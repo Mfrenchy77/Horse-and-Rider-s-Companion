@@ -1,0 +1,6 @@
+{
+    "Codegeex.EnableExtension": false,
+    "dart.flutterSdkPath": "/home/matteo/snap/flutter/common/flutter",
+    "cmake.sourceDirectory": "${workspaceFolder}/linux"
+   
+}
