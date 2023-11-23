@@ -5,28 +5,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
-import 'package:horseandriderscompanion/HorseProfile/cubit/horse_profile_cubit.dart';
+import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:intl/intl.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
+// TODO)(mfrenchy): go through and clean this all up
 class HorseProfileView extends StatelessWidget {
   const HorseProfileView({
     super.key,
     required this.usersProfile,
     required this.state,
-    required this.horseHomeCubit,
+    required this.homeCubit,
   });
 
   final RiderProfile? usersProfile;
-  final HorseHomeState state;
-  final HorseHomeCubit horseHomeCubit;
+  final HomeState state;
+  final HomeCubit homeCubit;
   @override
   Widget build(BuildContext context) {
-    // final isSmallScreen = MediaQuery.of(context).size.width < 600;
-    // final isDark = SharedPrefs().isDarkMode;
     final horseProfile = state.horseProfile;
     debugPrint('Horse Profile: ${state.horseProfile?.name}');
     if (horseProfile != null) {
@@ -37,7 +36,7 @@ class HorseProfileView extends StatelessWidget {
             isOwner: isOwner,
             context: context,
             state: state,
-            horseHomeCubit: horseHomeCubit,
+            homeCubit: homeCubit,
           ),
           title: const Text('Horse Profile'),
         ),
@@ -107,8 +106,8 @@ class HorseProfileView extends StatelessWidget {
 List<Widget> _appBarActions({
   required bool isOwner,
   required BuildContext context,
-  required HorseHomeState state,
-  required HorseHomeCubit horseHomeCubit,
+  required HomeState state,
+  required HomeCubit homeCubit,
 }) {
   return [
     Row(
@@ -117,7 +116,7 @@ List<Widget> _appBarActions({
           message: 'Horse Log Book',
           child: IconButton(
             onPressed: () {
-              horseHomeCubit.openHorseLogBook(context);
+              homeCubit.logNavigationSelected();
             },
             icon: const Icon(
               HorseAndRiderIcons.horseLogIcon,
@@ -130,7 +129,7 @@ List<Widget> _appBarActions({
             message: 'Edit Horse Profile',
             child: IconButton(
               onPressed: () {
-                horseHomeCubit.editHorseProfile(context: context);
+                homeCubit.editHorseProfile(context: context);
               },
               icon: const Icon(
                 Icons.edit,
@@ -144,7 +143,7 @@ List<Widget> _appBarActions({
             message: 'Transfer Horse Profile',
             child: IconButton(
               onPressed: () {
-                horseHomeCubit.transferHorseProfile();
+                homeCubit.transferHorseProfile();
               },
               icon: const Icon(
                 Icons.transfer_within_a_station,
@@ -158,7 +157,7 @@ List<Widget> _appBarActions({
             message: 'Delete Horse Profile',
             child: IconButton(
               onPressed: () {
-                horseHomeCubit.deleteHorseProfileFromUser();
+                homeCubit.deleteHorseProfileFromUser();
               },
               icon: const Icon(
                 Icons.delete,
@@ -189,16 +188,16 @@ List<Widget> _appBarActions({
           onSelected: (value) {
             switch (value) {
               case 'Horse Log Book':
-                horseHomeCubit.openHorseLogBook(context);
+                homeCubit.logNavigationSelected();
                 break;
               case 'Edit':
-                horseHomeCubit.editHorseProfile(context: context);
+                homeCubit.editHorseProfile(context: context);
                 break;
               case 'Transfer':
-                horseHomeCubit.transferHorseProfile();
+                homeCubit.transferHorseProfile();
                 break;
               case 'Delete':
-                horseHomeCubit.deleteHorseProfileFromUser();
+                homeCubit.deleteHorseProfileFromUser();
                 break;
             }
           },
@@ -221,9 +220,9 @@ Widget _currentOwner({
       Expanded(
         flex: 5,
         child: InkWell(
-          onTap: () => context.read<HorseHomeCubit>().openOwnersProfilePage(
+          onTap: () => context.read<HomeCubit>().gotoProfilePage(
                 context: context,
-                email: horseProfile.currentOwnerId,
+                toBeViewedEmail: horseProfile.currentOwnerId,
               ),
           child: Text(
             horseProfile.currentOwnerName ?? '',
@@ -468,7 +467,7 @@ Widget _addLogEntryButton({
           horseProfile: horseProfile,
         ),
       );
-      context.read<HorseHomeCubit>().addLogEntry(context: context);
+      context.read<HomeCubit>().addLogEntry(context: context);
     },
     child: const Text('Add an Entry into the Log'),
   );
@@ -506,12 +505,12 @@ Widget _requestToBeStudentHorseButton({
   required bool isOwner,
 }) {
   final isStudentHorse =
-      context.read<HorseHomeCubit>().isStudentHorse(horseProfile: horseProfile);
+      context.read<HomeCubit>().isStudentHorse(horseProfile: horseProfile);
   return Visibility(
     visible: !isOwner,
     child: ElevatedButton(
       onPressed: () {
-        context.read<HorseHomeCubit>().requestToBeStudentHorse(
+        context.read<HomeCubit>().requestToBeStudentHorse(
               isStudentHorse: isStudentHorse,
               context: context,
               horseProfile: horseProfile,

@@ -6,14 +6,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum LevelState {
   NO_PROGRESS,
   LEARNING,
-  COMPLETE,
+  PROFICIENT,
   VERIFIED,
 }
 
 ///Model of a Skill Level
 class SkillLevel {
   SkillLevel({
-    required this.levelId,
+    required this.skillId,
     this.verified = false,
     required this.lastEditBy,
     required this.lastEditDate,
@@ -21,14 +21,14 @@ class SkillLevel {
   });
 
   final bool? verified;
-  final String? levelId;
+  final String? skillId;
   final String? lastEditBy;
   final DateTime? lastEditDate;
   final LevelState levelState;
 
   SkillLevel.fromJson(Map<String, Object?> json)
       : this(
-          levelId: json['levelId']! as String,
+          skillId: json['skillId']! as String,
           verified: json['verified'] as bool?,
           lastEditBy: json['lastEditBy']! as String,
           lastEditDate: (json['lastEditDate']! as Timestamp).toDate(),
@@ -36,8 +36,8 @@ class SkillLevel {
               ? LevelState.NO_PROGRESS
               : (json['levelState']! as String) == 'LEARNING'
                   ? LevelState.LEARNING
-                  : (json['levelState']! as String) == 'COMPLETE'
-                      ? LevelState.COMPLETE
+                  : (json['levelState']! as String) == 'PROFICIENT'
+                      ? LevelState.PROFICIENT
                       : (json['levelState']! as String) == 'VERIFIED'
                           ? LevelState.VERIFIED
                           : LevelState.NO_PROGRESS,
@@ -49,7 +49,7 @@ class SkillLevel {
   ) {
     final data = snapshot.data();
     return SkillLevel(
-      levelId: data!['levelId'] as String?,
+      skillId: data!['skillId'] as String?,
       verified: data['verified'] as bool?,
       lastEditBy: data['lastEditBy'] as String?,
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
@@ -57,8 +57,8 @@ class SkillLevel {
           ? LevelState.NO_PROGRESS
           : (data['levelState'] as String) == 'LEARNING'
               ? LevelState.LEARNING
-              : (data['levelState'] as String) == 'COMPLETE'
-                  ? LevelState.COMPLETE
+              : (data['levelState'] as String) == 'PROFICIENT'
+                  ? LevelState.PROFICIENT
                   : (data['levelState'] as String) == 'VERIFIED'
                       ? LevelState.VERIFIED
                       : LevelState.NO_PROGRESS,
@@ -66,7 +66,7 @@ class SkillLevel {
   }
   Map<String, Object?> toFirestore() {
     return {
-      if (levelId != null) 'levelId': levelId,
+      if (skillId != null) 'skillId': skillId,
       if (verified != null) 'verified': verified,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
@@ -74,8 +74,8 @@ class SkillLevel {
           ? 'NO_PROGRESS'
           : levelState == LevelState.LEARNING
               ? 'LEARNING'
-              : levelState == LevelState.COMPLETE
-                  ? 'COMPLETE'
+              : levelState == LevelState.PROFICIENT
+                  ? 'PROFICIENT'
                   : levelState == LevelState.VERIFIED
                       ? 'VERIFIED'
                       : 'NO_PROGRESS',
@@ -84,7 +84,7 @@ class SkillLevel {
 
   Map<String, Object?> toJson() {
     return {
-      'levelId': levelId,
+      'skillId': skillId,
       'verified': verified,
       'lastEditBy': lastEditBy,
       'lastEditDate': lastEditDate,
@@ -92,8 +92,8 @@ class SkillLevel {
           ? 'NO_PROGRESS'
           : levelState == LevelState.LEARNING
               ? 'LEARNING'
-              : levelState == LevelState.COMPLETE
-                  ? 'COMPLETE'
+              : levelState == LevelState.PROFICIENT
+                  ? 'PROFICIENT'
                   : levelState == LevelState.VERIFIED
                       ? 'VERIFIED'
                       : 'NO_PROGRESS',

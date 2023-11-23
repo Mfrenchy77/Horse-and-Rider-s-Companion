@@ -3,7 +3,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
-import 'package:horseandriderscompanion/HorseProfile/cubit/horse_profile_cubit.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:intl/intl.dart';
 
@@ -11,11 +10,9 @@ class LogView extends StatelessWidget {
   const LogView({
     super.key,
     required this.state,
-    required this.horseState,
     required this.isRider,
   });
-  final HomeState? state;
-  final HorseHomeState? horseState;
+  final HomeState state;
   final bool isRider;
   @override
   Widget build(BuildContext context) {
@@ -31,10 +28,10 @@ class LogView extends StatelessWidget {
           children: [
             Expanded(
               child: _logBookList(
-                horseProfile: horseState?.horseProfile,
+                horseProfile: state.horseProfile,
                 isRider: isRider,
                 context: context,
-                profile: state?.viewingProfile ?? state?.usersProfile!,
+                profile: state.viewingProfile ?? state.usersProfile!,
               ),
             ),
             Row(

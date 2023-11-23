@@ -5,9 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/error_page.dart';
+import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
-import 'package:horseandriderscompanion/HorseProfile/view/horse_home_page.dart';
 import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Messages/view/messages_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
@@ -155,13 +154,13 @@ class AppView extends StatelessWidget {
                       return const LoginPage();
                     case HomePage.routeName:
                       return const HomePage();
-                    case HorseHomePage.routeName:
-                      return const HorseHomePage();
+                    // case HorseHomePage.routeName:
+                    //   return const HorseHomePage();
                     case MessagesPage.routeName:
                       return const MessagesPage();
 
                     default:
-                      return const ErrorPage();
+                      return errorView(context);
                   }
                 },
               );

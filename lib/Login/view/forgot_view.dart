@@ -217,8 +217,6 @@ Widget _submitButton({
   required BuildContext context,
   required LoginState state,
 }) {
-  //FIXME(mfrenchy77):
-  //this might cause an issue with the button color
   return state.status.isSubmissionInProgress
       ? const CircularProgressIndicator()
       : SizedBox(

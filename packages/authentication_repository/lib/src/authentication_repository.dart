@@ -91,6 +91,33 @@ class LogInWithEmailAndPasswordFailure implements Exception {
   final String message;
 }
 
+/// {@template log_in_as_guest_failure}
+/// Thrown during the login process if a failure occurs.
+/// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/signInAnonymously.html
+/// {@endtemplate}
+class LogInAsGuestFailure implements Exception {
+  /// {@macro log_in_as_guest_failure}
+  const LogInAsGuestFailure([
+    this.message = 'An unknown exception occurred.',
+  ]);
+
+  /// Create an authentication message
+  /// from a firebase authentication exception code.
+  factory LogInAsGuestFailure.fromCode(String code) {
+    switch (code) {
+      case 'user-disabled':
+        return const LogInAsGuestFailure(
+          'This function has been disabled. Please contact support for help.',
+        );
+      default:
+        return const LogInAsGuestFailure();
+    }
+  }
+
+  /// The associated error message.
+  final String message;
+}
+
 /// {@template reset_password_failure}
 ///Thrown during the reset password process if a failure occurs.
 ///https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/sendPasswordResetEmail.html
@@ -276,6 +303,17 @@ class AuthenticationRepository {
     }
   }
 
+  /// Allow the user to sign in as a guest
+  Future<void> signInAsGuest() async {
+    try {
+      await _firebaseAuth.signInAnonymously();
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw LogInAsGuestFailure.fromCode(e.code);
+    } catch (_) {
+      throw const LogInAsGuestFailure();
+    }
+  }
+
   /// Starts the Sign In with Google Flow.
   ///
   /// Throws a [LogInWithGoogleFailure] if an exception occurs.
@@ -355,8 +393,9 @@ extension on firebase_auth.User {
     return User(
       id: uid,
       email: email,
-      name: displayName,
       photo: photoURL,
+      name: displayName,
+      isGuest: isAnonymous,
       emailVerfified: emailVerified,
     );
   }

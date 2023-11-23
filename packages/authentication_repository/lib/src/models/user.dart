@@ -12,9 +12,9 @@ class User extends Equatable {
     this.name,
     this.photo,
     required this.id,
+    this.isGuest = false,
     this.emailVerfified = false,
   });
-
 
   /// The current user's id.
   final String id;
@@ -30,6 +30,9 @@ class User extends Equatable {
 
   /// Whether the current user's email address has been verified.
   final bool emailVerfified;
+
+  /// Whether the current user is a guest.
+  final bool isGuest;
 
   /// Empty user which represents an unauthenticated user.
   static const empty = User(id: '');

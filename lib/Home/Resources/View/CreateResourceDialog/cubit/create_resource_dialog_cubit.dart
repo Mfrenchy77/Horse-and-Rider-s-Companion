@@ -13,10 +13,30 @@ part 'create_resource_dialog_state.dart';
 class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   CreateResourceDialogCubit({
     required this.usersProfile,
+    required bool isEdit,
+    required Resource? resource,
+    required List<Skill?>? skills,
     required ResourcesRepository resourcesRepository,
-  })  : _resourcesRepository = resourcesRepository,
-        super(const CreateResourceDialogState());
-
+  })  : _skills = skills,
+        _isEdit = isEdit,
+        _resource = resource,
+        _resourcesRepository = resourcesRepository,
+        super(const CreateResourceDialogState()) {
+    if (resource != null) {
+      urlChanged(resource.url.toString());
+    }
+    emit(
+      state.copyWith(
+        skills: _skills,
+        resource: _resource,
+        isEdit: _isEdit,
+        resourceSkills: _resource?.skillTreeIds ?? [],
+      ),
+    );
+  }
+  final bool _isEdit;
+  final Resource? _resource;
+  final List<Skill?>? _skills;
   final RiderProfile? usersProfile;
   final ResourcesRepository _resourcesRepository;
 
@@ -28,15 +48,13 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       state.copyWith(
         urlFetchedStatus: UrlFetchedStatus.initial,
         url: url,
-        description: const SingleWord.pure(),
-        title: const SingleWord.pure(),
-        imageUrl: '',
         status: Formz.validate([url]),
       ),
     );
+    fetchUrl();
   }
 
-  ///   Called when Editing a Resourse and the
+  ///   Called when Editing a Resource and the
   ///   Title is changed
   void titleChanged(String value) {
     final title = SingleWord.dirty(value);
@@ -48,7 +66,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     );
   }
 
-  ///   Called when Editing a Resourse and the
+  ///   Called when Editing a Resource and the
   ///   Description is changed
   void descriptionChanged(String value) {
     final description = SingleWord.dirty(value);
@@ -60,23 +78,42 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     );
   }
 
+  ///   Called when the user has selected a skill
+  /// we want to remove the skill from the list of skills
+  /// if the skill is already in the list
+  /// and add the skill to the list if it is not in the list
+  void resourceSkillsChanged(String skillId) {
+    debugPrint('resourceSkillsChanged: $skillId');
+    if (state.resourceSkills != null) {
+      final updatedSkills = List<String>.from(state.resourceSkills!);
+
+      if (updatedSkills.contains(skillId)) {
+        debugPrint('removing skill');
+        updatedSkills.remove(skillId);
+      } else {
+        debugPrint('adding skill');
+        updatedSkills.add(skillId);
+      }
+
+      emit(state.copyWith(resourceSkills: updatedSkills));
+    } else {
+      debugPrint('adding skill');
+      final skills = <String>[skillId];
+      emit(state.copyWith(resourceSkills: skills));
+    }
+  }
+
   // if the url does not have a scheme, add https
   String _checkAndModifyUrl(String value) {
-    var url = value;
-    // Check if the URL starts with "http://" or "https://"
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      // If not, add "https://"
-      url = 'http://$url';
+    var uri = Uri.parse(value);
+
+    // Check if the scheme is missing
+    if (uri.scheme.isEmpty) {
+      // Add 'https://' as default scheme
+      uri = Uri.parse('https://$value');
     }
 
-    // Check if the URL contains "www."
-    if (!url.contains('www.')) {
-      // If not, add "www."
-      url = url.replaceAll('https://', 'https://www.');
-      url = url.replaceAll('http://', 'http://www.');
-    }
-
-    return url;
+    return uri.toString();
   }
 
   // read the url String and extract the metadata
@@ -84,50 +121,38 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   Future<void> fetchUrl() async {
     final url = _checkAndModifyUrl(state.url.value.trim());
     debugPrint('fetchUrl: $url');
-    emit(
-      state.copyWith(
-        urlFetchedStatus: UrlFetchedStatus.fetching,
-      ),
-    );
+    emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
+
     try {
-      await MetadataFetch.extract(url).then((value) {
-        if (value != null) {
-          final title = SingleWord.dirty(value.title ?? '');
-          final description = SingleWord.dirty(value.description ?? '');
-          final imageUrl = value.image ?? '';
-          final url = Url.dirty(value.url ?? '');
-          emit(
-            state.copyWith(
-              urlFetchedStatus: UrlFetchedStatus.fetched,
-              url: url,
-              title: title,
-              description: description,
-              imageUrl: imageUrl,
-              status: Formz.validate([title, description]),
-            ),
-          );
-        } else {
-          debugPrint('Error Fetching Url');
-          emit(
-            state.copyWith(
-              isError: true,
-              error: 'Error Fetching Url',
-              urlFetchedStatus: UrlFetchedStatus.error,
-              status: FormzStatus.invalid,
-            ),
-          );
-        }
-      });
-    } on Exception catch (e) {
-      debugPrint('Error Fetching Url: $e.');
-      emit(
-        state.copyWith(
-          isError: true,
-          urlFetchedStatus: UrlFetchedStatus.error,
-          error: e.toString(),
-          status: FormzStatus.invalid,
-        ),
-      );
+      final metadata = await MetadataFetch.extract(url);
+      if (metadata != null) {
+        final title = SingleWord.dirty(metadata.title ?? '');
+        final description = SingleWord.dirty(metadata.description ?? '');
+        final imageUrl = _checkAndModifyUrl(metadata.image ?? '');
+        debugPrint('imageUrl: $imageUrl');
+        emit(
+          state.copyWith(
+            urlFetchedStatus: UrlFetchedStatus.fetched,
+            url: Url.dirty(url),
+            title: title,
+            description: description,
+            imageUrl: imageUrl,
+            status: Formz.validate([state.url, title, description]),
+          ),
+        );
+      } else {
+        throw Exception('Metadata not found for URL');
+      }
+    } catch (e) {
+      debugPrint('Error Fetching Url: $e');
+      // emit(
+      //   state.copyWith(
+      //     isError: true,
+      //     error: e.toString(),
+      //     urlFetchedStatus: UrlFetchedStatus.error,
+      //     status: FormzStatus.invalid,
+      //   ),
+      // );
     }
   }
 
@@ -146,8 +171,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
             isSelected: false,
           );
           final raters = <BaseListItem>[user];
-          final skillId = BaseListItem();
-          final skillIds = <BaseListItem>[skillId];
+          final skillIds = state.resourceSkills ?? [];
           final resource = Resource(
             id: ViewUtils.createId(),
             name: value.title,
@@ -198,7 +222,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           url: url,
           numberOfRates: resource.numberOfRates,
           rating: resource.rating,
-          skillTreeIds: resource.skillTreeIds,
+          skillTreeIds: state.resourceSkills ?? [],
           usersWhoRated: resource.usersWhoRated,
           lastEditBy: usersProfile?.name ?? '',
           lastEditDate: DateTime.now(),

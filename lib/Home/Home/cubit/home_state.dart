@@ -1,16 +1,23 @@
 part of 'home_cubit.dart';
 
+enum SkillSearchState { skill, level }
+
+enum SearchType { ititial, rider, horse }
+
 enum LevelSubmitionStatus { submitting, ititial }
+
+enum LevelSubmissionStatus { submitting, initial }
+
+enum SearchState { email, name, horse, horseNickName }
 
 enum SkillTreeStatus { categories, subCategories, skill, level }
 
 enum ResourcesSortStatus { recent, saved, oldest, mostRecommended }
 
-enum SearchState { email, name, horse, horseNickName }
+// ignore: constant_identifier_names
+enum SkillTreeNavigation { Category, SubCategory, Skill, SkillLevel }
 
-enum SearchType { ititial, rider, horse }
-
-enum HomeStatus { loading, profile, resource, skillTree, ridersLog }
+enum HomeStatus { loading, profile, resource, skillTree, ridersLog, horseLog }
 
 @immutable
 class HomeState extends Equatable {
@@ -20,23 +27,38 @@ class HomeState extends Equatable {
     this.levels,
     this.bannerAd,
     this.category,
-    this.resources,
     this.index = 0,
+    this.allSkills,
     this.categories,
     this.error = '',
+    this.searchList,
+    this.introSkills,
     this.subCategory,
-    this.message = '',
+    this.sortedSkills,
+    this.horseProfile,
     this.usersProfile,
+    this.message = '',
+    this.allResources,
+    this.resourcesList,
+    this.ownersProfile,
     this.subCategories,
+    this.advancedSkills,
     this.viewingProfile,
+    this.isGuest = false,
+    this.isOwner = false,
+    this.isError = false,
+    this.isSearch = false,
     this.snackBar = false,
     this.isViewing = false,
+    this.searchQuery = '',
+    this.isForRider = true,
     this.unreadMessages = 0,
+    this.intermediateSkills,
+    this.isSnackbar = false,
+    this.isEditState = false,
     this.isSearching = false,
     this.errorSnackBar = false,
     this.searchResult = const [],
-    this.isSkillTreeEdit = false,
-    this.isResourcesEdit = false,
     this.isBannerAdReady = false,
     this.messageSnackBar = false,
     this.name = const Name.pure(),
@@ -48,164 +70,245 @@ class HomeState extends Equatable {
     this.searchType = SearchType.ititial,
     this.homeStatus = HomeStatus.loading,
     this.isSendingMessageToSupport = false,
+    this.difficultyState = DifficultyState.all,
+    this.skillSearchState = SkillSearchState.skill,
     this.skillTreeStatus = SkillTreeStatus.categories,
+    this.skillTreeNavigation = SkillTreeNavigation.Skill,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.levelSubmitionStatus = LevelSubmitionStatus.ititial,
+    this.levelSubmissionStatus = LevelSubmissionStatus.initial,
   });
-
   final int index;
   final Name name;
   final Email email;
   final Skill? skill;
   final String error;
+  final bool isError;
+  final bool isOwner;
+  final bool isGuest;
   final bool snackBar;
-  final String message;
+  final bool isSearch;
   final bool isViewing;
+  final String message;
+  final bool isSnackbar;
+  final bool isForRider;
+  final bool isEditState;
   final bool isSearching;
+  final String searchQuery;
   final int unreadMessages;
   final bool errorSnackBar;
   final BannerAd? bannerAd;
   final Catagorry? category;
   final bool messageSnackBar;
   final List<Level?>? levels;
-  final bool isResourcesEdit;
   final bool isBannerAdReady;
-  final bool isSkillTreeEdit;
   final List<Skill?>? skills;
   final HomeStatus homeStatus;
   final SearchType searchType;
-  final SubCategory? subCategory;
+  final List<Skill?>? allSkills;
   final FormzStatus formzStatus;
   final SearchState searchState;
+  final SubCategory? subCategory;
   final bool isDescriptionHidden;
+  final List<String?>? searchList;
+  final List<Skill?>? introSkills;
+  final List<Skill?>? sortedSkills;
+  final HorseProfile? horseProfile;
   final RiderProfile? usersProfile;
-  final List<Resource?>? resources;
-  final List<Catagorry?>? categories;
+  final RiderProfile? ownersProfile;
+  final List<Skill?>? advancedSkills;
   final RiderProfile? viewingProfile;
+  final List<Catagorry?>? categories;
+  final List<Resource?>? allResources;
+  final List<Resource?>? resourcesList;
   final bool isSendingMessageToSupport;
   final SkillTreeStatus skillTreeStatus;
+  final DifficultyState difficultyState;
   final List<RiderProfile?> searchResult;
+  final List<Skill?>? intermediateSkills;
   final List<SubCategory?>? subCategories;
+  final SkillSearchState skillSearchState;
   final List<HorseProfile?> horseSearchResult;
+  final SkillTreeNavigation skillTreeNavigation;
   final ResourcesSortStatus resourcesSortStatus;
   final LevelSubmitionStatus levelSubmitionStatus;
+  final LevelSubmissionStatus levelSubmissionStatus;
 
   HomeState copyWith({
     Name? name,
     int? index,
-    Email? email,
     Skill? skill,
+    Level? level,
+    Email? email,
     String? error,
+    bool? isGuest,
+    bool? isError,
+    bool? isOwner,
+    bool? isSearch,
     bool? snackBar,
-    String? message,
     bool? isViewing,
+    String? message,
+    bool? isSnackbar,
+    bool? isForRider,
+    bool? isEditState,
     bool? isSearching,
     BannerAd? bannerAd,
     int? unreadMessages,
-    bool? errorSnackBar,
+    String? searchQuery,
     Catagorry? category,
+    bool? errorSnackBar,
     List<Skill?>? skills,
     List<Level?>? levels,
     bool? messageSnackBar,
     bool? isBannerAdReady,
-    bool? isResourcesEdit,
-    bool? isSkillTreeEdit,
     SearchType? searchType,
     HomeStatus? homeStatus,
+    List<Skill?>? allSkills,
     SubCategory? subCategory,
     SearchState? searchState,
     FormzStatus? formzStatus,
+    List<String?>? searchList,
     bool? isDescriptionHidden,
+    List<Skill?>? introSkills,
+    List<Skill?>? sortedSkills,
+    HorseProfile? horseProfile,
     RiderProfile? usersProfile,
-    List<Resource?>? resources,
-    List<Catagorry?>? categories,
+    RiderProfile? ownersProfile,
+    List<Skill?>? advancedSkills,
     RiderProfile? viewingProfile,
+    List<Catagorry?>? categories,
+    List<Resource?>? allResources,
+    List<Resource?>? resourcesList,
     bool? isSendingMessageToSupport,
     SkillTreeStatus? skillTreeStatus,
-    List<SubCategory?>? subCategories,
+    List<Skill?>? intermediateSkills,
+    DifficultyState? difficultyState,
     List<RiderProfile?>? searchResult,
+    List<SubCategory?>? subCategories,
+    SkillSearchState? skillSearchState,
     List<HorseProfile?>? horseSearchResult,
+    SkillTreeNavigation? skillTreeNavigation,
     ResourcesSortStatus? resourcesSortStatus,
     LevelSubmitionStatus? levelSubmitionStatus,
+    LevelSubmissionStatus? levelSubmissionStatus,
   }) {
     return HomeState(
       name: name ?? this.name,
-      email: email ?? this.email,
       skill: skill ?? this.skill,
+      email: email ?? this.email,
       index: index ?? this.index,
       error: error ?? this.error,
       skills: skills ?? this.skills,
       levels: levels ?? this.levels,
+      isGuest: isGuest ?? this.isGuest,
+      isOwner: isOwner ?? this.isOwner,
+      isError: isError ?? this.isError,
       message: message ?? this.message,
       snackBar: snackBar ?? this.snackBar,
-      category: category ?? this.category,
       bannerAd: bannerAd ?? this.bannerAd,
+      category: category ?? this.category,
+      isSearch: isSearch ?? this.isSearch,
       isViewing: isViewing ?? this.isViewing,
-      resources: resources ?? this.resources,
+      allSkills: allSkills ?? this.allSkills,
+      searchList: searchList ?? this.searchList,
       searchType: searchType ?? this.searchType,
       homeStatus: homeStatus ?? this.homeStatus,
+      isSnackbar: isSnackbar ?? this.isSnackbar,
+      isForRider: isForRider ?? this.isForRider,
       categories: categories ?? this.categories,
-      subCategory: subCategory ?? this.subCategory,
+      isEditState: isEditState ?? this.isEditState,
       isSearching: isSearching ?? this.isSearching,
       formzStatus: formzStatus ?? this.formzStatus,
       searchState: searchState ?? this.searchState,
-      searchResult: searchResult ?? this.searchResult,
+      introSkills: introSkills ?? this.introSkills,
+      subCategory: subCategory ?? this.subCategory,
+      searchQuery: searchQuery ?? this.searchQuery,
+      allResources: allResources ?? this.allResources,
+      horseProfile: horseProfile ?? this.horseProfile,
       usersProfile: usersProfile ?? this.usersProfile,
-      subCategories: subCategories ?? this.subCategories,
+      searchResult: searchResult ?? this.searchResult,
+      sortedSkills: sortedSkills ?? this.sortedSkills,
+      resourcesList: resourcesList ?? this.resourcesList,
+      ownersProfile: ownersProfile ?? this.ownersProfile,
       errorSnackBar: errorSnackBar ?? this.errorSnackBar,
-      viewingProfile: viewingProfile ?? this.viewingProfile,
+      subCategories: subCategories ?? this.subCategories,
       unreadMessages: unreadMessages ?? this.unreadMessages,
+      advancedSkills: advancedSkills ?? this.advancedSkills,
+      viewingProfile: viewingProfile ?? this.viewingProfile,
       messageSnackBar: messageSnackBar ?? this.messageSnackBar,
-      isSkillTreeEdit: isSkillTreeEdit ?? this.isSkillTreeEdit,
-      isResourcesEdit: isResourcesEdit ?? this.isResourcesEdit,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       skillTreeStatus: skillTreeStatus ?? this.skillTreeStatus,
-      isSendingMessageToSupport:
-          isSendingMessageToSupport ?? this.isSendingMessageToSupport,
+      difficultyState: difficultyState ?? this.difficultyState,
+      skillSearchState: skillSearchState ?? this.skillSearchState,
       horseSearchResult: horseSearchResult ?? this.horseSearchResult,
+      skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       isDescriptionHidden: isDescriptionHidden ?? this.isDescriptionHidden,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
       levelSubmitionStatus: levelSubmitionStatus ?? this.levelSubmitionStatus,
+      intermediateSkills: intermediateSkills ?? this.intermediateSkills,
+      levelSubmissionStatus:
+          levelSubmissionStatus ?? this.levelSubmissionStatus,
+      isSendingMessageToSupport:
+          isSendingMessageToSupport ?? this.isSendingMessageToSupport,
     );
   }
 
   @override
   List<Object?> get props => [
         name,
-        email,
-        error,
         skill,
+        email,
         index,
+        error,
         skills,
         levels,
+        isOwner,
+        isGuest,
+        isError,
         message,
-        snackBar,
-        category,
         bannerAd,
-        resources,
+        category,
+        snackBar,
+        isSearch,
+        allSkills,
         isViewing,
-        categories,
+        isSnackbar,
+        isForRider,
         searchType,
         homeStatus,
+        categories,
+        searchList,
+        isEditState,
+        searchState,
+        formzStatus,
         isSearching,
         subCategory,
-        formzStatus,
-        searchState,
-        searchResult,
+        introSkills,
+        searchQuery,
+        allResources,
+        sortedSkills,
+        horseProfile,
         usersProfile,
+        searchResult,
         errorSnackBar,
+        resourcesList,
         subCategories,
-        viewingProfile,
+        ownersProfile,
         unreadMessages,
+        advancedSkills,
+        viewingProfile,
+        isBannerAdReady,
         messageSnackBar,
         skillTreeStatus,
-        isSkillTreeEdit,
-        isResourcesEdit,
-        isBannerAdReady,
+        difficultyState,
+        skillSearchState,
         horseSearchResult,
-        resourcesSortStatus,
+        intermediateSkills,
         isDescriptionHidden,
+        resourcesSortStatus,
+        skillTreeNavigation,
         levelSubmitionStatus,
+        levelSubmissionStatus,
         isSendingMessageToSupport,
       ];
 }

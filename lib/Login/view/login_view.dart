@@ -45,6 +45,8 @@ Widget loginView({
                           gap(),
                           _submitButton(context: context, state: state),
                           gap(),
+                          _signInAsGuest(context: context),
+                          gap(),
                           const RegistationLink(),
                           gap(),
                           const ForgotPasswordLink(),
@@ -125,6 +127,9 @@ Widget loginView({
                             ),
                           ],
                         ),
+                        gap(),
+                        _signInAsGuest(context: context),
+                        gap(),
                         const RegistationLink(),
                         gap(),
                         const ForgotPasswordLink(),
@@ -146,6 +151,31 @@ Widget loginView({
             //   ),
           ],
         );
+}
+
+    /// Login as Guest
+Widget _signInAsGuest({required BuildContext context}) {
+  return SizedBox(
+    width: double.infinity,
+    child: TextButton(
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      onPressed: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        context.read<LoginCubit>().logInAsGuest();
+      },
+      child: const Padding(
+        padding: EdgeInsets.all(10),
+        child: Text(
+          'Sign in as Guest',
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+    ),
+  );
 }
 
 Widget _emailField({

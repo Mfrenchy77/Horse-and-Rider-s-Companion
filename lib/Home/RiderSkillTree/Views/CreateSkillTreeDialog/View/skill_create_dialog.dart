@@ -16,11 +16,9 @@ class CreateSkillDialog extends StatelessWidget {
     required this.isRider,
     required int position,
     required String? userName,
-    required SubCategory? subCategory,
     required List<SubCategory?>? allSubCategories,
   })  : _userName = userName,
         _position = position,
-        _subCategory = subCategory,
         _allSubCategories = allSubCategories;
 
   final bool isEdit;
@@ -28,7 +26,6 @@ class CreateSkillDialog extends StatelessWidget {
   final bool isRider;
   final int _position;
   final String? _userName;
-  final SubCategory? _subCategory;
   final List<SubCategory?>? _allSubCategories;
 
   @override
@@ -40,7 +37,6 @@ class CreateSkillDialog extends StatelessWidget {
           skill: skill,
           name: _userName,
           isForRider: isRider,
-          subCatagorry: _subCategory,
           allSubCategories: _allSubCategories,
           skillsRepository: context.read<SkillTreeRepository>(),
         ),
@@ -125,6 +121,55 @@ class CreateSkillDialog extends StatelessWidget {
                             ),
                           ),
                           smallGap(),
+
+                          ///   Learning Description
+                          TextFormField(
+                            initialValue:
+                                isEdit ? skill?.learningDescription : '',
+                            textCapitalization: TextCapitalization.sentences,
+                            maxLines: 8,
+                            minLines: 3,
+                            onChanged: (learningDescription) => context
+                                .read<CreateSkillDialogCubit>()
+                                .skillLearningDescriptionChanged(
+                                  learningDescription,
+                                ),
+                            keyboardType: TextInputType.multiline,
+                            decoration: InputDecoration(
+                              border: const UnderlineInputBorder(),
+                              labelText: isEdit
+                                  ? 'Learning Description'
+                                  : 'New Learning Description',
+                              hintText:
+                                  'Describe what should be it means to be learning ${state.name.value}}',
+                              icon: const Icon(Icons.arrow_circle_up),
+                            ),
+                          ),
+                          smallGap(),
+
+                          ///   Proficient Description
+                          TextFormField(
+                            initialValue:
+                                isEdit ? skill?.proficientDescription : '',
+                            textCapitalization: TextCapitalization.sentences,
+                            maxLines: 8,
+                            minLines: 3,
+                            onChanged: (proficientDescription) => context
+                                .read<CreateSkillDialogCubit>()
+                                .skillProficientDescriptionChanged(
+                                  proficientDescription,
+                                ),
+                            keyboardType: TextInputType.multiline,
+                            decoration: InputDecoration(
+                              border: const UnderlineInputBorder(),
+                              labelText: isEdit
+                                  ? 'Proficient Description'
+                                  : 'New Proficient Description',
+                              hintText:
+                                  'Describe what it means to be proficient at ${state.name.value}}',
+                              icon: const Icon(Icons.arrow_circle_up),
+                            ),
+                          ),
 
                           ///   Difficulty radio buttons
                           Row(

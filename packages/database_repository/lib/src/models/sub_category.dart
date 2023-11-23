@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Represents a sub-category model.
 ///
 /// This class contains the properties and methods to represent a sub-category.
-/// It is used in conjunction with the Category model to organize data in the database.
+/// It is used in conjunction with the Category model
+///  to organize data in the database.
 class SubCategory {
   /// Creates a new sub-category instance.
   SubCategory({

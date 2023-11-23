@@ -10,6 +10,8 @@ class CreateSkillDialogState extends Equatable {
     this.name = const SingleWord.pure(),
     this.description = const SingleWord.pure(),
     this.difficulty = DifficultyState.introductory,
+    this.learningDescription = const SingleWord.pure(),
+    this.proficientDescription = const SingleWord.pure(),
     this.updateSubCategoryList = UpdateSubCategoryList.inital,
   });
 
@@ -17,6 +19,8 @@ class CreateSkillDialogState extends Equatable {
   final FormzStatus status;
   final SingleWord description;
   final DifficultyState difficulty;
+  final SingleWord learningDescription;
+  final SingleWord proficientDescription;
   final List<SubCategory?>? subCategoryList;
   final List<SubCategory?>? allSubCategories;
   final UpdateSubCategoryList updateSubCategoryList;
@@ -26,6 +30,8 @@ class CreateSkillDialogState extends Equatable {
     FormzStatus? status,
     SingleWord? description,
     DifficultyState? difficulty,
+    SingleWord? learningDescription,
+    SingleWord? proficientDescription,
     List<SubCategory?>? subCategoryList,
     List<SubCategory?>? allSubCategories,
     UpdateSubCategoryList? updateSubCategoryList,
@@ -35,10 +41,13 @@ class CreateSkillDialogState extends Equatable {
       status: status ?? this.status,
       difficulty: difficulty ?? this.difficulty,
       description: description ?? this.description,
+      proficientDescription:
+          proficientDescription ?? this.proficientDescription,
       subCategoryList: subCategoryList ?? this.subCategoryList,
-      allSubCategories: allSubCategories ?? this.allSubCategories,
       updateSubCategoryList:
           updateSubCategoryList ?? this.updateSubCategoryList,
+      allSubCategories: allSubCategories ?? this.allSubCategories,
+      learningDescription: learningDescription ?? this.learningDescription,
     );
   }
 
@@ -50,6 +59,8 @@ class CreateSkillDialogState extends Equatable {
         description,
         subCategoryList,
         allSubCategories,
+        learningDescription,
+        proficientDescription,
         updateSubCategoryList,
       ];
 }

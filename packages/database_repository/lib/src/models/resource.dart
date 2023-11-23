@@ -27,8 +27,8 @@ class Resource {
   final String? thumbnail;
   final String? lastEditBy;
   final String? description;
+  List<String?>? skillTreeIds;
   final DateTime? lastEditDate;
-  List<BaseListItem?>? skillTreeIds;
   List<BaseListItem?>? usersWhoRated;
 
   factory Resource.fromFirestore(
@@ -46,9 +46,9 @@ class Resource {
       lastEditBy: data['lastEditBy'] as String?,
       description: data['description'] as String?,
       numberOfRates: data['numberOfRates'] as int?,
-      skillTreeIds: data['skillTreeIds'] == null
+      skillTreeIds: (data['skillTreeIds']) == null
           ? null
-          : _convertSkillTreeIds(data['skillTreeIds'] as List),
+          : (data['skillTreeIds'] as List).map((e) => e as String?).toList(),
       usersWhoRated: data['usersWhoRated'] == null
           ? null
           : _convertUsersWhoRated(data['usersWhoRated'] as List),
@@ -67,9 +67,7 @@ class Resource {
       if (description != null) 'description': description,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
       if (numberOfRates != null) 'numberOfRates': numberOfRates,
-      if (skillTreeIds != null)
-        'skillTreeIds':
-            List<dynamic>.from(skillTreeIds!.map((e) => e?.toJson())),
+      if (skillTreeIds != null) 'skillTreeIds': skillTreeIds,
       if (usersWhoRated != null)
         'usersWhoRated':
             List<dynamic>.from(usersWhoRated!.map((e) => e?.toJson())),
@@ -86,7 +84,7 @@ class Resource {
     String? description,
     DateTime? lastEditDate,
     int? numberOfRates,
-    List<BaseListItem?>? skillTreeIds,
+    List<String?>? skillTreeIds,
     List<BaseListItem?>? usersWhoRated,
   }) {
     return Resource(
@@ -103,17 +101,6 @@ class Resource {
       usersWhoRated: usersWhoRated ?? this.usersWhoRated,
     );
   }
-}
-
-List<BaseListItem> _convertSkillTreeIds(List<dynamic>? itemMap) {
-  final skillTreeIds = <BaseListItem>[];
-  if (itemMap != null) {
-    for (final item in itemMap) {
-      skillTreeIds.add(BaseListItem.fromJson(item as Map<String, dynamic>));
-    }
-  }
-
-  return skillTreeIds;
 }
 
 List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {

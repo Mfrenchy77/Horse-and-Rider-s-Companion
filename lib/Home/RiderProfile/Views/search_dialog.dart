@@ -21,13 +21,14 @@ class SearchDialog extends StatelessWidget {
     final user = context.select((AppBloc bloc) => bloc.state.user);
     return BlocProvider(
       create: (context) => HomeCubit(
-        viewingProfile: null,
         user: user,
+        horseId: null,
+        viewingProfile: null,
+        messagesRepository: context.read<MessagesRepository>(),
+        skillTreeRepository: context.read<SkillTreeRepository>(),
+        resourcesRepository: context.read<ResourcesRepository>(),
         horseProfileRepository: context.read<HorseProfileRepository>(),
         riderProfileRepository: context.read<RiderProfileRepository>(),
-        skillTreeRepository: context.read<SkillTreeRepository>(),
-        messagesRepository: context.read<MessagesRepository>(),
-        resourcesRepository: context.read<ResourcesRepository>(),
       ),
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {

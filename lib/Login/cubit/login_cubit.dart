@@ -220,6 +220,31 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Login as a guest
+  Future<void> logInAsGuest() async {
+    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    try {
+      await _authenticationRepository.signInAsGuest();
+      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+    } on LogInAsGuestFailure catch (e) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Error: ${e.message}',
+          status: FormzStatus.submissionFailure,
+        ),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Submission Failure',
+          status: FormzStatus.submissionFailure,
+        ),
+      );
+    }
+  }
+
   Future<void> sendForgotPasswordEmail() async {
     if (!state.email.valid) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));

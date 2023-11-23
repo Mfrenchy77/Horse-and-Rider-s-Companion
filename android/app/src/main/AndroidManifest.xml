@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.frenchfriedtechnlogy.horseandriderscompanion">
-
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
@@ -30,9 +31,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-             <meta-data
+        <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-7692240231486800~5391797010"/>
-  
+            android:value="ca-app-pub-7692240231486800~5391797010" />
+
     </application>
 </manifest>

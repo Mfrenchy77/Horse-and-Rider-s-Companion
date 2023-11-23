@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
@@ -13,10 +14,10 @@ import 'package:horseandriderscompanion/Home/Resources/View/resources_view.dart'
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_view.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/search_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/support_message_dialog.dart';
-import 'package:horseandriderscompanion/Home/RiderSkillTree/Views/skill_tree_view_filters.dart';
+import 'package:horseandriderscompanion/Home/RiderSkillTree/Views/skill_tree_view.dart';
+import 'package:horseandriderscompanion/HorseProfile/view/horse_profile_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({
@@ -126,25 +127,23 @@ class HomeView extends StatelessWidget {
         child: BlocBuilder<HomeCubit, HomeState>(
           builder: (context, state) {
             final homeCubit = context.read<HomeCubit>();
-            return state.usersProfile != null
-                ? _mainView(
-                    homeCubit: homeCubit,
-                    isViewed: state.isViewing,
-                    viewingProfile: state.viewingProfile,
-                    usersProfile: state.usersProfile,
-                    context: context,
-                    user: user,
-                    state: state,
-                  )
-                : const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Logo(screenName: 'Loading...'),
-                        CircularProgressIndicator(),
-                      ],
-                    ),
-                  );
+            // check if usersProfile , viewingProfile and state.isGuest are null
+            if (state.usersProfile == null &&
+                state.viewingProfile == null &&
+                !state.isGuest) {
+              debugPrint('Users Profile: ${state.usersProfile?.name}');
+              return _loadingView();
+            } else {
+              return _mainView(
+                homeCubit: homeCubit,
+                isViewed: state.isViewing,
+                viewingProfile: state.viewingProfile,
+                usersProfile: state.usersProfile,
+                context: context,
+                user: user,
+                state: state,
+              );
+            }
           },
         ),
       ),
@@ -152,13 +151,17 @@ class HomeView extends StatelessWidget {
   }
 }
 
-Widget _loadingView({
-  required BuildContext context,
-  required bool isDark,
-}) {
-  return const Padding(
-    padding: EdgeInsets.all(20),
-    child: Expanded(child: Center(child: Logo(screenName: 'Loading...'))),
+Widget _loadingView() {
+  // ignore: lines_longer_than_80_chars
+  return const Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Logo(screenName: 'Loading...'),
+        CircularProgressIndicator(),
+      ],
+    ),
   );
 }
 
@@ -172,81 +175,84 @@ Widget _mainView({
   required HomeCubit homeCubit,
 }) {
   debugPrint('Users Profile: ${state.usersProfile?.name}');
-  final isDark = SharedPrefs().isDarkMode;
 
   return Scaffold(
     body: state.homeStatus == HomeStatus.profile
-        ? state.isViewing
+        ? state.horseProfile == null
             ?
 
             ///  Go to Rider's Profile
-            ProfileView(
-                homeCubit: homeCubit,
-                isViewing: state.isViewing,
+            profileView(
                 state: state,
-                user: user,
-                buildContext: context,
-                usersProfile: state.usersProfile,
+                context: context,
+                homeCubit: homeCubit,
                 viewingProfile: viewingProfile,
+                usersProfile: state.usersProfile,
               )
-            : ProfileView(
-                homeCubit: homeCubit,
-                user: user,
-                state: state,
-                isViewing: state.isViewing,
-                buildContext: context,
-                viewingProfile: null,
+            : HorseProfileView(
                 usersProfile: usersProfile,
+                state: state,
+                homeCubit: homeCubit,
               )
         : state.homeStatus == HomeStatus.ridersLog
             ? LogView(
-                horseState: null,
-                isRider: true,
                 state: state,
+                isRider: true,
               )
-            : state.homeStatus == HomeStatus.skillTree
-                ?
-
-                /// Go to the Skill Tree
-                SkillTreeViewFilter(
-                    usersProfile: usersProfile,
-                    homeContext: context,
+            : state.homeStatus == HomeStatus.horseLog
+                ? LogView(
+                    state: state,
+                    isRider: false,
                   )
-                : state.homeStatus == HomeStatus.resource
+                : state.homeStatus == HomeStatus.skillTree
                     ?
 
-                    /// Go to the Resource View
-                    ResourcesView(
-                        homeCubit: homeCubit,
+                    /// Go to the Skill Tree
+                    skillTreeView(
                         state: state,
-                        usersProfile: usersProfile,
+                        context: context,
+                        homeCubit: homeCubit,
                       )
-                    : state.homeStatus == HomeStatus.loading
+                    : state.homeStatus == HomeStatus.resource
                         ?
 
-                        ///  Loading Screen
-                        _loadingView(context: context, isDark: isDark)
-                        : const Center(
-                            child: Logo(screenName: ''),
-                          ),
+                        /// Go to the Resource View
+                        resourcesView(
+                            state: state,
+                            context: context,
+                            homeCubit: homeCubit,
+                          )
+                        : state.homeStatus == HomeStatus.loading
+                            ?
+
+                            ///  Loading Screen
+                            _loadingView()
+                            :
+
+                            ///  Error Screen
+                            errorView(context),
     bottomNavigationBar: Column(
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               activeIcon: Icon(Icons.person),
               icon: Icon(Icons.person_outline),
               label: 'Profile',
             ),
             BottomNavigationBarItem(
-              activeIcon: Icon(HorseAndRiderIcons.riderSkillIcon),
-              icon: Icon(HorseAndRiderIcons.riderSkillIcon),
+              activeIcon: state.isForRider
+                  ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+                  : const Icon(HorseAndRiderIcons.horseSkillIcon),
+              icon: state.isForRider
+                  ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+                  : const Icon(HorseAndRiderIcons.horseSkillIcon),
               label: 'Skill Tree',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               activeIcon: Icon(HorseAndRiderIcons.resourcesIcon),
               icon: Icon(HorseAndRiderIcons.resourcesIcon),
               label: 'Resources',

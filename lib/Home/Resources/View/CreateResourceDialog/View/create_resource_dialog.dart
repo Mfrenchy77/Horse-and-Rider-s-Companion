@@ -11,12 +11,14 @@ import 'package:horseandriderscompanion/shared_prefs.dart';
 class CreateResourcDialog extends StatelessWidget {
   const CreateResourcDialog({
     super.key,
-    required this.userProfile,
+    required this.skills,
     required this.resource,
+    required this.userProfile,
   });
 
-  final RiderProfile userProfile;
   final Resource? resource;
+  final List<Skill?>? skills;
+  final RiderProfile userProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +26,11 @@ class CreateResourcDialog extends StatelessWidget {
       create: (context) => ResourcesRepository(),
       child: BlocProvider(
         create: (context) => CreateResourceDialogCubit(
-          resourcesRepository: context.read<ResourcesRepository>(),
+          skills: skills,
+          resource: resource,
+          isEdit: resource != null,
           usersProfile: userProfile,
+          resourcesRepository: context.read<ResourcesRepository>(),
         ),
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
@@ -115,6 +120,36 @@ class CreateResourcDialog extends StatelessWidget {
                               ],
                             ),
                           ),
+
+                          ///   Skills picked from filter chips
+                          if (state.skills != null)
+                            Column(
+                              children: [
+                                const Text(
+                                  'Choose the skills for this Resource',
+                                ),
+                                Wrap(
+                                  spacing: 8,
+                                  children: state.skills!.map(
+                                    (Skill? skill) {
+                                      return FilterChip(
+                                        label: Text(skill!.skillName!),
+                                        selected: state.resourceSkills
+                                                ?.contains(skill.id) ??
+                                            false,
+                                        onSelected: (value) => context
+                                            .read<CreateResourceDialogCubit>()
+                                            .resourceSkillsChanged(
+                                              skill.id,
+                                            ),
+                                      );
+                                    },
+                                  ).toList(),
+                                ),
+                              ],
+                            )
+                          else
+                            const Text('No Skills Found'),
                         ],
                       ),
                     ),

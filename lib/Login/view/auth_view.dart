@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
+import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
 import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/Login/view/forgot_view.dart';
 import 'package:horseandriderscompanion/Login/view/login_view.dart';
@@ -20,7 +21,9 @@ class AuthView extends StatelessWidget {
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
         if (state.status.isSubmissionSuccess) {
-          // Navigator.of(context).pop();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            Navigator.of(context).pushReplacementNamed(HomePage.routeName);
+          });
         }
         if (state.showEmailDialog) {
           if (state.mailAppResult != null) {

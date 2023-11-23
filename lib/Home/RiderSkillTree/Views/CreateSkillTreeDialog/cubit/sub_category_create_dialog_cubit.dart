@@ -14,7 +14,6 @@ class SubCategoryCreateDialogCubit extends Cubit<SubCategoryCreateDialogState> {
   SubCategoryCreateDialogCubit({
     SubCategory? editingSubCategory,
     required Catagorry category,
-    
     required this.isRider,
     required String? name,
     required SkillTreeRepository subCategoryRepository,
@@ -22,7 +21,10 @@ class SubCategoryCreateDialogCubit extends Cubit<SubCategoryCreateDialogState> {
         _editingSubCategory = editingSubCategory,
         _category = category,
         _subCategoryRepository = subCategoryRepository,
-        super(const SubCategoryCreateDialogState());
+        super(const SubCategoryCreateDialogState()) {
+    emit(state.copyWith(subCategory: _editingSubCategory));
+  }
+
   final SubCategory? _editingSubCategory;
   final bool isRider;
   final String? _name;
@@ -52,17 +54,21 @@ class SubCategoryCreateDialogCubit extends Cubit<SubCategoryCreateDialogState> {
   /// we want to remove the skill from the list of skills
   /// if the skill is already in the list
   /// and add the skill to the list if it is not in the list
-  void subCategorySkillsChanged(String skillId) {
-    if (state.skills.contains(skillId)) {
-      final skills = state.skills..remove(skillId);
+  void subCategorySkillsChanged(String? skillId) {
+    if (skillId != null) {
+      if (state.skills.contains(skillId)) {
+        final skills = state.skills..remove(skillId);
 
-      emit(state.copyWith(skills: skills));
-      return;
+        emit(state.copyWith(skills: skills));
+        return;
+      } else {
+        final skills = state.skills..add(skillId);
+
+        emit(state.copyWith(skills: skills));
+        return;
+      }
     } else {
-      final skills = state.skills..add(skillId);
-
-      emit(state.copyWith(skills: skills));
-      return;
+      debugPrint('Skill id is Null');
     }
   }
 
@@ -101,23 +107,23 @@ class SubCategoryCreateDialogCubit extends Cubit<SubCategoryCreateDialogState> {
   }
 
   /// Called when editing a SubCategory
-  Future<void> editSubCategory({SubCategory? editedSubCategory}) async {
+  Future<void> editSubCategory() async {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
 
     final subCategory = SubCategory(
-      parentId: editedSubCategory?.parentId,
-      id: editedSubCategory?.id as String,
+      parentId: state.subCategory?.parentId,
+      id: state.subCategory?.id as String,
       name: state.name.value.isNotEmpty
           ? state.name.value
-          : editedSubCategory?.name as String,
+          : state.subCategory?.name as String,
       description: state.description.value.isNotEmpty
           ? state.description.value
-          : editedSubCategory?.description as String,
-      isRider: editedSubCategory?.isRider as bool,
-      position: editedSubCategory?.position as int,
+          : state.subCategory?.description as String,
+      isRider: state.subCategory?.isRider as bool,
+      position: state.subCategory?.position as int,
       skills: state.skills.isNotEmpty
           ? state.skills
-          : editedSubCategory?.skills as List<String>,
+          : state.subCategory?.skills as List<String>,
       lastEditBy: _name!,
       lastEditDate: DateTime.now(),
     );

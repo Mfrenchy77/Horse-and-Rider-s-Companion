@@ -18,8 +18,16 @@ late final FirebaseAuth auth;
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Error initializing firebase: $e');
+  }
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await SharedPrefs().init();
+
   try {
     debugPrint('defaultTargetPlatform: $defaultTargetPlatform');
     if (kIsWeb) {
@@ -48,15 +56,6 @@ Future<void> main() async {
   }
 
   FlutterNativeSplash.remove();
-
-  try {
-    await Firebase.initializeApp(
-      // name: "Horse and Rider's Companion",
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    debugPrint('Error initializing firebase: $e');
-  }
 
   //auth = FirebaseAuth.instanceFor(app: app);
 

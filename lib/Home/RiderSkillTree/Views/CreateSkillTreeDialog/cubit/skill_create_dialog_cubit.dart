@@ -15,13 +15,11 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     required Skill? skill,
     required String? name,
     required bool isForRider,
-    required SubCategory? subCatagorry,
     required List<SubCategory?>? allSubCategories,
     required SkillTreeRepository skillsRepository,
   })  : _name = name,
         _skill = skill,
         _isForRider = isForRider,
-        _subCategory = subCatagorry,
         _allSubCategories = allSubCategories,
         _skillsRepository = skillsRepository,
         super(const CreateSkillDialogState()) {
@@ -34,7 +32,6 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   final Skill? _skill;
   final bool _isForRider;
   //
-  final SubCategory? _subCategory;
   final String? _name;
   final SkillTreeRepository _skillsRepository;
   final List<SubCategory?>? _allSubCategories;
@@ -52,6 +49,28 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       state.copyWith(
         description: description,
         status: Formz.validate([description]),
+      ),
+    );
+  }
+
+  /// Called when the new Skill Learning Description changes
+  void skillLearningDescriptionChanged(String value) {
+    final learningDescription = SingleWord.dirty(value);
+    emit(
+      state.copyWith(
+        learningDescription: learningDescription,
+        status: Formz.validate([learningDescription]),
+      ),
+    );
+  }
+
+  /// Called when the new Skill Proficient Description changes
+  void skillProficientDescriptionChanged(String value) {
+    final proficientDescription = SingleWord.dirty(value);
+    emit(
+      state.copyWith(
+        proficientDescription: proficientDescription,
+        status: Formz.validate([proficientDescription]),
       ),
     );
   }
@@ -134,14 +153,15 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
 
     final skill = Skill(
       id: ViewUtils.createId(),
-      skillName: state.name.value,
-      description: state.description.value,
-      difficulty: state.difficulty,
       position: position,
-      //  This Determines if it is a Rider Skill or Horse Skill
-      rider: _isForRider,
       lastEditBy: _name,
+      rider: _isForRider,
+      difficulty: state.difficulty,
+      skillName: state.name.value,
       lastEditDate: DateTime.now(),
+      description: state.description.value,
+      learningDescription: state.learningDescription.value,
+      proficientDescription: state.proficientDescription.value,
     );
 
     //update the subcategories in the SubCategory list with the new skill
@@ -177,6 +197,76 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
         debugPrint(e.toString());
         emit(
           state.copyWith(status: FormzStatus.submissionFailure),
+        );
+      }
+    }
+  }
+
+  Future<void> editSkill({Skill? editedSkill}) async {
+    emit(
+      state.copyWith(status: FormzStatus.submissionInProgress),
+    );
+
+    final subCategories = state.subCategoryList ?? [];
+    // the skillid should be in the subcategoryids
+    // if not it has to be added and updated
+    //update the subcategories in the SubCategory list with the new skill
+
+    final skill = Skill(
+      lastEditBy: _name,
+      lastEditDate: DateTime.now(),
+      difficulty: state.difficulty,
+      id: editedSkill?.id as String,
+      rider: editedSkill?.rider ?? true,
+      position: editedSkill?.position as int,
+      skillName: state.name.value.isNotEmpty
+          ? state.name.value
+          : editedSkill?.skillName as String,
+      description: state.description.value.isNotEmpty
+          ? state.description.value
+          : editedSkill?.description as String,
+      learningDescription: state.learningDescription.value.isNotEmpty
+          ? state.learningDescription.value
+          : editedSkill?.learningDescription as String,
+      proficientDescription: state.proficientDescription.value.isNotEmpty
+          ? state.proficientDescription.value
+          : editedSkill?.proficientDescription as String,
+    );
+
+    for (final subCategory in subCategories) {
+      try {
+        //if the skill is not in the subcategory add it
+        if (!subCategory!.skills.contains(skill.id)) {
+          debugPrint(
+            'adding ${skill.skillName} to subcategory: ${subCategory.name}',
+          );
+          subCategory.skills.add(skill.id);
+          await _skillsRepository.createOrEditSubCategory(
+            subCategory: subCategory,
+          );
+        } else {
+          debugPrint(
+            'Skill ${skill.skillName} is already in subcategory: ${subCategory.name}',
+          );
+        }
+      } catch (e) {
+        debugPrint(e.toString());
+        emit(
+          state.copyWith(status: FormzStatus.submissionFailure),
+        );
+      }
+
+      try {
+        await _skillsRepository.createOrEditSkill(
+          skill: skill,
+        );
+        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      } catch (e) {
+        debugPrint(e.toString());
+        emit(
+          state.copyWith(
+            status: FormzStatus.submissionFailure,
+          ),
         );
       }
     }
@@ -222,70 +312,6 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       emit(
         state.copyWith(status: FormzStatus.submissionFailure),
       );
-    }
-  }
-
-  Future<void> editSkill({Skill? editedSkill}) async {
-    emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
-    );
-
-    final subCategories = state.subCategoryList ?? [];
-    // the skillid should be in the subcategoryids
-    // if not it has to be added and updated
-    //update the subcategories in the SubCategory list with the new skill
-
-    final skill = Skill(
-      difficulty: state.difficulty,
-      id: editedSkill?.id as String,
-      skillName: state.name.value.isNotEmpty
-          ? state.name.value
-          : editedSkill?.skillName as String,
-      description: state.description.value.isNotEmpty
-          ? state.description.value
-          : editedSkill?.description as String,
-      position: editedSkill?.position as int,
-      rider: editedSkill?.rider,
-      lastEditBy: _name,
-      lastEditDate: DateTime.now(),
-    );
-
-    for (final subCategory in subCategories) {
-      try {
-        //if the skill is not in the subcategory add it
-        if (!subCategory!.skills.contains(skill.id)) {
-          debugPrint(
-            'adding ${skill.skillName} to subcategory: ${subCategory.name}',
-          );
-          subCategory.skills.add(skill.id);
-          await _skillsRepository.createOrEditSubCategory(
-            subCategory: subCategory,
-          );
-        } else {
-          debugPrint(
-            'Skill ${skill.skillName} is already in subcategory: ${subCategory.name}',
-          );
-        }
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(status: FormzStatus.submissionFailure),
-        );
-      }
-
-      try {
-        await _skillsRepository.createOrEditSkill(
-          skill: skill,
-        );
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(
-            status: FormzStatus.submissionFailure,
-          ),
-        );
-      }
     }
   }
 

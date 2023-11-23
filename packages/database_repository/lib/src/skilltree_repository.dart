@@ -118,8 +118,13 @@ class SkillTreeRepository {
         .snapshots();
   }
 
-  ///  Retreives all Skills for Rider SKill Tree
+  /// Retreive all Skills
+  Stream<QuerySnapshot> getSkills() {
+    return _skillDatabaseReference.snapshots();
+  }
 
+
+  ///  Retreives all Skills for Rider SKill Tree
   Stream<QuerySnapshot> getSkillsForRiderSkillTree() {
     return _skillDatabaseReference.where('rider', isEqualTo: true).snapshots();
   }

@@ -11,17 +11,13 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 class CreateSubCategoryDialog extends StatelessWidget {
   const CreateSubCategoryDialog({
     super.key,
-    required BuildContext? skillTreeContext,
     required this.subCategory,
     required this.isEdit,
     required Catagorry? category,
-    required String? userName,
     required List<Skill?>? skills,
     required int position,
     required this.isRider,
-  })  : _skillTreeContext = skillTreeContext,
-        _category = category,
-        _userName = userName,
+  })  : _category = category,
         _position = position,
         _skills = skills;
 
@@ -29,10 +25,8 @@ class CreateSubCategoryDialog extends StatelessWidget {
   final bool isEdit;
   final Catagorry? _category;
   final List<Skill?>? _skills;
-  final String? _userName;
   final int _position;
   final bool isRider;
-  final BuildContext? _skillTreeContext;
 
   @override
   Widget build(BuildContext context) {
@@ -95,21 +89,23 @@ class CreateSubCategoryDialog extends StatelessWidget {
                           ),
                           Wrap(
                             spacing: 8,
-                            children: _skills!.map(
-                              (Skill? skill) {
-                                return FilterChip(
-                                  label: Text(skill!.skillName!),
-                                  selected: subCategory != null
-                                      ? subCategory!.skills.contains(skill.id)
-                                      : state.skills.contains(skill.id),
-                                  onSelected: (value) => context
-                                      .read<SubCategoryCreateDialogCubit>()
-                                      .subCategorySkillsChanged(
-                                        skill.id,
-                                      ),
-                                );
-                              },
-                            ).toList(),
+                            children: _skills?.map(
+                                  (Skill? skill) {
+                                    return FilterChip(
+                                      label: Text(skill?.skillName ?? ''),
+                                      selected: subCategory != null
+                                          ? subCategory!.skills
+                                              .contains(skill?.id)
+                                          : state.skills.contains(skill?.id),
+                                      onSelected: (value) => context
+                                          .read<SubCategoryCreateDialogCubit>()
+                                          .subCategorySkillsChanged(
+                                            skill?.id,
+                                          ),
+                                    );
+                                  },
+                                ).toList() ??
+                                [const Text('No Skills Found')],
                           ),
                         ],
                       )
@@ -176,9 +172,7 @@ class CreateSubCategoryDialog extends StatelessWidget {
                           isEdit
                               ? context
                                   .read<SubCategoryCreateDialogCubit>()
-                                  .editSubCategory(
-                                    editedSubCategory: subCategory,
-                                  )
+                                  .editSubCategory()
                               : context
                                   .read<SubCategoryCreateDialogCubit>()
                                   .createSubCategory(

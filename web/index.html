@@ -1,4 +1,7 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html>
+<html>
+
+<head>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -26,6 +29,9 @@
   <meta name="apple-mobile-web-app-title" content="horseandriderscompanion">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
+  <meta name="google-signin-client_id"
+    content="854658032014-hlrq1mf9jkv4qv0fkj59h7un5cfddnet.apps.googleusercontent.com" />
+
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
@@ -44,17 +50,23 @@
   <link rel="stylesheet" type="text/css" href="splash/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="splash/splash.js"></script>
-  
+
   <!-- Google Adsense Ads -->
-  <script async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7692240231486800" crossorigin="anonymous"></script>
+  <script async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7692240231486800"
+    crossorigin="anonymous"></script>
 
 </head>
 
-<body>  <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
-  </picture>            
+<body>
+  <picture id="splash">
+    <source
+      srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x"
+      media="(prefers-color-scheme: light)">
+    <source
+      srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x"
+      media="(prefers-color-scheme: dark)">
+    <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
+  </picture>
   <script type="module">
     import { } from "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js";
 
@@ -67,7 +79,7 @@
   <script src="main.dart.js" type="application/javascript"></script>
 
 
-  
+
 
 
 
@@ -85,10 +97,12 @@
       });
     });
   </script>
- 
 
 
 
 
 
-</body></html>
+
+</body>
+
+</html>

@@ -20,19 +20,21 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)!.settings.arguments as HomePageArguments?;
+    final horseId = args?.horseId;
     final viewingProfile = args?.viewingProfile;
     final user = context.select((AppBloc bloc) => bloc.state.user);
     debugPrint('Viewing Profile: ${viewingProfile?.name}');
     return Scaffold(
       body: BlocProvider(
         create: (context) => HomeCubit(
-          viewingProfile: viewingProfile,
           user: user,
-          skillTreeRepository: context.read<SkillTreeRepository>(),
+          horseId: horseId,
+          viewingProfile: viewingProfile,
           messagesRepository: context.read<MessagesRepository>(),
+          skillTreeRepository: context.read<SkillTreeRepository>(),
+          resourcesRepository: context.read<ResourcesRepository>(),
           horseProfileRepository: context.read<HorseProfileRepository>(),
           riderProfileRepository: context.read<RiderProfileRepository>(),
-          resourcesRepository: context.read<ResourcesRepository>(),
         ),
         child: HomeView(
           viewingProfile: viewingProfile,
@@ -44,8 +46,9 @@ class HomePage extends StatelessWidget {
   }
 }
 
+/// Arguments holder class for [HomePage].
 class HomePageArguments {
-  HomePageArguments({required this.viewingProfile});
-
+  HomePageArguments({required this.viewingProfile, required this.horseId});
+  final String? horseId;
   final RiderProfile? viewingProfile;
 }

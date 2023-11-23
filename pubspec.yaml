@@ -72,6 +72,10 @@ dependencies:
   flutter_layout_grid: ^2.0.5
   auto_size_text: ^3.0.0
   easy_search_bar: ^2.5.0
+  http: ^0.13.6
+  html: ^0.15.4
+  dropdown_search: ^5.0.6
+  searchfield: ^0.8.7
 
 dev_dependencies:
   bloc_test: ^9.0.0
