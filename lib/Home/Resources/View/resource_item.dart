@@ -3,7 +3,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/CommonWidgets/search_confimatio_dialog.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/View/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -43,155 +42,181 @@ Widget resourceItem({
   }
   return MaxWidthBox(
     maxWidth: 600,
-    child: Card(
-      elevation: 8,
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ///   Ratings
-            Visibility(
-              visible: isResourceList,
-              child: _ratingsBar(
-                resource: resource,
-                rater: newRatingUser,
-                context: context,
-              ),
-            ),
-            Divider(
-              color: isDark ? Colors.white : Colors.black,
-              endIndent: 5,
-              indent: 5,
-            ),
-
-            ///   Info
-            Row(
+    child: Stack(
+      children: [
+        Card(
+          elevation: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  fit: FlexFit.tight,
-                  flex: 4,
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    '${resource.name}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                ///   Ratings
                 Visibility(
-                  visible: state.isEditState,
-                  child: PopupMenuButton<String>(
-                    itemBuilder: (BuildContext menuContext) =>
-                        <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'Edit',
-                        child: Text('Edit'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Delete',
-                        child: Text('Delete'),
-                      ),
-                    ],
-                    onSelected: (String value) {
-                      switch (value) {
-                        case 'Edit':
-                          homeCubit.createOrEditResource(
-                            resource: resource,
-                            context: context,
-                          );
-                          break;
-                        case 'Delete':
-                          homeCubit.deleteResource(
-                            resource,
-                          );
-                          break;
-                      }
-                    },
+                  visible: isResourceList,
+                  child: _ratingsBar(
+                    resource: resource,
+                    rater: newRatingUser,
+                    context: context,
                   ),
                 ),
-              ],
-            ),
-            gap(),
-            InkWell(
-              onTap: () {
-                homeCubit.openResource(url: resource.url);
-              },
-              child: SizedBox(
-                height: 150,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Divider(
+                  color: isDark ? Colors.white : Colors.black,
+                  endIndent: 5,
+                  indent: 5,
+                ),
+
+                ///   Info
+                Row(
                   children: [
                     Flexible(
                       fit: FlexFit.tight,
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-
-                        ///   Description
-                        child: ConstrainedBox(
-                          constraints:
-                              BoxConstraints.loose(const Size.fromHeight(300)),
-                          child: Text(
-                            maxLines: 7,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            '${resource.description}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
+                      flex: 4,
+                      child: Text(
+                        textAlign: TextAlign.center,
+                        '${resource.name}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-
-                    ///   Image
-                    Expanded(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: FadeInImage.assetNetwork(
-                          placeholder: 'assets/horse_logo_and_text_dark.png',
-                          image: resource.thumbnail ?? '',
-                          fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 500),
-                          imageErrorBuilder: (context, error, stackTrace) {
-                            debugPrint('Error loading NetworkImage: $error');
-                            return Image.asset(
-                              'assets/horse_logo_and_text_dark.png',
-                            );
-                          },
-                        ),
+                    Visibility(
+                      visible: state.isEditState,
+                      child: PopupMenuButton<String>(
+                        itemBuilder: (BuildContext menuContext) =>
+                            <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
+                            value: 'Edit',
+                            child: Text('Edit'),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'Delete',
+                            child: Text('Delete'),
+                          ),
+                        ],
+                        onSelected: (String value) {
+                          switch (value) {
+                            case 'Edit':
+                              homeCubit.createOrEditResource(
+                                resource: resource,
+                                context: context,
+                              );
+                              break;
+                            case 'Delete':
+                              homeCubit.deleteResource(
+                                resource,
+                              );
+                              break;
+                          }
+                        },
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
+                gap(),
+                InkWell(
+                  onTap: () {
+                    homeCubit.openResource(url: resource.url);
+                  },
+                  child: SizedBox(
+                    height: 150,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          fit: FlexFit.tight,
+                          flex: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
 
-            Divider(
-              color: isDark ? Colors.white : Colors.black,
-              endIndent: 5,
-              indent: 5,
+                            ///   Description
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints.loose(
+                                const Size.fromHeight(300),
+                              ),
+                              child: Text(
+                                maxLines: 7,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                '${resource.description}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        ///   Image
+                        Expanded(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: FadeInImage.assetNetwork(
+                              placeholder:
+                                  'assets/horse_logo_and_text_dark.png',
+                              image: resource.thumbnail ?? '',
+                              fit: BoxFit.cover,
+                              fadeInDuration: const Duration(milliseconds: 500),
+                              imageErrorBuilder: (context, error, stackTrace) {
+                                debugPrint(
+                                  'Error loading NetworkImage: $error',
+                                );
+                                return Image.asset(
+                                  'assets/horse_logo_and_text_dark.png',
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Divider(
+                  color: isDark ? Colors.white : Colors.black,
+                  endIndent: 5,
+                  indent: 5,
+                ),
+                Visibility(
+                  visible: isResourceList,
+                  child: _ratingButtons(
+                    state: state,
+                    context: context,
+                    resource: resource,
+                    homeCubit: homeCubit,
+                    rater: newRatingUser,
+                  ),
+                ),
+              ],
             ),
-            Visibility(
-              visible: isResourceList,
-              child: _ratingButtons(
-                state: state,
-                context: context,
-                resource: resource,
-                homeCubit: homeCubit,
-                rater: newRatingUser,
+          ),
+        ),
+        Visibility(
+          visible: homeCubit.isNewResource(resource),
+          child: const Positioned(
+            top: 0,
+            right: 0,
+            child: ColoredBox(
+              color: Colors.yellow,
+              child: Text(
+                'New',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     ),
   );
 }

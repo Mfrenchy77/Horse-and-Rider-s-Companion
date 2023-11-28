@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:horseandriderscompanion/CommonWidgets/test_resources.dart';
 import 'package:horseandriderscompanion/CommonWidgets/test_skills.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
@@ -98,13 +99,20 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     ///   Stream of Resources
-    _resourcesStream = _resourcesRepository.getResources().listen((event) {
-      _resources = event.docs.map((doc) => (doc.data()) as Resource?).toList();
 
-      emit(
-        state.copyWith(allResources: _resources),
-      );
-    });
+    //FIXME:  Resources for TESTING
+
+    _resources = TestResource.generateTestResources();
+    emit(state.copyWith(allResources: _resources));
+    _sortResources();
+
+    // _resourcesStream = _resourcesRepository.getResources().listen((event) {
+    //   _resources = event.docs.map((doc) => (doc.data()) as Resource?).toList();
+
+    //   emit(
+    //     state.copyWith(allResources: _resources),
+    //   );
+    // });
 
     ///   Stream of Categoies
     _categoryStream =
@@ -124,6 +132,7 @@ class HomeCubit extends Cubit<HomeState> {
     });
 
     ///   Stream of Skills
+    //FIXME:  Skills for TESTING
     _skillsStream = _skillTreeRepository.getSkills().listen((event) {
       // _skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
       _skills = TestSkills.generateTestSkills();
@@ -2330,7 +2339,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Sort the resources by the ones with the highest rating
   void sortMostRecommended() {
-    final sortedList = state.allResources;
+    final sortedList = _resources;
     sortedList!.sort(
       (a, b) => (b?.rating as int).compareTo(a!.rating as int),
     );
@@ -2342,12 +2351,30 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  void _sortResources() {
+    switch (state.resourcesSortStatus) {
+      case ResourcesSortStatus.recent:
+        sortByNew();
+        break;
+      case ResourcesSortStatus.oldest:
+        sortByOld();
+        break;
+      case ResourcesSortStatus.saved:
+        sortBySaved();
+        break;
+      case ResourcesSortStatus.mostRecommended:
+        sortMostRecommended();
+        break;
+    }
+  }
+
   ///  Sort the resources by the newest last edit date
   void sortByNew() {
-    final sortedList = state.allResources;
+    debugPrint('Sorting by New');
+    final sortedList = _resources;
     sortedList!.sort(
       (a, b) =>
-          (a?.lastEditDate as DateTime).compareTo(b!.lastEditDate as DateTime),
+          (b?.lastEditDate as DateTime).compareTo(a!.lastEditDate as DateTime),
     );
     emit(
       state.copyWith(
@@ -2360,7 +2387,8 @@ class HomeCubit extends Cubit<HomeState> {
   /// Sort the resources by the ones that have the oldest
   /// last edit date
   void sortByOld() {
-    final sortedList = state.allResources;
+    debugPrint('Sorting by Old');
+    final sortedList = _resources;
     sortedList!.sort(
       (a, b) =>
           (a!.lastEditDate as DateTime).compareTo(b?.lastEditDate as DateTime),
@@ -2376,6 +2404,7 @@ class HomeCubit extends Cubit<HomeState> {
   /// Sort the resources by the ones that have been saved
   /// by the user
   void sortBySaved() {
+    debugPrint('Sorting by Saved');
     final savedResources = <Resource>[];
     if (_usersProfile != null) {
       if (_usersProfile?.savedResourcesList != null) {
@@ -2396,7 +2425,6 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  
   ///  User has clicked the recommend [resource] button
   void reccomendResource({required Resource? resource}) {
     final editedresource = resource as Resource;
@@ -2652,6 +2680,12 @@ class HomeCubit extends Cubit<HomeState> {
       wwwRegExp,
       (match) => '${match.group(0)}www.',
     );
+  }
+
+  bool isNewResource(Resource resource) {
+    final now = DateTime.now();
+    final difference = now.difference(resource.lastEditDate as DateTime);
+    return difference.inDays < 10;
   }
 
   ///       Ads

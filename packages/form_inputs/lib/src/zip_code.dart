@@ -10,7 +10,8 @@ enum ZipCodeValidationError {
 ///
 /// This class uses Formz package functionalities to handle zip code input
 /// validation. It's tailored for U.S. Zip codes, which are typically 5 digits
-/// but can also include an optional 4-digit extension after a hyphen (ZIP+4 format).
+/// but can also include an optional 4-digit extension after
+///  a hyphen (ZIP+4 format).
 class ZipCode extends FormzInput<String, ZipCodeValidationError> {
   /// Constructor for a pure [ZipCode].
   ///

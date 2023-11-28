@@ -1,4 +1,4 @@
-// ignore_for_file: lines_longer_than_80_chars
+// ignore_for_file: lines_longer_than_80_chars, duplicate_ignore
 
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,6 @@ import 'package:horseandriderscompanion/Home/RiderSkillTree/Views/CreateSkillTre
 import 'package:horseandriderscompanion/Home/RiderSkillTree/Views/CreateSkillTreeDialog/View/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/Views/CreateSkillTreeDialog/View/sub_category_create_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:searchfield/searchfield.dart';
 
@@ -53,20 +52,20 @@ Widget skillTreeView({
   );
 }
 
-Widget _description({required HomeState state}) {
-  switch (state.skillTreeNavigation) {
-    case SkillTreeNavigation.Category:
-      return const Text('');
-    case SkillTreeNavigation.SubCategory:
-      debugPrint('Category Description: ${state.category?.description}');
-      return Text(state.category?.description ?? '');
-    case SkillTreeNavigation.Skill:
-      debugPrint('SubCategory Description: ${state.subCategory?.description}');
-      return Text(state.subCategory?.description ?? '');
-    case SkillTreeNavigation.SkillLevel:
-      return Text(state.skill?.description ?? '');
-  }
-}
+// Widget _description({required HomeState state}) {
+//   switch (state.skillTreeNavigation) {
+//     case SkillTreeNavigation.Category:
+//       return const Text('');
+//     case SkillTreeNavigation.SubCategory:
+//       debugPrint('Category Description: ${state.category?.description}');
+//       return Text(state.category?.description ?? '');
+//     case SkillTreeNavigation.Skill:
+//       debugPrint('SubCategory Description: ${state.subCategory?.description}');
+//       return Text(state.subCategory?.description ?? '');
+//     case SkillTreeNavigation.SkillLevel:
+//       return Text(state.skill?.description ?? '');
+//   }
+// }
 
 //Search Bar for Skills and Resources
 PreferredSizeWidget _appBar({
@@ -388,21 +387,21 @@ List<Widget> _appbarActions({
   return actions;
 }
 
-String _appbarTitle(
-  HomeState state,
-  HomeCubit homeCubit,
-) {
-  switch (state.skillTreeNavigation) {
-    case SkillTreeNavigation.Category:
-      return 'Skill Tree Categories';
-    case SkillTreeNavigation.SubCategory:
-      return 'SubCategories for ${state.category?.name ?? ''}';
-    case SkillTreeNavigation.Skill:
-      return 'Skills';
-    case SkillTreeNavigation.SkillLevel:
-      return 'Levels for ${state.skill?.skillName ?? ''}';
-  }
-}
+// String _appbarTitle(
+//   HomeState state,
+//   HomeCubit homeCubit,
+// ) {
+//   switch (state.skillTreeNavigation) {
+//     case SkillTreeNavigation.Category:
+//       return 'Skill Tree Categories';
+//     case SkillTreeNavigation.SubCategory:
+//       return 'SubCategories for ${state.category?.name ?? ''}';
+//     case SkillTreeNavigation.Skill:
+//       return 'Skills';
+//     case SkillTreeNavigation.SkillLevel:
+//       return 'Levels for ${state.skill?.skillName ?? ''}';
+//   }
+// }
 
 // this will determite what the skillTreeNavigation is and return the
 // appropriate widget
@@ -867,7 +866,8 @@ Widget _skillLevelItem({
                   padding: EdgeInsets.only(left: 20, right: 20),
                   child: Divider(),
                 ),
-                Text('Resources', style: Theme.of(context).textTheme.titleLarge),
+                Text('Resources',
+                    style: Theme.of(context).textTheme.titleLarge),
                 const Padding(
                   padding: EdgeInsets.only(left: 20, right: 20),
                   child: Divider(),
@@ -920,139 +920,139 @@ Widget _skillLevelItem({
   );
 }
 
-Widget _addResourceButton({
-  required HomeState state,
-  required HomeCubit homeCubit,
-  required BuildContext context,
-  required FocusNode skillTreeFocus,
-}) {
-  return Padding(
-    padding: const EdgeInsets.all(8),
-    child: ElevatedButton(
-      onPressed: () {
-        skillTreeFocus.requestFocus();
-        homeCubit.search(
-          searchList: state.allResources!.map((e) => e!.name).toList(),
-        );
-      },
-      child: const Text('Add Resource'),
-    ),
-  );
-}
+// Widget _addResourceButton({
+//   required HomeState state,
+//   required HomeCubit homeCubit,
+//   required BuildContext context,
+//   required FocusNode skillTreeFocus,
+// }) {
+//   return Padding(
+//     padding: const EdgeInsets.all(8),
+//     child: ElevatedButton(
+//       onPressed: () {
+//         skillTreeFocus.requestFocus();
+//         homeCubit.search(
+//           searchList: state.allResources!.map((e) => e!.name).toList(),
+//         );
+//       },
+//       child: const Text('Add Resource'),
+//     ),
+//   );
+// }
 
 /// Add a resource Dialog that shows all the resources
 /// and has a search bar that can sort them by name
 /// and a button to add a new resource
-Widget _addResourceDialog({
-  required BuildContext context,
-  required HomeState state,
-  required HomeCubit homeCubit,
-}) {
-  final focus = FocusNode();
-  return AlertDialog(
-    title: const Text('Add Resource'),
-    content: SizedBox(
-      width: 1000,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Search Bar
-          SearchField<String>(
-            inputType: TextInputType.name,
-            hint: 'Search Resources',
-            focusNode: focus,
-            onSearchTextChanged: (query) {
-              homeCubit.resourceSearchQueryChanged(searchQuery: query);
+// Widget _addResourceDialog({
+//   required BuildContext context,
+//   required HomeState state,
+//   required HomeCubit homeCubit,
+// }) {
+//   final focus = FocusNode();
+//   return AlertDialog(
+//     title: const Text('Add Resource'),
+//     content: SizedBox(
+//       width: 1000,
+//       child: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           // Search Bar
+//           SearchField<String>(
+//             inputType: TextInputType.name,
+//             hint: 'Search Resources',
+//             focusNode: focus,
+//             onSearchTextChanged: (query) {
+//               homeCubit.resourceSearchQueryChanged(searchQuery: query);
 
-              return state.searchList
-                      ?.map(
-                        (e) => SearchFieldListItem<String>(
-                          e ?? '',
-                          child: Padding(
-                            padding: const EdgeInsets.all(4),
-                            child: Text(e!),
-                          ),
-                        ),
-                      )
-                      .toList() ??
-                  [];
-            },
-            searchInputDecoration: InputDecoration(
-              filled: true,
-              iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
-              fillColor:
-                  HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
-              prefixIcon: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_ios),
-              ),
-              hintText: 'Search Resources',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(40),
-              ),
-            ),
-            suggestions: state.searchList
-                    ?.map(
-                      (e) => SearchFieldListItem<String>(
-                        e ?? '',
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Text(e!),
-                        ),
-                      ),
-                    )
-                    .toList() ??
-                [],
-            onSuggestionTap: (value) {
-              final selectedResource = state.allResources!.firstWhere(
-                (resource) => resource?.name == value.searchKey,
-              )!;
-              debugPrint('Suggestion Tap Value: ${value.searchKey}');
-              if (state.skill != null) {
-                homeCubit.addResourceToSkill(
-                  skill: state.skill,
-                  resource: selectedResource,
-                );
-              }
-            },
-            textInputAction: TextInputAction.search,
-            textCapitalization: TextCapitalization.words,
-            onSubmit: (p0) {
-              debugPrint('Submit Value: $p0');
-            },
-          ),
-          // Resource List
-          Wrap(
-            children: state.searchList
-                    ?.map(
-                      (e) => InkWell(
-                        onTap: () => homeCubit.addResourceToSkill(
-                          skill: state.skill,
-                          resource: state.allResources!.firstWhere(
-                            (resource) => resource?.name == e,
-                          ),
-                        ),
-                        child: ListTile(
-                          title: Text(e!),
-                        ),
-                      ),
-                    )
-                    .toList() ??
-                [const Text('No Resources Found')],
-          ),
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-        child: const Text('Cancel'),
-      ),
-    ],
-  );
-}
+//               return state.searchList
+//                       ?.map(
+//                         (e) => SearchFieldListItem<String>(
+//                           e ?? '',
+//                           child: Padding(
+//                             padding: const EdgeInsets.all(4),
+//                             child: Text(e!),
+//                           ),
+//                         ),
+//                       )
+//                       .toList() ??
+//                   [];
+//             },
+//             searchInputDecoration: InputDecoration(
+//               filled: true,
+//               iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
+//               fillColor:
+//                   HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
+//               prefixIcon: IconButton(
+//                 onPressed: () => Navigator.of(context).pop(),
+//                 icon: const Icon(Icons.arrow_back_ios),
+//               ),
+//               hintText: 'Search Resources',
+//               border: OutlineInputBorder(
+//                 borderRadius: BorderRadius.circular(40),
+//               ),
+//             ),
+//             suggestions: state.searchList
+//                     ?.map(
+//                       (e) => SearchFieldListItem<String>(
+//                         e ?? '',
+//                         child: Padding(
+//                           padding: const EdgeInsets.all(4),
+//                           child: Text(e!),
+//                         ),
+//                       ),
+//                     )
+//                     .toList() ??
+//                 [],
+//             onSuggestionTap: (value) {
+//               final selectedResource = state.allResources!.firstWhere(
+//                 (resource) => resource?.name == value.searchKey,
+//               )!;
+//               debugPrint('Suggestion Tap Value: ${value.searchKey}');
+//               if (state.skill != null) {
+//                 homeCubit.addResourceToSkill(
+//                   skill: state.skill,
+//                   resource: selectedResource,
+//                 );
+//               }
+//             },
+//             textInputAction: TextInputAction.search,
+//             textCapitalization: TextCapitalization.words,
+//             onSubmit: (p0) {
+//               debugPrint('Submit Value: $p0');
+//             },
+//           ),
+//           // Resource List
+//           Wrap(
+//             children: state.searchList
+//                     ?.map(
+//                       (e) => InkWell(
+//                         onTap: () => homeCubit.addResourceToSkill(
+//                           skill: state.skill,
+//                           resource: state.allResources!.firstWhere(
+//                             (resource) => resource?.name == e,
+//                           ),
+//                         ),
+//                         child: ListTile(
+//                           title: Text(e!),
+//                         ),
+//                       ),
+//                     )
+//                     .toList() ??
+//                 [const Text('No Resources Found')],
+//           ),
+//         ],
+//       ),
+//     ),
+//     actions: [
+//       TextButton(
+//         onPressed: () {
+//           Navigator.of(context).pop();
+//         },
+//         child: const Text('Cancel'),
+//       ),
+//     ],
+//   );
+// }
 
 /// List of Resources for the selected skill shown in a wrap and resourceItem
 Widget _skillResourcesList({
@@ -1309,107 +1309,107 @@ Widget _skillTreeItem({
 
 // this will determite what the skillTreeNavigation is and return the
 // appropriate text
-Widget _skillTreeNavigationText({
-  required BuildContext context,
-  required HomeState state,
-}) {
-  final screenSize = MediaQuery.of(context).size.width;
+// Widget _skillTreeNavigationText({
+//   required BuildContext context,
+//   required HomeState state,
+// }) {
+//   final screenSize = MediaQuery.of(context).size.width;
 
-  switch (state.skillTreeNavigation) {
-    case SkillTreeNavigation.Category:
-      return Row(
-        children: [
-          _horseOrRiderIcon(state: state, size: screenSize * .07),
-          smallGap(),
-          const Text('Skill Tree Categories'),
-        ],
-      );
+//   switch (state.skillTreeNavigation) {
+//     case SkillTreeNavigation.Category:
+//       return Row(
+//         children: [
+//           _horseOrRiderIcon(state: state, size: screenSize * .07),
+//           smallGap(),
+//           const Text('Skill Tree Categories'),
+//         ],
+//       );
 
-    case SkillTreeNavigation.SubCategory:
-      return Row(
-        children: [
-          _horseOrRiderIcon(state: state, size: screenSize * .07),
-          smallGap(),
-          const Text('Training Paths'),
-        ],
-      );
-    case SkillTreeNavigation.Skill:
-      if (state.difficultyState == DifficultyState.all) {
-        return Row(
-          children: [
-            _horseOrRiderIcon(state: state, size: screenSize * .07),
-            smallGap(),
-            Text('${state.category?.name ?? ''} '),
-            Text(state.subCategory?.name ?? ''),
-            const Text('Skills - All'),
-          ],
-        );
-      } else if (state.difficultyState == DifficultyState.introductory) {
-        return Row(
-          children: [
-            _horseOrRiderIcon(state: state, size: screenSize * .07),
-            smallGap(),
-            Text('${state.category?.name ?? ''} - '),
-            Text('${state.subCategory?.name ?? ''} - '),
-            const Text('Skills - Introductory'),
-          ],
-        );
-      } else if (state.difficultyState == DifficultyState.intermediate) {
-        return Row(
-          children: [
-            _horseOrRiderIcon(state: state, size: screenSize * .07),
-            smallGap(),
-            Text('${state.category?.name ?? ''} - '),
-            Text('${state.subCategory?.name ?? ''} - '),
-            const Text('Skillls - Intermediate'),
-          ],
-        );
-      } else if (state.difficultyState == DifficultyState.advanced) {
-        return Row(
-          children: [
-            _horseOrRiderIcon(state: state, size: screenSize * .07),
-            smallGap(),
-            Text('${state.category?.name ?? ''} - '),
-            Text('${state.subCategory?.name ?? ''} - '),
-            const Text('Skills - Advanced'),
-          ],
-        );
-      } else {
-        return Row(
-          children: [
-            _horseOrRiderIcon(state: state, size: screenSize * .07),
-            smallGap(),
-            Text('${state.category?.name ?? ''} - '),
-            Text('${state.subCategory?.name ?? ''} - '),
-            const Text('Skills'),
-          ],
-        );
-      }
-    case SkillTreeNavigation.SkillLevel:
-      return Row(
-        children: [
-          _horseOrRiderIcon(state: state, size: screenSize * .07),
-          smallGap(),
-          Text('${state.skill?.skillName ?? ''} - '),
-          const Text('Skill Level'),
-        ],
-      );
-  }
-}
+//     case SkillTreeNavigation.SubCategory:
+//       return Row(
+//         children: [
+//           _horseOrRiderIcon(state: state, size: screenSize * .07),
+//           smallGap(),
+//           const Text('Training Paths'),
+//         ],
+//       );
+//     case SkillTreeNavigation.Skill:
+//       if (state.difficultyState == DifficultyState.all) {
+//         return Row(
+//           children: [
+//             _horseOrRiderIcon(state: state, size: screenSize * .07),
+//             smallGap(),
+//             Text('${state.category?.name ?? ''} '),
+//             Text(state.subCategory?.name ?? ''),
+//             const Text('Skills - All'),
+//           ],
+//         );
+//       } else if (state.difficultyState == DifficultyState.introductory) {
+//         return Row(
+//           children: [
+//             _horseOrRiderIcon(state: state, size: screenSize * .07),
+//             smallGap(),
+//             Text('${state.category?.name ?? ''} - '),
+//             Text('${state.subCategory?.name ?? ''} - '),
+//             const Text('Skills - Introductory'),
+//           ],
+//         );
+//       } else if (state.difficultyState == DifficultyState.intermediate) {
+//         return Row(
+//           children: [
+//             _horseOrRiderIcon(state: state, size: screenSize * .07),
+//             smallGap(),
+//             Text('${state.category?.name ?? ''} - '),
+//             Text('${state.subCategory?.name ?? ''} - '),
+//             const Text('Skillls - Intermediate'),
+//           ],
+//         );
+//       } else if (state.difficultyState == DifficultyState.advanced) {
+//         return Row(
+//           children: [
+//             _horseOrRiderIcon(state: state, size: screenSize * .07),
+//             smallGap(),
+//             Text('${state.category?.name ?? ''} - '),
+//             Text('${state.subCategory?.name ?? ''} - '),
+//             const Text('Skills - Advanced'),
+//           ],
+//         );
+//       } else {
+//         return Row(
+//           children: [
+//             _horseOrRiderIcon(state: state, size: screenSize * .07),
+//             smallGap(),
+//             Text('${state.category?.name ?? ''} - '),
+//             Text('${state.subCategory?.name ?? ''} - '),
+//             const Text('Skills'),
+//           ],
+//         );
+//       }
+//     case SkillTreeNavigation.SkillLevel:
+//       return Row(
+//         children: [
+//           _horseOrRiderIcon(state: state, size: screenSize * .07),
+//           smallGap(),
+//           Text('${state.skill?.skillName ?? ''} - '),
+//           const Text('Skill Level'),
+//         ],
+//       );
+//   }
+// }
 
-Widget _horseOrRiderIcon({required HomeState state, double? size}) {
-  if (state.isForRider) {
-    return Icon(
-      HorseAndRiderIcons.riderSkillIcon,
-      size: size,
-    );
-  } else {
-    return Icon(
-      HorseAndRiderIcons.horseSkillIcon,
-      size: size,
-    );
-  }
-}
+// Widget _horseOrRiderIcon({required HomeState state, double? size}) {
+//   if (state.isForRider) {
+//     return Icon(
+//       HorseAndRiderIcons.riderSkillIcon,
+//       size: size,
+//     );
+//   } else {
+//     return Icon(
+//       HorseAndRiderIcons.horseSkillIcon,
+//       size: size,
+//     );
+//   }
+// }
 
 FloatingActionButton _floatingActionButton({
   required HomeState state,

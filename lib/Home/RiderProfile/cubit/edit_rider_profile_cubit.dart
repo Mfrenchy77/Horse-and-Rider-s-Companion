@@ -181,7 +181,8 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   }
 
   // Future<void> getGeoPoint(Prediction prediction) async {
-  //   await _places.getDetailsByPlaceId(prediction.placeId ?? '').then((value) {
+  //   await _places.getDetailsByPlaceId(prediction.placeId ?? '')
+  //.then((value) {
   //     debugPrint('Location Name: ${value.result?.formattedAddress}');
   //     emit(
   //       state.copyWith(
