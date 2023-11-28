@@ -6,60 +6,90 @@ enum AutoCompleteStatus { loading, success, initial, error }
 
 class EditRiderProfileState extends Equatable {
   const EditRiderProfileState({
+    this.picUrl,
     this.bio = '',
+    this.prediction,
     this.error = '',
+    this.riderProfile,
     this.homeUrl = '',
     this.riderName = '',
+    this.isError = false,
     this.locationName = '',
-    this.prediction = const [],
-    this.location = const GeoPoint(0, 0),
+    this.isSubmitting = false,
+    this.isLocationSearch = false,
+    this.zipCode = const ZipCode.pure(),
     this.status = SubmissionStatus.initial,
+    this.locationStatus = FormzStatus.pure,
     this.autoCompleteStatus = AutoCompleteStatus.initial,
   });
   final String bio;
+  final bool isError;
   final String error;
+  final String? picUrl;
   final String homeUrl;
+  final ZipCode zipCode;
   final String riderName;
-  final GeoPoint location;
+  final bool isSubmitting;
   final String locationName;
+  final bool isLocationSearch;
   final SubmissionStatus status;
-  final List<Prediction> prediction;
+  final RiderProfile? riderProfile;
+  final FormzStatus locationStatus;
+  final PostalCodeResults? prediction;
   final AutoCompleteStatus autoCompleteStatus;
 
   EditRiderProfileState copyWith({
     String? bio,
+    bool? isError,
     String? error,
+    String? picUrl,
     String? homeUrl,
+    ZipCode? zipCode,
     String? riderName,
-    GeoPoint? location,
+    bool? isSubmitting,
     String? locationName,
+    bool? isLocationSearch,
     SubmissionStatus? status,
-    List<Prediction>? prediction,
+    RiderProfile? riderProfile,
+    FormzStatus? locationStatus,
+    PostalCodeResults? prediction,
     AutoCompleteStatus? autoCompleteStatus,
   }) {
     return EditRiderProfileState(
       bio: bio ?? this.bio,
       error: error ?? this.error,
+      picUrl: picUrl ?? this.picUrl,
       status: status ?? this.status,
+      isError: isError ?? this.isError,
       homeUrl: homeUrl ?? this.homeUrl,
-      location: location ?? this.location,
+      zipCode: zipCode ?? this.zipCode,
       riderName: riderName ?? this.riderName,
       prediction: prediction ?? this.prediction,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      riderProfile: riderProfile ?? this.riderProfile,
       locationName: locationName ?? this.locationName,
+      locationStatus: locationStatus ?? this.locationStatus,
+      isLocationSearch: isLocationSearch ?? this.isLocationSearch,
       autoCompleteStatus: autoCompleteStatus ?? this.autoCompleteStatus,
     );
   }
 
   @override
-  List<Object> get props => [
-        riderName,
+  List<Object?> get props => [
         bio,
-        location,
-        homeUrl,
-        status,
-        locationName,
-        prediction,
-        autoCompleteStatus,
         error,
+        picUrl,
+        status,
+        homeUrl,
+        isError,
+        zipCode,
+        riderName,
+        prediction,
+        riderProfile,
+        isSubmitting,
+        locationName,
+        locationStatus,
+        isLocationSearch,
+        autoCompleteStatus,
       ];
 }

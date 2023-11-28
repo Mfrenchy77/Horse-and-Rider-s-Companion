@@ -467,13 +467,11 @@ Widget _skillTreeItems({
                   onEdit: () => showDialog<CreateSubCategoryDialog>(
                     context: context,
                     builder: (dialogContext) => CreateSubCategoryDialog(
-                      skillTreeContext: context,
                       skills: state.allSkills ?? [],
                       subCategory: subCategory,
                       isEdit: true,
                       isRider: state.isForRider,
                       category: state.category,
-                      userName: state.usersProfile?.name,
                       position: subCategory.position,
                     ),
                   ),
@@ -1432,13 +1430,11 @@ FloatingActionButton _floatingActionButton({
           showDialog<CreateSubCategoryDialog>(
             context: context,
             builder: (context) => CreateSubCategoryDialog(
-              skillTreeContext: context,
               skills: homeCubit.getAllSkills(),
               subCategory: null,
               isEdit: false,
               isRider: true,
               category: state.category,
-              userName: state.usersProfile?.name ?? '',
               position:
                   state.subCategories != null && state.subCategories!.isNotEmpty
                       ? state.subCategories!.length

@@ -28,7 +28,7 @@ class CreateResourceDialogState extends Equatable {
   final FormzStatus status;
   final List<Skill?>? skills;
   final SingleWord description;
-  final List<String?>? resourceSkills;
+  final List<Skill?>? resourceSkills;
   final UrlFetchedStatus urlFetchedStatus;
 
   CreateResourceDialogState copyWith({
@@ -42,7 +42,7 @@ class CreateResourceDialogState extends Equatable {
     FormzStatus? status,
     List<Skill?>? skills,
     SingleWord? description,
-    List<String?>? resourceSkills,
+    List<Skill?>? resourceSkills,
     UrlFetchedStatus? urlFetchedStatus,
   }) {
     return CreateResourceDialogState(

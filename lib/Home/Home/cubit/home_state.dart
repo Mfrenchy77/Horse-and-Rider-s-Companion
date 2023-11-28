@@ -27,6 +27,7 @@ class HomeState extends Equatable {
     this.levels,
     this.bannerAd,
     this.category,
+    this.resource,
     this.index = 0,
     this.allSkills,
     this.categories,
@@ -94,6 +95,7 @@ class HomeState extends Equatable {
   final bool isForRider;
   final bool isEditState;
   final bool isSearching;
+  final Resource? resource;
   final String searchQuery;
   final int unreadMessages;
   final bool errorSnackBar;
@@ -152,6 +154,7 @@ class HomeState extends Equatable {
     bool? isForRider,
     bool? isEditState,
     bool? isSearching,
+    Resource? resource,
     BannerAd? bannerAd,
     int? unreadMessages,
     String? searchQuery,
@@ -204,6 +207,7 @@ class HomeState extends Equatable {
       isOwner: isOwner ?? this.isOwner,
       isError: isError ?? this.isError,
       message: message ?? this.message,
+      resource: resource ?? this.resource,
       snackBar: snackBar ?? this.snackBar,
       bannerAd: bannerAd ?? this.bannerAd,
       category: category ?? this.category,
@@ -270,7 +274,7 @@ class HomeState extends Equatable {
         category,
         snackBar,
         isSearch,
-        allSkills,
+        resource,
         isViewing,
         isSnackbar,
         isForRider,

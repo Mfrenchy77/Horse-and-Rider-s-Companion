@@ -10,9 +10,18 @@ class KeysRepository {
   ///Constant to refer to the API key for the Google Maps
   static const String MAPS_CONSTANT = 'MapsApiKey';
 
+  /// Constant to refer to the API key for the ZipCode API
+  static const String ZIP_CODE_CONSTANT = 'ZipApiKey';
+
   /// returns the API key for the Google Maps
   Future<String> getMapsApiKey() async {
     await remoteConfig.fetchAndActivate();
     return remoteConfig.getString(MAPS_CONSTANT);
+  }
+
+  /// returns the API key for the ZipCode API
+  Future<String> getZipCodeApiKey() async {
+    await remoteConfig.fetchAndActivate();
+    return remoteConfig.getString(ZIP_CODE_CONSTANT);
   }
 }

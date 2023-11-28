@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/models.dart';
 import 'package:database_repository/src/models/rider_profile.dart';
+import 'package:flutter/foundation.dart';
 
 ///Interface for Firebase and Rider's Profile
 class RiderProfileRepository {
@@ -19,28 +20,43 @@ class RiderProfileRepository {
 
   Future<void> createOrUpdateRiderProfile({
     required RiderProfile riderProfile,
-  }) {
-    return _riderProfileDatabaseReference
-        .doc(_convertEmailToPath(email: riderProfile.email))
-        .set(riderProfile);
+  }) async {
+    try {
+      await _riderProfileDatabaseReference
+          .doc(_convertEmailToPath(email: riderProfile.email))
+          .set(riderProfile);
+    } on FirebaseException catch (e) {
+      handleFirebaseException(e);
+    }
   }
 
   Future<void> addOrUpdateOwnedHorse({
     required RiderProfile? riderProfile,
     required String? horseId,
-  }) {
-    return _riderProfileDatabaseReference
-        .doc(_convertEmailToPath(email: riderProfile?.email))
-        .update({
-      OWNED_HORSES: FieldValue.arrayUnion([horseId]),
-    });
+  }) async {
+    try {
+      await _riderProfileDatabaseReference
+          .doc(_convertEmailToPath(email: riderProfile?.email))
+          .update({
+        OWNED_HORSES: FieldValue.arrayUnion([horseId]),
+      });
+    } on FirebaseException catch (e) {
+      handleFirebaseException(e);
+    }
   }
 
   /// Retrieve the user's profile using [email]
   Stream<DocumentSnapshot> getRiderProfile({required String? email}) {
     return _riderProfileDatabaseReference
         .doc(_convertEmailToPath(email: email))
-        .snapshots();
+        .snapshots()
+        .handleError((Object error) {
+      if (error is FirebaseException) {
+        handleFirebaseException(error);
+      } else {
+        debugPrint('An unknown error occurred in getRiderProfile: $error');
+      }
+    });
   }
 
   ///Retrive a single profile by [name]
@@ -49,7 +65,14 @@ class RiderProfileRepository {
         .where('name', isEqualTo: name)
         .get()
         .asStream()
-        .map((event) => event.docs.first);
+        .map((event) => event.docs.first)
+        .handleError((Object error) {
+      if (error is FirebaseException) {
+        handleFirebaseException(error);
+      } else {
+        debugPrint('An unknown error occurred in getProfileByName: $error');
+      }
+    });
   }
 
   /// Retrieve all profile for [name]
@@ -60,12 +83,25 @@ class RiderProfileRepository {
           'name',
           isLessThanOrEqualTo: '$name\uf8ff',
         )
-        .snapshots();
+        .snapshots()
+        .handleError((Object error) {
+      if (error is FirebaseException) {
+        handleFirebaseException(error);
+      } else {
+        debugPrint('An unknown error occurred in getProfilesByName: $error');
+      }
+    });
   }
 
   /// Delete user's RiderProfile at [email]
-  void deleteRiderProfile({required String email}) {
-    _riderProfileDatabaseReference.doc(_convertEmailToPath(email: email));
+  Future<void> deleteRiderProfile({required String email}) async {
+    try {
+      await _riderProfileDatabaseReference
+          .doc(_convertEmailToPath(email: email))
+          .delete();
+    } on FirebaseException catch (e) {
+      handleFirebaseException(e);
+    }
   }
 
   /// converts email to a path
@@ -81,4 +117,21 @@ class RiderProfileRepository {
     convertedEmail = convertedEmail.replaceAll('co', 'l');
     return convertedEmail;
   }
+}
+
+/// Handle Firebase exceptions
+void handleFirebaseException(FirebaseException exception) {
+  switch (exception.code) {
+    case 'not-found':
+      debugPrint('Document not found');
+      break;
+    case 'permission-denied':
+      debugPrint('Permission denied');
+      break;
+    // Add cases for other error codes
+    default:
+      debugPrint('An unknown error occurred: ${exception.message}');
+  }
+  // Depending on the use case, you might want to rethrow the exception
+  // or handle it silently
 }

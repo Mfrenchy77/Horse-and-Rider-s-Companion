@@ -1,20 +1,22 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
+import 'dart:io';
+
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:google_maps_webservice_ex/places.dart';
+import 'package:flutter/foundation.dart';
+import 'package:form_inputs/form_inputs.dart';
+import 'package:formz/formz.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_picker_web/image_picker_web.dart';
 
 part 'edit_rider_profile_state.dart';
 
 class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   EditRiderProfileCubit({
-    required KeysRepository keysRepository,
     required RiderProfile riderProfile,
+    required KeysRepository keysRepository,
     required CloudRepository cloudRepository,
     required RiderProfileRepository riderProfileRepository,
   })  : _riderProfile = riderProfile,
@@ -22,16 +24,26 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         _cloudRepository = cloudRepository,
         _riderProfileRepository = riderProfileRepository,
         super(const EditRiderProfileState()) {
-    _keysRepository
-        .getMapsApiKey()
-        .then((value) => _places = GoogleMapsPlaces(apiKey: value));
+    _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
+    emit(
+      state.copyWith(
+        riderProfile: _riderProfile,
+        bio: _riderProfile.bio,
+        picUrl: _riderProfile.picUrl,
+        riderName: _riderProfile.name,
+        homeUrl: _riderProfile.homeUrl,
+        locationName: _riderProfile.locationName,
+        zipCode: ZipCode.dirty(_riderProfile.zipCode ?? ''),
+      ),
+    );
   }
 
+  late String _zipApi;
   final RiderProfile _riderProfile;
-  final RiderProfileRepository _riderProfileRepository;
-  final CloudRepository _cloudRepository;
   final KeysRepository _keysRepository;
-  late final GoogleMapsPlaces _places;
+  // late final GoogleMapsPlaces _places;
+  final CloudRepository _cloudRepository;
+  final RiderProfileRepository _riderProfileRepository;
 
   void riderNameChanged({required String value}) {
     emit(state.copyWith(riderName: value));
@@ -41,8 +53,15 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     emit(state.copyWith(bio: value));
   }
 
-  void riderLocationChanged({required GeoPoint value}) {
-    emit(state.copyWith(location: value));
+  void riderLocationChanged({required String value}) {
+    final zipCode = ZipCode.dirty(value);
+    emit(
+      state.copyWith(
+        locationName: '',
+        zipCode: zipCode,
+        locationStatus: Formz.validate([zipCode]),
+      ),
+    );
   }
 
   void riderHomeUrlChanged({required String value}) {
@@ -50,48 +69,76 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   }
 
   Future<void> riderProfilePicClicked() async {
-    final picker = ImagePicker();
-    XFile? pickedFile;
+    String? picUrl;
 
-    pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 20,
-    );
-    if (pickedFile != null) {
-      final picUrl = await _cloudRepository.addRiderPhoto(
-        path: pickedFile.path,
-        riderId: _riderProfile.id as String,
+    if (kIsWeb) {
+      // Web-specific logic
+      final webImageData = await ImagePickerWeb.getImageAsBytes();
+      if (webImageData != null) {
+        emit(state.copyWith(isSubmitting: true));
+        picUrl = await _cloudRepository.addRiderPhoto(
+          data: webImageData,
+          riderId: _riderProfile.id as String,
+        );
+      }
+    } else {
+      // Mobile-specific logic
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 20,
       );
-      if (picUrl != null) {
-        _riderProfile
-          ..picUrl = picUrl
-          ..lastEditBy = _riderProfile.name
-          ..lastEditDate = DateTime.now();
-        await _riderProfileRepository.createOrUpdateRiderProfile(
-          riderProfile: _riderProfile,
+      if (pickedFile != null) {
+        emit(state.copyWith(isSubmitting: true));
+        final file = File(pickedFile.path);
+        picUrl = await _cloudRepository.addRiderPhoto(
+          path: file.path,
+          riderId: _riderProfile.id as String,
         );
       }
     }
+    if (picUrl != null) {
+      emit(state.copyWith(picUrl: picUrl, isSubmitting: false));
+    } else {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          status: SubmissionStatus.failure,
+          error: 'Error uploading image',
+        ),
+      );
+      debugPrint('Pic Url is null');
+    }
+  }
+
+  /// Toggle the location search
+  void toggleLocationSearch() {
+    emit(state.copyWith(isLocationSearch: !state.isLocationSearch));
   }
 
 //method that opens a dialog to let user choose
 // their city based on ther geo location
-  Future<void> autoCompleteLocation({required String value}) async {
-    if (value.length >= 3) {
+  Future<void> searchForLocation() async {
+    //retool this to work with the zip code api
+    final value = state.zipCode.value;
+    final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
+    if (value.length >= 5) {
+      emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
       try {
-        final response = await _places.autocomplete(value);
-        if (response.status == 'OK') {
+        final response = await zipcodeRepo.queryZipcode(value);
+        if (response != null) {
+          debugPrint('Response: ${response.results.results.length}');
           emit(
             state.copyWith(
               autoCompleteStatus: AutoCompleteStatus.success,
-              prediction: response.predictions,
+              prediction: response.results,
             ),
           );
         } else {
           emit(
             state.copyWith(
               autoCompleteStatus: AutoCompleteStatus.error,
-              error: response.errorMessage,
+              error: 'Error ',
             ),
           );
         }
@@ -106,57 +153,86 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     }
   }
 
-  Future<void> getGeoPoint(Prediction prediction) async {
-    await _places.getDetailsByPlaceId(prediction.placeId ?? '').then((value) {
-      debugPrint('Location Name: ${value.result?.formattedAddress}');
+  void locationSelected({
+    required String locationName,
+    required String selectedZipCode,
+  }) {
+    debugPrint('Location Name: $locationName');
+    debugPrint('Zip Code: $selectedZipCode');
+    final zipCode = ZipCode.dirty(selectedZipCode);
+    if (zipCode.valid) {
       emit(
         state.copyWith(
-          location: GeoPoint(
-            value.result?.geometry?.location.lat as double,
-            value.result?.geometry?.location.lng as double,
-          ),
-          locationName: prediction.description,
-          autoCompleteStatus: AutoCompleteStatus.initial,
+          locationName: locationName,
+          zipCode: zipCode,
+          locationStatus: Formz.validate([zipCode]),
         ),
       );
-
-      debugPrint('State Location Name: ${state.locationName}');
-    });
-  }
-
-  Future<void> updateRiderProfile() async {
-    emit(state.copyWith(status: SubmissionStatus.inProgress));
-
-    _riderProfile
-      ..name = state.riderName == '' ? _riderProfile.name : state.riderName
-      ..location = state.location == const GeoPoint(0, 0)
-          ? _riderProfile.location
-          : state.location
-      ..bio = state.bio == '' ? _riderProfile.bio : state.bio
-      ..homeUrl = state.homeUrl == '' ? _riderProfile.homeUrl : state.homeUrl
-      ..locationName = state.locationName == ''
-          ? _riderProfile.locationName
-          : state.locationName
-      ..location = state.location == const GeoPoint(0, 0)
-          ? _riderProfile.location
-          : state.location
-      ..lastEditBy = _riderProfile.name
-      ..lastEditDate = DateTime.now();
-
-    try {
-      await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: _riderProfile,
+    } else {
+      debugPrint('Zip Code is not valid');
+      emit(
+        state.copyWith(
+          locationName: locationName,
+          zipCode: zipCode,
+          locationStatus: Formz.validate([zipCode]),
+        ),
       );
-      emit(state.copyWith(status: SubmissionStatus.success));
-    } catch (e) {
-      debugPrint('Sometin went wong');
-      emit(state.copyWith(status: SubmissionStatus.failure));
     }
   }
 
-  @override
-  Future<void> close() {
-    _places.dispose();
-    return super.close();
+  // Future<void> getGeoPoint(Prediction prediction) async {
+  //   await _places.getDetailsByPlaceId(prediction.placeId ?? '').then((value) {
+  //     debugPrint('Location Name: ${value.result?.formattedAddress}');
+  //     emit(
+  //       state.copyWith(
+  //         location: GeoPoint(
+  //           value.result?.geometry?.location.lat as double,
+  //           value.result?.geometry?.location.lng as double,
+  //         ),
+  //         locationName: prediction.description,
+  //         autoCompleteStatus: AutoCompleteStatus.initial,
+  //       ),
+  //     );
+
+  //     debugPrint('State Location Name: ${state.locationName}');
+  //   });
+  // }
+  Future<void> updateRiderProfile() async {
+    emit(state.copyWith(status: SubmissionStatus.inProgress));
+    final riderProfile = state.riderProfile;
+    debugPrint('zipCode: ${state.zipCode.value}');
+    debugPrint('locationName: ${state.locationName}');
+
+    // Create a new instance of riderProfile with updated values
+    final updatedRiderProfile = riderProfile?.copyWith(
+      bio: state.bio,
+      picUrl: state.picUrl,
+      name: state.riderName,
+      homeUrl: state.homeUrl,
+      lastEditDate: DateTime.now(),
+      zipCode: state.zipCode.value,
+      lastEditBy: _riderProfile
+          .name, // Ensure _riderProfile.name is the correct reference
+      locationName: state.locationName,
+    );
+
+    if (updatedRiderProfile != null) {
+      debugPrint('Editing Rider Profile ${updatedRiderProfile.name}');
+      try {
+        await _riderProfileRepository.createOrUpdateRiderProfile(
+          riderProfile: updatedRiderProfile,
+        );
+        emit(state.copyWith(status: SubmissionStatus.success));
+      } catch (e) {
+        debugPrint('Something went wrong: $e');
+        emit(state.copyWith(status: SubmissionStatus.failure));
+      }
+    } else {
+      debugPrint('Rider Profile is null');
+    }
+  }
+
+  void clearError() {
+    emit(state.copyWith(isError: false, error: ''));
   }
 }

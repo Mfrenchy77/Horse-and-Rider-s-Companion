@@ -18,10 +18,13 @@ dependencies:
   firebase_remote_config: ^3.0.12
 
 
+
   firebase_storage: ^11.0.6
   flutter:
     sdk: flutter
  
+  http: ^1.1.2
+  
   meta: ^1.7.0
 
 dev_dependencies:

@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 ///Repository that interacts with Goolge [CloudRepository]
 ///and Horse and Rider's Companion
@@ -16,36 +16,58 @@ class CloudRepository {
 
   final _storageReference = FirebaseStorage.instance.ref();
 
-  ///   Method to add Riders Photo to Cloud Firestore
-  ///   returns the url or null
+  /// Method to add Riders Photo to Cloud Firestore
   Future<String?> addRiderPhoto({
-    required String path,
+    String? path, // For mobile
+    Uint8List? data, // For web
     required String riderId,
   }) async {
     final riderRef = _storageReference.child(RIDERS_PHOTO).child(riderId);
-    final file = File(path);
+
     try {
-      await riderRef.putFile(file);
+      if (kIsWeb && data != null) {
+        // Web upload logic
+        await riderRef.putData(data);
+      } else if (path != null) {
+        // Mobile upload logic
+        final file = File(path);
+        await riderRef.putFile(file);
+      } else {
+        throw Exception('No data provided for upload');
+      }
       return await riderRef.getDownloadURL();
     } on FirebaseException catch (e) {
       debugPrint(e.toString());
+    } catch (e) {
+      debugPrint('Error: $e');
     }
     return null;
   }
 
-  ///   Method to add Horse photo to Cloud Firestore
-  ///    returns the url or null
+  /// Method to add Horse photo to Cloud Firestore
   Future<String?> addHorsePhoto({
-    required String path,
+    String? path, // For mobile
+    Uint8List? data, // For web
     required String horseId,
   }) async {
     final horseRef = _storageReference.child(HORSES_PHOTO).child(horseId);
-    final file = File(path);
+
     try {
-      await horseRef.putFile(file);
-      return horseRef.getDownloadURL();
+      if (kIsWeb && data != null) {
+        // Web upload logic
+        await horseRef.putData(data);
+      } else if (path != null) {
+        // Mobile upload logic
+        final file = File(path);
+        await horseRef.putFile(file);
+      } else {
+        throw Exception('No data provided for upload');
+      }
+      return await horseRef.getDownloadURL();
     } on FirebaseException catch (e) {
       debugPrint(e.toString());
+    } catch (e) {
+      debugPrint('Error: $e');
     }
     return null;
   }

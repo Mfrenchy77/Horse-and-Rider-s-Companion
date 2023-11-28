@@ -35,98 +35,102 @@ class EditRiderProfileDialog extends StatelessWidget {
           riderProfile: riderProfile,
           riderProfileRepository: context.read<RiderProfileRepository>(),
         ),
-        child: BlocBuilder<EditRiderProfileCubit, EditRiderProfileState>(
-          builder: (context, state) {
-            if (state.status == SubmissionStatus.success) {
-              Navigator.pop(context);
-            }
-            return Scaffold(
-              appBar: AppBar(
-                title: Text('Edit: ${riderProfile.name}'),
-              ),
-              backgroundColor: Colors.transparent,
-              body: AlertDialog(
-                scrollable: true,
-                title: const Text('Edit Profile'),
-                content: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Form(
-                    child: Column(
-                      children: [
-                        _profilePhoto(
-                          context: context,
-                          riderProfile: riderProfile,
-                          size: isSmallScreen ? 85 : 150,
-                        ),
-                        gap(),
-                        _riderName(
-                          context: context,
-                          state: state,
-                          riderProfile: riderProfile,
-                        ),
-                        gap(),
-                        _riderBio(
-                          context: context,
-                          state: state,
-                          riderProfile: riderProfile,
-                        ),
-                        gap(),
-                        _riderHomeUrl(
-                          context: context,
-                          state: state,
-                          riderProfile: riderProfile,
-                        ),
-                        gap(),
-                        _riderLocation(
-                          context: context,
-                          riderProfile: riderProfile,
-                          state: state,
-                        ),
-                        gap(),
-                      ],
-                    ),
+        child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
+          listener: (context, state) {
+            if (state.isError) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(state.error),
                   ),
+                ).closed.then((_) {
+                  context.read<EditRiderProfileCubit>().clearError();
+                });
+            }
+          },
+          child: BlocBuilder<EditRiderProfileCubit, EditRiderProfileState>(
+            builder: (context, state) {
+              if (state.status == SubmissionStatus.success) {
+                Navigator.pop(context);
+              }
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text('Edit: ${riderProfile.name}'),
                 ),
-                actions: [
-                  // cancel button with same color as background, teext color is primary text color
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: HorseAndRidersTheme()
-                          .getTheme()
-                          .colorScheme
-                          .background,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Cancel',
-                     style: TextStyle(
-                        color: HorseAndRidersTheme()
-                            .getTheme()
-                            .colorScheme
-                            .secondary,
+                backgroundColor: Colors.transparent,
+                body: AlertDialog(
+                  scrollable: true,
+                  title: const Text('Edit Profile'),
+                  content: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Form(
+                      child: Column(
+                        children: [
+                          _profilePhoto(
+                            state: state,
+                            context: context,
+                            riderProfile: riderProfile,
+                            size: isSmallScreen ? 85 : 150,
+                          ),
+                          gap(),
+                          _riderName(
+                            context: context,
+                            state: state,
+                            riderProfile: riderProfile,
+                          ),
+                          gap(),
+                          _riderBio(
+                            context: context,
+                            state: state,
+                            riderProfile: riderProfile,
+                          ),
+                          gap(),
+                          _riderHomeUrl(
+                            context: context,
+                            state: state,
+                            riderProfile: riderProfile,
+                          ),
+                          gap(),
+                          _riderLocation(
+                            context: context,
+                            riderProfile: riderProfile,
+                            state: state,
+                          ),
+                          gap(),
+                        ],
                       ),
                     ),
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          HorseAndRidersTheme().getTheme().primaryColor,
+                  actions: [
+                    // cancel button with same color as background, teext color is primary text color
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        'Cancel',
+                      ),
                     ),
-                    onPressed: () {
-                      context
-                          .read<EditRiderProfileCubit>()
-                          .updateRiderProfile();
-                    },
-                    child: state.status == SubmissionStatus.inProgress
-                        ? const CircularProgressIndicator()
-                        : const Text('Submit'),
-                  ),
-                ],
-              ),
-            );
-          },
+                    Visibility(
+                      visible: state.status != SubmissionStatus.inProgress,
+                      child: FilledButton(
+                        onPressed: () {
+                          context
+                              .read<EditRiderProfileCubit>()
+                              .updateRiderProfile();
+                        },
+                        child: state.status == SubmissionStatus.inProgress
+                            ? const CircularProgressIndicator()
+                            : const Text('Submit'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -144,7 +148,7 @@ Widget _riderName({
     keyboardType: TextInputType.name,
     textInputAction: TextInputAction.next,
     textCapitalization: TextCapitalization.words,
-    initialValue: riderProfile.name,
+    initialValue: state.riderName,
     decoration: const InputDecoration(
       labelText: "Rider's Name",
       hintText: "Enter Rider's Name",
@@ -163,7 +167,7 @@ Widget _riderHomeUrl({
         context.read<EditRiderProfileCubit>().riderHomeUrlChanged(value: value),
     keyboardType: TextInputType.url,
     textInputAction: TextInputAction.next,
-    initialValue: riderProfile.homeUrl ?? '',
+    initialValue: state.homeUrl,
     decoration: const InputDecoration(
       labelText: 'Website',
       hintText: 'Enter your buisness website',
@@ -185,7 +189,7 @@ Widget _riderBio({
     minLines: 3,
     textInputAction: TextInputAction.next,
     textCapitalization: TextCapitalization.sentences,
-    initialValue: riderProfile.bio ?? '',
+    initialValue: state.bio,
     decoration: const InputDecoration(
       labelText: "Rider's Bio",
       hintText: "Enter Rider's Bio",
@@ -202,26 +206,61 @@ Widget _riderLocation({
   required RiderProfile riderProfile,
   required EditRiderProfileState state,
 }) {
-  final searchController = TextEditingController();
   return Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      TextFormField(
-        controller: searchController,
-        onChanged: (value) async {
-          if (value.isNotEmpty) {
-            await context
+      Visibility(
+        visible: !state.isLocationSearch,
+        child: InkWell(
+          onTap: () {
+            context.read<EditRiderProfileCubit>().toggleLocationSearch();
+          },
+          child: Row(
+            children: [
+              const Icon(Icons.location_on),
+              smallGap(),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(state.locationName),
+              ),
+            ],
+          ),
+        ),
+      ),
+      Visibility(
+        visible: state.isLocationSearch,
+        child: TextFormField(
+          enabled: true,
+          onChanged: (value) {
+            context
                 .read<EditRiderProfileCubit>()
-                .autoCompleteLocation(value: value);
-          }
-        },
-        keyboardType: TextInputType.streetAddress,
-        textInputAction: TextInputAction.next,
-        textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(
-          labelText: "Rider's Location",
-          hintText: "Enter Rider's Location",
-          prefixIcon: Icon(Icons.my_location_rounded),
+                .riderLocationChanged(value: value);
+          },
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            labelText: "Rider's Location",
+            hintText: 'Enter Zip Code',
+            prefixIcon: IconButton(
+              onPressed: () {
+                context.read<EditRiderProfileCubit>().toggleLocationSearch();
+              },
+              icon: const Icon(Icons.close),
+            ),
+            icon: const Icon(Icons.location_on),
+            suffixIcon: IconButton(
+              onPressed: () {
+// search for location
+                context
+                    .read<EditRiderProfileCubit>()
+                    .searchForLocation()
+                    .then((value) {
+                  debugPrint('Search for location completed');
+                });
+              },
+              icon: const Icon(Icons.search),
+            ),
+          ),
         ),
       ),
       if (state.autoCompleteStatus == AutoCompleteStatus.loading)
@@ -232,19 +271,41 @@ Widget _riderLocation({
           height: 200,
           child: ListView.builder(
             shrinkWrap: true,
-            itemCount: state.prediction.length,
+            itemCount: state.prediction?.results.length ?? 0,
             itemBuilder: (context, index) {
-              return ListTile(
-                onTap: () async {
-                  await context
-                      .read<EditRiderProfileCubit>()
-                      .getGeoPoint(state.prediction[index]);
-
-                  searchController.text =
-                      state.prediction[index].description ?? '';
-                  debugPrint('location name: ${state.locationName}');
-                },
-                title: Text(state.prediction[index].description ?? ''),
+              final postalCode =
+                  state.prediction?.results.keys.elementAt(index) ?? '';
+              final locations = state.prediction?.results[postalCode];
+              final controller = ExpansionTileController();
+              return ExpansionTile(
+                controller: controller,
+                initiallyExpanded: true,
+                title: Text('Postal Code: $postalCode'),
+                children: locations
+                        ?.map(
+                          (location) => ListTile(
+                            title: Text(location.city),
+                            subtitle: Text(
+                              '${location.city}, ${location.state}',
+                            ),
+                            onTap: () {
+                              context
+                                  .read<EditRiderProfileCubit>()
+                                  .toggleLocationSearch();
+                              controller.collapse();
+                              debugPrint('Location Selected ${location.city}');
+                              context
+                                  .read<EditRiderProfileCubit>()
+                                  .locationSelected(
+                                    locationName:
+                                        '${location.city}, ${location.state}',
+                                    selectedZipCode: postalCode,
+                                  );
+                            },
+                          ),
+                        )
+                        .toList() ??
+                    [const Text('No locations found')],
               );
             },
           ),
@@ -266,6 +327,7 @@ Widget _profilePhoto({
   required BuildContext context,
   required RiderProfile riderProfile,
   required double size,
+  required EditRiderProfileState state,
 }) {
   final isDark = SharedPrefs().isDarkMode;
   return InkWell(
@@ -273,21 +335,23 @@ Widget _profilePhoto({
     child: Column(
       children: [
         ///   Image
-        CachedNetworkImage(
-          imageUrl: '${riderProfile.picUrl}',
-          placeholder: (context, url) =>
-              const Image(image: AssetImage('assets/horse_icon_01.png')),
-          errorWidget: (context, url, error) =>
-              const Image(image: AssetImage('assets/horse_icon_01.png')),
-          height: size,
-          width: size,
-        ),
+        if (state.isSubmitting)
+          const CircularProgressIndicator()
+        else
+          CachedNetworkImage(
+            imageUrl: '${state.picUrl}',
+            placeholder: (context, url) =>
+                const Image(image: AssetImage('assets/horse_icon_01.png')),
+            errorWidget: (context, url, error) =>
+                const Image(image: AssetImage('assets/horse_icon_01.png')),
+            height: size,
+            width: size,
+          ),
         smallGap(),
         Text(
           riderProfile.picUrl != null
               ? 'Tap to Change your Photo'
               : ' Tap to Add a Photo',
-          style: const TextStyle(fontSize: 12),
         ),
         smallGap(),
         Divider(

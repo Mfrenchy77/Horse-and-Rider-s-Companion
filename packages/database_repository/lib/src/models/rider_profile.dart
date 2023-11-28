@@ -12,7 +12,7 @@ class RiderProfile {
     this.email,
     this.picUrl,
     this.homeUrl,
-    this.location,
+    this.zipCode,
     this.lastEditBy,
     this.subscribed,
     this.locationName,
@@ -36,10 +36,10 @@ class RiderProfile {
   bool? editor;
   String? bio;
   String? name;
+  String? zipCode;
   bool? isTrainer;
   String? homeUrl;
   final String? id;
-  GeoPoint? location;
   String? lastEditBy;
   String? picUrl = '';
   final String? email;
@@ -71,10 +71,10 @@ class RiderProfile {
       editor: data['editor'] as bool?,
       email: data['email'] as String?,
       picUrl: data['picUrl'] as String?,
+      zipCode: data['zipCode'] as String?,
       homeUrl: data['homeUrl'] as String?,
       isTrainer: data['isTrainer'] as bool?,
       subscribed: data['subscribed'] as bool?,
-      location: data['location'] as GeoPoint?,
       lastEditBy: data['lastEditBy'] as String?,
       locationName: data['locationName'] as String?,
       subscriptionDate: data['subscriptionDate'] as DateTime?,
@@ -129,7 +129,7 @@ class RiderProfile {
       if (name != null) 'name': name,
       if (editor != null) 'editor': editor,
       if (picUrl != null) 'picUrl': picUrl,
-      if (location != null) 'location': location,
+      if (zipCode != null) 'zipCode': zipCode,
       if (isTrainer != null) 'isTrainer': isTrainer,
       if (email != null) 'email': email?.toLowerCase(),
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
@@ -183,4 +183,59 @@ List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
   }
 
   return baseListItem;
+}
+
+//copyWith method for RiderProfile
+extension RiderProfileCopyWith on RiderProfile {
+  RiderProfile copyWith({
+    String? id,
+    String? bio,
+    String? name,
+    String? email,
+    String? picUrl,
+    bool? isTrainer,
+    String? homeUrl,
+    String? zipCode,
+    bool? subscribed,
+    String? lastEditBy,
+    String? locationName,
+    DateTime? lastEditDate,
+    List<BaseListItem>? notes,
+    List<String>? messagesList,
+    DateTime? subscriptionDate,
+    List<BaseListItem>? students,
+    DateTime? subscriptionEndDate,
+    List<SkillLevel>? skillLevels,
+    List<BaseListItem>? instructors,
+    List<BaseListItem>? ownedHorses,
+    List<BaseListItem>? studentHorses,
+    List<BaseListItem>? savedProfilesList,
+    List<String>? savedResourcesList,
+  }) {
+    return RiderProfile(
+      id: id ?? this.id,
+      bio: bio ?? this.bio,
+      name: name ?? this.name,
+      notes: notes ?? this.notes,
+      email: email ?? this.email,
+      picUrl: picUrl ?? this.picUrl,
+      homeUrl: homeUrl ?? this.homeUrl,
+      zipCode: zipCode ?? this.zipCode,
+      students: students ?? this.students,
+      isTrainer: isTrainer ?? this.isTrainer,
+      lastEditBy: lastEditBy ?? this.lastEditBy,
+      subscribed: subscribed ?? this.subscribed,
+      skillLevels: skillLevels ?? this.skillLevels,
+      ownedHorses: ownedHorses ?? this.ownedHorses,
+      instructors: instructors ?? this.instructors,
+      locationName: locationName ?? this.locationName,
+      lastEditDate: lastEditDate ?? this.lastEditDate,
+      messagesList: messagesList ?? this.messagesList,
+      studentHorses: studentHorses ?? this.studentHorses,
+      subscriptionDate: subscriptionDate ?? this.subscriptionDate,
+      savedProfilesList: savedProfilesList ?? this.savedProfilesList,
+      savedResourcesList: savedResourcesList ?? this.savedResourcesList,
+      subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
+    );
+  }
 }

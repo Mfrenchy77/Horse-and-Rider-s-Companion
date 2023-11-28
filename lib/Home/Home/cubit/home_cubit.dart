@@ -47,19 +47,18 @@ class HomeCubit extends Cubit<HomeState> {
         _riderProfileRepository = riderProfileRepository,
         super(const HomeState()) {
     if (!user.isGuest) {
-      ///   Stream to listen to changes in RiderProfile
       _riderProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: _user.email)
           .listen((event) {
-        _usersProfile = event.data() as RiderProfile?;
-        if (state.homeStatus == HomeStatus.profile) {
+        final profile = event.data() as RiderProfile?;
+        debugPrint('Received Rider Profile: ${profile?.name}');
+
+        if (profile != null) {
+          _usersProfile = profile;
           emit(state.copyWith(usersProfile: _usersProfile));
-          if (_usersProfile == null) {
-            debugPrint(
-              '!!!   !!!   Creating Rider Profile for ${_user.name}   !!!!   !!!',
-            );
-            createRiderProfile(user: user);
-          }
+        } else {
+          debugPrint('Creating Rider Profile for ${_user.name}');
+          createRiderProfile(user: user);
         }
       });
     } else {
@@ -224,13 +223,14 @@ class HomeCubit extends Cubit<HomeState> {
 
     final note = BaseListItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: '${user.name} joined Horse and Rider Companion',
+      name: '${user.name} joined Horse and Rider Companion!',
       date: DateTime.now(),
       message: user.name,
       parentId: user.email,
     );
 
     final riderProfile = RiderProfile(
+      id: user.id,
       picUrl: user.photo,
       name: user.name,
       email: user.email,
@@ -243,8 +243,8 @@ class HomeCubit extends Cubit<HomeState> {
         riderProfile: riderProfile,
       );
     } on FirebaseException catch (e) {
-      debugPrint('ERROR Occurred in bloc: $e');
-      emit(state.copyWith(error: e.toString()));
+      debugPrint('Error: ${e.message}');
+      emit(state.copyWith(error: e.toString(), errorSnackBar: true));
     }
   }
 
@@ -256,12 +256,19 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('Menu Selection: $choice');
     switch (choice) {
       case 'Edit':
-        showDialog<EditRiderProfileDialog>(
-          context: context,
-          builder: (context) => EditRiderProfileDialog(
-            riderProfile: _usersProfile as RiderProfile,
-          ),
-        );
+        _usersProfile != null
+            ? showDialog<EditRiderProfileDialog>(
+                context: context,
+                builder: (context) => EditRiderProfileDialog(
+                  riderProfile: _usersProfile!,
+                ),
+              )
+            : emit(
+                state.copyWith(
+                  error: 'User Profile is null',
+                  errorSnackBar: true,
+                ),
+              );
         break;
       case 'Add Horse':
         showDialog<AddHorseDialog>(
@@ -2180,10 +2187,19 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  ///  Editing a resource set it to state
+  void editingResource({required Resource? resource}) {
+    debugPrint('Editing Resource: ${resource?.name}');
+    debugPrint('number of skills: ${resource?.skillTreeIds?.length}');
+    emit(state.copyWith(resource: resource));
+  }
+
   ///Resource is selected to be added to a Skill
 
-  void addResourceToSkill(
-      {required Resource? resource, required Skill? skill}) {
+  void addResourceToSkill({
+    required Resource? resource,
+    required Skill? skill,
+  }) {
     if (resource != null) {
       debugPrint('Resource Selected: ${resource.name}');
 

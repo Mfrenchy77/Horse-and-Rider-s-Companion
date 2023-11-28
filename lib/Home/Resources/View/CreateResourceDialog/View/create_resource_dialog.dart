@@ -173,7 +173,7 @@ class CreateResourcDialog extends StatelessWidget {
                                 : () {
                                     context
                                         .read<CreateResourceDialogCubit>()
-                                        .editResource(resource);
+                                        .editResource();
                                     Navigator.pop(context);
                                   },
                         child: const Text('Submit'),

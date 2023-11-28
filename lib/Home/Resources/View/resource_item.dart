@@ -3,7 +3,9 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/search_confimatio_dialog.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
+import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/View/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
@@ -319,84 +321,115 @@ Widget _ratingButtons({
           flex: 5,
           child: IconButton(
             onPressed: () {
+              homeCubit.editingResource(resource: resource);
+
               ///  Show the skills associated with this resource
               showDialog<AlertDialog>(
                 context: context,
                 builder: (context) {
-                  return AlertDialog(
-                    title: const Text('Associated Skills for:'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(resource.name ?? ''),
-                        gap(),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          runSpacing: 4,
-                          children: homeCubit
-                                  .getSkillsForResource(
-                                    ids: resource.skillTreeIds,
-                                  )
-                                  ?.map(
-                                    (e) => TextButton(
-                                      onPressed: () {
-                                        homeCubit.skillSelected(skill: e);
-                                        debugPrint('Skill: ${e?.skillName}');
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(e?.skillName ?? ''),
-                                    ),
-                                  )
-                                  .toList() ??
-                              [const Text('No Skills Found')],
-                        ),
-                        gap(),
-                        const Text('Add or Remove Skills from this Resource'),
-                        gap(),
-                        const Divider(),
-                        smallGap(),
-                        Wrap(
-                          spacing: 8,
-                          children: homeCubit
-                                  .getAllSkills()
-                                  ?.map(
-                                    (e) => FilterChip(
-                                      label: Text(e?.skillName ?? ''),
-                                      selected: resource.skillTreeIds
-                                              ?.contains(e?.id) ??
-                                          false,
-                                      onSelected: (value) {
-                                      
-                                        homeCubit.addResourceToSkill(
-                                          resource: resource,
-                                          skill: e,
-                                        );
-                                      },
-                                    ),
-                                  )
-                                  .toList() ??
-                              [const Text('No Skills Found')],
-                        ),
-                        gap(),
-                        TextButton(
-                          onPressed: () {
-                            debugPrint(
-                              'Add Skill for Resource ${resource.name}',
-                            );
-                          },
-                          child: const Text('Add Skill'),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Close'),
-                      ),
-                    ],
+                  return UpdateResourceSkills(
+                    skills: homeCubit.getAllSkills(),
+                    resource: resource,
+                    homeCubit: homeCubit,
+                    userProfile: state.usersProfile,
                   );
+                  // return AlertDialog(
+                  //   title: const Text('Associated Skills for:'),
+                  //   content: SingleChildScrollView(
+                  //     child: Column(
+                  //       mainAxisSize: MainAxisSize.min,
+                  //       children: [
+                  //         Text(state.resource?.name ?? ''),
+                  //         gap(),
+                  //         Wrap(
+                  //           alignment: WrapAlignment.center,
+                  //           runSpacing: 4,
+                  //           children: homeCubit
+                  //                   .getSkillsForResource(
+                  //                     ids: state.resource?.skillTreeIds,
+                  //                   )
+                  //                   ?.map(
+                  //                     (e) => TextButton(
+                  //                       onPressed: () {
+                  //                         homeCubit.skillSelected(skill: e);
+                  //                         debugPrint('Skill: ${e?.skillName}');
+                  //                         Navigator.pop(context);
+                  //                       },
+                  //                       child: Text(e?.skillName ?? ''),
+                  //                     ),
+                  //                   )
+                  //                   .toList() ??
+                  //               [const Text('No Skills Found')],
+                  //         ),
+                  //         gap(),
+                  //         const Divider(),
+                  //         gap(),
+                  //         const Text('Add or Remove Skills from this Resource'),
+                  //         smallGap(),
+                  //         SingleChildScrollView(
+                  //           child: Wrap(
+                  //             spacing: 8,
+                  //             children: homeCubit
+                  //                     .getAllSkills()
+                  //                     ?.map(
+                  //                       (e) => FilterChip(
+                  //                         label: Text(e?.skillName ?? ''),
+                  //                         selected: state.resource?.skillTreeIds
+                  //                                 ?.contains(e?.id) ??
+                  //                             false,
+                  //                         onSelected: (value) {
+                  //                           showDialog<AlertDialog>(
+                  //                             context: context,
+                  //                             builder: (context) {
+                  //                               return searchConfirmationDialog(
+                  //                                 // add/remove skill if value is true/false
+                  //                                 text:
+                  //                                     '${value ? 'Add' : 'Remove'} Skill ${e?.skillName} ${value ? 'to' : 'from'} ${resource.name}',
+
+                  //                                 title:
+                  //                                     '${value ? 'Add' : 'Remove'} Skill ${value ? 'to' : 'from'} ${resource.name}',
+                  //                                 cancelTap: () {
+                  //                                   Navigator.pop(context);
+                  //                                 },
+                  //                                 confirmTap: () {
+                  //                                   Navigator.pop(context);
+                  //                                   homeCubit
+                  //                                       .addResourceToSkill(
+                  //                                     resource: state.resource,
+                  //                                     skill: e,
+                  //                                   );
+                  //                                 },
+                  //                               );
+                  //                             },
+                  //                           );
+                  //                         },
+                  //                       ),
+                  //                     )
+                  //                     .toList() ??
+                  //                 [const Text('No Skills Found')],
+                  //           ),
+                  //         ),
+                  //         // gap(),
+                  //         // TextButton(
+                  //         //   onPressed: () {
+                  //         //     debugPrint(
+                  //         //       'Add Skill for Resource ${resource.name}',
+                  //         //     );
+                  //         //   },
+                  //         //   child: const Text('Add Skill'),
+                  //         // ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  //   actions: [
+                  //     TextButton(
+                  //       onPressed: () {
+                  //         Navigator.pop(context);
+                  //       },
+                  //       child: const Text('Close'),
+                  //     ),
+                  //   ],
+                  // );
                 },
               );
             },

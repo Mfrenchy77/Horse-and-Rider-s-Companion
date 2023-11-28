@@ -24,13 +24,14 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         super(const CreateResourceDialogState()) {
     if (resource != null) {
       urlChanged(resource.url.toString());
+      // list of skills that are in the resourceids
     }
     emit(
       state.copyWith(
         skills: _skills,
         resource: _resource,
         isEdit: _isEdit,
-        resourceSkills: _resource?.skillTreeIds ?? [],
+        resourceSkills: getSkillsForResource(ids: _resource?.skillTreeIds),
       ),
     );
   }
@@ -84,23 +85,45 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   /// and add the skill to the list if it is not in the list
   void resourceSkillsChanged(String skillId) {
     debugPrint('resourceSkillsChanged: $skillId');
-    if (state.resourceSkills != null) {
-      final updatedSkills = List<String>.from(state.resourceSkills!);
+    final resource = state.resource;
+    final updatedSkills = List<String>.from(resource?.skillTreeIds ?? []);
 
-      if (updatedSkills.contains(skillId)) {
-        debugPrint('removing skill');
-        updatedSkills.remove(skillId);
-      } else {
-        debugPrint('adding skill');
-        updatedSkills.add(skillId);
-      }
-
-      emit(state.copyWith(resourceSkills: updatedSkills));
+    if (updatedSkills.contains(skillId)) {
+      debugPrint('removing skill');
+      updatedSkills.remove(skillId);
     } else {
       debugPrint('adding skill');
-      final skills = <String>[skillId];
-      emit(state.copyWith(resourceSkills: skills));
+      updatedSkills.add(skillId);
     }
+
+    final updatedResourceSkills = getSkillsForResource(ids: updatedSkills);
+    final updatedResource = resource?.copyWith(skillTreeIds: updatedSkills);
+
+    emit(
+      state.copyWith(
+        resourceSkills: updatedResourceSkills,
+        resource: updatedResource,
+      ),
+    );
+  }
+
+  /// the skills that in the resourceSkills list
+  List<Skill?>? getSkillsForResource({required List<String?>? ids}) {
+    final skills = <Skill?>[];
+    if (ids != null) {
+      if (_skills != null) {
+        for (final skill in _skills!) {
+          if (ids.contains(skill?.id)) {
+            skills.add(skill);
+          }
+        }
+      } else {
+        debugPrint('skills is null');
+      }
+    } else {
+      return null;
+    }
+    return skills;
   }
 
   // if the url does not have a scheme, add https
@@ -171,7 +194,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
             isSelected: false,
           );
           final raters = <BaseListItem>[user];
-          final skillIds = state.resourceSkills ?? [];
+          final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
           final resource = Resource(
             id: ViewUtils.createId(),
             name: value.title,
@@ -204,39 +227,58 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     }
   }
 
-  ///   Called when the user wants to update the [resource]
-  Future<void> editResource(Resource? resource) async {
-    emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+  Future<void> editResource() async {
+    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+
+    if (state.resource == null) {
+      debugPrint('Resource is null');
+      emit(
+        state.copyWith(
+          status: FormzStatus.submissionFailure,
+          isError: true,
+          error: 'Error',
+        ),
+      );
+      return;
+    }
+
+    final url =
+        state.url.value.isNotEmpty ? state.url.value : state.resource!.url;
+    final editedResource = Resource(
+      id: state.resource!.id,
+      name: state.title.value,
+      thumbnail: state.imageUrl.isNotEmpty
+          ? state.imageUrl
+          : state.resource!.thumbnail,
+      description: state.description.value.isNotEmpty
+          ? state.description.value
+          : state.resource!.description,
+      url: url,
+      numberOfRates: state.resource!.numberOfRates,
+      rating: state.resource!.rating,
+      skillTreeIds: state.resourceSkills?.map((e) => e?.id).toList() ?? [],
+      usersWhoRated: state.resource!.usersWhoRated,
+      lastEditBy: usersProfile?.name ?? '',
+      lastEditDate: DateTime.now(),
     );
-    final url = state.url.value.isNotEmpty ? state.url.value : resource?.url;
 
-    debugPrint('url empty?: ${state.url.value.isEmpty}');
-    await MetadataFetch.extract(url.toString()).then((value) {
-      if (value != null && resource != null) {
-        final editedResource = Resource(
-          id: resource.id,
-          name: state.title.value,
-          thumbnail: resource.thumbnail,
-          description: state.description.value,
-          url: url,
-          numberOfRates: resource.numberOfRates,
-          rating: resource.rating,
-          skillTreeIds: state.resourceSkills ?? [],
-          usersWhoRated: resource.usersWhoRated,
-          lastEditBy: usersProfile?.name ?? '',
-          lastEditDate: DateTime.now(),
-        );
-
-        try {
-          _resourcesRepository.createOrUpdateResource(resource: editedResource);
-          emit(state.copyWith(status: FormzStatus.submissionSuccess));
-        } on FirebaseException catch (e) {
-          debugPrint('Error: ${e.message}');
-          emit(state.copyWith(status: FormzStatus.submissionFailure));
-        }
-      }
-    });
+    try {
+      await _resourcesRepository.createOrUpdateResource(
+        resource: editedResource,
+      );
+      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+    } catch (e) {
+      debugPrint('Error: $e');
+      final errorMessage =
+          (e is FirebaseException) ? e.message ?? 'Firebase Error' : 'Error';
+      emit(
+        state.copyWith(
+          status: FormzStatus.submissionFailure,
+          error: errorMessage,
+          isError: true,
+        ),
+      );
+    }
   }
 
   //  Clears the error message
