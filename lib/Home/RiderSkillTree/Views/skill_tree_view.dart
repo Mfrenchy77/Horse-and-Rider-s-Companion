@@ -838,48 +838,53 @@ Widget _skillLevelItem({
 }) {
   return Stack(
     children: [
-      SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 50,
+      Center(
+        child: MaxWidthBox(
+          maxWidth: 1400,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(
+                  height: 50,
+                ),
+                // learningDescription or ProficientDescription
+                // depending on the levelState if No Progress
+                // show the learningDescription and if the levelState
+                // is Learning show the ProficientDescription
+                // if the levelState is Proficient
+                // show a custom message
+                Text(
+                  homeCubit.getLevelProgressDescription(),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 20, right: 20),
+                  child: Divider(),
+                ),
+                smallGap(),
+                Text(state.skill?.description ?? ''),
+                smallGap(),
+                const Padding(
+                  padding: EdgeInsets.only(left: 20, right: 20),
+                  child: Divider(),
+                ),
+                Text('Resources', style: Theme.of(context).textTheme.titleLarge),
+                const Padding(
+                  padding: EdgeInsets.only(left: 20, right: 20),
+                  child: Divider(),
+                ),
+                smallGap(),
+                _skillResourcesList(
+                  state: state,
+                  homeCubit: homeCubit,
+                  context: context,
+                ),
+                smallGap(),
+                const SizedBox(
+                  height: 50,
+                ),
+              ],
             ),
-            // learningDescription or ProficientDescription
-            // depending on the levelState if No Progress
-            // show the learningDescription and if the levelState
-            // is Learning show the ProficientDescription
-            // if the levelState is Proficient
-            // show a custom message
-            Text(
-              homeCubit.getLevelProgressDescription(),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 20, right: 20),
-              child: Divider(),
-            ),
-            smallGap(),
-            Text(state.skill?.description ?? ''),
-            smallGap(),
-            const Padding(
-              padding: EdgeInsets.only(left: 20, right: 20),
-              child: Divider(),
-            ),
-            Text('Resources', style: Theme.of(context).textTheme.titleLarge),
-            const Padding(
-              padding: EdgeInsets.only(left: 20, right: 20),
-              child: Divider(),
-            ),
-            smallGap(),
-            _skillResourcesList(
-              state: state,
-              homeCubit: homeCubit,
-              context: context,
-            ),
-            smallGap(),
-            const SizedBox(
-              height: 50,
-            ),
-          ],
+          ),
         ),
       ),
 
@@ -1116,6 +1121,7 @@ Widget _skillLevelProgressBar({
                     showDialog<AlertDialog>(
                       context: context,
                       builder: (context) => _skillLevelSelectedConfirmation(
+                        state: state,
                         context: context,
                         homeCubit: homeCubit,
                         levelState: LevelState.LEARNING,
@@ -1168,6 +1174,7 @@ Widget _skillLevelProgressBar({
                     showDialog<AlertDialog>(
                       context: context,
                       builder: (context) => _skillLevelSelectedConfirmation(
+                        state: state,
                         context: context,
                         homeCubit: homeCubit,
                         levelState: LevelState.PROFICIENT,
@@ -1218,14 +1225,21 @@ Widget _skillLevelSelectedConfirmation({
   required HomeCubit homeCubit,
   required BuildContext context,
   required LevelState levelState,
+  required HomeState state,
 }) {
   return AlertDialog(
     title: const Text('Confirm Skill Level'),
     content: Text(
-      'Are you sure you want to set the skill level to ${levelState.name}?',
+      'Are you sure you want to set ${state.skill?.skillName} level to ${levelState.name}?',
     ),
     actions: [
-      TextButton(
+      OutlinedButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        child: const Text('No'),
+      ),
+      FilledButton(
         onPressed: () {
           homeCubit.levelSelected(
             levelState: levelState,
@@ -1233,12 +1247,6 @@ Widget _skillLevelSelectedConfirmation({
           Navigator.of(context).pop();
         },
         child: const Text('Yes'),
-      ),
-      TextButton(
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-        child: const Text('No'),
       ),
     ],
   );
