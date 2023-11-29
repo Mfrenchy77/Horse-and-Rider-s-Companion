@@ -710,7 +710,6 @@ Widget _horseLocation({
           },
           builder: (context, controller, focusNode) {
             return TextFormField(
-              onFieldSubmitted: ,
               controller: controller,
               focusNode: focusNode,
               autofocus: true,
