@@ -20,10 +20,25 @@ late final FirebaseAuth auth;
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+ 
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: 'AIzaSyBN43zMspWaixekQY4R5kQb4M50Po5v00M',
+        appId: '1:854658032014:web:856209270067e0fa7204df',
+        messagingSenderId: '854658032014',
+        projectId: 'horse-and-riders-compani-d2bd4',
+        authDomain: 'horse-and-riders-compani-d2bd4.firebaseapp.com',
+        databaseURL: 'https://horse-and-riders-compani-d2bd4.firebaseio.com',
+        storageBucket: 'horse-and-riders-compani-d2bd4.appspot.com',
+        measurementId: 'G-EQJLGV7D0B',
+      ),
+    );
+  } else {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
   // await FirebaseAppCheck.instance.activate(
   //   // You can also use a `ReCaptchaEnterpriseProvider` provider instance as an

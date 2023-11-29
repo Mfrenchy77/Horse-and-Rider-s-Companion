@@ -70,31 +70,26 @@ class EditRiderProfileDialog extends StatelessWidget {
                           _profilePhoto(
                             state: state,
                             context: context,
-                            riderProfile: riderProfile,
                             size: isSmallScreen ? 85 : 150,
                           ),
                           gap(),
                           _riderName(
                             context: context,
                             state: state,
-                            riderProfile: riderProfile,
                           ),
                           gap(),
                           _riderBio(
                             context: context,
                             state: state,
-                            riderProfile: riderProfile,
                           ),
                           gap(),
                           _riderHomeUrl(
                             context: context,
                             state: state,
-                            riderProfile: riderProfile,
                           ),
                           gap(),
                           _riderLocation(
                             context: context,
-                            riderProfile: riderProfile,
                             state: state,
                           ),
                           gap(),
@@ -139,7 +134,6 @@ class EditRiderProfileDialog extends StatelessWidget {
 Widget _riderName({
   required BuildContext context,
   required EditRiderProfileState state,
-  required RiderProfile riderProfile,
 }) {
   return TextFormField(
     onChanged: (value) =>
@@ -159,7 +153,6 @@ Widget _riderName({
 Widget _riderHomeUrl({
   required BuildContext context,
   required EditRiderProfileState state,
-  required RiderProfile riderProfile,
 }) {
   return TextFormField(
     onChanged: (value) =>
@@ -178,7 +171,6 @@ Widget _riderHomeUrl({
 Widget _riderBio({
   required BuildContext context,
   required EditRiderProfileState state,
-  required RiderProfile riderProfile,
 }) {
   return TextFormField(
     onChanged: (value) =>
@@ -202,7 +194,6 @@ Widget _riderBio({
 //geolocator package and them displays it in the text form field as a city name
 Widget _riderLocation({
   required BuildContext context,
-  required RiderProfile riderProfile,
   required EditRiderProfileState state,
 }) {
   return Column(
@@ -323,9 +314,8 @@ Widget _riderLocation({
 }
 
 Widget _profilePhoto({
-  required BuildContext context,
-  required RiderProfile riderProfile,
   required double size,
+  required BuildContext context,
   required EditRiderProfileState state,
 }) {
   final isDark = SharedPrefs().isDarkMode;
@@ -348,7 +338,7 @@ Widget _profilePhoto({
           ),
         smallGap(),
         Text(
-          riderProfile.picUrl != null
+          state.riderProfile?.picUrl != null
               ? 'Tap to Change your Photo'
               : ' Tap to Add a Photo',
         ),

@@ -60,7 +60,7 @@ class ZipcodeRepository {
   ZipcodeRepository({required this.apiKey});
 
   /// The base URL of the Zipcodebase API.
-  final String _baseUrl = 'https://app.zipcodebase.com/api/v1/search';
+  final String _baseUrl = 'https://app.zipcodebase.com/api/v1/';
 
   /// The API key for accessing the Zipcodebase API.
   final String apiKey;
@@ -75,13 +75,13 @@ class ZipcodeRepository {
   /// Returns a [ZipcodeApiResponse] containing the query results, or `null` if
   /// the request fails or the API does not return a successful response.
   Future<ZipcodeApiResponse?> queryZipcode(
-    String postalCode, {
+    String city, {
     String? country,
   }) async {
-    var url = Uri.parse('$_baseUrl?apikey=$apiKey&codes=$postalCode');
+    var url = Uri.parse('${_baseUrl}coe/city?apikey=$apiKey&city=$city');
     if (country != null) {
       url = Uri.parse(
-        '$_baseUrl?apikey=$apiKey&codes=$postalCode&country=$country',
+        '${_baseUrl}code/city?apikey=$apiKey&city=$city&country=$country',
       );
     }
 
@@ -101,5 +101,38 @@ class ZipcodeRepository {
     } catch (e) {
       throw ZipcodeApiException(e.toString());
     }
+  }
+
+  Future<CityQueryResponse?> queryCity(
+    String city, {
+    String? stateName,
+    String? country,
+  }) async {
+    final queryParams = {
+      'apikey': apiKey,
+      'city': city,
+    };
+
+    if (stateName != null) queryParams['state_name'] = stateName;
+    if (country != null) queryParams['country'] = country;
+
+    final url = Uri.https(_baseUrl, '/api/v1/code/city', queryParams);
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        return CityQueryResponse.fromJson(json);
+      } else {
+        throw ZipcodeApiRequestException(response.statusCode);
+      }
+    } catch (e) {
+      throw ZipcodeApiException(e.toString());
+    }
+    //  url = Uri.parse(
+//         '${_baseUrl}
+// search?apikey=$apiKey&codes=$postalCode&country=$country',
+//
   }
 }

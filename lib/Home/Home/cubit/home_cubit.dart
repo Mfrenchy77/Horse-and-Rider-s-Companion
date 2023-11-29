@@ -280,12 +280,10 @@ class HomeCubit extends Cubit<HomeState> {
               );
         break;
       case 'Add Horse':
-        showDialog<AddHorseDialog>(
+        openAddHorseDialog(
           context: context,
-          builder: (context) => AddHorseDialog(
-            riderProfile: _usersProfile,
-            editProfile: false,
-          ),
+          isEdit: false,
+          horseProfile: null,
         );
         break;
     }
@@ -312,15 +310,24 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  /// Opens the Add Horse Dialog
-  void openAddHorseDialog({required BuildContext context}) {
-    showDialog<AddHorseDialog>(
-      context: context,
-      builder: (context) => AddHorseDialog(
-        riderProfile: _usersProfile,
-        editProfile: false,
-      ),
-    );
+  /// Opens the Add/Edit Horse Dialog
+  void openAddHorseDialog({
+    required BuildContext context,
+    required bool isEdit,
+    required HorseProfile? horseProfile,
+  }) {
+    if (state.usersProfile != null) {
+      showDialog<AddHorseDialog>(
+        context: context,
+        builder: (context) => AddHorseDialog(
+          horseProfile: horseProfile,
+          userProfile: state.usersProfile!,
+          editProfile: isEdit,
+        ),
+      );
+    } else {
+      debugPrint('Can not add horse, user profile is null');
+    }
   }
 
   /// Toggles if the user is a trainer or not
@@ -1369,20 +1376,6 @@ class HomeCubit extends Cubit<HomeState> {
       arguments: MessageArguments(
         group: group,
         riderProfile: state.usersProfile,
-      ),
-    );
-  }
-
-  /// Opens the Edit Horse Profile Dialog
-  void editHorseProfile({
-    required BuildContext context,
-  }) {
-    showDialog<AddHorseDialog>(
-      context: context,
-      builder: (context) => AddHorseDialog(
-        riderProfile: _ownersProfile,
-        editProfile: true,
-        horseProfile: _horseProfile,
       ),
     );
   }

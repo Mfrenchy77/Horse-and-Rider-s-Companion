@@ -2,7 +2,7 @@
 // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, debugPrint, defaultTargetPlatform, kIsWeb;
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -18,36 +18,28 @@ class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
-    } else {
-      debugPrint('Firebase Options for Mobile');
-      switch (defaultTargetPlatform) {
-        case TargetPlatform.android:
-          debugPrint('Firebase Options for Android');
-          return android;
-        case TargetPlatform.iOS:
-          debugPrint('Firebase Options for iOS');
-          return ios;
-        case TargetPlatform.macOS:
-          throw UnsupportedError(
-            'DefaultFirebaseOptions have not been configured for macos - '
-            'you can reconfigure this by running the FlutterFire CLI again.',
-          );
-        case TargetPlatform.windows:
-          throw UnsupportedError(
-            'DefaultFirebaseOptions have not been configured for windows - '
-            'you can reconfigure this by running the FlutterFire CLI again.',
-          );
-        case TargetPlatform.linux:
-          throw UnsupportedError(
-            'DefaultFirebaseOptions have not been configured for linux - '
-            'you can reconfigure this by running the FlutterFire CLI again.',
-          );
-        case TargetPlatform.fuchsia:
-         throw UnsupportedError(
-            'DefaultFirebaseOptions have not been configured for Fuchia - '
-            'you can reconfigure this by running the FlutterFire CLI again.',
-          );
-      }
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      case TargetPlatform.iOS:
+        return ios;
+      case TargetPlatform.macOS:
+        return macos;
+      case TargetPlatform.windows:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      case TargetPlatform.linux:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      default:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions are not supported for this platform.',
+        );
     }
   }
 
@@ -78,8 +70,18 @@ class DefaultFirebaseOptions {
     projectId: 'horse-and-riders-compani-d2bd4',
     databaseURL: 'https://horse-and-riders-compani-d2bd4.firebaseio.com',
     storageBucket: 'horse-and-riders-compani-d2bd4.appspot.com',
-    iosClientId:
-        '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
+    iosClientId: '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
+    iosBundleId: 'com.frenchfriedtechnlogy.horseandriderscompanion',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyA3yEV5t3SaDFrviuv98uqXyrdbJdzL8Tg',
+    appId: '1:854658032014:ios:b62fce49ccd4315c7204df',
+    messagingSenderId: '854658032014',
+    projectId: 'horse-and-riders-compani-d2bd4',
+    databaseURL: 'https://horse-and-riders-compani-d2bd4.firebaseio.com',
+    storageBucket: 'horse-and-riders-compani-d2bd4.appspot.com',
+    iosClientId: '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
     iosBundleId: 'com.frenchfriedtechnlogy.horseandriderscompanion',
   );
 }

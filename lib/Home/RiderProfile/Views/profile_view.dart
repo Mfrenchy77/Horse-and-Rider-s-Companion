@@ -239,16 +239,19 @@ Widget _profile({
               mainAxisSize: MainAxisSize.min,
               children: [
                 gap(),
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<AppBloc>().add(AppLogoutRequested());
+                Tooltip(
+                  message: 'Create Account/Login',
+                  child: FilledButton(
+                    onPressed: () {
+                      context.read<AppBloc>().add(AppLogoutRequested());
 
-                    Navigator.pushReplacementNamed(
-                      context,
-                      LoginPage.routeName,
-                    );
-                  },
-                  child: const Text('Create Account/Login'),
+                      Navigator.pushReplacementNamed(
+                        context,
+                        LoginPage.routeName,
+                      );
+                    },
+                    child: const Text('Create Account/Login'),
+                  ),
                 ),
                 gap(),
                 const MaxWidthBox(
@@ -812,7 +815,11 @@ List<Widget>? _appBarActions({
           message: 'Add Horse',
           child: IconButton(
             iconSize: iconSize,
-            onPressed: () => homeCubit.openAddHorseDialog(context: context),
+            onPressed: () => homeCubit.openAddHorseDialog(
+              context: context,
+              horseProfile: null,
+              isEdit: false,
+            ),
             icon: const Icon(HorseAndRiderIcons.horseIconAdd),
           ),
         ),
@@ -835,7 +842,11 @@ List<Widget>? _appBarActions({
                 homeCubit.openLogBook(context);
                 break;
               case 'Add Horse':
-                homeCubit.openAddHorseDialog(context: context);
+                homeCubit.openAddHorseDialog(
+                  context: context,
+                  horseProfile: null,
+                  isEdit: false,
+                );
                 break;
               case 'Settings':
                 Navigator.of(context, rootNavigator: true)
@@ -858,7 +869,6 @@ Widget? _drawer({
   required HomeCubit homeCubit,
 }) {
   if (state.usersProfile != null) {
-    debugPrint('Drawer: ${state.usersProfile!.name}');
     return Drawer(
       child: ListView(
         children: [

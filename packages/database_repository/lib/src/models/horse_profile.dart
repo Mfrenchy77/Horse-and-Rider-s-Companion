@@ -13,8 +13,8 @@ class HorseProfile {
     this.gender,
     this.picUrl,
     this.height,
+    this.zipCode,
     this.nickname,
-    this.location,
     this.lastEditBy,
     this.dateOfBirth,
     this.skillLevels,
@@ -33,18 +33,18 @@ class HorseProfile {
   final String name;
   String? breed = '';
   String? color = '';
-  GeoPoint? location;
   String? gender = '';
   String? height = '';
   String? picUrl = '';
+  String? zipCode = '';
   String? locationName;
+  String currentOwnerId;
   DateTime? dateOfBirth;
   String? nickname = '';
   int? purchasePrice = 0;
   DateTime? lastEditDate;
   String? lastEditBy = '';
   DateTime? dateOfPurchase;
-  String currentOwnerId;
   String? currentOwnerName;
   List<BaseListItem>? notes = [];
   List<SkillLevel>? skillLevels = [];
@@ -64,8 +64,8 @@ class HorseProfile {
       picUrl: data['picUrl'] as String?,
       gender: data['gender'] as String?,
       height: data['height'] as String?,
+      zipCode: data['zipCode'] as String?,
       nickname: data['nickname'] as String?,
-      location: data['location'] as GeoPoint?,
       lastEditBy: data['lastEditBy'] as String?,
       purchasePrice: data['purchasePrice'] as int?,
       locationName: data['locationName'] as String?,
@@ -95,15 +95,15 @@ class HorseProfile {
       if (picUrl != null) 'picUrl': picUrl,
       if (gender != null) 'gender': gender,
       if (height != null) 'height': height,
+      if (zipCode != null) 'zipCode': zipCode,
       if (nickname != null) 'nickname': nickname,
-      if (location != null) 'location': location,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
       if (locationName != null) 'locationName': locationName,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
-      if (currentOwnerName != null) 'currentOwnerName': currentOwnerName,
       if (purchasePrice != null) 'purchasePrice': purchasePrice,
       if (dateOfPurchase != null) 'dateOfPurchase': dateOfPurchase,
+      if (currentOwnerName != null) 'currentOwnerName': currentOwnerName,
       if (notes != null)
         'notes': List<dynamic>.from(notes!.map((e) => e.toJson())),
       if (instructors != null)
@@ -111,6 +111,52 @@ class HorseProfile {
       if (skillLevels != null)
         'skillLevels': skillLevels?.map((e) => e.toFirestore()).toList(),
     };
+  }
+
+  HorseProfile copyWith({
+    String? id,
+    String? name,
+    String? breed,
+    String? color,
+    String? gender,
+    String? height,
+    String? picUrl,
+    String? zipCode,
+    String? nickname,
+    int? purchasePrice,
+    String? lastEditBy,
+    String? locationName,
+    DateTime? dateOfBirth,
+    DateTime? lastEditDate,
+    String? currentOwnerId,
+    DateTime? dateOfPurchase,
+    String? currentOwnerName,
+    List<BaseListItem>? notes,
+    List<SkillLevel>? skillLevels,
+    List<BaseListItem>? instructors,
+  }) {
+    return HorseProfile(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      breed: breed ?? this.breed,
+      color: color ?? this.color,
+      notes: notes ?? this.notes,
+      gender: gender ?? this.gender,
+      height: height ?? this.height,
+      picUrl: picUrl ?? this.picUrl,
+      zipCode: zipCode ?? this.zipCode,
+      nickname: nickname ?? this.nickname,
+      lastEditBy: lastEditBy ?? this.lastEditBy,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      skillLevels: skillLevels ?? this.skillLevels,
+      instructors: instructors ?? this.instructors,
+      lastEditDate: lastEditDate ?? this.lastEditDate,
+      locationName: locationName ?? this.locationName,
+      purchasePrice: purchasePrice ?? this.purchasePrice,
+      currentOwnerId: currentOwnerId ?? this.currentOwnerId,
+      dateOfPurchase: dateOfPurchase ?? this.dateOfPurchase,
+      currentOwnerName: currentOwnerName ?? this.currentOwnerName,
+    );
   }
 }
 

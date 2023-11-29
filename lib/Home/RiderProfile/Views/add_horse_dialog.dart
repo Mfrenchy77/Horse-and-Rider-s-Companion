@@ -7,8 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/cubit/add_horse_dialog_cubit.dart';
-import 'package:horseandriderscompanion/Home/RiderProfile/cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
@@ -18,26 +18,23 @@ import 'package:numberpicker/numberpicker.dart';
 class AddHorseDialog extends StatelessWidget {
   const AddHorseDialog({
     super.key,
-    required RiderProfile? riderProfile,
     required bool editProfile,
-    this.horseProfile,
+    required RiderProfile userProfile,
+    required HorseProfile? horseProfile,
   })  : _editProfile = editProfile,
-        _riderProfile = riderProfile;
+        _usersProfile = userProfile,
+        _horseProfile = horseProfile;
 
-  final RiderProfile? _riderProfile;
   final bool _editProfile;
-  final HorseProfile? horseProfile;
+  final RiderProfile _usersProfile;
+  final HorseProfile? _horseProfile;
 
   @override
   Widget build(BuildContext context) {
-    
-// if horseProfile is null then we are creating a new horse profile 
+// if horseProfile is null then we are creating a new horse profile
 // and editProfile should be false
 
-
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
-    final searchText = TextEditingController();
-    final breedController = TextEditingController();
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider(create: (context) => KeysRepository()),
@@ -47,9 +44,9 @@ class AddHorseDialog extends StatelessWidget {
       ],
       child: BlocProvider(
         create: (context) => AddHorseDialogCubit(
-          riderProfile: _riderProfile,
+          usersProfile: _usersProfile,
+          horseProfile: _horseProfile,
           keysRepository: context.read<KeysRepository>(),
-          cloudRepository: context.read<CloudRepository>(),
           horseProfileRepository: context.read<HorseProfileRepository>(),
           riderProfileRepository: context.read<RiderProfileRepository>(),
         ),
@@ -64,13 +61,12 @@ class AddHorseDialog extends StatelessWidget {
               appBar: AppBar(
                 title: Text(
                   _editProfile
-                      ? 'Edit Horse: ${horseProfile!.name}'
+                      ? 'Edit Horse: ${state.horseProfile?.name}'
                       : 'Create New Horse Profile',
                 ),
               ),
               body: AlertDialog(
                 insetPadding: const EdgeInsets.all(10),
-                // backgroundColor: COLOR_CONST.DEFAULT_5,
                 scrollable: true,
                 // titleTextStyle: FONT_CONST.MEDIUM_WHITE,
                 // title: const Text('Create New Horse Profile'),
@@ -79,14 +75,13 @@ class AddHorseDialog extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           ///   Horse photo
-                          _horsePhoto(context, 85, horseProfile),
+                          _horsePhoto(context: context, size: 85, state: state),
                           gap(),
 
                           ///   Horse Name
                           _horseName(
                             context: context,
                             state: state,
-                            horseProfile: horseProfile,
                           ),
                           gap(),
 
@@ -94,14 +89,11 @@ class AddHorseDialog extends StatelessWidget {
                           _horseNickName(
                             context: context,
                             state: state,
-                            horseProfile: horseProfile,
                           ),
                           gap(),
 
                           ///  Horse Location
                           _horseLocation(
-                            searchText: searchText,
-                            horseProfile: horseProfile,
                             context: context,
                             state: state,
                           ),
@@ -110,23 +102,19 @@ class AddHorseDialog extends StatelessWidget {
                           ///   Horse Gender
                           _horseGender(
                             state: state,
-                            horseProfile: horseProfile,
                             context: context,
                           ),
 
                           ///   Horse Breed
                           _horseBreed(
-                            controller: breedController,
                             state: state,
-                            buildContext: context,
-                            horseProfile: horseProfile,
+                            context: context,
                           ),
                           gap(),
 
                           ///   Horse Date of Birth
 
                           _horseDateOfBirth(
-                            horseProfile: horseProfile,
                             state: state,
                             context: context,
                           ),
@@ -135,7 +123,6 @@ class AddHorseDialog extends StatelessWidget {
                           ///   Horse Color
                           _horseColor(
                             state: state,
-                            horseProfile: horseProfile,
                             context: context,
                           ),
                           gap(),
@@ -143,7 +130,6 @@ class AddHorseDialog extends StatelessWidget {
                           ///   Horse Height
                           _horseHeight(
                             state: state,
-                            horseProfile: horseProfile,
                             buildContext: context,
                           ),
                           gap(),
@@ -153,7 +139,6 @@ class AddHorseDialog extends StatelessWidget {
 
                           ///   Horse Purchase Date
                           _horsePurchaseDate(
-                            horseProfile: horseProfile,
                             context: context,
                             state: state,
                           ),
@@ -164,14 +149,12 @@ class AddHorseDialog extends StatelessWidget {
                           _horsePurchasePrice(
                             context: context,
                             state: state,
-                            horseProfile: horseProfile,
                           ),
 
                           errorText(state: state),
 
                           ///   Submit Horse Button
                           _horseSubmitButton(
-                            horseProfile: horseProfile,
                             isEdit: _editProfile,
                             context: context,
                             state: state,
@@ -189,7 +172,11 @@ class AddHorseDialog extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
                               gap(),
-                              _horsePhoto(context, 150, horseProfile),
+                              _horsePhoto(
+                                context: context,
+                                size: 150,
+                                state: state,
+                              ),
                               gap(),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -197,7 +184,6 @@ class AddHorseDialog extends StatelessWidget {
                                   gap(),
                                   Expanded(
                                     child: _horseName(
-                                      horseProfile: horseProfile,
                                       context: context,
                                       state: state,
                                     ),
@@ -205,7 +191,6 @@ class AddHorseDialog extends StatelessWidget {
                                   gap(),
                                   Expanded(
                                     child: _horseNickName(
-                                      horseProfile: horseProfile,
                                       context: context,
                                       state: state,
                                     ),
@@ -215,8 +200,6 @@ class AddHorseDialog extends StatelessWidget {
                               ),
                               gap(),
                               _horseLocation(
-                                searchText: searchText,
-                                horseProfile: horseProfile,
                                 context: context,
                                 state: state,
                               ),
@@ -226,24 +209,19 @@ class AddHorseDialog extends StatelessWidget {
                                 children: [
                                   _horseGender(
                                     state: state,
-                                    horseProfile: horseProfile,
                                     context: context,
                                   ),
                                   gap(),
                                   Expanded(
                                     child: _horseBreed(
-                                      controller: breedController,
                                       state: state,
-                                      horseProfile: horseProfile,
-                                      buildContext: context,
+                                      context: context,
                                     ),
                                   ),
                                   gap(),
                                   Expanded(
                                     child: _horseDateOfBirth(
                                       context: context,
-                                      horseProfile:
-                                          horseProfile as HorseProfile,
                                       state: state,
                                     ),
                                   ),
@@ -258,7 +236,6 @@ class AddHorseDialog extends StatelessWidget {
                                     child: _horseColor(
                                       state: state,
                                       context: context,
-                                      horseProfile: horseProfile,
                                     ),
                                   ),
                                   gap(),
@@ -266,7 +243,6 @@ class AddHorseDialog extends StatelessWidget {
                                     child: _horseHeight(
                                       state: state,
                                       buildContext: context,
-                                      horseProfile: horseProfile,
                                     ),
                                   ),
                                   // gap(),
@@ -286,14 +262,12 @@ class AddHorseDialog extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: _horsePurchasePrice(
-                                      horseProfile: horseProfile,
                                       context: context,
                                       state: state,
                                     ),
                                   ),
                                   Expanded(
                                     child: _horsePurchaseDate(
-                                      horseProfile: horseProfile,
                                       context: context,
                                       state: state,
                                     ),
@@ -302,7 +276,6 @@ class AddHorseDialog extends StatelessWidget {
                               ),
                               errorText(state: state),
                               _horseSubmitButton(
-                                horseProfile: horseProfile,
                                 isEdit: _editProfile,
                                 context: context,
                                 state: state,
@@ -358,7 +331,6 @@ Widget _didPurchaseHorse({
 }
 
 Widget _horseSubmitButton({
-  required HorseProfile? horseProfile,
   required bool isEdit,
   required BuildContext context,
   required AddHorseDialogState state,
@@ -370,24 +342,24 @@ Widget _horseSubmitButton({
         // :
         () {
       isEdit
-          ? context
-              .read<AddHorseDialogCubit>()
-              .editHorseProfile(editedHorseProfile: horseProfile)
+          ? context.read<AddHorseDialogCubit>().editHorseProfile()
           : context.read<AddHorseDialogCubit>().createHorseProfile();
     },
     child: state.status == FormzStatus.submissionInProgress
         ? const CircularProgressIndicator()
         : Text(
-            isEdit ? "Update ${horseProfile?.name}'s Profile" : 'Submit Horse',
+            isEdit
+                ? "Update ${state.horseProfile?.name}'s Profile"
+                : 'Submit Horse',
           ),
   );
 }
 
-Widget _horsePhoto(
-  BuildContext context,
-  double size,
-  HorseProfile? horseProfile,
-) {
+Widget _horsePhoto({
+  required BuildContext context,
+  required double size,
+  required AddHorseDialogState state,
+}) {
   final isDark = SharedPrefs().isDarkMode;
   return InkWell(
     onTap: () => context.read<AddHorseDialogCubit>().horsePicButtonClicked(),
@@ -395,7 +367,7 @@ Widget _horsePhoto(
       children: [
         ///   Image
         CachedNetworkImage(
-          imageUrl: '${horseProfile?.picUrl}',
+          imageUrl: '${state.horseProfile?.picUrl}',
           placeholder: (context, url) =>
               const Image(image: AssetImage('assets/horse_icon_01.png')),
           errorWidget: (context, url, error) =>
@@ -423,7 +395,6 @@ Widget _horsePhoto(
 Widget _horseName({
   required BuildContext context,
   required AddHorseDialogState state,
-  required HorseProfile? horseProfile,
 }) {
   return TextFormField(
     onChanged: (value) =>
@@ -431,7 +402,7 @@ Widget _horseName({
     keyboardType: TextInputType.name,
     textInputAction: TextInputAction.next,
     textCapitalization: TextCapitalization.words,
-    initialValue: horseProfile?.name ?? state.horseName.value,
+    initialValue: state.horseName.value,
     decoration: const InputDecoration(
       labelText: "Horse's Name",
       hintText: "Enter New Horse's Name",
@@ -441,12 +412,11 @@ Widget _horseName({
 }
 
 Widget _horseNickName({
-  required HorseProfile? horseProfile,
   required BuildContext context,
   required AddHorseDialogState state,
 }) {
   return TextFormField(
-    initialValue: horseProfile?.nickname ?? state.horseNickname.value,
+    initialValue: state.horseNickname.value,
     onChanged: (value) =>
         context.read<AddHorseDialogCubit>().horseNicknameChanged(value),
     keyboardType: TextInputType.name,
@@ -460,101 +430,59 @@ Widget _horseNickName({
   );
 }
 
-// TODO(mfrench77): Having issues with setting the ititial value
-//and then updating it with a new one
-// it keeps wanting to reload the old value
 Widget _horseBreed({
-  required TextEditingController controller,
-  required HorseProfile? horseProfile,
   required AddHorseDialogState state,
-  required BuildContext buildContext,
+  required BuildContext context,
 }) {
-  return TypeAheadField(
-    textFieldConfiguration: TextFieldConfiguration(
-      controller: controller,
-      keyboardType: TextInputType.name,
-      textCapitalization: TextCapitalization.words,
-      // onChanged: (value) =>
-      //     buildContext.read<AddHorseDialogCubit>().horseBreedChanged(value),
-      decoration: const InputDecoration(
-        icon: Icon(HorseAndRiderIcons.horseIcon),
-        labelText: 'Horse Breed',
-        hintText: 'Enter horse breed',
-      ),
-    ),
-    onSuggestionSelected: (suggestion) {
-      controller.text = suggestion;
-      buildContext.read<AddHorseDialogCubit>().horseBreedChanged(suggestion);
+  final breedController = TextEditingController()
+    ..text = state.horseProfile?.breed ?? '';
+  return TypeAheadField<String>(
+    suggestionsCallback: (pattern) {
+      return HorseDetails.breeds
+          .where(
+            (item) => item.toLowerCase().startsWith(pattern.toLowerCase()),
+          )
+          .toList();
     },
-    suggestionsCallback: (pattern) => buildContext
-        .read<AddHorseDialogCubit>()
-        .getAutocompleteBreedSuggestions(pattern),
-    itemBuilder: (context, itemData) => ListTile(
-      title: Text(itemData),
+    itemBuilder: (context, suggestion) {
+      return ListTile(
+        title: Text(suggestion),
+      );
+    },
+    onSelected: (suggestion) {
+      breedController.text = suggestion;
+      context.read<AddHorseDialogCubit>().horseBreedChanged(suggestion);
+    },
+    builder: (context, controller, focusNode) {
+      return TextField(
+        controller: controller,
+        focusNode: focusNode,
+        decoration: const InputDecoration(
+          labelText: "Horse's Breed",
+          hintText: "Enter Horse's Breed",
+          icon: Icon(HorseAndRiderIcons.horseIcon),
+        ),
+      );
+    },
+    emptyBuilder: (context) => const Padding(
+      padding: EdgeInsets.all(8),
+      child: Text('No breeds found.'),
     ),
   );
-
-  // TextFormField(
-  //   controller: controller,
-  //   autofillHints: ,
-  //   decoration: const InputDecoration(
-  //     labelText: 'Horse Breed',
-  //     prefixIcon: Icon(HorseAndRiderIcons.horseIcon),
-  //     hintText: 'Enter horse breed',
-  //   ),
-  //   validator: (value) {
-  //     if (value == null || value.isEmpty) {
-  //       return 'Please enter a horse breed';
-  //     }
-  //     return null;
-  //   },
-  //   onChanged: (value) {
-  //     // Get the autocomplete suggestions and rebuild the widget
-  //     final suggestions = buildContext
-  //         .read<AddHorseDialogCubit>()
-  //         .getAutocompleteBreedSuggestions(value);
-  //     if (suggestions.isNotEmpty) {
-  //       showModalBottomSheet<ListView>(
-  //         context: buildContext,
-  //         builder: (context) {
-  //           return ListView.builder(
-  //             shrinkWrap: true,
-  //             itemCount: suggestions.length,
-  //             itemBuilder: (context, index) {
-  //               return ListTile(
-  //                 title: Text(suggestions[index]),
-  //                 onTap: () {
-  //                   buildContext
-  //                       .read<AddHorseDialogCubit>()
-  //                       .horseBreedChanged(suggestions[index]);
-  //                   controller.text = suggestions[index];
-  //                   Navigator.of(context).pop();
-  //                 },
-  //               );
-  //             },
-  //           );
-  //         },
-  //       );
-  //     }
-  //   },
-  //   keyboardType: TextInputType.text,
-  //   textCapitalization: TextCapitalization.words,
-  // );
 }
 
 Widget _horseDateOfBirth({
   required BuildContext context,
   required AddHorseDialogState state,
-  required HorseProfile? horseProfile,
 }) {
   final initialDate = state.dateOfBirth != null
       ? DateTime.fromMillisecondsSinceEpoch(state.dateOfBirth as int)
       : DateTime.now();
 
   final dateText = TextEditingController(
-    text: horseProfile?.dateOfBirth != null
+    text: state.horseProfile?.dateOfBirth != null
         ? DateFormat('MMMM dd yyyy')
-            .format(horseProfile?.dateOfBirth as DateTime)
+            .format(state.horseProfile?.dateOfBirth as DateTime)
         : state.dateOfBirth != null
             ? DateFormat('MMMM dd yyyy').format(
                 DateTime.fromMillisecondsSinceEpoch(state.dateOfBirth as int),
@@ -578,8 +506,8 @@ Widget _horseDateOfBirth({
         debugPrint('DateofBirth: $value');
         if (value != null) {
           dateText.text = value.toString();
-          if (horseProfile != null) {
-            horseProfile.dateOfBirth = value;
+          if (state.horseProfile != null) {
+            state.horseProfile?.dateOfBirth = value;
           }
           context.read<AddHorseDialogCubit>().horseDateOfBirthChanged(value);
         }
@@ -594,41 +522,43 @@ Widget _horseDateOfBirth({
 }
 
 Widget _horseColor({
-  required HorseProfile? horseProfile,
   required BuildContext context,
   required AddHorseDialogState state,
 }) {
-  final horseColorOptions = <String>[
-    'Appaloosa',
-    'Buckskin',
-    'Black',
-    'Bay',
-    'Chestnut',
-    'Dun',
-    'Grullo',
-    'Gray',
-    'Grey',
-    'Palomino',
-    'Pinto',
-    'Roan',
-    'Sorrel',
-    'White',
-    'Other',
-  ];
-  return DropdownButtonFormField(
-    value: horseProfile?.color ?? 'Other',
-    onChanged: (value) =>
-        context.read<AddHorseDialogCubit>().horseColorChanged(value as String),
-    items: horseColorOptions.map((String value) {
-      return DropdownMenuItem<String>(
-        value: value,
-        child: Text(value),
+  final colorController = TextEditingController()
+    ..text = state.horseProfile?.color ?? '';
+
+  return TypeAheadField<String>(
+    suggestionsCallback: (pattern) {
+      return HorseDetails.colors
+          .where(
+            (item) => item.toLowerCase().startsWith(pattern.toLowerCase()),
+          )
+          .toList();
+    },
+    itemBuilder: (context, suggestion) {
+      return ListTile(
+        title: Text(suggestion),
       );
-    }).toList(),
-    decoration: const InputDecoration(
-      labelText: "Horse's Color",
-      hintText: "Choose Horse's color",
-      icon: Icon(Icons.color_lens),
+    },
+    onSelected: (suggestion) {
+      colorController.text = suggestion;
+      context.read<AddHorseDialogCubit>().horseColorChanged(suggestion);
+    },
+    builder: (context, controller, focusNode) {
+      return TextField(
+        controller: controller,
+        focusNode: focusNode,
+        decoration: const InputDecoration(
+          labelText: "Horse's Color",
+          hintText: "Enter Horse's color",
+          icon: Icon(Icons.color_lens),
+        ),
+      );
+    },
+    emptyBuilder: (context) => const Padding(
+      padding: EdgeInsets.all(8),
+      child: Text('No colors found.'),
     ),
   );
 }
@@ -636,22 +566,14 @@ Widget _horseColor({
 //Widget that allows user to pick the gender of the horse and offers a list of
 //options to choose from  Mare, Filly, Colt, Gelding, Stallion,
 Widget _horseGender({
-  required HorseProfile? horseProfile,
   required BuildContext context,
   required AddHorseDialogState state,
 }) {
-  final genderChoices = <String>[
-    'Mare',
-    'Filly',
-    'Colt',
-    'Gelding',
-    'Stallion',
-  ];
   return DropdownButtonFormField(
-    value: horseProfile?.gender ?? 'Mare',
+    value: state.horseProfile?.gender ?? 'Mare',
     onChanged: (value) =>
         context.read<AddHorseDialogCubit>().horseGenderChanged(value as String),
-    items: genderChoices
+    items: HorseDetails.genders
         .map(
           (e) => DropdownMenuItem(
             value: e,
@@ -669,17 +591,16 @@ Widget _horseGender({
 }
 
 Widget _horsePurchaseDate({
-  required HorseProfile? horseProfile,
   required BuildContext context,
   required AddHorseDialogState state,
 }) {
   final initialDate = state.dateOfPurchase != null
       ? DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int)
       : DateTime.now();
-  if (horseProfile != null) {
+  if (state.horseProfile != null) {
     context
         .read<AddHorseDialogCubit>()
-        .horseDateOfPurchaseChanged(horseProfile.dateOfPurchase);
+        .horseDateOfPurchaseChanged(state.horseProfile?.dateOfPurchase);
   }
 
   final dateOfPurchase = state.dateOfPurchase != null
@@ -709,8 +630,8 @@ Widget _horsePurchaseDate({
         ).then((value) {
           if (value != null) {
             dateText.text = value.toString();
-            if (horseProfile != null) {
-              horseProfile.dateOfPurchase = value;
+            if (state.horseProfile != null) {
+              state.horseProfile?.dateOfPurchase = value;
             }
             context
                 .read<AddHorseDialogCubit>()
@@ -728,78 +649,256 @@ Widget _horsePurchaseDate({
 }
 
 Widget _horseLocation({
-  required HorseProfile? horseProfile,
   required BuildContext context,
   required AddHorseDialogState state,
-  required TextEditingController searchText,
 }) {
-  searchText.text = horseProfile?.locationName ?? state.locationName;
   return Column(
     children: [
-      TextFormField(
-        controller: searchText,
-        onChanged: (value) =>
-            context.read<AddHorseDialogCubit>().horseLocationChanged(value),
-        keyboardType: TextInputType.streetAddress,
-        textInputAction: TextInputAction.next,
-        textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(
-          labelText: "Horse's Location",
-          hintText: "Enter Horse's Location",
-          icon: Icon(Icons.location_on),
-        ),
-      ),
-      if (state.autoCompleteStatus == AutoCompleteStatus.loading)
-        const CircularProgressIndicator()
-      else if (state.autoCompleteStatus == AutoCompleteStatus.success)
-        Card(
-          elevation: 8,
-          child: SizedBox(
-            width: double.maxFinite,
-            height: 200,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: state.prediction.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  onTap: () async {
-                    await context
-                        .read<AddHorseDialogCubit>()
-                        .getGeoPoint(state.prediction[index]);
-
-                    searchText.text = state.prediction[index].description ?? '';
-                    debugPrint('location name: ${state.locationName}');
-                  },
-                  title: Text(state.prediction[index].description ?? ''),
-                );
-              },
+      // Country selection
+      TypeAheadField<Country>(
+        suggestionsCallback: (pattern) async {
+          final countries =
+              await context.read<AddHorseDialogCubit>().getCountries();
+          // Filter the country names based on the pattern
+          return countries
+              .where(
+                (country) => country.name
+                    .toLowerCase()
+                    .startsWith(pattern.toLowerCase()),
+              )
+              .toList();
+        },
+        builder: (context, controller, focusNode) {
+          return TextField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: const InputDecoration(
+              border: UnderlineInputBorder(),
+              labelText: 'Country',
             ),
-          ),
-        )
-      else if (state.autoCompleteStatus == AutoCompleteStatus.error)
-        ColoredBox(
-          color: Colors.red,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child:
-                Text(state.error, style: const TextStyle(color: Colors.white)),
-          ),
+          );
+        },
+        itemBuilder: (context, Country country) {
+          return ListTile(
+            title: Text(country.name),
+            subtitle: Text(country.iso2),
+          );
+        },
+        onSelected: (country) {
+          context.read<AddHorseDialogCubit>().countryChanged(
+                countryIso: country.iso2,
+                countryName: country.name,
+              );
+        },
+      ),
+
+      // State selection (visible if a country is selected)
+      if (state.selectedCountry != null)
+        TypeAheadField<StateLocation>(
+          suggestionsCallback: (pattern) async {
+            final states = await context
+                .read<AddHorseDialogCubit>()
+                .getStates(countryIso: state.countryIso!);
+            // Filter the state names based on the pattern
+            return states
+                .where(
+                  (state) => state.name
+                      .toLowerCase()
+                      .startsWith(pattern.toLowerCase()),
+                )
+                .toList();
+          },
+          builder: (context, controller, focusNode) {
+            return TextFormField(
+              onFieldSubmitted: ,
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: true,
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: 'State',
+              ),
+            );
+          },
+          itemBuilder: (context, state) {
+            return ListTile(
+              title: Text(state.name),
+              subtitle: Text(state.iso2),
+            );
+          },
+          onSelected: (state) {
+            context.read<AddHorseDialogCubit>().stateChanged(
+                  stateName: state.name,
+                  stateId: state.id,
+                );
+          },
+        ),
+
+      // City selection (visible if a state is selected)
+      if (state.selectedState != null)
+        TypeAheadField<City>(
+          suggestionsCallback: (pattern) async {
+            final cities = await context.read<AddHorseDialogCubit>().getCities(
+                  countryIso: state.countryIso!,
+                  stateId: state.stateId!,
+                );
+            // Filter the city names based on the pattern
+            return cities
+                .where(
+                  (city) =>
+                      city.name.toLowerCase().startsWith(pattern.toLowerCase()),
+                )
+                .toList();
+          },
+          builder: (context, controller, focusNode) {
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: true,
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: 'City',
+              ),
+            );
+          },
+          itemBuilder: (context, city) {
+            return ListTile(
+              title: Text(city.name),
+              subtitle: Text(city.id.toString()),
+            );
+          },
+          onSelected: (city) {
+            context.read<AddHorseDialogCubit>().cityChanged(
+                  city: city.name,
+                );
+          },
         ),
     ],
   );
+
+//   Column(
+//     mainAxisSize: MainAxisSize.min,
+//     children: [
+//       Visibility(
+//         visible: !state.isLocationSearch,
+//         child: InkWell(
+//           onTap: () {
+//             context.read<AddHorseDialogCubit>().toggleLocationSearch();
+//           },
+//           child: Row(
+//             children: [
+//               const Icon(Icons.location_on),
+//               smallGap(),
+//               Padding(
+//                 padding: const EdgeInsets.all(8),
+//                 child: Text(state.locationName),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//       Visibility(
+//         visible: state.isLocationSearch,
+//         child: TextFormField(
+//           enabled: true,
+//           onChanged: (value) {
+//             context.read<AddHorseDialogCubit>().horseZipChanged(value);
+//           },
+//           keyboardType: TextInputType.number,
+//           textInputAction: TextInputAction.search,
+//           decoration: InputDecoration(
+//             labelText: "Horse's Location",
+//             hintText: 'Enter Zip Code',
+//             prefixIcon: IconButton(
+//               onPressed: () {
+//                 context.read<AddHorseDialogCubit>().toggleLocationSearch();
+//               },
+//               icon: const Icon(Icons.close),
+//             ),
+//             icon: const Icon(Icons.location_on),
+//             suffixIcon: IconButton(
+//               onPressed: () {
+// // search for location
+//                 context
+//                     .read<AddHorseDialogCubit>()
+//                     .searchForLocation()
+//                     .then((value) {
+//                   debugPrint('Search for location completed');
+//                 });
+//               },
+//               icon: const Icon(Icons.search),
+//             ),
+//           ),
+//         ),
+//       ),
+//       if (state.autoCompleteStatus == AutoCompleteStatus.loading)
+//         const CircularProgressIndicator()
+//       else if (state.autoCompleteStatus == AutoCompleteStatus.success)
+//         SizedBox(
+//           width: double.maxFinite,
+//           height: 200,
+//           child: ListView.builder(
+//             shrinkWrap: true,
+//             itemCount: state.prediction?.results.length ?? 0,
+//             itemBuilder: (context, index) {
+//               final postalCode =
+//                   state.prediction?.results.keys.elementAt(index) ?? '';
+//               final locations = state.prediction?.results[postalCode];
+//               final controller = ExpansionTileController();
+//               return ExpansionTile(
+//                 controller: controller,
+//                 initiallyExpanded: true,
+//                 title: Text('Postal Code: $postalCode'),
+//                 children: locations
+//                         ?.map(
+//                           (location) => ListTile(
+//                             title: Text(location.city),
+//                             subtitle: Text(
+//                               '${location.city}, ${location.state}',
+//                             ),
+//                             onTap: () {
+//                               context
+//                                   .read<AddHorseDialogCubit>()
+//                                   .toggleLocationSearch();
+//                               controller.collapse();
+//                               debugPrint('Location Selected ${location.city}');
+//                               context
+//                                   .read<AddHorseDialogCubit>()
+//                                   .locationSelected(
+//                                     locationName:
+//                                         '${location.city}, ${location.state}',
+//                                     selectedZipCode: postalCode,
+//                                   );
+//                             },
+//                           ),
+//                         )
+//                         .toList() ??
+//                     [const Text('No locations found')],
+//               );
+//             },
+//           ),
+//         )
+//       else if (state.autoCompleteStatus == AutoCompleteStatus.error)
+//         ColoredBox(
+//           color: Colors.red,
+//           child: Padding(
+//             padding: const EdgeInsets.all(8),
+//             child:
+//                 Text(state.error, style: const TextStyle(color: Colors.white)),
+//           ),
+//         ),
+//     ],
+//   );
 }
 
 Widget _horsePurchasePrice({
-  required HorseProfile? horseProfile,
   required BuildContext context,
   required AddHorseDialogState state,
 }) {
   return Visibility(
     visible: state.isPurchacedStatus == IsPurchacedStatus.isPurchased,
     child: TextFormField(
-      initialValue: horseProfile?.purchasePrice != null
-          ? horseProfile?.purchasePrice.toString()
-          : '',
+      initialValue: state.horseProfile?.purchasePrice.toString(),
       onChanged: (value) {
         final price = int.parse(value);
         context.read<AddHorseDialogCubit>().horsePurchasePriceChanged(price);
@@ -815,25 +914,27 @@ Widget _horsePurchasePrice({
   );
 }
 
+//FIXME: Lets make this centemeter by default and hands by choice in the settings
 Widget _horseHeight({
-  required HorseProfile? horseProfile,
   required BuildContext buildContext,
   required AddHorseDialogState state,
 }) {
   final isDark = SharedPrefs().isDarkMode;
   final heightText = TextEditingController(
-    text: horseProfile != null ? horseProfile.height : state.height.value,
+    text: state.horseProfile != null
+        ? state.horseProfile?.height
+        : state.height.value,
   );
 
-  var handsValue = horseProfile != null
+  var handsValue = state.horseProfile != null
       ? int.parse(
-          horseProfile.height?.toString().substring(0, 2) ?? '14',
+          state.horseProfile?.height?.toString().substring(0, 2) ?? '14',
         )
       : state.handsValue;
 
-  var inchesValue = horseProfile != null
+  var inchesValue = state.horseProfile != null
       ? int.parse(
-          horseProfile.height?.toString().substring(3) ?? '0',
+          state.horseProfile?.height?.toString().substring(3) ?? '0',
         )
       : state.inchesValue;
 
@@ -892,8 +993,8 @@ Widget _horseHeight({
                                     .handsChanged(value);
                                 handsValue = value;
                                 height = '$handsValue.$inchesValue';
-                                if (horseProfile != null) {
-                                  horseProfile.height = height;
+                                if (state.horseProfile != null) {
+                                  state.horseProfile?.height = height;
                                 }
                                 buildContext
                                     .read<AddHorseDialogCubit>()
@@ -930,6 +1031,7 @@ Widget _horseHeight({
                                 height = '$handsValue.$inchesValue';
                                 debugPrint(height);
                                 heightText.text = height;
+                                final horseProfile = state.horseProfile;
                                 if (horseProfile != null) {
                                   horseProfile.height = height;
                                 }
@@ -951,7 +1053,7 @@ Widget _horseHeight({
       ).then((value) {
         debugPrint('Value: $value');
         height = '$handsValue.$inchesValue';
-        horseProfile?.height = height;
+        state.horseProfile?.copyWith(height: height);
         buildContext.read<AddHorseDialogCubit>().horseHeightChanged(height);
         heightText.text = state.height.value;
         // setState(() {

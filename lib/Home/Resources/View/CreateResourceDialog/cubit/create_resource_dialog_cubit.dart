@@ -5,8 +5,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/CommonWidgets/web_page_data_fetch.dart';
 import 'package:horseandriderscompanion/utils/view_utils.dart';
-import 'package:metadata_fetch/metadata_fetch.dart';
 
 part 'create_resource_dialog_state.dart';
 
@@ -52,7 +52,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         status: Formz.validate([url]),
       ),
     );
-    fetchUrl();
+    if (!state.url.invalid) {
+      fetchUrl();
+    } else {
+      debugPrint('$value is not validated');
+    }
   }
 
   ///   Called when Editing a Resource and the
@@ -146,26 +150,25 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     debugPrint('fetchUrl: $url');
     emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
 
+    final metadata = WebPageDataFetcher(url);
     try {
-      final metadata = await MetadataFetch.extract(url);
-      if (metadata != null) {
-        final title = SingleWord.dirty(metadata.title ?? '');
-        final description = SingleWord.dirty(metadata.description ?? '');
-        final imageUrl = _checkAndModifyUrl(metadata.image ?? '');
-        debugPrint('imageUrl: $imageUrl');
-        emit(
-          state.copyWith(
-            urlFetchedStatus: UrlFetchedStatus.fetched,
-            url: Url.dirty(url),
-            title: title,
-            description: description,
-            imageUrl: imageUrl,
-            status: Formz.validate([state.url, title, description]),
-          ),
-        );
-      } else {
-        throw Exception('Metadata not found for URL');
-      }
+      final data = await metadata.fetchData();
+      final title = SingleWord.dirty(data.title ?? '');
+      final description = SingleWord.dirty(data.description ?? '');
+      final imageUrl = _checkAndModifyUrl(data.imageUrl ?? '');
+      debugPrint('imageUrl: $imageUrl');
+      debugPrint('title: $title');
+      debugPrint('description: $description');
+      emit(
+        state.copyWith(
+          urlFetchedStatus: UrlFetchedStatus.fetched,
+          url: Url.dirty(url),
+          title: title,
+          description: description,
+          imageUrl: imageUrl,
+          status: Formz.validate([state.url, title, description]),
+        ),
+      );
     } catch (e) {
       debugPrint('Error Fetching Url: $e');
       // emit(
@@ -186,44 +189,42 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     );
     final url = state.url.value;
     if (state.status.isValidated) {
-      await MetadataFetch.extract(url).then((value) {
-        if (value != null) {
-          final user = BaseListItem(
-            id: usersProfile?.email ?? '',
-            isCollapsed: false,
-            isSelected: false,
-          );
-          final raters = <BaseListItem>[user];
-          final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
-          final resource = Resource(
-            id: ViewUtils.createId(),
-            name: value.title,
-            thumbnail: value.image,
-            description: value.description,
-            url: url,
-            numberOfRates: 0,
-            rating: 0,
-            skillTreeIds: skillIds,
-            usersWhoRated: raters,
-            lastEditBy: usersProfile?.name ?? '',
-            lastEditDate: DateTime.now(),
-          );
+      final user = BaseListItem(
+        id: usersProfile?.email ?? '',
+        isCollapsed: false,
+        isSelected: false,
+      );
+      final raters = <BaseListItem>[user];
+      final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
+      final resource = Resource(
+        id: ViewUtils.createId(),
+        name: state.title.value,
+        thumbnail: state.imageUrl,
+        description: state.description.value,
+        url: url,
+        numberOfRates: 0,
+        rating: 0,
+        skillTreeIds: skillIds,
+        usersWhoRated: raters,
+        lastEditBy: usersProfile?.name ?? '',
+        lastEditDate: DateTime.now(),
+      );
 
-          try {
-            _resourcesRepository.createOrUpdateResource(resource: resource);
-            emit(state.copyWith(status: FormzStatus.submissionSuccess));
-          } on FirebaseException catch (e) {
-            debugPrint('Error: ${e.message}');
-            emit(
-              state.copyWith(
-                status: FormzStatus.submissionFailure,
-                error: e.message ?? 'Error',
-                isError: true,
-              ),
-            );
-          }
-        }
-      });
+      try {
+        await _resourcesRepository.createOrUpdateResource(resource: resource);
+        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      } on FirebaseException catch (e) {
+        debugPrint('Error: ${e.message}');
+        emit(
+          state.copyWith(
+            status: FormzStatus.submissionFailure,
+            error: e.message ?? 'Error',
+            isError: true,
+          ),
+        );
+      }
+    } else {
+      debugPrint('Form is not valid');
     }
   }
 

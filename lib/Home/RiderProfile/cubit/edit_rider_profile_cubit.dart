@@ -119,13 +119,12 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 //method that opens a dialog to let user choose
 // their city based on ther geo location
   Future<void> searchForLocation() async {
-    //retool this to work with the zip code api
     final value = state.zipCode.value;
     final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
     if (value.length >= 5) {
       emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
       try {
-        final response = await zipcodeRepo.queryZipcode(value);
+        final response = await zipcodeRepo.queryZipcode(value, country: 'us');
         if (response != null) {
           debugPrint('Response: ${response.results.results.length}');
           emit(

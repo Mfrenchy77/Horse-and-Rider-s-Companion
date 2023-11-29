@@ -129,7 +129,11 @@ List<Widget> _appBarActions({
             message: 'Edit Horse Profile',
             child: IconButton(
               onPressed: () {
-                homeCubit.editHorseProfile(context: context);
+                homeCubit.openAddHorseDialog(
+                  context: context,
+                  isEdit: true,
+                  horseProfile: state.horseProfile,
+                );
               },
               icon: const Icon(
                 Icons.edit,
@@ -182,8 +186,8 @@ List<Widget> _appBarActions({
               child: Text('Horse Log Book'),
             ),
             const PopupMenuItem(value: 'Edit', child: Text('Edit')),
-            const PopupMenuItem(value: 'Transfer', child: Text('Transfer')),
             const PopupMenuItem(value: 'Delete', child: Text('Delete')),
+            const PopupMenuItem(value: 'Transfer', child: Text('Transfer')),
           ],
           onSelected: (value) {
             switch (value) {
@@ -191,7 +195,11 @@ List<Widget> _appBarActions({
                 homeCubit.logNavigationSelected();
                 break;
               case 'Edit':
-                homeCubit.editHorseProfile(context: context);
+                homeCubit.openAddHorseDialog(
+                  isEdit: true,
+                  context: context,
+                  horseProfile: state.horseProfile,
+                );
                 break;
               case 'Transfer':
                 homeCubit.transferHorseProfile();

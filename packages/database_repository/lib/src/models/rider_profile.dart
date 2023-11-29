@@ -160,33 +160,7 @@ class RiderProfile {
         'instructors': List<dynamic>.from(instructors!.map((e) => e.toJson())),
     };
   }
-}
 
-List<SkillLevel> _convertSkillLevel(List<dynamic>? skillLevelMap) {
-  final skillLevels = <SkillLevel>[];
-
-  if (skillLevelMap != null) {
-    for (final skillLevel in skillLevelMap) {
-      skillLevels.add(SkillLevel.fromJson(skillLevel as Map<String, dynamic>));
-    }
-  }
-
-  return skillLevels;
-}
-
-List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
-  final baseListItem = <BaseListItem>[];
-  if (itemMap != null) {
-    for (final item in itemMap) {
-      baseListItem.add(BaseListItem.fromJson(item as Map<String, dynamic>));
-    }
-  }
-
-  return baseListItem;
-}
-
-//copyWith method for RiderProfile
-extension RiderProfileCopyWith on RiderProfile {
   RiderProfile copyWith({
     String? id,
     String? bio,
@@ -238,4 +212,27 @@ extension RiderProfileCopyWith on RiderProfile {
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
     );
   }
+}
+
+List<SkillLevel> _convertSkillLevel(List<dynamic>? skillLevelMap) {
+  final skillLevels = <SkillLevel>[];
+
+  if (skillLevelMap != null) {
+    for (final skillLevel in skillLevelMap) {
+      skillLevels.add(SkillLevel.fromJson(skillLevel as Map<String, dynamic>));
+    }
+  }
+
+  return skillLevels;
+}
+
+List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
+  final baseListItem = <BaseListItem>[];
+  if (itemMap != null) {
+    for (final item in itemMap) {
+      baseListItem.add(BaseListItem.fromJson(item as Map<String, dynamic>));
+    }
+  }
+
+  return baseListItem;
 }

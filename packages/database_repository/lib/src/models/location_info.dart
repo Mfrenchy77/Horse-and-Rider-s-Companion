@@ -144,3 +144,43 @@ class ZipcodeApiResponse {
     );
   }
 }
+
+/// Represents the response from a city query to the Zipcodebase API.
+class CityQueryResponse {
+  /// Constructs a [CityQueryResponse] with the provided [query] and [results].
+  CityQueryResponse({required this.query, required this.results});
+
+  /// Creates a [CityQueryResponse] from a JSON map.
+  factory CityQueryResponse.fromJson(Map<String, dynamic> json) {
+    return CityQueryResponse(
+      query: CityQuery.fromJson(json['query'] as Map<String, dynamic>),
+      results: List<String>.from(json['results'] as List),
+    );
+  }
+
+  /// The query information, including state name and country.
+  final CityQuery query;
+
+  /// The list of postal codes returned as a result of the query.
+  final List<String> results;
+}
+
+/// Contains the details of a city query request.
+class CityQuery {
+  /// Constructs a [CityQuery] with the provided [stateName] and [country].
+  CityQuery({required this.stateName, required this.country});
+
+  /// Creates a [CityQuery] from a JSON map.
+  factory CityQuery.fromJson(Map<String, dynamic> json) {
+    return CityQuery(
+      stateName: json['state_name'] as String,
+      country: json['country'] as String,
+    );
+  }
+
+  /// The state name used in the query.
+  final String stateName;
+
+  /// The country code used in the query.
+  final String country;
+}

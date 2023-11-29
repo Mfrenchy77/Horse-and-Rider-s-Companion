@@ -9,22 +9,31 @@ enum IsPurchacedStatus { notPurchased, isPurchased }
 class AddHorseDialogState extends Equatable {
   const AddHorseDialogState({
     this.id = '',
+    this.stateId,
+    this.countryIso,
     this.error = '',
+    this.prediction,
     this.picUrl = '',
     this.dateOfBirth,
+    this.selectedCity,
+    this.horseProfile,
+    this.usersProfile,
+    this.selectedState,
+    this.selectedCountry,
     this.dateOfPurchase,
     this.inchesValue = 0,
     this.handsValue = 14,
     this.locationName = '',
     this.picFlilePath = '',
-    this.prediction = const [],
+    this.isLocationSearch = false,
     this.status = FormzStatus.pure,
     this.dateStatus = DateStatus.nodate,
-    this.location = const GeoPoint(0, 0),
+    this.zipCode = const ZipCode.pure(),
     this.breed = const SingleWord.pure(),
     this.color = const SingleWord.pure(),
     this.gender = const SingleWord.pure(),
     this.height = const SingleWord.pure(),
+    this.locationStatus = FormzStatus.pure,
     this.horseName = const SingleWord.pure(),
     this.purchasePrice = const Numberz.pure(),
     this.picStatus = PictureGetterStatus.nothing,
@@ -34,50 +43,68 @@ class AddHorseDialogState extends Equatable {
   });
 
   final String id;
+  final int? stateId;
   final String error;
   final String picUrl;
   final int handsValue;
+  final ZipCode zipCode;
   final int inchesValue;
   final int? dateOfBirth;
   final SingleWord color;
   final SingleWord breed;
   final SingleWord gender;
   final SingleWord height;
-  final GeoPoint? location;
   final FormzStatus status;
+  final String? countryIso;
   final int? dateOfPurchase;
   final String picFlilePath;
-  final SingleWord horseName;
   final String locationName;
+  final String? selectedCity;
+  final SingleWord horseName;
+  final String? selectedState;
+  final bool isLocationSearch;
   final Numberz purchasePrice;
   final DateStatus dateStatus;
+  final String? selectedCountry;
   final SingleWord horseNickname;
-  final List<Prediction> prediction;
+  final RiderProfile? usersProfile;
+  final HorseProfile? horseProfile;
+  final FormzStatus? locationStatus;
+  final PostalCodeResults? prediction;
   final PictureGetterStatus picStatus;
   final IsPurchacedStatus isPurchacedStatus;
   final AutoCompleteStatus autoCompleteStatus;
 
   AddHorseDialogState copyWith({
     String? id,
+    int? stateId,
     String? error,
     String? picUrl,
     int? handsValue,
+    ZipCode? zipCode,
     int? inchesValue,
     int? dateOfBirth,
     SingleWord? breed,
     SingleWord? color,
     SingleWord? gender,
     SingleWord? height,
-    GeoPoint? location,
+    String? countryIso,
     int? dateOfPurchase,
     FormzStatus? status,
     String? locationName,
     String? picFlilePath,
+    String? selectedState,
+    String? selectedCity,
     SingleWord? horseName,
     Numberz? purchasePrice,
     DateStatus? dateStatus,
+    bool? isLocationSearch,
+    String? selectedCountry,
     SingleWord? horseNickname,
-    List<Prediction>? prediction,
+    RiderProfile? usersProfile,
+    HorseProfile? horseProfile,
+    FormzStatus? locationStatus,
+    PostalCodeResults? prediction,
     PictureGetterStatus? picStatus,
     IsPurchacedStatus? isPurchacedStatus,
     AutoCompleteStatus? autoCompleteStatus,
@@ -91,19 +118,28 @@ class AddHorseDialogState extends Equatable {
       picUrl: picUrl ?? this.picUrl,
       height: height ?? this.height,
       status: status ?? this.status,
-      location: location ?? this.location,
+      stateId: stateId ?? this.stateId,
+      zipCode: zipCode ?? this.zipCode,
       picStatus: picStatus ?? this.picStatus,
       horseName: horseName ?? this.horseName,
+      countryIso: countryIso ?? this.countryIso,
       dateStatus: dateStatus ?? this.dateStatus,
       prediction: prediction ?? this.prediction,
       handsValue: handsValue ?? this.handsValue,
       inchesValue: inchesValue ?? this.inchesValue,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      usersProfile: usersProfile ?? this.usersProfile,
+      horseProfile: horseProfile ?? this.horseProfile,
       locationName: locationName ?? this.locationName,
       picFlilePath: picFlilePath ?? this.picFlilePath,
+      selectedCity: selectedCity ?? this.selectedCity,
+      selectedState: selectedState ?? this.selectedState,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       horseNickname: horseNickname ?? this.horseNickname,
       dateOfPurchase: dateOfPurchase ?? this.dateOfPurchase,
+      locationStatus: locationStatus ?? this.locationStatus,
+      selectedCountry: selectedCountry ?? this.selectedCountry,
+      isLocationSearch: isLocationSearch ?? this.isLocationSearch,
       isPurchacedStatus: isPurchacedStatus ?? this.isPurchacedStatus,
       autoCompleteStatus: autoCompleteStatus ?? this.autoCompleteStatus,
     );
@@ -111,8 +147,6 @@ class AddHorseDialogState extends Equatable {
 
   @override
   List<Object?> get props => [
-        inchesValue,
-        handsValue,
         id,
         error,
         color,
@@ -121,17 +155,28 @@ class AddHorseDialogState extends Equatable {
         picUrl,
         height,
         status,
-        location,
+        stateId,
+        zipCode,
         horseName,
         picStatus,
+        countryIso,
+        handsValue,
         prediction,
         dateStatus,
+        inchesValue,
         dateOfBirth,
+        usersProfile,
+        horseProfile,
         locationName,
         picFlilePath,
+        selectedCity,
+        selectedState,
         horseNickname,
         purchasePrice,
+        locationStatus,
         dateOfPurchase,
+        selectedCountry,
+        isLocationSearch,
         isPurchacedStatus,
         autoCompleteStatus,
       ];
