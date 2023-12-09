@@ -7,61 +7,89 @@ import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resource_item.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-Widget resourcesView({
-  required HomeState state,
-  required HomeCubit homeCubit,
-  required BuildContext context,
-}) {
-  return Scaffold(
-    appBar: AppBar(
-      leading: IconButton(
-        onPressed: homeCubit.skillTreeNavigationSelected,
-        icon: const Icon(
-          Icons.arrow_back,
+Widget resourcesView() {
+  return BlocBuilder<HomeCubit, HomeState>(
+    builder: (context, state) {
+      final homeCubit = context.read<HomeCubit>();
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: homeCubit.skillTreeNavigationSelected,
+            icon: const Icon(
+              Icons.arrow_back,
+            ),
+          ),
+          actions: _appBarActions(
+            state: state,
+            homeCubit: homeCubit,
+            context: context,
+          ),
+          title: BlocBuilder<HomeCubit, HomeState>(
+            buildWhen: (previous, current) =>
+                previous.resourcesSortStatus != current.resourcesSortStatus,
+            builder: (context, state) {
+              return Text(
+                state.resourcesSortStatus == ResourcesSortStatus.oldest
+                    ? 'Resources - Oldest'
+                    : state.resourcesSortStatus ==
+                            ResourcesSortStatus.mostRecommended
+                        ? 'Resources - Most Recommended'
+                        : state.resourcesSortStatus ==
+                                ResourcesSortStatus.recent
+                            ? 'Resources - Most Recent'
+                            : 'Resources - Saved',
+                style: const TextStyle(),
+              );
+            },
+          ),
         ),
-      ),
-      actions: _appBarActions(
-        state: state,
-        homeCubit: homeCubit,
-        context: context,
-      ),
-      title: Text(
-        state.resourcesSortStatus == ResourcesSortStatus.oldest
-            ? 'Resources - Oldest'
-            : state.resourcesSortStatus == ResourcesSortStatus.mostRecommended
-                ? 'Resources - Most Recommended'
-                : state.resourcesSortStatus == ResourcesSortStatus.recent
-                    ? 'Resources - Most Recent'
-                    : 'Resources - Saved',
-        style: const TextStyle(),
-      ),
-    ),
-    body: Center(
-      child: SingleChildScrollView(
-        child: state.allResources != null
-            ? Wrap(
-                alignment: WrapAlignment.center,
-                runSpacing: 4,
-                children: state.allResources!
-                    .map(
-                      (e) => resourceItem(
-                        state: state,
-                        resource: e!,
-                        context: context,
-                        isResourceList: true,
-                        homeCubit: homeCubit,
-                        usersWhoRated: e.usersWhoRated,
-                      ),
-                    )
-                    .toList(),
-              )
-            : const Text('No Resources Found'),
-      ),
-    ),
+        body: Center(
+          child: BlocBuilder<HomeCubit, HomeState>(
+            buildWhen: (previous, current) =>
+                previous.allResources != current.allResources,
+            builder: (context, state) {
+              return SingleChildScrollView(
+                child: state.resourcesSortStatus == ResourcesSortStatus.saved
+                    ? state.savedResources != null
+                        ? Wrap(
+                            alignment: WrapAlignment.center,
+                            runSpacing: 4,
+                            children: state.savedResources!
+                                .map(
+                                  (e) => resourceItem(
+                                    resource: e!,
+                                    isResourceList: true,
+                                    usersWhoRated: e.usersWhoRated,
+                                  ),
+                                )
+                                .toList(),
+                          )
+                        : const Text('No Resources Found')
+                    : state.allResources != null
+                        ? Wrap(
+                            alignment: WrapAlignment.center,
+                            runSpacing: 4,
+                            children: state.allResources!
+                                .map(
+                                  (e) => resourceItem(
+                                    resource: e!,
+                                    isResourceList: true,
+                                    usersWhoRated: e.usersWhoRated,
+                                  ),
+                                )
+                                .toList(),
+                          )
+                        : const Text('No Resources Found'),
+              );
+            },
+          ),
+        ),
+      );
+    },
   );
 }
 
-//TODO(mfrenchy: This is all wonky and needs to be fixed
+// TODO(mfrenchy): This is all wonky and needs to be fixed
 // items are not in the right order
 List<Widget> _appBarActions({
   required HomeState state,

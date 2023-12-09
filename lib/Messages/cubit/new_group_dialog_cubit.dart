@@ -107,18 +107,18 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
   void createGroup() {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
 
-    final id = StringBuffer()..write(convertEmailToPath(user.email as String));
-    final memberNames = <String>[user.name as String];
-    final memberIds = <String>[user.email?.toLowerCase() as String];
+    final id = StringBuffer()..write(convertEmailToPath(user.email));
+    final memberNames = <String>[user.name];
+    final memberIds = <String>[user.email.toLowerCase()];
     List<RiderProfile> groupMembers;
     if (state.groupMembers.isNotEmpty) {
       groupMembers = state.groupMembers as List<RiderProfile>;
       for (final riderProfile in groupMembers) {
         id.write(
-          convertEmailToPath(riderProfile.email?.toLowerCase() as String),
+          convertEmailToPath(riderProfile.email.toLowerCase()),
         );
-        memberIds.add(riderProfile.email?.toLowerCase() as String);
-        memberNames.add(riderProfile.name as String);
+        memberIds.add(riderProfile.email.toLowerCase());
+        memberNames.add(riderProfile.name);
       }
     }
     debugPrint('Id: $id');
@@ -127,10 +127,10 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
       type: state.groupType,
       parties: memberNames,
       partiesIds: memberIds,
-      createdBy: user.name as String,
+      createdBy: user.name,
       createdOn: DateTime.now(),
       lastEditDate: DateTime.now(),
-      lastEditBy: user.name as String,
+      lastEditBy: user.name,
       recentMessage: null,
     );
 

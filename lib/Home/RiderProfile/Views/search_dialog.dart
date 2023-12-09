@@ -1,4 +1,4 @@
-// ignore_for_file: cast_nullable_to_non_nullable
+// ignore_for_file: cast_nullable_to_non_nullable, unnecessary_null_comparison
 
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
@@ -13,101 +13,109 @@ import 'package:horseandriderscompanion/shared_prefs.dart';
 
 class SearchDialog extends StatelessWidget {
   const SearchDialog({
+    required this.userProfile,
     super.key,
   });
-
+  final RiderProfile userProfile;
   @override
   Widget build(BuildContext context) {
     final user = context.select((AppBloc bloc) => bloc.state.user);
-    return BlocProvider(
-      create: (context) => HomeCubit(
-        user: user,
+    return BlocBuilder<HomeCubit, HomeState>(
+      bloc: HomeCubit(
         horseId: null,
         viewingProfile: null,
-        messagesRepository: context.read<MessagesRepository>(),
-        skillTreeRepository: context.read<SkillTreeRepository>(),
-        resourcesRepository: context.read<ResourcesRepository>(),
-        horseProfileRepository: context.read<HorseProfileRepository>(),
-        riderProfileRepository: context.read<RiderProfileRepository>(),
+        messagesRepository: MessagesRepository(),
+        skillTreeRepository: SkillTreeRepository(),
+        resourcesRepository: ResourcesRepository(),
+        horseProfileRepository: HorseProfileRepository(),
+        riderProfileRepository: RiderProfileRepository(),
+        user: user,
+        usersProfile: userProfile,
       ),
-      child: BlocBuilder<HomeCubit, HomeState>(
-        builder: (context, state) {
-          return Scaffold(
-            backgroundColor: Colors.transparent,
-            body: AlertDialog(
-              insetPadding: const EdgeInsets.all(1),
-              scrollable: true,
-              title: Text(
-                state.searchState == SearchState.email
-                    ? 'Search for Contact By Email'
-                    : state.searchState == SearchState.name
-                        ? 'Search for Contact By Name'
-                        : state.searchState == SearchState.horse
-                            ? 'Search for Horse By Official Name'
-                            : 'Search for Horse By NickName',
-                textAlign: TextAlign.center,
-              ),
-              actions: [
-                Visibility(
-                  visible: state.searchResult.isNotEmpty ||
-                      state.horseSearchResult.isNotEmpty,
-                  child: _clearResults(context: context),
-                ),
-                _close(context: context),
-              ],
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _searchField(
-                    context: context,
-                    state: state,
-                  ),
-                  gap(),
-                  const Center(
-                    child: Text(
-                      'Search Filters',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  const Divider(),
-                  _searchButtons(
-                    context: context,
-                    state: state,
-                  ),
-                  gap(),
-                  const Divider(),
-                  if (state.formzStatus == FormzStatus.submissionInProgress)
-                    const CircularProgressIndicator()
-                  else if (state.formzStatus == FormzStatus.submissionFailure)
-                    ColoredBox(
-                      color: Colors.red,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                          state.error,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  else
-                    state.formzStatus == FormzStatus.submissionSuccess
-                        ? _resultList(context: context, state: state)
-                        : Center(
-                            child: Text(
-                              state.searchState == SearchState.horse
-                                  ? 'Horse Results'
-                                  : state.searchState ==
-                                          SearchState.horseNickName
-                                      ? 'Horse Results'
-                                      : 'Search Results',
-                            ),
-                          ),
-                ],
-              ),
+      buildWhen: (previous, current) =>
+          previous.searchState != current.searchState ||
+          previous.searchType != current.searchType ||
+          previous.searchResult != current.searchResult ||
+          previous.horseSearchResult != current.horseSearchResult ||
+          previous.formzStatus != current.formzStatus ||
+          previous.error != current.error ||
+          previous.email != current.email ||
+          previous.name != current.name,
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: AlertDialog(
+            insetPadding: const EdgeInsets.all(1),
+            scrollable: true,
+            title: Text(
+              state.searchState == SearchState.email
+                  ? 'Search for Contact By Email'
+                  : state.searchState == SearchState.name
+                      ? 'Search for Contact By Name'
+                      : state.searchState == SearchState.horse
+                          ? 'Search for Horse By Official Name'
+                          : 'Search for Horse By NickName',
+              textAlign: TextAlign.center,
             ),
-          );
-        },
-      ),
+            actions: [
+              Visibility(
+                visible: state.searchResult.isNotEmpty ||
+                    state.horseSearchResult.isNotEmpty,
+                child: _clearResults(context: context),
+              ),
+              _close(context: context),
+            ],
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _searchField(
+                  context: context,
+                  state: state,
+                ),
+                gap(),
+                const Center(
+                  child: Text(
+                    'Search Filters',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+                const Divider(),
+                _searchButtons(
+                  context: context,
+                  state: state,
+                ),
+                gap(),
+                const Divider(),
+                if (state.formzStatus == FormzStatus.submissionInProgress)
+                  const CircularProgressIndicator()
+                else if (state.formzStatus == FormzStatus.submissionFailure)
+                  ColoredBox(
+                    color: Colors.red,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        state.error,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  )
+                else
+                  state.formzStatus == FormzStatus.submissionSuccess
+                      ? _resultList(context: context, state: state)
+                      : Center(
+                          child: Text(
+                            state.searchState == SearchState.horse
+                                ? 'Horse Results'
+                                : state.searchState == SearchState.horseNickName
+                                    ? 'Horse Results'
+                                    : 'Search Results',
+                          ),
+                        ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -406,7 +414,7 @@ Widget _resultItem({
             child: ListTile(
               title: profile.name != null
                   ? Text(
-                      profile.name!,
+                      profile.name,
                       style: TextStyle(
                         color: isDark
                             ? Colors.white
@@ -423,7 +431,7 @@ Widget _resultItem({
                 );
                 context.read<HomeCubit>().gotoProfilePage(
                       context: context,
-                      toBeViewedEmail: profile.email as String,
+                      toBeViewedEmail: profile.email,
                     );
               },
               leading: profile.picUrl != null && profile.picUrl!.isNotEmpty
@@ -458,9 +466,8 @@ Widget _resultItem({
                 debugPrint(
                   'Open Horse Profile Page For: ${horseProfile.name}',
                 );
-                context.read<HomeCubit>().horseSelected(
-                      context: context,
-                      horseProfileId: horseProfile.id,
+                context.read<HomeCubit>().horseProfileSelected(
+                      id: horseProfile.id,
                     );
               },
               leading:

@@ -22,6 +22,7 @@ dependencies:
   flow_builder: ^0.0.9
   flutter:
     sdk: flutter
+  flutter_adaptive_scaffold: ^0.1.7+1
   flutter_bloc: ^8.1.1
   flutter_expandable_fab: ^2.0.0
   flutter_launcher_icons: ^0.13.1
@@ -41,7 +42,6 @@ dependencies:
   html: ^0.15.4
   http: ^1.1.2
   image_picker: ^1.0.4
-  image_picker_web: ^3.1.1
   intl: any
   intl_utils: ^2.8.2
   meta: ^1.8.0
@@ -52,6 +52,7 @@ dependencies:
   searchfield: ^0.8.7
   shared_preferences: ^2.0.18
   timeago: ^3.3.0
+  universal_html: ^2.2.4
   url_launcher: ^6.1.7
 description: A Site to Record Riders and Horses's progress. Allows you to let trainers and others to update your progress or your horses. As well, it provides resources to further educaion.
 # Dependencies specify other packages that your package needs in order to work.

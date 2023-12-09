@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/CommonWidgets/notification_icon.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/Home/RiderProfile/Views/search_dialog.dart';
 import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -18,44 +19,52 @@ import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-Widget profileView({
-  required HomeState state,
-  required BuildContext context,
-  required RiderProfile? viewingProfile,
-  required RiderProfile? usersProfile,
-  required HomeCubit homeCubit,
-}) {
+// TODO(mfrench): Going to make his view change to horseProfileView when a horse is selected
+
+Widget profileView() {
   //final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(DESKTOP);
-  final isUser = viewingProfile == null;
-  final isAuthorized = homeCubit.isAuthtorized();
-  debugPrint(
-    'UsersProfile: ${usersProfile?.name}, ViewingProfile: ${viewingProfile?.name}',
-  );
-  return Scaffold(
-    drawer: isUser
-        ? _drawer(
-            homeCubit: homeCubit,
-            state: state,
-            context: context,
-          )
-        : null,
-    body: CustomScrollView(
-      slivers: [
-        _sliverAppBar(
-          state: state,
-          context: context,
-          isUser: isUser,
-          isAuthorized: isAuthorized,
-          usersProfile: usersProfile,
-          homeCubit: homeCubit,
+  return BlocBuilder<HomeCubit, HomeState>(
+    buildWhen: (previous, current) =>
+        previous.usersProfile != current.usersProfile ||
+        previous.viewingProfile != current.viewingProfile ||
+        previous.isGuest != current.isGuest ||
+        previous.unreadMessages != current.unreadMessages,
+    builder: (context, state) {
+      final homeCubit = context.read<HomeCubit>();
+      final usersProfile = state.usersProfile;
+      final viewingProfile = state.viewingProfile;
+      final isUser = state.viewingProfile == null;
+      final isAuthorized = homeCubit.isAuthtorized();
+      debugPrint(
+        'UsersProfile: ${usersProfile?.name}, ViewingProfile: ${viewingProfile?.name}',
+      );
+      return Scaffold(
+        drawer: isUser
+            ? _drawer(
+                homeCubit: homeCubit,
+                state: state,
+                context: context,
+              )
+            : null,
+        body: CustomScrollView(
+          slivers: [
+            _sliverAppBar(
+              state: state,
+              context: context,
+              isUser: isUser,
+              isAuthorized: isAuthorized,
+              usersProfile: usersProfile,
+              homeCubit: homeCubit,
+            ),
+            _profile(
+              homeCubit: homeCubit,
+              state: state,
+              context: context,
+            ),
+          ],
         ),
-        _profile(
-          homeCubit: homeCubit,
-          state: state,
-          context: context,
-        ),
-      ],
-    ),
+      );
+    },
   );
 }
 
@@ -194,9 +203,9 @@ Widget? _appbarTitle({
   // if viewingProfile is not null -- Viewing: viewingProfile.name
 
   if (state.usersProfile != null) {
-    return Text(state.usersProfile!.name!);
+    return Text(state.usersProfile!.name);
   } else if (state.viewingProfile != null) {
-    return Text('Viewing: ${state.viewingProfile!.name!}');
+    return Text('Viewing: ${state.viewingProfile!.name}');
   } else {
     return const Text('Welcome, Guest');
   }
@@ -283,7 +292,6 @@ Widget _profile({
           )
         : SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 gap(),
                 _riderLocation(
@@ -317,32 +325,23 @@ Widget _profile({
                   visible: state.usersProfile != null,
                   child: Center(
                     child: Text(
-                      state.usersProfile!.email.toString(),
+                      state.usersProfile!.email,
                       style: const TextStyle(fontSize: 20),
                     ),
                   ),
                 ),
                 gap(),
-                _lists(
-                  homeCubit: homeCubit,
-                  context: context,
-                  state: state,
-                ),
+                _lists(),
                 gap(),
                 // Log Book Button
                 Visibility(
                   visible: homeCubit.isAuthtorized(),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(100, 0, 100, 0),
-                    child: MaxWidthBox(
-                      maxWidth: 350,
-                      child: ElevatedButton(
-                        onPressed: () => homeCubit.openLogBook(context),
-                        child: Text(
-                          S.of(context).log_book_text,
-                        ),
-                      ),
+                  child: FilledButton.icon(
+                    label: Text(
+                      S.of(context).log_book_text,
                     ),
+                    icon: const Icon(HorseAndRiderIcons.riderLogIcon),
+                    onPressed: () => homeCubit.openLogBook(context),
                   ),
                 ),
                 gap(),
@@ -352,395 +351,402 @@ Widget _profile({
   );
 }
 
-Widget _lists({
-  required HomeCubit homeCubit,
-  required BuildContext context,
-  required HomeState state,
-}) {
+Widget _lists() {
   // show the instructor, student and horse list for the respective profile
   //if screen size is larger than a tablet then show the lists side by side
   // else show them in a column
-  final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(DESKTOP);
-  if (isSmallScreen) {
-    return Column(
-      children: [
-        Visibility(
-          visible: state.viewingProfile?.instructors?.isNotEmpty ??
-              state.usersProfile!.instructors?.isNotEmpty ??
-              false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Center(
-                child: Text(
-                  'Instructors',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+
+  return BlocBuilder<HomeCubit, HomeState>(
+    buildWhen: (previous, current) =>
+        previous.viewingProfile != current.viewingProfile ||
+        previous.usersProfile != current.usersProfile,
+    builder: (context, state) {
+      final homeCubit = context.read<HomeCubit>();
+      final isSmallScreen =
+          ResponsiveBreakpoints.of(context).smallerThan(DESKTOP);
+
+      if (isSmallScreen) {
+        return Column(
+          children: [
+            Visibility(
+              visible: state.viewingProfile?.instructors?.isNotEmpty ??
+                  state.usersProfile!.instructors?.isNotEmpty ??
+                  false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Instructors',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                direction: Axis.vertical,
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  ...state.viewingProfile?.instructors
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      state.usersProfile!.instructors
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      [],
+                  smallGap(),
+                  Wrap(
+                    direction: Axis.vertical,
+                    spacing: 5,
+                    runSpacing: 5,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ...state.viewingProfile?.instructors
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          state.usersProfile!.instructors
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          [],
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        gap(),
-        Visibility(
-          visible: state.viewingProfile?.students?.isNotEmpty ??
-              state.usersProfile!.students?.isNotEmpty ??
-              false,
-          child: Column(
-            children: [
-              const Text(
-                'Students',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                direction: Axis.vertical,
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
+            ),
+            gap(),
+            Visibility(
+              visible: state.viewingProfile?.students?.isNotEmpty ??
+                  state.usersProfile!.students?.isNotEmpty ??
+                  false,
+              child: Column(
                 children: [
-                  ...state.viewingProfile?.students
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      state.usersProfile!.students
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      [],
-                ],
-              ),
-            ],
-          ),
-        ),
-        gap(),
-        Visibility(
-          visible: state.viewingProfile?.ownedHorses?.isNotEmpty ??
-              state.usersProfile!.ownedHorses?.isNotEmpty ??
-              false,
-          child: Column(
-            children: [
-              const Text(
-                'Owned Horses',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  ...state.viewingProfile?.ownedHorses
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      state.usersProfile!.ownedHorses
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      [],
-                ],
-              ),
-            ],
-          ),
-        ),
-        //student horses
-        Visibility(
-          visible: state.viewingProfile?.studentHorses?.isNotEmpty ??
-              state.usersProfile!.studentHorses?.isNotEmpty ??
-              false,
-          child: Column(
-            children: [
-              const Text(
-                'Student Horses',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  ...state.viewingProfile?.studentHorses
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      state.usersProfile!.studentHorses
-                          ?.map(
-                            (e) => _profileCard(
-                              context: context,
-                              baseItem: e,
-                              homeCubit: homeCubit,
-                            ),
-                          )
-                          .toList() ??
-                      [],
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  } else {
-//large screen show the lists in a row
-    return Row(
-      children: [
-        Visibility(
-          visible: state.viewingProfile?.instructors?.isNotEmpty ??
-              state.usersProfile!.instructors?.isNotEmpty ??
-              false,
-          child: Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Center(
-                  child: Text(
-                    'Instructors',
+                  const Text(
+                    'Students',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.underline,
                     ),
                   ),
-                ),
-                smallGap(),
-                Wrap(
-                  direction: Axis.vertical,
-                  spacing: 5,
-                  runSpacing: 5,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ...state.viewingProfile?.instructors
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        state.usersProfile!.instructors
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        [],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        smallGap(),
-        //students
-        Visibility(
-          visible: state.viewingProfile?.students?.isNotEmpty ??
-              state.usersProfile!.students?.isNotEmpty ??
-              false,
-          child: Expanded(
-            child: Column(
-              children: [
-                const Text(
-                  'Students',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+                  smallGap(),
+                  Wrap(
+                    direction: Axis.vertical,
+                    spacing: 5,
+                    runSpacing: 5,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ...state.viewingProfile?.students
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          state.usersProfile!.students
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          [],
+                    ],
                   ),
-                ),
-                smallGap(),
-                Wrap(
-                  spacing: 5,
-                  runSpacing: 5,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ...state.viewingProfile?.students
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        state.usersProfile!.students
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        [],
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ),
-        gap(),
-        Visibility(
-          visible: state.viewingProfile?.ownedHorses?.isNotEmpty ??
-              state.usersProfile!.ownedHorses?.isNotEmpty ??
-              false,
-          child: Expanded(
-            child: Column(
-              children: [
-                const Text(
-                  'Owned Horses',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+            gap(),
+            Visibility(
+              visible: state.viewingProfile?.ownedHorses?.isNotEmpty ??
+                  state.usersProfile!.ownedHorses?.isNotEmpty ??
+                  false,
+              child: Column(
+                children: [
+                  const Text(
+                    'Owned Horses',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
-                ),
-                smallGap(),
-                Wrap(
-                  spacing: 5,
-                  runSpacing: 5,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ...state.viewingProfile?.ownedHorses
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        state.usersProfile!.ownedHorses
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        [],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        //student horses
-        Visibility(
-          visible: state.viewingProfile?.studentHorses?.isNotEmpty ??
-              state.usersProfile!.studentHorses?.isNotEmpty ??
-              false,
-          child: Expanded(
-            child: Column(
-              children: [
-                const Text(
-                  'Student Horses',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+                  smallGap(),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ...state.viewingProfile?.ownedHorses
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          state.usersProfile!.ownedHorses
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          [],
+                    ],
                   ),
-                ),
-                smallGap(),
-                Wrap(
-                  spacing: 5,
-                  runSpacing: 5,
-                  alignment: WrapAlignment.center,
+                ],
+              ),
+            ),
+            //student horses
+            Visibility(
+              visible: state.viewingProfile?.studentHorses?.isNotEmpty ??
+                  state.usersProfile!.studentHorses?.isNotEmpty ??
+                  false,
+              child: Column(
+                children: [
+                  const Text(
+                    'Student Horses',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  smallGap(),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ...state.viewingProfile?.studentHorses
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          state.usersProfile!.studentHorses
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          [],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      } else {
+//large screen show the lists in a row
+        return Row(
+          children: [
+            Visibility(
+              visible: state.viewingProfile?.instructors?.isNotEmpty ??
+                  state.usersProfile!.instructors?.isNotEmpty ??
+                  false,
+              child: Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ...state.viewingProfile?.studentHorses
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        state.usersProfile!.studentHorses
-                            ?.map(
-                              (e) => _profileCard(
-                                context: context,
-                                baseItem: e,
-                                homeCubit: homeCubit,
-                              ),
-                            )
-                            .toList() ??
-                        [],
+                    const Center(
+                      child: Text(
+                        'Instructors',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    smallGap(),
+                    Wrap(
+                      direction: Axis.vertical,
+                      spacing: 5,
+                      runSpacing: 5,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ...state.viewingProfile?.instructors
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            state.usersProfile!.instructors
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            [],
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ],
-    );
-  }
+            smallGap(),
+            //students
+            Visibility(
+              visible: state.viewingProfile?.students?.isNotEmpty ??
+                  state.usersProfile!.students?.isNotEmpty ??
+                  false,
+              child: Expanded(
+                child: Column(
+                  children: [
+                    const Text(
+                      'Students',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    smallGap(),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ...state.viewingProfile?.students
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            state.usersProfile!.students
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            [],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            gap(),
+            Visibility(
+              visible: state.viewingProfile?.ownedHorses?.isNotEmpty ??
+                  state.usersProfile!.ownedHorses?.isNotEmpty ??
+                  false,
+              child: Expanded(
+                child: Column(
+                  children: [
+                    const Text(
+                      'Owned Horses',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    smallGap(),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ...state.viewingProfile?.ownedHorses
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            state.usersProfile!.ownedHorses
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            [],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            //student horses
+            Visibility(
+              visible: state.viewingProfile?.studentHorses?.isNotEmpty ??
+                  state.usersProfile!.studentHorses?.isNotEmpty ??
+                  false,
+              child: Expanded(
+                child: Column(
+                  children: [
+                    const Text(
+                      'Student Horses',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    smallGap(),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ...state.viewingProfile?.studentHorses
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            state.usersProfile!.studentHorses
+                                ?.map(
+                                  (e) => _profileCard(
+                                    context: context,
+                                    baseItem: e,
+                                    homeCubit: homeCubit,
+                                  ),
+                                )
+                                .toList() ??
+                            [],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    },
+  );
 }
 
 /// app bar actions
@@ -875,7 +881,6 @@ Widget? _drawer({
           UserAccountsDrawerHeader(
             // margin: const EdgeInsets.only(top: 8, left: 8),
             decoration: BoxDecoration(
-              color: HorseAndRidersTheme().getTheme().colorScheme.primary,
               image: DecorationImage(
                 image: AssetImage(
                   SharedPrefs().isDarkMode
@@ -887,10 +892,16 @@ Widget? _drawer({
               ),
             ),
             accountName: Text(
-              state.usersProfile!.name ?? 'Guest',
+              state.usersProfile!.name,
+              style: TextStyle(
+                color: SharedPrefs().isDarkMode ? Colors.white : Colors.black,
+              ),
             ),
             accountEmail: Text(
               state.usersProfile?.email ?? '',
+              style: TextStyle(
+                color: SharedPrefs().isDarkMode ? Colors.white : Colors.black,
+              ),
             ),
           ),
 
@@ -997,7 +1008,42 @@ Widget? _drawer({
             leading: const Icon(Icons.person_search),
             title: const Text('Search Horse/Rider'),
             onTap: () {
-              context.read<HomeCubit>().searchClicked();
+              showDialog<AlertDialog>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: Text(
+                    state.searchState == SearchState.email
+                        ? 'Search for Contact By Email'
+                        : state.searchState == SearchState.name
+                            ? 'Search for Contact By Name'
+                            : state.searchState == SearchState.horse
+                                ? 'Search for Horse By Official Name'
+                                : 'Search for Horse By NickName',
+                    textAlign: TextAlign.center,
+                  ),
+                  content: SearchDialog(userProfile: state.usersProfile!),
+                  actions: [
+                    Visibility(
+                      visible: state.searchResult.isNotEmpty ||
+                          state.horseSearchResult.isNotEmpty,
+                      child: TextButton(
+                        onPressed: homeCubit.clearSearchResults,
+                        child: const Text('Clear Search'),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        homeCubit.closeSearchForHorsesOrRiders();
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+              ).then(
+                (value) => homeCubit.closeSearchForHorsesOrRiders(),
+              );
+
               debugPrint('Search Clicked');
             },
           ),
@@ -1068,10 +1114,8 @@ Widget _profileCard({
                 context: context,
                 toBeViewedEmail: baseItem.id ?? '',
               )
-            : context.read<HomeCubit>().horseSelected(
-                  context: context,
-                  // Otherwise we are selecting a horse
-                  horseProfileId: baseItem.id ?? '',
+            : context.read<HomeCubit>().horseProfileSelected(
+                  id: baseItem.id ?? '',
                 ),
       ),
     ),
@@ -1096,10 +1140,8 @@ Widget _profileTile({
               context: context,
               toBeViewedEmail: baseItem.id ?? '',
             )
-          : context.read<HomeCubit>().horseSelected(
-                context: context,
-                // Otherwise we are selecting a horse
-                horseProfileId: baseItem.id ?? '',
+          : context.read<HomeCubit>().horseProfileSelected(
+                id: baseItem.id ?? '',
               ),
     ),
   );
@@ -1122,8 +1164,6 @@ Widget _riderBio({
   required BuildContext context,
   required RiderProfile? riderProfile,
 }) {
-  debugPrint('riderProfile.bio: ${riderProfile?.bio}');
-
   return Visibility(
     visible: riderProfile?.bio != null,
     child: Padding(

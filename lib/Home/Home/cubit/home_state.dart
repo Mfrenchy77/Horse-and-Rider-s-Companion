@@ -27,6 +27,7 @@ class HomeState extends Equatable {
     this.skill,
     this.skills,
     this.levels,
+    this.horseId,
     this.bannerAd,
     this.category,
     this.resource,
@@ -47,15 +48,16 @@ class HomeState extends Equatable {
     this.subCategories,
     this.advancedSkills,
     this.viewingProfile,
+    this.savedResources,
     this.isGuest = false,
     this.isOwner = false,
-    this.isError = false,
     this.isSearch = false,
     this.snackBar = false,
     this.isViewing = false,
     this.searchQuery = '',
     this.isForRider = true,
     this.unreadMessages = 0,
+    this.trainingPathSkills,
     this.intermediateSkills,
     this.isSnackbar = false,
     this.isEditState = false,
@@ -86,13 +88,13 @@ class HomeState extends Equatable {
   final Email email;
   final Skill? skill;
   final String error;
-  final bool isError;
   final bool isOwner;
   final bool isGuest;
   final bool snackBar;
   final bool isSearch;
   final bool isViewing;
   final String message;
+  final String? horseId;
   final bool isSnackbar;
   final bool isForRider;
   final bool isEditState;
@@ -126,8 +128,10 @@ class HomeState extends Equatable {
   final List<Resource?>? allResources;
   final List<Resource?>? resourcesList;
   final bool isSendingMessageToSupport;
+  final List<Resource?>? savedResources;
   final SkillTreeStatus skillTreeStatus;
   final DifficultyState difficultyState;
+  final List<Skill?>? trainingPathSkills;
   final List<RiderProfile?> searchResult;
   final List<Skill?>? intermediateSkills;
   final List<SubCategory?>? subCategories;
@@ -146,10 +150,10 @@ class HomeState extends Equatable {
     Email? email,
     String? error,
     bool? isGuest,
-    bool? isError,
     bool? isOwner,
     bool? isSearch,
     bool? snackBar,
+    String? horseId,
     bool? isViewing,
     String? message,
     bool? isSnackbar,
@@ -184,7 +188,9 @@ class HomeState extends Equatable {
     List<Catagorry?>? categories,
     List<Resource?>? allResources,
     List<Resource?>? resourcesList,
+    List<Resource?>? savedResources,
     bool? isSendingMessageToSupport,
+    List<Skill?>? trainingPathSkills,
     SkillTreeStatus? skillTreeStatus,
     List<Skill?>? intermediateSkills,
     DifficultyState? difficultyState,
@@ -205,9 +211,9 @@ class HomeState extends Equatable {
       error: error ?? this.error,
       skills: skills ?? this.skills,
       levels: levels ?? this.levels,
+      horseId: horseId ?? this.horseId, 
       isGuest: isGuest ?? this.isGuest,
       isOwner: isOwner ?? this.isOwner,
-      isError: isError ?? this.isError,
       message: message ?? this.message,
       resource: resource ?? this.resource,
       snackBar: snackBar ?? this.snackBar,
@@ -238,6 +244,7 @@ class HomeState extends Equatable {
       ownersProfile: ownersProfile ?? this.ownersProfile,
       errorSnackBar: errorSnackBar ?? this.errorSnackBar,
       subCategories: subCategories ?? this.subCategories,
+      savedResources: savedResources ?? this.savedResources,
       unreadMessages: unreadMessages ?? this.unreadMessages,
       advancedSkills: advancedSkills ?? this.advancedSkills,
       viewingProfile: viewingProfile ?? this.viewingProfile,
@@ -247,11 +254,12 @@ class HomeState extends Equatable {
       difficultyState: difficultyState ?? this.difficultyState,
       skillSearchState: skillSearchState ?? this.skillSearchState,
       horseSearchResult: horseSearchResult ?? this.horseSearchResult,
+      intermediateSkills: intermediateSkills ?? this.intermediateSkills,
+      trainingPathSkills: trainingPathSkills ?? this.trainingPathSkills,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       isDescriptionHidden: isDescriptionHidden ?? this.isDescriptionHidden,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
       levelSubmitionStatus: levelSubmitionStatus ?? this.levelSubmitionStatus,
-      intermediateSkills: intermediateSkills ?? this.intermediateSkills,
       levelSubmissionStatus:
           levelSubmissionStatus ?? this.levelSubmissionStatus,
       isSendingMessageToSupport:
@@ -268,9 +276,9 @@ class HomeState extends Equatable {
         error,
         skills,
         levels,
+        horseId,
         isOwner,
         isGuest,
-        isError,
         message,
         bannerAd,
         category,
@@ -300,6 +308,7 @@ class HomeState extends Equatable {
         resourcesList,
         subCategories,
         ownersProfile,
+        savedResources,
         unreadMessages,
         advancedSkills,
         viewingProfile,
@@ -309,6 +318,7 @@ class HomeState extends Equatable {
         difficultyState,
         skillSearchState,
         horseSearchResult,
+        trainingPathSkills,
         intermediateSkills,
         isDescriptionHidden,
         resourcesSortStatus,

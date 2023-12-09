@@ -119,10 +119,7 @@ class AppView extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             home: BlocBuilder<AppBloc, AppState>(
               builder: (context, state) {
-                switch (state.status) {
-                  // case AppStatus.uninitialized:
-                  //   debugPrint('uninitialized Showing SplashPage');
-                  //   return const Splash();
+                switch (state.status) {                 
                   case AppStatus.authenticated:
                     return const HomePage();
                   case AppStatus.unauthenticated:

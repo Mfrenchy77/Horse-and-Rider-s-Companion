@@ -17,13 +17,13 @@ class ZipCode extends FormzInput<String, ZipCodeValidationError> {
   ///
   /// A pure [ZipCode] is not dirty (i.e., it hasn't been modified by the user).
   /// [value] defaults to an empty string if not provided.
-  const ZipCode.pure([String value = '']) : super.pure(value);
+  const ZipCode.pure([super.value = '']) : super.pure();
 
   /// Constructor for a dirty [ZipCode].
   ///
   /// A dirty [ZipCode] has been modified by the user.
   /// [value] defaults to an empty string if not provided.
-  const ZipCode.dirty([String value = '']) : super.dirty(value);
+  const ZipCode.dirty([super.value = '']) : super.dirty();
 
   // Regular expression to validate a U.S. Zip code.
   static final _zipCodeRegExp = RegExp(r'^\d{5}(-\d{4})?$');

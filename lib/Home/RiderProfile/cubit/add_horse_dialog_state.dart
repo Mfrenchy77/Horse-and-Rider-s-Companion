@@ -43,13 +43,12 @@ class AddHorseDialogState extends Equatable {
   });
 
   final String id;
-  final int? stateId;
   final String error;
   final String picUrl;
   final int handsValue;
+  final String? stateId;
   final ZipCode zipCode;
   final int inchesValue;
-  final int? dateOfBirth;
   final SingleWord color;
   final SingleWord breed;
   final SingleWord gender;
@@ -61,6 +60,7 @@ class AddHorseDialogState extends Equatable {
   final String locationName;
   final String? selectedCity;
   final SingleWord horseName;
+  final DateTime? dateOfBirth;
   final String? selectedState;
   final bool isLocationSearch;
   final Numberz purchasePrice;
@@ -77,13 +77,12 @@ class AddHorseDialogState extends Equatable {
 
   AddHorseDialogState copyWith({
     String? id,
-    int? stateId,
     String? error,
     String? picUrl,
+    String? stateId,
     int? handsValue,
     ZipCode? zipCode,
     int? inchesValue,
-    int? dateOfBirth,
     SingleWord? breed,
     SingleWord? color,
     SingleWord? gender,
@@ -93,8 +92,9 @@ class AddHorseDialogState extends Equatable {
     FormzStatus? status,
     String? locationName,
     String? picFlilePath,
-    String? selectedState,
     String? selectedCity,
+    String? selectedState,
+    DateTime? dateOfBirth,
     SingleWord? horseName,
     Numberz? purchasePrice,
     DateStatus? dateStatus,

@@ -15,7 +15,12 @@ class HorseProfile {
     this.height,
     this.zipCode,
     this.nickname,
+    this.cityName,
+    this.stateIso,
+    this.stateName,
+    this.countryIso,
     this.lastEditBy,
+    this.countryName,
     this.dateOfBirth,
     this.skillLevels,
     required this.id,
@@ -37,13 +42,18 @@ class HorseProfile {
   String? height = '';
   String? picUrl = '';
   String? zipCode = '';
+  String? cityName = '';
+  String? stateIso = '';
   String? locationName;
   String currentOwnerId;
   DateTime? dateOfBirth;
   String? nickname = '';
   int? purchasePrice = 0;
+  String? stateName = '';
   DateTime? lastEditDate;
+  String? countryIso = '';
   String? lastEditBy = '';
+  String? countryName = '';
   DateTime? dateOfPurchase;
   String? currentOwnerName;
   List<BaseListItem>? notes = [];
@@ -65,8 +75,13 @@ class HorseProfile {
       gender: data['gender'] as String?,
       height: data['height'] as String?,
       zipCode: data['zipCode'] as String?,
+      cityName: data['cityName'] as String?,
       nickname: data['nickname'] as String?,
+      stateIso: data['stateIso'] as String?,
+      stateName: data['stateName'] as String?,
+      countryIso: data['countryIso'] as String?,
       lastEditBy: data['lastEditBy'] as String?,
+      countryName: data['countryName'] as String?,
       purchasePrice: data['purchasePrice'] as int?,
       locationName: data['locationName'] as String?,
       currentOwnerId: data['currentOwnerId'] as String,
@@ -97,7 +112,12 @@ class HorseProfile {
       if (height != null) 'height': height,
       if (zipCode != null) 'zipCode': zipCode,
       if (nickname != null) 'nickname': nickname,
+      if (cityName != null) 'cityName': cityName,
+      if (stateIso != null) 'stateIso': stateIso,
+      if (stateName != null) 'stateName': stateName,
+      if (countryIso != null) 'countryIso': countryIso,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
+      if (countryName != null) 'countryName': countryName,
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
       if (locationName != null) 'locationName': locationName,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
@@ -121,10 +141,15 @@ class HorseProfile {
     String? gender,
     String? height,
     String? picUrl,
+    String? cityName,
     String? zipCode,
+    String? stateIso,
     String? nickname,
+    String? stateName,
     int? purchasePrice,
     String? lastEditBy,
+    String? countryIso,
+    String? countryName,
     String? locationName,
     DateTime? dateOfBirth,
     DateTime? lastEditDate,
@@ -145,8 +170,13 @@ class HorseProfile {
       height: height ?? this.height,
       picUrl: picUrl ?? this.picUrl,
       zipCode: zipCode ?? this.zipCode,
+      cityName: cityName ?? this.cityName,
       nickname: nickname ?? this.nickname,
+      stateIso: stateIso ?? this.stateIso,
+      stateName: stateName ?? this.stateName,
+      countryIso: countryIso ?? this.countryIso,
       lastEditBy: lastEditBy ?? this.lastEditBy,
+      countryName: countryName ?? this.countryName,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       skillLevels: skillLevels ?? this.skillLevels,
       instructors: instructors ?? this.instructors,

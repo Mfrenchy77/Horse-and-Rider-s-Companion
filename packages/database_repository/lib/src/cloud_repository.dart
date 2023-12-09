@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 ///Repository that interacts with Goolge [CloudRepository]
 ///and Horse and Rider's Companion
@@ -18,24 +19,26 @@ class CloudRepository {
 
   /// Method to add Riders Photo to Cloud Firestore
   Future<String?> addRiderPhoto({
-    String? path, // For mobile
-    Uint8List? data, // For web
+    required XFile? file,
     required String riderId,
   }) async {
     final riderRef = _storageReference.child(RIDERS_PHOTO).child(riderId);
 
     try {
-      if (kIsWeb && data != null) {
-        // Web upload logic
-        await riderRef.putData(data);
-      } else if (path != null) {
-        // Mobile upload logic
-        final file = File(path);
-        await riderRef.putFile(file);
+      if (file != null) {
+        if (kIsWeb) {
+          // Web upload logic
+          final data = await file.readAsBytes();
+          await riderRef.putData(data);
+        } else {
+          // Mobile upload logic
+          final mobileFile = File(file.path);
+          await riderRef.putFile(mobileFile);
+        }
+        return await riderRef.getDownloadURL();
       } else {
-        throw Exception('No data provided for upload');
+        throw Exception('No file provided for upload');
       }
-      return await riderRef.getDownloadURL();
     } on FirebaseException catch (e) {
       debugPrint(e.toString());
     } catch (e) {
@@ -46,24 +49,26 @@ class CloudRepository {
 
   /// Method to add Horse photo to Cloud Firestore
   Future<String?> addHorsePhoto({
-    String? path, // For mobile
-    Uint8List? data, // For web
+    required XFile? file,
     required String horseId,
   }) async {
     final horseRef = _storageReference.child(HORSES_PHOTO).child(horseId);
 
     try {
-      if (kIsWeb && data != null) {
-        // Web upload logic
-        await horseRef.putData(data);
-      } else if (path != null) {
-        // Mobile upload logic
-        final file = File(path);
-        await horseRef.putFile(file);
+      if (file != null) {
+        if (kIsWeb) {
+          // Web upload logic
+          final data = await file.readAsBytes();
+          await horseRef.putData(data);
+        } else {
+          // Mobile upload logic
+          final mobileFile = File(file.path);
+          await horseRef.putFile(mobileFile);
+        }
+        return await horseRef.getDownloadURL();
       } else {
-        throw Exception('No data provided for upload');
+        throw Exception('No file provided for upload');
       }
-      return await horseRef.getDownloadURL();
     } on FirebaseException catch (e) {
       debugPrint(e.toString());
     } catch (e) {

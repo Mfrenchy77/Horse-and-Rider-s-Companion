@@ -87,8 +87,7 @@ class UpdateResourceSkills extends StatelessWidget {
                       SingleChildScrollView(
                         child: Wrap(
                           spacing: 8,
-                          children: homeCubit
-                                  .getAllSkills()
+                          children: homeCubit.state.allSkills
                                   ?.map(
                                     (e) => FilterChip(
                                       label: Text(e?.skillName ?? ''),

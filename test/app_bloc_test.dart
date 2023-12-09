@@ -21,8 +21,12 @@ void main() {
     });
 
     test('emits [authenticated] when user is logged in', () {
-      const user =
-          User(id: '123', email: 'test@test.com', emailVerfified: true);
+      const user = User(
+        id: '123',
+        name: 'Joe Schmoe',
+        email: 'test@test.com',
+        emailVerfified: true,
+      );
       final appBloc =
           AppBloc(authenticationRepository: authenticationRepository);
       expectLater(
@@ -50,7 +54,7 @@ void main() {
 
     test('emits [unauthenticated] when user is not verified', () {
       const user =
-          User(id: '123', email: 'test@test.com');
+          User(id: '123', name: 'Jolene Schmoe', email: 'test@test.com');
       final appBloc =
           AppBloc(authenticationRepository: authenticationRepository);
       expectLater(

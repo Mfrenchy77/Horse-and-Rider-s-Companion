@@ -26,7 +26,7 @@ class TestSkills {
     });
   }
 
-  // Main method to generate the test skills
+  /// Generates a list of skills for testing purposes
   static List<Skill> generateTestSkills() {
     final introductorySkills =
         _generateSkillsForDifficulty(DifficultyState.introductory, 15);

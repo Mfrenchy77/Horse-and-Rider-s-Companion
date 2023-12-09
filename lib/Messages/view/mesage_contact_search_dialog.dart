@@ -281,7 +281,7 @@ Widget _resultItem({
                   ),
                 ),
           title: Text(
-            profile.name ?? '',
+            profile.name,
             style: const TextStyle(
               fontSize: 18,
             ),

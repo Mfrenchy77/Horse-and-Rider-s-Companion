@@ -20,27 +20,26 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)!.settings.arguments as HomePageArguments?;
+
     final horseId = args?.horseId;
+    final usersProfile = args?.usersProfile;
     final viewingProfile = args?.viewingProfile;
     final user = context.select((AppBloc bloc) => bloc.state.user);
-    debugPrint('Viewing Profile: ${viewingProfile?.name}');
-    return Scaffold(
-      body: BlocProvider(
-        create: (context) => HomeCubit(
-          user: user,
-          horseId: horseId,
-          viewingProfile: viewingProfile,
-          messagesRepository: context.read<MessagesRepository>(),
-          skillTreeRepository: context.read<SkillTreeRepository>(),
-          resourcesRepository: context.read<ResourcesRepository>(),
-          horseProfileRepository: context.read<HorseProfileRepository>(),
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-        ),
-        child: HomeView(
-          viewingProfile: viewingProfile,
-          user: user,
-          buildContext: context,
-        ),
+
+    return BlocProvider(
+      create: (context) => HomeCubit(
+        user: user,
+        horseId: horseId,
+        usersProfile: usersProfile,
+        viewingProfile: viewingProfile,
+        messagesRepository: MessagesRepository(),
+        resourcesRepository: ResourcesRepository(),
+        skillTreeRepository: SkillTreeRepository(),
+        horseProfileRepository: HorseProfileRepository(),
+        riderProfileRepository: RiderProfileRepository(),
+      ),
+      child: const HomeView(
+        key: Key('HomeView'),
       ),
     );
   }
@@ -48,7 +47,12 @@ class HomePage extends StatelessWidget {
 
 /// Arguments holder class for [HomePage].
 class HomePageArguments {
-  HomePageArguments({required this.viewingProfile, required this.horseId});
+  HomePageArguments({
+    required this.horseId,
+    required this.usersProfile,
+    required this.viewingProfile,
+  });
   final String? horseId;
+  final RiderProfile? usersProfile;
   final RiderProfile? viewingProfile;
 }

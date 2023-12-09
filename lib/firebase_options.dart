@@ -36,6 +36,7 @@ class DefaultFirebaseOptions {
           'DefaultFirebaseOptions have not been configured for linux - '
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
+      // ignore: no_default_cases
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -70,7 +71,8 @@ class DefaultFirebaseOptions {
     projectId: 'horse-and-riders-compani-d2bd4',
     databaseURL: 'https://horse-and-riders-compani-d2bd4.firebaseio.com',
     storageBucket: 'horse-and-riders-compani-d2bd4.appspot.com',
-    iosClientId: '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
+    iosClientId:
+        '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
     iosBundleId: 'com.frenchfriedtechnlogy.horseandriderscompanion',
   );
 
@@ -81,7 +83,8 @@ class DefaultFirebaseOptions {
     projectId: 'horse-and-riders-compani-d2bd4',
     databaseURL: 'https://horse-and-riders-compani-d2bd4.firebaseio.com',
     storageBucket: 'horse-and-riders-compani-d2bd4.appspot.com',
-    iosClientId: '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
+    iosClientId:
+        '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
     iosBundleId: 'com.frenchfriedtechnlogy.horseandriderscompanion',
   );
 }

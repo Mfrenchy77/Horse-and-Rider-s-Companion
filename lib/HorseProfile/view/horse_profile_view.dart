@@ -12,95 +12,102 @@ import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:intl/intl.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-// TODO)(mfrenchy): go through and clean this all up
-class HorseProfileView extends StatelessWidget {
-  const HorseProfileView({
-    super.key,
-    required this.usersProfile,
-    required this.state,
-    required this.homeCubit,
-  });
-
-  final RiderProfile? usersProfile;
-  final HomeState state;
-  final HomeCubit homeCubit;
-  @override
-  Widget build(BuildContext context) {
-    final horseProfile = state.horseProfile;
-    debugPrint('Horse Profile: ${state.horseProfile?.name}');
-    if (horseProfile != null) {
-      final isOwner = horseProfile.currentOwnerId == usersProfile?.email;
-      return Scaffold(
-        appBar: AppBar(
-          actions: _appBarActions(
-            isOwner: isOwner,
-            context: context,
-            state: state,
-            homeCubit: homeCubit,
+// TODO(mfrenchy): go through and clean this all up
+Widget horseProfileView() {
+  return BlocBuilder<HomeCubit, HomeState>(
+    buildWhen: (previous, current) =>
+        previous.horseProfile != current.horseProfile,
+    builder: (context, state) {
+      final homeCubit = context.read<HomeCubit>();
+      debugPrint('Horse Profile: ${state.horseProfile?.name}');
+      if (state.horseProfile != null) {
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              onPressed: homeCubit.goBackToUsersProfile,
+              icon: const Icon(
+                Icons.arrow_back,
+              ),
+            ),
+            actions: _appBarActions(
+              isOwner: state.isOwner,
+              context: context,
+              state: state,
+              homeCubit: homeCubit,
+            ),
+            title: const Text('Horse Profile'),
           ),
-          title: const Text('Horse Profile'),
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Center(
-              child: Column(
-                children: [
-                  _horsePhoto(horseProfile: horseProfile),
-                  smallGap(),
-                  _currentOwner(
-                    horseProfile: horseProfile,
-                    context: context,
-                  ),
-                  smallGap(),
-                  _horseNickName(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseLocation(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseAge(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseColor(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseBreed(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseGender(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseHeight(horseProfile: horseProfile),
-                  smallGap(),
-                  _horseDateOfBirth(horseProfile: horseProfile),
-                  smallGap(),
-                  _requestToBeStudentHorseButton(
-                    context: context,
-                    horseProfile: horseProfile,
-                    isOwner: isOwner,
-                  ),
-                  // Text("${horseProfile.name}'s Log Book"),
-                  // Divider(
-                  //   color: isDark ? Colors.white : Colors.black,
-                  //   indent: 20,
-                  //   endIndent: 20,
-                  // ),
-                  // _addLogEntryButton(
-                  //   context: context,
-                  //   horseProfile: horseProfile,
-                  //   riderProfile: usersProfile as RiderProfile,
-                  // ),
-                  // gap(),
-                  // _notes(horseProfile: horseProfile)
-                ],
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Center(
+                child: Column(
+                  children: [
+                    _horsePhoto(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _currentOwner(
+                      horseProfile: state.horseProfile,
+                      context: context,
+                    ),
+                    smallGap(),
+                    _horseNickName(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseLocation(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseAge(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseColor(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseBreed(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseGender(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseHeight(horseProfile: state.horseProfile),
+                    smallGap(),
+                    _horseDateOfBirth(horseProfile: state.horseProfile),
+                    smallGap(),
+                    Visibility(
+                      visible: !state.isOwner,
+                      child: _requestToBeStudentHorseButton(
+                        context: context,
+                        horseProfile: state.horseProfile!,
+                        isOwner: state.isOwner,
+                      ),
+                    ),
+                    // Text("${horseProfile.name}'s Log Book"),
+                    // Divider(
+                    //   color: isDark ? Colors.white : Colors.black,
+                    //   indent: 20,
+                    //   endIndent: 20,
+                    // ),
+                    // _addLogEntryButton(
+                    //   context: context,
+                    //   horseProfile: horseProfile,
+                    //   riderProfile: usersProfile as RiderProfile,
+                    // ),
+                    // gap(),
+                    // _notes(horseProfile: horseProfile)
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
-    } else {
-      return const Center(
-        child: Logo(
-          screenName: 'Loading...',
-        ),
-      );
-    }
-  }
+        );
+      } else {
+        debugPrint('Horse Profile is null, trying to load');
+        if (state.horseId != null) {
+          homeCubit.horseProfileSelected(id: state.horseId!);
+        } else {
+          debugPrint('Horse Id is null');
+        }
+        return const Center(
+          child: Logo(
+            screenName: 'Loading...',
+          ),
+        );
+      }
+    },
+  );
 }
 
 List<Widget> _appBarActions({
@@ -109,6 +116,7 @@ List<Widget> _appBarActions({
   required HomeState state,
   required HomeCubit homeCubit,
 }) {
+  debugPrint('isOwner: $isOwner');
   return [
     Row(
       children: [
@@ -216,7 +224,7 @@ List<Widget> _appBarActions({
 }
 
 Widget _currentOwner({
-  required HorseProfile horseProfile,
+  required HorseProfile? horseProfile,
   required BuildContext context,
 }) {
   return Row(
@@ -228,12 +236,14 @@ Widget _currentOwner({
       Expanded(
         flex: 5,
         child: InkWell(
-          onTap: () => context.read<HomeCubit>().gotoProfilePage(
-                context: context,
-                toBeViewedEmail: horseProfile.currentOwnerId,
-              ),
+          onTap: horseProfile == null
+              ? null
+              : () => context.read<HomeCubit>().gotoProfilePage(
+                    context: context,
+                    toBeViewedEmail: horseProfile.currentOwnerId,
+                  ),
           child: Text(
-            horseProfile.currentOwnerName ?? '',
+            horseProfile?.currentOwnerName ?? '',
             textAlign: TextAlign.start,
             style: const TextStyle(
               fontSize: 18,
@@ -398,7 +408,7 @@ Widget _horsePhoto({required HorseProfile? horseProfile}) {
   );
 }
 
-Widget _horseLocation({required HorseProfile horseProfile}) {
+Widget _horseLocation({required HorseProfile? horseProfile}) {
   return Row(
     children: [
       const Expanded(
@@ -408,7 +418,7 @@ Widget _horseLocation({required HorseProfile horseProfile}) {
       Expanded(
         flex: 5,
         child: Text(
-          horseProfile.locationName ?? 'No Location Specified',
+          horseProfile?.locationName ?? 'No Location Specified',
           textAlign: TextAlign.start,
           style: const TextStyle(
             fontSize: 18,

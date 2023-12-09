@@ -1,7 +1,5 @@
 // ignore_for_file: cast_nullable_to_non_nullable, lines_longer_than_80_chars
 
-import 'dart:io';
-
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
@@ -10,11 +8,9 @@ import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
-import 'package:horseandriderscompanion/CommonWidgets/test_location_data.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/utils/view_utils.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_picker_web/image_picker_web.dart';
 
 part 'add_horse_dialog_state.dart';
 
@@ -37,13 +33,16 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         .then((value) => _locationApiKey = value);
     emit(
       state.copyWith(
+        selectedCountry: _horseProfile?.countryName,
+        selectedState: _horseProfile?.stateName,
+        selectedCity: _horseProfile?.cityName,
         horseProfile: _horseProfile,
         usersProfile: _usersProfile,
         horseName: SingleWord.dirty(_horseProfile?.name ?? ''),
         horseNickname: SingleWord.dirty(_horseProfile?.nickname ?? ''),
         breed: SingleWord.dirty(_horseProfile?.breed ?? ''),
         color: SingleWord.dirty(_horseProfile?.color ?? ''),
-        dateOfBirth: _horseProfile?.dateOfBirth?.millisecondsSinceEpoch,
+        dateOfBirth: _horseProfile?.dateOfBirth,
         dateOfPurchase: _horseProfile?.dateOfPurchase?.millisecondsSinceEpoch,
         gender: SingleWord.dirty(_horseProfile?.gender ?? ''),
         height: SingleWord.dirty(_horseProfile?.height ?? ''),
@@ -55,8 +54,8 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       ),
     );
   }
-  late String _locationApiKey;
-  late String _zipApi;
+  String _locationApiKey = '';
+  String _zipApi = '';
   final RiderProfile? _usersProfile;
   final HorseProfile? _horseProfile;
   final KeysRepository _keysRepository;
@@ -130,58 +129,43 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     final cloudRepository = CloudRepository();
 
     emit(state.copyWith(picStatus: PictureGetterStatus.picking));
-    if (kIsWeb) {
-      // Web-specific logic
-      final webImageData = await ImagePickerWeb.getImageAsBytes();
-      if (webImageData != null) {
-        emit(state.copyWith(picStatus: PictureGetterStatus.got));
-        picUrl = await cloudRepository.addRiderPhoto(
-          data: webImageData,
-          riderId: state.usersProfile?.id as String,
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 20,
+    );
+
+    if (pickedFile != null) {
+      picUrl = await cloudRepository.addHorsePhoto(
+        file: pickedFile,
+        horseId: state.horseProfile?.id as String,
+      );
+      if (picUrl != null) {
+        emit(
+          state.copyWith(
+            picUrl: picUrl,
+            picStatus: PictureGetterStatus.nothing,
+          ),
         );
-      }
-    } else {
-      // Mobile-specific logic
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 20,
-      );
-      if (pickedFile != null) {
-        emit(state.copyWith(picStatus: PictureGetterStatus.got));
-        final file = File(pickedFile.path);
-        picUrl = await cloudRepository.addRiderPhoto(
-          path: file.path,
-          riderId: state.usersProfile?.id as String,
+      } else {
+        emit(
+          state.copyWith(
+            picStatus: PictureGetterStatus.nothing,
+            status: FormzStatus.invalid,
+            error: 'Error uploading image',
+          ),
         );
+        debugPrint('Pic Url is null');
       }
-    }
-    if (picUrl != null) {
-      emit(
-        state.copyWith(
-          picUrl: picUrl,
-          picStatus: PictureGetterStatus.nothing,
-        ),
-      );
-    } else {
-      emit(
-        state.copyWith(
-          picStatus: PictureGetterStatus.nothing,
-          status: FormzStatus.invalid,
-          error: 'Error uploading image',
-        ),
-      );
-      debugPrint('Pic Url is null');
     }
   }
 
   Future<void> horseDateOfBirthChanged(DateTime? date) async {
-    final dob = date?.millisecondsSinceEpoch;
-
     emit(
       state.copyWith(
         dateStatus: DateStatus.dateSet,
-        dateOfBirth: dob,
+        dateOfBirth: date,
       ),
     );
   }
@@ -214,29 +198,30 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   /// Get the list of countries from the location api
   Future<List<Country>> getCountries() async {
-    // final locationRepository = LocationRepository(apiKey: _locationApiKey);
-// commented out for testing
-    // return locationRepository.getCountries();
-    return TestLocationData.generateTestCountries(20);
+    final locationRepository = LocationRepository(apiKey: _locationApiKey);
+    return locationRepository.getCountries();
   }
 
   /// Get the list of states from the location api
   /// [countryIso] is the iso code for the country
   Future<List<StateLocation>> getStates({required String countryIso}) async {
-    // final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    // return locationRepository.getStates(countryIso: countryIso);
-
-    return TestLocationData.generateTestStates(20);
+    final locationRepository = LocationRepository(apiKey: _locationApiKey);
+    return locationRepository.getStates(countryIso: countryIso);
   }
 
   /// Get the list of cities from the location api
-  /// [stateId] is the id of the state
+  /// [stateIso] is the id of the state
   /// [countryIso] is the iso code for the country
   Future<List<City>> getCities({
-    required int stateId,
+    required String stateIso,
     required String countryIso,
   }) async {
-    return TestLocationData.generateTestCities(20);
+    debugPrint('Getting Cities for $stateIso, $countryIso');
+    final locationRepository = LocationRepository(apiKey: _locationApiKey);
+    return locationRepository.getCities(
+      stateIso: stateIso,
+      countryCode: countryIso,
+    );
   }
 
   void countryChanged({
@@ -246,7 +231,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     emit(state.copyWith(countryIso: countryIso, selectedCountry: countryName));
   }
 
-  void stateChanged({required int stateId, required String stateName}) {
+  void stateChanged({required String stateId, required String stateName}) {
     emit(state.copyWith(stateId: stateId, selectedState: stateName));
   }
 
@@ -254,45 +239,65 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     emit(state.copyWith(selectedCity: city));
   }
 
-  Future<void> searchForLocation() async {
-    final value = state.zipCode.value;
+  void zipCodeChanged(String value) {
+    final zipCode = ZipCode.dirty(value);
+    emit(
+      state.copyWith(
+        zipCode: zipCode,
+        locationStatus: Formz.validate([zipCode]),
+      ),
+    );
+  }
+
+  Future<void> _searchForZip() async {
     final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
 
-    // emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
+    emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
 
-    // try {
-    //   if (int.tryParse(value) != null) {
-    //     debugPrint('Searching by Zip Code');
-    //     final zipResponse =
-    //         await zipcodeRepo.queryZipcode(value, country: 'us');
-    //     if (zipResponse != null && zipResponse.results.results.isNotEmpty) {
-    //       emit(
-    //         state.copyWith(
-    //           autoCompleteStatus: AutoCompleteStatus.success,
-    //           prediction: zipResponse.results.results,
-    //         ),
-    //       );
-    //     }
-    //   } else {
-    //     debugPrint('Searching by City');
-    //     final cityResponse = await zipcodeRepo.queryCity(value, country: 'us');
-    //     if (cityResponse != null && cityResponse.results.isNotEmpty) {
-    //       emit(
-    //         state.copyWith(
-    //           autoCompleteStatus: AutoCompleteStatus.success,
-    //           prediction: cityResponse,
-    //         ),
-    //       );
-    //     }
-    //   }
-    // } catch (e) {
-    //   emit(
-    //     state.copyWith(
-    //       autoCompleteStatus: AutoCompleteStatus.error,
-    //       error: e.toString(),
-    //     ),
-    //   );
-    // }
+    if (state.countryIso != null &&
+        state.selectedCity != null &&
+        state.selectedState != null) {
+      try {
+        debugPrint('Searching by Zip Code');
+        final zipResponse = await zipcodeRepo.queryZipcode(
+          city: state.selectedCity!,
+          country: state.countryIso!,
+          state: state.selectedState!,
+        );
+        if (zipResponse != null && zipResponse.results.results.isNotEmpty) {
+          if (zipResponse.results.results.length > 1) {
+            debugPrint('More than one result');
+            emit(
+              state.copyWith(
+                autoCompleteStatus: AutoCompleteStatus.success,
+                prediction: zipResponse.results,
+              ),
+            );
+          } else {
+            debugPrint('One result');
+            final zipCode =
+                ZipCode.dirty(zipResponse.results.results.keys.elementAt(0));
+            emit(
+              state.copyWith(
+                zipCode: zipCode,
+                locationStatus: Formz.validate([zipCode]),
+                autoCompleteStatus: AutoCompleteStatus.success,
+                prediction: zipResponse.results,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        emit(
+          state.copyWith(
+            autoCompleteStatus: AutoCompleteStatus.error,
+            error: e.toString(),
+          ),
+        );
+      }
+    } else {
+      debugPrint('No Country, State or City Selected');
+    }
   }
 
   void countrySelected({required String country, required String countryIso}) {
@@ -308,6 +313,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   void citySelected(String city) {
     debugPrint('City Selected: $city');
     emit(state.copyWith(selectedCity: city));
+    _searchForZip();
   }
 
   void locationSelected({
@@ -390,7 +396,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     final initialNoteEntry = BaseListItem(
       id: DateTime.now().toString(),
       name:
-          "${state.usersProfile?.name} registered ${state.horseName} with Horse & Rider's Companion",
+          "${state.usersProfile?.name} registered ${state.horseName.value} with Horse & Rider's Companion",
       message: state.usersProfile?.name,
       parentId: state.usersProfile?.email,
       date: DateTime.now(),
@@ -411,8 +417,8 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       locationName: state.locationName.trim(),
       height: state.height.value.trim(),
       gender: state.gender.value.trim(),
-      currentOwnerId: state.usersProfile?.email?.trim() as String,
-      currentOwnerName: state.usersProfile?.name?.trim() as String,
+      currentOwnerId: state.usersProfile?.email.trim() as String,
+      currentOwnerName: state.usersProfile?.name.trim() as String,
       dateOfPurchase: state.dateOfPurchase != null
           ? DateTime.fromMillisecondsSinceEpoch(
               state.dateOfPurchase as int,
@@ -420,17 +426,17 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
           : null,
       purchasePrice: state.purchasePrice.value,
       lastEditDate: DateTime.now(),
-      lastEditBy: state.usersProfile?.name?.trim(),
+      lastEditBy: state.usersProfile?.name.trim(),
       notes: notes,
     );
     if (horseProfile.dateOfBirth != null) {
       /// Add a note to the horses profile that it was born
       /// and who the owner was at the time
       final dobNote = BaseListItem(
-        id: DateTime.now().toString(),
-        date: horseProfile.dateOfBirth,
-        parentId: state.usersProfile?.email?.trim(),
-        message: state.usersProfile?.name?.trim(),
+        id: state.dateOfBirth.toString(),
+        date: state.dateOfBirth,
+        parentId: state.usersProfile?.email.trim(),
+        message: state.usersProfile?.name.trim(),
         name: '${state.horseProfile?.name} was Born',
       );
       horseProfile.notes?.add(dobNote);
@@ -510,9 +516,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       picUrl: state.picUrl.isNotEmpty
           ? state.picUrl.trim()
           : state.horseProfile?.picUrl,
-      dateOfBirth: state.dateOfBirth != null
-          ? DateTime.fromMillisecondsSinceEpoch(state.dateOfBirth as int)
-          : state.horseProfile?.dateOfBirth,
+      dateOfBirth: state.dateOfBirth,
       color: state.color.value.isNotEmpty
           ? state.color.value.trim()
           : state.horseProfile?.color,

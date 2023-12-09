@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:database_repository/database_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Repository for handling location-based API calls.
@@ -67,7 +68,9 @@ class LocationRepository {
       final data = await response.stream.bytesToString();
       final json = jsonDecode(data) as Iterable<dynamic>;
       return json
-          .map<StateLocation>((state) => StateLocation.fromJson(state as Map<String, dynamic>))
+          .map<StateLocation>(
+            (state) => StateLocation.fromJson(state as Map<String, dynamic>),
+          )
           .toList();
     } else {
       throw Exception('Failed to load states: ${response.reasonPhrase}');
@@ -83,7 +86,7 @@ class LocationRepository {
   /// Throws an [Exception] if the API call fails.
   Future<List<City>> getCities({
     required String countryCode,
-    required int stateId,
+    required String stateIso,
   }) async {
     final headers = {
       'X-CSCAPI-KEY': apiKey,
@@ -92,12 +95,12 @@ class LocationRepository {
     final request = http.Request(
       'GET',
       Uri.parse(
-        'https://api.countrystatecity.in/v1/countries/$countryCode/states/$stateId/cities',
+        'https://api.countrystatecity.in/v1/countries/$countryCode/states/$stateIso/cities',
       ),
     );
 
     request.headers.addAll(headers);
-
+    debugPrint('City request: $request');
     final response = await request.send();
 
     if (response.statusCode == 200) {

@@ -134,8 +134,10 @@ class CreateResourcDialog extends StatelessWidget {
                                     (Skill? skill) {
                                       return FilterChip(
                                         label: Text(skill!.skillName!),
-                                        selected: state.resourceSkills
-                                                ?.contains(skill.id) ??
+                                        selected: state.resourceSkills?.any(
+                                              (skillObject) =>
+                                                  skillObject?.id == skill.id,
+                                            ) ??
                                             false,
                                         onSelected: (value) => context
                                             .read<CreateResourceDialogCubit>()

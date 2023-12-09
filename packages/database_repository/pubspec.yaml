@@ -25,6 +25,8 @@ dependencies:
  
   http: ^1.1.2
   
+  image_picker: ^1.0.4
+
   meta: ^1.7.0
 
 dev_dependencies:

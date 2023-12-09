@@ -392,9 +392,9 @@ extension on firebase_auth.User {
   User get toUser {
     return User(
       id: uid,
-      email: email,
+      email: email ?? '',
       photo: photoURL,
-      name: displayName,
+      name: displayName ?? '',
       isGuest: isAnonymous,
       emailVerfified: emailVerified,
     );

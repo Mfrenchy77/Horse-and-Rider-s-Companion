@@ -1,9 +1,8 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
-import 'package:authentication_repository/authentication_repository.dart';
-import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
@@ -20,132 +19,173 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class HomeView extends StatelessWidget {
-  const HomeView({
-    super.key,
-    required this.user,
-    required this.buildContext,
-    this.viewingProfile,
-  });
-
-  final RiderProfile? viewingProfile;
-  final User user;
-  final BuildContext buildContext;
-
+  const HomeView({super.key});
   @override
-  Widget build(Object context) {
+  Widget build(BuildContext context) {
     // ignore: avoid_unnecessary_containers
-    return Container(
-      child: BlocListener<HomeCubit, HomeState>(
-        listener: (context, state) {
-          final homeCubit = context.read<HomeCubit>();
+    return BlocListener<HomeCubit, HomeState>(
+      listenWhen: (previous, current) =>
+          previous.isSearching != current.isSearching ||
+          previous.isSendingMessageToSupport !=
+              current.isSendingMessageToSupport ||
+          previous.errorSnackBar != current.errorSnackBar ||
+          previous.snackBar != current.snackBar ||
+          previous.messageSnackBar != current.messageSnackBar,
+      listener: (context, state) {
+        final homeCubit = context.read<HomeCubit>();
 
-          ///Open a dialog to send a message to support
+        ///Open a dialog to send a message to support
 
-          if (state.isSendingMessageToSupport) {
-            SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-              showDialog<SupportMessageDialog>(
-                context: context,
-                builder: (dialogContext) => const SupportMessageDialog(),
-              ).then((value) => homeCubit.closeMessageToSupport());
-            });
-          }
-
-          /// Show Search
-          if (state.isSearching) {
-            showDialog<SearchDialog>(
+        if (state.isSendingMessageToSupport) {
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            showDialog<SupportMessageDialog>(
               context: context,
-              builder: (context) => const SearchDialog(),
-            ).then((value) => context.read<HomeCubit>().clearSearch());
-          }
-
-          /// Show Error Snackbar
-          if (state.errorSnackBar) {
-            SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      state.error,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.red,
-                  ),
-                ).closed.then((value) {
-                  homeCubit.clearSnackBar();
-                });
-            });
-          }
-
-          /// Show Regular SnackBar
-          if (state.snackBar) {
-            SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    backgroundColor:
-                        HorseAndRidersTheme().getTheme().colorScheme.primary,
-                    content: Text(
-                      state.error,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ).closed.then(
-                      (value) => homeCubit.clearSnackBar(),
-                    );
-            });
-          }
-
-          /// Show Message SnackBar
-          if (state.messageSnackBar) {
-            SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    action: SnackBarAction(
-                      label: 'Open Messages',
-                      onPressed: () => context
-                          .read<HomeCubit>()
-                          .openMessages(context: context),
-                    ),
-                    backgroundColor:
-                        HorseAndRidersTheme().getTheme().colorScheme.primary,
-                    content: Text(
-                      state.error,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ).closed.then(
-                      (value) => homeCubit.clearSnackBar(),
-                    );
-            });
-          }
-        },
-        child: BlocBuilder<HomeCubit, HomeState>(
-          builder: (context, state) {
-            final homeCubit = context.read<HomeCubit>();
-            // check if usersProfile , viewingProfile and state.isGuest are null
-            if (state.usersProfile == null &&
-                state.viewingProfile == null &&
-                !state.isGuest) {
-              debugPrint('Users Profile: ${state.usersProfile?.name}');
-              return _loadingView();
-            } else {
-              return _mainView(
+              builder: (dialogContext) => SupportMessageDialog(
                 homeCubit: homeCubit,
-                isViewed: state.isViewing,
-                viewingProfile: state.viewingProfile,
-                usersProfile: state.usersProfile,
-                context: context,
-                user: user,
                 state: state,
-              );
-            }
-          },
-        ),
+              ),
+            ).then((value) => homeCubit.closeMessageToSupport());
+          });
+        }
+
+        /// Show Search
+        if (state.isSearching) {
+          showDialog<SearchDialog>(
+            context: context,
+            builder: (context) => SearchDialog(
+              userProfile: state.usersProfile!,
+            ),
+          ).then(
+            (value) => context.read<HomeCubit>().closeSearchForHorsesOrRiders(),
+          );
+        }
+
+        /// Show Error Snackbar
+        if (state.errorSnackBar) {
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    state.error,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+              ).closed.then((value) {
+                homeCubit.clearSnackBar();
+              });
+          });
+        }
+
+        /// Show Regular SnackBar
+        if (state.snackBar) {
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  backgroundColor:
+                      HorseAndRidersTheme().getTheme().colorScheme.primary,
+                  content: Text(
+                    state.error,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ).closed.then(
+                    (value) => homeCubit.clearSnackBar(),
+                  );
+          });
+        }
+
+        /// Show Message SnackBar
+        if (state.messageSnackBar) {
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  action: SnackBarAction(
+                    label: 'Open Messages',
+                    onPressed: () => context
+                        .read<HomeCubit>()
+                        .openMessages(context: context),
+                  ),
+                  backgroundColor:
+                      HorseAndRidersTheme().getTheme().colorScheme.primary,
+                  content: Text(
+                    state.error,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ).closed.then(
+                    (value) => homeCubit.clearSnackBar(),
+                  );
+          });
+        }
+      },
+      child: BlocBuilder<HomeCubit, HomeState>(
+        buildWhen: (previous, current) =>
+            previous.usersProfile != current.usersProfile ||
+            previous.viewingProfile != current.viewingProfile ||
+            previous.isGuest != current.isGuest ||
+            previous.isViewing != current.isViewing,
+        builder: (context, state) {
+          // check if usersProfile , viewingProfile and state.isGuest are null
+
+          return SizedBox(
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            child: Column(
+              children: [
+                Expanded(
+                  child: BlocBuilder<HomeCubit, HomeState>(
+                    buildWhen: (previous, current) =>
+                        previous.index != current.index ||
+                        previous.isForRider != current.isForRider,
+                    builder: (context, state) {
+                      final homeCubit = context.read<HomeCubit>();
+                      return AdaptiveScaffold(
+                        // leadingUnextendedNavRail: const Padding(
+                        //   padding: EdgeInsets.all(8.0),
+                        //   child:
+                        //       Image(image: AssetImage('assets/horse_logo.png')),
+                        // ),
+                        // leadingExtendedNavRail: const Logo(screenName: ''),
+                        useDrawer: false,
+                        destinations:
+                            _buildDestinations(isForRider: state.isForRider),
+                        selectedIndex: state.index,
+                        onSelectedIndexChange: (int newIndex) {
+                          if (newIndex == 0) {
+                            homeCubit.profileNavigationSelected();
+                          } else if (newIndex == 1) {
+                            homeCubit.skillTreeNavigationSelected();
+                          } else if (newIndex == 2) {
+                            homeCubit.resourcesNavigationSelected();
+                          }
+                        },
+                        body: (_) => AdaptiveLayout(
+                          body: SlotLayout(
+                            config: <Breakpoint, SlotLayoutConfig>{
+                              Breakpoints.standard: SlotLayout.from(
+                                key: const Key('mainView'),
+                                builder: (_) => _mainView(),
+                              ),
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                _bannerAd(),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -165,141 +205,98 @@ Widget _loadingView() {
   );
 }
 
-Widget _mainView({
-  required BuildContext context,
-  required User user,
-  required HomeState state,
-  required RiderProfile? viewingProfile,
-  required RiderProfile? usersProfile,
-  required bool isViewed,
-  required HomeCubit homeCubit,
-}) {
-  debugPrint('Users Profile: ${state.usersProfile?.name}');
+Widget _mainView() {
+  return BlocBuilder<HomeCubit, HomeState>(
+    buildWhen: (previous, current) =>
+        previous.homeStatus != current.homeStatus ||
+        previous.isForRider != current.isForRider,
+    builder: (context, state) {
+      return state.homeStatus == HomeStatus.profile
+          ? state.isForRider
+              ? profileView()
+              : horseProfileView()
+          : state.homeStatus == HomeStatus.ridersLog
+              ? LogView(
+                  state: state,
+                  isRider: true,
+                )
+              : state.homeStatus == HomeStatus.horseLog
+                  ? LogView(
+                      state: state,
+                      isRider: false,
+                    )
+                  : state.homeStatus == HomeStatus.skillTree
+                      ?
 
-  return Scaffold(
-    body: state.homeStatus == HomeStatus.profile
-        ? state.horseProfile == null
-            ?
+                      /// Go to the Skill Tree
+                      skillTreeView()
+                      : state.homeStatus == HomeStatus.resource
+                          ?
 
-            ///  Go to Rider's Profile
-            profileView(
-                state: state,
-                context: context,
-                homeCubit: homeCubit,
-                viewingProfile: viewingProfile,
-                usersProfile: state.usersProfile,
-              )
-            : HorseProfileView(
-                usersProfile: usersProfile,
-                state: state,
-                homeCubit: homeCubit,
-              )
-        : state.homeStatus == HomeStatus.ridersLog
-            ? LogView(
-                state: state,
-                isRider: true,
-              )
-            : state.homeStatus == HomeStatus.horseLog
-                ? LogView(
-                    state: state,
-                    isRider: false,
-                  )
-                : state.homeStatus == HomeStatus.skillTree
-                    ?
+                          /// Go to the Resource View
+                          resourcesView()
+                          : state.homeStatus == HomeStatus.loading
+                              ?
 
-                    /// Go to the Skill Tree
-                    skillTreeView(
-                        state: state,
-                        context: context,
-                        homeCubit: homeCubit,
-                      )
-                    : state.homeStatus == HomeStatus.resource
-                        ?
+                              ///  Loading Screen
+                              _loadingView()
+                              :
 
-                        /// Go to the Resource View
-                        resourcesView(
-                            state: state,
-                            context: context,
-                            homeCubit: homeCubit,
-                          )
-                        : state.homeStatus == HomeStatus.loading
-                            ?
-
-                            ///  Loading Screen
-                            _loadingView()
-                            :
-
-                            ///  Error Screen
-                            errorView(context),
-    bottomNavigationBar: Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        BottomNavigationBar(
-          items: [
-            const BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person),
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: state.isForRider
-                  ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-                  : const Icon(HorseAndRiderIcons.horseSkillIcon),
-              icon: state.isForRider
-                  ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-                  : const Icon(HorseAndRiderIcons.horseSkillIcon),
-              label: 'Skill Tree',
-            ),
-            const BottomNavigationBarItem(
-              activeIcon: Icon(HorseAndRiderIcons.resourcesIcon),
-              icon: Icon(HorseAndRiderIcons.resourcesIcon),
-              label: 'Resources',
-            ),
-          ],
-          currentIndex: state.index,
-          onTap: (value) {
-            switch (value) {
-              case 0:
-                homeCubit.riderProfileNavigationSelected();
-
-                break;
-              case 1:
-                homeCubit.skillTreeNavigationSelected();
-                break;
-
-              case 2:
-                homeCubit.resourcesNavigationSelected();
-
-                break;
-            }
-          },
-
-          //   );
-          // },
-        ),
-
-        //Ad
-        _bannerAd(state: state, context: context),
-      ],
-    ),
+                              ///  Error Screen
+                              errorView(context);
+    },
   );
 }
 
-Widget _bannerAd({required HomeState state, required BuildContext context}) {
-  if (state.isBannerAdReady) {
-    return Visibility(
-      visible: state.isBannerAdReady,
-      child: Container(
-        color: HorseAndRidersTheme().getTheme().primaryColor,
-        width: double.infinity,
-        height: state.bannerAd?.size.height.toDouble(),
-        alignment: Alignment.center,
-        child: AdWidget(ad: state.bannerAd!),
-      ),
-    );
-  } else {
-    return const SizedBox();
-  }
+// Define your destinations for NavigationRail and BottomNavigationBar
+List<NavigationDestination> _buildDestinations({required bool isForRider}) {
+  return [
+    NavigationDestination(
+      selectedIcon: isForRider
+          ? const Icon(Icons.person)
+          : const Icon(HorseAndRiderIcons.horseIconCircle),
+      icon: isForRider
+          ? const Icon(Icons.person_outline)
+          : const Icon(HorseAndRiderIcons.horseIcon),
+      label: isForRider ? 'Profile' : 'Horse Profile',
+    ),
+    NavigationDestination(
+      selectedIcon: isForRider
+          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+      icon: isForRider
+          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+      label: 'Skill Tree',
+    ),
+    const NavigationDestination(
+      selectedIcon: Icon(HorseAndRiderIcons.resourcesIcon),
+      icon: Icon(HorseAndRiderIcons.resourcesIcon),
+      label: 'Resources',
+    ),
+  ];
+}
+
+Widget _bannerAd() {
+  return BlocBuilder<HomeCubit, HomeState>(
+    buildWhen: (previous, current) =>
+        previous.isBannerAdReady != current.isBannerAdReady ||
+        previous.bannerAd != current.bannerAd,
+    builder: (context, state) {
+      if (state.isBannerAdReady) {
+        return Visibility(
+          visible: state.isBannerAdReady,
+          child: Container(
+            color: HorseAndRidersTheme().getTheme().primaryColor,
+            width: double.infinity,
+            height: state.bannerAd?.size.height.toDouble(),
+            alignment: Alignment.center,
+            child: AdWidget(ad: state.bannerAd!),
+          ),
+        );
+      } else {
+        return const SizedBox();
+      }
+    },
+  );
 }

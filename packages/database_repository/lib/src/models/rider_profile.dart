@@ -7,17 +7,17 @@ import 'package:database_repository/src/models/skill_level.dart';
 ///Model for a Rider's Profile
 class RiderProfile {
   RiderProfile({
-    this.id,
     this.bio,
-    this.email,
     this.picUrl,
     this.homeUrl,
     this.zipCode,
     this.lastEditBy,
     this.subscribed,
+    required this.id,
     this.locationName,
     this.lastEditDate,
     required this.name,
+    required this.email,
     this.editor = false,
     this.notes = const [],
     this.subscriptionDate,
@@ -35,14 +35,14 @@ class RiderProfile {
 
   bool? editor;
   String? bio;
-  String? name;
+  String name;
   String? zipCode;
   bool? isTrainer;
   String? homeUrl;
-  final String? id;
+  final String id;
   String? lastEditBy;
   String? picUrl = '';
-  final String? email;
+  final String email;
   String? locationName;
   DateTime? lastEditDate;
   List<BaseListItem>? notes;
@@ -65,11 +65,11 @@ class RiderProfile {
   ) {
     final data = snapshot.data();
     return RiderProfile(
-      id: data!['id'] as String?,
+      id: data!['id'] as String,
       bio: data['bio'] as String?,
-      name: data['name'] as String?,
+      name: data['name'] as String,
+      email: data['email'] as String,
       editor: data['editor'] as bool?,
-      email: data['email'] as String?,
       picUrl: data['picUrl'] as String?,
       zipCode: data['zipCode'] as String?,
       homeUrl: data['homeUrl'] as String?,
@@ -124,22 +124,22 @@ class RiderProfile {
   }
   Map<String, dynamic> toFirestore() {
     return {
-      if (id != null) 'id': id,
+      'id': id,
+      'name': name,
       if (bio != null) 'bio': bio,
-      if (name != null) 'name': name,
+      'email': email.toLowerCase(),
       if (editor != null) 'editor': editor,
       if (picUrl != null) 'picUrl': picUrl,
       if (zipCode != null) 'zipCode': zipCode,
       if (isTrainer != null) 'isTrainer': isTrainer,
-      if (email != null) 'email': email?.toLowerCase(),
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (subscribed != null) 'subscribed': subscribed,
       if (locationName != null) 'locationName': locationName,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
       if (messagesList != null) 'messagesList': messagesList,
       if (homeUrl != null) 'homeUrl': homeUrl?.toLowerCase(),
-      if (savedResourcesList != null) 'savedResourcesList': savedResourcesList,
       if (subscriptionDate != null) 'subscriptionDate': subscriptionDate,
+      if (savedResourcesList != null) 'savedResourcesList': savedResourcesList,
       if (notes != null)
         'notes': List<dynamic>.from(notes!.map((e) => e.toJson())),
       if (subscriptionEndDate != null)

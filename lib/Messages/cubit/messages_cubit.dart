@@ -22,7 +22,7 @@ class MessagesCubit extends Cubit<MessagesState> {
         super(const MessagesState()) {
     ///   Groups Stream
     _groupsStream = _messagesRepository
-        .getGroups(userEmail: riderProfile.email as String)
+        .getGroups(userEmail: riderProfile.email)
         .listen((event) {
       _groups = event.docs.map((e) => (e.data()) as Group?).toList();
       _groups?.sort(
@@ -418,7 +418,7 @@ class MessagesCubit extends Cubit<MessagesState> {
     final updatedGroup = state.group as Group
       ..recentMessage = state.messages.isNotEmpty ? state.messages.first : null
       ..lastEditDate = DateTime.now()
-      ..lastEditBy = riderProfile.name as String;
+      ..lastEditBy = riderProfile.name;
     _messagesRepository.createOrUpdateGroup(group: updatedGroup);
     emit(state.copyWith(status: MessagesStatus.groups));
 

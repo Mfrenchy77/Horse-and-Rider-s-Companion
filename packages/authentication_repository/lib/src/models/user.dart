@@ -8,10 +8,10 @@ import 'package:equatable/equatable.dart';
 class User extends Equatable {
   /// {@macro user}
   const User({
-    this.email,
-    this.name,
     this.photo,
     required this.id,
+    required this.name,
+    required this.email,
     this.isGuest = false,
     this.emailVerfified = false,
   });
@@ -20,10 +20,10 @@ class User extends Equatable {
   final String id;
 
   /// The current user's name (display name).
-  final String? name;
+  final String name;
 
   /// The current user's email address.
-  final String? email;
+  final String email;
 
   /// Url for the current user's photo.
   final String? photo;
@@ -35,7 +35,7 @@ class User extends Equatable {
   final bool isGuest;
 
   /// Empty user which represents an unauthenticated user.
-  static const empty = User(id: '');
+  static const empty = User(id: '', name: '', email: '');
 
   /// Convenience getter to determine whether the current user is empty.
   bool get isEmpty => this == User.empty;

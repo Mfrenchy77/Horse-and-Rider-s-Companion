@@ -49,7 +49,7 @@ class ColorConst {
   static const fallBackgroundDark = Color(0xFF212121);
 
   // Winter colors
-  static const winterPrimaryLight = Color(0xFF1976D2);
+  static const winterPrimaryLight = Color(0xFF64B5F6);
   static const winterAccentLight = Color(0xFFB0BEC5);
   static const winterBackgroundLight = Color(0xFFECEFF1);
   static const winterPrimaryDark = Color(0xFF64B5F6);

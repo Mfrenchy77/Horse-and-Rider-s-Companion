@@ -32,132 +32,175 @@ class HomeCubit extends Cubit<HomeState> {
     this.bannerAd,
     required User user,
     required String? horseId,
+    required RiderProfile? usersProfile,
     required RiderProfile? viewingProfile,
     required MessagesRepository messagesRepository,
     required ResourcesRepository resourcesRepository,
     required SkillTreeRepository skillTreeRepository,
     required HorseProfileRepository horseProfileRepository,
     required RiderProfileRepository riderProfileRepository,
-  })  : _user = user,
-        _horseId = horseId,
-        _viewingProfile = viewingProfile,
-        _messagesRepository = messagesRepository,
+  })  : _messagesRepository = messagesRepository,
         _skillTreeRepository = skillTreeRepository,
         _resourcesRepository = resourcesRepository,
         _horseProfileRepository = horseProfileRepository,
         _riderProfileRepository = riderProfileRepository,
         super(const HomeState()) {
+    emit(state.copyWith(viewingProfile: viewingProfile));
+    if (usersProfile != null) {
+      debugPrint('Users Profile: ${usersProfile.email}');
+      emit(state.copyWith(usersProfile: usersProfile));
+    } else {
+      debugPrint('userProfile is null');
+    }
     if (!user.isGuest) {
+      debugPrint('Trying to get Rider Profile for ${user.email}');
       _riderProfileSubscription = _riderProfileRepository
-          .getRiderProfile(email: _user.email)
+          .getRiderProfile(email: user.email)
           .listen((event) {
         final profile = event.data() as RiderProfile?;
         debugPrint('Received Rider Profile: ${profile?.name}');
 
         if (profile != null) {
-          _usersProfile = profile;
-          emit(state.copyWith(usersProfile: _usersProfile));
+          emit(state.copyWith(usersProfile: profile));
         } else {
-          debugPrint('Creating Rider Profile for ${_user.name}');
+          debugPrint('Creating Rider Profile for ${user.name}');
           createRiderProfile(user: user);
         }
+        profileNavigationSelected();
       });
     } else {
       debugPrint('User is a Guest');
       // ignore: avoid_redundant_argument_values
       emit(state.copyWith(usersProfile: null, isGuest: true));
     }
+    if (horseId != null) {
+      horseProfileSelected(id: horseId);
+    }
 
     ///   Stream to listen to changes in HorseProfile and retrieves
     ///   the owner's profile if not the user
-    if (_horseId != null) {
-      _horseProfileSubscription = _horseProfileRepository
-          .getHorseProfileById(id: _horseId)
-          .listen((event) {
-        _horseProfile = event.data() as HorseProfile?;
-        if (!_isOwner()) {
-          _riderProfileRepository
-              .getRiderProfile(email: _horseProfile?.currentOwnerId)
-              .listen((event) {
-            _ownersProfile = event.data() as RiderProfile?;
-            emit(state.copyWith(ownersProfile: _ownersProfile));
-          });
-        } else {
-          emit(state.copyWith(ownersProfile: _usersProfile));
-        }
-        debugPrint('HorseProfile: ${_horseProfile?.name}');
-        emit(
-          state.copyWith(
-            horseProfile: _horseProfile,
-            isOwner: _isOwner(),
-            isForRider: false,
-          ),
-        );
-      });
-    } else {
-      debugPrint('HorseId is null');
-    }
+    // if (horseId != null) {
+    //   if (state.horseProfile == null || state.horseProfile?.id != horseId) {
+    //     debugPrint('Getting HorseProfile for $horseId');
+    //     _horseProfileSubscription = _horseProfileRepository
+    //         .getHorseProfileById(id: horseId)
+    //         .listen((event) {
+    //       final horseProfile = event.data() as HorseProfile?;
+    //       debugPrint('HorseProfile: ${horseProfile?.name}');
+    //       if (!_isOwner()) {
+    //         _riderProfileRepository
+    //             .getRiderProfile(email: horseProfile?.currentOwnerId)
+    //             .listen((event) {
+    //           final ownersProfile = event.data() as RiderProfile?;
+    //           debugPrint('Owners Profile: ${ownersProfile?.name}');
+    //           emit(state.copyWith(ownersProfile: ownersProfile));
+    //         });
+    //       } else {
+    //         debugPrint('User is the Owner');
+    //         emit(state.copyWith(ownersProfile: usersProfile));
+    //       }
+    //       debugPrint('Setting HorseProfile');
+    //       emit(
+    //         state.copyWith(
+    //           horseProfile: horseProfile,
+    //           isOwner: _isOwner(),
+    //           isForRider: false,
+    //         ),
+    //       );
+    //     });
+    //   } else {
+    //     debugPrint('HorseProfile already set');
+    //   }
+    // } else {
+    //   debugPrint('HorseId is null');
+    // }
 
     ///   Stream of Resources
 
     //FIXME:  Resources for TESTING
+    if (state.allResources == null) {
+      debugPrint('Getting Resources');
+      final resources = TestResource.generateTestResources();
+      emit(state.copyWith(allResources: resources));
+      _sortResources();
+    } else {
+      debugPrint('Resources already set');
+    }
+    _resourcesStream = _resourcesRepository.getResources().listen((event) {
+      debugPrint('Resources Stream: got data ${event.docs.length}');
+      // _resources = event.docs.map((doc) => (doc.data()) as Resource?).toList();
 
-    _resources = TestResource.generateTestResources();
-    emit(state.copyWith(allResources: _resources));
-    _sortResources();
-
-    // _resourcesStream = _resourcesRepository.getResources().listen((event) {
-    //   _resources = event.docs.map((doc) => (doc.data()) as Resource?).toList();
-
-    //   emit(
-    //     state.copyWith(allResources: _resources),
-    //   );
-    // });
+      // emit(
+      //   state.copyWith(allResources: _resources),
+      // );
+    });
 
     ///   Stream of Categoies
-    _categoryStream =
-        _skillTreeRepository.getCatagoriesForRiderSkillTree().listen((event) {
-      _categories =
-          event.docs.map((doc) => (doc.data()) as Catagorry?).toList();
-      emit(state.copyWith(categories: _categories));
-    });
+    if (state.categories == null) {
+      debugPrint('Getting Categories');
+      _categoryStream =
+          _skillTreeRepository.getCatagoriesForRiderSkillTree().listen((event) {
+        debugPrint('Categories Stream: got data ${event.docs.length}');
+        final categories =
+            event.docs.map((doc) => (doc.data()) as Catagorry?).toList();
+        emit(state.copyWith(categories: categories));
+      });
+    }
 
     ///   Stream of SubCategories
-    _subCategoryStream = _skillTreeRepository
-        .getSubCategoriesForRiderSkillTree()
-        .listen((event) {
-      _subCategories =
-          event.docs.map((e) => (e.data()) as SubCategory?).toList();
-      emit(state.copyWith(subCategories: _getSubCategories(category: null)));
-    });
+    if (state.subCategories == null) {
+      debugPrint('Getting SubCategories');
+      _subCategoryStream = _skillTreeRepository
+          .getSubCategoriesForRiderSkillTree()
+          .listen((event) {
+        debugPrint('SubCategories Stream: got data ${event.docs.length}');
+        final subCategories =
+            event.docs.map((e) => (e.data()) as SubCategory?).toList();
+        emit(state.copyWith(subCategories: subCategories));
+        _sortSubCategories(category: null);
+      });
+    } else {
+      debugPrint('SubCategories already set');
+    }
 
     ///   Stream of Skills
     //FIXME:  Skills for TESTING
-    _skillsStream = _skillTreeRepository.getSkills().listen((event) {
-      // _skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
-      _skills = TestSkills.generateTestSkills();
-      _skills!.sort((a, b) => a!.position.compareTo(b!.position));
-      _sortSkillForDifficulty(skills: _skills);
-      emit(
-        state.copyWith(
-          allSkills: _getSkills(subCategory: null),
-        ),
-      );
-    });
+
+    if (state.allSkills == null) {
+      debugPrint('Getting Skills');
+      getSkills();
+
+      //   _skillsStream = _skillTreeRepository.getSkills().listen((event) {
+      //     debugPrint('Skills Stream: got data ${event.docs.length}');
+      //     final skills = TestSkills.generateTestSkills()
+      //       ..sort((a, b) => a.position.compareTo(b.position));
+
+      //     debugPrint('Setting allSkills: ${skills.length}');
+      //     emit(state.copyWith(allSkills: skills));
+      //     sortSkills(subCategory: null);
+      //     // final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
+      //     // debugPrint('Setting allSkills: ${skills.length}');
+      //     // emit(state.copyWith(allSkills: skills));
+      //   });
+    } else {
+      debugPrint('Skills already set');
+    }
 
     ///   Stream of Groups to get unread messages
     ///   Groups Stream
     if (state.usersProfile != null) {
+      debugPrint('Getting Groups');
       _groupsStream = _messagesRepository
           .getGroups(
-        userEmail: state.usersProfile?.email ?? _user.email as String,
+        userEmail: state.usersProfile!.email,
       )
           .listen((event) {
-        _groups = event.docs.map((e) => e.data() as Group?).toList();
+        debugPrint('Groups Stream: got data ${event.docs.length}');
+        final groups = event.docs.map((e) => e.data() as Group?).toList();
 
-        final unreadMessages = _groups!.fold(0, (int total, Group? group) {
+        final unreadMessages = groups.fold(0, (int total, Group? group) {
           if (group?.messageState == MessageState.UNREAD &&
-              group?.recentMessage?.sender != _user.email) {
+              group?.recentMessage?.sender != state.usersProfile!.email) {
             return total + 1;
           }
           return total;
@@ -170,7 +213,7 @@ class HomeCubit extends Cubit<HomeState> {
     ///     Load Ad
     _loadBannerAds();
 
-    riderProfileNavigationSelected();
+    // profileNavigationSelected();
   }
 
   ///   Repositories
@@ -190,31 +233,20 @@ class HomeCubit extends Cubit<HomeState> {
   late final StreamSubscription<QuerySnapshot<Object?>> _subCategoryStream;
 
   ///   Rider Profile for the current user
-  final User _user;
-  RiderProfile? _usersProfile;
 
   ///   Viewing Profile if not null
-  final RiderProfile? _viewingProfile;
 
   /// HorseProfile
-  final String? _horseId;
-  HorseProfile? _horseProfile;
-  RiderProfile? _ownersProfile;
 
   ///   Resources
-  List<Resource?>? _resources;
 
   ///   Categories
-  List<Catagorry?>? _categories;
 
   ///   SubCategories
-  List<SubCategory?>? _subCategories;
 
   ///   Skills
-  List<Skill?>? _skills;
 
   ///   Messages
-  List<Group?>? _groups;
 
   /// Ads
   BannerAd? bannerAd;
@@ -265,11 +297,11 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('Menu Selection: $choice');
     switch (choice) {
       case 'Edit':
-        _usersProfile != null
+        state.usersProfile != null
             ? showDialog<EditRiderProfileDialog>(
                 context: context,
                 builder: (context) => EditRiderProfileDialog(
-                  riderProfile: _usersProfile!,
+                  riderProfile: state.usersProfile!,
                 ),
               )
             : emit(
@@ -293,7 +325,7 @@ class HomeCubit extends Cubit<HomeState> {
     showDialog<EditRiderProfileDialog>(
       context: context,
       builder: (context) => EditRiderProfileDialog(
-        riderProfile: _usersProfile as RiderProfile,
+        riderProfile: state.usersProfile!,
       ),
     );
   }
@@ -335,34 +367,40 @@ class HomeCubit extends Cubit<HomeState> {
     required bool isTrainer,
     required BuildContext context,
   }) {
+    final currentUserProfile = state.usersProfile;
+    if (currentUserProfile == null) {
+      // Handle the case where the user profile is not available
+      debugPrint('User profile is not available');
+      return;
+    }
+
     final note = BaseListItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: 'Is Trainer: $isTrainer',
       date: DateTime.now(),
-      message: _user.name,
-      parentId: _user.email,
+      message: currentUserProfile.name,
+      parentId: currentUserProfile.email,
+    );
+
+    currentUserProfile.isTrainer = isTrainer;
+    if (!isTrainer) {
+      currentUserProfile.notes?.add(note);
+    }
+    _riderProfileRepository.createOrUpdateRiderProfile(
+      riderProfile: currentUserProfile,
     );
 
     if (isTrainer) {
-      _usersProfile?.isTrainer = true;
-
-      ///open dialog to set trainer info
       showDialog<EditRiderProfileDialog>(
         context: context,
         builder: (context) =>
-            EditRiderProfileDialog(riderProfile: _usersProfile as RiderProfile),
-      );
-    } else {
-      _usersProfile?.isTrainer = false;
-      _usersProfile?.notes?.add(note);
-      _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: _usersProfile as RiderProfile,
+            EditRiderProfileDialog(riderProfile: currentUserProfile),
       );
     }
   }
 
   /// Navigates to the Rider Profile Screen
-  void riderProfileNavigationSelected() {
+  void profileNavigationSelected() {
     emit(
       state.copyWith(
         index: 0,
@@ -442,18 +480,20 @@ class HomeCubit extends Cubit<HomeState> {
             state.copyWith(
               formzStatus: FormzStatus.submissionFailure,
               error: 'No Results',
+              errorSnackBar: true,
             ),
           );
         }
       });
-    } on FirebaseException catch (e) {
+    } catch (e) {
       emit(
         state.copyWith(
           formzStatus: FormzStatus.submissionFailure,
-          error: e.message,
+          error: e.toString(),
+          errorSnackBar: true,
         ),
       );
-      debugPrint("Failed with error '${e.code}': ${e.message}");
+      debugPrint("Failed with error '$e': $e");
     }
   }
 
@@ -581,7 +621,7 @@ class HomeCubit extends Cubit<HomeState> {
     required String toBeViewedEmail,
   }) {
     debugPrint(
-      'gotoProfilePage for $toBeViewedEmail, for User: ${state.usersProfile?.name}',
+      'gotoProfilePage for $toBeViewedEmail, for User: ${state.usersProfile?.email}',
     );
     if (state.usersProfile?.email != toBeViewedEmail) {
       _riderProfileRepository
@@ -599,12 +639,13 @@ class HomeCubit extends Cubit<HomeState> {
           arguments: HomePageArguments(
             horseId: null,
             viewingProfile: value.data() as RiderProfile,
+            usersProfile: state.usersProfile,
           ),
         );
       });
     } else {
       //throw error and goto profile page
-
+      debugPrint('Cannot view own profile');
       emit(
         state.copyWith(
           homeStatus: HomeStatus.profile,
@@ -616,12 +657,13 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   bool iEditor() {
-    return _usersProfile?.editor ?? false;
+    return state.usersProfile?.editor ?? false;
   }
 
   bool isAuthtorized() {
-    if (_viewingProfile != null) {
-      return _viewingProfile?.instructors
+    // TODO(mfrenchy): This logic seems backwards
+    if (state.viewingProfile != null) {
+      return state.viewingProfile?.instructors
               ?.contains(state.usersProfile?.email ?? false) ??
           false;
     } else {
@@ -629,11 +671,11 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  void searchClicked() {
+  void openSearchForHorsesOrRiders() {
     emit(state.copyWith(isSearching: true));
   }
 
-  void clearSearch() {
+  void closeSearchForHorsesOrRiders() {
     emit(state.copyWith(isSearching: false));
   }
 
@@ -652,7 +694,14 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('goBackToUsersProfile, setting isViewing to false');
 
     // ignore: avoid_redundant_argument_values
-    emit(state.copyWith(isViewing: false, viewingProfile: null));
+    emit(
+      state.copyWith(
+        isViewing: false,
+        viewingProfile: null,
+        index: 0,
+        isForRider: true,
+      ),
+    );
   }
 
   ///emits a  state flag that open a message dialog to HorseAndRidersSupport
@@ -683,7 +732,7 @@ class HomeCubit extends Cubit<HomeState> {
       final id = StringBuffer()
         ..write(
           convertEmailToPath(
-            state.usersProfile?.email?.toLowerCase() as String,
+            state.usersProfile?.email.toLowerCase() as String,
           ),
         )
         ..write(
@@ -692,7 +741,7 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         );
       final recipients = <String>[
-        state.usersProfile?.email?.toLowerCase() as String,
+        state.usersProfile?.email.toLowerCase() as String,
         Constants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
       ];
 
@@ -761,7 +810,7 @@ class HomeCubit extends Cubit<HomeState> {
     final user = state.usersProfile as RiderProfile;
     final messageId = DateTime.now().millisecondsSinceEpoch.toString();
     final studentRequestItem = BaseListItem(
-      id: user.email?.toLowerCase() as String,
+      id: user.email.toLowerCase(),
       name: user.name,
       imageUrl: user.picUrl,
       isCollapsed: true,
@@ -769,17 +818,17 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     final id = StringBuffer()
-      ..write(convertEmailToPath(user.email?.toLowerCase() as String))
+      ..write(convertEmailToPath(user.email.toLowerCase()))
       ..write(
-        convertEmailToPath(instructorProfile.email?.toLowerCase() as String),
+        convertEmailToPath(instructorProfile.email.toLowerCase()),
       );
     final memberNames = <String>[
-      user.name as String,
-      instructorProfile.name as String,
+      user.name,
+      instructorProfile.name,
     ];
     final memberIds = <String>[
-      user.email?.toLowerCase() as String,
-      instructorProfile.email?.toLowerCase() as String,
+      user.email.toLowerCase(),
+      instructorProfile.email.toLowerCase(),
     ];
     final message = Message(
       date: DateTime.now(),
@@ -800,10 +849,10 @@ class HomeCubit extends Cubit<HomeState> {
       type: GroupType.private,
       parties: memberNames,
       partiesIds: memberIds,
-      createdBy: user.name as String,
+      createdBy: user.name,
       createdOn: DateTime.now(),
       lastEditDate: DateTime.now(),
-      lastEditBy: user.name as String,
+      lastEditBy: user.name,
       recentMessage: message,
     );
     try {
@@ -838,7 +887,7 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('user: ${user?.email}');
     debugPrint('student: ${studentProfile.email}');
     final instructorRequestItem = BaseListItem(
-      id: user?.email?.toLowerCase(),
+      id: user?.email.toLowerCase(),
       name: user?.name,
       imageUrl: user?.picUrl,
       isCollapsed: true,
@@ -846,17 +895,17 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     final id = StringBuffer()
-      ..write(convertEmailToPath(user?.email?.toLowerCase() as String))
+      ..write(convertEmailToPath(user?.email.toLowerCase() as String))
       ..write(
-        convertEmailToPath(studentProfile.email?.toLowerCase() as String),
+        convertEmailToPath(studentProfile.email.toLowerCase()),
       );
     final memberNames = <String>[
       user?.name as String,
-      studentProfile.name as String,
+      studentProfile.name,
     ];
     final memberIds = <String>[
-      user?.email?.toLowerCase() as String,
-      studentProfile.email?.toLowerCase() as String,
+      user?.email.toLowerCase() as String,
+      studentProfile.email.toLowerCase(),
     ];
     final message = Message(
       date: DateTime.now(),
@@ -916,23 +965,23 @@ class HomeCubit extends Cubit<HomeState> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
       message: user.name,
-      parentId: user.email?.toLowerCase() as String,
+      parentId: user.email.toLowerCase(),
       name: 'Removed ${studentProfile.name} as Student',
     );
     final studentNote = BaseListItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
       message: user.name,
-      parentId: user.email?.toLowerCase() as String,
+      parentId: user.email.toLowerCase(),
       name: '${user.name} removed themselves as an Instructor',
     );
 
     user.students?.removeWhere(
-      (element) => element.id == studentProfile.email?.toLowerCase(),
+      (element) => element.id == studentProfile.email.toLowerCase(),
     );
     user.notes?.add(userNote);
     studentProfile.instructors?.removeWhere(
-      (element) => element.id == user.email?.toLowerCase(),
+      (element) => element.id == user.email.toLowerCase(),
     );
     studentProfile.notes?.add(studentNote);
 
@@ -970,22 +1019,22 @@ class HomeCubit extends Cubit<HomeState> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
       message: user.name,
-      parentId: user.email?.toLowerCase() as String,
+      parentId: user.email.toLowerCase(),
       name: 'Removed ${instructor.name} as Instructor',
     );
     final instructorNote = BaseListItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
       message: user.name,
-      parentId: user.email?.toLowerCase() as String,
+      parentId: user.email.toLowerCase(),
       name: '${user.name} removed themselves as a Student',
     );
 
     user.instructors?.removeWhere(
-      (element) => element.id == instructor.email?.toLowerCase(),
+      (element) => element.id == instructor.email.toLowerCase(),
     );
     instructor.students
-        ?.removeWhere((element) => element.id == user.email?.toLowerCase());
+        ?.removeWhere((element) => element.id == user.email.toLowerCase());
     user.notes?.add(userNote);
     instructor.notes?.add(instructorNote);
 
@@ -1020,7 +1069,7 @@ class HomeCubit extends Cubit<HomeState> {
     if (state.usersProfile != null) {
       final user = state.usersProfile;
       final newContact = BaseListItem(
-        id: riderProfile.email?.toLowerCase() as String,
+        id: riderProfile.email.toLowerCase(),
         name: riderProfile.name,
         imageUrl: riderProfile.picUrl,
         //this sets the item to a rider profile
@@ -1028,7 +1077,7 @@ class HomeCubit extends Cubit<HomeState> {
         isSelected: false,
       );
       final userContact = BaseListItem(
-        id: user!.email?.toLowerCase() as String,
+        id: user!.email.toLowerCase(),
         name: user.name,
         imageUrl: user.picUrl,
         isCollapsed: true,
@@ -1038,14 +1087,14 @@ class HomeCubit extends Cubit<HomeState> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: DateTime.now(),
         message: state.usersProfile?.name,
-        parentId: state.usersProfile?.email?.toLowerCase() as String,
+        parentId: state.usersProfile?.email.toLowerCase() as String,
         name: 'Added ${riderProfile.name} to contacts',
       );
       final riderNote = BaseListItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: DateTime.now(),
         message: state.usersProfile?.name,
-        parentId: state.usersProfile?.email?.toLowerCase() as String,
+        parentId: state.usersProfile?.email.toLowerCase() as String,
         name: '${state.usersProfile?.name} added you to their contacts',
       );
       if (riderProfile.savedProfilesList != null) {
@@ -1102,7 +1151,7 @@ class HomeCubit extends Cubit<HomeState> {
       final userNote = BaseListItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: DateTime.now(),
-        parentId: user!.email?.toLowerCase() as String,
+        parentId: user!.email.toLowerCase(),
         message: user.name,
         name: 'Removed ${riderProfile.name} from contacts',
       );
@@ -1110,7 +1159,7 @@ class HomeCubit extends Cubit<HomeState> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: DateTime.now(),
         message: user.name,
-        parentId: user.email?.toLowerCase() as String,
+        parentId: user.email.toLowerCase(),
         name: '${user.name} removed you from their contacts',
       );
 
@@ -1170,20 +1219,23 @@ class HomeCubit extends Cubit<HomeState> {
       MessagesPage.routeName,
       arguments: MessageArguments(
         group: null,
-        riderProfile: _usersProfile as RiderProfile,
+        riderProfile: state.usersProfile,
       ),
     );
   }
 
   /// Opens the Horse Profile Page
-  void horseSelected({
+  void _gotoHorseHomePage({
     required BuildContext context,
     required String horseProfileId,
   }) {
     Navigator.of(context, rootNavigator: true).pushNamed(
       HomePage.routeName,
-      arguments:
-          HomePageArguments(horseId: horseProfileId, viewingProfile: null),
+      arguments: HomePageArguments(
+        usersProfile: state.usersProfile,
+        horseId: horseProfileId,
+        viewingProfile: state.viewingProfile,
+      ),
     );
     debugPrint('Horse Profile Selected: $horseProfileId');
   }
@@ -1200,34 +1252,62 @@ class HomeCubit extends Cubit<HomeState> {
 /* ****************************************************************************
                           Horse Profile
 ***************************************************************************** */
-  void horseProfileSelected({required String id}) {
-    _horseProfile != null
-        ? emit(state.copyWith(index: 0, horseProfile: _horseProfile))
-        : getHorseProfile(id: id);
+  void horseProfileSelected({
+    required String id,
+  }) {
+    emit(state.copyWith(index: 0, isForRider: false, horseId: id));
+    _getHorseProfile(id: id);
+    // Navigator.of(context, rootNavigator: true).pushNamed(
+    //   HomePage.routeName,
+    //   arguments: HomePageArguments(
+    //     usersProfile: state.usersProfile,
+    //     horseId: id,
+    //     viewingProfile: state.viewingProfile,
+    //   ),
+    // );
   }
 
-  Future<void> getHorseProfile({required String id}) async {
-    try {
-      _horseProfileRepository.getHorseProfile(id: id).listen((event) {
-        _horseProfile = event.data() as HorseProfile?;
-        emit(state.copyWith(horseProfile: _horseProfile));
-      });
-    } on FirebaseException catch (e) {
-      debugPrint('Failed to get Horse Profile: $e');
-      emit(state.copyWith(error: e.message.toString()));
+  Future<void> _getHorseProfile({required String id}) async {
+    debugPrint('getHorseProfile for $id');
+    if (state.horseProfile?.id == id) {
+      debugPrint('Horse Profile already retrieved');
+      emit(
+        state.copyWith(
+          index: 0,
+          isForRider: false,
+          horseId: state.horseProfile?.id,
+          horseProfile: state.horseProfile,
+        ),
+      );
+    } else {
+      debugPrint('Horse Profile not retrieved, getting now');
+      try {
+        _horseProfileSubscription =
+            _horseProfileRepository.getHorseProfile(id: id).listen((event) {
+          final horseProfile = event.data() as HorseProfile?;
+          debugPrint('Horse Profile Retrieved: ${horseProfile?.name}');
+          emit(
+            state.copyWith(
+              horseProfile: horseProfile,
+              horseId: horseProfile?.id,
+              isForRider: false,
+              isOwner:
+                  state.usersProfile?.email == horseProfile?.currentOwnerId,
+            ),
+          );
+        });
+      } on FirebaseException catch (e) {
+        debugPrint('Failed to get Horse Profile: $e');
+        emit(state.copyWith(error: e.message.toString()));
+      }
     }
-  }
-
-  /// Check if the user is the owner of the horse
-  bool _isOwner() {
-    return _horseProfile?.currentOwnerId == _usersProfile?.email;
   }
 
   bool isStudentHorse({required HorseProfile horseProfile}) {
     var isStudent = false;
     if (horseProfile.instructors != null) {
       for (final instructors in horseProfile.instructors!) {
-        if (instructors.id == _usersProfile?.email) {
+        if (instructors.id == state.usersProfile?.email) {
           isStudent = true;
           break;
         }
@@ -1253,17 +1333,17 @@ class HomeCubit extends Cubit<HomeState> {
   ///  Removes the horse from the users student horse list
   void _removeStudentHorse(HorseProfile horseProfile) {
     debugPrint('Remove Student Horse');
-    _usersProfile?.studentHorses
+    state.usersProfile?.studentHorses
         ?.removeWhere((element) => element.id == horseProfile.id);
     horseProfile.instructors
-        ?.removeWhere((element) => element.id == _usersProfile?.email);
+        ?.removeWhere((element) => element.id == state.usersProfile?.email);
 
     try {
       _horseProfileRepository.createOrUpdateHorseProfile(
         horseProfile: horseProfile,
       );
       _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: _usersProfile as RiderProfile,
+        riderProfile: state.usersProfile as RiderProfile,
       );
     } on FirebaseException catch (e) {
       debugPrint('Error: $e');
@@ -1276,7 +1356,7 @@ class HomeCubit extends Cubit<HomeState> {
     HorseProfile horseProfile,
   ) {
     debugPrint('Request to add horse as student horse');
-    if (_ownersProfile == null) {
+    if (state.ownersProfile == null) {
       debugPrint('Something went Wrong, No owner profile found');
       return;
     }
@@ -1310,10 +1390,10 @@ class HomeCubit extends Cubit<HomeState> {
     BaseListItem requestHorse,
   ) {
     final id = _createGroupId().toString();
-    final memberNames = [state.usersProfile?.name, _ownersProfile?.name]
+    final memberNames = [state.usersProfile?.name, state.ownersProfile?.name]
         .map((e) => e as String)
         .toList();
-    final memberIds = [state.usersProfile?.email, _ownersProfile?.email]
+    final memberIds = [state.usersProfile?.email, state.ownersProfile?.email]
         .map((e) => e?.toLowerCase() as String)
         .toList();
 
@@ -1348,7 +1428,7 @@ class HomeCubit extends Cubit<HomeState> {
       subject: 'Student Horse Request',
       message:
           '${state.usersProfile?.name} has requested to add ${horseProfile.name} as a student horse.',
-      recipients: [state.usersProfile?.name, _ownersProfile?.name]
+      recipients: [state.usersProfile?.name, state.ownersProfile?.name]
           .map((e) => e as String)
           .toList(),
       messageType: MessageType.STUDENT_HORSE_REQUEST,
@@ -1360,12 +1440,12 @@ class HomeCubit extends Cubit<HomeState> {
     return StringBuffer()
       ..write(
         convertEmailToPath(
-          state.usersProfile?.email?.toLowerCase() as String,
+          state.usersProfile?.email.toLowerCase() as String,
         ),
       )
       ..write(
         convertEmailToPath(
-          _ownersProfile?.email?.toLowerCase() as String,
+          state.ownersProfile?.email.toLowerCase() as String,
         ),
       );
   }
@@ -1391,38 +1471,55 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('Transfer this dum horse!!');
   }
 
-  void deleteHorseProfileFromUser() {
-    debugPrint(
-      'Deleting ${_horseProfile?.name} from ownedHorseList',
-    );
-    if (_ownersProfile != null) {
-      _ownersProfile?.ownedHorses
-          ?.removeWhere((element) => element.id == _horseProfile?.id);
-      _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: _ownersProfile as RiderProfile,
-      );
-      _horseProfile?.currentOwnerId = 'NONE';
-      _horseProfile?.currentOwnerName = 'NONE';
-      _horseProfile?.lastEditBy = _ownersProfile?.name;
-      _horseProfile?.lastEditDate = DateTime.now();
-      _horseProfileRepository.createOrUpdateHorseProfile(
-        horseProfile: _horseProfile as HorseProfile,
-      );
+  Future<void> deleteHorseProfileFromUser() async {
+    if (state.ownersProfile != null && state.horseProfile != null) {
+      // Update owner's profile
+      final updatedOwnersProfile = state.ownersProfile!
+        ..ownedHorses
+            ?.removeWhere((element) => element.id == state.horseProfile!.id);
+
+      // Update horse profile
+      final updatedHorseProfile = state.horseProfile!
+        ..currentOwnerId = 'NONE'
+        ..currentOwnerName = 'NONE'
+        ..lastEditBy = state.ownersProfile!.name
+        ..lastEditDate = DateTime.now();
+
+      try {
+        // Persist changes
+        await _riderProfileRepository.createOrUpdateRiderProfile(
+          riderProfile: updatedOwnersProfile,
+        );
+        await _horseProfileRepository.createOrUpdateHorseProfile(
+          horseProfile: updatedHorseProfile,
+        );
+
+        // Emit new state
+        emit(
+          state.copyWith(
+            ownersProfile: updatedOwnersProfile,
+            horseProfile: updatedHorseProfile,
+          ),
+        );
+      } catch (e) {
+        // Handle errors, perhaps by emitting an error state
+        debugPrint('Error deleting horse profile: $e');
+      }
     }
   }
 
   /* *********************************************************************
                                Skill Tree
   *************************************************************** */
-  ///   Resources Tab Selected
+  ///   SkillTree Tab Selected
   void skillTreeNavigationSelected() {
-    _sortSkillForDifficulty(skills: state.allSkills);
+    sortSkills(allSkills: state.allSkills, subCategory: null);
+    sortSkillForDifficulty();
     emit(
       state.copyWith(
         index: 1,
         homeStatus: HomeStatus.skillTree,
         difficultyState: DifficultyState.all,
-        allSkills: _getSkills(subCategory: null),
         skillTreeNavigation: SkillTreeNavigation.Skill,
       ),
     );
@@ -1431,7 +1528,7 @@ class HomeCubit extends Cubit<HomeState> {
 /* ********************************************************
                           Search
  ***********************************************************/
-  void cancelSearch() {
+  void closeSearch() {
     emit(state.copyWith(isSearch: false));
   }
 
@@ -1491,8 +1588,8 @@ class HomeCubit extends Cubit<HomeState> {
     emit(
       state.copyWith(
         skillTreeNavigation: SkillTreeNavigation.Category,
-        subCategories: _subCategories,
-        allSkills: _skills,
+        subCategories: state.subCategories,
+        allSkills: state.allSkills,
       ),
     );
   }
@@ -1500,6 +1597,19 @@ class HomeCubit extends Cubit<HomeState> {
   /* **************************************************************
                           Skills
    *************************************************************/
+
+  /// Calls the skills from the repository
+  Future<void> getSkills() async {
+    debugPrint('getSkills');
+    final skills = TestSkills.generateTestSkills()
+      ..sort((a, b) => a.position.compareTo(b.position));
+    sortSkills(allSkills: skills, subCategory: null);
+    sortSkillForDifficulty();
+    // _skillsStream= _skillTreeRepository.getSkills().listen((event) {
+    //      final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
+    //   emit(state.copyWith(allSkills: skills));
+    // });
+  }
 
   /// This method will be called when the user clicks a skill
   /// it will change the filter to SkillLevel for that skill.
@@ -1523,8 +1633,8 @@ class HomeCubit extends Cubit<HomeState> {
   List<Skill?>? getSkillsForResource({required List<String?>? ids}) {
     final skills = <Skill?>[];
     if (ids != null) {
-      if (_skills != null) {
-        for (final skill in _skills!) {
+      if (state.allSkills != null) {
+        for (final skill in state.allSkills!) {
           if (ids.contains(skill?.id)) {
             skills.add(skill);
           }
@@ -1538,15 +1648,15 @@ class HomeCubit extends Cubit<HomeState> {
     return skills;
   }
 
-  List<Skill?>? getAllSkills() {
-    return _skills;
-  }
-
-  List<Skill?>? _getSkills({required SubCategory? subCategory}) {
+  void sortSkills({
+    required List<Skill?>? allSkills,
+    required SubCategory? subCategory,
+  }) {
     final skills = <Skill>[];
     if (subCategory != null) {
-      if (_skills != null) {
-        for (final skill in _skills!) {
+      debugPrint('subcategory is not null');
+      if (allSkills != null) {
+        for (final skill in allSkills) {
           if (subCategory.skills.contains(skill?.id)) {
             skills.add(skill!);
           }
@@ -1554,30 +1664,33 @@ class HomeCubit extends Cubit<HomeState> {
         emit(
           state.copyWith(
             sortedSkills: _sortedSkillsForHorseOrRider(skills: skills),
+            allSkills: allSkills,
           ),
         );
       } else {
-        debugPrint('skills is null');
+        debugPrint('allSkills is null');
       }
     } else {
+      debugPrint('subcategory is null');
       //if subcategory is null we are going to return all the skills
-      if (_skills != null) {
-        for (final skill in _skills!) {
+      if (allSkills != null) {
+        for (final skill in allSkills) {
           skills.add(skill!);
         }
         emit(
           state.copyWith(
+            allSkills: allSkills,
             sortedSkills: _sortedSkillsForHorseOrRider(skills: skills),
           ),
         );
       } else {
-        debugPrint('skills is null');
+        debugPrint('allSkills is null');
       }
     }
-    return _sortedSkillsForHorseOrRider(skills: skills);
   }
 
-  void _sortSkillForDifficulty({required List<Skill?>? skills}) {
+  void sortSkillForDifficulty() {
+    final skills = state.sortedSkills;
     emit(
       state.copyWith(
         introSkills: _sortedSkillsForHorseOrRider(skills: skills)
@@ -1689,11 +1802,6 @@ class HomeCubit extends Cubit<HomeState> {
     // if difficulty is all we are going to show all the skills
 
     var skills = <Skill?>[];
-    emit(
-      state.copyWith(
-        allSkills: _getSkills(subCategory: subCategory),
-      ),
-    );
     debugPrint('DifficultyState: $difficultyState');
 
     if (state.sortedSkills != null) {
@@ -1712,14 +1820,14 @@ class HomeCubit extends Cubit<HomeState> {
       } else {
         emit(
           state.copyWith(
-            sortedSkills: _getSkills(subCategory: subCategory),
+            sortedSkills: state.allSkills,
             difficultyState: difficultyState,
             skillTreeNavigation: SkillTreeNavigation.Skill,
           ),
         );
       }
     } else {
-      debugPrint('skills is null');
+      debugPrint('sorted skills is null');
     }
     emit(state.copyWith(difficultyState: difficultyState));
   }
@@ -1790,18 +1898,18 @@ class HomeCubit extends Cubit<HomeState> {
   /// This method will be called when the user clicks a category
   /// it will change the filter to subcategories for that category.
   void categorySelected({required Catagorry category}) {
+    // TODO(mfrenchy77): This is the method that will go to the Training Paths, Refactoring Needed!
     //if the user clicks a category we are going to change the filter
     //to subcategories for that category.
     // and select only the subcategories for that category
     var subCategories = <SubCategory?>[];
     if (state.subCategories != null) {
-      subCategories = _subCategories!
+      subCategories = state.subCategories!
           .where((element) => element?.parentId == category.id)
           .toList();
 
       emit(
         state.copyWith(
-          categories: _categories,
           category: category,
           subCategories: subCategories,
           skillTreeNavigation: SkillTreeNavigation.SubCategory,
@@ -1817,9 +1925,7 @@ class HomeCubit extends Cubit<HomeState> {
     emit(
       state.copyWith(
         skillTreeNavigation: SkillTreeNavigation.Skill,
-        subCategories: _subCategories,
-        allSkills: _skills,
-        sortedSkills: _skills,
+        sortedSkills: state.allSkills,
       ),
     );
   }
@@ -1832,10 +1938,10 @@ class HomeCubit extends Cubit<HomeState> {
   /// it will change the filter to skills for that subcategory.
   /// and select only the skills for that subcategory
   void subCategorySelected({required SubCategory subCategory}) {
+    // TODO(mfrenchy77): This is the method that will go to the Training Paths, Refactoring Needed!
     emit(
       state.copyWith(
         subCategory: subCategory,
-        sortedSkills: _getSkills(subCategory: subCategory),
         skillTreeNavigation: SkillTreeNavigation.Skill,
       ),
     );
@@ -1851,11 +1957,11 @@ class HomeCubit extends Cubit<HomeState> {
   /// get SubCategories for a Category
   /// if the category is null we will return all the subcategories
   /// sorted by bool isForRider
-  List<SubCategory?>? _getSubCategories({required Catagorry? category}) {
+  void _sortSubCategories({required Catagorry? category}) {
     final subCategories = <SubCategory?>[];
     if (category != null) {
-      if (_subCategories != null) {
-        for (final subCategory in _subCategories!) {
+      if (state.subCategories != null) {
+        for (final subCategory in state.subCategories!) {
           if (subCategory?.parentId == category.id) {
             subCategories.add(subCategory);
           }
@@ -1872,8 +1978,8 @@ class HomeCubit extends Cubit<HomeState> {
       }
     } else {
       //if category is null we are going to return all the subcategories
-      if (_subCategories != null) {
-        for (final subCategory in _subCategories!) {
+      if (state.subCategories != null) {
+        for (final subCategory in state.subCategories!) {
           subCategories.add(subCategory);
         }
         emit(
@@ -1887,7 +1993,6 @@ class HomeCubit extends Cubit<HomeState> {
         debugPrint('subCategories is null');
       }
     }
-    return _sortedSubCategoriesForHorseOrRider(subCategories: subCategories);
   }
 
   /// Sorted SubCategories by bool isForRider
@@ -1920,7 +2025,7 @@ class HomeCubit extends Cubit<HomeState> {
               (element) => element.skillId == skill.id,
               orElse: () => SkillLevel(
                 skillId: skill.id,
-                lastEditBy: _usersProfile?.name,
+                lastEditBy: state.usersProfile?.name,
                 lastEditDate: DateTime.now(),
               ),
             );
@@ -1939,7 +2044,12 @@ class HomeCubit extends Cubit<HomeState> {
         }
       } else {
         debugPrint('skill is null');
-        emit(state.copyWith(isError: true, error: 'skill is null'));
+        emit(
+          state.copyWith(
+            errorSnackBar: true,
+            error: 'skill is null',
+          ),
+        );
       }
     }
     return Colors.grey;
@@ -1959,7 +2069,7 @@ class HomeCubit extends Cubit<HomeState> {
             (element) => element.skillId == skill.id,
             orElse: () => SkillLevel(
               skillId: skill.id,
-              lastEditBy: _usersProfile?.name,
+              lastEditBy: state.usersProfile?.name,
               lastEditDate: DateTime.now(),
             ),
           );
@@ -2008,10 +2118,10 @@ class HomeCubit extends Cubit<HomeState> {
   //the current profile being viewed
 
   RiderProfile? determineCurrentProfile() {
-    if (_viewingProfile != null) {
-      return _viewingProfile!;
-    } else if (_usersProfile != null) {
-      return _usersProfile!;
+    if (state.viewingProfile != null) {
+      return state.viewingProfile!;
+    } else if (state.usersProfile != null) {
+      return state.usersProfile!;
     } else {
       return null;
     }
@@ -2036,14 +2146,14 @@ class HomeCubit extends Cubit<HomeState> {
           '${state.usersProfile?.name} has changed ${state.skill?.skillName} level to ${levelState.name}';
     } else {
       noteMessage =
-          '${_usersProfile?.name} changed ${state.skill?.skillName} level to ${levelState.name} for ${state.viewingProfile?.name ?? 'themself'}';
+          '${state.usersProfile?.name} changed ${state.skill?.skillName} level to ${levelState.name} for ${state.viewingProfile?.name ?? 'themself'}';
     }
     return BaseListItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
       name: noteMessage,
-      parentId: _usersProfile?.email,
-      message: _usersProfile?.name,
+      parentId: state.usersProfile?.email,
+      message: state.usersProfile?.name,
     );
   }
 
@@ -2060,13 +2170,13 @@ class HomeCubit extends Cubit<HomeState> {
             (element) => element.skillId == state.skill?.id,
             orElse: () => SkillLevel(
               skillId: state.skill?.id,
-              lastEditBy: _usersProfile?.name,
+              lastEditBy: state.usersProfile?.name,
               lastEditDate: timestamp,
             ),
           ) ??
           SkillLevel(
             skillId: state.skill?.id,
-            lastEditBy: _usersProfile?.name,
+            lastEditBy: state.usersProfile?.name,
             lastEditDate: timestamp,
           );
 
@@ -2075,7 +2185,7 @@ class HomeCubit extends Cubit<HomeState> {
         SkillLevel(
           skillId: state.skill?.id,
           levelState: levelState,
-          lastEditBy: _usersProfile?.name,
+          lastEditBy: state.usersProfile?.name,
           lastEditDate: timestamp,
         ),
       );
@@ -2106,7 +2216,7 @@ class HomeCubit extends Cubit<HomeState> {
               (value) => emit(
                 state.copyWith(
                   levelSubmissionStatus: LevelSubmissionStatus.initial,
-                  isError: false,
+                  messageSnackBar: true,
                   message:
                       'Updated ${state.skill?.skillName} to ${levelState.name}',
                 ),
@@ -2116,7 +2226,7 @@ class HomeCubit extends Cubit<HomeState> {
         emit(
           state.copyWith(
             levelSubmissionStatus: LevelSubmissionStatus.initial,
-            isError: true,
+            errorSnackBar: true,
             error:
                 'Failed to update ${state.skill?.skillName} to ${levelState.name}: $error',
           ),
@@ -2132,7 +2242,7 @@ class HomeCubit extends Cubit<HomeState> {
   // if notViewing then we can see the riders log
   void logNavigationSelected() {
     if (state.horseProfile == null) {
-      if (_viewingProfile != null) {
+      if (state.viewingProfile != null) {
         if (state.viewingProfile?.instructors
                 ?.any((element) => element.id == state.usersProfile?.email) ??
             false) {
@@ -2275,14 +2385,21 @@ class HomeCubit extends Cubit<HomeState> {
     required Resource? resource,
     required BuildContext context,
   }) {
-    showDialog<CreateResourcDialog>(
-      context: context,
-      builder: (context) => CreateResourcDialog(
-        skills: state.allSkills,
-        userProfile: _usersProfile as RiderProfile,
-        resource: resource,
-      ),
-    );
+    state.usersProfile != null
+        ? showDialog<CreateResourcDialog>(
+            context: context,
+            builder: (context) => CreateResourcDialog(
+              skills: state.allSkills,
+              userProfile: state.usersProfile!,
+              resource: resource,
+            ),
+          )
+        : emit(
+            state.copyWith(
+              error: 'You Are Not Authorized To Edit Until Logged In',
+              errorSnackBar: true,
+            ),
+          );
   }
 
   ///   Open Sort Dialog for Resources and sort by
@@ -2332,7 +2449,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Sort the resources by the ones with the highest rating
   void sortMostRecommended() {
-    final sortedList = _resources;
+    final sortedList = state.allResources;
     sortedList!.sort(
       (a, b) => (b?.rating as int).compareTo(a!.rating as int),
     );
@@ -2364,7 +2481,7 @@ class HomeCubit extends Cubit<HomeState> {
   ///  Sort the resources by the newest last edit date
   void sortByNew() {
     debugPrint('Sorting by New');
-    final sortedList = _resources;
+    final sortedList = state.allResources;
     sortedList!.sort(
       (a, b) =>
           (b?.lastEditDate as DateTime).compareTo(a!.lastEditDate as DateTime),
@@ -2381,7 +2498,7 @@ class HomeCubit extends Cubit<HomeState> {
   /// last edit date
   void sortByOld() {
     debugPrint('Sorting by Old');
-    final sortedList = _resources;
+    final sortedList = state.allResources;
     sortedList!.sort(
       (a, b) =>
           (a!.lastEditDate as DateTime).compareTo(b?.lastEditDate as DateTime),
@@ -2399,11 +2516,12 @@ class HomeCubit extends Cubit<HomeState> {
   void sortBySaved() {
     debugPrint('Sorting by Saved');
     final savedResources = <Resource>[];
-    if (_usersProfile != null) {
-      if (_usersProfile?.savedResourcesList != null) {
-        if (_resources != null) {
-          for (final resource in _resources!) {
-            if (_usersProfile!.savedResourcesList!.contains(resource!.id)) {
+    if (state.usersProfile != null) {
+      if (state.usersProfile?.savedResourcesList != null) {
+        if (state.resource != null) {
+          for (final resource in state.allResources!) {
+            if (state.usersProfile!.savedResourcesList!
+                .contains(resource!.id)) {
               savedResources.add(resource);
             }
           }
@@ -2412,7 +2530,7 @@ class HomeCubit extends Cubit<HomeState> {
     }
     emit(
       state.copyWith(
-        allResources: savedResources,
+        savedResources: savedResources,
         resourcesSortStatus: ResourcesSortStatus.saved,
       ),
     );
@@ -2434,30 +2552,45 @@ class HomeCubit extends Cubit<HomeState> {
 
   ///   Save [resource] to the users profile saved resources list
   void saveResource({required Resource resource}) {
-    List<String> savedResourcesList;
-    if (_usersProfile?.savedResourcesList != null) {
-      savedResourcesList = _usersProfile?.savedResourcesList as List<String>;
-    } else {
-      savedResourcesList = [];
-    }
+    final currentUserProfile = state.usersProfile;
+    if (currentUserProfile != null) {
+      List<String> savedResourcesList;
+      if (currentUserProfile.savedResourcesList != null) {
+        savedResourcesList =
+            currentUserProfile.savedResourcesList as List<String>;
+      } else {
+        savedResourcesList = [];
+      }
 
-    if (!savedResourcesList.contains(resource.id)) {
-      savedResourcesList.add(resource.id as String);
-    } else {
-      savedResourcesList.remove(resource.id);
-    }
-    _usersProfile?.savedResourcesList = savedResourcesList;
+      if (!savedResourcesList.contains(resource.id)) {
+        savedResourcesList.add(resource.id as String);
+      } else {
+        savedResourcesList.remove(resource.id);
+      }
+      currentUserProfile.savedResourcesList = savedResourcesList;
 
-    _riderProfileRepository.createOrUpdateRiderProfile(
-      riderProfile: _usersProfile as RiderProfile,
-    );
+      _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: currentUserProfile,
+      );
+    } else {
+      // Handle the case where the user profile is not available
+      debugPrint('User profile is not available');
+      emit(
+        state.copyWith(
+          error: 'Unautherized to Edit Resources, Login or Create an account',
+          errorSnackBar: true,
+        ),
+      );
+    }
   }
 
   ///   Sets the new Rating on the [resource] based on whether or not they rated
   Resource _setNewPositiveRating({required Resource resource}) {
+    final userEmail = state.usersProfile?.email as String;
+
     ///   List item with user and rated is true
     final newuser = BaseListItem(
-      id: _usersProfile?.email as String,
+      id: userEmail,
       isSelected: true,
       isCollapsed: false,
     );
@@ -2472,7 +2605,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     ///   Reference to the user
     final user = resource.usersWhoRated
-        ?.firstWhere((element) => element?.id == _usersProfile?.email);
+        ?.firstWhere((element) => element?.id == userEmail);
 
     /// All Conditions possible
     if (resource.usersWhoRated != null) {
@@ -2487,30 +2620,30 @@ class HomeCubit extends Cubit<HomeState> {
         } else if (user.isSelected == true && user.isCollapsed == false) {
           ///   Already Positive Rating, -1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isCollapsed = false;
           resource.rating = newNegativeRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == false) {
           ///   User does not have a registered rateing +1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isSelected = true;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isCollapsed = false;
           resource.rating = newPositiveRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == true) {
           ///   User already rated NEGATIVE, adding +2
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isSelected = true;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isCollapsed = false;
           resource.rating = newDoublePositveRating;
           return resource;
@@ -2535,9 +2668,11 @@ class HomeCubit extends Cubit<HomeState> {
 
   ///   Sets the new Rating on the [resource] based on whether or not they rated
   Resource _setNewNegativeRating({required Resource resource}) {
+    final userEmail = state.usersProfile?.email as String;
+
     ///   List item with user and rated is true
     final newuser = BaseListItem(
-      id: _usersProfile?.email as String,
+      id: userEmail,
       isSelected: false,
       isCollapsed: true,
     );
@@ -2552,7 +2687,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     ///   Reference to the User
     final user = resource.usersWhoRated
-        ?.firstWhere((element) => element?.id == _usersProfile?.email);
+        ?.firstWhere((element) => element?.id == userEmail);
 
     if (resource.usersWhoRated != null) {
       ///  List is not NULL
@@ -2566,30 +2701,30 @@ class HomeCubit extends Cubit<HomeState> {
         } else if (user.isSelected == false && user.isCollapsed == true) {
           ///   Already Negative Rating, +1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isCollapsed = false;
           resource.rating = newPositiveRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == false) {
           ///   User does not have a registered rating -1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isCollapsed = true;
           resource.rating = newNegativeRating;
           return resource;
         } else if (user.isSelected == true && user.isCollapsed == false) {
           ///   User already rated POSITIVE, adding -2
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == _usersProfile?.email)
+              ?.firstWhere((element) => element?.id == userEmail)
               ?.isCollapsed = true;
           resource.rating = newDoubleNegativeRating;
           return resource;
@@ -2632,7 +2767,7 @@ class HomeCubit extends Cubit<HomeState> {
   // dialog to show all the skills accociated with the resource
   // and the user can select a skill to view
   // or add a skill to the resource
-  //TODO(mfrenchy): implement this
+  // TODO(mfrenchy): implement this
   void openResourceSkillTreeDialog({
     required BuildContext context,
     required Resource resource,
@@ -2640,38 +2775,6 @@ class HomeCubit extends Cubit<HomeState> {
     showDialog<AlertDialog>(
       context: context,
       builder: (context) => const AlertDialog(),
-    );
-  }
-
-  ///  Convert all the http urls to uppercase
-  List<Resource?>? _convertResourceUrls(
-    List<Resource?>? resources,
-  ) {
-    if (resources == null) return null;
-
-    return resources.map((resource) {
-      if (resource != null && resource.url != null) {
-        final newUrl = _modifyUrl(resource.url!);
-        final newThumbnail = _modifyUrl(resource.thumbnail!);
-        return resource.copyWith(url: newUrl, thumbnail: newThumbnail);
-      }
-      return resource;
-    }).toList();
-  }
-
-  String _modifyUrl(String url) {
-    // Convert http or https to uppercase
-    final httpRegExp = RegExp('https?', caseSensitive: false);
-    var modifiedUrl = url.replaceAllMapped(
-      httpRegExp,
-      (match) => match.group(0)!.toUpperCase(),
-    );
-
-    // Add 'www.' if it is not present after 'http://' or 'https://'
-    final wwwRegExp = RegExp(r'^(HTTP://|HTTPS://)(?!www\.)');
-    return modifiedUrl = modifiedUrl.replaceAllMapped(
-      wwwRegExp,
-      (match) => '${match.group(0)}www.',
     );
   }
 
@@ -2685,6 +2788,7 @@ class HomeCubit extends Cubit<HomeState> {
   void _loadBannerAds() {
     if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android) {
+      debugPrint('Loading Banner Ad');
       BannerAd(
         size: AdSize.banner,
         adUnitId: AdHelper.bannerAdUnitId,
@@ -2702,24 +2806,19 @@ class HomeCubit extends Cubit<HomeState> {
         ),
         request: const AdRequest(),
       ).load();
+    } else {
+      debugPrint('Not Loading Banner Ad');
     }
   }
 
-  void errorSnackBar({required String error}) {
-    emit(
-      state.copyWith(
-        errorSnackBar: true,
-        error: error,
-      ),
-    );
-  }
-
+  ///   Clear the snackbars
   void clearSnackBar() {
     emit(
       state.copyWith(
         errorSnackBar: false,
         snackBar: false,
         messageSnackBar: false,
+        message: '',
         error: '',
       ),
     );
