@@ -1613,8 +1613,8 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// This method will be called when the user clicks a skill
   /// it will change the filter to SkillLevel for that skill.
-  void skillSelected({required Skill? skill}) {
-    if (skill != null) {
+  void skillSelected({required Skill? skill, required bool isSplitScreen}) {
+    if (!isSplitScreen) {
       emit(
         state.copyWith(
           index: 1,
@@ -1625,8 +1625,7 @@ class HomeCubit extends Cubit<HomeState> {
         ),
       );
     } else {
-      debugPrint('skill is null');
-      emit(state.copyWith(error: 'skill is null', errorSnackBar: true));
+      emit(state.copyWith(skill: skill));
     }
   }
 

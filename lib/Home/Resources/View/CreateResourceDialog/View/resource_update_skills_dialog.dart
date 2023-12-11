@@ -69,7 +69,12 @@ class UpdateResourceSkills extends StatelessWidget {
                                 ?.map(
                                   (e) => TextButton(
                                     onPressed: () {
-                                      homeCubit.skillSelected(skill: e);
+                                      homeCubit.skillSelected(
+                                        skill: e,
+                                        isSplitScreen:
+                                            MediaQuery.of(context).size.width >
+                                                800,
+                                      );
                                       debugPrint('Skill: ${e?.skillName}');
                                       Navigator.pop(context);
                                     },

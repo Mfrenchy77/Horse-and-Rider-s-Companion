@@ -4,7 +4,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/information_dialog.dart';
 import 'package:horseandriderscompanion/CommonWidgets/search_confimatio_dialog.dart';
@@ -57,7 +56,7 @@ Widget skillTreeView() {
     ),
     secondaryBody: SlotLayout(
       config: <Breakpoint, SlotLayoutConfig>{
-        Breakpoints.large: SlotLayout.from(
+        Breakpoints.largeDesktop: SlotLayout.from(
           key: const Key('secondaryView'),
           builder: (_) => secondaryView,
         ),
@@ -126,6 +125,7 @@ Widget _appBar({
         previous.isEditState != current.isEditState,
     builder: (context, state) {
       final homeCubit = context.read<HomeCubit>();
+      final bool isSplitScreen = MediaQuery.of(context).size.width > 800;
       return SizedBox(
         height: 50,
         child: AppBar(
@@ -191,6 +191,7 @@ Widget _appBar({
                 skillTreeFocus.unfocus();
                 state.skillTreeNavigation == SkillTreeNavigation.Skill
                     ? homeCubit.skillSelected(
+                        isSplitScreen: isSplitScreen,
                         skill: state.allSkills!.firstWhere(
                           (skill) => skill?.skillName == value.searchKey,
                         ),
@@ -483,6 +484,7 @@ Widget _skillTreeItems({
         previous.difficultyState != current.difficultyState,
     builder: (context, state) {
       final homeCubit = context.read<HomeCubit>();
+      final isSplitScreen = MediaQuery.of(context).size.width > 800;
       switch (state.skillTreeNavigation) {
         //    Categories
         case SkillTreeNavigation.Category:
@@ -576,192 +578,191 @@ Widget _skillTreeItems({
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           /// Introductory
-                          ColoredBox(
-                            color: Colors.greenAccent.shade200.withOpacity(0.4),
-                            child: Column(
-                              children: [
-                                smallGap(),
-                                Visibility(
-                                  visible: state.allSkills!
-                                      .where(
-                                        (skill) =>
-                                            skill!.difficulty ==
-                                            DifficultyState.introductory,
-                                      )
-                                      .isNotEmpty,
-                                  child: const Center(
-                                    child: Text(
-                                      'Introductory',
-                                      style: TextStyle(fontSize: 20),
-                                    ),
+                          Column(
+                            children: [
+                              smallGap(),
+                              Visibility(
+                                visible: state.allSkills!
+                                    .where(
+                                      (skill) =>
+                                          skill!.difficulty ==
+                                          DifficultyState.introductory,
+                                    )
+                                    .isNotEmpty,
+                                child: const Center(
+                                  child: Text(
+                                    'Introductory',
+                                    style: TextStyle(fontSize: 20),
                                   ),
                                 ),
-                                smallGap(),
-                                Wrap(
-                                  alignment: WrapAlignment.center,
-                                  runAlignment: WrapAlignment.center,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    ...state.introSkills!.map(
-                                      (skill) => _skillTreeItem(
-                                        isEditState: state.isEditState,
-                                        isGuest: state.isGuest,
-                                        difficulty:
-                                            DifficultyState.introductory,
-                                        name: skill!.skillName,
-                                        onTap: () => context
-                                            .read<HomeCubit>()
-                                            .skillSelected(skill: skill),
-                                        onEdit: () =>
-                                            showDialog<CreateSkillDialog>(
-                                          context: context,
-                                          builder: (context) =>
-                                              CreateSkillDialog(
-                                            allSubCategories:
-                                                state.subCategories ?? [],
-                                            isRider: state.isForRider,
-                                            isEdit: true,
+                              ),
+                              smallGap(),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                runAlignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  ...state.introSkills!.map(
+                                    (skill) => _skillTreeItem(
+                                      isEditState: state.isEditState,
+                                      isGuest: state.isGuest,
+                                      difficulty:
+                                          DifficultyState.introductory,
+                                      name: skill!.skillName,
+                                      onTap: () => context
+                                          .read<HomeCubit>()
+                                          .skillSelected(
                                             skill: skill,
-                                            userName: state.usersProfile?.name,
-                                            position:
-                                                state.introSkills != null &&
-                                                        state.introSkills!
-                                                            .isNotEmpty
-                                                    ? state.introSkills!.length
-                                                    : 0,
+                                            isSplitScreen: isSplitScreen,
                                           ),
+                                      onEdit: () =>
+                                          showDialog<CreateSkillDialog>(
+                                        context: context,
+                                        builder: (context) =>
+                                            CreateSkillDialog(
+                                          allSubCategories:
+                                              state.subCategories ?? [],
+                                          isRider: state.isForRider,
+                                          isEdit: true,
+                                          skill: skill,
+                                          userName: state.usersProfile?.name,
+                                          position:
+                                              state.introSkills != null &&
+                                                      state.introSkills!
+                                                          .isNotEmpty
+                                                  ? state.introSkills!.length
+                                                  : 0,
                                         ),
-                                        backgroundColor:
-                                            Colors.greenAccent.shade200,
                                       ),
+                                      backgroundColor:
+                                          Colors.greenAccent.shade200,
                                     ),
-                                  ],
-                                ),
-                                smallGap(),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                              smallGap(),
+                            ],
                           ),
 
                           /// Intermediate
-                          ColoredBox(
-                            color:
-                                Colors.yellowAccent.shade200.withOpacity(0.4),
-                            child: Column(
-                              children: [
-                                Visibility(
-                                  visible: state.intermediateSkills!.isNotEmpty,
-                                  child: const Center(
-                                    child: Text(
-                                      'Intermediate',
-                                      style: TextStyle(fontSize: 20),
-                                    ),
+                          Column(
+                            children: [
+                              Visibility(
+                                visible: state.intermediateSkills!.isNotEmpty,
+                                child: const Center(
+                                  child: Text(
+                                    'Intermediate',
+                                    style: TextStyle(fontSize: 20),
                                   ),
                                 ),
-                                smallGap(),
-                                Wrap(
-                                  alignment: WrapAlignment.center,
-                                  runAlignment: WrapAlignment.center,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    ...state.intermediateSkills!.map(
-                                      (skill) => _skillTreeItem(
-                                        isEditState: state.isEditState,
-                                        isGuest: state.isGuest,
-                                        difficulty:
-                                            DifficultyState.intermediate,
-                                        name: skill!.skillName,
-                                        onTap: () => context
-                                            .read<HomeCubit>()
-                                            .skillSelected(skill: skill),
-                                        onEdit: () =>
-                                            showDialog<CreateSkillDialog>(
-                                          context: context,
-                                          builder: (context) =>
-                                              CreateSkillDialog(
-                                            allSubCategories:
-                                                state.subCategories ?? [],
-                                            isRider: state.isForRider,
-                                            isEdit: true,
+                              ),
+                              smallGap(),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                runAlignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  ...state.intermediateSkills!.map(
+                                    (skill) => _skillTreeItem(
+                                      isEditState: state.isEditState,
+                                      isGuest: state.isGuest,
+                                      difficulty:
+                                          DifficultyState.intermediate,
+                                      name: skill!.skillName,
+                                      onTap: () => context
+                                          .read<HomeCubit>()
+                                          .skillSelected(
                                             skill: skill,
-                                            userName: state.usersProfile?.name,
-                                            position:
-                                                state.intermediateSkills !=
-                                                            null &&
-                                                        state
-                                                            .intermediateSkills!
-                                                            .isNotEmpty
-                                                    ? state.intermediateSkills!
-                                                        .length
-                                                    : 0,
+                                            isSplitScreen: isSplitScreen,
                                           ),
+                                      onEdit: () =>
+                                          showDialog<CreateSkillDialog>(
+                                        context: context,
+                                        builder: (context) =>
+                                            CreateSkillDialog(
+                                          allSubCategories:
+                                              state.subCategories ?? [],
+                                          isRider: state.isForRider,
+                                          isEdit: true,
+                                          skill: skill,
+                                          userName: state.usersProfile?.name,
+                                          position:
+                                              state.intermediateSkills !=
+                                                          null &&
+                                                      state
+                                                          .intermediateSkills!
+                                                          .isNotEmpty
+                                                  ? state.intermediateSkills!
+                                                      .length
+                                                  : 0,
                                         ),
-                                        backgroundColor:
-                                            Colors.yellowAccent.shade200,
                                       ),
+                                      backgroundColor:
+                                          Colors.yellowAccent.shade200,
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
 
                           /// Advanced
-                          ColoredBox(
-                            color: Colors.redAccent.shade200.withOpacity(0.4),
-                            child: Column(
-                              children: [
-                                smallGap(),
-                                Visibility(
-                                  visible: state.advancedSkills!.isNotEmpty,
-                                  child: const Center(
-                                    child: Text(
-                                      'Advanced',
-                                      style: TextStyle(fontSize: 20),
-                                    ),
+                          Column(
+                            children: [
+                              smallGap(),
+                              Visibility(
+                                visible: state.advancedSkills!.isNotEmpty,
+                                child: const Center(
+                                  child: Text(
+                                    'Advanced',
+                                    style: TextStyle(fontSize: 20),
                                   ),
                                 ),
-                                smallGap(),
-                                Wrap(
-                                  alignment: WrapAlignment.center,
-                                  runAlignment: WrapAlignment.center,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    ...state.advancedSkills!.map(
-                                      (skill) => _skillTreeItem(
-                                        isEditState: state.isEditState,
-                                        isGuest: state.isGuest,
-                                        difficulty: DifficultyState.advanced,
-                                        name: skill!.skillName,
-                                        backgroundColor:
-                                            Colors.redAccent.shade200,
-                                        onTap: () => context
-                                            .read<HomeCubit>()
-                                            .skillSelected(skill: skill),
-                                        onEdit: () =>
-                                            showDialog<CreateSkillDialog>(
-                                          context: context,
-                                          builder: (context) =>
-                                              CreateSkillDialog(
-                                            allSubCategories:
-                                                state.subCategories ?? [],
-                                            isRider: state.isForRider,
-                                            isEdit: true,
+                              ),
+                              smallGap(),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                runAlignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  ...state.advancedSkills!.map(
+                                    (skill) => _skillTreeItem(
+                                      isEditState: state.isEditState,
+                                      isGuest: state.isGuest,
+                                      difficulty: DifficultyState.advanced,
+                                      name: skill!.skillName,
+                                      backgroundColor:
+                                          Colors.redAccent.shade200,
+                                      onTap: () => context
+                                          .read<HomeCubit>()
+                                          .skillSelected(
                                             skill: skill,
-                                            userName: state.usersProfile?.name,
-                                            position: state.advancedSkills !=
-                                                        null &&
-                                                    state.advancedSkills!
-                                                        .isNotEmpty
-                                                ? state.advancedSkills!.length
-                                                : 0,
+                                            isSplitScreen: isSplitScreen,
                                           ),
+                                      onEdit: () =>
+                                          showDialog<CreateSkillDialog>(
+                                        context: context,
+                                        builder: (context) =>
+                                            CreateSkillDialog(
+                                          allSubCategories:
+                                              state.subCategories ?? [],
+                                          isRider: state.isForRider,
+                                          isEdit: true,
+                                          skill: skill,
+                                          userName: state.usersProfile?.name,
+                                          position: state.advancedSkills !=
+                                                      null &&
+                                                  state.advancedSkills!
+                                                      .isNotEmpty
+                                              ? state.advancedSkills!.length
+                                              : 0,
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -790,9 +791,11 @@ Widget _skillTreeItems({
                               isGuest: state.isGuest,
                               difficulty: DifficultyState.introductory,
                               name: skill!.skillName,
-                              onTap: () => context
-                                  .read<HomeCubit>()
-                                  .skillSelected(skill: skill),
+                              onTap: () =>
+                                  context.read<HomeCubit>().skillSelected(
+                                        skill: skill,
+                                        isSplitScreen: isSplitScreen,
+                                      ),
                               onEdit: () => showDialog<CreateSkillDialog>(
                                 context: context,
                                 builder: (context) => CreateSkillDialog(
@@ -836,9 +839,11 @@ Widget _skillTreeItems({
                               isGuest: state.isGuest,
                               difficulty: DifficultyState.intermediate,
                               name: skill!.skillName,
-                              onTap: () => context
-                                  .read<HomeCubit>()
-                                  .skillSelected(skill: skill),
+                              onTap: () =>
+                                  context.read<HomeCubit>().skillSelected(
+                                        skill: skill,
+                                        isSplitScreen: isSplitScreen,
+                                      ),
                               onEdit: () => showDialog<CreateSkillDialog>(
                                 context: context,
                                 builder: (context) => CreateSkillDialog(
@@ -882,9 +887,11 @@ Widget _skillTreeItems({
                               isGuest: state.isGuest,
                               difficulty: DifficultyState.advanced,
                               name: skill!.skillName,
-                              onTap: () => context
-                                  .read<HomeCubit>()
-                                  .skillSelected(skill: skill),
+                              onTap: () =>
+                                  context.read<HomeCubit>().skillSelected(
+                                        skill: skill,
+                                        isSplitScreen: isSplitScreen,
+                                      ),
                               onEdit: () => showDialog<CreateSkillDialog>(
                                 context: context,
                                 builder: (context) => CreateSkillDialog(
@@ -917,7 +924,19 @@ Widget _skillTreeItems({
             debugPrint('Skill: ${state.skill?.skillName} ');
             return _skillLevelItem(skillTreeFocus: skillTreeFocus);
           } else {
-            return errorView(context);
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('No Skill Selected'),
+                  smallGap(),
+                  ElevatedButton(
+                    onPressed: homeCubit.skillTreeNavigationSelected,
+                    child: const Text('Back'),
+                  ),
+                ],
+              ),
+            );
           }
       }
     },
@@ -933,86 +952,92 @@ Widget _skillLevelItem({
 }) {
   return BlocBuilder<HomeCubit, HomeState>(
     buildWhen: (previous, current) =>
-        previous.skillTreeNavigation != current.skillTreeNavigation,
+        previous.skillTreeNavigation != current.skillTreeNavigation ||
+        previous.skill != current.skill,
     builder: (context, state) {
       final homeCubit = context.read<HomeCubit>();
-      return Stack(
-        children: [
-          Center(
-            child: responsive_framework.MaxWidthBox(
-              maxWidth: 1400,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      height: 50,
+      return state.skill == null
+          ? const Center(
+              child: Text('No Skill Selected'),
+            )
+          : Stack(
+              children: [
+                Center(
+                  child: responsive_framework.MaxWidthBox(
+                    maxWidth: 1400,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          const SizedBox(
+                            height: 50,
+                          ),
+                          // learningDescription or ProficientDescription
+                          // depending on the levelState if No Progress
+                          // show the learningDescription and if the levelState
+                          // is Learning show the ProficientDescription
+                          // if the levelState is Proficient
+                          // show a custom message
+                          Text(
+                            homeCubit.getLevelProgressDescription(),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 20, right: 20),
+                            child: Divider(),
+                          ),
+                          smallGap(),
+                          Text(state.skill?.description ?? ''),
+                          smallGap(),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 20, right: 20),
+                            child: Divider(),
+                          ),
+                          Text(
+                            'Resources',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 20, right: 20),
+                            child: Divider(),
+                          ),
+                          smallGap(),
+                          _skillResourcesList(),
+                          smallGap(),
+                          const SizedBox(
+                            height: 50,
+                          ),
+                        ],
+                      ),
                     ),
-                    // learningDescription or ProficientDescription
-                    // depending on the levelState if No Progress
-                    // show the learningDescription and if the levelState
-                    // is Learning show the ProficientDescription
-                    // if the levelState is Proficient
-                    // show a custom message
-                    Text(
-                      homeCubit.getLevelProgressDescription(),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 20, right: 20),
-                      child: Divider(),
-                    ),
-                    smallGap(),
-                    Text(state.skill?.description ?? ''),
-                    smallGap(),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 20, right: 20),
-                      child: Divider(),
-                    ),
-                    Text(
-                      'Resources',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 20, right: 20),
-                      child: Divider(),
-                    ),
-                    smallGap(),
-                    _skillResourcesList(),
-                    smallGap(),
-                    const SizedBox(
-                      height: 50,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
 
-          // ProgressBar at the top
+                // ProgressBar at the top
 
-          // hide the progress bar if the
-          Visibility(
-            child: Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _skillLevelProgressBar(),
-            ),
-          ),
+                // hide the progress bar if the
+                Visibility(
+                  visible: state.skill != null,
+                  child: Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: _skillLevelProgressBar(),
+                  ),
+                ),
 
-          // AddResourceButton at the bottom
-          // Positioned(
-          //   bottom: 0,
-          //   left: 0,
-          //   right: 0,
-          //   child: _addResourceButton(
-          //     state: state,
-          //     context: context,
-          //     homeCubit: homeCubit,
-          //     skillTreeFocus: skillTreeFocus,
-          //   ),
-          // ),
-        ],
-      );
+                // AddResourceButton at the bottom
+                // Positioned(
+                //   bottom: 0,
+                //   left: 0,
+                //   right: 0,
+                //   child: _addResourceButton(
+                //     state: state,
+                //     context: context,
+                //     homeCubit: homeCubit,
+                //     skillTreeFocus: skillTreeFocus,
+                //   ),
+                // ),
+              ],
+            );
     },
   );
 }
