@@ -136,35 +136,36 @@ class HomeCubit extends Cubit<HomeState> {
     });
 
     ///   Stream of Categoies
-    if (state.categories == null) {
-      debugPrint('Getting Categories');
-      _categoryStream =
-          _skillTreeRepository.getCatagoriesForRiderSkillTree().listen((event) {
-        debugPrint('Categories Stream: got data ${event.docs.length}');
-        final categories =
-            event.docs.map((doc) => (doc.data()) as Catagorry?).toList();
-        emit(state.copyWith(categories: categories));
-      });
-    }
+    // if (state.categories == null) {
+    //   debugPrint('Getting Categories');
+    //   _categoryStream =
+    //       _skillTreeRepository.getCatagoriesForRiderSkillTree().listen((event) {
+    //     debugPrint('Categories Stream: got data ${event.docs.length}');
+    //     final categories =
+    //         event.docs.map((doc) => (doc.data()) as Catagorry?).toList();
+    //     emit(state.copyWith(categories: categories));
+    //   });
+    // }
 
     ///   Stream of SubCategories
-    if (state.subCategories == null) {
-      debugPrint('Getting SubCategories');
-      _subCategoryStream = _skillTreeRepository
-          .getSubCategoriesForRiderSkillTree()
-          .listen((event) {
-        debugPrint('SubCategories Stream: got data ${event.docs.length}');
-        final subCategories =
-            event.docs.map((e) => (e.data()) as SubCategory?).toList();
-        emit(state.copyWith(subCategories: subCategories));
-        _sortSubCategories(category: null);
-      });
-    } else {
-      debugPrint('SubCategories already set');
-    }
+    // if (state.subCategories == null) {
+    //   debugPrint('Getting SubCategories');
+    //   _subCategoryStream = _skillTreeRepository
+    //       .getSubCategoriesForRiderSkillTree()
+    //       .listen((event) {
+    //     debugPrint('SubCategories Stream: got data ${event.docs.length}');
+    //     final subCategories =
+    //         event.docs.map((e) => (e.data()) as SubCategory?).toList();
+    //     emit(state.copyWith(subCategories: subCategories));
+    //     _sortSubCategories(category: null);
+    //   });
+    // } else {
+    //   debugPrint('SubCategories already set');
+    // }
+    /// Stream of Training Paths
+    _getTrainingPaths();
 
     ///   Stream of Skills
-    //FIXME:  Skills for TESTING
 
     if (state.allSkills == null) {
       debugPrint('Getting Skills');
@@ -227,10 +228,12 @@ class HomeCubit extends Cubit<HomeState> {
   StreamSubscription<DocumentSnapshot<Object?>>? _riderProfileSubscription;
   StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
   late final StreamSubscription<QuerySnapshot<Object?>> _skillsStream;
+  late final StreamSubscription<QuerySnapshot<Object?>> _trainingPathsStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _categoryStream;
   StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _resourcesStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _subCategoryStream;
+  final ScrollController _scrollController = ScrollController();
 
   ///   Rider Profile for the current user
 
@@ -250,6 +253,27 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Ads
   BannerAd? bannerAd;
+
+  /* ***********************************************************************
+                          Navigation
+  *************************************************************************** */
+  /// Handles the Navigation when the back button is pressed from Resources, Skill Tree
+  /// Messages, HorseProfile or Viewing a Rider Profile
+  void backPressed() {
+    if (state.index == 0 && state.isViewing) {
+      goBackToUsersProfile();
+    } else if (state.index == 1 &&
+        state.skillTreeNavigation == SkillTreeNavigation.Skill) {
+      profileNavigationSelected();
+    } else if (state.index == 1 &&
+        state.skillTreeNavigation == SkillTreeNavigation.SkillLevel) {
+      skillTreeNavigationSelected();
+    } else if (state.index == 0 && !state.isForRider) {
+      goBackToUsersProfile();
+    } else if (state.index == 2) {
+      skillTreeNavigationSelected();
+    }
+  }
 
 /* ************************************************************************* 
                           Rider Profile
@@ -1533,7 +1557,6 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> search({required List<String?>? searchList}) async {
-    debugPrint('Search list: $searchList');
     emit(state.copyWith(isSearch: true, searchList: searchList));
   }
 
@@ -1587,11 +1610,48 @@ class HomeCubit extends Cubit<HomeState> {
   void backToCategory() {
     emit(
       state.copyWith(
-        skillTreeNavigation: SkillTreeNavigation.Category,
+        skillTreeNavigation: SkillTreeNavigation.Skill,
         subCategories: state.subCategories,
         allSkills: state.allSkills,
       ),
     );
+  }
+
+/* ****************************************************************
+                          Training Paths
+  ************************************************************** */
+  Future<void> _getTrainingPaths() async {
+    debugPrint('getTrainingPaths');
+    _trainingPathsStream =
+        _skillTreeRepository.getAllTrainingPaths().listen((event) {
+      final trainingPaths =
+          event.docs.map((doc) => (doc.data()) as TrainingPath?).toList();
+      emit(state.copyWith(trainingPaths: trainingPaths));
+    });
+  }
+
+  void trainingPathSelected({required TrainingPath? trainingPath}) {
+    emit(
+      state.copyWith(
+        trainingPath: trainingPath,
+        skillTreeNavigation: SkillTreeNavigation.TrainingPath,
+        homeStatus: HomeStatus.skillTree,
+      ),
+    );
+  }
+
+  ScrollController getScrollController() {
+    return _scrollController;
+  }
+
+  /// Children of the [skillNode] sorted by position
+  List<SkillNode> childrenNodes({required SkillNode skillNode}) {
+    final children = <SkillNode>[];
+    for (final child in state.trainingPath!.skillNodes) {
+      if (child != null && child.parentId == skillNode.id) children.add(child);
+    }
+    children.sort((a, b) => a.position.compareTo(b.position));
+    return children;
   }
 
   /* **************************************************************
@@ -1613,15 +1673,20 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// This method will be called when the user clicks a skill
   /// it will change the filter to SkillLevel for that skill.
-  void skillSelected({required Skill? skill, required bool isSplitScreen}) {
+  void skillSelected({
+    required Skill? skill,
+    required bool isSplitScreen,
+    required bool isFromTrainingPath,
+  }) {
     if (!isSplitScreen) {
       emit(
         state.copyWith(
           index: 1,
-          homeStatus: HomeStatus.skillTree,
           skill: skill,
-          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
           isSearch: false,
+          homeStatus: HomeStatus.skillTree,
+          isFromTrainingPath: isFromTrainingPath,
+          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
         ),
       );
     } else {
@@ -1719,20 +1784,19 @@ class HomeCubit extends Cubit<HomeState> {
           title: const Text('Training Paths'),
           content: SingleChildScrollView(
             child: ListBody(
-              children: state.subCategories
-                      ?.map(
-                        (subcategory) => subcategory != null
-                            ? ListTile(
-                                title: Text(subcategory.name),
-                                onTap: () {
-                                  subCategorySelected(subCategory: subcategory);
-                                  Navigator.of(context).pop();
-                                },
-                              )
-                            : Container(),
-                      )
-                      .toList() ??
-                  [],
+              children: state.trainingPaths
+                  .map(
+                    (trainingPath) => trainingPath != null
+                        ? ListTile(
+                            title: Text(trainingPath.name),
+                            onTap: () {
+                              trainingPathSelected(trainingPath: trainingPath);
+                              Navigator.of(context).pop();
+                            },
+                          )
+                        : Container(),
+                  )
+                  .toList(),
             ),
           ),
           actions: <Widget>[
@@ -1911,7 +1975,7 @@ class HomeCubit extends Cubit<HomeState> {
         state.copyWith(
           category: category,
           subCategories: subCategories,
-          skillTreeNavigation: SkillTreeNavigation.SubCategory,
+          skillTreeNavigation: SkillTreeNavigation.Skill,
         ),
       );
     } else {

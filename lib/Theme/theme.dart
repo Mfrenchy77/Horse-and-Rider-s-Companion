@@ -86,7 +86,7 @@ class HorseAndRidersTheme {
     if (month == 10) {
       debugPrint('Halloween');
       return ThemeSeasons.halloween;
-    } else if (month == 1) {
+    } else if (month == 12) {
       debugPrint('Christmas');
       return ThemeSeasons.christmas;
     } else if (month == 3 && day >= 22 || month == 4 && day <= 15) {
@@ -113,8 +113,25 @@ class HorseAndRidersTheme {
 ///   Main Theme
 
 final mainThemeLight = ThemeData(
-  //colorSchemeSeed: Colors.blueGrey,
-  primarySwatch: Colors.blueGrey,
+  colorSchemeSeed: Colors.blueGrey,
+  navigationBarTheme: NavigationBarThemeData(
+    backgroundColor: ColorConst.mainPrimaryLight,
+    iconTheme: MaterialStateProperty.all(
+      const IconThemeData(color: Colors.white),
+    ),
+    labelTextStyle: MaterialStateProperty.all(
+      const TextStyle(color: Colors.white),
+    ),
+  ),
+  navigationRailTheme: NavigationRailThemeData(
+    backgroundColor: ColorConst.mainPrimaryLight,
+    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
+    selectedLabelTextStyle: const TextStyle(color: Colors.white),
+    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
+    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
+  ),
+
+  //primarySwatch: Colors.blueGrey,
   scaffoldBackgroundColor: ColorConst.mainBackgroundLight,
   appBarTheme: const AppBarTheme(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
@@ -127,12 +144,6 @@ final mainThemeLight = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.mainBackgroundLight,
   ),
-  colorScheme: ColorScheme.fromSwatch().copyWith(
-    brightness: Brightness.light,
-    primary: ColorConst.mainPrimaryLight,
-    secondary: ColorConst.mainAccentLight,
-    background: ColorConst.mainBackgroundLight,
-  ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: ColorConst.mainBackgroundDark,
     unselectedItemColor: ColorConst.mainBackgroundLight,
@@ -142,9 +153,22 @@ final mainThemeLight = ThemeData(
 
 final mainThemeDark = ThemeData(
   useMaterial3: true,
-  colorSchemeSeed: ColorConst.cardDark,
+  navigationBarTheme: NavigationBarThemeData(
+    iconTheme: MaterialStateProperty.all(
+      const IconThemeData(color: Colors.white),
+    ),
+    labelTextStyle: MaterialStateProperty.all(
+      const TextStyle(color: Colors.white),
+    ),
+  ),
+  navigationRailTheme: NavigationRailThemeData(
+    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
+    selectedLabelTextStyle: const TextStyle(color: Colors.white),
+    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
+    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
+  ),
   brightness: Brightness.dark,
-  // colorSchemeSeed: Colors.blueGrey,
+  colorSchemeSeed: Colors.blueGrey,
   scaffoldBackgroundColor: const Color.fromARGB(255, 44, 44, 44),
   appBarTheme: const AppBarTheme(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
@@ -160,12 +184,6 @@ final mainThemeDark = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.mainBackgroundDark,
   ),
-  // colorScheme: ColorScheme.fromSwatch().copyWith(
-  //   brightness: Brightness.dark,
-  //   primary: ColorConst.mainBackgroundDark,
-  //   secondary: ColorConst.mainAccentDark,
-  //   background: ColorConst.mainBackgroundDark,
-  // ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: ColorConst.mainAccentDark,
     unselectedItemColor: ColorConst.mainBackgroundDark,
@@ -361,7 +379,7 @@ final winterTheme = ThemeData(
   navigationBarTheme: const NavigationBarThemeData(
     backgroundColor: ColorConst.winterPrimaryLight,
   ),
- 
+
   cardColor: ColorConst.winterPrimaryLight,
   dialogBackgroundColor: ColorConst.winterBackgroundLight,
   drawerTheme: const DrawerThemeData(
@@ -373,7 +391,7 @@ final winterTheme = ThemeData(
   //   secondary: ColorConst.winterAccentLight,
   //   background: ColorConst.winterBackgroundLight,
   // ),
- // primarySwatch: Colors.blue,
+  // primarySwatch: Colors.blue,
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: ColorConst.winterBackgroundDark,
     unselectedItemColor: ColorConst.winterBackgroundLight,
@@ -386,12 +404,10 @@ final winterThemeDark = ThemeData(
   useMaterial3: true,
   navigationBarTheme: const NavigationBarThemeData(
     backgroundColor: ColorConst.winterPrimaryDark,
-
   ),
-  
+
   navigationRailTheme: const NavigationRailThemeData(
     backgroundColor: ColorConst.winterPrimaryDark,
-    
   ),
   colorSchemeSeed: ColorConst.winterPrimaryLight,
   scaffoldBackgroundColor: ColorConst.winterBackgroundDark,
@@ -412,7 +428,7 @@ final winterThemeDark = ThemeData(
   //   secondary: ColorConst.winterAccentDark,
   //   background: ColorConst.winterBackgroundDark,
   // ),
- // primarySwatch: Colors.blue,
+  // primarySwatch: Colors.blue,
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: ColorConst.winterBackgroundDark,
     backgroundColor: ColorConst.winterPrimaryDark,
@@ -482,6 +498,27 @@ final christmasTheme = ThemeData(
   useMaterial3: true,
   colorSchemeSeed: ColorConst.christmasPrimaryLight,
   scaffoldBackgroundColor: const Color.fromARGB(255, 219, 216, 216),
+  navigationDrawerTheme: const NavigationDrawerThemeData(
+    backgroundColor: ColorConst.christmasBackgroundLight,
+  ),
+  navigationBarTheme: NavigationBarThemeData(
+    indicatorColor: ColorConst.christmasAccentLight,
+    iconTheme: MaterialStateProperty.all(
+      const IconThemeData(color: Colors.white),
+    ),
+    labelTextStyle: MaterialStateProperty.all(
+      const TextStyle(color: Colors.white),
+    ),
+    backgroundColor: ColorConst.christmasPrimaryLight,
+  ),
+  navigationRailTheme: NavigationRailThemeData(
+    indicatorColor: ColorConst.christmasAccentLight,
+    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
+    selectedLabelTextStyle: const TextStyle(color: Colors.white),
+    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
+    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
+    backgroundColor: ColorConst.christmasPrimaryLight,
+  ),
   appBarTheme: const AppBarTheme(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
@@ -489,6 +526,7 @@ final christmasTheme = ThemeData(
     color: ColorConst.christmasPrimaryLight,
   ),
   cardColor: ColorConst.christmasBackgroundLight,
+  secondaryHeaderColor: ColorConst.christmasPrimaryLight,
   dialogBackgroundColor: ColorConst.christmasBackgroundLight,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.christmasBackgroundLight,
@@ -499,7 +537,7 @@ final christmasTheme = ThemeData(
   //   secondary: ColorConst.christmasAccentLight,
   //   background: ColorConst.christmasBackgroundLight,
   // ),
-  //primarySwatch: Colors.red,
+  // primarySwatch: Colors.red,
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: ColorConst.christmasAccentLight,
     unselectedItemColor: ColorConst.christmasBackgroundLight,
@@ -509,6 +547,16 @@ final christmasTheme = ThemeData(
 
 final christmasThemeDark = ThemeData(
   useMaterial3: true,
+  navigationBarTheme: NavigationBarThemeData(
+    indicatorColor: ColorConst.christmasAccentDark,
+    iconTheme: MaterialStateProperty.all(
+      const IconThemeData(color: Colors.white),
+    ),
+    labelTextStyle: MaterialStateProperty.all(
+      const TextStyle(color: Colors.white),
+    ),
+    backgroundColor: ColorConst.christmasPrimaryDark,
+  ),
   colorSchemeSeed: ColorConst.christmasPrimaryDark,
   brightness: Brightness.dark,
   scaffoldBackgroundColor: ColorConst.christmasBackgroundDark,

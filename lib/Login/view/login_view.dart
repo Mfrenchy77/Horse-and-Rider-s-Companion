@@ -28,7 +28,10 @@ Widget loginView({
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Logo(screenName: 'Login', forceDark: true),
+                  const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Logo(screenName: 'Login', forceDark: true),
+                  ),
                   Container(
                     constraints: const BoxConstraints(maxWidth: 300),
                     child: Form(
@@ -95,9 +98,11 @@ Widget loginView({
                             ),
                             const Expanded(
                               flex: 5,
-                              child: Logo(
-                                forceDark: true,
-                                screenName: 'Login',
+                              child: Center(
+                                child: Logo(
+                                  forceDark: true,
+                                  screenName: 'Login',
+                                ),
                               ),
                             ),
                             Expanded(
@@ -153,7 +158,44 @@ Widget loginView({
         );
 }
 
-    /// Login as Guest
+Widget _logoView() {
+  return const Logo(
+    forceDark: true,
+    screenName: 'Login',
+  );
+}
+
+Widget _loginView({
+  required BuildContext context,
+  required LoginState state,
+}) {
+  return Form(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _emailField(
+          context: context,
+          state: state,
+        ),
+        gap(),
+        _passwordField(context: context, state: state),
+        gap(),
+        _submitButton(context: context, state: state),
+        gap(),
+        _signInAsGuest(context: context),
+        gap(),
+        const RegistationLink(),
+        gap(),
+        const ForgotPasswordLink(),
+        gap(),
+        const GoogleLoginButton(),
+      ],
+    ),
+  );
+}
+
+/// Login as Guest
 Widget _signInAsGuest({required BuildContext context}) {
   return SizedBox(
     width: double.infinity,

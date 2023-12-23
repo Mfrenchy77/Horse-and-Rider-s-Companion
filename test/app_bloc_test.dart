@@ -1,3 +1,4 @@
+import 'package:test/test.dart';
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_bloc.dart';
@@ -9,14 +10,14 @@ class MockAuthenticationRepository extends Mock
 void main() {
   group('AppBloc', () {
     late AuthenticationRepository authenticationRepository;
+    late AppBloc appBloc;
 
     setUp(() {
       authenticationRepository = MockAuthenticationRepository();
+      appBloc = AppBloc(authenticationRepository: authenticationRepository);
     });
 
     test('initial state is correct', () {
-      final appBloc =
-          AppBloc(authenticationRepository: authenticationRepository);
       expect(appBloc.state, equals(const AppState.unauthenticated()));
     });
 
@@ -27,8 +28,6 @@ void main() {
         email: 'test@test.com',
         emailVerfified: true,
       );
-      final appBloc =
-          AppBloc(authenticationRepository: authenticationRepository);
       expectLater(
         appBloc.stream,
         emitsInOrder([
@@ -41,8 +40,6 @@ void main() {
     });
 
     test('emits [unauthenticated] when user logs out', () {
-      final appBloc =
-          AppBloc(authenticationRepository: authenticationRepository);
       expectLater(
         appBloc.stream,
         emitsInOrder([
@@ -55,8 +52,6 @@ void main() {
     test('emits [unauthenticated] when user is not verified', () {
       const user =
           User(id: '123', name: 'Jolene Schmoe', email: 'test@test.com');
-      final appBloc =
-          AppBloc(authenticationRepository: authenticationRepository);
       expectLater(
         appBloc.stream,
         emitsInOrder([
@@ -67,15 +62,13 @@ void main() {
     });
 
     // test('emits [unauthenticated] when user is null', () {
-    //   final appBloc =
-    //       AppBloc(authenticationRepository: authenticationRepository);
     //   expectLater(
     //     appBloc.stream,
     //     emitsInOrder([
     //       const AppState.unauthenticated(),
     //     ]),
     //   );
-    //   appBloc.add(const AppUserChanged(Null));
+    //   appBloc.add(const AppUserChanged(null));
     // });
 
     // tearDown(() {

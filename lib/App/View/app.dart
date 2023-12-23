@@ -15,23 +15,28 @@ import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/generated/l10n.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
+/// The `App` class is responsible for building the main
+///  application widget tree.
+/// It provides the necessary dependencies and initializes
+/// the `AppBloc` and `AppView` widgets.
 class App extends StatelessWidget {
   const App({
     super.key,
-    // required this.auth,
     required this.settingsController,
-    required AuthenticationRepository authenticationRepository,
-  }) : _authenticationRepository = authenticationRepository;
-  // final FirebaseAuth auth;
-  final AuthenticationRepository _authenticationRepository;
+    required this.authenticationRepository,
+  });
+
+  final AuthenticationRepository authenticationRepository;
   final SettingsController settingsController;
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider.value(
-      value: _authenticationRepository,
+      value: authenticationRepository,
       child: BlocProvider(
-        create: (context) =>
-            AppBloc(authenticationRepository: _authenticationRepository),
+        create: (context) => AppBloc(
+          authenticationRepository: authenticationRepository,
+        ),
         child: AppView(settingsController: settingsController),
       ),
     );
@@ -44,7 +49,6 @@ class AppView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final isDarkMode = SharedPrefs().isDarkMode;
     return AnimatedBuilder(
       animation: settingsController,
       builder: (context, child) {
@@ -65,18 +69,6 @@ class AppView extends StatelessWidget {
             RepositoryProvider<HorseProfileRepository>(
               create: (context) => HorseProfileRepository(),
             ),
-            RepositoryProvider<CatagorryRepository>(
-              create: (context) => CatagorryRepository(),
-            ),
-            RepositoryProvider<SkillsRepository>(
-              create: (context) => SkillsRepository(),
-            ),
-            RepositoryProvider<LevelsRepository>(
-              create: (context) => LevelsRepository(),
-            ),
-            RepositoryProvider<SubCategoryRepository>(
-              create: (context) => SubCategoryRepository(),
-            ),
           ],
           child: MaterialApp(
             builder: (context, child) => ResponsiveBreakpoints.builder(
@@ -88,19 +80,8 @@ class AppView extends StatelessWidget {
                 const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
               ],
             ),
-            // Providing a restorationScopeId allows the Navigator built by the
-            // MaterialApp to restore the navigation stack when a user leaves
-            // and
-            // returns to the app after it has been killed while running in the
-            // background.
             restorationScopeId: 'app',
-
-            /// The title of the app
             title: "Horse & Rider's Companion",
-
-            // Provide the generated AppLocalizations to the MaterialApp. This
-            // allows descendant Widgets to display the correct translations
-            // depending on the user's locale.
             localizationsDelegates: const [
               AppLocalizations.delegate,
               S.delegate,
@@ -109,9 +90,6 @@ class AppView extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: S.delegate.supportedLocales,
-
-            // The appTitle is defined in .arb files found in the localization
-            // directory.
             onGenerateTitle: (BuildContext context) => S.of(context).appTitle,
             themeMode: settingsController.darkMode,
             theme: settingsController.theme,
@@ -119,7 +97,7 @@ class AppView extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             home: BlocBuilder<AppBloc, AppState>(
               builder: (context, state) {
-                switch (state.status) {                 
+                switch (state.status) {
                   case AppStatus.authenticated:
                     return const HomePage();
                   case AppStatus.unauthenticated:
@@ -127,14 +105,6 @@ class AppView extends StatelessWidget {
                 }
               },
             ),
-
-            // FlowBuilder<AppStatus>(
-            //   state: context.select((AppBloc bloc) => bloc.state.status),
-            //  onGeneratePages: onGenerateAppViewPages,
-            // ),
-            // Define a function to handle named routes in order to support
-            // Flutter web url navigation and deep linking.
-
             onGenerateRoute: (routeSettings) {
               return MaterialPageRoute<void>(
                 settings: routeSettings,
@@ -151,11 +121,8 @@ class AppView extends StatelessWidget {
                       return const LoginPage();
                     case HomePage.routeName:
                       return const HomePage();
-                    // case HorseHomePage.routeName:
-                    //   return const HorseHomePage();
                     case MessagesPage.routeName:
                       return const MessagesPage();
-
                     default:
                       return errorView(context);
                   }

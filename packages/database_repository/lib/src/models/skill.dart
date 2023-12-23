@@ -22,7 +22,7 @@ class Skill implements Comparable<Skill> {
   final String id;
   int position = -1;
   final bool rider;
-  final String? skillName;
+  final String skillName;
   final String? lastEditBy;
   final String? description;
   final DateTime? lastEditDate;
@@ -40,7 +40,7 @@ class Skill implements Comparable<Skill> {
       id: data!['id'] as String,
       rider: data['rider'] as bool,
       position: data['position'] as int,
-      skillName: data['skillName'] as String?,
+      skillName: data['skillName'] as String,
       lastEditBy: data['lastEditBy'] as String?,
       description: data['description'] as String?,
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
@@ -63,7 +63,7 @@ class Skill implements Comparable<Skill> {
       'id': id,
       'rider': rider,
       'position': position,
-      if (skillName != null) 'skillName': skillName,
+      'skillName': skillName,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (description != null) 'description': description,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,

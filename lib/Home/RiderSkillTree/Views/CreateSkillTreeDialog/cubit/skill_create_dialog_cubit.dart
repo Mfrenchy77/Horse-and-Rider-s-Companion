@@ -115,33 +115,34 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
 
 // user selects a subcategory to add to the skillid to its skills list
   Future<void> updateSubCategoryList({required SubCategory subCategory}) async {
-    emit(
-      state.copyWith(
-        updateSubCategoryList: UpdateSubCategoryList.inProgress,
-      ),
-    );
-    final subCategories = <SubCategory?>[
-      ...state.subCategoryList ?? [],
-    ];
-    debugPrint('SubCategoryList: ${subCategories.length}');
-    subCategories.contains(subCategory)
-        ? subCategories.remove(subCategory)
-        : subCategories.add(subCategory);
+    debugPrint('No more SubCategories');
+    // emit(
+    //   state.copyWith(
+    //     updateSubCategoryList: UpdateSubCategoryList.inProgress,
+    //   ),
+    // );
+    // final subCategories = <SubCategory?>[
+    //   ...state.subCategoryList ?? [],
+    // ];
+    // debugPrint('SubCategoryList: ${subCategories.length}');
+    // subCategories.contains(subCategory)
+    //     ? subCategories.remove(subCategory)
+    //     : subCategories.add(subCategory);
 
-    try {
-      await _skillsRepository.createOrEditSubCategory(
-        subCategory: subCategory,
-      );
-      emit(
-        state.copyWith(
-          updateSubCategoryList: UpdateSubCategoryList.success,
-          subCategoryList: subCategories,
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error updateing subcategory: $e');
-      emit(state.copyWith(updateSubCategoryList: UpdateSubCategoryList.error));
-    }
+    // try {
+    //   await _skillsRepository.createOrEditSubCategory(
+    //     subCategory: subCategory,
+    //   );
+    //   emit(
+    //     state.copyWith(
+    //       updateSubCategoryList: UpdateSubCategoryList.success,
+    //       subCategoryList: subCategories,
+    //     ),
+    //   );
+    // } catch (e) {
+    //   debugPrint('Error updateing subcategory: $e');
+    //   emit(state.copyWith(updateSubCategoryList: UpdateSubCategoryList.error));
+    // }
   }
 
   ///   Called when creating new Skill
@@ -164,41 +165,40 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       proficientDescription: state.proficientDescription.value,
     );
 
-    //update the subcategories in the SubCategory list with the new skill
-    for (final subCategory in subCategories) {
-      try {
-        //if the skill is not in the subcategory add it
-        if (!subCategory!.skills.contains(skill.id)) {
-          debugPrint(
-            'adding ${skill.skillName} to subcategory: ${subCategory.name}',
-          );
-          subCategory.skills.add(skill.id);
-          await _skillsRepository.createOrEditSubCategory(
-            subCategory: subCategory,
-          );
-        } else {
-          debugPrint(
-            'Skill ${skill.skillName} is already in subcategory: ${subCategory.name}',
-          );
-        }
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(status: FormzStatus.submissionFailure),
-        );
-      }
+    // //update the subcategories in the SubCategory list with the new skill
+    // for (final subCategory in subCategories) {
+    //   try {
+    //     //if the skill is not in the subcategory add it
+    //     if (!subCategory!.skills.contains(skill.id)) {
+    //       debugPrint(
+    //         'adding ${skill.skillName} to subcategory: ${subCategory.name}',
+    //       );
+    //       subCategory.skills.add(skill.id);
+    //       await _skillsRepository.createOrEditSubCategory(
+    //         subCategory: subCategory,
+    //       );
+    //     } else {
+    //       debugPrint(
+    //         'Skill ${skill.skillName} is already in subcategory: ${subCategory.name}',
+    //       );
+    //     }
+    //   } catch (e) {
+    //     debugPrint(e.toString());
+    //     emit(
+    //       state.copyWith(status: FormzStatus.submissionFailure),
+    //     );
+    //   }
 
-      try {
-        await _skillsRepository.createOrEditSkill(
-          skill: skill,
-        );
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(status: FormzStatus.submissionFailure),
-        );
-      }
+    try {
+      await _skillsRepository.createOrEditSkill(
+        skill: skill,
+      );
+      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+    } catch (e) {
+      debugPrint(e.toString());
+      emit(
+        state.copyWith(status: FormzStatus.submissionFailure),
+      );
     }
   }
 
@@ -233,42 +233,41 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
           : editedSkill?.proficientDescription as String,
     );
 
-    for (final subCategory in subCategories) {
-      try {
-        //if the skill is not in the subcategory add it
-        if (!subCategory!.skills.contains(skill.id)) {
-          debugPrint(
-            'adding ${skill.skillName} to subcategory: ${subCategory.name}',
-          );
-          subCategory.skills.add(skill.id);
-          await _skillsRepository.createOrEditSubCategory(
-            subCategory: subCategory,
-          );
-        } else {
-          debugPrint(
-            'Skill ${skill.skillName} is already in subcategory: ${subCategory.name}',
-          );
-        }
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(status: FormzStatus.submissionFailure),
-        );
-      }
+    // for (final subCategory in subCategories) {
+    //   try {
+    //     //if the skill is not in the subcategory add it
+    //     if (!subCategory!.skills.contains(skill.id)) {
+    //       debugPrint(
+    //         'adding ${skill.skillName} to subcategory: ${subCategory.name}',
+    //       );
+    //       subCategory.skills.add(skill.id);
+    //       await _skillsRepository.createOrEditSubCategory(
+    //         subCategory: subCategory,
+    //       );
+    //     } else {
+    //       debugPrint(
+    //         'Skill ${skill.skillName} is already in subcategory: ${subCategory.name}',
+    //       );
+    //     }
+    //   } catch (e) {
+    //     debugPrint(e.toString());
+    //     emit(
+    //       state.copyWith(status: FormzStatus.submissionFailure),
+    //     );
+    //   }
 
-      try {
-        await _skillsRepository.createOrEditSkill(
-          skill: skill,
-        );
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(
-            status: FormzStatus.submissionFailure,
-          ),
-        );
-      }
+    try {
+      await _skillsRepository.createOrEditSkill(
+        skill: skill,
+      );
+      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+    } catch (e) {
+      debugPrint(e.toString());
+      emit(
+        state.copyWith(
+          status: FormzStatus.submissionFailure,
+        ),
+      );
     }
   }
 
@@ -276,31 +275,31 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     emit(
       state.copyWith(status: FormzStatus.submissionInProgress),
     );
-    final subCategories = state.allSubCategories;
-    //remove the skill from the subcategory
-    for (final subCategory in subCategories!) {
-      try {
-        //if the skill is in the subcategory remove it
-        if (subCategory!.skills.contains(skill.id)) {
-          debugPrint(
-            'removing ${skill.skillName} from subcategory: ${subCategory.name}',
-          );
-          subCategory.skills.remove(skill.id);
-          _skillsRepository.createOrEditSubCategory(
-            subCategory: subCategory,
-          );
-        } else {
-          debugPrint(
-            'Skill ${skill.skillName} is not in subcategory: ${subCategory.name}',
-          );
-        }
-      } catch (e) {
-        debugPrint(e.toString());
-        emit(
-          state.copyWith(status: FormzStatus.submissionFailure),
-        );
-      }
-    }
+    // final subCategories = state.allSubCategories;
+    // //remove the skill from the subcategory
+    // for (final subCategory in subCategories!) {
+    //   try {
+    //     //if the skill is in the subcategory remove it
+    //     if (subCategory!.skills.contains(skill.id)) {
+    //       debugPrint(
+    //         'removing ${skill.skillName} from subcategory: ${subCategory.name}',
+    //       );
+    //       subCategory.skills.remove(skill.id);
+    //       _skillsRepository.createOrEditSubCategory(
+    //         subCategory: subCategory,
+    //       );
+    //     } else {
+    //       debugPrint(
+    //         'Skill ${skill.skillName} is not in subcategory: ${subCategory.name}',
+    //       );
+    //     }
+    //   } catch (e) {
+    //     debugPrint(e.toString());
+    //     emit(
+    //       state.copyWith(status: FormzStatus.submissionFailure),
+    //     );
+    //   }
+    // }
 
     try {
       _skillsRepository.deleteSkill(

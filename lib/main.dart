@@ -96,7 +96,7 @@ Future<void> main() async {
 
   Bloc.observer = AppBlocObserver();
   final authenticationRepository = AuthenticationRepository();
-  await authenticationRepository.user.first.then((value) {
+  authenticationRepository.user.listen((value) {
     debugPrint('User is $value');
   });
   final settingsController = SettingsController(SettingsService());

@@ -148,12 +148,31 @@ class HomeView extends StatelessWidget {
                     builder: (context, state) {
                       final homeCubit = context.read<HomeCubit>();
                       return AdaptiveScaffold(
-                        // leadingUnextendedNavRail: const Padding(
-                        //   padding: EdgeInsets.all(8.0),
-                        //   child:
-                        //       Image(image: AssetImage('assets/horse_logo.png')),
-                        // ),
-                        // leadingExtendedNavRail: const Logo(screenName: ''),
+                        leadingUnextendedNavRail: Visibility(
+                          visible: state.index != 0 || state.isViewing,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_back,
+                              color: HorseAndRidersTheme()
+                                  .getTheme()
+                                  .appBarTheme
+                                  .iconTheme
+                                  ?.color,
+                            ),
+                            onPressed: homeCubit.backPressed,
+                          ),
+                        ),
+                        leadingExtendedNavRail: IconButton(
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: HorseAndRidersTheme()
+                                .getTheme()
+                                .appBarTheme
+                                .iconTheme
+                                ?.color,
+                          ),
+                          onPressed: homeCubit.backPressed,
+                        ),
                         useDrawer: false,
                         destinations:
                             _buildDestinations(isForRider: state.isForRider),

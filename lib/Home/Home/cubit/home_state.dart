@@ -17,7 +17,7 @@ enum SkillTreeStatus { categories, subCategories, skill, level }
 enum ResourcesSortStatus { recent, saved, oldest, mostRecommended }
 
 // ignore: constant_identifier_names
-enum SkillTreeNavigation { Category, SubCategory, Skill, SkillLevel }
+enum SkillTreeNavigation { TrainingPath, Skill, SkillLevel }
 
 enum HomeStatus { loading, profile, resource, skillTree, ridersLog, horseLog }
 
@@ -38,6 +38,7 @@ class HomeState extends Equatable {
     this.searchList,
     this.introSkills,
     this.subCategory,
+    this.trainingPath,
     this.sortedSkills,
     this.horseProfile,
     this.usersProfile,
@@ -66,9 +67,11 @@ class HomeState extends Equatable {
     this.searchResult = const [],
     this.isBannerAdReady = false,
     this.messageSnackBar = false,
+    this.trainingPaths = const [],
     this.name = const Name.pure(),
     this.isDescriptionHidden = true,
     this.email = const Email.pure(),
+    this.isFromTrainingPath = false,
     this.horseSearchResult = const [],
     this.searchState = SearchState.name,
     this.formzStatus = FormzStatus.pure,
@@ -111,6 +114,7 @@ class HomeState extends Equatable {
   final List<Skill?>? skills;
   final HomeStatus homeStatus;
   final SearchType searchType;
+  final bool isFromTrainingPath;
   final List<Skill?>? allSkills;
   final FormzStatus formzStatus;
   final SearchState searchState;
@@ -119,6 +123,7 @@ class HomeState extends Equatable {
   final List<String?>? searchList;
   final List<Skill?>? introSkills;
   final List<Skill?>? sortedSkills;
+  final TrainingPath? trainingPath;
   final HorseProfile? horseProfile;
   final RiderProfile? usersProfile;
   final RiderProfile? ownersProfile;
@@ -134,6 +139,7 @@ class HomeState extends Equatable {
   final List<Skill?>? trainingPathSkills;
   final List<RiderProfile?> searchResult;
   final List<Skill?>? intermediateSkills;
+  final List<TrainingPath?> trainingPaths;
   final List<SubCategory?>? subCategories;
   final SkillSearchState skillSearchState;
   final List<HorseProfile?> horseSearchResult;
@@ -173,12 +179,14 @@ class HomeState extends Equatable {
     SearchType? searchType,
     HomeStatus? homeStatus,
     List<Skill?>? allSkills,
+    bool? isFromTrainingPath,
     SubCategory? subCategory,
     SearchState? searchState,
     FormzStatus? formzStatus,
     List<String?>? searchList,
     bool? isDescriptionHidden,
     List<Skill?>? introSkills,
+    TrainingPath? trainingPath,
     List<Skill?>? sortedSkills,
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
@@ -197,6 +205,7 @@ class HomeState extends Equatable {
     List<RiderProfile?>? searchResult,
     List<SubCategory?>? subCategories,
     SkillSearchState? skillSearchState,
+    List<TrainingPath?>? trainingPaths,
     List<HorseProfile?>? horseSearchResult,
     SkillTreeNavigation? skillTreeNavigation,
     ResourcesSortStatus? resourcesSortStatus,
@@ -211,7 +220,7 @@ class HomeState extends Equatable {
       error: error ?? this.error,
       skills: skills ?? this.skills,
       levels: levels ?? this.levels,
-      horseId: horseId ?? this.horseId, 
+      horseId: horseId ?? this.horseId,
       isGuest: isGuest ?? this.isGuest,
       isOwner: isOwner ?? this.isOwner,
       message: message ?? this.message,
@@ -235,11 +244,13 @@ class HomeState extends Equatable {
       introSkills: introSkills ?? this.introSkills,
       subCategory: subCategory ?? this.subCategory,
       searchQuery: searchQuery ?? this.searchQuery,
+      trainingPath: trainingPath ?? this.trainingPath,
       allResources: allResources ?? this.allResources,
       horseProfile: horseProfile ?? this.horseProfile,
       usersProfile: usersProfile ?? this.usersProfile,
       searchResult: searchResult ?? this.searchResult,
       sortedSkills: sortedSkills ?? this.sortedSkills,
+      trainingPaths: trainingPaths ?? this.trainingPaths,
       resourcesList: resourcesList ?? this.resourcesList,
       ownersProfile: ownersProfile ?? this.ownersProfile,
       errorSnackBar: errorSnackBar ?? this.errorSnackBar,
@@ -254,6 +265,7 @@ class HomeState extends Equatable {
       difficultyState: difficultyState ?? this.difficultyState,
       skillSearchState: skillSearchState ?? this.skillSearchState,
       horseSearchResult: horseSearchResult ?? this.horseSearchResult,
+      isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
       intermediateSkills: intermediateSkills ?? this.intermediateSkills,
       trainingPathSkills: trainingPathSkills ?? this.trainingPathSkills,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
@@ -285,6 +297,7 @@ class HomeState extends Equatable {
         snackBar,
         isSearch,
         resource,
+        allSkills,
         isViewing,
         isSnackbar,
         isForRider,
@@ -299,11 +312,13 @@ class HomeState extends Equatable {
         subCategory,
         introSkills,
         searchQuery,
+        trainingPath,
         allResources,
         sortedSkills,
         horseProfile,
         usersProfile,
         searchResult,
+        trainingPaths,
         errorSnackBar,
         resourcesList,
         subCategories,
@@ -318,6 +333,7 @@ class HomeState extends Equatable {
         difficultyState,
         skillSearchState,
         horseSearchResult,
+        isFromTrainingPath,
         trainingPathSkills,
         intermediateSkills,
         isDescriptionHidden,

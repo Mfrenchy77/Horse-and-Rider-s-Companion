@@ -19,6 +19,14 @@ class AuthView extends StatelessWidget {
     final isSmallScreen =
         ResponsiveBreakpoints.of(context).smallerOrEqualTo(TABLET);
     return BlocBuilder<LoginCubit, LoginState>(
+      buildWhen: (previous, current) =>
+          previous.status != current.status ||
+          previous.pageStatus != current.pageStatus ||
+          previous.isPasswordVisible != current.isPasswordVisible ||
+          previous.showEmailDialog != current.showEmailDialog ||
+          previous.mailAppResult != current.mailAppResult ||
+          previous.isError != current.isError ||
+          previous.errorMessage != current.errorMessage,
       builder: (context, state) {
         if (state.status.isSubmissionSuccess) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -65,7 +73,7 @@ class AuthView extends StatelessWidget {
         } else {
           return const Center(
             child: Logo(
-              screenName: 'Loading...',
+              screenName: '',
             ),
           );
         }

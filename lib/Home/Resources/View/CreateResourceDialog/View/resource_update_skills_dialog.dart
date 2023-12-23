@@ -70,6 +70,7 @@ class UpdateResourceSkills extends StatelessWidget {
                                   (e) => TextButton(
                                     onPressed: () {
                                       homeCubit.skillSelected(
+                                        isFromTrainingPath: false,
                                         skill: e,
                                         isSplitScreen:
                                             MediaQuery.of(context).size.width >
