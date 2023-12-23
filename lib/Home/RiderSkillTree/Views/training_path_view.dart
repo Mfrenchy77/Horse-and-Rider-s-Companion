@@ -103,46 +103,46 @@ Widget _skillNodeCard({
 
               return Column(
                 children: [
-                  _buildHorizontalDividerLine(index, totalChildren),
-                  // Row(
-                  //   mainAxisSize: MainAxisSize.min,
-                  //   children: [
-                  //     Container(
-                  //       height: 2,
-                  //       width: 99,
-                  //       color: e.position == 0
-                  //           ? Colors.transparent
-                  //           : HorseAndRidersTheme().getTheme().brightness ==
-                  //                   Brightness.light
-                  //               ? Colors.black
-                  //               : Colors.white,
-                  //     ),
-                  //     Container(
-                  //       height: 2,
-                  //       width: 2,
-                  //       color: HorseAndRidersTheme().getTheme().brightness ==
-                  //               Brightness.light
-                  //           ? Colors.black
-                  //           : Colors.white,
-                  //     ),
-                  //     Container(
-                  //       width: 99,
-                  //       height: 2,
-                  //       color: e.position ==
-                  //               homeCubit
-                  //                       .childrenNodes(
-                  //                         skillNode: skillNode,
-                  //                       )
-                  //                       .length -
-                  //                   1
-                  //           ? Colors.transparent
-                  //           : HorseAndRidersTheme().getTheme().brightness ==
-                  //                   Brightness.light
-                  //               ? Colors.black
-                  //               : Colors.white,
-                  //     ),
-                  //   ],
-                  // ),
+                  // _buildHorizontalDividerLine(index, totalChildren),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 2,
+                        width: 99,
+                        color: e.position == 0
+                            ? Colors.transparent
+                            : HorseAndRidersTheme().getTheme().brightness ==
+                                    Brightness.light
+                                ? Colors.black
+                                : Colors.white,
+                      ),
+                      Container(
+                        height: 2,
+                        width: 2,
+                        color: HorseAndRidersTheme().getTheme().brightness ==
+                                Brightness.light
+                            ? Colors.black
+                            : Colors.white,
+                      ),
+                      Container(
+                        width: 99,
+                        height: 2,
+                        color: e.position ==
+                                homeCubit
+                                        .childrenNodes(
+                                          skillNode: skillNode,
+                                        )
+                                        .length -
+                                    1
+                            ? Colors.transparent
+                            : HorseAndRidersTheme().getTheme().brightness ==
+                                    Brightness.light
+                                ? Colors.black
+                                : Colors.white,
+                      ),
+                    ],
+                  ),
                   Container(
                     height: 10,
                     color: HorseAndRidersTheme().getTheme().brightness ==

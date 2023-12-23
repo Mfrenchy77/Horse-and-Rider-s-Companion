@@ -66,7 +66,7 @@ class ColorConst {
 
   // Halloween colors
   static const halloweenPrimaryLight = Color(0xFFFF5722);
-  static const halloweenAccentLight = Color(0xFFE65100);
+  static const halloweenAccentLight = Colors.black87;
   static const halloweenBackgroundLight = Colors.white;
   static const halloweenPrimaryDark = Color(0xFFE65100);
   static const halloweenAccentDark = Color(0xFFFF6D00);
@@ -74,9 +74,9 @@ class ColorConst {
 
   // Easter colors
   static const easterPrimaryLight = Color(0xFF673AB7);
-  static const easterAccentLight = Color(0xFFF44336);
+  static const easterAccentLight = Color(0xFFAED581);
   static const easterBackgroundLight = Color(0xFFFFFFFF);
   static const easterPrimaryDark = Color(0xFF4A148C);
-  static const easterAccentDark = Color(0xFFFEFFA2);
+  static const easterAccentDark = Color(0xFFAED581);
   static const easterBackgroundDark = Color.fromARGB(255, 46, 46, 46);
 }

@@ -223,7 +223,7 @@ Widget _appBarBackground({
         color: HorseAndRidersTheme().getTheme().appBarTheme.backgroundColor,
         image: const DecorationImage(
           image: AssetImage(
-            'assets/horse_logo_and_text_002.png',
+            'assets/horse_logo_and_text_dark.png',
           ),
           fit: BoxFit.fitHeight,
         ),
