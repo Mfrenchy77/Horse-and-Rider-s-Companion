@@ -1,4 +1,4 @@
-// ignore_for_file: use_late_for_private_fields_and_variables
+// ignore_for_file: use_late_for_private_fields_and_variables, constant_identifier_names, lines_longer_than_80_chars
 
 part of 'home_cubit.dart';
 
@@ -16,8 +16,12 @@ enum SkillTreeStatus { categories, subCategories, skill, level }
 
 enum ResourcesSortStatus { recent, saved, oldest, mostRecommended }
 
-// ignore: constant_identifier_names
-enum SkillTreeNavigation { TrainingPath, Skill, SkillLevel }
+enum SkillTreeNavigation {
+  SkillList,
+  SkillLevel,
+  TrainingPath,
+  TrainingPathList
+}
 
 enum HomeStatus { loading, profile, resource, skillTree, ridersLog, horseLog }
 
@@ -81,10 +85,10 @@ class HomeState extends Equatable {
     this.difficultyState = DifficultyState.all,
     this.skillSearchState = SkillSearchState.skill,
     this.skillTreeStatus = SkillTreeStatus.categories,
-    this.skillTreeNavigation = SkillTreeNavigation.Skill,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.levelSubmitionStatus = LevelSubmitionStatus.ititial,
     this.levelSubmissionStatus = LevelSubmissionStatus.initial,
+    this.skillTreeNavigation = SkillTreeNavigation.TrainingPathList,
   });
   final int index;
   final Name name;

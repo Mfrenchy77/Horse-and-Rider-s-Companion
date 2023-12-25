@@ -1,6 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
@@ -10,32 +11,46 @@ Widget trainingPathView() {
       final homeCubit = context.read<HomeCubit>();
       final scrollController = ScrollController();
 
-      return Scrollbar(
-        trackVisibility: true,
-        thickness: 6,
-        thumbVisibility: true,
-        controller: scrollController,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 15),
-          child: SingleChildScrollView(
+      return Column(
+        children: [
+          Text(state.trainingPath?.name ?? 'No Training Path Selected'),
+          gap(),
+          Text(state.trainingPath?.description ?? ''),
+          smallGap(),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * .08,
+            child: const Divider(color: Colors.black, thickness: 2),
+          ),
+          Scrollbar(
+            trackVisibility: true,
+            thickness: 6,
+            thumbVisibility: true,
             controller: scrollController,
-            scrollDirection: Axis.horizontal,
-            child: Wrap(
-              children: state.trainingPath?.skillNodes
-                      .where((element) => element!.parentId?.isEmpty ?? false)
-                      .map(
-                        (e) => _skillNodeCard(
-                          context: context,
-                          state: state,
-                          homeCubit: homeCubit,
-                          skillNode: e,
-                        ),
-                      )
-                      .toList() ??
-                  [const Text('No Skill Found')],
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 15),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Wrap(
+                  children: state.trainingPath?.skillNodes
+                          .where(
+                            (element) => element!.parentId?.isEmpty ?? false,
+                          )
+                          .map(
+                            (e) => _skillNodeCard(
+                              context: context,
+                              state: state,
+                              homeCubit: homeCubit,
+                              skillNode: e,
+                            ),
+                          )
+                          .toList() ??
+                      [const Text('No Skill Found')],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       );
     },
   );

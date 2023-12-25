@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/Home/RiderSkillTree/CreateTrainingPaths/cubit/create_training_path_cubit.dart';
+import 'package:horseandriderscompanion/Home/RiderSkillTree/CreateSkillTreeDialogs/cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 import 'package:searchfield/searchfield.dart';
 
 ///   This is the Dialog that is used to create a new TriainingPath
@@ -366,7 +365,7 @@ Widget _skillNodeCard({
       children: [
         // If it is a child node, show a divider on top
         // if (isChild) const Divider(color: Colors.black, thickness: 2),
-    
+
         DragTarget<Skill>(
           onAccept: (data) => trainingPathcubit.createOrDeleteChildSkillNode(
             parentNode: skillNode,
@@ -384,17 +383,18 @@ Widget _skillNodeCard({
             );
           },
         ),
-    
+
         // If it has children, show a vertical divider below
         if (hasChildren)
           Container(
             height: 10,
             width: 2,
-            color: HorseAndRidersTheme().getTheme().brightness == Brightness.light
-                ? Colors.black
-                : Colors.white,
+            color:
+                HorseAndRidersTheme().getTheme().brightness == Brightness.light
+                    ? Colors.black
+                    : Colors.white,
           ),
-    
+
         Wrap(
           children: trainingPathcubit
               .childrenOfSkillNode(skillNode: skillNode)

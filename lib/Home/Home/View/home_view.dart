@@ -13,7 +13,7 @@ import 'package:horseandriderscompanion/Home/Resources/View/resources_view.dart'
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_view.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/search_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/support_message_dialog.dart';
-import 'package:horseandriderscompanion/Home/RiderSkillTree/Views/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/horse_profile_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';

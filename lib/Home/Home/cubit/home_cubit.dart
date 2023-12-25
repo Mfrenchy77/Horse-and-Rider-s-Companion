@@ -263,10 +263,16 @@ class HomeCubit extends Cubit<HomeState> {
     if (state.index == 0 && state.isViewing) {
       goBackToUsersProfile();
     } else if (state.index == 1 &&
-        state.skillTreeNavigation == SkillTreeNavigation.Skill) {
-      profileNavigationSelected();
+        state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
+      skillTreeNavigationSelected();
     } else if (state.index == 1 &&
         state.skillTreeNavigation == SkillTreeNavigation.SkillLevel) {
+      skillTreeNavigationSelected();
+    } else if (state.index == 1 &&
+        state.skillTreeNavigation == SkillTreeNavigation.TrainingPathList) {
+      profileNavigationSelected();
+    } else if (state.index == 1 &&
+        state.skillTreeNavigation == SkillTreeNavigation.TrainingPath) {
       skillTreeNavigationSelected();
     } else if (state.index == 0 && !state.isForRider) {
       goBackToUsersProfile();
@@ -1544,7 +1550,7 @@ class HomeCubit extends Cubit<HomeState> {
         index: 1,
         homeStatus: HomeStatus.skillTree,
         difficultyState: DifficultyState.all,
-        skillTreeNavigation: SkillTreeNavigation.Skill,
+        skillTreeNavigation: SkillTreeNavigation.TrainingPath,
       ),
     );
   }
@@ -1601,21 +1607,6 @@ class HomeCubit extends Cubit<HomeState> {
     emit(state.copyWith(searchList: searchList));
   }
 
-/* ********************************************************
-                          Filter
-  ***********************************************************/
-
-  /// This method will be called when the user clicks the back button
-  /// when in subcategories
-  void backToCategory() {
-    emit(
-      state.copyWith(
-        skillTreeNavigation: SkillTreeNavigation.Skill,
-        subCategories: state.subCategories,
-        allSkills: state.allSkills,
-      ),
-    );
-  }
 
 /* ****************************************************************
                           Training Paths
@@ -1630,11 +1621,15 @@ class HomeCubit extends Cubit<HomeState> {
     });
   }
 
+  void navigateToTrainingPathList() {
+    emit(state.copyWith(skillTreeNavigation: SkillTreeNavigation.TrainingPath));
+  }
+
   void trainingPathSelected({required TrainingPath? trainingPath}) {
     emit(
       state.copyWith(
         trainingPath: trainingPath,
-        skillTreeNavigation: SkillTreeNavigation.TrainingPath,
+        skillTreeNavigation: SkillTreeNavigation.SkillLevel,
         homeStatus: HomeStatus.skillTree,
       ),
     );
@@ -1776,41 +1771,43 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void showTrainingSelectedPathsDialog(BuildContext context) {
-    showDialog<AlertDialog>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Training Paths'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: state.trainingPaths
-                  .map(
-                    (trainingPath) => trainingPath != null
-                        ? ListTile(
-                            title: Text(trainingPath.name),
-                            onTap: () {
-                              trainingPathSelected(trainingPath: trainingPath);
-                              Navigator.of(context).pop();
-                            },
-                          )
-                        : Container(),
-                  )
-                  .toList(),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  ///  Can Potenially get rid of this
+
+  // void showTrainingSelectedPathsDialog(BuildContext context) {
+  //   showDialog<AlertDialog>(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Training Paths'),
+  //         content: SingleChildScrollView(
+  //           child: ListBody(
+  //             children: state.trainingPaths
+  //                 .map(
+  //                   (trainingPath) => trainingPath != null
+  //                       ? ListTile(
+  //                           title: Text(trainingPath.name),
+  //                           onTap: () {
+  //                             trainingPathSelected(trainingPath: trainingPath);
+  //                             Navigator.of(context).pop();
+  //                           },
+  //                         )
+  //                       : Container(),
+  //                 )
+  //                 .toList(),
+  //           ),
+  //         ),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: const Text('Close'),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   /* **************************************************************
                           Difficulty
@@ -1877,7 +1874,7 @@ class HomeCubit extends Cubit<HomeState> {
           state.copyWith(
             sortedSkills: skills,
             difficultyState: difficultyState,
-            skillTreeNavigation: SkillTreeNavigation.Skill,
+            skillTreeNavigation: SkillTreeNavigation.SkillList,
           ),
         );
       } else {
@@ -1885,7 +1882,7 @@ class HomeCubit extends Cubit<HomeState> {
           state.copyWith(
             sortedSkills: state.allSkills,
             difficultyState: difficultyState,
-            skillTreeNavigation: SkillTreeNavigation.Skill,
+            skillTreeNavigation: SkillTreeNavigation.SkillList,
           ),
         );
       }
@@ -1950,62 +1947,6 @@ class HomeCubit extends Cubit<HomeState> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /* **************************************************************
-                          Categories
-   *************************************************************/
-
-  /// This method will be called when the user clicks a category
-  /// it will change the filter to subcategories for that category.
-  void categorySelected({required Catagorry category}) {
-    // TODO(mfrenchy77): This is the method that will go to the Training Paths, Refactoring Needed!
-    //if the user clicks a category we are going to change the filter
-    //to subcategories for that category.
-    // and select only the subcategories for that category
-    var subCategories = <SubCategory?>[];
-    if (state.subCategories != null) {
-      subCategories = state.subCategories!
-          .where((element) => element?.parentId == category.id)
-          .toList();
-
-      emit(
-        state.copyWith(
-          category: category,
-          subCategories: subCategories,
-          skillTreeNavigation: SkillTreeNavigation.Skill,
-        ),
-      );
-    } else {
-      debugPrint('subCategories is null');
-    }
-  }
-
-  void skillTreeHome() {
-    debugPrint('skillTreeHome');
-    emit(
-      state.copyWith(
-        skillTreeNavigation: SkillTreeNavigation.Skill,
-        sortedSkills: state.allSkills,
-      ),
-    );
-  }
-
-  /* **************************************************************
-                          SubCategories
-   *************************************************************/
-
-  /// This method will be called when the user clicks a subcategory
-  /// it will change the filter to skills for that subcategory.
-  /// and select only the skills for that subcategory
-  void subCategorySelected({required SubCategory subCategory}) {
-    // TODO(mfrenchy77): This is the method that will go to the Training Paths, Refactoring Needed!
-    emit(
-      state.copyWith(
-        subCategory: subCategory,
-        skillTreeNavigation: SkillTreeNavigation.Skill,
       ),
     );
   }
