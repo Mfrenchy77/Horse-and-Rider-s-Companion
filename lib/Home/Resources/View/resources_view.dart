@@ -13,10 +13,14 @@ Widget resourcesView() {
       final homeCubit = context.read<HomeCubit>();
       return Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            onPressed: homeCubit.skillTreeNavigationSelected,
-            icon: const Icon(
-              Icons.arrow_back,
+          leading: Visibility(
+            visible: // smallscreen
+                MediaQuery.of(context).size.width < 800,
+            child: IconButton(
+              onPressed: homeCubit.navigateToTrainingPathList,
+              icon: const Icon(
+                Icons.arrow_back,
+              ),
             ),
           ),
           actions: _appBarActions(

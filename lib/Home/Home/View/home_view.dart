@@ -148,6 +148,14 @@ class HomeView extends StatelessWidget {
                     builder: (context, state) {
                       final homeCubit = context.read<HomeCubit>();
                       return AdaptiveScaffold(
+                        smallBreakpoint:
+                            const WidthPlatformBreakpoint(end: 800),
+                        mediumBreakpoint: const WidthPlatformBreakpoint(
+                          begin: 800,
+                          end: 1200,
+                        ),
+                        largeBreakpoint:
+                            const WidthPlatformBreakpoint(begin: 1200),
                         leadingUnextendedNavRail: Visibility(
                           visible: state.index != 0 || state.isViewing,
                           child: IconButton(
@@ -181,7 +189,7 @@ class HomeView extends StatelessWidget {
                           if (newIndex == 0) {
                             homeCubit.profileNavigationSelected();
                           } else if (newIndex == 1) {
-                            homeCubit.skillTreeNavigationSelected();
+                            homeCubit.navigateToSkillsList();
                           } else if (newIndex == 2) {
                             homeCubit.resourcesNavigationSelected();
                           }

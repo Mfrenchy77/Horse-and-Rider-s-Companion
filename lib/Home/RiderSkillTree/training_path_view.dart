@@ -7,13 +7,17 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 
 Widget trainingPathView() {
   return BlocBuilder<HomeCubit, HomeState>(
+    buildWhen: (previous, current) =>
+        previous.trainingPath != current.trainingPath ||
+        previous.skillTreeNavigation != current.skillTreeNavigation,
     builder: (context, state) {
       final homeCubit = context.read<HomeCubit>();
       final scrollController = ScrollController();
-
+      debugPrint('Training Path View: ${state.trainingPath?.name}');
       return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(state.trainingPath?.name ?? 'No Training Path Selected'),
+          Text(state.trainingPath?.name ?? 'Select a Training Path'),
           gap(),
           Text(state.trainingPath?.description ?? ''),
           smallGap(),
@@ -45,7 +49,7 @@ Widget trainingPathView() {
                             ),
                           )
                           .toList() ??
-                      [const Text('No Skill Found')],
+                      [const Text('')],
                 ),
               ),
             ),
@@ -79,8 +83,7 @@ Widget _skillNodeCard({
 
         InkWell(
           onTap: () {
-            homeCubit.skillSelected(
-              isFromTrainingPath: true,
+            homeCubit.navigateToSkillLevel(
               isSplitScreen: isSplitScreen,
               skill: state.allSkills?.firstWhere(
                 (element) => element?.skillName == skillNode.name,
@@ -180,7 +183,7 @@ Widget _skillNodeCard({
       ],
     );
   } else {
-    return const Text('No Skill Found');
+    return const Text('');
   }
 }
 

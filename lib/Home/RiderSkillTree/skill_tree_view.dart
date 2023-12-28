@@ -44,6 +44,21 @@ Widget skillTreeView() {
           // ),
           body: SlotLayout(
             config: <Breakpoint, SlotLayoutConfig>{
+              Breakpoints.small: SlotLayout.from(
+                key: const Key('primaryView'),
+                builder: (_) {
+                  switch (state.skillTreeNavigation) {
+                    case SkillTreeNavigation.TrainingPath:
+                      return trainingPathView();
+                    case SkillTreeNavigation.TrainingPathList:
+                      return trainingPathsList();
+                    case SkillTreeNavigation.SkillList:
+                      return skillsList();
+                    case SkillTreeNavigation.SkillLevel:
+                      return skillLevel();
+                  }
+                },
+              ),
               Breakpoints.medium: SlotLayout.from(
                 key: const Key('primaryView'),
                 builder: (_) {
@@ -72,7 +87,9 @@ Widget skillTreeView() {
                     case SkillTreeNavigation.SkillLevel:
                       return state.isFromTrainingPath
                           ? trainingPathView()
-                          : skillLevel();
+                          : state.isFromTrainingPathList
+                              ? trainingPathView()
+                              : skillsList();
                   }
                 },
               ),
@@ -215,8 +232,7 @@ PreferredSizeWidget _appBar({
               debugPrint('Suggestion Tap Value: ${value.searchKey}');
               skillTreeFocus.unfocus();
               state.skillTreeNavigation == SkillTreeNavigation.SkillList
-                  ? homeCubit.skillSelected(
-                      isFromTrainingPath: false,
+                  ? homeCubit.navigateToSkillLevel(
                       isSplitScreen: isSplitScreen,
                       skill: state.allSkills!.firstWhere(
                         (skill) => skill?.skillName == value.searchKey,
@@ -293,33 +309,36 @@ PreferredSizeWidget _appBar({
           Icons.arrow_back,
         ),
         onPressed: () {
-          // if we are in the subcategories filter we are going to
-          // change the filter to categories
+          final isSplitScreen = MediaQuery.of(context).size.width > 1200;
           switch (state.skillTreeNavigation) {
             case SkillTreeNavigation.TrainingPathList:
               homeCubit.profileNavigationSelected();
               break;
             case SkillTreeNavigation.TrainingPath:
-              state.isFromTrainingPath
-                  ? homeCubit.trainingPathSelected(
-                      trainingPath: state.trainingPath,
-                    )
-                  : homeCubit.navigateToTrainingPathList();
+              homeCubit.navigateToTrainingPathList();
               break;
             case SkillTreeNavigation.SkillList:
-              // if we are in the skills filter we are going to
-              // change the filter to subcategories for the selected category
-              state.isFromTrainingPath
-                  ? homeCubit.trainingPathSelected(
-                      trainingPath: state.trainingPath,
-                    )
-                  : homeCubit.profileNavigationSelected();
+              homeCubit.navigateToTrainingPathList();
               break;
             case SkillTreeNavigation.SkillLevel:
-              // if we are in the levels filter we are going to
-              // change the filter to skills for the selected subcategory
-              homeCubit.skillTreeNavigationSelected();
+              if (isSplitScreen) {
+                state.isFromTrainingPath
+                    ? homeCubit.navigateToTrainingPathList()
+                    : state.isFromTrainingPathList
+                        ? homeCubit.profileNavigationSelected()
+                        : homeCubit.navigateToSkillsList();
+              } else {
+                state.isFromTrainingPath
+                    ? homeCubit.navigateToTrainingPath(
+                        trainingPath: state.trainingPath,
+                      )
+                    : state.isFromTrainingPathList
+                        ? homeCubit.navigateToTrainingPathList()
+                        : homeCubit.navigateToSkillsList();
+              }
               break;
+              //default navigate to profile
+              
           }
         },
       ),
@@ -404,7 +423,25 @@ List<Widget> _appbarActions({
             ),
     icon: const Icon(Icons.add),
   );
-
+//icon for navigating to the skills list
+  final Widget skillsList = Visibility(
+    visible: isMobile,
+    child: Visibility(
+      visible:
+          state.skillTreeNavigation == SkillTreeNavigation.TrainingPathList ||
+              state.skillTreeNavigation == SkillTreeNavigation.TrainingPath ||
+              state.skillTreeNavigation == SkillTreeNavigation.SkillLevel,
+      child: Tooltip(
+        message: 'Skills',
+        child: IconButton(
+          icon: const Icon(Icons.list),
+          onPressed: () {
+            homeCubit.navigateToSkillsList();
+          },
+        ),
+      ),
+    ),
+  );
   // icon for editing the skill tree
   final Widget editIcon = Visibility(
     visible: !isMobile,
@@ -488,6 +525,7 @@ List<Widget> _appbarActions({
     ),
   );
   actions
+    ..add(skillsList)
     ..add(search)
     ..add(createTraingPath)
     ..add(trainingPaths)

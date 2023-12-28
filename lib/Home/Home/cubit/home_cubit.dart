@@ -233,7 +233,6 @@ class HomeCubit extends Cubit<HomeState> {
   StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _resourcesStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _subCategoryStream;
-  final ScrollController _scrollController = ScrollController();
 
   ///   Rider Profile for the current user
 
@@ -264,20 +263,20 @@ class HomeCubit extends Cubit<HomeState> {
       goBackToUsersProfile();
     } else if (state.index == 1 &&
         state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
-      skillTreeNavigationSelected();
+      navigateToTrainingPathList();
     } else if (state.index == 1 &&
         state.skillTreeNavigation == SkillTreeNavigation.SkillLevel) {
-      skillTreeNavigationSelected();
+      navigateToTrainingPathList();
     } else if (state.index == 1 &&
         state.skillTreeNavigation == SkillTreeNavigation.TrainingPathList) {
       profileNavigationSelected();
     } else if (state.index == 1 &&
         state.skillTreeNavigation == SkillTreeNavigation.TrainingPath) {
-      skillTreeNavigationSelected();
+      navigateToTrainingPathList();
     } else if (state.index == 0 && !state.isForRider) {
       goBackToUsersProfile();
     } else if (state.index == 2) {
-      skillTreeNavigationSelected();
+      navigateToTrainingPathList();
     }
   }
 
@@ -1539,20 +1538,85 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   /* *********************************************************************
-                               Skill Tree
+                               Skill Tree Navigation 
   *************************************************************** */
   ///   SkillTree Tab Selected
-  void skillTreeNavigationSelected() {
-    sortSkills(allSkills: state.allSkills, subCategory: null);
-    sortSkillForDifficulty();
+  // void skillTreeNavigationSelected() {
+  //   debugPrint('skillTreeNavigationSelected');
+  //   sortSkills(allSkills: state.allSkills);
+  //   sortSkillForDifficulty();
+  //   emit(
+  //     state.copyWith(
+  //       index: 1,
+  //       homeStatus: HomeStatus.skillTree,
+  //       difficultyState: DifficultyState.all,
+  //       skillTreeNavigation: SkillTreeNavigation.TrainingPath,
+  //     ),
+  //   );
+  // }
+
+  void navigateToTrainingPathList() {
+    debugPrint('navigateToTrainingPathList');
     emit(
       state.copyWith(
         index: 1,
         homeStatus: HomeStatus.skillTree,
-        difficultyState: DifficultyState.all,
+        isFromTrainingPath: false,
+        isFromTrainingPathList: true,
+        skillTreeNavigation: SkillTreeNavigation.TrainingPathList,
+      ),
+    );
+  }
+
+  void navigateToTrainingPath({required TrainingPath? trainingPath}) {
+    debugPrint('navigateToTrainingPath ${trainingPath?.name}');
+    emit(
+      state.copyWith(
+        isFromTrainingPath: true,
+        trainingPath: trainingPath,
+        isFromTrainingPathList: false,
+        homeStatus: HomeStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.TrainingPath,
       ),
     );
+  }
+
+  void navigateToSkillsList() {
+    debugPrint('navigateToSkillsList');
+    emit(
+      state.copyWith(
+        index: 1,
+        homeStatus: HomeStatus.skillTree,
+        skillTreeNavigation: SkillTreeNavigation.SkillList,
+        isFromTrainingPath: false,
+        isFromTrainingPathList: false,
+      ),
+    );
+  }
+
+  void navigateToSkillLevel({
+    required Skill? skill,
+    required bool isSplitScreen,
+  }) {
+    debugPrint('navigateToSkillLevel for ${skill?.skillName}');
+    if (!isSplitScreen) {
+      emit(
+        state.copyWith(
+          index: 1,
+          skill: skill,
+          isSearch: false,
+          homeStatus: HomeStatus.skillTree,
+          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          skill: skill,
+          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
+        ),
+      );
+    }
   }
 
 /* ********************************************************
@@ -1607,7 +1671,6 @@ class HomeCubit extends Cubit<HomeState> {
     emit(state.copyWith(searchList: searchList));
   }
 
-
 /* ****************************************************************
                           Training Paths
   ************************************************************** */
@@ -1619,24 +1682,6 @@ class HomeCubit extends Cubit<HomeState> {
           event.docs.map((doc) => (doc.data()) as TrainingPath?).toList();
       emit(state.copyWith(trainingPaths: trainingPaths));
     });
-  }
-
-  void navigateToTrainingPathList() {
-    emit(state.copyWith(skillTreeNavigation: SkillTreeNavigation.TrainingPath));
-  }
-
-  void trainingPathSelected({required TrainingPath? trainingPath}) {
-    emit(
-      state.copyWith(
-        trainingPath: trainingPath,
-        skillTreeNavigation: SkillTreeNavigation.SkillLevel,
-        homeStatus: HomeStatus.skillTree,
-      ),
-    );
-  }
-
-  ScrollController getScrollController() {
-    return _scrollController;
   }
 
   /// Children of the [skillNode] sorted by position
@@ -1658,7 +1703,7 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('getSkills');
     final skills = TestSkills.generateTestSkills()
       ..sort((a, b) => a.position.compareTo(b.position));
-    sortSkills(allSkills: skills, subCategory: null);
+    sortSkills(allSkills: skills);
     sortSkillForDifficulty();
     // _skillsStream= _skillTreeRepository.getSkills().listen((event) {
     //      final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
@@ -1666,27 +1711,13 @@ class HomeCubit extends Cubit<HomeState> {
     // });
   }
 
-  /// This method will be called when the user clicks a skill
-  /// it will change the filter to SkillLevel for that skill.
-  void skillSelected({
-    required Skill? skill,
-    required bool isSplitScreen,
-    required bool isFromTrainingPath,
-  }) {
-    if (!isSplitScreen) {
-      emit(
-        state.copyWith(
-          index: 1,
-          skill: skill,
-          isSearch: false,
-          homeStatus: HomeStatus.skillTree,
-          isFromTrainingPath: isFromTrainingPath,
-          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
-        ),
-      );
-    } else {
-      emit(state.copyWith(skill: skill));
-    }
+  void setFromSkills() {
+    emit(
+      state.copyWith(
+        isFromTrainingPath: false,
+        isFromTrainingPathList: false,
+      ),
+    );
   }
 
   List<Skill?>? getSkillsForResource({required List<String?>? ids}) {
@@ -1709,42 +1740,23 @@ class HomeCubit extends Cubit<HomeState> {
 
   void sortSkills({
     required List<Skill?>? allSkills,
-    required SubCategory? subCategory,
   }) {
     final skills = <Skill>[];
-    if (subCategory != null) {
-      debugPrint('subcategory is not null');
-      if (allSkills != null) {
-        for (final skill in allSkills) {
-          if (subCategory.skills.contains(skill?.id)) {
-            skills.add(skill!);
-          }
-        }
-        emit(
-          state.copyWith(
-            sortedSkills: _sortedSkillsForHorseOrRider(skills: skills),
-            allSkills: allSkills,
-          ),
-        );
-      } else {
-        debugPrint('allSkills is null');
+
+    debugPrint('subcategory is null');
+    //if subcategory is null we are going to return all the skills
+    if (allSkills != null) {
+      for (final skill in allSkills) {
+        skills.add(skill!);
       }
+      emit(
+        state.copyWith(
+          allSkills: allSkills,
+          sortedSkills: _sortedSkillsForHorseOrRider(skills: skills),
+        ),
+      );
     } else {
-      debugPrint('subcategory is null');
-      //if subcategory is null we are going to return all the skills
-      if (allSkills != null) {
-        for (final skill in allSkills) {
-          skills.add(skill!);
-        }
-        emit(
-          state.copyWith(
-            allSkills: allSkills,
-            sortedSkills: _sortedSkillsForHorseOrRider(skills: skills),
-          ),
-        );
-      } else {
-        debugPrint('allSkills is null');
-      }
+      debugPrint('allSkills is null');
     }
   }
 
@@ -1837,9 +1849,6 @@ class HomeCubit extends Cubit<HomeState> {
       debugPrint('skills is null');
       return [];
     }
-
-    // Sort the filtered list of skills by the
-    // numerical value of their difficulty
     final filteredSkills = skills
         .where((skill) => skill!.difficulty != DifficultyState.all)
         .toList()
@@ -1856,11 +1865,6 @@ class HomeCubit extends Cubit<HomeState> {
     required DifficultyState difficultyState,
     required SubCategory? subCategory,
   }) {
-    //if the user clicks a difficulty we are going to change the filter to
-    //skills for that difficulty.
-    // and select only the skills for that difficulty
-    // if difficulty is all we are going to show all the skills
-
     var skills = <Skill?>[];
     debugPrint('DifficultyState: $difficultyState');
 
@@ -1891,9 +1895,6 @@ class HomeCubit extends Cubit<HomeState> {
     }
     emit(state.copyWith(difficultyState: difficultyState));
   }
-// Open the difficulty select dialog
-// this will allow the user to select a difficulty to filter by
-// the user can select all, introductory, intermediate, or advanced
 
   void openDifficultySelectDialog({
     required BuildContext context,
@@ -1956,58 +1957,6 @@ class HomeCubit extends Cubit<HomeState> {
     return state.isForRider
         ? skills?.where((element) => element?.rider ?? true == true).toList()
         : skills?.where((element) => element?.rider == false).toList();
-  }
-
-  /// get SubCategories for a Category
-  /// if the category is null we will return all the subcategories
-  /// sorted by bool isForRider
-  void _sortSubCategories({required Catagorry? category}) {
-    final subCategories = <SubCategory?>[];
-    if (category != null) {
-      if (state.subCategories != null) {
-        for (final subCategory in state.subCategories!) {
-          if (subCategory?.parentId == category.id) {
-            subCategories.add(subCategory);
-          }
-        }
-        emit(
-          state.copyWith(
-            subCategories: _sortedSubCategoriesForHorseOrRider(
-              subCategories: subCategories,
-            ),
-          ),
-        );
-      } else {
-        debugPrint('subCategories is null');
-      }
-    } else {
-      //if category is null we are going to return all the subcategories
-      if (state.subCategories != null) {
-        for (final subCategory in state.subCategories!) {
-          subCategories.add(subCategory);
-        }
-        emit(
-          state.copyWith(
-            subCategories: _sortedSubCategoriesForHorseOrRider(
-              subCategories: subCategories,
-            ),
-          ),
-        );
-      } else {
-        debugPrint('subCategories is null');
-      }
-    }
-  }
-
-  /// Sorted SubCategories by bool isForRider
-  List<SubCategory?>? _sortedSubCategoriesForHorseOrRider({
-    required List<SubCategory?>? subCategories,
-  }) {
-    return state.isForRider
-        ? subCategories
-            ?.where((element) => element?.isRider ?? true == true)
-            .toList()
-        : subCategories?.where((element) => element?.isRider == false).toList();
   }
 
   /* **************************************************************
@@ -2102,7 +2051,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   ///    Called when a [level] is selected and we
   ///    want to change the [levelState] of the SkillLevel in the
-  ///    Rider's profile or the Horse's profile
+  ///    Rider or Horse's profile
   void levelSelected({required LevelState levelState}) {
     // Determine the current profile being viewed.
     final riderProfile = determineCurrentProfile();
@@ -2837,6 +2786,7 @@ class HomeCubit extends Cubit<HomeState> {
     _categoryStream.cancel();
     _resourcesStream.cancel();
     _subCategoryStream.cancel();
+    _trainingPathsStream.cancel();
     _riderProfileSubscription?.cancel();
     _horseProfileSubscription?.cancel();
     return super.close();

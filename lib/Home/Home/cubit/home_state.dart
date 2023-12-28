@@ -77,6 +77,7 @@ class HomeState extends Equatable {
     this.email = const Email.pure(),
     this.isFromTrainingPath = false,
     this.horseSearchResult = const [],
+    this.isFromTrainingPathList = false,
     this.searchState = SearchState.name,
     this.formzStatus = FormzStatus.pure,
     this.searchType = SearchType.ititial,
@@ -130,6 +131,7 @@ class HomeState extends Equatable {
   final TrainingPath? trainingPath;
   final HorseProfile? horseProfile;
   final RiderProfile? usersProfile;
+  final bool isFromTrainingPathList;
   final RiderProfile? ownersProfile;
   final List<Skill?>? advancedSkills;
   final RiderProfile? viewingProfile;
@@ -195,6 +197,7 @@ class HomeState extends Equatable {
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
     RiderProfile? ownersProfile,
+    bool? isFromTrainingPathList,
     List<Skill?>? advancedSkills,
     RiderProfile? viewingProfile,
     List<Catagorry?>? categories,
@@ -278,6 +281,8 @@ class HomeState extends Equatable {
       levelSubmitionStatus: levelSubmitionStatus ?? this.levelSubmitionStatus,
       levelSubmissionStatus:
           levelSubmissionStatus ?? this.levelSubmissionStatus,
+      isFromTrainingPathList:
+          isFromTrainingPathList ?? this.isFromTrainingPathList,
       isSendingMessageToSupport:
           isSendingMessageToSupport ?? this.isSendingMessageToSupport,
     );
@@ -345,6 +350,7 @@ class HomeState extends Equatable {
         skillTreeNavigation,
         levelSubmitionStatus,
         levelSubmissionStatus,
+        isFromTrainingPathList,
         isSendingMessageToSupport,
       ];
 }

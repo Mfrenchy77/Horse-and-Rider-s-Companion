@@ -60,12 +60,13 @@ Widget skillsList() {
                                   isGuest: state.isGuest,
                                   difficulty: DifficultyState.introductory,
                                   name: skill!.skillName,
-                                  onTap: () =>
-                                      context.read<HomeCubit>().skillSelected(
-                                            isFromTrainingPath: false,
-                                            skill: skill,
-                                            isSplitScreen: isSplitScreen,
-                                          ),
+                                  onTap: () {
+                                    context.read<HomeCubit>().setFromSkills();
+                                    context.read<HomeCubit>().navigateToSkillLevel(
+                                          skill: skill,
+                                          isSplitScreen: isSplitScreen,
+                                        );
+                                  },
                                   onEdit: () => showDialog<CreateSkillDialog>(
                                     context: context,
                                     builder: (context) => CreateSkillDialog(
@@ -114,12 +115,13 @@ Widget skillsList() {
                                   isGuest: state.isGuest,
                                   difficulty: DifficultyState.intermediate,
                                   name: skill!.skillName,
-                                  onTap: () =>
-                                      context.read<HomeCubit>().skillSelected(
-                                            isFromTrainingPath: false,
-                                            skill: skill,
-                                            isSplitScreen: isSplitScreen,
-                                          ),
+                                  onTap: () {
+                                    context.read<HomeCubit>().setFromSkills();
+                                    context.read<HomeCubit>().navigateToSkillLevel(
+                                          skill: skill,
+                                          isSplitScreen: isSplitScreen,
+                                        );
+                                  },
                                   onEdit: () => showDialog<CreateSkillDialog>(
                                     context: context,
                                     builder: (context) => CreateSkillDialog(
@@ -172,8 +174,7 @@ Widget skillsList() {
                                   name: skill!.skillName,
                                   backgroundColor: Colors.redAccent.shade200,
                                   onTap: () =>
-                                      context.read<HomeCubit>().skillSelected(
-                                            isFromTrainingPath: false,
+                                      context.read<HomeCubit>().navigateToSkillLevel(
                                             skill: skill,
                                             isSplitScreen: isSplitScreen,
                                           ),
@@ -225,11 +226,13 @@ Widget skillsList() {
                           isGuest: state.isGuest,
                           difficulty: DifficultyState.introductory,
                           name: skill!.skillName,
-                          onTap: () => context.read<HomeCubit>().skillSelected(
-                                isFromTrainingPath: false,
-                                skill: skill,
-                                isSplitScreen: isSplitScreen,
-                              ),
+                          onTap: () {
+                            context.read<HomeCubit>().setFromSkills();
+                            context.read<HomeCubit>().navigateToSkillLevel(
+                                  skill: skill,
+                                  isSplitScreen: isSplitScreen,
+                                );
+                          },
                           onEdit: () => showDialog<CreateSkillDialog>(
                             context: context,
                             builder: (context) => CreateSkillDialog(
@@ -273,11 +276,13 @@ Widget skillsList() {
                           isGuest: state.isGuest,
                           difficulty: DifficultyState.intermediate,
                           name: skill!.skillName,
-                          onTap: () => context.read<HomeCubit>().skillSelected(
-                                isFromTrainingPath: false,
-                                skill: skill,
-                                isSplitScreen: isSplitScreen,
-                              ),
+                          onTap: () {
+                            context.read<HomeCubit>().setFromSkills();
+                            context.read<HomeCubit>().navigateToSkillLevel(
+                                  skill: skill,
+                                  isSplitScreen: isSplitScreen,
+                                );
+                          },
                           onEdit: () => showDialog<CreateSkillDialog>(
                             context: context,
                             builder: (context) => CreateSkillDialog(
@@ -321,11 +326,13 @@ Widget skillsList() {
                           isGuest: state.isGuest,
                           difficulty: DifficultyState.advanced,
                           name: skill!.skillName,
-                          onTap: () => context.read<HomeCubit>().skillSelected(
-                                isFromTrainingPath: false,
-                                skill: skill,
-                                isSplitScreen: isSplitScreen,
-                              ),
+                          onTap: () {
+                            context.read<HomeCubit>().setFromSkills();
+                            context.read<HomeCubit>().navigateToSkillLevel(
+                                  skill: skill,
+                                  isSplitScreen: isSplitScreen,
+                                );
+                          },
                           onEdit: () => showDialog<CreateSkillDialog>(
                             context: context,
                             builder: (context) => CreateSkillDialog(
