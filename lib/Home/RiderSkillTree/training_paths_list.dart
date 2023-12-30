@@ -20,6 +20,7 @@ Widget trainingPathsList() {
                 Text(trainingPath?.createdBy ?? ''),
                 ListTile(
                   onTap: () {
+                    debugPrint('Clicked on ${trainingPath?.name}');
                     homeCubit.navigateToTrainingPath(
                       trainingPath: trainingPath,
                     );

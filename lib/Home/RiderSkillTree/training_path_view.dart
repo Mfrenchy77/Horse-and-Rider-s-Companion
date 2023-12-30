@@ -5,58 +5,56 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
-Widget trainingPathView() {
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.trainingPath != current.trainingPath ||
-        previous.skillTreeNavigation != current.skillTreeNavigation,
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      final scrollController = ScrollController();
-      debugPrint('Training Path View: ${state.trainingPath?.name}');
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(state.trainingPath?.name ?? 'Select a Training Path'),
-          gap(),
-          Text(state.trainingPath?.description ?? ''),
-          smallGap(),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * .08,
-            child: const Divider(color: Colors.black, thickness: 2),
-          ),
-          Scrollbar(
-            trackVisibility: true,
-            thickness: 6,
-            thumbVisibility: true,
-            controller: scrollController,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 15),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                scrollDirection: Axis.horizontal,
-                child: Wrap(
-                  children: state.trainingPath?.skillNodes
-                          .where(
-                            (element) => element!.parentId?.isEmpty ?? false,
-                          )
-                          .map(
-                            (e) => _skillNodeCard(
-                              context: context,
-                              state: state,
-                              homeCubit: homeCubit,
-                              skillNode: e,
-                            ),
-                          )
-                          .toList() ??
-                      [const Text('')],
-                ),
+Widget trainingPathView({
+  required HomeState state,
+  required HomeCubit homeCubit,
+  required BuildContext context,
+}) {
+  final scrollController = ScrollController();
+  debugPrint('Training Path View: ${state.trainingPath?.name}');
+  return Align(
+    alignment: Alignment.topCenter,
+    child: Column(
+      children: [
+        Text(state.trainingPath?.name ?? 'Select a Training Path'),
+        gap(),
+        Text(state.trainingPath?.description ?? ''),
+        smallGap(),
+        SizedBox(
+          width: MediaQuery.of(context).size.width * .08,
+          child: const Divider(color: Colors.black, thickness: 2),
+        ),
+        Scrollbar(
+          trackVisibility: true,
+          thickness: 6,
+          thumbVisibility: true,
+          controller: scrollController,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 15),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              child: Wrap(
+                children: state.trainingPath?.skillNodes
+                        .where(
+                          (element) => element!.parentId?.isEmpty ?? false,
+                        )
+                        .map(
+                          (e) => _skillNodeCard(
+                            context: context,
+                            state: state,
+                            homeCubit: homeCubit,
+                            skillNode: e,
+                          ),
+                        )
+                        .toList() ??
+                    [const Text('')],
               ),
             ),
           ),
-        ],
-      );
-    },
+        ),
+      ],
+    ),
   );
 }
 

@@ -72,6 +72,7 @@ class HomeCubit extends Cubit<HomeState> {
       debugPrint('User is a Guest');
       // ignore: avoid_redundant_argument_values
       emit(state.copyWith(usersProfile: null, isGuest: true));
+      profileNavigationSelected();
     }
     if (horseId != null) {
       horseProfileSelected(id: horseId);
@@ -1570,8 +1571,11 @@ class HomeCubit extends Cubit<HomeState> {
 
   void navigateToTrainingPath({required TrainingPath? trainingPath}) {
     debugPrint('navigateToTrainingPath ${trainingPath?.name}');
+    emit(state.copyWith(index: 1, trainingPath: trainingPath));
+    debugPrint('navigateToTrainingPath ${state.trainingPath?.name}');
     emit(
       state.copyWith(
+        index: 1,
         isFromTrainingPath: true,
         trainingPath: trainingPath,
         isFromTrainingPathList: false,
@@ -1599,24 +1603,15 @@ class HomeCubit extends Cubit<HomeState> {
     required bool isSplitScreen,
   }) {
     debugPrint('navigateToSkillLevel for ${skill?.skillName}');
-    if (!isSplitScreen) {
-      emit(
-        state.copyWith(
-          index: 1,
-          skill: skill,
-          isSearch: false,
-          homeStatus: HomeStatus.skillTree,
-          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
-        ),
-      );
-    } else {
-      emit(
-        state.copyWith(
-          skill: skill,
-          skillTreeNavigation: SkillTreeNavigation.SkillLevel,
-        ),
-      );
-    }
+    emit(
+      state.copyWith(
+        index: 1,
+        skill: skill,
+        isSearch: false,
+        homeStatus: HomeStatus.skillTree,
+        skillTreeNavigation: SkillTreeNavigation.SkillLevel,
+      ),
+    );
   }
 
 /* ********************************************************

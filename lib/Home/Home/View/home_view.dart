@@ -234,9 +234,6 @@ Widget _loadingView() {
 
 Widget _mainView() {
   return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.homeStatus != current.homeStatus ||
-        previous.isForRider != current.isForRider,
     builder: (context, state) {
       return state.homeStatus == HomeStatus.profile
           ? state.isForRider

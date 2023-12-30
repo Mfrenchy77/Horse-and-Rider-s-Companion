@@ -8,9 +8,6 @@ import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_item.dart';
 
 Widget skillsList() {
   return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) {
-      return previous.skills != current.skills;
-    },
     builder: (context, state) {
       final isSplitScreen = MediaQuery.of(context).size.width > 800;
       final homeCubit = context.read<HomeCubit>();
@@ -62,7 +59,9 @@ Widget skillsList() {
                                   name: skill!.skillName,
                                   onTap: () {
                                     context.read<HomeCubit>().setFromSkills();
-                                    context.read<HomeCubit>().navigateToSkillLevel(
+                                    context
+                                        .read<HomeCubit>()
+                                        .navigateToSkillLevel(
                                           skill: skill,
                                           isSplitScreen: isSplitScreen,
                                         );
@@ -117,7 +116,9 @@ Widget skillsList() {
                                   name: skill!.skillName,
                                   onTap: () {
                                     context.read<HomeCubit>().setFromSkills();
-                                    context.read<HomeCubit>().navigateToSkillLevel(
+                                    context
+                                        .read<HomeCubit>()
+                                        .navigateToSkillLevel(
                                           skill: skill,
                                           isSplitScreen: isSplitScreen,
                                         );
@@ -173,11 +174,12 @@ Widget skillsList() {
                                   difficulty: DifficultyState.advanced,
                                   name: skill!.skillName,
                                   backgroundColor: Colors.redAccent.shade200,
-                                  onTap: () =>
-                                      context.read<HomeCubit>().navigateToSkillLevel(
-                                            skill: skill,
-                                            isSplitScreen: isSplitScreen,
-                                          ),
+                                  onTap: () => context
+                                      .read<HomeCubit>()
+                                      .navigateToSkillLevel(
+                                        skill: skill,
+                                        isSplitScreen: isSplitScreen,
+                                      ),
                                   onEdit: () => showDialog<CreateSkillDialog>(
                                     context: context,
                                     builder: (context) => CreateSkillDialog(

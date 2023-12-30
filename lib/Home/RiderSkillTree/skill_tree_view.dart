@@ -49,7 +49,11 @@ Widget skillTreeView() {
                 builder: (_) {
                   switch (state.skillTreeNavigation) {
                     case SkillTreeNavigation.TrainingPath:
-                      return trainingPathView();
+                      return trainingPathView(
+                        state: state,
+                        homeCubit: homeCubit,
+                        context: context,
+                      );
                     case SkillTreeNavigation.TrainingPathList:
                       return trainingPathsList();
                     case SkillTreeNavigation.SkillList:
@@ -64,7 +68,11 @@ Widget skillTreeView() {
                 builder: (_) {
                   switch (state.skillTreeNavigation) {
                     case SkillTreeNavigation.TrainingPath:
-                      return trainingPathView();
+                      return trainingPathView(
+                        state: state,
+                        homeCubit: homeCubit,
+                        context: context,
+                      );
                     case SkillTreeNavigation.TrainingPathList:
                       return trainingPathsList();
                     case SkillTreeNavigation.SkillList:
@@ -86,9 +94,17 @@ Widget skillTreeView() {
                       return skillsList();
                     case SkillTreeNavigation.SkillLevel:
                       return state.isFromTrainingPath
-                          ? trainingPathView()
+                          ? trainingPathView(
+                              state: state,
+                              homeCubit: homeCubit,
+                              context: context,
+                            )
                           : state.isFromTrainingPathList
-                              ? trainingPathView()
+                              ? trainingPathView(
+                                  state: state,
+                                  homeCubit: homeCubit,
+                                  context: context,
+                                )
                               : skillsList();
                   }
                 },
@@ -102,9 +118,17 @@ Widget skillTreeView() {
                 builder: (_) {
                   switch (state.skillTreeNavigation) {
                     case SkillTreeNavigation.TrainingPath:
-                      return trainingPathView();
+                      return trainingPathView(
+                        state: state,
+                        homeCubit: homeCubit,
+                        context: context,
+                      );
                     case SkillTreeNavigation.TrainingPathList:
-                      return trainingPathView();
+                      return trainingPathView(
+                        state: state,
+                        homeCubit: homeCubit,
+                        context: context,
+                      );
                     case SkillTreeNavigation.SkillList:
                       return skillLevel();
                     case SkillTreeNavigation.SkillLevel:
@@ -337,8 +361,7 @@ PreferredSizeWidget _appBar({
                         : homeCubit.navigateToSkillsList();
               }
               break;
-              //default navigate to profile
-              
+            //default navigate to profile
           }
         },
       ),
