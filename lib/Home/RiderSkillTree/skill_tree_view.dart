@@ -369,6 +369,8 @@ PreferredSizeWidget _appBar({
   );
 }
 
+
+// FIXME: this is a mess
 List<Widget> _appbarActions({
   required HomeState state,
   required HomeCubit homeCubit,
@@ -381,7 +383,7 @@ List<Widget> _appbarActions({
 // popup menu for the edit button when the
 // screen size is small we only want to show the
 // Difficulty option if the skillTreeNavigation is Skill
-  final Widget popupMenu = Visibility(
+  final Widget skillsPopupMenu = Visibility(
     visible: isMobile,
     child: PopupMenuButton<String>(
       itemBuilder: (context) {
@@ -554,7 +556,7 @@ List<Widget> _appbarActions({
     ..add(trainingPaths)
     ..add(difficulty)
     ..add(editIcon)
-    ..add(popupMenu);
+    ..add(skillsPopupMenu);
   return actions;
 }
 

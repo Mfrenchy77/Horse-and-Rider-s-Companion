@@ -148,6 +148,7 @@ class HomeView extends StatelessWidget {
                     builder: (context, state) {
                       final homeCubit = context.read<HomeCubit>();
                       return AdaptiveScaffold(
+                        
                         smallBreakpoint:
                             const WidthPlatformBreakpoint(end: 800),
                         mediumBreakpoint: const WidthPlatformBreakpoint(
@@ -156,31 +157,48 @@ class HomeView extends StatelessWidget {
                         ),
                         largeBreakpoint:
                             const WidthPlatformBreakpoint(begin: 1200),
-                        leadingUnextendedNavRail: Visibility(
-                          visible: state.index != 0 || state.isViewing,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.arrow_back,
-                              color: HorseAndRidersTheme()
-                                  .getTheme()
-                                  .appBarTheme
-                                  .iconTheme
-                                  ?.color,
-                            ),
-                            onPressed: homeCubit.backPressed,
-                          ),
-                        ),
-                        leadingExtendedNavRail: IconButton(
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: HorseAndRidersTheme()
-                                .getTheme()
-                                .appBarTheme
-                                .iconTheme
-                                ?.color,
-                          ),
-                          onPressed: homeCubit.backPressed,
-                        ),
+                        leadingUnextendedNavRail: state.index == 0
+                            ? const Image(
+                                color: Colors.white,
+                                fit: BoxFit.contain,
+                                image: AssetImage('assets/horse_logo.png'),
+                                height: 40,
+                              )
+                            : Visibility(
+                                visible: state.index != 0 || state.isViewing,
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.arrow_back,
+                                    color: HorseAndRidersTheme()
+                                        .getTheme()
+                                        .appBarTheme
+                                        .iconTheme
+                                        ?.color,
+                                  ),
+                                  onPressed: homeCubit.backPressed,
+                                ),
+                              ),
+                        leadingExtendedNavRail: state.index == 0
+                            ? const Image(
+                                color: Colors.white,
+                                fit: BoxFit.contain,
+                                image: AssetImage('assets/horse_logo.png'),
+                                height: 40,
+                              )
+                            : Visibility(
+                                visible: state.index != 0 || state.isViewing,
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.arrow_back,
+                                    color: HorseAndRidersTheme()
+                                        .getTheme()
+                                        .appBarTheme
+                                        .iconTheme
+                                        ?.color,
+                                  ),
+                                  onPressed: homeCubit.backPressed,
+                                ),
+                              ),
                         useDrawer: false,
                         destinations:
                             _buildDestinations(isForRider: state.isForRider),

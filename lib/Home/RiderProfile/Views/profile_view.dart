@@ -19,8 +19,6 @@ import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// TODO(mfrench): Going to make his view change to horseProfileView when a horse is selected
-
 Widget profileView() {
   //final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(DESKTOP);
   return BlocBuilder<HomeCubit, HomeState>(
@@ -39,7 +37,7 @@ Widget profileView() {
         'UsersProfile: ${usersProfile?.name}, ViewingProfile: ${viewingProfile?.name}',
       );
       return Scaffold(
-        drawer: isUser
+        drawer: isUser && MediaQuery.of(context).size.width < 800
             ? _drawer(
                 homeCubit: homeCubit,
                 state: state,
@@ -97,22 +95,24 @@ Widget _sliverAppBar({
     expandedHeight:
         isLargeScreen ? 60 : 400.0, // Adjust height for large screens
     collapsedHeight: 60,
-    leading: state.viewingProfile != null
-        ? IconButton(
-            onPressed: homeCubit.goBackToUsersProfile,
-            icon: const Icon(Icons.arrow_back),
-          )
+    // leading: state.viewingProfile != null
+    //     ? IconButton(
+    //         onPressed: homeCubit.goBackToUsersProfile,
+    //         icon: const Icon(Icons.arrow_back),
+    //       )
+    //     : null,
+    title: isLargeScreen
+        ? _largeScreenAppBarTitle(state: state, context: context)
         : null,
-    title: isLargeScreen ? _largeScreenAppBarTitle(state) : null,
-    actions: _appBarActions(
-      iconSize: 24,
-      state: state,
-      isUser: isUser,
-      isAuthorized: isAuthorized,
-      usersProfile: usersProfile,
-      homeCubit: homeCubit,
-      context: context,
-    ),
+    // actions: _appBarActions(
+    //   iconSize: 24,
+    //   state: state,
+    //   isUser: isUser,
+    //   isAuthorized: isAuthorized,
+    //   usersProfile: usersProfile,
+    //   homeCubit: homeCubit,
+    //   context: context,
+    // ),
     flexibleSpace: isLargeScreen
         ? null
         : _defaultFlexibleSpaceBar(
@@ -122,27 +122,61 @@ Widget _sliverAppBar({
   );
 }
 
-Widget _largeScreenAppBarTitle(HomeState state) {
+Widget _largeScreenAppBarTitle({
+  required HomeState state,
+  required BuildContext context,
+}) {
   return Row(
     children: [
       // Logo
-      const Image(
-        image: AssetImage('assets/horse_logo_and_text_dark.png'),
-        height: 62,
+      // const Image(
+      //   color: Colors.white,
+      //   fit: BoxFit.contain,
+      //   image: AssetImage('assets/horse_logo.png'),
+      //   height: 40,
+      // ),
+      gap(),
+      const Expanded(
+        flex: 8,
+        child: Image(
+          color: Colors.white,
+          image: AssetImage(
+            'assets/horse_text.png',
+          ),
+          height: 25,
+        ),
       ),
       gap(),
 
       // Profile Photo
       Visibility(
         visible: !state.isGuest,
-        child: profilePhoto(
-          size: 50, // Adjust as needed
-          profilePicUrl: state.usersProfile?.picUrl,
+        child: InkWell(
+          onTap: state.isViewing
+              ? null
+              : () {
+                  // we are going to show the items in the drawer here
+
+                  Scaffold.of(context).openDrawer();
+                },
+          child:
+              //profile photo with a border
+              Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const ShapeDecoration(
+              color: Colors.white,
+              shape: CircleBorder(),
+            ),
+            child: profilePhoto(
+              size: 62,
+              profilePicUrl:
+                  state.viewingProfile?.picUrl ?? state.usersProfile?.picUrl,
+            ),
+          ),
         ),
       ),
-      gap(),
       // Title
-      Center(child: _appbarTitle(state: state)),
+      // Center(child: _appbarTitle(state: state)),
     ],
   );
 }
@@ -345,6 +379,11 @@ Widget _profile({
                   ),
                 ),
                 gap(),
+                secondaryView(
+                  context: context,
+                  homeCubit: homeCubit,
+                  state: state,
+                ),
               ],
             ),
           ),
@@ -1271,6 +1310,83 @@ Widget _trainerQuestion({
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+Widget secondaryView({
+  required BuildContext context,
+  required HomeCubit homeCubit,
+  required HomeState state,
+}) {
+  // a list of the skills in the users skilllevels showing the level of progress
+
+  return Wrap(
+    spacing: 5,
+    runSpacing: 5,
+    alignment: WrapAlignment.center,
+    children: [
+      ...state.usersProfile?.skillLevels
+              ?.map(
+                (e) => _skillLevelCard(
+                  state: state,
+                  context: context,
+                  skillLevel: e,
+                  homeCubit: homeCubit,
+                ),
+              )
+              .toList() ??
+          [],
+    ],
+  );
+}
+
+Widget _skillLevelCard({
+  required BuildContext context,
+  required SkillLevel skillLevel,
+  required HomeCubit homeCubit,
+  required HomeState state,
+}) {
+  final skill = state.allSkills
+      ?.firstWhere((element) => element?.id == skillLevel.skillId);
+  // a card that shows the skill name and the visual representation of the Level State, by
+  // having the background be half filled if the level state in in Progress filled if the level state is complete
+  // and yellow if the level state is verified
+  return SizedBox(
+    width: 200,
+    child: Card(
+      elevation: 8,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: skillLevel.levelState == LevelState.LEARNING
+              ? const LinearGradient(
+                  colors: [Colors.blue, Colors.grey],
+                )
+              : LinearGradient(
+                  colors: [
+                    if (skillLevel.levelState == LevelState.VERIFIED)
+                      Colors.yellow
+                    else
+                      Colors.blue,
+                    Colors.grey,
+                  ],
+                ),
+        ),
+        child: ListTile(
+          title: Text(
+            skill?.skillName ?? '',
+            textAlign: TextAlign.center,
+          ),
+          subtitle: Text(
+            skillLevel.levelState.toString(),
+            textAlign: TextAlign.center,
+          ),
+          onTap: () => homeCubit.navigateToSkillLevel(
+            isSplitScreen: MediaQuery.of(context).size.width > 1200,
+            skill: skill,
+          ),
+        ),
       ),
     ),
   );
