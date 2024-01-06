@@ -19,16 +19,35 @@ class Resource {
     this.usersWhoRated,
   });
 
+  /// Rating of the resource
   int? rating;
+
+  /// Id of the resource
   final String? id;
+
+  /// Url of the resource
   final String? url;
+
+  /// Name of the resource
   final String? name;
+
+  /// Number of users who rated this resource
   int? numberOfRates;
   final String? thumbnail;
+
+  /// User who last edited the resource
   final String? lastEditBy;
+
+  /// Description of the resource
   final String? description;
+
+  /// List of skillTreeIds that this resource is part of
   List<String?>? skillTreeIds;
+
+  ///Date of the last edit
   final DateTime? lastEditDate;
+
+  ///List of users who rated this resource
   List<BaseListItem?>? usersWhoRated;
 
   factory Resource.fromFirestore(
@@ -46,13 +65,13 @@ class Resource {
       lastEditBy: data['lastEditBy'] as String?,
       description: data['description'] as String?,
       numberOfRates: data['numberOfRates'] as int?,
-      skillTreeIds: (data['skillTreeIds']) == null
-          ? null
-          : (data['skillTreeIds'] as List).map((e) => e as String?).toList(),
+      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
       usersWhoRated: data['usersWhoRated'] == null
           ? null
           : _convertUsersWhoRated(data['usersWhoRated'] as List),
-      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
+      skillTreeIds: (data['skillTreeIds']) == null
+          ? null
+          : (data['skillTreeIds'] as List).map((e) => e as String?).toList(),
     );
   }
 
@@ -65,9 +84,9 @@ class Resource {
       if (thumbnail != null) 'thumbnail': thumbnail,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (description != null) 'description': description,
+      if (skillTreeIds != null) 'skillTreeIds': skillTreeIds,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
       if (numberOfRates != null) 'numberOfRates': numberOfRates,
-      if (skillTreeIds != null) 'skillTreeIds': skillTreeIds,
       if (usersWhoRated != null)
         'usersWhoRated':
             List<dynamic>.from(usersWhoRated!.map((e) => e?.toJson())),
@@ -76,14 +95,14 @@ class Resource {
 
   Resource copyWith({
     String? id,
+    int? rating,
     String? url,
     String? name,
-    int? rating,
     String? thumbnail,
+    int? numberOfRates,
     String? lastEditBy,
     String? description,
     DateTime? lastEditDate,
-    int? numberOfRates,
     List<String?>? skillTreeIds,
     List<BaseListItem?>? usersWhoRated,
   }) {
@@ -95,9 +114,9 @@ class Resource {
       thumbnail: thumbnail ?? this.thumbnail,
       lastEditBy: lastEditBy ?? this.lastEditBy,
       description: description ?? this.description,
+      skillTreeIds: skillTreeIds ?? this.skillTreeIds,
       lastEditDate: lastEditDate ?? this.lastEditDate,
       numberOfRates: numberOfRates ?? this.numberOfRates,
-      skillTreeIds: skillTreeIds ?? this.skillTreeIds,
       usersWhoRated: usersWhoRated ?? this.usersWhoRated,
     );
   }

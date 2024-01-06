@@ -60,7 +60,7 @@ Future<void> main() async {
   //   appleProvider: AppleProvider.debug,
   // );
 
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding,);
   await SharedPrefs().init();
 
   try {

@@ -1,296 +1,286 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/information_dialog.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resource_item.dart';
 import 'package:responsive_framework/max_width_box.dart';
 
-Widget skillLevel() {
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.skillTreeNavigation != current.skillTreeNavigation ||
-        previous.skill != current.skill,
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      return state.skill == null
-          ? const Center(
-              child: Text('No Skill Selected'),
-            )
-          : Stack(
-              children: [
-                Center(
-                  child: MaxWidthBox(
-                    maxWidth: 1400,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          const SizedBox(
-                            height: 50,
-                          ),
-                          Text(
-                            homeCubit.getLevelProgressDescription(),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 20, right: 20),
-                            child: Divider(),
-                          ),
-                          smallGap(),
-                          Text(state.skill?.description ?? ''),
-                          smallGap(),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 20, right: 20),
-                            child: Divider(),
-                          ),
-                          Text(
-                            'Resources',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 20, right: 20),
-                            child: Divider(),
-                          ),
-                          smallGap(),
-                          _skillResourcesList(),
-                          smallGap(),
-                          const SizedBox(
-                            height: 50,
-                          ),
-                        ],
+Widget skillLevel({
+  required HomeCubit homeCubit,
+  required HomeState state,
+  required BuildContext context,
+}) {
+  return state.skill == null
+      ? const Center(
+          child: Text('No Skill Selected'),
+        )
+      : Stack(
+          children: [
+            Center(
+              child: MaxWidthBox(
+                maxWidth: 1400,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(
+                        height: 50,
                       ),
-                    ),
+                      Text(
+                        homeCubit.getLevelProgressDescription(),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 20, right: 20),
+                        child: Divider(),
+                      ),
+                      smallGap(),
+                      Text(state.skill?.description ?? ''),
+                      smallGap(),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 20, right: 20),
+                        child: Divider(),
+                      ),
+                      const Text(
+                        'Resources',
+                        style: TextStyle(fontSize: 30),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 20, right: 20),
+                        child: Divider(),
+                      ),
+                      smallGap(),
+                      _skillResourcesList(state: state),
+                      smallGap(),
+                      const SizedBox(
+                        height: 50,
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            ),
 
-                // ProgressBar at the top
+            // ProgressBar at the top
 
-                // hide the progress bar if the
-                Visibility(
-                  visible: state.skill != null,
-                  child: Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: _skillLevelProgressBar(),
-                  ),
+            // hide the progress bar if the
+            Visibility(
+              visible: state.skill != null,
+              child: Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _skillLevelProgressBar(
+                  homeCubit: homeCubit,
+                  state: state,
+                  context: context,
                 ),
-              ],
-            );
-    },
-  );
+              ),
+            ),
+          ],
+        );
 }
 
 /// List of Resources for the selected skill shown in a wrap and resourceItem
-Widget _skillResourcesList() {
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.skillTreeNavigation != current.skillTreeNavigation,
-    builder: (context, state) {
-      if (state.allResources?.isNotEmpty ?? false) {
-        // Filter the resources based on skillTreeIds containing the skill id
-        final filteredResources = state.allResources!
-            .where(
-              (element) =>
-                  element?.skillTreeIds?.contains(state.skill?.id) ?? false,
-            )
-            .toList();
+Widget _skillResourcesList({required HomeState state}) {
+  if (state.allResources?.isNotEmpty ?? false) {
+    // Filter the resources based on skillTreeIds containing the skill id
+    final filteredResources = state.allResources!
+        .where(
+          (element) =>
+              element?.skillTreeIds?.contains(state.skill?.id) ?? false,
+        )
+        .toList();
 
-        // Check if the filtered list is not empty
-        if (filteredResources.isNotEmpty) {
-          return Wrap(
-            alignment: WrapAlignment.center,
-            runSpacing: 4,
-            children: filteredResources
-                .map(
-                  (e) => resourceItem(
-                    resource: e!,
-                    isResourceList: false,
-                    usersWhoRated: e.usersWhoRated,
-                  ),
-                )
-                .toList(),
-          );
-        } else {
-          return const Text('No Resources Found');
-        }
-      } else {
-        return const Text('No Resources Found');
-      }
-    },
-  );
+    // Check if the filtered list is not empty
+    if (filteredResources.isNotEmpty) {
+      return Wrap(
+        alignment: WrapAlignment.center,
+        runSpacing: 4,
+        children: filteredResources
+            .map(
+              (e) => resourceItem(
+                resource: e!,
+                isResourceList: false,
+                usersWhoRated: e.usersWhoRated,
+              ),
+            )
+            .toList(),
+      );
+    } else {
+      return const Text('No Resources Found');
+    }
+  } else {
+    return const Text('No Resources Found');
+  }
 }
 
 /// This will display the progress bar for the skill level
-Widget _skillLevelProgressBar() {
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.skillTreeNavigation != current.skillTreeNavigation,
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      debugPrint('Skill for rider: ${state.skill?.rider}');
-      debugPrint('Horse Profile: ${state.horseProfile}');
-      final isConflict =
-          state.horseProfile == null && state.skill?.rider == false;
-      debugPrint('Is Conflict: $isConflict');
-      return MaxWidthBox(
-        maxWidth: 1000,
-        child: Row(
-          children: [
-            // Learning
-            Expanded(
-              child: InkWell(
-                onTap: state.isGuest || isConflict
-                    ? null
-                    : () {
-                        showDialog<AlertDialog>(
-                          context: context,
-                          builder: (context) => _skillLevelSelectedConfirmation(
-                            levelState: LevelState.LEARNING,
-                          ),
-                        );
-                      },
-                child: ColoredBox(
-                  color: homeCubit.levelColor(
-                    levelState: LevelState.LEARNING,
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Learning',
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTapDown: (details) {
-                              InformationDialog.show(
-                                context,
-                                const Text(
-                                  'Learning: This stage indicates that the '
-                                  'individual should be actively engaged in '
-                                  'acquiring the skill. They should be in the '
-                                  'process of understanding and practicing the '
-                                  'basic concepts and techniques. Mistakes are '
-                                  'common at this level, but they provide '
-                                  'valuable learning experiences. The '
-                                  'individual should be developing their '
-                                  'abilities but not yet mastered the skill.',
-                                ),
-                                details.globalPosition,
-                              );
-                            },
-                            child: const Icon(
-                              Icons.info_outline_rounded,
-                            ),
-                          ),
-                        ],
+Widget _skillLevelProgressBar({
+  required HomeCubit homeCubit,
+  required HomeState state,
+  required BuildContext context,
+}) {
+  debugPrint('Skill for rider: ${state.skill?.rider}');
+  debugPrint('Horse Profile: ${state.horseProfile}');
+  final isConflict = state.horseProfile == null && state.skill?.rider == false;
+  debugPrint('Is Conflict: $isConflict');
+  return MaxWidthBox(
+    maxWidth: 1000,
+    child: Row(
+      children: [
+        // Learning
+        Expanded(
+          child: InkWell(
+            onTap: state.isGuest || isConflict
+                ? null
+                : () {
+                    showDialog<AlertDialog>(
+                      context: context,
+                      builder: (context) => _skillLevelSelectedConfirmation(
+                        context: context,
+                        state: state,
+                        homeCubit: homeCubit,
+                        levelState: LevelState.LEARNING,
                       ),
-                    ),
+                    );
+                  },
+            child: ColoredBox(
+              color: homeCubit.levelColor(
+                levelState: LevelState.LEARNING,
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Learning',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTapDown: (details) {
+                          InformationDialog.show(
+                            context,
+                            const Text(
+                              'Learning: This stage indicates that the '
+                              'individual should be actively engaged in '
+                              'acquiring the skill. They should be in the '
+                              'process of understanding and practicing the '
+                              'basic concepts and techniques. Mistakes are '
+                              'common at this level, but they provide '
+                              'valuable learning experiences. The '
+                              'individual should be developing their '
+                              'abilities but not yet mastered the skill.',
+                            ),
+                            details.globalPosition,
+                          );
+                        },
+                        child: const Icon(
+                          Icons.info_outline_rounded,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            // Proficient
-            Expanded(
-              child: InkWell(
-                onTap: state.isGuest || isConflict
-                    ? null
-                    : () {
-                        showDialog<AlertDialog>(
-                          context: context,
-                          builder: (context) => _skillLevelSelectedConfirmation(
-                            levelState: LevelState.PROFICIENT,
-                          ),
-                        );
-                      },
-                child: ColoredBox(
-                  color: homeCubit.levelColor(
-                    levelState: LevelState.PROFICIENT,
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child:
-                                Text('Proficient', textAlign: TextAlign.center),
-                          ),
-                          GestureDetector(
-                            onTapDown: (details) {
-                              InformationDialog.show(
-                                context,
-                                const Text(
-                                  'Proficient: At this level, the individual '
-                                  'should have achieved a significant degree '
-                                  'of competence in the skill. They should '
-                                  'demonstrate consistent and effective '
-                                  'application of the skill in relevant '
-                                  'situations. Proficiency implies that the '
-                                  'individual can perform the skill '
-                                  'independently and reliably, with a good '
-                                  'understanding of advanced concepts and '
-                                  'techniques.',
-                                ),
-                                details.globalPosition,
-                              );
-                            },
-                            child: const Icon(
-                              Icons.info_outline_rounded,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Resource list
-          ],
+          ),
         ),
-      );
-    },
+        // Proficient
+        Expanded(
+          child: InkWell(
+            onTap: state.isGuest || isConflict
+                ? null
+                : () {
+                    showDialog<AlertDialog>(
+                      context: context,
+                      builder: (context) => _skillLevelSelectedConfirmation(
+                        context: context,
+                        state: state,
+                        homeCubit: homeCubit,
+                        levelState: LevelState.PROFICIENT,
+                      ),
+                    );
+                  },
+            child: ColoredBox(
+              color: homeCubit.levelColor(
+                levelState: LevelState.PROFICIENT,
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text('Proficient', textAlign: TextAlign.center),
+                      ),
+                      GestureDetector(
+                        onTapDown: (details) {
+                          InformationDialog.show(
+                            context,
+                            const Text(
+                              'Proficient: At this level, the individual '
+                              'should have achieved a significant degree '
+                              'of competence in the skill. They should '
+                              'demonstrate consistent and effective '
+                              'application of the skill in relevant '
+                              'situations. Proficiency implies that the '
+                              'individual can perform the skill '
+                              'independently and reliably, with a good '
+                              'understanding of advanced concepts and '
+                              'techniques.',
+                            ),
+                            details.globalPosition,
+                          );
+                        },
+                        child: const Icon(
+                          Icons.info_outline_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Resource list
+      ],
+    ),
   );
 }
 
 Widget _skillLevelSelectedConfirmation({
+  required HomeCubit homeCubit,
   required LevelState levelState,
+  required BuildContext context,
+  required HomeState state,
 }) {
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.skillTreeNavigation != current.skillTreeNavigation,
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      return AlertDialog(
-        title: const Text('Confirm Skill Level'),
-        content: Text(
-          'Are you sure you want to set ${state.skill?.skillName} '
-          'level to ${levelState.name}?',
-        ),
-        actions: [
-          OutlinedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('No'),
-          ),
-          FilledButton(
-            onPressed: () {
-              homeCubit.levelSelected(
-                levelState: levelState,
-              );
-              Navigator.of(context).pop();
-            },
-            child: const Text('Yes'),
-          ),
-        ],
-      );
-    },
+  return AlertDialog(
+    title: const Text('Confirm Skill Level'),
+    content: Text(
+      'Are you sure you want to set ${state.skill?.skillName} '
+      'level to ${levelState.name}?',
+    ),
+    actions: [
+      OutlinedButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        child: const Text('No'),
+      ),
+      FilledButton(
+        onPressed: () {
+          homeCubit.levelSelected(
+            levelState: levelState,
+          );
+          Navigator.of(context).pop();
+        },
+        child: const Text('Yes'),
+      ),
+    ],
   );
 }
 

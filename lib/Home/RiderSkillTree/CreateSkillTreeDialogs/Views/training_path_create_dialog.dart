@@ -5,6 +5,7 @@ import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/CreateSkillTreeDialogs/cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:responsive_framework/max_width_box.dart';
 import 'package:searchfield/searchfield.dart';
 
 ///   This is the Dialog that is used to create a new TriainingPath
@@ -71,31 +72,42 @@ class CreateTrainingPathDialog extends StatelessWidget {
                     child: SingleChildScrollView(
                       child: Column(
                         children: <Widget>[
-                          ///   Name
-                          TextFormField(
-                            textCapitalization: TextCapitalization.words,
-                            initialValue:
-                                isEdit ? state.trainingPath?.name : '',
-                            decoration: const InputDecoration(
-                              labelText: 'Name',
-                              border: UnderlineInputBorder(),
-                            ),
-                            onChanged: (value) => trainingPathcubit
-                                .trainingPathNameChanged(name: value),
-                          ),
-
-                          ///   Description
-                          TextFormField(
-                            textCapitalization: TextCapitalization.sentences,
-                            initialValue:
-                                isEdit ? state.trainingPath?.description : '',
-                            decoration: const InputDecoration(
-                              labelText: 'Description',
-                              border: UnderlineInputBorder(),
-                            ),
-                            onChanged: (value) => trainingPathcubit
-                                .trainingPathDescriptionChanged(
-                              description: value,
+                          MaxWidthBox(
+                            maxWidth: 900,
+                            child: Column(
+                              children: [
+                                ///   Name
+                                TextFormField(
+                                  textCapitalization:
+                                      TextCapitalization.words,
+                                  initialValue:
+                                      isEdit ? state.trainingPath?.name : '',
+                                  decoration: const InputDecoration(
+                                    labelText: 'Name',
+                                    border: UnderlineInputBorder(),
+                                  ),
+                                  onChanged: (value) => trainingPathcubit
+                                      .trainingPathNameChanged(name: value),
+                                ),
+            
+                                ///   Description
+                                gap(),
+                                TextFormField(
+                                  textCapitalization:
+                                      TextCapitalization.sentences,
+                                  initialValue: isEdit
+                                      ? state.trainingPath?.description
+                                      : '',
+                                  decoration: const InputDecoration(
+                                    labelText: 'Description',
+                                    border: UnderlineInputBorder(),
+                                  ),
+                                  onChanged: (value) => trainingPathcubit
+                                      .trainingPathDescriptionChanged(
+                                    description: value,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           gap(),
@@ -110,61 +122,63 @@ class CreateTrainingPathDialog extends StatelessWidget {
                           _selectedSkills(),
                           gap(),
                           _trainingPath(),
-
                           gap(),
-                          Row(
-                            children: [
-                              //Delete Button
-                              Expanded(
-                                flex: 5,
-                                child: Visibility(
-                                  visible: state.trainingPath?.createdBy ==
-                                      usersProfile.name,
-                                  child: IconButton(
-                                    onPressed: () {
-                                      trainingPathcubit.deleteTrainingPath();
-                                      Navigator.pop(context);
-                                    },
-                                    icon: const Icon(Icons.delete),
-                                  ),
-                                ),
-                              ),
-
-                              //Cancel Button
-                              Expanded(
-                                flex: 5,
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Cancel'),
-                                ),
-                              ),
-                              gap(),
-
-                              //Submit Button
-                              if (state.status.isSubmissionInProgress)
-                                const Expanded(
-                                  flex: 7,
-                                  child: CircularProgressIndicator(),
-                                )
-                              else
+                          MaxWidthBox(
+                            maxWidth: 900,
+                            child: Row(
+                              children: [
+                                //Delete Button
                                 Expanded(
-                                  flex: 7,
-                                  child: FilledButton(
-                                    onPressed: () {
-                                      trainingPathcubit
-                                          .createOrEditTrainingPath();
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(
-                                      isEdit
-                                          ? 'Submit Edited Training Path'
-                                          : 'Submit',
+                                  flex: 5,
+                                  child: Visibility(
+                                    visible: state.trainingPath?.createdBy ==
+                                        usersProfile.name,
+                                    child: IconButton(
+                                      onPressed: () {
+                                        trainingPathcubit.deleteTrainingPath();
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.delete),
                                     ),
                                   ),
                                 ),
-                            ],
+                                        
+                                //Cancel Button
+                                Expanded(
+                                  flex: 5,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                ),
+                                gap(),
+                                        
+                                //Submit Button
+                                if (state.status.isSubmissionInProgress)
+                                  const Expanded(
+                                    flex: 7,
+                                    child: CircularProgressIndicator(),
+                                  )
+                                else
+                                  Expanded(
+                                    flex: 7,
+                                    child: FilledButton(
+                                      onPressed: () {
+                                        trainingPathcubit
+                                            .createOrEditTrainingPath();
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        isEdit
+                                            ? 'Submit Edited Training Path'
+                                            : 'Submit',
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ],
                       ),

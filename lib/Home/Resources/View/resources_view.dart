@@ -7,89 +7,100 @@ import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resource_item.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-Widget resourcesView() {
-  return BlocBuilder<HomeCubit, HomeState>(
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      return Scaffold(
-        appBar: AppBar(
-          leading: Visibility(
-            visible: // smallscreen
-                MediaQuery.of(context).size.width < 800,
-            child: IconButton(
-              onPressed: homeCubit.navigateToTrainingPathList,
-              icon: const Icon(
-                Icons.arrow_back,
-              ),
-            ),
-          ),
-          actions: _appBarActions(
-            state: state,
-            homeCubit: homeCubit,
-            context: context,
-          ),
-          title: BlocBuilder<HomeCubit, HomeState>(
-            buildWhen: (previous, current) =>
-                previous.resourcesSortStatus != current.resourcesSortStatus,
-            builder: (context, state) {
-              return Text(
-                state.resourcesSortStatus == ResourcesSortStatus.oldest
-                    ? 'Resources - Oldest'
-                    : state.resourcesSortStatus ==
-                            ResourcesSortStatus.mostRecommended
-                        ? 'Resources - Most Recommended'
-                        : state.resourcesSortStatus ==
-                                ResourcesSortStatus.recent
-                            ? 'Resources - Most Recent'
-                            : 'Resources - Saved',
-                style: const TextStyle(),
-              );
-            },
+Widget resourcesView({
+  required BuildContext context,
+  required HomeCubit homeCubit,
+  required HomeState state,
+}) {
+  return Scaffold(
+    floatingActionButton: Visibility(
+      visible: !state.isGuest,
+      child: FloatingActionButton(
+        onPressed: () => homeCubit.createOrEditResource(
+          resource: null,
+          context: context,
+        ),
+        child: const Icon(
+          Icons.add,
+        ),
+      ),
+    ),
+    appBar: AppBar(
+      leading: Visibility(
+        visible: // smallscreen
+            MediaQuery.of(context).size.width < 800,
+        child: IconButton(
+          onPressed: homeCubit.navigateToTrainingPathList,
+          icon: const Icon(
+            Icons.arrow_back,
           ),
         ),
-        body: Center(
-          child: BlocBuilder<HomeCubit, HomeState>(
-            buildWhen: (previous, current) =>
-                previous.allResources != current.allResources,
-            builder: (context, state) {
-              return SingleChildScrollView(
-                child: state.resourcesSortStatus == ResourcesSortStatus.saved
-                    ? state.savedResources != null
-                        ? Wrap(
-                            alignment: WrapAlignment.center,
-                            runSpacing: 4,
-                            children: state.savedResources!
-                                .map(
-                                  (e) => resourceItem(
-                                    resource: e!,
-                                    isResourceList: true,
-                                    usersWhoRated: e.usersWhoRated,
-                                  ),
-                                )
-                                .toList(),
-                          )
-                        : const Text('No Resources Found')
-                    : state.allResources != null
-                        ? Wrap(
-                            alignment: WrapAlignment.center,
-                            runSpacing: 4,
-                            children: state.allResources!
-                                .map(
-                                  (e) => resourceItem(
-                                    resource: e!,
-                                    isResourceList: true,
-                                    usersWhoRated: e.usersWhoRated,
-                                  ),
-                                )
-                                .toList(),
-                          )
-                        : const Text('No Resources Found'),
-              );
-            },
-          ),
+      ),
+      actions: _appBarActions(
+        state: state,
+        homeCubit: homeCubit,
+        context: context,
+      ),
+      titleSpacing: 0,
+      centerTitle: true,
+      title: const Image(
+        color: Colors.white,
+        image: AssetImage(
+          'assets/horse_text.png',
         ),
-      );
-    },
+        height: 25,
+      ),
+    ),
+    body: Center(
+      child: ListView(
+        children: [
+          Text(
+            state.resourcesSortStatus == ResourcesSortStatus.oldest
+                ? 'Resources - Oldest'
+                : state.resourcesSortStatus ==
+                        ResourcesSortStatus.mostRecommended
+                    ? 'Resources - Most Recommended'
+                    : state.resourcesSortStatus == ResourcesSortStatus.recent
+                        ? 'Resources - Most Recent'
+                        : 'Resources - Saved',
+            style: const TextStyle(fontSize: 24),
+          ),
+          smallGap(),
+          if (state.resourcesSortStatus == ResourcesSortStatus.saved)
+            state.savedResources != null
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    runSpacing: 4,
+                    children: state.savedResources!
+                        .map(
+                          (e) => resourceItem(
+                            resource: e!,
+                            isResourceList: true,
+                            usersWhoRated: e.usersWhoRated,
+                          ),
+                        )
+                        .toList(),
+                  )
+                : const Text('No Resources Found')
+          else
+            state.allResources != null
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    runSpacing: 4,
+                    children: state.allResources!
+                        .map(
+                          (e) => resourceItem(
+                            resource: e!,
+                            isResourceList: true,
+                            usersWhoRated: e.usersWhoRated,
+                          ),
+                        )
+                        .toList(),
+                  )
+                : const Text('No Resources Found'),
+        ],
+      ),
+    ),
   );
 }
 
@@ -103,6 +114,10 @@ List<Widget> _appBarActions({
   final isMobile = ResponsiveBreakpoints.of(context).smallerOrEqualTo(TABLET);
   final isTabletOrLarger = ResponsiveBreakpoints.of(context).largerThan(TABLET);
   return [
+    IconButton(
+      onPressed: () {},
+      icon: const Icon(Icons.search),
+    ),
     if (isMobile)
       Visibility(
         visible: !state.isGuest,
@@ -136,12 +151,15 @@ List<Widget> _appBarActions({
           },
         ),
       ),
-    Tooltip(
-      message: 'Sort Resources',
-      child: IconButton(
-        onPressed: () => homeCubit.openSortDialog(context),
-        icon: const Icon(
-          Icons.sort,
+    Visibility(
+      visible: !isMobile,
+      child: Tooltip(
+        message: 'Sort Resources',
+        child: IconButton(
+          onPressed: () => homeCubit.openSortDialog(context),
+          icon: const Icon(
+            Icons.sort,
+          ),
         ),
       ),
     ),

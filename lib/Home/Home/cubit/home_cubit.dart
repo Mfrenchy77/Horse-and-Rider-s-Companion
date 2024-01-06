@@ -12,8 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:horseandriderscompanion/CommonWidgets/test_resources.dart';
-import 'package:horseandriderscompanion/CommonWidgets/test_skills.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/View/create_resource_dialog.dart';
@@ -121,20 +119,20 @@ class HomeCubit extends Cubit<HomeState> {
     //FIXME:  Resources for TESTING
     if (state.allResources == null) {
       debugPrint('Getting Resources');
-      final resources = TestResource.generateTestResources();
-      emit(state.copyWith(allResources: resources));
-      _sortResources();
+      _resourcesStream = _resourcesRepository.getResources().listen((event) {
+        debugPrint('Resources Stream: got data ${event.docs.length}');
+        final resources =
+            event.docs.map((doc) => (doc.data()) as Resource?).toList();
+
+        emit(
+          state.copyWith(allResources: resources),
+        );
+        _sortResources();
+      });
+//emit(state.copyWith(allResources: resources));
     } else {
       debugPrint('Resources already set');
     }
-    _resourcesStream = _resourcesRepository.getResources().listen((event) {
-      debugPrint('Resources Stream: got data ${event.docs.length}');
-      // _resources = event.docs.map((doc) => (doc.data()) as Resource?).toList();
-
-      // emit(
-      //   state.copyWith(allResources: _resources),
-      // );
-    });
 
     ///   Stream of Categoies
     // if (state.categories == null) {
@@ -230,7 +228,6 @@ class HomeCubit extends Cubit<HomeState> {
   StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
   late final StreamSubscription<QuerySnapshot<Object?>> _skillsStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _trainingPathsStream;
-  late final StreamSubscription<QuerySnapshot<Object?>> _categoryStream;
   StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _resourcesStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _subCategoryStream;
@@ -1589,8 +1586,6 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('navigateToSkillsList');
     emit(
       state.copyWith(
-        index: 1,
-        homeStatus: HomeStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillList,
         isFromTrainingPath: false,
         isFromTrainingPathList: false,
@@ -1622,6 +1617,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> search({required List<String?>? searchList}) async {
+    debugPrint('search');
     emit(state.copyWith(isSearch: true, searchList: searchList));
   }
 
@@ -1696,14 +1692,63 @@ class HomeCubit extends Cubit<HomeState> {
   /// Calls the skills from the repository
   Future<void> getSkills() async {
     debugPrint('getSkills');
-    final skills = TestSkills.generateTestSkills()
-      ..sort((a, b) => a.position.compareTo(b.position));
-    sortSkills(allSkills: skills);
-    sortSkillForDifficulty();
-    // _skillsStream= _skillTreeRepository.getSkills().listen((event) {
-    //      final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
-    //   emit(state.copyWith(allSkills: skills));
-    // });
+    // final skills = TestSkills.generateTestSkills()
+    // ..sort((a, b) => a.position.compareTo(b.position));
+    _skillsStream = _skillTreeRepository.getSkills().listen((event) {
+      debugPrint('Skill Stream: ${event.docs.length}');
+      final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList()
+        ..sort((a, b) => a!.position.compareTo(b!.position));
+      emit(
+        state.copyWith(
+          allSkills: skills,
+          sortedSkills: _sortedSkillsForHorseOrRider(skills: skills),
+          introSkills: _sortedSkillsForHorseOrRider(skills: skills)
+              ?.where(
+                (element) =>
+                    element?.difficulty == DifficultyState.introductory,
+              )
+              .toList(),
+          intermediateSkills: _sortedSkillsForHorseOrRider(skills: skills)
+              ?.where(
+                (element) =>
+                    element?.difficulty == DifficultyState.intermediate,
+              )
+              .toList(),
+          advancedSkills: _sortedSkillsForHorseOrRider(skills: skills)
+              ?.where(
+                (element) => element?.difficulty == DifficultyState.advanced,
+              )
+              .toList(),
+        ),
+      );
+    });
+  }
+
+  /// Returs a List of Skills for the Navigation
+  /// based on whether the user is a rider or horse
+  List<Skill?>? skillsList() {
+    switch (state.difficultyState) {
+      case DifficultyState.introductory:
+        return _sortedSkillsForHorseOrRider(skills: state.allSkills)
+            ?.where(
+              (element) => element?.difficulty == DifficultyState.introductory,
+            )
+            .toList();
+      case DifficultyState.intermediate:
+        return _sortedSkillsForHorseOrRider(skills: state.allSkills)
+            ?.where(
+              (element) => element?.difficulty == DifficultyState.intermediate,
+            )
+            .toList();
+      case DifficultyState.advanced:
+        return _sortedSkillsForHorseOrRider(skills: state.allSkills)
+            ?.where(
+              (element) => element?.difficulty == DifficultyState.advanced,
+            )
+            .toList();
+      case DifficultyState.all:
+        return _sortedSkillsForHorseOrRider(skills: state.allSkills);
+    }
   }
 
   void setFromSkills() {
@@ -1738,8 +1783,6 @@ class HomeCubit extends Cubit<HomeState> {
   }) {
     final skills = <Skill>[];
 
-    debugPrint('subcategory is null');
-    //if subcategory is null we are going to return all the skills
     if (allSkills != null) {
       for (final skill in allSkills) {
         skills.add(skill!);
@@ -2700,6 +2743,7 @@ class HomeCubit extends Cubit<HomeState> {
     _resourcesRepository.deleteResource(resource: resource);
   }
 
+// TODO(mfrenchy): add th ability to open the resource locally
   ///   Single Resource is Selected and is being viewed
   Future<void> openResource({required String? url}) async {
     final uri = Uri.parse(url!);
@@ -2709,21 +2753,6 @@ class HomeCubit extends Cubit<HomeState> {
     )) {
       throw Exception('Could Not Launch: $uri');
     }
-  }
-
-  /// Open Resource Skill Tree Dialog
-  // dialog to show all the skills accociated with the resource
-  // and the user can select a skill to view
-  // or add a skill to the resource
-  // TODO(mfrenchy): implement this
-  void openResourceSkillTreeDialog({
-    required BuildContext context,
-    required Resource resource,
-  }) {
-    showDialog<AlertDialog>(
-      context: context,
-      builder: (context) => const AlertDialog(),
-    );
   }
 
   bool isNewResource(Resource resource) {
@@ -2778,7 +2807,6 @@ class HomeCubit extends Cubit<HomeState> {
     bannerAd?.dispose();
     _skillsStream.cancel();
     _groupsStream?.cancel();
-    _categoryStream.cancel();
     _resourcesStream.cancel();
     _subCategoryStream.cancel();
     _trainingPathsStream.cancel();

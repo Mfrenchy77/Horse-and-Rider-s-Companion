@@ -1,8 +1,12 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
+// ignore_for_file:  sort_constructors_first
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// This is a multi use container. It is used to represent a Rating for a
+///  Resource, a Log Entry for Horse or Rider, a Instructor Request, a Contact
+///  for adding to a users Profile.
 class BaseListItem {
+  /// Constructor for a BaseListItem
   BaseListItem({
     this.name,
     this.date,
@@ -16,15 +20,59 @@ class BaseListItem {
   });
 
   int? depth;
+
+  /// If BaseListItem is for a Log Entry, this is the date of the log entry
   DateTime? date;
+
+  /// If BaseListItem is a Rating, this is the users email who rated the
+  ///  resource.
+  /// 
+  ///  If it is a Log Entry, this is the date of the log entry.
+  /// 
+  ///  If it is a Instructor Request, this is the user making the request's
+  ///  email.
+  /// 
+  ///  If it is a Contact, this is the contact's email.
   final String? id;
+
+  /// If BaseListItem is a Log Entry, this is the Users Name who made the log
+  ///  entry.
   String? message;
+
+  /// If the BaseListItem is an Instructor Request, this is the users Thumbnail.
+  /// 
+  /// If it is a Contact, this is the contact's thumbnail.
   String? imageUrl;
+
+  /// If BaseListItem is a Log Entry, this is the users email.
   String? parentId;
+
+  /// If BaseListItem is a Rating, this is used to notate a positive rating.
+  /// 
+  /// If it is a Instructor Request, this is used to notate if the request
+  /// has been accepted or not.
   bool? isSelected;
+
+  /// If BaseListItem is a Rating, this is used to notate a negative rating.
+  /// 
+  /// If it is a Instructor Request, this is used to notate if the request
+  /// is for a Horse or a Rider. True if Rider, False if Horse.
+  /// 
+  ///  If it is a
+  /// Contact, this is used to notate if the contact is a Horse or a Rider.
+  /// True if Rider, False if Horse.
   bool? isCollapsed;
+
+  /// If BaseListItem is a Log Entry, this is used to hold the log entry
+  ///  message.
+  /// 
+  ///  If it is a Instructor Request, this is used to hold the name of the user
+  ///  making the request.
+  /// 
+  ///  If it is a Contact, this is used to hold the contact's name.
   final String? name;
 
+  /// Creates a BaseListItem from a json map
   factory BaseListItem.fromJson(Map<String, dynamic> json) => BaseListItem(
         id: json['id'] as String?,
         depth: json['depth'] as int?,
@@ -37,6 +85,7 @@ class BaseListItem {
         date: (json['date'] as Timestamp?)?.toDate(),
       );
 
+  /// Creates a BaseListItem from a firestore snapshot
   factory BaseListItem.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     // ignore: avoid_unused_constructor_parameters
@@ -55,6 +104,8 @@ class BaseListItem {
       date: (data['date'] as Timestamp?)?.toDate(),
     );
   }
+
+  /// Converts a List of BaseListItems to Firestore
   Map<String, dynamic> toFirestore() {
     return {
       if (id != null) 'id': id,
@@ -69,6 +120,7 @@ class BaseListItem {
     };
   }
 
+  /// Converts a List of BaseListItems to a List of json maps
   Map<String, Object?> toJson() {
     return {
       if (id != null) 'id': id,

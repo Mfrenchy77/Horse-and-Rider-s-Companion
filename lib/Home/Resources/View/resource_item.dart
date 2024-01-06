@@ -11,6 +11,7 @@ import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:horseandriderscompanion/utils/my_formatter.dart';
 import 'package:responsive_framework/max_width_box.dart';
+import 'package:super_banners/super_banners.dart';
 
 Widget resourceItem({
   required Resource resource,
@@ -63,6 +64,7 @@ Widget resourceItem({
                     Visibility(
                       visible: isResourceList,
                       child: _ratingsBar(
+                        isNew: homeCubit.isNewResource(resource),
                         resource: resource,
                         rater: newRatingUser,
                       ),
@@ -205,19 +207,12 @@ Widget resourceItem({
             ),
             Visibility(
               visible: homeCubit.isNewResource(resource),
-              child: const Positioned(
-                top: 0,
-                right: 0,
-                child: ColoredBox(
-                  color: Colors.yellow,
-                  child: Text(
-                    'New',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+              child: const Padding(
+                padding: EdgeInsets.only(left: 8, top: 4),
+                child: CornerBanner(
+                  bannerColor: Colors.blue,
+                  elevation: 4,
+                  child: Text('New'),
                 ),
               ),
             ),
@@ -231,6 +226,7 @@ Widget resourceItem({
 Widget _ratingsBar({
   required Resource? resource,
   required BaseListItem? rater,
+  required bool isNew,
 }) {
   if (resource != null) {
     final isDark = SharedPrefs().isDarkMode;
@@ -239,10 +235,17 @@ Widget _ratingsBar({
         (rater?.isCollapsed ?? false) || (rater?.isSelected ?? false);
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        Visibility(
+          visible: isNew,
+          child: const SizedBox(
+            width: 30,
+          ),
+        ),
         Text(
           maxLines: 1,
-          '${resource.rating}',
+          '${resource.rating ?? 0}',
           style: TextStyle(
             fontSize: 14,
             color: isSelected
@@ -253,7 +256,7 @@ Widget _ratingsBar({
           ),
         ),
         Expanded(
-          flex: 5,
+          flex: 4,
           child: Text(
             'Submitted by: ${resource.lastEditBy}',
             maxLines: 1,
@@ -308,6 +311,7 @@ Widget _ratingButtons({
             Expanded(
               flex: 5,
               child: IconButton(
+                tooltip: 'Recommend',
                 onPressed: state.isGuest
                     ? null
                     : () {
@@ -332,6 +336,7 @@ Widget _ratingButtons({
             Expanded(
               flex: 5,
               child: IconButton(
+                tooltip: "Don't Recommend",
                 onPressed: state.isGuest
                     ? null
                     : () {
@@ -353,8 +358,12 @@ Widget _ratingButtons({
             Expanded(
               flex: 5,
               child: IconButton(
+                tooltip: 'Assosiate Skills',
                 onPressed: () {
-                  homeCubit.editingResource(resource: resource);
+                  // I want a dropdown likst of the skills associated with this resource
+                  
+
+                  //homeCubit.editingResource(resource: resource);
 
                   ///  Show the skills associated with this resource
                   showDialog<AlertDialog>(
@@ -405,6 +414,7 @@ Widget _saveResourceButton({
               .isNotEmpty ??
           false;
       return IconButton(
+        tooltip: 'Save Resource',
         onPressed: state.isGuest
             ? null
             : () {

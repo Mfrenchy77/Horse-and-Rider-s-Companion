@@ -148,7 +148,6 @@ class HomeView extends StatelessWidget {
                     builder: (context, state) {
                       final homeCubit = context.read<HomeCubit>();
                       return AdaptiveScaffold(
-                        
                         smallBreakpoint:
                             const WidthPlatformBreakpoint(end: 800),
                         mediumBreakpoint: const WidthPlatformBreakpoint(
@@ -207,12 +206,13 @@ class HomeView extends StatelessWidget {
                           if (newIndex == 0) {
                             homeCubit.profileNavigationSelected();
                           } else if (newIndex == 1) {
-                            homeCubit.navigateToSkillsList();
+                            homeCubit.navigateToTrainingPathList();
                           } else if (newIndex == 2) {
                             homeCubit.resourcesNavigationSelected();
                           }
                         },
                         body: (_) => AdaptiveLayout(
+                          internalAnimations: false,
                           body: SlotLayout(
                             config: <Breakpoint, SlotLayoutConfig>{
                               Breakpoints.standard: SlotLayout.from(
@@ -253,6 +253,7 @@ Widget _loadingView() {
 Widget _mainView() {
   return BlocBuilder<HomeCubit, HomeState>(
     builder: (context, state) {
+      final homeCubit = context.read<HomeCubit>();
       return state.homeStatus == HomeStatus.profile
           ? state.isForRider
               ? profileView()
@@ -271,12 +272,20 @@ Widget _mainView() {
                       ?
 
                       /// Go to the Skill Tree
-                      skillTreeView()
+                      skillTreeView(
+                          context: context,
+                          homeCubit: homeCubit,
+                          state: state,
+                        )
                       : state.homeStatus == HomeStatus.resource
                           ?
 
                           /// Go to the Resource View
-                          resourcesView()
+                          resourcesView(
+                              context: context,
+                              homeCubit: homeCubit,
+                              state: state,
+                            )
                           : state.homeStatus == HomeStatus.loading
                               ?
 

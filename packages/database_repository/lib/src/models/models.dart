@@ -12,6 +12,7 @@ export 'catagorry.dart';
 export 'skill_node.dart';
 export 'skill_level.dart';
 export 'sub_category.dart';
+export 'url_meta_data.dart';
 export 'web_page_data.dart';
 export 'horse_profile.dart';
 export 'rider_profile.dart';

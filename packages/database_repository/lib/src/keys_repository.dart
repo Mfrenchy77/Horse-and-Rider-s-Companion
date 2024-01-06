@@ -16,6 +16,9 @@ class KeysRepository {
   /// Constant to refer to the API key for the Location API
   static const String LOCATION_KEY_CONSTANT = 'LocationApiKey';
 
+  /// Constant to refer to the API key for the Json Link API
+  static const String JSON_LINK_API_KEY_CONSTANT = 'JsonLinkApiKey';
+
   /// returns the API key for the Google Maps
   Future<String> getMapsApiKey() async {
     await remoteConfig.fetchAndActivate();
@@ -32,5 +35,11 @@ class KeysRepository {
   Future<String> getLocationApiKey() async {
     await remoteConfig.fetchAndActivate();
     return remoteConfig.getString(LOCATION_KEY_CONSTANT);
+  }
+
+  /// returns the API key for the Json Link API
+  Future<String> getJsonLinkApiKey() async {
+    await remoteConfig.fetchAndActivate();
+    return remoteConfig.getString(JSON_LINK_API_KEY_CONSTANT);
   }
 }

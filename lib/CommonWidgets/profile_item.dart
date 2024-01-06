@@ -29,10 +29,10 @@ Widget profileItem({
       child: MenuItemButton(
         onPressed: () => onTap(),
         child: Row(
-          
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            profilePhoto(size: size, profilePicUrl: profilePicUrl),
+            profilePhoto(
+                size: size, profilePicUrl: profilePicUrl, context: context,),
             smallGap(),
             Text(
               profileName,

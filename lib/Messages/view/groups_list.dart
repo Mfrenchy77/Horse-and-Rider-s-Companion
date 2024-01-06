@@ -29,16 +29,18 @@ class GroupsList extends StatelessWidget {
         title: Text(S.of(context).messages_text),
         actions: [
           ResponsiveVisibility(
-            visibleConditions:  [
-              Condition.smallerThan(name: TABLET,value: 800),
+            visibleConditions: [
+              Condition.smallerThan(name: TABLET, value: 800),
             ],
-            hiddenConditions:  [
-              Condition.largerThan(name: TABLET,value: 800),
+            hiddenConditions: [
+              Condition.largerThan(name: TABLET, value: 800),
             ],
             child: PopupMenuButton<String>(
               itemBuilder: (context) => <PopupMenuEntry<String>>[
                 const PopupMenuItem(
-                    value: 'Sort Messages', child: Text('Sort Messages'),),
+                  value: 'Sort Messages',
+                  child: Text('Sort Messages'),
+                ),
               ],
               onSelected: (value) {
                 if (value == 'Sort Messages') {
@@ -60,11 +62,11 @@ class GroupsList extends StatelessWidget {
             ),
           ),
           ResponsiveVisibility(
-            visibleConditions:  [
-              Condition.largerThan(name: TABLET,value: 800),
+            visibleConditions: [
+              Condition.largerThan(name: TABLET, value: 800),
             ],
-            hiddenConditions:  [
-              Condition.smallerThan(name: TABLET,value: 800),
+            hiddenConditions: [
+              Condition.smallerThan(name: TABLET, value: 800),
             ],
             child: Row(
               children: [
@@ -158,6 +160,7 @@ Widget _groupItem({
             style: TextStyle(color: textColor),
           ),
           leading: profilePhoto(
+            context: context,
             size: 40,
             profilePicUrl: group.recentMessage?.senderProfilePicUrl,
           ),

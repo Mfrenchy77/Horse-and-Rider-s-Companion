@@ -22,14 +22,22 @@ class UpdateResourceSkills extends StatelessWidget {
   final RiderProfile? userProfile;
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => ResourcesRepository(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<ResourcesRepository>(
+          create: (context) => ResourcesRepository(),
+        ),
+        RepositoryProvider(
+          create: (context) => KeysRepository(),
+        ),
+      ],
       child: BlocProvider(
         create: (context) => CreateResourceDialogCubit(
           skills: skills,
           resource: resource,
           isEdit: resource != null,
           usersProfile: userProfile,
+          keysRepository: context.read<KeysRepository>(),
           resourcesRepository: context.read<ResourcesRepository>(),
         ),
         child:

@@ -5,7 +5,6 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
-import 'package:horseandriderscompanion/CommonWidgets/web_page_data_fetch.dart';
 import 'package:horseandriderscompanion/utils/view_utils.dart';
 
 part 'create_resource_dialog_state.dart';
@@ -15,13 +14,16 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required this.usersProfile,
     required bool isEdit,
     required Resource? resource,
+    required KeysRepository keysRepository,
     required List<Skill?>? skills,
     required ResourcesRepository resourcesRepository,
   })  : _skills = skills,
         _isEdit = isEdit,
         _resource = resource,
+        _keysRepository = keysRepository,
         _resourcesRepository = resourcesRepository,
         super(const CreateResourceDialogState()) {
+    _keysRepository.getJsonLinkApiKey().then((value) => _jsonKey = value);
     if (resource != null) {
       urlChanged(resource.url.toString());
       // list of skills that are in the resourceids
@@ -39,6 +41,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   final Resource? _resource;
   final List<Skill?>? _skills;
   final RiderProfile? usersProfile;
+  String? _jsonKey;
+  final KeysRepository _keysRepository;
   final ResourcesRepository _resourcesRepository;
 
   ///   Called when user is inputting the Url to be parsed
@@ -89,8 +93,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   /// and add the skill to the list if it is not in the list
   void resourceSkillsChanged(String skillId) {
     debugPrint('resourceSkillsChanged: $skillId');
-    final resource = state.resource;
-    final updatedSkills = List<String>.from(resource?.skillTreeIds ?? []);
+    final resource = state.resource ?? Resource();
+
+    // Clone the current list of skill IDs to avoid directly modifying the state
+    final updatedSkills = List<String>.from(resource.skillTreeIds ?? []);
+    debugPrint('updatedSkills: $updatedSkills');
 
     if (updatedSkills.contains(skillId)) {
       debugPrint('removing skill');
@@ -100,9 +107,13 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       updatedSkills.add(skillId);
     }
 
+    // Fetch the skills for the updated list of IDs
     final updatedResourceSkills = getSkillsForResource(ids: updatedSkills);
-    final updatedResource = resource?.copyWith(skillTreeIds: updatedSkills);
 
+    // Create a new copy of the resource with the updated skill IDs
+    final updatedResource = resource.copyWith(skillTreeIds: updatedSkills);
+
+    // Emit the new state with updated values
     emit(
       state.copyWith(
         resourceSkills: updatedResourceSkills,
@@ -149,38 +160,75 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     final url = _checkAndModifyUrl(state.url.value.trim());
     debugPrint('fetchUrl: $url');
     emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
+    final metadatarepository = UrlMetadataRepository(apiKey: _jsonKey ?? '');
 
-    final metadata = WebPageDataFetcher(url);
-    try {
-      final data = await metadata.fetchData();
-      final title = SingleWord.dirty(data.title ?? '');
-      final description = SingleWord.dirty(data.description ?? '');
-      final imageUrl = _checkAndModifyUrl(data.imageUrl ?? '');
-      debugPrint('imageUrl: $imageUrl');
-      debugPrint('title: $title');
-      debugPrint('description: $description');
+    await metadatarepository.extractUrlMetadata(url: url).then((value) {
+      debugPrint('metadata: $value');
+      updateUrlMetadata(data: value);
+    }).catchError((Object e) {
+      debugPrint('Error Fetching Url: $e');
       emit(
         state.copyWith(
-          urlFetchedStatus: UrlFetchedStatus.fetched,
-          url: Url.dirty(url),
-          title: title,
-          description: description,
-          imageUrl: imageUrl,
-          status: Formz.validate([state.url, title, description]),
+          isError: true,
+          error: e.toString(),
+          urlFetchedStatus: UrlFetchedStatus.error,
+          status: FormzStatus.invalid,
         ),
       );
-    } catch (e) {
-      debugPrint('Error Fetching Url: $e');
-      // emit(
-      //   state.copyWith(
-      //     isError: true,
-      //     error: e.toString(),
-      //     urlFetchedStatus: UrlFetchedStatus.error,
-      //     status: FormzStatus.invalid,
-      //   ),
-      // );
-    }
+    });
   }
+
+  ///   Called when the url is inputted and validated
+  ///  and the metadata is fetched
+  void updateUrlMetadata({required UrlMetadata data}) {
+    final title = SingleWord.dirty(data.title);
+    final description = SingleWord.dirty(data.description);
+    final imageUrl = data.imageUrls.first;
+    debugPrint('imageUrl: $imageUrl');
+    debugPrint('title: $title');
+    debugPrint('description: $description');
+    emit(
+      state.copyWith(
+        urlFetchedStatus: UrlFetchedStatus.fetched,
+        url: Url.dirty(state.url.value),
+        title: title,
+        description: description,
+        imageUrl: imageUrl,
+        status: Formz.validate([state.url, title, description]),
+      ),
+    );
+  }
+  //   });
+  //   try {
+
+  //     final title = SingleWord.dirty(data.title ?? '');
+  //     final description = SingleWord.dirty(data.description ?? '');
+  //     final imageUrl = _checkAndModifyUrl(data.imageUrl ?? '');
+  //     debugPrint('imageUrl: $imageUrl');
+  //     debugPrint('title: $title');
+  //     debugPrint('description: $description');
+  //     emit(
+  //       state.copyWith(
+  //         urlFetchedStatus: UrlFetchedStatus.fetched,
+  //         url: Url.dirty(url),
+  //         title: title,
+  //         description: description,
+  //         imageUrl: imageUrl,
+  //         status: Formz.validate([state.url, title, description]),
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     debugPrint('Error Fetching Url: $e');
+  //     // emit(
+  //     //   state.copyWith(
+  //     //     isError: true,
+  //     //     error: e.toString(),
+  //     //     urlFetchedStatus: UrlFetchedStatus.error,
+  //     //     status: FormzStatus.invalid,
+  //     //   ),
+  //     // );
+  //   }
+  // }
 
   ///   Called when the url is inputted and validated
   Future<void> createResource() async {
@@ -230,55 +278,54 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   Future<void> editResource() async {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
-
-    if (state.resource == null) {
-      debugPrint('Resource is null');
-      emit(
-        state.copyWith(
-          status: FormzStatus.submissionFailure,
-          isError: true,
-          error: 'Error',
-        ),
-      );
-      return;
-    }
-
-    final url =
-        state.url.value.isNotEmpty ? state.url.value : state.resource!.url;
-    final editedResource = Resource(
-      id: state.resource!.id,
-      name: state.title.value,
-      thumbnail: state.imageUrl.isNotEmpty
-          ? state.imageUrl
-          : state.resource!.thumbnail,
-      description: state.description.value.isNotEmpty
-          ? state.description.value
-          : state.resource!.description,
-      url: url,
-      numberOfRates: state.resource!.numberOfRates,
-      rating: state.resource!.rating,
-      skillTreeIds: state.resourceSkills?.map((e) => e?.id).toList() ?? [],
-      usersWhoRated: state.resource!.usersWhoRated,
-      lastEditBy: usersProfile?.name ?? '',
-      lastEditDate: DateTime.now(),
+    debugPrint(
+      'Editting Resource ${state.resource?.name ?? state.title.value}',
     );
 
-    try {
-      await _resourcesRepository.createOrUpdateResource(
-        resource: editedResource,
+    if (state.status.isValidated) {
+      final editedResource = Resource(
+        id: state.resource?.id ?? ViewUtils.createId(),
+        name: state.title.value.isEmpty
+            ? state.resource?.name
+            : state.title.value,
+        thumbnail:
+            state.imageUrl.isEmpty ? state.resource?.thumbnail : state.imageUrl,
+        description: state.description.value.isEmpty
+            ? state.resource?.description
+            : state.description.value,
+        url: state.url.value.isEmpty ? state.resource?.url : state.url.value,
+        numberOfRates: state.resource?.numberOfRates ?? 0,
+        rating: state.resource?.rating ?? 1,
+        skillTreeIds: state.resourceSkills?.map((e) => e?.id).toList() ?? [],
+        usersWhoRated: state.resource?.usersWhoRated ??
+            [
+              BaseListItem(
+                id: usersProfile?.email,
+                isSelected: true,
+                isCollapsed: false,
+              ),
+            ],
+        lastEditBy: usersProfile?.name,
+        lastEditDate: DateTime.now(),
       );
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
-    } catch (e) {
-      debugPrint('Error: $e');
-      final errorMessage =
-          (e is FirebaseException) ? e.message ?? 'Firebase Error' : 'Error';
-      emit(
-        state.copyWith(
-          status: FormzStatus.submissionFailure,
-          error: errorMessage,
-          isError: true,
-        ),
-      );
+
+      try {
+        await _resourcesRepository.createOrUpdateResource(
+          resource: editedResource,
+        );
+        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      } catch (e) {
+        debugPrint('Error: $e');
+        final errorMessage =
+            (e is FirebaseException) ? e.message ?? 'Firebase Error' : 'Error';
+        emit(
+          state.copyWith(
+            status: FormzStatus.submissionFailure,
+            error: errorMessage,
+            isError: true,
+          ),
+        );
+      }
     }
   }
 

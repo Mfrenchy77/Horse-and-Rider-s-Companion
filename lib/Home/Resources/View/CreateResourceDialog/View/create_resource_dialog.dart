@@ -1,12 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
+import 'package:image_network/image_network.dart';
 
 class CreateResourcDialog extends StatelessWidget {
   const CreateResourcDialog({
@@ -22,19 +20,34 @@ class CreateResourcDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => ResourcesRepository(),
+    final titleController = TextEditingController(text: resource?.name ?? '');
+    final descriptionController =
+        TextEditingController(text: resource?.description ?? '');
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider(
+          create: (context) => ResourcesRepository(),
+        ),
+        RepositoryProvider(
+          create: (context) => KeysRepository(),
+        ),
+      ],
       child: BlocProvider(
         create: (context) => CreateResourceDialogCubit(
           skills: skills,
           resource: resource,
           isEdit: resource != null,
           usersProfile: userProfile,
+          keysRepository: context.read<KeysRepository>(),
           resourcesRepository: context.read<ResourcesRepository>(),
         ),
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listener: (context, state) {
+            if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
+              titleController.text = state.title.value;
+              descriptionController.text = state.description.value;
+            }
             if (state.status.isSubmissionSuccess) {
               Navigator.of(context).pop();
             }
@@ -43,6 +56,7 @@ class CreateResourcDialog extends StatelessWidget {
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
                   SnackBar(
+                    duration: const Duration(seconds: 5),
                     backgroundColor: Colors.red,
                     content: Text(state.error),
                   ),
@@ -106,19 +120,21 @@ class CreateResourcDialog extends StatelessWidget {
                                   resource: resource,
                                   state: state,
                                 ),
-                                _titleField(
-                                  state: state,
-                                  context: context,
-                                  resource: resource,
-                                ),
-                                gap(),
-                                _descriptionField(
-                                  state: state,
-                                  context: context,
-                                  resource: resource,
-                                ),
                               ],
                             ),
+                          ),
+                          _titleField(
+                            titleController: titleController,
+                            state: state,
+                            context: context,
+                            resource: resource,
+                          ),
+                          gap(),
+                          _descriptionField(
+                            state: state,
+                            context: context,
+                            resource: resource,
+                            descriptionController: descriptionController,
                           ),
 
                           ///   Skills picked from filter chips
@@ -133,7 +149,7 @@ class CreateResourcDialog extends StatelessWidget {
                                   children: state.skills!.map(
                                     (Skill? skill) {
                                       return FilterChip(
-                                        label: Text(skill!.skillName!),
+                                        label: Text(skill!.skillName),
                                         selected: state.resourceSkills?.any(
                                               (skillObject) =>
                                                   skillObject?.id == skill.id,
@@ -164,11 +180,7 @@ class CreateResourcDialog extends StatelessWidget {
                     if (state.status.isSubmissionInProgress)
                       const CircularProgressIndicator()
                     else
-                      TextButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              HorseAndRidersTheme().getTheme().primaryColor,
-                        ),
+                      ElevatedButton(
                         onPressed:
                             state.urlFetchedStatus != UrlFetchedStatus.fetched
                                 ? null
@@ -239,24 +251,22 @@ Widget _image({
   Resource? resource,
   required CreateResourceDialogState state,
 }) {
-  final isDark = SharedPrefs().isDarkMode;
-
   return SizedBox(
     height: 200,
     width: 200,
-    child: CachedNetworkImage(
-      imageUrl: state.urlFetchedStatus == UrlFetchedStatus.fetched
-          ? state.imageUrl
-          : resource?.thumbnail ?? '',
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Image(
-        image: AssetImage(
-          isDark
-              ? 'assets/horse_icon_circle_dark.png'
-              : 'assets/horse_icon_circle.png',
-        ),
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.grey,
+        borderRadius: BorderRadius.circular(10),
       ),
-      errorWidget: (context, url, error) => const Icon(Icons.error),
+      child: ImageNetwork(
+        debugPrint: true,
+        image: state.urlFetchedStatus == UrlFetchedStatus.fetched
+            ? state.imageUrl
+            : resource?.thumbnail ?? '',
+        height: 200,
+        width: 200,
+      ),
     ),
   );
 }
@@ -276,16 +286,18 @@ Widget _urlField({required BuildContext context, required Resource? resource}) {
 }
 
 Widget _titleField({
+  required TextEditingController titleController,
   required BuildContext context,
   required Resource? resource,
   required CreateResourceDialogState state,
 }) {
   return TextFormField(
+    controller: titleController,
     minLines: 2,
     maxLines: 10,
-    initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
-        ? state.title.value
-        : resource?.name ?? '',
+    // initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
+    //     ? state.title.value
+    //     : resource?.name ?? '',
     onChanged: (title) =>
         context.read<CreateResourceDialogCubit>().titleChanged(title),
     keyboardType: TextInputType.name,
@@ -299,16 +311,18 @@ Widget _titleField({
 }
 
 Widget _descriptionField({
+  required TextEditingController descriptionController,
   required BuildContext context,
   required Resource? resource,
   required CreateResourceDialogState state,
 }) {
   return TextFormField(
+    controller: descriptionController,
     minLines: 3,
     maxLines: 10,
-    initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
-        ? state.description.value
-        : resource?.description ?? '',
+    // initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
+    //     ? state.description.value
+    //     : resource?.description ?? '',
     onChanged: (description) => context
         .read<CreateResourceDialogCubit>()
         .descriptionChanged(description),
