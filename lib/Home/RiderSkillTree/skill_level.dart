@@ -146,6 +146,7 @@ Widget _skillLevelProgressBar({
                   },
             child: ColoredBox(
               color: homeCubit.levelColor(
+                skill: state.skill as Skill,
                 levelState: LevelState.LEARNING,
               ),
               child: Center(
@@ -206,6 +207,7 @@ Widget _skillLevelProgressBar({
                   },
             child: ColoredBox(
               color: homeCubit.levelColor(
+                skill: state.skill as Skill,
                 levelState: LevelState.PROFICIENT,
               ),
               child: Center(

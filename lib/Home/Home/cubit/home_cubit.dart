@@ -2003,44 +2003,34 @@ class HomeCubit extends Cubit<HomeState> {
 
   Color levelColor({
     required LevelState levelState,
+    required Skill skill,
   }) {
-    final skill = state.skill;
     final riderProfile = determineCurrentProfile();
     var isVerified = false;
     {
-      if (skill != null) {
-        if (riderProfile != null) {
-          if (riderProfile.skillLevels != null &&
-              riderProfile.skillLevels!.isNotEmpty) {
-            final skillLevel = riderProfile.skillLevels?.firstWhere(
-              (element) => element.skillId == skill.id,
-              orElse: () => SkillLevel(
-                skillId: skill.id,
-                lastEditBy: state.usersProfile?.name,
-                lastEditDate: DateTime.now(),
-              ),
-            );
+      if (riderProfile != null) {
+        if (riderProfile.skillLevels != null &&
+            riderProfile.skillLevels!.isNotEmpty) {
+          final skillLevel = riderProfile.skillLevels?.firstWhere(
+            (element) => element.skillId == skill.id,
+            orElse: () => SkillLevel(
+              skillId: skill.id,
+              lastEditBy: state.usersProfile?.name,
+              lastEditDate: DateTime.now(),
+            ),
+          );
 
-            if (skillLevel?.lastEditBy != null &&
-                skillLevel?.lastEditBy != riderProfile.name) {
-              isVerified = true;
-            }
-            if (skillLevel!.levelState.index >= levelState.index) {
-              return isVerified ? Colors.yellow : Colors.blue;
-            }
+          if (skillLevel?.lastEditBy != null &&
+              skillLevel?.lastEditBy != riderProfile.name) {
+            isVerified = true;
           }
-        } else {
-          debugPrint('isGuest');
-          return Colors.grey;
+          if (skillLevel!.levelState.index >= levelState.index) {
+            return isVerified ? Colors.yellow : Colors.blue;
+          }
         }
       } else {
-        debugPrint('skill is null');
-        emit(
-          state.copyWith(
-            errorSnackBar: true,
-            error: 'skill is null',
-          ),
-        );
+        debugPrint('isGuest');
+        return Colors.grey;
       }
     }
     return Colors.grey;

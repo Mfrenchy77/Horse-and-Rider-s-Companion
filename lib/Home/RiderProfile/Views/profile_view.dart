@@ -2,6 +2,8 @@
 
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart'
+    as adaptive;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
@@ -19,65 +21,155 @@ import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-Widget profileView() {
-  //final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(DESKTOP);
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.usersProfile != current.usersProfile ||
-        previous.viewingProfile != current.viewingProfile ||
-        previous.isGuest != current.isGuest ||
-        previous.isViewing != current.isViewing ||
-        previous.skills != current.skills ||
-        previous.unreadMessages != current.unreadMessages,
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      final usersProfile = state.usersProfile;
-      final viewingProfile = state.viewingProfile;
-      final isUser = state.viewingProfile == null;
-      final isAuthorized = homeCubit.isAuthtorized();
-      debugPrint(
-        'UsersProfile: ${usersProfile?.name}, ViewingProfile: ${viewingProfile?.name}',
-      );
-      return Scaffold(
-        appBar: AppBar(
-          title: _largeScreenAppBarTitle(state: state, context: context),
-          actions: _appBarActions(
-            iconSize: 24,
-            state: state,
-            isUser: isUser,
-            isAuthorized: isAuthorized,
-            usersProfile: usersProfile,
+Widget profileView({
+  required BuildContext context,
+  required HomeCubit homeCubit,
+  required HomeState state,
+}) {
+  final usersProfile = state.usersProfile;
+  final viewingProfile = state.viewingProfile;
+  final isUser = state.viewingProfile == null;
+  final isAuthorized = homeCubit.isAuthtorized();
+  debugPrint(
+    'UsersProfile: ${usersProfile?.name}, ViewingProfile: ${viewingProfile?.name}',
+  );
+  return Scaffold(
+    appBar: AppBar(
+      title: _largeScreenAppBarTitle(state: state, context: context),
+      actions: _appBarActions(
+        iconSize: 24,
+        state: state,
+        isUser: isUser,
+        isAuthorized: isAuthorized,
+        usersProfile: usersProfile,
+        homeCubit: homeCubit,
+        context: context,
+      ),
+    ),
+    drawer: isUser && MediaQuery.of(context).size.width < 800
+        ? _drawer(
             homeCubit: homeCubit,
+            state: state,
             context: context,
+          )
+        : null,
+    body: adaptive.AdaptiveLayout(
+      secondaryBody: adaptive.SlotLayout(
+        config: <adaptive.Breakpoint, adaptive.SlotLayoutConfig>{
+          adaptive.Breakpoints.large: adaptive.SlotLayout.from(
+            key: const Key('smallProfileSecondaryBody'),
+            builder: (context) => ListView(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ColoredBox(
+                        color: HorseAndRidersTheme()
+                                .getTheme()
+                                .appBarTheme
+                                .backgroundColor ??
+                            Colors.white,
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Text(
+                            'Skills',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                gap(),
+                secondaryView(
+                  context: context,
+                  state: state,
+                  homeCubit: homeCubit,
+                ),
+              ],
+            ),
           ),
-        ),
-        drawer: isUser && MediaQuery.of(context).size.width < 800
-            ? _drawer(
-                homeCubit: homeCubit,
-                state: state,
-                context: context,
-              )
-            : null,
-        body: _profile(state: state, homeCubit: homeCubit, context: context),
-        // body: CustomScrollView(
-        //   slivers: [
-        //     _sliverAppBar(
-        //       state: state,
-        //       context: context,
-        //       isUser: isUser,
-        //       isAuthorized: isAuthorized,
-        //       usersProfile: usersProfile,
-        //       homeCubit: homeCubit,
-        //     ),
-        //     _profile(
-        //       homeCubit: homeCubit,
-        //       state: state,
-        //       context: context,
-        //     ),
-        //   ],
-        // ),
-      );
-    },
+        },
+      ),
+      body: adaptive.SlotLayout(
+        config: <adaptive.Breakpoint, adaptive.SlotLayoutConfig>{
+          adaptive.Breakpoints.small: adaptive.SlotLayout.from(
+            key: const Key('smallProfilePrimaryBody'),
+            builder: (context) => ListView(
+              children: [
+                _profile(
+                  state: state,
+                  homeCubit: homeCubit,
+                  context: context,
+                ),
+                const Text(
+                  'Skills',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                gap(),
+                secondaryView(
+                  context: context,
+                  homeCubit: homeCubit,
+                  state: state,
+                ),
+              ],
+            ),
+          ),
+          adaptive.Breakpoints.medium: adaptive.SlotLayout.from(
+            key: const Key('mediumProfilePrimaryBody'),
+            builder: (context) => ListView(
+              children: [
+                _profile(
+                  state: state,
+                  homeCubit: homeCubit,
+                  context: context,
+                ),
+                secondaryView(
+                  context: context,
+                  homeCubit: homeCubit,
+                  state: state,
+                ),
+              ],
+            ),
+          ),
+          adaptive.Breakpoints.large: adaptive.SlotLayout.from(
+            key: const Key('largeProfilePrimaryBody'),
+            builder: (context) => _profile(
+              state: state,
+              homeCubit: homeCubit,
+              context: context,
+            ),
+          ),
+        },
+      ),
+    ),
+
+    // _profile(state: state, homeCubit: homeCubit, context: context),
+    // body: CustomScrollView(
+    //   slivers: [
+    //     _sliverAppBar(
+    //       state: state,
+    //       context: context,
+    //       isUser: isUser,
+    //       isAuthorized: isAuthorized,
+    //       usersProfile: usersProfile,
+    //       homeCubit: homeCubit,
+    //     ),
+    //     _profile(
+    //       homeCubit: homeCubit,
+    //       state: state,
+    //       context: context,
+    //     ),
+    //   ],
+    // ),
   );
 }
 
@@ -231,8 +323,9 @@ Widget _name({
       children: [
         Expanded(
           child: ColoredBox(
-            color: HorseAndRidersTheme().getTheme().appBarTheme.backgroundColor ??
-                Colors.white,
+            color:
+                HorseAndRidersTheme().getTheme().appBarTheme.backgroundColor ??
+                    Colors.white,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -262,7 +355,7 @@ Widget _name({
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 30,
-                    fontWeight: FontWeight.w100,
+                    fontWeight: FontWeight.w200,
                     color: Colors.white,
                   ),
                 ),
@@ -455,30 +548,29 @@ Widget _profile({
             // Log Book Button
             Visibility(
               visible: homeCubit.isAuthtorized(),
-              child: FilledButton.icon(
-                label: Text(
-                  S.of(context).log_book_text,
+              child: MaxWidthBox(
+                maxWidth: 200,
+                child: FilledButton.icon(
+                  label: Text(
+                    S.of(context).log_book_text,
+                  ),
+                  icon: const Icon(HorseAndRiderIcons.riderLogIcon),
+                  onPressed: () => homeCubit.openLogBook(context),
                 ),
-                icon: const Icon(HorseAndRiderIcons.riderLogIcon),
-                onPressed: () => homeCubit.openLogBook(context),
               ),
             ),
             gap(),
-            // secondaryView(
-            //   context: context,
-            //   homeCubit: homeCubit,
-            //   state: state,
-            // ),
           ],
         ),
     ],
   );
 }
 
-Widget _lists(
-    {required BuildContext context,
-    required HomeState state,
-    required HomeCubit homeCubit}) {
+Widget _lists({
+  required BuildContext context,
+  required HomeState state,
+  required HomeCubit homeCubit,
+}) {
   // show the instructor, student and horse list for the respective profile
   //if screen size is larger than a tablet then show the lists side by side
   // else show them in a column
@@ -1025,7 +1117,10 @@ Widget _profileCard({
       elevation: 8,
       child: ListTile(
         leading: profilePhoto(
-            context: context, size: 45, profilePicUrl: baseItem.imageUrl),
+          context: context,
+          size: 45,
+          profilePicUrl: baseItem.imageUrl,
+        ),
         title: Text(
           baseItem.name ?? '',
           textAlign: TextAlign.center,
@@ -1052,7 +1147,10 @@ Widget _profileTile({
     width: 200,
     child: ListTile(
       leading: profilePhoto(
-          context: context, size: 45, profilePicUrl: baseItem.imageUrl),
+        context: context,
+        size: 45,
+        profilePicUrl: baseItem.imageUrl,
+      ),
       title: Text(
         baseItem.name ?? '',
         textAlign: TextAlign.center,
@@ -1232,7 +1330,7 @@ Widget _skillLevelCard({
   required HomeState state,
 }) {
   final skill = state.allSkills
-      ?.firstWhere((element) => element?.id == skillLevel.skillId);
+      ?.firstWhere((element) => element?.id == skillLevel.skillId) as Skill;
   // a card that shows the skill name and the visual representation of the Level State, by
   // having the background be half filled if the level state in in Progress filled if the level state is complete
   // and yellow if the level state is verified
@@ -1245,15 +1343,23 @@ Widget _skillLevelCard({
       elevation: 8,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: skillLevel.levelState == LevelState.VERIFIED
-              ? Colors.yellow
-              : skillLevel.levelState == LevelState.PROFICIENT
-                  ? Colors.blue
-                  : Colors.transparent,
+          color: skillLevel.levelState == LevelState.PROFICIENT
+              ? homeCubit.levelColor(
+                  levelState: skillLevel.levelState,
+                  skill: skill,
+                )
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           gradient: skillLevel.levelState == LevelState.LEARNING
-              ? const LinearGradient(
-                  colors: [Colors.blue, Colors.transparent],
+              ? LinearGradient(
+                  stops: const [0.5, 0.5],
+                  colors: [
+                    homeCubit.levelColor(
+                      levelState: skillLevel.levelState,
+                      skill: skill,
+                    ),
+                    Colors.transparent,
+                  ],
                 )
               : null,
         ),

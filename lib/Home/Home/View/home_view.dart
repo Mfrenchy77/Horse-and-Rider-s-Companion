@@ -256,7 +256,11 @@ Widget _mainView() {
       final homeCubit = context.read<HomeCubit>();
       return state.homeStatus == HomeStatus.profile
           ? state.isForRider
-              ? profileView()
+              ? profileView(
+                  context: context,
+                  homeCubit: homeCubit,
+                  state: state,
+                )
               : horseProfileView()
           : state.homeStatus == HomeStatus.ridersLog
               ? LogView(
