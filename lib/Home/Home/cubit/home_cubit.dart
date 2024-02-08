@@ -1970,34 +1970,45 @@ class HomeCubit extends Cubit<HomeState> {
     required LevelState levelState,
     required Skill skill,
   }) {
-    final riderProfile = determineCurrentProfile();
+    // Determine whether we are dealing with a rider or a horse profile.
+    final currentProfile =
+        state.isForRider ? determineCurrentProfile() : state.horseProfile;
     var isVerified = false;
-    {
-      if (riderProfile != null) {
-        if (riderProfile.skillLevels != null &&
-            riderProfile.skillLevels!.isNotEmpty) {
-          final skillLevel = riderProfile.skillLevels?.firstWhere(
-            (element) => element.skillId == skill.id,
-            orElse: () => SkillLevel(
-              skillId: skill.id,
-              skillName: skill.skillName,
-              lastEditBy: state.usersProfile?.name,
-              lastEditDate: DateTime.now(),
-            ),
-          );
 
-          if (skillLevel?.lastEditBy != null &&
-              skillLevel?.lastEditBy != riderProfile.name) {
+    if (currentProfile != null) {
+      final skillLevels = currentProfile is RiderProfile
+          ? currentProfile.skillLevels
+          : (currentProfile as HorseProfile).skillLevels;
+
+      if (skillLevels != null && skillLevels.isNotEmpty) {
+        final skillLevel = skillLevels.firstWhere(
+          (element) => element.skillId == skill.id,
+          orElse: () => SkillLevel(
+            skillId: skill.id,
+            skillName: skill.skillName,
+            lastEditBy: state.usersProfile?.name,
+            lastEditDate: DateTime.now(),
+          ),
+        );
+
+        if (state.isForRider) {
+          if (skillLevel.lastEditBy != null &&
+              skillLevel.lastEditBy != state.usersProfile?.name) {
             isVerified = true;
           }
-          if (skillLevel!.levelState.index >= levelState.index) {
-            return isVerified ? Colors.yellow : Colors.blue;
+        } else {
+          if (skillLevel.lastEditBy != null &&
+              skillLevel.lastEditBy != state.horseProfile?.currentOwnerName) {
+            isVerified = true;
           }
         }
-      } else {
-        debugPrint('isGuest');
-        return Colors.grey;
+        if (skillLevel.levelState.index >= levelState.index) {
+          return isVerified ? Colors.yellow : Colors.blue;
+        }
       }
+    } else {
+      debugPrint('Profile is not determined');
+      return Colors.grey;
     }
     return Colors.grey;
   }
@@ -2054,36 +2065,84 @@ class HomeCubit extends Cubit<HomeState> {
   ///    want to change the [levelState] of the SkillLevel in the
   ///    Rider or Horse's profile
   void levelSelected({required LevelState levelState}) {
-    // Determine the current profile being viewed.
-    final riderProfile = determineCurrentProfile();
-
-    // Start the level submission process.
-    emitSubmittingStatus();
-
-    // Create an edit note for the level change.
-    final note = _createLevelChangeNote(levelState);
-
-    // Update the skill level for the rider/horse.
     if (state.isForRider) {
-      _updateRiderSkillLevel(riderProfile, levelState, note);
-    } else {
-      final horseProfile = state.horseProfile;
-      if (horseProfile != null) {
-        _updateHorseSkillLevel(horseProfile, levelState, note);
-        _persistHorseProfileChanges(horseProfile, levelState);
+      if (state.viewingProfile != null) {
+        // process the level change for the viewing profile
+        // and add a note to the user's
+        debugPrint('Changing ${state.viewingProfile?.name} ${state.skill} '
+            'to $levelState');
+        final note = BaseListItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          date: DateTime.now(),
+          message: state.usersProfile?.name,
+          parentId: state.usersProfile?.email,
+          name: '${state.usersProfile?.name} changed ${state.skill?.skillName} '
+              'level to ${levelState.name} ',
+        );
+        final newViewingProfile = state.viewingProfile;
+        _updateRiderSkillLevel(newViewingProfile, levelState, note);
+        final newUsersProfile = state.usersProfile;
+        _addNoteToProfile(
+          newUsersProfile!,
+          BaseListItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            date: DateTime.now(),
+            message: state.usersProfile?.name,
+            parentId: state.usersProfile?.email,
+            name: "Changed ${state.viewingProfile?.name}'s "
+                " skill '${state.skill?.skillName}' "
+                'level to ${levelState.name} ',
+          ),
+        );
       } else {
-        debugPrint('horseProfile is null');
+        // process the level change for the user's profile
+        // add a note to the user's profile
+        debugPrint(
+            'Changing ${state.usersProfile?.name} ${state.skill?.skillName} '
+            'to $levelState');
+        final newUsersProfile = state.usersProfile;
+        final note = BaseListItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          date: DateTime.now(),
+          message: state.usersProfile?.name,
+          parentId: state.usersProfile?.email,
+          name: 'Changed their ${state.skill?.skillName} level '
+              'to ${levelState.name}',
+        );
+        _updateRiderSkillLevel(newUsersProfile, levelState, note);
       }
+    } else {
+      // process the level change for the horse's profile
+      // add a note to the horse's profile and the user's profile
+      debugPrint('Changing ${state.horseProfile?.name} ${state.skill} '
+          'to $levelState');
+      final newHorseProfile = state.horseProfile;
+      final note = BaseListItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        date: DateTime.now(),
+        message: state.usersProfile?.name,
+        parentId: state.usersProfile?.email,
+        name: '${state.usersProfile?.name} changed skill'
+            " '${state.skill?.skillName}' to ${levelState.name}",
+      );
+      _updateHorseSkillLevel(newHorseProfile!, levelState, note);
+      final newUsersProfile = state.usersProfile;
+      _addNoteToProfile(
+        newUsersProfile!,
+        BaseListItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          date: DateTime.now(),
+          message: state.usersProfile?.name,
+          parentId: state.usersProfile?.email,
+          name: "Changed ${state.horseProfile?.name}'s "
+              "skill '${state.skill?.skillName}' to ${levelState.name}",
+        ),
+      );
     }
-
-    // Persist the changes to the repository.
-    _persistRiderProfileChanges(riderProfile, levelState);
   }
 
-  void _persistHorseProfileChanges(
-    HorseProfile horseProfile,
-    LevelState levelState,
-  ) {
+  void _persistHorseProfileChanges(HorseProfile horseProfile) {
+    debugPrint('Persisting Horse Profile Changes');
     try {
       _horseProfileRepository
           .createOrUpdateHorseProfile(horseProfile: horseProfile)
@@ -2091,44 +2150,46 @@ class HomeCubit extends Cubit<HomeState> {
             (value) => emit(
               state.copyWith(
                 levelSubmissionStatus: LevelSubmissionStatus.initial,
-                messageSnackBar: true,
-                message:
-                    'Updated ${state.skill?.skillName} to ${levelState.name}',
+                snackBar: true,
+                message: "${state.horseProfile?.name}'s profile updated",
               ),
             ),
           );
     } catch (error) {
       debugPrint('Error: $error');
+      emit(
+        state.copyWith(
+          errorSnackBar: true,
+          error: "Error updating ${state.horseProfile?.name}'s profile",
+        ),
+      );
     }
   }
 
-  /// Updates the skill level for the horse
   void _updateHorseSkillLevel(
     HorseProfile horseProfile,
     LevelState levelState,
     BaseListItem note,
   ) {
-    if (state.horseProfile != null) {
-      if (state.skill != null) {
-        final timestamp = DateTime.now();
-        final skillLevel = horseProfile.skillLevels?.firstWhere(
-              (element) => element.skillId == state.skill?.id,
-              orElse: () => SkillLevel(
-                lastEditDate: timestamp,
-                skillId: state.skill!.id,
-                skillName: state.skill!.skillName,
-                lastEditBy: state.usersProfile?.name,
-              ),
-            ) ??
-            SkillLevel(
-              lastEditDate: timestamp,
-              skillId: state.skill!.id,
-              skillName: state.skill!.skillName,
-              lastEditBy: state.usersProfile?.name,
-            );
+    if (state.horseProfile != null && state.skill != null) {
+      final timestamp = DateTime.now();
+      final updatedSkillLevels = horseProfile.skillLevels ?? [];
 
-        horseProfile.skillLevels?.remove(skillLevel);
-        horseProfile.skillLevels?.add(
+      // Attempt to find existing skill level index
+      final existingIndex = updatedSkillLevels
+          .indexWhere((element) => element.skillId == state.skill?.id);
+
+      // Replace or add the skill level
+      if (existingIndex != -1) {
+        updatedSkillLevels[existingIndex] = SkillLevel(
+          levelState: levelState,
+          lastEditDate: timestamp,
+          skillId: state.skill!.id,
+          skillName: state.skill!.skillName,
+          lastEditBy: state.usersProfile?.name,
+        );
+      } else {
+        updatedSkillLevels.add(
           SkillLevel(
             levelState: levelState,
             lastEditDate: timestamp,
@@ -2137,11 +2198,14 @@ class HomeCubit extends Cubit<HomeState> {
             lastEditBy: state.usersProfile?.name,
           ),
         );
-
-        _addNoteToHorseProfile(horseProfile, note);
       }
+
+      // Update the horse profile with the new list
+      horseProfile.skillLevels = updatedSkillLevels;
+      debugPrint('Skills: ${horseProfile.skillLevels?.length}');
+      _addNoteToHorseProfile(horseProfile, note);
     } else {
-      debugPrint('horse Profile is null');
+      debugPrint('horse Profile or skill is null');
     }
   }
 
@@ -2163,36 +2227,6 @@ class HomeCubit extends Cubit<HomeState> {
       state.copyWith(
         levelSubmissionStatus: LevelSubmissionStatus.submitting,
       ),
-    );
-  }
-
-// TODO: Need to fix how the notes are added to the profile for horse and rider or viewingProfile
-  /// Creates an edit note for the level change
-  BaseListItem _createLevelChangeNote(
-    LevelState levelState,
-  ) {
-    String noteMessage;
-    if (!state.isForRider) {
-      noteMessage =
-          '${state.usersProfile?.name} changed ${state.skill?.skillName} '
-          'level to ${levelState.name}';
-    } else if (state.viewingProfile?.name == state.usersProfile?.name) {
-      noteMessage =
-          '${state.usersProfile?.name} has changed ${state.skill?.skillName} '
-          'level to ${levelState.name}';
-    } else {
-      noteMessage =
-          '${state.usersProfile?.name} changed ${state.skill?.skillName} '
-          'level to ${levelState.name} for '
-          '${state.viewingProfile?.name ?? 'themself'}';
-    }
-
-    return BaseListItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      date: DateTime.now(),
-      name: noteMessage,
-      parentId: state.usersProfile?.email,
-      message: state.usersProfile?.name,
     );
   }
 
@@ -2239,23 +2273,23 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-// Adds a note to the rider's profile if necessary
+// Adds a note to the rider's profile
   void _addNoteToProfile(RiderProfile riderProfile, BaseListItem note) {
-    if (riderProfile.notes != null && riderProfile.notes!.isEmpty) {
-      riderProfile.notes!.add(note);
-    }
+    riderProfile.notes ??= []; // Ensure the notes list is initialized
+    riderProfile.notes!.add(note);
+    _persistRiderProfileChanges(riderProfile);
   }
 
+// Adds a note to the horse's profile
   void _addNoteToHorseProfile(HorseProfile horseProfile, BaseListItem note) {
-    if (horseProfile.notes != null && horseProfile.notes!.isEmpty) {
-      horseProfile.notes!.add(note);
-    }
+    horseProfile.notes ??= []; // Ensure the notes list is initialized
+    horseProfile.notes!.add(note);
+    _persistHorseProfileChanges(horseProfile);
   }
 
 // Persists the changes to the rider profile to the repository
   void _persistRiderProfileChanges(
     RiderProfile? riderProfile,
-    LevelState levelState,
   ) {
     if (riderProfile != null) {
       try {
@@ -2265,9 +2299,8 @@ class HomeCubit extends Cubit<HomeState> {
               (value) => emit(
                 state.copyWith(
                   levelSubmissionStatus: LevelSubmissionStatus.initial,
-                  messageSnackBar: true,
-                  message:
-                      'Updated ${state.skill?.skillName} to ${levelState.name}',
+                  snackBar: true,
+                  message: "Updated ${riderProfile.name}'s profile",
                 ),
               ),
             );
@@ -2276,8 +2309,7 @@ class HomeCubit extends Cubit<HomeState> {
           state.copyWith(
             levelSubmissionStatus: LevelSubmissionStatus.initial,
             errorSnackBar: true,
-            error: 'Failed to update ${state.skill?.skillName} to '
-                '${levelState.name}: $error',
+            error: "Failed to update ${riderProfile.name}'s profile  ",
           ),
         );
       }
