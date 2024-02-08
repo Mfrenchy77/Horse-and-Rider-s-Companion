@@ -89,7 +89,7 @@ class HomeView extends StatelessWidget {
                   backgroundColor:
                       HorseAndRidersTheme().getTheme().colorScheme.primary,
                   content: Text(
-                    state.error,
+                    state.message,
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
@@ -115,7 +115,7 @@ class HomeView extends StatelessWidget {
                   backgroundColor:
                       HorseAndRidersTheme().getTheme().colorScheme.primary,
                   content: Text(
-                    state.error,
+                    state.message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white),
                   ),
