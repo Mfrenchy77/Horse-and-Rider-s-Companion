@@ -56,6 +56,11 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
     );
   }
 
+  ///   Toggles whether the training path is for a horse or a rider
+  void isForHorse() {
+    emit(state.copyWith(isForHorse: !state.isForHorse));
+  }
+
   void isSearch() {
     debugPrint('All Skills: ${state.allSkills.length}');
     final searchList = state.allSkills
@@ -260,15 +265,16 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
 
       try {
         final trainingPath = TrainingPath(
-          skills: state.skillNodes.map((e) => e?.id).toList(),
-          skillNodes: state.skillNodes,
-          id: state.trainingPath?.id ?? ViewUtils.createId(),
           name: state.name.value,
-          description: state.description.value,
-          createdBy: state.trainingPath?.createdBy ?? _usersProfile.name,
-          createdAt: state.trainingPath?.createdAt ?? DateTime.now(),
-          lastEditBy: _usersProfile.name,
           lastEditDate: DateTime.now(),
+          skillNodes: state.skillNodes,
+          isForHorse: state.isForHorse,
+          lastEditBy: _usersProfile.name,
+          description: state.description.value,
+          skills: state.skillNodes.map((e) => e?.id).toList(),
+          id: state.trainingPath?.id ?? ViewUtils.createId(),
+          createdAt: state.trainingPath?.createdAt ?? DateTime.now(),
+          createdBy: state.trainingPath?.createdBy ?? _usersProfile.name,
         );
 
         await _trainingPathRepository.createOrEditTrainingPath(

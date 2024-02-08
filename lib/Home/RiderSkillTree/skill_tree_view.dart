@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:horseandriderscompanion/CommonWidgets/search_confimatio_dialog.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
-import 'package:horseandriderscompanion/Home/RiderSkillTree/CreateSkillTreeDialogs/Views/training_path_create_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_level.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/skills_list.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/training_path_view.dart';
@@ -77,7 +76,6 @@ Widget skillTreeView({
             },
           ),
           Breakpoints.medium: SlotLayout.from(
-            inAnimation: AdaptiveScaffold.fadeIn,
             key: const Key('primaryView'),
             builder: (_) {
               switch (state.skillTreeNavigation) {
@@ -110,7 +108,6 @@ Widget skillTreeView({
             },
           ),
           Breakpoints.large: SlotLayout.from(
-            inAnimation: AdaptiveScaffold.fadeIn,
             key: const Key('primaryView'),
             builder: (_) {
               switch (state.skillTreeNavigation) {
@@ -134,24 +131,30 @@ Widget skillTreeView({
                     homeCubit: homeCubit,
                   );
                 case SkillTreeNavigation.SkillLevel:
-                  return state.isFromTrainingPath
-                      ? trainingPathView(
-                          state: state,
-                          homeCubit: homeCubit,
+                  return state.isFromProfile
+                      ? trainingPathsList(
                           context: context,
+                          homeCubit: homeCubit,
+                          state: state,
                         )
-                      : state.isFromTrainingPathList
+                      : state.isFromTrainingPath
                           ? trainingPathView(
                               state: state,
                               homeCubit: homeCubit,
                               context: context,
                             )
-                          : skillsList(
-                              skills: homeCubit.skillsList(),
-                              context: context,
-                              state: state,
-                              homeCubit: homeCubit,
-                            );
+                          : state.isFromTrainingPathList
+                              ? trainingPathView(
+                                  state: state,
+                                  homeCubit: homeCubit,
+                                  context: context,
+                                )
+                              : skillsList(
+                                  skills: homeCubit.skillsList(),
+                                  context: context,
+                                  state: state,
+                                  homeCubit: homeCubit,
+                                );
               }
             },
           ),
@@ -160,7 +163,6 @@ Widget skillTreeView({
       secondaryBody: SlotLayout(
         config: <Breakpoint, SlotLayoutConfig>{
           Breakpoints.large: SlotLayout.from(
-            inAnimation: AdaptiveScaffold.fadeIn,
             key: const Key('secondaryView'),
             builder: (_) {
               switch (state.skillTreeNavigation) {
@@ -213,14 +215,21 @@ PreferredSizeWidget _appBar({
             suggestionState:
                 state.isSearch ? Suggestion.expand : Suggestion.hidden,
             inputType: TextInputType.name,
+            // should say search skills, search resources, or search training paths
             hint: state.skillTreeNavigation == SkillTreeNavigation.SkillList
                 ? 'Search Skills'
-                : 'Search Resources',
+                : state.skillTreeNavigation == SkillTreeNavigation.SkillLevel
+                    ? 'Search Resources'
+                    : 'Search Training Paths',
             focusNode: skillTreeFocus,
             onSearchTextChanged: (query) {
-              state.skillSearchState == SkillSearchState.skill
+              state.skillTreeNavigation == SkillTreeNavigation.SkillList
                   ? homeCubit.skillSearchQueryChanged(searchQuery: query)
-                  : homeCubit.resourceSearchQueryChanged(searchQuery: query);
+                  : state.skillTreeNavigation == SkillTreeNavigation.SkillLevel
+                      ? homeCubit.resourceSearchQueryChanged(searchQuery: query)
+                      : homeCubit.trainingPathSearchQueryChanged(
+                          searchQuery: query,
+                        );
 
               return state.searchList
                       ?.map(
@@ -265,8 +274,8 @@ PreferredSizeWidget _appBar({
                     .toList() ??
                 [],
             onSuggestionTap: (value) {
+              homeCubit.closeSearch();
               debugPrint('Suggestion Tap Value: ${value.searchKey}');
-              skillTreeFocus.unfocus();
               state.skillTreeNavigation == SkillTreeNavigation.SkillList
                   ? homeCubit.navigateToSkillLevel(
                       isSplitScreen: isSplitScreen,
@@ -274,56 +283,64 @@ PreferredSizeWidget _appBar({
                         (skill) => skill?.skillName == value.searchKey,
                       ),
                     )
-                  : showDialog<AlertDialog>(
-                      context: context,
-                      builder: (context) => searchConfirmationDialog(
-                        // title should say add or remove depending on if
-                        // the resource from the value.searchKey contains
-                        // state.skill.id in it's skill id list
-                        title: (state.allResources!
-                                    .firstWhere(
-                                      (resource) =>
-                                          resource?.name == value.searchKey,
-                                      orElse: () => null,
-                                    )
-                                    ?.skillTreeIds
-                                    ?.contains(state.skill?.id) ??
-                                false)
-                            ? 'Remove'
-                            : 'Add',
+                  : state.skillTreeNavigation ==
+                          SkillTreeNavigation.TrainingPathList
+                      ? homeCubit.navigateToTrainingPath(
+                          trainingPath: state.trainingPaths.firstWhere(
+                            (element) => element?.name == value.item,
+                          ),
+                        )
+                      : showDialog<AlertDialog>(
+                          context: context,
+                          builder: (context) => searchConfirmationDialog(
+                            // title should say add or remove depending on if
+                            // the resource from the value.searchKey contains
+                            // state.skill.id in it's skill id list
+                            title: (state.allResources!
+                                        .firstWhere(
+                                          (resource) =>
+                                              resource?.name == value.searchKey,
+                                          orElse: () => null,
+                                        )
+                                        ?.skillTreeIds
+                                        ?.contains(state.skill?.id) ??
+                                    false)
+                                ? 'Remove'
+                                : 'Add',
 
-                        // text should say add or remove depending on if
-                        // the resource from the value.searchKey
-                        // contains state.skill.id in it's skill id list
+                            // text should say add or remove depending on if
+                            // the resource from the value.searchKey
+                            // contains state.skill.id in it's skill id list
 
-                        text: (state.allResources!
-                                    .firstWhere(
-                                      (resource) =>
-                                          resource?.name == value.searchKey,
-                                      orElse: () => null,
-                                    )
-                                    ?.skillTreeIds
-                                    ?.contains(state.skill?.id) ??
-                                false)
-                            ? 'Remove ${value.searchKey} from ${state.skill?.skillName}'
-                            : 'Add ${value.searchKey} to ${state.skill?.skillName}',
-                        confirmTap: () {
-                          homeCubit
-                            ..addResourceToSkill(
-                              skill: state.skill,
-                              resource: state.allResources!.firstWhere(
-                                (resource) => resource?.name == value.searchKey,
-                              ),
-                            )
-                            ..closeSearch();
-                          Navigator.pop(context);
-                        },
-                        cancelTap: () {
-                          homeCubit.closeSearch();
-                          Navigator.pop(context);
-                        },
-                      ),
-                    );
+                            text: (state.allResources!
+                                        .firstWhere(
+                                          (resource) =>
+                                              resource?.name == value.searchKey,
+                                          orElse: () => null,
+                                        )
+                                        ?.skillTreeIds
+                                        ?.contains(state.skill?.id) ??
+                                    false)
+                                ? 'Remove ${value.searchKey} from ${state.skill?.skillName}'
+                                : 'Add ${value.searchKey} to ${state.skill?.skillName}',
+                            confirmTap: () {
+                              homeCubit
+                                ..addResourceToSkill(
+                                  skill: state.skill,
+                                  resource: state.allResources!.firstWhere(
+                                    (resource) =>
+                                        resource?.name == value.searchKey,
+                                  ),
+                                )
+                                ..closeSearch();
+                              Navigator.pop(context);
+                            },
+                            cancelTap: () {
+                              homeCubit.closeSearch();
+                              Navigator.pop(context);
+                            },
+                          ),
+                        );
             },
             textInputAction: TextInputAction.search,
             textCapitalization: TextCapitalization.words,
@@ -396,6 +413,7 @@ List<Widget> _appbarActions({
 }) {
   final isMobile = MediaQuery.of(context).size.width < 800;
   final actions = <Widget>[];
+  final isEditor = state.usersProfile?.editor ?? false;
 
 // popup menu for the edit button when the
 // screen size is small we only want to show the
@@ -414,7 +432,7 @@ List<Widget> _appbarActions({
             value: 'Training Paths',
             child: Text('Training Paths'),
           ),
-          if (!state.isGuest)
+          if (!state.isGuest && isEditor)
             const PopupMenuItem(
               value: 'Edit',
               child: Text('Toggle Edit Controls'),
@@ -422,20 +440,15 @@ List<Widget> _appbarActions({
         ];
       } else {
         return [
-          PopupMenuItem(
+          const PopupMenuItem(
             value: 'Skills',
-            child: Visibility(
-              visible: !state.isGuest,
-              child: const Text('Skills'),
-            ),
+            child: Text('Skills'),
           ),
-          PopupMenuItem(
-            value: 'Edit',
-            child: Visibility(
-              visible: !state.isGuest,
-              child: const Text('Toggle Edit Controls'),
+          if (!state.isGuest && isEditor)
+            const PopupMenuItem(
+              value: 'Edit',
+              child: Text('Toggle Edit Controls'),
             ),
-          ),
         ];
       }
     },
@@ -516,7 +529,8 @@ List<Widget> _appbarActions({
   final Widget search = Visibility(
     visible: !state.isSearch,
     child: Tooltip(
-      message: 'Search',
+      message:
+          'Search for ${state.skillTreeNavigation == SkillTreeNavigation.SkillList ? 'Skills' : state.skillTreeNavigation == SkillTreeNavigation.SkillLevel ? 'Resources' : 'Training Paths'}',
       child: IconButton(
         icon: const Icon(Icons.search),
         onPressed: () {
@@ -524,6 +538,19 @@ List<Widget> _appbarActions({
           if (state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
             homeCubit.search(
               searchList: state.allSkills!.map((e) => e!.skillName).toList(),
+            );
+          } else if (state.skillTreeNavigation ==
+              SkillTreeNavigation.TrainingPathList) {
+            homeCubit.search(
+              searchList: state.isForRider
+                  ? state.trainingPaths
+                      .where((element) => element?.isForHorse == false)
+                      .map((e) => e!.name)
+                      .toList()
+                  : state.trainingPaths
+                      .where((element) => element?.isForHorse == true)
+                      .map((e) => e!.name)
+                      .toList(),
             );
           } else if (state.skillTreeNavigation ==
               SkillTreeNavigation.SkillLevel) {

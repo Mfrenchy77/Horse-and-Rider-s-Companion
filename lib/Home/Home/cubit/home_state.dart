@@ -67,6 +67,7 @@ class HomeState extends Equatable {
     this.isSnackbar = false,
     this.isEditState = false,
     this.isSearching = false,
+    this.isFromProfile = false,
     this.errorSnackBar = false,
     this.searchResult = const [],
     this.isBannerAdReady = false,
@@ -107,6 +108,7 @@ class HomeState extends Equatable {
   final bool isForRider;
   final bool isEditState;
   final bool isSearching;
+  final bool isFromProfile;
   final Resource? resource;
   final String searchQuery;
   final int unreadMessages;
@@ -175,6 +177,7 @@ class HomeState extends Equatable {
     Resource? resource,
     BannerAd? bannerAd,
     int? unreadMessages,
+    bool? isFromProfile,
     String? searchQuery,
     Catagorry? category,
     bool? errorSnackBar,
@@ -257,6 +260,7 @@ class HomeState extends Equatable {
       usersProfile: usersProfile ?? this.usersProfile,
       searchResult: searchResult ?? this.searchResult,
       sortedSkills: sortedSkills ?? this.sortedSkills,
+      isFromProfile: isFromProfile ?? this.isFromProfile,
       trainingPaths: trainingPaths ?? this.trainingPaths,
       resourcesList: resourcesList ?? this.resourcesList,
       ownersProfile: ownersProfile ?? this.ownersProfile,
@@ -327,6 +331,7 @@ class HomeState extends Equatable {
         horseProfile,
         usersProfile,
         searchResult,
+        isFromProfile,
         trainingPaths,
         errorSnackBar,
         resourcesList,

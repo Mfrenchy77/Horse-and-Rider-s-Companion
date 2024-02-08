@@ -15,13 +15,15 @@ class SkillLevel {
   SkillLevel({
     required this.skillId,
     this.verified = false,
+    required this.skillName,
     required this.lastEditBy,
     required this.lastEditDate,
     this.levelState = LevelState.NO_PROGRESS,
   });
 
-  final bool? verified;
-  final String? skillId;
+  final bool verified;
+  final String skillId;
+  final String skillName;
   final String? lastEditBy;
   final DateTime? lastEditDate;
   final LevelState levelState;
@@ -29,7 +31,8 @@ class SkillLevel {
   SkillLevel.fromJson(Map<String, Object?> json)
       : this(
           skillId: json['skillId']! as String,
-          verified: json['verified'] as bool?,
+          skillName: json['skillName']! as String,
+          verified: json['verified']! as bool,
           lastEditBy: json['lastEditBy']! as String,
           lastEditDate: (json['lastEditDate']! as Timestamp).toDate(),
           levelState: (json['levelState']! as String) == 'NO_PROGRESS'
@@ -49,8 +52,9 @@ class SkillLevel {
   ) {
     final data = snapshot.data();
     return SkillLevel(
-      skillId: data!['skillId'] as String?,
-      verified: data['verified'] as bool?,
+      verified: data!['verified'] as bool,
+      skillId: data['skillId'] as String,
+      skillName: data['skillName'] as String,
       lastEditBy: data['lastEditBy'] as String?,
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
       levelState: (data['levelState'] as String) == 'NO_PROGRESS'
@@ -66,8 +70,9 @@ class SkillLevel {
   }
   Map<String, Object?> toFirestore() {
     return {
-      if (skillId != null) 'skillId': skillId,
-      if (verified != null) 'verified': verified,
+      'skillId': skillId,
+      'verified': verified,
+      'skillName': skillName,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
       'levelState': levelState == LevelState.NO_PROGRESS
@@ -86,6 +91,7 @@ class SkillLevel {
     return {
       'skillId': skillId,
       'verified': verified,
+      'skillName': skillName,
       'lastEditBy': lastEditBy,
       'lastEditDate': lastEditDate,
       'levelState': levelState == LevelState.NO_PROGRESS

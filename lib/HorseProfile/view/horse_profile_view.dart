@@ -2,112 +2,368 @@
 
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
+import 'package:horseandriderscompanion/CommonWidgets/example_skill.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
+import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
+import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:intl/intl.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
-// TODO(mfrenchy): go through and clean this all up
-Widget horseProfileView() {
-  return BlocBuilder<HomeCubit, HomeState>(
-    buildWhen: (previous, current) =>
-        previous.horseProfile != current.horseProfile,
-    builder: (context, state) {
-      final homeCubit = context.read<HomeCubit>();
-      debugPrint('Horse Profile: ${state.horseProfile?.name}');
-      if (state.horseProfile != null) {
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              onPressed: homeCubit.goBackToUsersProfile,
-              icon: const Icon(
-                Icons.arrow_back,
+Widget horseProfileView({
+  required BuildContext context,
+  required HomeState state,
+  required HomeCubit homeCubit,
+}) {
+  debugPrint('Horse Profile: ${state.horseProfile?.name}');
+  if (state.horseProfile != null) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: homeCubit.goBackToUsersProfile,
+          icon: const Icon(
+            Icons.arrow_back,
+          ),
+        ),
+        actions: _appBarActions(
+          isOwner: state.isOwner,
+          context: context,
+          state: state,
+          homeCubit: homeCubit,
+        ),
+        title: appBarTitle(),
+      ),
+      body: AdaptiveLayout(
+        body: SlotLayout(
+          config: <Breakpoint, SlotLayoutConfig>{
+            Breakpoints.large: SlotLayout.from(
+              key: const Key('primary'),
+              builder: (context) => _primaryView(
+                context: context,
+                homeCubit: homeCubit,
+                state: state,
               ),
             ),
-            actions: _appBarActions(
-              isOwner: state.isOwner,
-              context: context,
-              state: state,
-              homeCubit: homeCubit,
-            ),
-            title: const Text('Horse Profile'),
-          ),
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Center(
-                child: Column(
-                  children: [
-                    _horsePhoto(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _currentOwner(
-                      horseProfile: state.horseProfile,
-                      context: context,
+            Breakpoints.medium: SlotLayout.from(
+              key: const Key('primary'),
+              builder: (context) => ListView(
+                children: [
+                  _primaryView(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                  ),
+                  const Text(
+                    'Skills',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
                     ),
-                    smallGap(),
-                    _horseNickName(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseLocation(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseAge(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseColor(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseBreed(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseGender(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseHeight(horseProfile: state.horseProfile),
-                    smallGap(),
-                    _horseDateOfBirth(horseProfile: state.horseProfile),
-                    smallGap(),
-                    Visibility(
-                      visible: !state.isOwner,
-                      child: _requestToBeStudentHorseButton(
+                  ),
+                  gap(),
+                  _skillsView(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                  ),
+                ],
+              ),
+            ),
+            Breakpoints.small: SlotLayout.from(
+              key: const Key('primary'),
+              builder: (context) => ListView(
+                children: [
+                  _primaryView(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                  ),
+                  const Text(
+                    'Skills',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  gap(),
+                  _skillsView(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                  ),
+                ],
+              ),
+            ),
+          },
+        ),
+        secondaryBody: SlotLayout(
+          config: <Breakpoint, SlotLayoutConfig>{
+            Breakpoints.large: SlotLayout.from(
+              key: const Key('secondary'),
+              builder: (context) => ListView(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ColoredBox(
+                          color: HorseAndRidersTheme()
+                                  .getTheme()
+                                  .appBarTheme
+                                  .backgroundColor ??
+                              Colors.white,
+                          child: const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Text(
+                              'Skills',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w200,
+                                fontSize: 30,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  gap(),
+                  _skillsView(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                  ),
+                ],
+              ),
+            ),
+          },
+        ),
+      ),
+      // body: SingleChildScrollView(
+      //   child: Padding(
+      //     padding: const EdgeInsets.all(8),
+      //     child: Center(
+      //       child: Column(
+      //         children: [
+      //           _horsePhoto(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _currentOwner(
+      //             horseProfile: state.horseProfile,
+      //             context: context,
+      //           ),
+      //           smallGap(),
+      //           _horseNickName(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseLocation(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseAge(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseColor(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseBreed(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseGender(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseHeight(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           _horseDateOfBirth(horseProfile: state.horseProfile),
+      //           smallGap(),
+      //           Visibility(
+      //             visible: !state.isOwner,
+      //             child: _requestToBeStudentHorseButton(
+      //               context: context,
+      //               horseProfile: state.horseProfile!,
+      //               isOwner: state.isOwner,
+      //             ),
+      //           ),
+      //           // Text("${horseProfile.name}'s Log Book"),
+      //           // Divider(
+      //           //   color: isDark ? Colors.white : Colors.black,
+      //           //   indent: 20,
+      //           //   endIndent: 20,
+      //           // ),
+      //           // _addLogEntryButton(
+      //           //   context: context,
+      //           //   horseProfile: horseProfile,
+      //           //   riderProfile: usersProfile as RiderProfile,
+      //           // ),
+      //           // gap(),
+      //           // _notes(horseProfile: horseProfile)
+      //         ],
+      //       ),
+      //     ),
+      //   ),
+      // ),
+    );
+  } else {
+    debugPrint('Horse Profile is null, trying to load');
+    if (state.horseId != null) {
+      homeCubit.horseProfileSelected(id: state.horseId!);
+    } else {
+      debugPrint('Horse Id is null');
+    }
+    return const Center(
+      child: Logo(
+        screenName: 'Loading...',
+      ),
+    );
+  }
+}
+
+Widget _primaryView({
+  required BuildContext context,
+  required HomeCubit homeCubit,
+  required HomeState state,
+}) {
+  final horseProfile = state.horseProfile;
+  return ListView(
+    shrinkWrap: true,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: ColoredBox(
+              color: HorseAndRidersTheme()
+                      .getTheme()
+                      .appBarTheme
+                      .backgroundColor ??
+                  Colors.white,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const ShapeDecoration(
+                        shape: CircleBorder(),
+                        color: Colors.white,
+                      ),
+                      child: profilePhoto(
                         context: context,
-                        horseProfile: state.horseProfile!,
-                        isOwner: state.isOwner,
+                        size: 100,
+                        profilePicUrl: state.horseProfile?.picUrl,
                       ),
                     ),
-                    // Text("${horseProfile.name}'s Log Book"),
-                    // Divider(
-                    //   color: isDark ? Colors.white : Colors.black,
-                    //   indent: 20,
-                    //   endIndent: 20,
-                    // ),
-                    // _addLogEntryButton(
-                    //   context: context,
-                    //   horseProfile: horseProfile,
-                    //   riderProfile: usersProfile as RiderProfile,
-                    // ),
-                    // gap(),
-                    // _notes(horseProfile: horseProfile)
-                  ],
-                ),
+                  ),
+                  Text(
+                    '${state.horseProfile?.name}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w200,
+                      fontSize: 30,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        );
-      } else {
-        debugPrint('Horse Profile is null, trying to load');
-        if (state.horseId != null) {
-          homeCubit.horseProfileSelected(id: state.horseId!);
-        } else {
-          debugPrint('Horse Id is null');
-        }
-        return const Center(
-          child: Logo(
-            screenName: 'Loading...',
-          ),
-        );
-      }
-    },
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            _currentOwner(horseProfile: horseProfile, context: context),
+            smallGap(),
+            _horseNickName(horseProfile: horseProfile),
+            smallGap(),
+            _horseLocation(horseProfile: horseProfile),
+            smallGap(),
+            _horseAge(horseProfile: horseProfile),
+            smallGap(),
+            _horseColor(horseProfile: horseProfile),
+            smallGap(),
+            _horseBreed(horseProfile: horseProfile),
+            smallGap(),
+            _horseGender(horseProfile: horseProfile),
+            smallGap(),
+            _horseHeight(horseProfile: horseProfile),
+            smallGap(),
+            _horseDateOfBirth(horseProfile: horseProfile),
+            smallGap(),
+            Visibility(
+              visible: !state.isOwner,
+              child: _requestToBeStudentHorseButton(
+                context: context,
+                horseProfile: state.horseProfile!,
+                isOwner: state.isOwner,
+              ),
+            ),
+            Visibility(
+                visible: state.isOwner,
+                child: _logBookButton(context: context)),
+          ],
+        ),
+      ),
+    ],
   );
+}
+
+Widget _skillsView({
+  required BuildContext context,
+  required HomeCubit homeCubit,
+  required HomeState state,
+}) {
+  if (state.isGuest) {
+    return Column(
+      children: [
+        const Center(
+          child: Text(
+            "This is where your hores's skills will be displayed",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+            ),
+          ),
+        ),
+        gap(),
+        Wrap(
+          children: [
+            ...ExampleSkill().getSkillLevels().map(
+                  (e) => skillLevelCard(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                    skillLevel: e,
+                  ),
+                ),
+          ],
+        ),
+      ],
+    );
+  } else {
+    return Wrap(
+      spacing: 50,
+      runSpacing: 5,
+      alignment: WrapAlignment.center,
+      children: [
+        ...state.horseProfile?.skillLevels
+                ?.map(
+                  (e) => skillLevelCard(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                    skillLevel: e,
+                  ),
+                )
+                .toList() ??
+            [const Text('No Skills')],
+      ],
+    );
+  }
 }
 
 List<Widget> _appBarActions({
@@ -118,106 +374,99 @@ List<Widget> _appBarActions({
 }) {
   debugPrint('isOwner: $isOwner');
   return [
-    Row(
-      children: [
-        Tooltip(
-          message: 'Horse Log Book',
-          child: IconButton(
-            onPressed: () {
-              homeCubit.logNavigationSelected();
-            },
-            icon: const Icon(
-              HorseAndRiderIcons.horseLogIcon,
-            ),
-          ),
-        ),
-        Visibility(
-          visible: isOwner,
-          child: Tooltip(
-            message: 'Edit Horse Profile',
-            child: IconButton(
-              onPressed: () {
-                homeCubit.openAddHorseDialog(
-                  context: context,
-                  isEdit: true,
-                  horseProfile: state.horseProfile,
-                );
-              },
-              icon: const Icon(
-                Icons.edit,
-              ),
-            ),
-          ),
-        ),
-        Visibility(
-          visible: isOwner,
-          child: Tooltip(
-            message: 'Transfer Horse Profile',
-            child: IconButton(
-              onPressed: () {
-                homeCubit.transferHorseProfile();
-              },
-              icon: const Icon(
-                Icons.transfer_within_a_station,
-              ),
-            ),
-          ),
-        ),
-        Visibility(
-          visible: isOwner,
-          child: Tooltip(
-            message: 'Delete Horse Profile',
-            child: IconButton(
-              onPressed: () {
-                homeCubit.deleteHorseProfileFromUser();
-              },
-              icon: const Icon(
-                Icons.delete,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-    //Icons
+    // Row(
+    //   children: [
+    //     Tooltip(
+    //       message: 'Horse Log Book',
+    //       child: IconButton(
+    //         onPressed: () {
+    //           homeCubit.logNavigationSelected();
+    //         },
+    //         icon: const Icon(
+    //           HorseAndRiderIcons.horseLogIcon,
+    //         ),
+    //       ),
+    //     ),
+    //     Visibility(
+    //       visible: isOwner,
+    //       child: Tooltip(
+    //         message: 'Edit Horse Profile',
+    //         child: IconButton(
+    //           onPressed: () {
+    //             homeCubit.openAddHorseDialog(
+    //               context: context,
+    //               isEdit: true,
+    //               horseProfile: state.horseProfile,
+    //             );
+    //           },
+    //           icon: const Icon(
+    //             Icons.edit,
+    //           ),
+    //         ),
+    //       ),
+    //     ),
+    //     Visibility(
+    //       visible: isOwner,
+    //       child: Tooltip(
+    //         message: 'Transfer Horse Profile',
+    //         child: IconButton(
+    //           onPressed: () {
+    //             homeCubit.transferHorseProfile();
+    //           },
+    //           icon: const Icon(
+    //             Icons.transfer_within_a_station,
+    //           ),
+    //         ),
+    //       ),
+    //     ),
+    //     Visibility(
+    //       visible: isOwner,
+    //       child: Tooltip(
+    //         message: 'Delete Horse Profile',
+    //         child: IconButton(
+    //           onPressed: () {
+    //             homeCubit.deleteHorseProfileFromUser();
+    //           },
+    //           icon: const Icon(
+    //             Icons.delete,
+    //           ),
+    //         ),
+    //       ),
+    //     ),
+    //   ],
+    // ),
+    // //Icons
 
     //Menu
-    ResponsiveVisibility(
-      hiddenConditions: [Condition.largerThan(name: TABLET, value: 800)],
-      visibleConditions: [Condition.smallerThan(name: TABLET, value: 451)],
-      child: Visibility(
-        visible: isOwner,
-        child: PopupMenuButton<String>(
-          itemBuilder: (BuildContext menuContext) => <PopupMenuEntry<String>>[
-            const PopupMenuItem(
-              value: 'Horse Log Book',
-              child: Text('Horse Log Book'),
-            ),
-            const PopupMenuItem(value: 'Edit', child: Text('Edit')),
-            const PopupMenuItem(value: 'Delete', child: Text('Delete')),
-            const PopupMenuItem(value: 'Transfer', child: Text('Transfer')),
-          ],
-          onSelected: (value) {
-            switch (value) {
-              case 'Horse Log Book':
-                homeCubit.logNavigationSelected();
-                break;
-              case 'Edit':
-                homeCubit.openAddHorseDialog(
-                  isEdit: true,
-                  context: context,
-                  horseProfile: state.horseProfile,
-                );
-                break;
-              case 'Transfer':
-                homeCubit.transferHorseProfile();
-                break;
-              case 'Delete':
-                homeCubit.deleteHorseProfileFromUser();
-                break;
-            }
-          },
-        ),
+    Visibility(
+      visible: isOwner,
+      child: PopupMenuButton<String>(
+        itemBuilder: (BuildContext menuContext) => <PopupMenuEntry<String>>[
+          // const PopupMenuItem(
+          //   value: 'Horse Log Book',
+          //   child: Text('Horse Log Book'),
+          // ),
+          const PopupMenuItem(value: 'Edit', child: Text('Edit')),
+          const PopupMenuItem(value: 'Delete', child: Text('Delete')),
+          const PopupMenuItem(value: 'Transfer', child: Text('Transfer')),
+        ],
+        onSelected: (value) {
+          switch (value) {
+            case 'Edit':
+              homeCubit.openAddHorseDialog(
+                isEdit: true,
+                context: context,
+                horseProfile: state.horseProfile,
+              );
+              break;
+            case 'Transfer':
+              homeCubit.transferHorseProfile();
+              break;
+            case 'Delete':
+              homeCubit.deleteHorseProfileFromUser();
+              break;
+          }
+        },
       ),
     ),
   ];
@@ -254,6 +503,18 @@ Widget _currentOwner({
         ),
       ),
     ],
+  );
+}
+
+Widget _logBookButton({required BuildContext context}) {
+  return FilledButton.icon(
+    onPressed: () {
+      context.read<HomeCubit>().openLogBook(context);
+    },
+    icon: const Icon(
+      HorseAndRiderIcons.horseLogIcon,
+    ),
+    label: const Text('Log Book'),
   );
 }
 

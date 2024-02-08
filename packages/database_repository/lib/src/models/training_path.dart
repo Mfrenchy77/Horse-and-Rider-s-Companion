@@ -13,6 +13,7 @@ class TrainingPath {
     required this.skills,
     required this.createdBy,
     required this.createdAt,
+    required this.isForHorse,
     required this.skillNodes,
     required this.lastEditBy,
     required this.description,
@@ -28,16 +29,18 @@ class TrainingPath {
   /// Description of the training path.
   final String description;
 
-
   /// User who created the training path.
   final String createdBy;
+
+  /// Whether the training path is for horses or not.
+  final bool isForHorse;
 
   /// Creation date of the training path.
   final DateTime createdAt;
 
   /// User who last edited the training path.
   final String lastEditBy;
-  
+
   /// List of all the Skill ids in the training path.
   final List<String?> skills;
 
@@ -46,7 +49,6 @@ class TrainingPath {
 
   /// List of skill nodes that make up the training path.
   final List<SkillNode?> skillNodes;
-
 
   /// Method to create a TrainingPath object from Firestore data
 
@@ -60,6 +62,7 @@ class TrainingPath {
     return TrainingPath(
       id: data!['id'] as String,
       name: data['name'] as String,
+      isForHorse: data['isForHorse'] as bool,
       createdBy: data['createdBy'] as String,
       lastEditBy: data['lastEditBy'] as String,
       description: data['description'] as String,
@@ -81,6 +84,7 @@ class TrainingPath {
       'skills': skills,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      'isForHorse': isForHorse,
       'lastEditBy': lastEditBy,
       'description': description,
       'lastEditDate': lastEditDate,
@@ -103,6 +107,7 @@ class TrainingPath {
   }) {
     return TrainingPath(
       id: id ?? this.id,
+      isForHorse: isForHorse,
       name: name ?? this.name,
       skills: skills ?? this.skills,
       createdBy: createdBy ?? this.createdBy,

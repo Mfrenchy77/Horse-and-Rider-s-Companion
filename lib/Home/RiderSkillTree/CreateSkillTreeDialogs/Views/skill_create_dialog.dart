@@ -141,7 +141,7 @@ class CreateSkillDialog extends StatelessWidget {
                                   ? 'Learning Description'
                                   : 'New Learning Description',
                               hintText:
-                                  'Describe what should be it means to be learning ${state.name.value}}',
+                                  'Describe what should be it means to be learning ${state.name.value}',
                               icon: const Icon(Icons.arrow_circle_up),
                             ),
                           ),
@@ -166,7 +166,7 @@ class CreateSkillDialog extends StatelessWidget {
                                   ? 'Proficient Description'
                                   : 'New Proficient Description',
                               hintText:
-                                  'Describe what it means to be proficient at ${state.name.value}}',
+                                  'Describe what it means to be proficient at ${state.name.value}',
                               icon: const Icon(Icons.arrow_circle_up),
                             ),
                           ),
@@ -281,25 +281,18 @@ class CreateSkillDialog extends StatelessWidget {
                         if (state.status.isSubmissionInProgress)
                           const CircularProgressIndicator()
                         else
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  HorseAndRidersTheme().getTheme().primaryColor,
-                            ),
-                            onPressed:
-
-                                //  !state.status.isValid
-                                //     ? null
-                                //     :
-                                () {
-                              isEdit
-                                  ? context
-                                      .read<CreateSkillDialogCubit>()
-                                      .editSkill(editedSkill: skill)
-                                  : context
-                                      .read<CreateSkillDialogCubit>()
-                                      .createSkill(_position);
-                            },
+                          FilledButton(
+                            onPressed: state.name.value.isEmpty
+                                ? null
+                                : () {
+                                    isEdit
+                                        ? context
+                                            .read<CreateSkillDialogCubit>()
+                                            .editSkill(editedSkill: skill)
+                                        : context
+                                            .read<CreateSkillDialogCubit>()
+                                            .createSkill(_position);
+                                  },
                             child:
                                 Text(isEdit ? 'Submit Edited Skill' : 'Submit'),
                           ),

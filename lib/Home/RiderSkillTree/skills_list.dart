@@ -4,6 +4,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/CreateSkillTreeDialogs/Views/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_item.dart';
+import 'package:horseandriderscompanion/Theme/theme.dart';
 
 Widget skillsList({
   required List<Skill?>? skills,
@@ -12,57 +13,98 @@ Widget skillsList({
   required HomeCubit homeCubit,
 }) {
   final isSplitScreen = MediaQuery.of(context).size.width > 800;
-  return Center(
-    child: Column(
-      children: [
-        Text(
-          'Skills - ${_skillsTitle(state, homeCubit)}',
-          style: Theme.of(context).textTheme.headline5,
+  return Scaffold(
+    floatingActionButton: Visibility(
+      visible: !state.isGuest || state.usersProfile?.editor == true,
+      child: Tooltip(
+        message: 'Add a new ${state.isForRider? 'Rider': 'Horse'} skill',
+        child: FloatingActionButton(
+          onPressed: () => showDialog<CreateSkillDialog>(
+            context: context,
+            builder: (context) => CreateSkillDialog(
+              allSubCategories: state.subCategories ?? [],
+              isRider: state.isForRider,
+              isEdit: false,
+              skill: null,
+              userName: state.usersProfile?.name,
+              position: skills != null && skills.isNotEmpty ? skills.length : 0,
+            ),
+          ),
+          child: const Icon(
+            Icons.add,
+          ),
         ),
-        gap(),
-        if (skills != null && skills.isNotEmpty)
-          Wrap(
-            children: skills
-                    .map(
-                      (skill) => skillItem(
-                        isEditState: state.isEditState,
-                        isGuest: state.isGuest,
-                        difficulty: skill!.difficulty,
-                        name: skill.skillName,
-                        onTap: () {
-                          homeCubit..setFromSkills()
+      ),
+    ),
+    body: Center(
+      child: Column(
+        children: [
+          ColoredBox(
+            color:
+                HorseAndRidersTheme().getTheme().appBarTheme.backgroundColor ??
+                    Colors.white,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: Text(
+                    'Skills - ${_skillsTitle(state, homeCubit)}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          gap(),
+          if (skills != null && skills.isNotEmpty)
+            Wrap(
+              children: skills
+                  .map(
+                    (skill) => skillItem(
+                      isEditState: state.isEditState,
+                      isGuest: state.isGuest,
+                      difficulty: skill!.difficulty,
+                      name: skill.skillName,
+                      onTap: () {
+                        homeCubit
+                          ..setFromSkills()
                           ..navigateToSkillLevel(
                             skill: skill,
                             isSplitScreen: isSplitScreen,
                           );
-                        },
-                        onEdit: () => showDialog<CreateSkillDialog>(
-                          context: context,
-                          builder: (context) => CreateSkillDialog(
-                            allSubCategories: state.subCategories ?? [],
-                            isRider: state.isForRider,
-                            isEdit: true,
-                            skill: skill,
-                            userName: state.usersProfile?.name,
-                            position: skills.isNotEmpty
-                                ? skills.length
-                                : 0,
-                          ),
+                      },
+                      onEdit: () => showDialog<CreateSkillDialog>(
+                        context: context,
+                        builder: (context) => CreateSkillDialog(
+                          allSubCategories: state.subCategories ?? [],
+                          isRider: state.isForRider,
+                          isEdit: true,
+                          skill: skill,
+                          userName: state.usersProfile?.name,
+                          position: skills.isNotEmpty ? skills.length : 0,
                         ),
-                        backgroundColor: skill.difficulty == DifficultyState.introductory
-                            ? Colors.greenAccent.shade200
-                            : skill.difficulty == DifficultyState.intermediate
-                                ? Colors.yellowAccent.shade200
-                                : Colors.redAccent.shade200,
                       ),
-                    )
-                    .toList(),
-          )
-        else
-          const Center(
-            child: Text('No Skills'),
-          ),
-      ],
+                      backgroundColor:
+                          skill.difficulty == DifficultyState.introductory
+                              ? Colors.greenAccent.shade200
+                              : skill.difficulty == DifficultyState.intermediate
+                                  ? Colors.yellowAccent.shade200
+                                  : Colors.redAccent.shade200,
+                    ),
+                  )
+                  .toList(),
+            )
+          else
+            const Center(
+              child: Text('No Skills'),
+            ),
+        ],
+      ),
     ),
   );
   // if (state.allSkills != null && state.allSkills!.isNotEmpty) {
@@ -427,7 +469,6 @@ Widget skillsList({
   //   return const Center(child: Text('No Skills'));
   // }
 }
-
 
 String _skillsTitle(
   HomeState state,

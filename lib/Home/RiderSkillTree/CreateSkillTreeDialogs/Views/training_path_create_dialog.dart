@@ -59,8 +59,8 @@ class CreateTrainingPathDialog extends StatelessWidget {
               title: Text(
                 isEdit
                     ? 'Edit ${state.trainingPath?.name} '
-                    : 'Create New Training Path',
-                style: const TextStyle(fontSize: 15),
+                    : 'Create New Training Path '
+                        'for ${state.isForHorse ? 'Horse' : 'Rider'}',
               ),
             ),
             body: Padding(
@@ -78,8 +78,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                               children: [
                                 ///   Name
                                 TextFormField(
-                                  textCapitalization:
-                                      TextCapitalization.words,
+                                  textCapitalization: TextCapitalization.words,
                                   initialValue:
                                       isEdit ? state.trainingPath?.name : '',
                                   decoration: const InputDecoration(
@@ -89,7 +88,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                   onChanged: (value) => trainingPathcubit
                                       .trainingPathNameChanged(name: value),
                                 ),
-            
+
                                 ///   Description
                                 gap(),
                                 TextFormField(
@@ -107,6 +106,20 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                     description: value,
                                   ),
                                 ),
+                          gap(),
+                          //checkbox for isForHorse
+                          CheckboxListTile(
+                            title: Text(
+                              state.isForHorse
+                                  ? 'Remove this check to make this Training '
+                                      'Path for a Rider'
+                                  : 'Check this to make this Training Path for '
+                                      'a Horse',
+                            ),
+                            value: state.isForHorse,
+                            onChanged: (value) =>
+                                trainingPathcubit.isForHorse(),
+                          ),
                               ],
                             ),
                           ),
@@ -142,7 +155,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                        
+
                                 //Cancel Button
                                 Expanded(
                                   flex: 5,
@@ -154,7 +167,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                   ),
                                 ),
                                 gap(),
-                                        
+
                                 //Submit Button
                                 if (state.status.isSubmissionInProgress)
                                   const Expanded(
@@ -165,11 +178,13 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                   Expanded(
                                     flex: 7,
                                     child: FilledButton(
-                                      onPressed: () {
-                                        trainingPathcubit
-                                            .createOrEditTrainingPath();
-                                        Navigator.pop(context);
-                                      },
+                                      onPressed: state.skillNodes.isEmpty
+                                          ? null
+                                          : () {
+                                              trainingPathcubit
+                                                  .createOrEditTrainingPath();
+                                              Navigator.pop(context);
+                                            },
                                       child: Text(
                                         isEdit
                                             ? 'Submit Edited Training Path'

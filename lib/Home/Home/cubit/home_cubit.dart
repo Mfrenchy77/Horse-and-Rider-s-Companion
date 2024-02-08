@@ -1,4 +1,4 @@
-// ignore_for_file: cast_nullable_to_non_nullable, lines_longer_than_80_chars
+// ignore_for_file: cast_nullable_to_non_nullable,
 
 import 'dart:async';
 
@@ -116,7 +116,6 @@ class HomeCubit extends Cubit<HomeState> {
 
     ///   Stream of Resources
 
-    //FIXME:  Resources for TESTING
     if (state.allResources == null) {
       debugPrint('Getting Resources');
       _resourcesStream = _resourcesRepository.getResources().listen((event) {
@@ -254,8 +253,9 @@ class HomeCubit extends Cubit<HomeState> {
   /* ***********************************************************************
                           Navigation
   *************************************************************************** */
-  /// Handles the Navigation when the back button is pressed from Resources, Skill Tree
-  /// Messages, HorseProfile or Viewing a Rider Profile
+
+  /// Handles the Navigation when the back button is pressed from Resources,
+  ///  Skill Tree, Messages, HorseProfile or Viewing a Rider Profile
   void backPressed() {
     if (state.index == 0 && state.isViewing) {
       goBackToUsersProfile();
@@ -363,7 +363,7 @@ class HomeCubit extends Cubit<HomeState> {
       context: context,
       elevation: 20,
       builder: (context) => LogView(
-        isRider: state.horseProfile == null,
+        isRider: state.isForRider,
         state: state,
       ),
     );
@@ -648,7 +648,8 @@ class HomeCubit extends Cubit<HomeState> {
     required String toBeViewedEmail,
   }) {
     debugPrint(
-      'gotoProfilePage for $toBeViewedEmail, for User: ${state.usersProfile?.email}',
+      'gotoProfilePage for $toBeViewedEmail, for User: '
+      '${state.usersProfile?.email}',
     );
     if (state.usersProfile?.email != toBeViewedEmail) {
       _riderProfileRepository
@@ -687,7 +688,7 @@ class HomeCubit extends Cubit<HomeState> {
     return state.usersProfile?.editor ?? false;
   }
 
-  bool isAuthtorized() {
+  bool canViewInstructors() {
     // TODO(mfrenchy): This logic seems backwards
     if (state.viewingProfile != null) {
       return state.viewingProfile?.instructors
@@ -720,11 +721,13 @@ class HomeCubit extends Cubit<HomeState> {
   void goBackToUsersProfile() {
     debugPrint('goBackToUsersProfile, setting isViewing to false');
 
-    // ignore: avoid_redundant_argument_values
     emit(
       state.copyWith(
         isViewing: false,
+        // ignore: avoid_redundant_argument_values
         viewingProfile: null,
+        // ignore: avoid_redundant_argument_values
+        horseProfile: null,
         index: 0,
         isForRider: true,
       ),
@@ -865,8 +868,8 @@ class HomeCubit extends Cubit<HomeState> {
       messsageId: messageId,
       recipients: memberNames,
       subject: 'Instructor Request',
-      message:
-          '${user.name} has requested ${instructorProfile.name} to be their Instructor',
+      message: '${user.name} has requested ${instructorProfile.name} '
+          'to be their Instructor',
       messageType: MessageType.INSTRUCTOR_REQUEST,
       requestItem: studentRequestItem,
     );
@@ -942,8 +945,8 @@ class HomeCubit extends Cubit<HomeState> {
       messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
       recipients: memberNames,
       subject: 'Student Request',
-      message:
-          '${user?.name} has requested ${studentProfile.name} to be their Student',
+      message: '${user?.name} has requested ${studentProfile.name} to be '
+          'their Student',
       messageType: MessageType.STUDENT_REQUEST,
       requestItem: instructorRequestItem,
     );
@@ -1251,21 +1254,21 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  /// Opens the Horse Profile Page
-  void _gotoHorseHomePage({
-    required BuildContext context,
-    required String horseProfileId,
-  }) {
-    Navigator.of(context, rootNavigator: true).pushNamed(
-      HomePage.routeName,
-      arguments: HomePageArguments(
-        usersProfile: state.usersProfile,
-        horseId: horseProfileId,
-        viewingProfile: state.viewingProfile,
-      ),
-    );
-    debugPrint('Horse Profile Selected: $horseProfileId');
-  }
+  // /// Opens the Horse Profile Page
+  // void _gotoHorseHomePage({
+  //   required BuildContext context,
+  //   required String horseProfileId,
+  // }) {
+  //   Navigator.of(context, rootNavigator: true).pushNamed(
+  //     HomePage.routeName,
+  //     arguments: HomePageArguments(
+  //       usersProfile: state.usersProfile,
+  //       horseId: horseProfileId,
+  //       viewingProfile: state.viewingProfile,
+  //     ),
+  //   );
+  //   debugPrint('Horse Profile Selected: $horseProfileId');
+  // }
 
   /// Toggles whether the User sees the edit tools
   void toggleIsEditState() {
@@ -1453,8 +1456,8 @@ class HomeCubit extends Cubit<HomeState> {
       senderProfilePicUrl: state.usersProfile?.picUrl as String,
       messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
       subject: 'Student Horse Request',
-      message:
-          '${state.usersProfile?.name} has requested to add ${horseProfile.name} as a student horse.',
+      message: '${state.usersProfile?.name} has requested to add '
+          '${horseProfile.name} as a student horse.',
       recipients: [state.usersProfile?.name, state.ownersProfile?.name]
           .map((e) => e as String)
           .toList(),
@@ -1538,20 +1541,6 @@ class HomeCubit extends Cubit<HomeState> {
   /* *********************************************************************
                                Skill Tree Navigation 
   *************************************************************** */
-  ///   SkillTree Tab Selected
-  // void skillTreeNavigationSelected() {
-  //   debugPrint('skillTreeNavigationSelected');
-  //   sortSkills(allSkills: state.allSkills);
-  //   sortSkillForDifficulty();
-  //   emit(
-  //     state.copyWith(
-  //       index: 1,
-  //       homeStatus: HomeStatus.skillTree,
-  //       difficultyState: DifficultyState.all,
-  //       skillTreeNavigation: SkillTreeNavigation.TrainingPath,
-  //     ),
-  //   );
-  // }
 
   void navigateToTrainingPathList() {
     debugPrint('navigateToTrainingPathList');
@@ -1603,6 +1592,7 @@ class HomeCubit extends Cubit<HomeState> {
         index: 1,
         skill: skill,
         isSearch: false,
+        isFromProfile: state.index == 0,
         homeStatus: HomeStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillLevel,
       ),
@@ -1652,6 +1642,19 @@ class HomeCubit extends Cubit<HomeState> {
   void resourceSearchQueryChanged({required String searchQuery}) {
     final searchList = state.allResources
         ?.map((e) => e?.name)
+        .toList()
+        .where(
+          (element) =>
+              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+              false,
+        )
+        .toList();
+    emit(state.copyWith(searchList: searchList));
+  }
+
+  void trainingPathSearchQueryChanged({required String searchQuery}) {
+    final searchList = state.trainingPaths
+        .map((e) => e?.name)
         .toList()
         .where(
           (element) =>
@@ -1821,44 +1824,6 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  ///  Can Potenially get rid of this
-
-  // void showTrainingSelectedPathsDialog(BuildContext context) {
-  //   showDialog<AlertDialog>(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: const Text('Training Paths'),
-  //         content: SingleChildScrollView(
-  //           child: ListBody(
-  //             children: state.trainingPaths
-  //                 .map(
-  //                   (trainingPath) => trainingPath != null
-  //                       ? ListTile(
-  //                           title: Text(trainingPath.name),
-  //                           onTap: () {
-  //                             trainingPathSelected(trainingPath: trainingPath);
-  //                             Navigator.of(context).pop();
-  //                           },
-  //                         )
-  //                       : Container(),
-  //                 )
-  //                 .toList(),
-  //           ),
-  //         ),
-  //         actions: <Widget>[
-  //           TextButton(
-  //             child: const Text('Close'),
-  //             onPressed: () {
-  //               Navigator.of(context).pop();
-  //             },
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
   /* **************************************************************
                           Difficulty
    *************************************************************/
@@ -2015,6 +1980,7 @@ class HomeCubit extends Cubit<HomeState> {
             (element) => element.skillId == skill.id,
             orElse: () => SkillLevel(
               skillId: skill.id,
+              skillName: skill.skillName,
               lastEditBy: state.usersProfile?.name,
               lastEditDate: DateTime.now(),
             ),
@@ -2049,17 +2015,25 @@ class HomeCubit extends Cubit<HomeState> {
           final skillLevel = riderProfile.skillLevels?.firstWhere(
             (element) => element.skillId == skill.id,
             orElse: () => SkillLevel(
+              skillName: skill.skillName,
               skillId: skill.id,
               lastEditBy: state.usersProfile?.name,
               lastEditDate: DateTime.now(),
             ),
           );
           if (skillLevel?.levelState == LevelState.NO_PROGRESS) {
-            return skill.learningDescription ?? '';
+            return skill.learningDescription ??
+                'To be considered "Learning"'
+                    ' you should be actively working on this skill and '
+                    'trying to improve';
           } else if (skillLevel?.levelState == LevelState.LEARNING) {
-            return skill.proficientDescription ?? '';
+            return skill.proficientDescription ??
+                'To be considered '
+                    '"Proficient" you should be able to do ${skill.skillName} '
+                    'with out assistance';
           } else if (skillLevel?.levelState == LevelState.PROFICIENT) {
-            return 'You should be able to do ${skill.skillName} without assistance anymore';
+            return 'You should be able to do ${skill.skillName} without'
+                ' assistance anymore';
           } else {
             return '';
           }
@@ -2068,8 +2042,7 @@ class HomeCubit extends Cubit<HomeState> {
           return '';
         }
       } else {
-        debugPrint('isGuest');
-        return 'This is where you will be able to track your progress for this skill';
+        return '';
       }
     } else {
       debugPrint('skill is null');
@@ -2087,15 +2060,91 @@ class HomeCubit extends Cubit<HomeState> {
     // Start the level submission process.
     emitSubmittingStatus();
 
-    // Create an audit note for the level change.
+    // Create an edit note for the level change.
     final note = _createLevelChangeNote(levelState);
 
-    // Update the skill level for the rider.
-    _updateRiderSkillLevel(riderProfile, levelState, note);
+    // Update the skill level for the rider/horse.
+    if (state.isForRider) {
+      _updateRiderSkillLevel(riderProfile, levelState, note);
+    } else {
+      final horseProfile = state.horseProfile;
+      if (horseProfile != null) {
+        _updateHorseSkillLevel(horseProfile, levelState, note);
+        _persistHorseProfileChanges(horseProfile, levelState);
+      } else {
+        debugPrint('horseProfile is null');
+      }
+    }
 
     // Persist the changes to the repository.
     _persistRiderProfileChanges(riderProfile, levelState);
   }
+
+  void _persistHorseProfileChanges(
+    HorseProfile horseProfile,
+    LevelState levelState,
+  ) {
+    try {
+      _horseProfileRepository
+          .createOrUpdateHorseProfile(horseProfile: horseProfile)
+          .then(
+            (value) => emit(
+              state.copyWith(
+                levelSubmissionStatus: LevelSubmissionStatus.initial,
+                messageSnackBar: true,
+                message:
+                    'Updated ${state.skill?.skillName} to ${levelState.name}',
+              ),
+            ),
+          );
+    } catch (error) {
+      debugPrint('Error: $error');
+    }
+  }
+
+  /// Updates the skill level for the horse
+  void _updateHorseSkillLevel(
+    HorseProfile horseProfile,
+    LevelState levelState,
+    BaseListItem note,
+  ) {
+    if (state.horseProfile != null) {
+      if (state.skill != null) {
+        final timestamp = DateTime.now();
+        final skillLevel = horseProfile.skillLevels?.firstWhere(
+              (element) => element.skillId == state.skill?.id,
+              orElse: () => SkillLevel(
+                lastEditDate: timestamp,
+                skillId: state.skill!.id,
+                skillName: state.skill!.skillName,
+                lastEditBy: state.usersProfile?.name,
+              ),
+            ) ??
+            SkillLevel(
+              lastEditDate: timestamp,
+              skillId: state.skill!.id,
+              skillName: state.skill!.skillName,
+              lastEditBy: state.usersProfile?.name,
+            );
+
+        horseProfile.skillLevels?.remove(skillLevel);
+        horseProfile.skillLevels?.add(
+          SkillLevel(
+            levelState: levelState,
+            lastEditDate: timestamp,
+            skillId: state.skill!.id,
+            skillName: state.skill!.skillName,
+            lastEditBy: state.usersProfile?.name,
+          ),
+        );
+
+        _addNoteToHorseProfile(horseProfile, note);
+      }
+    } else {
+      debugPrint('horse Profile is null');
+    }
+  }
+
   //the current profile being viewed
 
   RiderProfile? determineCurrentProfile() {
@@ -2117,18 +2166,27 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  /// Creates an audit note for the level change
+// TODO: Need to fix how the notes are added to the profile for horse and rider or viewingProfile
+  /// Creates an edit note for the level change
   BaseListItem _createLevelChangeNote(
     LevelState levelState,
   ) {
     String noteMessage;
-    if (state.viewingProfile?.name == state.usersProfile?.name) {
+    if (!state.isForRider) {
       noteMessage =
-          '${state.usersProfile?.name} has changed ${state.skill?.skillName} level to ${levelState.name}';
+          '${state.usersProfile?.name} changed ${state.skill?.skillName} '
+          'level to ${levelState.name}';
+    } else if (state.viewingProfile?.name == state.usersProfile?.name) {
+      noteMessage =
+          '${state.usersProfile?.name} has changed ${state.skill?.skillName} '
+          'level to ${levelState.name}';
     } else {
       noteMessage =
-          '${state.usersProfile?.name} changed ${state.skill?.skillName} level to ${levelState.name} for ${state.viewingProfile?.name ?? 'themself'}';
+          '${state.usersProfile?.name} changed ${state.skill?.skillName} '
+          'level to ${levelState.name} for '
+          '${state.viewingProfile?.name ?? 'themself'}';
     }
+
     return BaseListItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
@@ -2145,33 +2203,37 @@ class HomeCubit extends Cubit<HomeState> {
     BaseListItem note,
   ) {
     if (riderProfile != null) {
-      final timestamp = DateTime
-          .now(); // Reuse the same timestamp for all operations in this method
-      final skillLevel = riderProfile.skillLevels?.firstWhere(
-            (element) => element.skillId == state.skill?.id,
-            orElse: () => SkillLevel(
-              skillId: state.skill?.id,
-              lastEditBy: state.usersProfile?.name,
+      if (state.skill != null) {
+        final timestamp = DateTime.now();
+        final skillLevel = riderProfile.skillLevels?.firstWhere(
+              (element) => element.skillId == state.skill?.id,
+              orElse: () => SkillLevel(
+                lastEditDate: timestamp,
+                skillId: state.skill!.id,
+                skillName: state.skill!.skillName,
+                lastEditBy: state.usersProfile?.name,
+              ),
+            ) ??
+            SkillLevel(
               lastEditDate: timestamp,
-            ),
-          ) ??
+              skillId: state.skill!.id,
+              skillName: state.skill!.skillName,
+              lastEditBy: state.usersProfile?.name,
+            );
+
+        riderProfile.skillLevels?.remove(skillLevel);
+        riderProfile.skillLevels?.add(
           SkillLevel(
-            skillId: state.skill?.id,
-            lastEditBy: state.usersProfile?.name,
+            levelState: levelState,
             lastEditDate: timestamp,
-          );
+            skillId: state.skill!.id,
+            skillName: state.skill!.skillName,
+            lastEditBy: state.usersProfile?.name,
+          ),
+        );
 
-      riderProfile.skillLevels?.remove(skillLevel);
-      riderProfile.skillLevels?.add(
-        SkillLevel(
-          skillId: state.skill?.id,
-          levelState: levelState,
-          lastEditBy: state.usersProfile?.name,
-          lastEditDate: timestamp,
-        ),
-      );
-
-      _addNoteToProfile(riderProfile, note);
+        _addNoteToProfile(riderProfile, note);
+      }
     } else {
       debugPrint('riderProfile is null');
     }
@@ -2181,6 +2243,12 @@ class HomeCubit extends Cubit<HomeState> {
   void _addNoteToProfile(RiderProfile riderProfile, BaseListItem note) {
     if (riderProfile.notes != null && riderProfile.notes!.isEmpty) {
       riderProfile.notes!.add(note);
+    }
+  }
+
+  void _addNoteToHorseProfile(HorseProfile horseProfile, BaseListItem note) {
+    if (horseProfile.notes != null && horseProfile.notes!.isEmpty) {
+      horseProfile.notes!.add(note);
     }
   }
 
@@ -2208,54 +2276,13 @@ class HomeCubit extends Cubit<HomeState> {
           state.copyWith(
             levelSubmissionStatus: LevelSubmissionStatus.initial,
             errorSnackBar: true,
-            error:
-                'Failed to update ${state.skill?.skillName} to ${levelState.name}: $error',
+            error: 'Failed to update ${state.skill?.skillName} to '
+                '${levelState.name}: $error',
           ),
         );
       }
     } else {
       debugPrint('riderProfile is null');
-    }
-  }
-
-  //viewing profile contains users profile in instructors list
-  //if true then show the riders log
-  // if notViewing then we can see the riders log
-  void logNavigationSelected() {
-    if (state.horseProfile == null) {
-      if (state.viewingProfile != null) {
-        if (state.viewingProfile?.instructors
-                ?.any((element) => element.id == state.usersProfile?.email) ??
-            false) {
-          emit(
-            state.copyWith(
-              index: 1,
-              homeStatus: HomeStatus.ridersLog,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              errorSnackBar: true,
-              error: 'You are not an authorized to view this page',
-            ),
-          );
-        }
-      } else {
-        emit(
-          state.copyWith(
-            index: 1,
-            homeStatus: HomeStatus.ridersLog,
-          ),
-        );
-      }
-    } else {
-      emit(
-        state.copyWith(
-          index: 1,
-          homeStatus: HomeStatus.horseLog,
-        ),
-      );
     }
   }
 
@@ -2298,7 +2325,6 @@ class HomeCubit extends Cubit<HomeState> {
 
       if (skill != null) {
         debugPrint('Skill Selected: ${skill.skillName}');
-        // Initialize skillTreeIds with an empty list if null, otherwise use the existing list
         final skillTreeIds = resource.skillTreeIds ?? [];
 
         // Toggle the presence of skill.id in skillTreeIds
@@ -2598,6 +2624,7 @@ class HomeCubit extends Cubit<HomeState> {
           resource.usersWhoRated?.add(newuser);
           resource.rating = newPositiveRating;
           return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
           ///   Already Positive Rating, -1
           resource.usersWhoRated
@@ -2618,6 +2645,7 @@ class HomeCubit extends Cubit<HomeState> {
               ?.isCollapsed = false;
           resource.rating = newPositiveRating;
           return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
           ///   User already rated NEGATIVE, adding +2
           resource.usersWhoRated
@@ -2679,6 +2707,7 @@ class HomeCubit extends Cubit<HomeState> {
           resource.usersWhoRated?.add(newuser);
           resource.rating = newNegativeRating;
           return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
           ///   Already Negative Rating, +1
           resource.usersWhoRated
@@ -2699,6 +2728,7 @@ class HomeCubit extends Cubit<HomeState> {
               ?.isCollapsed = true;
           resource.rating = newNegativeRating;
           return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
           ///   User already rated POSITIVE, adding -2
           resource.usersWhoRated

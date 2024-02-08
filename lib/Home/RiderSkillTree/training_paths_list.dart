@@ -8,34 +8,50 @@ Widget trainingPathsList({
   required HomeCubit homeCubit,
   required HomeState state,
 }) {
+  // if state.isForRider we want to show the training paths for the rider only
+  final trainingPaths = state.trainingPaths
+      .where((element) => element?.isForHorse == !state.isForRider)
+      .toList();
   return Scaffold(
     floatingActionButton: Visibility(
       visible: !state.isGuest,
-      child: FloatingActionButton(
-        onPressed: () => showDialog<CreateTrainingPathDialog>(
-          context: context,
-          builder: (context) => CreateTrainingPathDialog(
-            usersProfile: state.usersProfile!,
-            trainingPath: null,
-            isEdit: false,
-            allSkills: state.allSkills!,
-            isForRider: true,
+      child: Tooltip(
+        message: 'Create Training Path',
+        child: FloatingActionButton(
+          onPressed: () => showDialog<CreateTrainingPathDialog>(
+            context: context,
+            builder: (context) => CreateTrainingPathDialog(
+              usersProfile: state.usersProfile!,
+              trainingPath: null,
+              isEdit: false,
+              allSkills: state.allSkills!,
+              isForRider: true,
+            ),
           ),
-        ),
-        child: const Icon(
-          Icons.add,
+          child: const Icon(
+            Icons.add,
+          ),
         ),
       ),
     ),
     body: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Training Path', style: Theme.of(context).textTheme.headline5),
+        const Center(
+          child: Text(
+            'Training Paths',
+            style: TextStyle(fontSize: 24),
+            textAlign: TextAlign.center,
+          ),
+        ),
         gap(),
-        if (state.trainingPaths.isNotEmpty)
+        if (trainingPaths.isNotEmpty)
           ListView.builder(
-            itemCount: state.trainingPaths.length,
+            shrinkWrap: true,
+            itemCount: trainingPaths.length,
             itemBuilder: (context, index) {
-              final trainingPath = state.trainingPaths[index];
+              final trainingPath = trainingPaths[index];
               return Card(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

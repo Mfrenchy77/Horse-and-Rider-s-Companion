@@ -6,6 +6,7 @@ class CreateTrainingPathState extends Equatable {
     this.isSearch = false,
     this.searchQuery = '',
     this.skills = const [],
+    this.isForHorse = false,
     this.allSkills = const [],
     this.skillNodes = const [],
     this.searchList = const [],
@@ -17,6 +18,7 @@ class CreateTrainingPathState extends Equatable {
   });
 
   final bool isSearch;
+  final bool isForHorse;
   final SingleWord name;
   final String searchQuery;
   final FormzStatus status;
@@ -32,6 +34,7 @@ class CreateTrainingPathState extends Equatable {
   CreateTrainingPathState copyWith({
     bool? isSearch,
     SingleWord? name,
+    bool? isForHorse,
     String? searchQuery,
     FormzStatus? status,
     List<String>? skills,
@@ -49,6 +52,7 @@ class CreateTrainingPathState extends Equatable {
       status: status ?? this.status,
       isSearch: isSearch ?? this.isSearch,
       allSkills: allSkills ?? this.allSkills,
+      isForHorse: isForHorse ?? this.isForHorse,
       searchList: searchList ?? this.searchList,
       skillNodes: skillNodes ?? this.skillNodes,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -68,6 +72,7 @@ class CreateTrainingPathState extends Equatable {
         allSkills,
         searchList,
         skillNodes,
+        isForHorse,
         searchQuery,
         description,
         trainingPath,

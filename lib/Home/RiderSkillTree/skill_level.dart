@@ -17,46 +17,58 @@ Widget skillLevel({
         )
       : Stack(
           children: [
-            Center(
-              child: MaxWidthBox(
-                maxWidth: 1400,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      const SizedBox(
-                        height: 50,
-                      ),
-                      Text(
-                        homeCubit.getLevelProgressDescription(),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 20, right: 20),
-                        child: Divider(),
-                      ),
-                      smallGap(),
-                      Text(state.skill?.description ?? ''),
-                      smallGap(),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 20, right: 20),
-                        child: Divider(),
-                      ),
-                      const Text(
-                        'Resources',
-                        style: TextStyle(fontSize: 30),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 20, right: 20),
-                        child: Divider(),
-                      ),
-                      smallGap(),
-                      _skillResourcesList(state: state),
-                      smallGap(),
-                      const SizedBox(
-                        height: 50,
-                      ),
-                    ],
+            SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 50,
                   ),
-                ),
+                  Visibility(
+                    visible: state.isGuest,
+                    child: const Text(
+                      'This is where you will be able to track your '
+                      'progress for this skill. There will be information '
+                      'for each skill that explains what is expected for '
+                      '"Learning" and "Proficient"',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Text(
+                    state.skill?.skillName ?? '',
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
+                  gap(),
+                  Text(
+                    homeCubit.getLevelProgressDescription(),
+                    textAlign: TextAlign.center,
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 20, right: 20),
+                    child: Divider(),
+                  ),
+                  smallGap(),
+                  Text(state.skill?.description ?? ''),
+                  smallGap(),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 20, right: 20),
+                    child: Divider(),
+                  ),
+                  const Text(
+                    'Resources',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 20, right: 20),
+                    child: Divider(),
+                  ),
+                  smallGap(),
+                  _skillResourcesList(state: state),
+                  smallGap(),
+                  const SizedBox(
+                    height: 50,
+                  ),
+                ],
               ),
             ),
 
@@ -262,10 +274,10 @@ Widget _skillLevelSelectedConfirmation({
 }) {
   return AlertDialog(
     title: const Text('Confirm Skill Level'),
-    content: Text(
-      'Are you sure you want to set ${state.skill?.skillName} '
-      'level to ${levelState.name}?',
-    ),
+    content: Text('Are you sure you want to set ${state.skill?.skillName} '
+        'level to ${levelState.name}${!state.isForRider ? ' for '
+            '${state.horseProfile?.name}' : state.isViewing ? ' '
+            'for ${state.viewingProfile?.name}' : ''} ?'),
     actions: [
       OutlinedButton(
         onPressed: () {
