@@ -12,7 +12,8 @@ class AppBloc extends Bloc<AppEvent, AppState> {
   AppBloc({required AuthenticationRepository authenticationRepository})
       : _authenticationRepository = authenticationRepository,
         super(
-          authenticationRepository.currentUser.isNotEmpty
+          //TODO: this is where the app state is set to authenticated or unauthenticated
+          authenticationRepository.currentUser.emailVerfified
               ? AppState.authenticated(authenticationRepository.currentUser)
               : const AppState.unauthenticated(),
         ) {
@@ -34,7 +35,7 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     );
 
     emit(
-      event.user.isNotEmpty
+      event.user.emailVerfified
           ? AppState.authenticated(event.user)
           : const AppState.unauthenticated(),
     );

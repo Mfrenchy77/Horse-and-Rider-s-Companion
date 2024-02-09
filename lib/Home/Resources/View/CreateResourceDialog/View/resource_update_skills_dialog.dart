@@ -11,11 +11,13 @@ import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
     super.key,
+    required this.homeState,
     required this.skills,
     required this.resource,
     required this.homeCubit,
     required this.userProfile,
   });
+  final HomeState homeState;
   final HomeCubit homeCubit;
   final Resource? resource;
   final List<Skill?>? skills;
@@ -93,42 +95,43 @@ class UpdateResourceSkills extends StatelessWidget {
                             [const Text('No Skills Found')],
                       ),
                       gap(),
-                      const Divider(),
-                      gap(),
-                      const Text('Add or Remove Skills from this Resource'),
-                      smallGap(),
-                      SingleChildScrollView(
-                        child: Wrap(
-                          spacing: 8,
-                          children: homeCubit.state.allSkills
-                                  ?.map(
-                                    (e) => FilterChip(
-                                      label: Text(e?.skillName ?? ''),
-                                      selected: state.resource?.skillTreeIds
-                                              ?.contains(e?.id) ??
-                                          false,
-                                      onSelected: (value) {
-                                        context
-                                            .read<CreateResourceDialogCubit>()
-                                            .resourceSkillsChanged(
-                                              e?.id ?? '',
-                                            );
-                                      },
-                                    ),
-                                  )
-                                  .toList() ??
-                              [const Text('No Skills Found')],
+                      Visibility(
+                        visible: !homeState.isGuest,
+                        child: Column(
+                          children: [
+                            const Divider(),
+                            gap(),
+                            const Text(
+                                'Add or Remove Skills from this Resource'),
+                            smallGap(),
+                            SingleChildScrollView(
+                              child: Wrap(
+                                spacing: 8,
+                                children: homeCubit.state.allSkills
+                                        ?.map(
+                                          (e) => FilterChip(
+                                            label: Text(e?.skillName ?? ''),
+                                            selected: state
+                                                    .resource?.skillTreeIds
+                                                    ?.contains(e?.id) ??
+                                                false,
+                                            onSelected: (value) {
+                                              context
+                                                  .read<
+                                                      CreateResourceDialogCubit>()
+                                                  .resourceSkillsChanged(
+                                                    e?.id ?? '',
+                                                  );
+                                            },
+                                          ),
+                                        )
+                                        .toList() ??
+                                    [const Text('No Skills Found')],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      // gap(),
-                      // TextButton(
-                      //   onPressed: () {
-                      //     debugPrint(
-                      //       'Add Skill for Resource ${resource.name}',
-                      //     );
-                      //   },
-                      //   child: const Text('Add Skill'),
-                      // ),
                     ],
                   ),
                 ),
@@ -139,15 +142,18 @@ class UpdateResourceSkills extends StatelessWidget {
                     },
                     child: const Text('Close'),
                   ),
-                  TextButton(
-                    onPressed: state.status.isValidated
-                        ? () {
-                            context
-                                .read<CreateResourceDialogCubit>()
-                                .editResource();
-                          }
-                        : null,
-                    child: const Text('Update'),
+                  Visibility(
+                    visible: !homeState.isGuest,
+                    child: TextButton(
+                      onPressed: state.status.isValidated
+                          ? () {
+                              context
+                                  .read<CreateResourceDialogCubit>()
+                                  .editResource();
+                            }
+                          : null,
+                      child: const Text('Update'),
+                    ),
                   ),
                 ],
               );

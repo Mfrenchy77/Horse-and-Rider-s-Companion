@@ -150,61 +150,6 @@ Widget horseProfileView({
           },
         ),
       ),
-      // body: SingleChildScrollView(
-      //   child: Padding(
-      //     padding: const EdgeInsets.all(8),
-      //     child: Center(
-      //       child: Column(
-      //         children: [
-      //           _horsePhoto(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _currentOwner(
-      //             horseProfile: state.horseProfile,
-      //             context: context,
-      //           ),
-      //           smallGap(),
-      //           _horseNickName(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseLocation(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseAge(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseColor(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseBreed(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseGender(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseHeight(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           _horseDateOfBirth(horseProfile: state.horseProfile),
-      //           smallGap(),
-      //           Visibility(
-      //             visible: !state.isOwner,
-      //             child: _requestToBeStudentHorseButton(
-      //               context: context,
-      //               horseProfile: state.horseProfile!,
-      //               isOwner: state.isOwner,
-      //             ),
-      //           ),
-      //           // Text("${horseProfile.name}'s Log Book"),
-      //           // Divider(
-      //           //   color: isDark ? Colors.white : Colors.black,
-      //           //   indent: 20,
-      //           //   endIndent: 20,
-      //           // ),
-      //           // _addLogEntryButton(
-      //           //   context: context,
-      //           //   horseProfile: horseProfile,
-      //           //   riderProfile: usersProfile as RiderProfile,
-      //           // ),
-      //           // gap(),
-      //           // _notes(horseProfile: horseProfile)
-      //         ],
-      //       ),
-      //     ),
-      //   ),
-      // ),
     );
   } else {
     debugPrint('Horse Profile is null, trying to load');
@@ -273,7 +218,7 @@ Widget _primaryView({
         ],
       ),
       Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8),
         child: Column(
           children: [
             _currentOwner(horseProfile: horseProfile, context: context),
@@ -303,8 +248,13 @@ Widget _primaryView({
               ),
             ),
             Visibility(
-                visible: state.isOwner,
-                child: _logBookButton(context: context)),
+              visible: state.isOwner,
+              child: _logBookButton(
+                context: context,
+                state: state,
+                homeCubit: homeCubit,
+              ),
+            ),
           ],
         ),
       ),
@@ -374,78 +324,11 @@ List<Widget> _appBarActions({
 }) {
   debugPrint('isOwner: $isOwner');
   return [
-    // Row(
-    //   children: [
-    //     Tooltip(
-    //       message: 'Horse Log Book',
-    //       child: IconButton(
-    //         onPressed: () {
-    //           homeCubit.logNavigationSelected();
-    //         },
-    //         icon: const Icon(
-    //           HorseAndRiderIcons.horseLogIcon,
-    //         ),
-    //       ),
-    //     ),
-    //     Visibility(
-    //       visible: isOwner,
-    //       child: Tooltip(
-    //         message: 'Edit Horse Profile',
-    //         child: IconButton(
-    //           onPressed: () {
-    //             homeCubit.openAddHorseDialog(
-    //               context: context,
-    //               isEdit: true,
-    //               horseProfile: state.horseProfile,
-    //             );
-    //           },
-    //           icon: const Icon(
-    //             Icons.edit,
-    //           ),
-    //         ),
-    //       ),
-    //     ),
-    //     Visibility(
-    //       visible: isOwner,
-    //       child: Tooltip(
-    //         message: 'Transfer Horse Profile',
-    //         child: IconButton(
-    //           onPressed: () {
-    //             homeCubit.transferHorseProfile();
-    //           },
-    //           icon: const Icon(
-    //             Icons.transfer_within_a_station,
-    //           ),
-    //         ),
-    //       ),
-    //     ),
-    //     Visibility(
-    //       visible: isOwner,
-    //       child: Tooltip(
-    //         message: 'Delete Horse Profile',
-    //         child: IconButton(
-    //           onPressed: () {
-    //             homeCubit.deleteHorseProfileFromUser();
-    //           },
-    //           icon: const Icon(
-    //             Icons.delete,
-    //           ),
-    //         ),
-    //       ),
-    //     ),
-    //   ],
-    // ),
-    // //Icons
-
     //Menu
     Visibility(
       visible: isOwner,
       child: PopupMenuButton<String>(
         itemBuilder: (BuildContext menuContext) => <PopupMenuEntry<String>>[
-          // const PopupMenuItem(
-          //   value: 'Horse Log Book',
-          //   child: Text('Horse Log Book'),
-          // ),
           const PopupMenuItem(value: 'Edit', child: Text('Edit')),
           const PopupMenuItem(value: 'Delete', child: Text('Delete')),
           const PopupMenuItem(value: 'Transfer', child: Text('Transfer')),
@@ -506,15 +389,47 @@ Widget _currentOwner({
   );
 }
 
-Widget _logBookButton({required BuildContext context}) {
-  return FilledButton.icon(
-    onPressed: () {
-      context.read<HomeCubit>().openLogBook(context);
-    },
-    icon: const Icon(
-      HorseAndRiderIcons.horseLogIcon,
-    ),
-    label: const Text('Log Book'),
+Widget _logBookButton({
+  required BuildContext context,
+  required HomeState state,
+  required HomeCubit homeCubit,
+}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Tooltip(
+        message: 'Open the Log Book',
+        child: FilledButton.icon(
+          onPressed: () {
+            context
+                .read<HomeCubit>()
+                .openLogBook(cubit: homeCubit, context: context);
+          },
+          icon: const Icon(
+            HorseAndRiderIcons.horseLogIcon,
+          ),
+          label: const Text('Log Book'),
+        ),
+      ),
+      Tooltip(
+        message: 'Add an Entry into the Log',
+        child: IconButton(
+          onPressed: () {
+            showDialog<AddLogEntryDialog>(
+              context: context,
+              builder: (context) => AddLogEntryDialog(
+                riderProfile: state.viewingProfile ?? state.usersProfile!,
+                horseProfile: state.horseProfile,
+              ),
+            );
+            context.read<HomeCubit>().addLogEntry(context: context);
+          },
+          icon: const Icon(
+            Icons.add,
+          ),
+        ),
+      ),
+    ],
   );
 }
 

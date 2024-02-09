@@ -377,16 +377,27 @@ PreferredSizeWidget _appBar({
               homeCubit.navigateToTrainingPathList();
               break;
             case SkillTreeNavigation.SkillList:
-              homeCubit.navigateToTrainingPathList();
+              state.isFromProfile
+                  ? homeCubit.profileNavigationSelected()
+                  : homeCubit.navigateToTrainingPathList();
               break;
             case SkillTreeNavigation.SkillLevel:
+            state.isFromProfile
+                ? homeCubit.profileNavigationSelected()
+                : homeCubit.navigateToSkillsList();
               if (isSplitScreen) {
+                state.isFromProfile
+                    ? homeCubit.profileNavigationSelected()
+                    :
                 state.isFromTrainingPath
                     ? homeCubit.navigateToTrainingPathList()
                     : state.isFromTrainingPathList
                         ? homeCubit.profileNavigationSelected()
                         : homeCubit.navigateToSkillsList();
               } else {
+                state.isFromProfile
+                    ? homeCubit.profileNavigationSelected()
+                    :
                 state.isFromTrainingPath
                     ? homeCubit.navigateToTrainingPath(
                         trainingPath: state.trainingPath,

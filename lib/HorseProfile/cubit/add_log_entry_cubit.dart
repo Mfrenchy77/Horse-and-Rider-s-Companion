@@ -1,49 +1,88 @@
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 
 part 'add_log_entry_state.dart';
 
 class AddLogEntryCubit extends Cubit<AddLogEntryState> {
-  AddLogEntryCubit({required HorseProfileRepository horseProfileRepository})
-      : _horseProfileRepository = horseProfileRepository,
-        super( AddLogEntryState(date: DateTime.now()));
+  AddLogEntryCubit({
+    required HorseProfileRepository horseProfileRepository,
+    required RiderProfileRepository riderProfileRepository,
+  })  : _horseProfileRepository = horseProfileRepository,
+        _riderProfileRepository = riderProfileRepository,
+        super(AddLogEntryState(date: DateTime.now()));
 
   final HorseProfileRepository _horseProfileRepository;
+  final RiderProfileRepository _riderProfileRepository;
 
-  void entryChanged({required String value}) {
-    final entry = SingleWord.dirty(value);
-    emit(state.copyWith(event: entry, status: Formz.validate([entry])));
+  /// Changed the log entry value
+  void logEntryChanged({required String value}) {
+    final logEntry = SingleWord.dirty(value);
+    emit(
+      state.copyWith(logEntry: logEntry, status: Formz.validate([logEntry])),
+    );
   }
 
+  /// Changed the Log Tag
+  void logTagChanged({required LogTag tag}) {
+    emit(state.copyWith(tag: tag));
+  }
+
+  /// Changed the date value
   void dateChanged({required DateTime entryDate}) {
     emit(state.copyWith(date: entryDate));
   }
 
+  /// Process the log entry and persist it to the database
   void addLogEntry({
     required RiderProfile riderProfile,
-    required HorseProfile horseProfile,
+    required HorseProfile? horseProfile,
   }) {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
-    final logEntry = BaseListItem(
-      id: DateTime.now().toString(),
-      name: state.event.value,
-      date: state.date,
-      parentId: riderProfile.email,
-    );
-
-    horseProfile.notes ??= [];
-    horseProfile.notes?.add(logEntry);
-
-    try {
-      _horseProfileRepository.createOrUpdateHorseProfile(
-        horseProfile: horseProfile,
+    if (horseProfile != null) {
+      // add the log entry for the horse
+      debugPrint('Adding log entry for horse');
+      final logEntry = BaseListItem(
+        date: state.date,
+        name: state.logEntry.value,
+        parentId: riderProfile.email,
+        id: DateTime.now().toString(),
+        imageUrl: state.tag.name,
       );
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
-    } catch (e) {
-      emit(state.copyWith(status: FormzStatus.submissionFailure));
+      horseProfile.notes ??= [];
+      horseProfile.notes?.add(logEntry);
+
+      try {
+        _horseProfileRepository.createOrUpdateHorseProfile(
+          horseProfile: horseProfile,
+        );
+        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      } catch (e) {
+        emit(state.copyWith(status: FormzStatus.submissionFailure));
+      }
+    } else {
+      // add the log entry for the rider
+      debugPrint('Adding log entry for rider');
+      final logEntry = BaseListItem(
+        date: state.date,
+        name: state.logEntry.value,
+        parentId: riderProfile.email,
+        id: DateTime.now().toString(),
+        imageUrl: state.tag.toString(),
+      );
+      riderProfile.notes ??= [];
+      riderProfile.notes?.add(logEntry);
+      try {
+        _riderProfileRepository.createOrUpdateRiderProfile(
+          riderProfile: riderProfile,
+        );
+        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      } catch (e) {
+        emit(state.copyWith(status: FormzStatus.submissionFailure));
+      }
     }
   }
 }

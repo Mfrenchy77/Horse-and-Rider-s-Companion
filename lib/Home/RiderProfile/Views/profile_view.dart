@@ -13,6 +13,7 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/search_dialog.dart';
+import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -71,17 +72,30 @@ Widget profileView({
                                 .appBarTheme
                                 .backgroundColor ??
                             Colors.white,
-                        child: const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Text(
-                            'Skills',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w200,
-                              fontSize: 30,
-                              color: Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: TextButton(
+                            onPressed: () {
+                              // Navigate to the skills page
+                              homeCubit.navigateToSkillsList();
+                            },
+                            child: const Text(
+                              'Skills',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w200,
+                                fontSize: 30,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
+                          // 'Skills',
+                          // textAlign: TextAlign.center,
+                          // style: TextStyle(
+                          //   fontWeight: FontWeight.w200,
+                          //   fontSize: 30,
+                          //   color: Colors.white,
+                          // ),
                         ),
                       ),
                     ),
@@ -109,13 +123,19 @@ Widget profileView({
                   homeCubit: homeCubit,
                   context: context,
                 ),
-                const Text(
-                  'Skills',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+                TextButton(
+                  onPressed: () {
+                    // Navigate to the skills page
+                    homeCubit.navigateToSkillsList();
+                  },
+                  child: const Text(
+                    'Skills',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
                 gap(),
@@ -124,6 +144,21 @@ Widget profileView({
                   homeCubit: homeCubit,
                   state: state,
                 ),
+                // const Text(
+                //   'Skills',
+                //   textAlign: TextAlign.center,
+                //   style: TextStyle(
+                //     fontSize: 20,
+                //     fontWeight: FontWeight.bold,
+                //     decoration: TextDecoration.underline,
+                //   ),
+                // ),
+                // gap(),
+                // _skillsView(
+                //   context: context,
+                //   homeCubit: homeCubit,
+                //   state: state,
+                // ),
               ],
             ),
           ),
@@ -548,39 +583,82 @@ Widget _profile({
               visible: state.usersProfile != null,
               child: Center(
                 child: Text(
-                  state.usersProfile!.email,
+                  state.usersProfile?.email ?? '',
                   style: const TextStyle(fontSize: 20),
                 ),
               ),
             ),
             gap(),
-            _lists(context: context, state: state, homeCubit: homeCubit),
-            gap(),
-            // Log Book Button
-            Visibility(
-              visible: homeCubit.canViewInstructors(),
-              child: MaxWidthBox(
-                maxWidth: 200,
-                child: FilledButton.icon(
-                  label: Text(
-                    S.of(context).log_book_text,
-                  ),
-                  icon: const Icon(HorseAndRiderIcons.riderLogIcon),
-                  onPressed: () => homeCubit.openLogBook(context),
-                ),
-              ),
+            _lists(
+              state: state,
+              context: context,
+              homeCubit: homeCubit,
             ),
             gap(),
+            // Log Book Button
+            _logBookButton(
+              state: state,
+              context: context,
+              homeCubit: homeCubit,
+            ),
           ],
         ),
     ],
   );
 }
 
-Widget _lists({
-  required BuildContext context,
+Widget _logBookButton({
   required HomeState state,
   required HomeCubit homeCubit,
+  required BuildContext context,
+}) {
+  return Visibility(
+    visible: homeCubit.canViewInstructors(),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Tooltip(
+          message: 'Open the Log Book',
+          child: FilledButton.icon(
+            onPressed: () {
+              context.read<HomeCubit>().openLogBook(
+                    cubit: homeCubit,
+                    context: context,
+                  );
+            },
+            icon: const Icon(
+              HorseAndRiderIcons.riderLogIcon,
+            ),
+            label: const Text('Log Book'),
+          ),
+        ),
+        Tooltip(
+          message: 'Add an Entry into the Log',
+          child: IconButton(
+            onPressed: () {
+              showDialog<AddLogEntryDialog>(
+                context: context,
+                builder: (context) => AddLogEntryDialog(
+                  riderProfile: state.viewingProfile ?? state.usersProfile!,
+                  horseProfile: null,
+                ),
+              );
+              context.read<HomeCubit>().addLogEntry(context: context);
+            },
+            icon: const Icon(
+              Icons.add,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _lists({
+  required HomeState state,
+  required HomeCubit homeCubit,
+  required BuildContext context,
 }) {
   // show the instructor, student and horse list for the respective profile
   //if screen size is larger than a tablet then show the lists side by side
@@ -867,7 +945,7 @@ List<Widget>? _appBarActions({
                 homeCubit.openEditDialog(context: context);
                 break;
               case 'Log Book':
-                homeCubit.openLogBook(context);
+                homeCubit.openLogBook(cubit: homeCubit, context: context);
                 break;
               case 'Add Horse':
                 homeCubit.openAddHorseDialog(
@@ -940,7 +1018,8 @@ Widget? _drawer({
           ListTile(
             leading: const Icon(HorseAndRiderIcons.riderLogIcon),
             title: const Text('Log Book'),
-            onTap: () => homeCubit.openLogBook(context),
+            onTap: () =>
+                homeCubit.openLogBook(cubit: homeCubit, context: context),
           ),
 
           //  saved profile list
@@ -1362,61 +1441,3 @@ Widget _skillsView({
     );
   }
 }
-
-// Widget _skillLevelCard({
-//   required BuildContext context,
-//   required SkillLevel skillLevel,
-//   required HomeCubit homeCubit,
-//   required HomeState state,
-// }) {
-//   return SizedBox(
-//     width: 200,
-//     child: Card(
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(10),
-//       ),
-//       elevation: 8,
-//       child: DecoratedBox(
-//         decoration: BoxDecoration(
-//           color: skillLevel.levelState == LevelState.PROFICIENT
-//               ? skillLevel.verified
-//                   ? Colors.yellow
-//                   : Colors.blue
-//               : Colors.transparent,
-//           borderRadius: BorderRadius.circular(10),
-//           gradient: skillLevel.levelState == LevelState.LEARNING
-//               ? LinearGradient(
-//                   stops: const [0.5, 0.5],
-//                   colors: [
-//                     if (skillLevel.verified) Colors.yellow else Colors.blue,
-//                     Colors.transparent,
-//                   ],
-//                 )
-//               : null,
-//         ),
-//         child: ListTile(
-//           title: Text(
-//             skillLevel.skillName,
-//             textAlign: TextAlign.center,
-//           ),
-//           subtitle: Text(
-//             '${skillLevel.levelState.toString().split('.').last} ${skillLevel.verified ? ' \n' '(Verified by: ${skillLevel.lastEditBy})' : ''}',
-//             textAlign: TextAlign.center,
-//           ),
-//           onTap: state.isGuest
-//               ? null
-//               : () {
-//                   final skill = state.allSkills?.firstWhere(
-//                     (element) => element?.id == skillLevel.skillId,
-//                   );
-
-//                   homeCubit.navigateToSkillLevel(
-//                     isSplitScreen: MediaQuery.of(context).size.width > 1200,
-//                     skill: skill,
-//                   );
-//                 },
-//         ),
-//       ),
-//     ),
-//   );
-// }

@@ -139,6 +139,7 @@ class LoginCubit extends Cubit<LoginState> {
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
+      debugPrint('signUpFormSubmitted: ${state.name.value}');
       await _authenticationRepository
           .signUp(
         name: state.name.value,
@@ -146,6 +147,7 @@ class LoginCubit extends Cubit<LoginState> {
         password: state.password.value,
       )
           .then((value) {
+        debugPrint('Open Email App for: ${state.email.value}');
         openEmailApp(email: state.email.value, context: context);
         emit(state.copyWith(status: FormzStatus.submissionSuccess));
       });

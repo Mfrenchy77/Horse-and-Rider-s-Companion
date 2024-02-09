@@ -17,7 +17,9 @@ import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/View/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/HorseProfile/cubit/add_log_entry_cubit.dart';
 import 'package:horseandriderscompanion/Messages/view/messages_page.dart';
+import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/utils/ad_helper.dart';
 import 'package:horseandriderscompanion/utils/constants.dart';
 import 'package:horseandriderscompanion/utils/view_utils.dart';
@@ -128,38 +130,10 @@ class HomeCubit extends Cubit<HomeState> {
         );
         _sortResources();
       });
-//emit(state.copyWith(allResources: resources));
     } else {
       debugPrint('Resources already set');
     }
 
-    ///   Stream of Categoies
-    // if (state.categories == null) {
-    //   debugPrint('Getting Categories');
-    //   _categoryStream =
-    //       _skillTreeRepository.getCatagoriesForRiderSkillTree().listen((event) {
-    //     debugPrint('Categories Stream: got data ${event.docs.length}');
-    //     final categories =
-    //         event.docs.map((doc) => (doc.data()) as Catagorry?).toList();
-    //     emit(state.copyWith(categories: categories));
-    //   });
-    // }
-
-    ///   Stream of SubCategories
-    // if (state.subCategories == null) {
-    //   debugPrint('Getting SubCategories');
-    //   _subCategoryStream = _skillTreeRepository
-    //       .getSubCategoriesForRiderSkillTree()
-    //       .listen((event) {
-    //     debugPrint('SubCategories Stream: got data ${event.docs.length}');
-    //     final subCategories =
-    //         event.docs.map((e) => (e.data()) as SubCategory?).toList();
-    //     emit(state.copyWith(subCategories: subCategories));
-    //     _sortSubCategories(category: null);
-    //   });
-    // } else {
-    //   debugPrint('SubCategories already set');
-    // }
     /// Stream of Training Paths
     _getTrainingPaths();
 
@@ -168,19 +142,6 @@ class HomeCubit extends Cubit<HomeState> {
     if (state.allSkills == null) {
       debugPrint('Getting Skills');
       getSkills();
-
-      //   _skillsStream = _skillTreeRepository.getSkills().listen((event) {
-      //     debugPrint('Skills Stream: got data ${event.docs.length}');
-      //     final skills = TestSkills.generateTestSkills()
-      //       ..sort((a, b) => a.position.compareTo(b.position));
-
-      //     debugPrint('Setting allSkills: ${skills.length}');
-      //     emit(state.copyWith(allSkills: skills));
-      //     sortSkills(subCategory: null);
-      //     // final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList();
-      //     // debugPrint('Setting allSkills: ${skills.length}');
-      //     // emit(state.copyWith(allSkills: skills));
-      //   });
     } else {
       debugPrint('Skills already set');
     }
@@ -229,7 +190,6 @@ class HomeCubit extends Cubit<HomeState> {
   late final StreamSubscription<QuerySnapshot<Object?>> _trainingPathsStream;
   StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _resourcesStream;
-  late final StreamSubscription<QuerySnapshot<Object?>> _subCategoryStream;
 
   ///   Rider Profile for the current user
 
@@ -358,15 +318,94 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   ///   Open the Rider's Log Book
-  void openLogBook(BuildContext context) {
-    showModalBottomSheet<LogView>(
+  void openLogBook({
+    required HomeCubit cubit,
+    required BuildContext context,
+  }) {
+    showDialog<LogView>(
       context: context,
-      elevation: 20,
       builder: (context) => LogView(
+        cubit: cubit,
         isRider: state.isForRider,
         state: state,
       ),
     );
+  }
+
+  /// return a chip with a color based on the Log Tag
+  Widget logTagChip({required String? tagString}) {
+    final tag = convertStringToLogTag(tagString);
+    return Chip(
+      avatar: _logTagIcon(tag: tag),
+      label: Text(
+        _logTagText(tag: tag),
+        style: const TextStyle(color: Colors.white),
+      ),
+      backgroundColor: _logTagColor(tag: tag),
+    );
+  }
+
+  LogTag convertStringToLogTag(String? tag) {
+    switch (tag) {
+      case 'LogTag.Show':
+        return LogTag.Show;
+      case 'LogTag.Training':
+        return LogTag.Training;
+      case 'LogTag.Health':
+        return LogTag.Health;
+      case 'LogTag.Other':
+        return LogTag.Other;
+      default:
+        return LogTag.Other;
+    }
+  }
+
+  /// returns a icon for an avatar based on the Log Tag
+  Icon _logTagIcon({required LogTag? tag}) {
+    switch (tag) {
+      case LogTag.Show:
+        return const Icon(HorseAndRiderIcons.horseIcon);
+      case LogTag.Training:
+        return const Icon(HorseAndRiderIcons.horseSkillIcon);
+      case LogTag.Health:
+        return const Icon(Icons.local_hospital);
+      case LogTag.Other:
+        return const Icon(Icons.more_horiz);
+      case null:
+        return const Icon(HorseAndRiderIcons.horseIcon);
+    }
+  }
+
+  /// returns text base on Log Tag
+  String _logTagText({required LogTag? tag}) {
+    switch (tag) {
+      case LogTag.Show:
+        return 'Show';
+      case LogTag.Training:
+        return 'Training';
+      case LogTag.Health:
+        return 'Health';
+      case LogTag.Other:
+        return 'Other';
+      case null:
+        return 'Other';
+    }
+  }
+
+  /// returns a color based on the Log Tag
+  Color _logTagColor({required LogTag? tag}) {
+    switch (tag) {
+      case LogTag.Show:
+        return Colors.blue;
+      case LogTag.Training:
+        return Colors.green;
+      case LogTag.Health:
+        return Colors.red;
+      case LogTag.Other:
+        return Colors.grey;
+      case null:
+        return Colors.grey;
+    }
   }
 
   /// Opens the Add/Edit Horse Dialog
@@ -1575,9 +1614,12 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('navigateToSkillsList');
     emit(
       state.copyWith(
+        index: 1,
+        homeStatus: HomeStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillList,
         isFromTrainingPath: false,
         isFromTrainingPathList: false,
+        isFromProfile: state.index == 0,
       ),
     );
   }
@@ -2860,7 +2902,6 @@ class HomeCubit extends Cubit<HomeState> {
     _skillsStream.cancel();
     _groupsStream?.cancel();
     _resourcesStream.cancel();
-    _subCategoryStream.cancel();
     _trainingPathsStream.cancel();
     _riderProfileSubscription?.cancel();
     _horseProfileSubscription?.cancel();

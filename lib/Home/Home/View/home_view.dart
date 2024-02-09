@@ -149,7 +149,6 @@ class HomeView extends StatelessWidget {
                       final homeCubit = context.read<HomeCubit>();
                       return AdaptiveScaffold(
                         internalAnimations: false,
-                        
                         smallBreakpoint:
                             const WidthPlatformBreakpoint(end: 800),
                         mediumBreakpoint: const WidthPlatformBreakpoint(
@@ -272,11 +271,13 @@ Widget _mainView() {
               ? LogView(
                   state: state,
                   isRider: true,
+                  cubit: homeCubit,
                 )
               : state.homeStatus == HomeStatus.horseLog
                   ? LogView(
                       state: state,
                       isRider: false,
+                      cubit: homeCubit,
                     )
                   : state.homeStatus == HomeStatus.skillTree
                       ?

@@ -1,32 +1,40 @@
 part of 'add_log_entry_cubit.dart';
 
+// ignore: constant_identifier_names
+enum LogTag { Show, Training, Health, Other }
+
 class AddLogEntryState extends Equatable {
   const AddLogEntryState({
+    this.tag = LogTag.Other,
     required this.date,
     this.status = FormzStatus.pure,
-    this.event = const SingleWord.pure(),
+    this.logEntry = const SingleWord.pure(),
   });
 
+  final LogTag tag;
   final DateTime date;
-  final SingleWord event;
   final FormzStatus status;
+  final SingleWord logEntry;
 
   AddLogEntryState copyWith({
+    LogTag? tag,
     DateTime? date,
-    SingleWord? event,
     FormzStatus? status,
+    SingleWord? logEntry,
   }) {
     return AddLogEntryState(
+      tag: tag ?? this.tag,
       date: date ?? this.date,
-      event: event ?? this.event,
       status: status ?? this.status,
+      logEntry: logEntry ?? this.logEntry,
     );
   }
 
   @override
   List<Object> get props => [
-        event,
+        tag,
         date,
         status,
+        logEntry,
       ];
 }

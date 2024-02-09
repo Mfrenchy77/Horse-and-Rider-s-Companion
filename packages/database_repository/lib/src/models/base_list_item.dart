@@ -38,7 +38,8 @@ class BaseListItem {
   /// If BaseListItem is a Log Entry, this is the Users Name who made the log
   ///  entry.
   String? message;
-
+  /// If the BaseListItem is a Log Entry, this is the Tag
+  /// 
   /// If the BaseListItem is an Instructor Request, this is the users Thumbnail.
   /// 
   /// If it is a Contact, this is the contact's thumbnail.

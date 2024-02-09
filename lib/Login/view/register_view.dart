@@ -242,7 +242,7 @@ Widget _confirmPasswordField({
       }
       return null;
     },
-    obscureText: state.isPasswordVisible,
+    obscureText: !state.isPasswordVisible,
     decoration: InputDecoration(
       labelStyle: const TextStyle(color: Colors.white54),
       labelText: 'Re-Enter Password',

@@ -358,21 +358,18 @@ Widget _ratingButtons({
             Expanded(
               flex: 5,
               child: IconButton(
-                tooltip: 'Assosiate Skills',
+                tooltip: 'Assosiated Skills',
                 onPressed: () {
-                  // I want a dropdown likst of the skills associated with this resource
-                  
-
-                  //homeCubit.editingResource(resource: resource);
-
-                  ///  Show the skills associated with this resource
+                 
+                  //  Show the skills associated with this resource
                   showDialog<AlertDialog>(
                     context: context,
                     builder: (context) {
                       return UpdateResourceSkills(
-                        skills: state.allSkills,
+                        homeState: state,
                         resource: resource,
                         homeCubit: homeCubit,
+                        skills: state.allSkills,
                         userProfile: state.usersProfile,
                       );
                     },

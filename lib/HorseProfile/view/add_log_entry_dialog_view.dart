@@ -14,13 +14,21 @@ class AddLogEntryDialog extends StatelessWidget {
     required this.horseProfile,
   });
   final RiderProfile riderProfile;
-  final HorseProfile horseProfile;
+  final HorseProfile? horseProfile;
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => HorseProfileRepository(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider(
+          create: (context) => HorseProfileRepository(),
+        ),
+        RepositoryProvider(
+          create: (context) => RiderProfileRepository(),
+        ),
+      ],
       child: BlocProvider(
         create: (context) => AddLogEntryCubit(
+          riderProfileRepository: context.read<RiderProfileRepository>(),
           horseProfileRepository: context.read<HorseProfileRepository>(),
         ),
         child: BlocBuilder<AddLogEntryCubit, AddLogEntryState>(
@@ -28,49 +36,60 @@ class AddLogEntryDialog extends StatelessWidget {
             if (state.status == FormzStatus.submissionSuccess) {
               Navigator.of(context).pop();
             }
-            return Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: AppBar(
-                title: const Text('Add New Log Entry'),
+            return AlertDialog(
+              titlePadding: const EdgeInsets.all(10),
+              title: Text(
+                'Add New Log Entry For \n'
+                '${horseProfile?.name ?? riderProfile.name}',
+                textAlign: TextAlign.center,
               ),
-              body: AlertDialog(
-                insetPadding: const EdgeInsets.all(10),
-                scrollable: true,
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    EventDate(
-                      addLogEntryCubit: context.read<AddLogEntryCubit>(),
-                      state: state,
-                      context: context,
-                      horseProfile: horseProfile,
-                    ),
-                    gap(),
-                    _event(
-                      context: context,
-                      state: state,
-                      horseProfile: horseProfile,
-                    ),
-                    gap(),
-                    Visibility(
-                      visible: state.status.isSubmissionFailure,
-                      child: const ColoredBox(
-                        color: Colors.red,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Text('Error With Submission'),
-                        ),
+              insetPadding: const EdgeInsets.all(10),
+              scrollable: true,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  EventDate(
+                    state: state,
+                    context: context,
+                    horseProfile: horseProfile,
+                    addLogEntryCubit: context.read<AddLogEntryCubit>(),
+                  ),
+                  gap(),
+                  _logTag(context: context, state: state),
+                  gap(),
+                  _logEntry(
+                    state: state,
+                    context: context,
+                    rider: riderProfile,
+                    horseProfile: horseProfile,
+                  ),
+                  gap(),
+                  Visibility(
+                    visible: state.status.isSubmissionFailure,
+                    child: const ColoredBox(
+                      color: Colors.red,
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text('Error With Submission'),
                       ),
                     ),
-                    _submitButton(
-                      horseProfile: horseProfile,
-                      riderProfile: riderProfile,
-                      context: context,
-                      state: state,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                _submitButton(
+                  context: context,
+                  state: state,
+                  riderProfile: riderProfile,
+                  horseProfile: horseProfile,
+                ),
+              ],
             );
           },
         ),
@@ -152,100 +171,76 @@ class EventDateState extends State<EventDate> {
   }
 }
 
-// class _EventDate extends StatefulWidget {
-//   const _EventDate({
-//     required this.context,
-//     required this.state,
-//     required this.horseProfile,
-//   });
-//   final BuildContext context;
-//   final AddLogEntryState state;
-//   final HorseProfile? horseProfile;
-//   @override
-//   State<_EventDate> createState() => _EventDateState();
-// }
+/// Log Tag
+Widget _logTag({
+  required BuildContext context,
+  required AddLogEntryState state,
+}) {
+  return DropdownButtonFormField<LogTag>(
+    value: state.tag,
+    onChanged: (value) =>
+        context.read<AddLogEntryCubit>().logTagChanged(tag: value!),
+    items: const [
+      DropdownMenuItem(
+        value: LogTag.Show,
+        child: Text('Show'),
+      ),
+      DropdownMenuItem(
+        value: LogTag.Training,
+        child: Text('Training'),
+      ),
+      DropdownMenuItem(
+        value: LogTag.Health,
+        child: Text('Health'),
+      ),
+      DropdownMenuItem(
+        value: LogTag.Other,
+        child: Text('Other'),
+      ),
+    ],
+    decoration: const InputDecoration(
+      labelText: 'Log Tag',
+      hintText: 'Select the Log Tag',
+      icon: Icon(Icons.tag),
+    ),
+  );
+}
 
-// class _EventDateState extends State<_EventDate> {
-//   late TextEditingController dateText;
-//   @override
-//   void initState() {
-//     super.initState();
-//     dateText = TextEditingController(
-//       text: DateFormat('MMMM dd yyyy').format(DateTime.now()),
-//     );
-//   }
-
-//   @override
-//   void dispose() {
-//     dateText.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return TextFormField(
-//       readOnly: true,
-//       controller: dateText,
-//       keyboardType: TextInputType.datetime,
-//       textInputAction: TextInputAction.next,
-//       onTap: () async {
-//         FocusScope.of(context).requestFocus(FocusNode());
-//         await showDatePicker(
-//           context: context,
-//           helpText: 'Select the date the Event Happened',
-//           initialDate: DateTime.now(),
-//           firstDate: DateTime(1995),
-//           lastDate: DateTime(2100),
-//         ).then((value) {
-//           if (value != null) {
-//             widget.context
-//                 .read<AddLogEntryCubit>()
-//                 .dateChanged(entryDate: value);
-
-//             dateText.text = DateFormat('MM-dd-yyyy').format(value);
-//           }
-//         });
-//       },
-//       decoration: const InputDecoration(
-//         labelText: 'Event Date',
-//         hintText: 'Enter the Date the Event Occured',
-//         icon: Icon(Icons.date_range),
-//       ),
-//     );
-//   }
-// }
-
-///   Text of what the event is for
-Widget _event({
+///   Log Entry
+Widget _logEntry({
+  required RiderProfile rider,
   required BuildContext context,
   required AddLogEntryState state,
   required HorseProfile? horseProfile,
 }) {
   return TextFormField(
+    minLines: 3,
+    maxLines: 10,
     onChanged: (value) =>
-        context.read<AddLogEntryCubit>().entryChanged(value: value),
+        context.read<AddLogEntryCubit>().logEntryChanged(value: value),
     keyboardType: TextInputType.multiline,
-    textInputAction: TextInputAction.next,
+    textInputAction: TextInputAction.newline,
     textCapitalization: TextCapitalization.sentences,
     decoration: InputDecoration(
       labelText: 'Log Entry',
-      hintText:
-          'Enter a description of the Log event for ${horseProfile?.name}',
-      icon: const Icon(HorseAndRiderIcons.horseIcon),
+      hintText: 'Enter a detailed log entry for '
+          '${horseProfile?.name ?? rider.name}',
+      icon: horseProfile != null
+          ? const Icon(HorseAndRiderIcons.horseLogIcon)
+          : const Icon(HorseAndRiderIcons.riderLogIcon),
     ),
   );
 }
 
 ///   Submit Button
-
 Widget _submitButton({
-  required HorseProfile horseProfile,
-  required RiderProfile riderProfile,
   required BuildContext context,
   required AddLogEntryState state,
+  required RiderProfile riderProfile,
+  required HorseProfile? horseProfile,
 }) {
-  return ElevatedButton(
-    onPressed: state.event.invalid
+  return FilledButton(
+    onPressed: state.logEntry.invalid
         ? null
         : () {
             context.read<AddLogEntryCubit>().addLogEntry(
@@ -260,6 +255,3 @@ Widget _submitButton({
           ),
   );
 }
-
-
-///(Advanced) Notification if Repeating
