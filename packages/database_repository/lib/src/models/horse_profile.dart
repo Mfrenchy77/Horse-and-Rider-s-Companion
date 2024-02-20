@@ -1,11 +1,10 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 
 ///Model of a Horse Profile
 class HorseProfile {
+  /// Creates a new instance of [HorseProfile]
   HorseProfile({
     this.notes,
     this.color,
@@ -34,32 +33,83 @@ class HorseProfile {
     this.currentOwnerName = '',
   });
 
+  /// the horse's id
   final String id;
+
+  /// the horse's name
   final String name;
+
+  /// the horse's breed
   String? breed = '';
+
+  /// the horse's color
   String? color = '';
+
+  /// the horse's gender
   String? gender = '';
+
+  /// the horse's height
   String? height = '';
+
+  /// the horse's profile picture url
   String? picUrl = '';
+
+  /// the horse's location zip code
   String? zipCode = '';
+
+  /// the horse's location city name
   String? cityName = '';
+
+  /// the horse's location state iso
   String? stateIso = '';
+
+  /// the horse's location state name
   String? locationName;
+
+  /// the horse's current owner id
   String currentOwnerId;
+
+  /// the horse's date of birth
   DateTime? dateOfBirth;
+
+  /// the horse's nickname
   String? nickname = '';
+
+  /// the horse's purchase price
   int? purchasePrice = 0;
+
+  /// the horse's location state name
   String? stateName = '';
+
+  /// the last date the profile was edited
   DateTime? lastEditDate;
+
+  /// the horse's location country iso
   String? countryIso = '';
+
+  /// the last user to edit the profile
   String? lastEditBy = '';
+
+  /// the horse's location country name
   String? countryName = '';
+
+  /// the horse's date of purchase
   DateTime? dateOfPurchase;
+
+  /// the horse's current owner name
   String? currentOwnerName;
+
+  /// the horse's skill levels
   List<BaseListItem>? notes = [];
+
+  /// List of skill levels the horse has
   List<SkillLevel>? skillLevels = [];
+
+  /// List of instructors the horse has
   List<BaseListItem>? instructors = [];
 
+  ///Converts a [DocumentSnapshot] to a [HorseProfile]
+  // ignore: sort_constructors_first
   factory HorseProfile.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     // ignore: avoid_unused_constructor_parameters
@@ -100,6 +150,7 @@ class HorseProfile {
     );
   }
 
+  ///Converts a [HorseProfile] to a [Map<String, dynamic>]
   Map<String, Object?> toFirestore() {
     return {
       'id': id,
@@ -133,6 +184,7 @@ class HorseProfile {
     };
   }
 
+  ///Creates a copy of the [HorseProfile] with the specified fields replaced
   HorseProfile copyWith({
     String? id,
     String? name,

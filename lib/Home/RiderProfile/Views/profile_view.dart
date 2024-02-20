@@ -12,7 +12,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
-import 'package:horseandriderscompanion/Home/RiderProfile/Views/search_dialog.dart';
+import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
@@ -38,6 +38,15 @@ Widget profileView({
   );
   return Scaffold(
     appBar: AppBar(
+      //back if viewing profile
+      leading: viewingProfile != null
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                homeCubit.goBackToUsersProfile(context);
+              },
+            )
+          : null,
       title: appBarTitle(),
       actions: _appBarActions(
         iconSize: 24,
@@ -49,7 +58,7 @@ Widget profileView({
         context: context,
       ),
     ),
-    drawer: state.isGuest
+    drawer: state.isGuest || viewingProfile != null
         ? null
         : _drawer(
             homeCubit: homeCubit,
@@ -116,55 +125,44 @@ Widget profileView({
         config: <adaptive.Breakpoint, adaptive.SlotLayoutConfig>{
           adaptive.Breakpoints.small: adaptive.SlotLayout.from(
             key: const Key('smallProfilePrimaryBody'),
-            builder: (context) => ListView(
-              children: [
-                _profile(
-                  state: state,
-                  homeCubit: homeCubit,
-                  context: context,
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to the skills page
-                    homeCubit.navigateToSkillsList();
-                  },
-                  child: const Text(
-                    'Skills',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
+            builder: (context) => SingleChildScrollView(
+              child: Column(
+                // needed for scrolling on mobile web
+                children: [
+                  _profile(
+                    state: state,
+                    homeCubit: homeCubit,
+                    context: context,
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to the skills page
+                      homeCubit.navigateToSkillsList();
+                    },
+                    child: const Text(
+                      'Skills',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ),
-                ),
-                gap(),
-                _skillsView(
-                  context: context,
-                  homeCubit: homeCubit,
-                  state: state,
-                ),
-                // const Text(
-                //   'Skills',
-                //   textAlign: TextAlign.center,
-                //   style: TextStyle(
-                //     fontSize: 20,
-                //     fontWeight: FontWeight.bold,
-                //     decoration: TextDecoration.underline,
-                //   ),
-                // ),
-                // gap(),
-                // _skillsView(
-                //   context: context,
-                //   homeCubit: homeCubit,
-                //   state: state,
-                // ),
-              ],
+                  gap(),
+                  _skillsView(
+                    context: context,
+                    homeCubit: homeCubit,
+                    state: state,
+                  ),
+                ],
+              ),
             ),
           ),
           adaptive.Breakpoints.medium: adaptive.SlotLayout.from(
             key: const Key('mediumProfilePrimaryBody'),
             builder: (context) => ListView(
+              shrinkWrap: true,
               children: [
                 _profile(
                   state: state,
@@ -191,10 +189,12 @@ Widget profileView({
           ),
           adaptive.Breakpoints.large: adaptive.SlotLayout.from(
             key: const Key('largeProfilePrimaryBody'),
-            builder: (context) => _profile(
-              state: state,
-              homeCubit: homeCubit,
-              context: context,
+            builder: (context) => SingleChildScrollView(
+              child: _profile(
+                state: state,
+                homeCubit: homeCubit,
+                context: context,
+              ),
             ),
           ),
         },
@@ -203,126 +203,10 @@ Widget profileView({
   );
 }
 
-/// scrollable and pinned SliverApp bar to replace the app bar
-// Widget _sliverAppBar({
-//   required HomeState state,
-//   required BuildContext context,
-//   required bool isUser,
-//   required bool isAuthorized,
-//   required RiderProfile? usersProfile,
-//   required HomeCubit homeCubit,
-// }) {
-//   final screenWidth = MediaQuery.of(context).size.width;
-//   final isLargeScreen = screenWidth > 800;
-
-//   return SliverAppBar(
-//     floating: true,
-//     pinned: true,
-//     snap: true,
-//     expandedHeight:
-//         isLargeScreen ? 60 : 400.0, // Adjust height for large screens
-//     collapsedHeight: 60,
-//     // leading: state.viewingProfile != null
-//     //     ? IconButton(
-//     //         onPressed: homeCubit.goBackToUsersProfile,
-//     //         icon: const Icon(Icons.arrow_back),
-//     //       )
-//     //     : null,
-//     title: isLargeScreen
-//         ? _largeScreenAppBarTitle(state: state, context: context)
-//         : null,
-//     // actions: _appBarActions(
-//     //   iconSize: 24,
-//     //   state: state,
-//     //   isUser: isUser,
-//     //   isAuthorized: isAuthorized,
-//     //   usersProfile: usersProfile,
-//     //   homeCubit: homeCubit,
-//     //   context: context,
-//     // ),
-//     flexibleSpace: isLargeScreen
-//         ? null
-//         : _defaultFlexibleSpaceBar(
-//             state: state,
-//             context: context,
-//           ),
-//   );
-// }
-
-// Widget _largeScreenAppBarTitle() {
-//   return const Row(
-//     children: [
-//       Expanded(
-//         flex: 8,
-//         child: Image(
-//           color: Colors.white,
-//           image: AssetImage(
-//             'assets/horse_text.png',
-//           ),
-//           height: 25,
-//         ),
-//       ),
-//     ],
-//   );
-// }
-
-// Widget _defaultFlexibleSpaceBar({
-//   required HomeState state,
-//   required BuildContext context,
-// }) {
-//   final screenWidth = MediaQuery.of(context).size.width;
-//   final isLargeScreen = screenWidth > 800;
-//   final expandedHeight =
-//       isLargeScreen ? 100.0 : 400.0; // Smaller height for large screens
-//   const collapsedHeight = 60.0;
-//   return FlexibleSpaceBar(
-//     centerTitle: true,
-//     collapseMode: CollapseMode.pin,
-//     title: _name(state: state, context: context),
-//     background: Stack(
-//       children: [
-//         //background image
-//         Align(
-//           alignment: Alignment.topCenter,
-//           child: SizedBox(
-//             height: expandedHeight - collapsedHeight - 80,
-//             child: _appBarBackground(state: state),
-//           ),
-//         ),
-//         Visibility(
-//           visible: !state.isGuest,
-//           child: Positioned(
-//             //profile photo
-//             bottom: collapsedHeight + 10,
-//             left: MediaQuery.of(context).size.width / 2 - 50,
-//             child: Container(
-//               padding: const EdgeInsets.all(5),
-//               decoration: ShapeDecoration(
-//                 color: HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
-//                 shape: const CircleBorder(),
-//               ),
-//               child: profilePhoto(
-//                 context: context,
-//                 size: 150,
-//                 profilePicUrl:
-//                     state.viewingProfile?.picUrl ?? state.usersProfile?.picUrl,
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     ),
-//   );
-// }
-
 Widget _name({
   required HomeState state,
   required BuildContext context,
 }) {
-  //if riderProfile is null --  Horse & Rider's Companion
-  // if riderProfile is not null -- riderProfile.name
-  // if viewingProfile is not null -- Viewing: viewingProfile.name
-
   if (state.usersProfile != null) {
     return Row(
       children: [
@@ -349,14 +233,15 @@ Widget _name({
                       child: profilePhoto(
                         context: context,
                         size: 100,
-                        profilePicUrl: state.viewingProfile?.picUrl ??
-                            state.usersProfile?.picUrl,
+                        profilePicUrl: state.viewingProfile != null
+                            ? state.viewingProfile?.picUrl
+                            : state.usersProfile?.picUrl,
                       ),
                     ),
                   ),
                 ),
                 Text(
-                  state.usersProfile!.name,
+                  state.viewingProfile?.name ?? state.usersProfile!.name,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 30,
@@ -423,7 +308,7 @@ Widget _name({
                 HorseAndRidersTheme().getTheme().appBarTheme.backgroundColor ??
                     Colors.white,
             child: const Padding(
-              padding: EdgeInsets.all(8.0),
+              padding: EdgeInsets.all(8),
               child: Text(
                 'Welcome, Guest',
                 textAlign: TextAlign.center,
@@ -441,27 +326,6 @@ Widget _name({
   }
 }
 
-Widget _appBarBackground({
-  required HomeState state,
-}) {
-  return Padding(
-    padding: const EdgeInsets.all(10),
-    child: Container(
-      alignment: AlignmentDirectional.bottomStart,
-      margin: const EdgeInsets.only(top: 24),
-      decoration: BoxDecoration(
-        color: HorseAndRidersTheme().getTheme().appBarTheme.backgroundColor,
-        image: const DecorationImage(
-          image: AssetImage(
-            'assets/horse_logo_and_text_dark.png',
-          ),
-          fit: BoxFit.fitHeight,
-        ),
-      ),
-    ),
-  );
-}
-
 /// Profile view for the user or viewed profile
 /// if userProfile is null then treat this as
 /// a guest user and show a welcome message
@@ -470,8 +334,7 @@ Widget _profile({
   required HomeCubit homeCubit,
   required BuildContext context,
 }) {
-  return ListView(
-    shrinkWrap: true,
+  return Column(
     children: [
       Center(child: _name(state: state, context: context)),
       smallGap(),
@@ -547,8 +410,7 @@ Widget _profile({
           ),
         )
       else
-        ListView(
-          shrinkWrap: true,
+        Column(
           children: [
             gap(),
             _riderLocation(
@@ -583,7 +445,9 @@ Widget _profile({
               visible: state.usersProfile != null,
               child: Center(
                 child: Text(
-                  state.usersProfile?.email ?? '',
+                  state.viewingProfile?.email ??
+                      state.usersProfile?.email ??
+                      '',
                   style: const TextStyle(fontSize: 20),
                 ),
               ),
@@ -689,25 +553,29 @@ Widget _lists({
               runSpacing: 5,
               alignment: WrapAlignment.center,
               children: [
-                ...state.viewingProfile?.instructors
-                        ?.map(
-                          (e) => _profileCard(
-                            context: context,
-                            baseItem: e,
-                            homeCubit: homeCubit,
-                          ),
-                        )
-                        .toList() ??
-                    state.usersProfile!.instructors
-                        ?.map(
-                          (e) => _profileCard(
-                            context: context,
-                            baseItem: e,
-                            homeCubit: homeCubit,
-                          ),
-                        )
-                        .toList() ??
-                    [],
+                Column(
+                  children: state.viewingProfile != null
+                      ? state.viewingProfile?.instructors
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          []
+                      : state.usersProfile?.instructors
+                              ?.map(
+                                (e) => _profileCard(
+                                  context: context,
+                                  baseItem: e,
+                                  homeCubit: homeCubit,
+                                ),
+                              )
+                              .toList() ??
+                          [],
+                ),
               ],
             ),
           ],
@@ -862,6 +730,21 @@ List<Widget>? _appBarActions({
 }) {
   if (usersProfile != null) {
     return [
+      //search
+      IconButton(
+        onPressed: () {
+          showDialog<AlertDialog>(
+            context: context,
+            builder: (dialogContext) => ProfileSearchDialog(
+              homeContext: context,
+              key: const Key('ProfileSearchDialog'),
+            ),
+          );
+
+          debugPrint('Search Clicked');
+        },
+        icon: const Icon(Icons.search),
+      ),
       if (isUser)
         //   Tooltip(
         //     message: 'Messages',
@@ -1110,38 +993,10 @@ Widget? _drawer({
             onTap: () {
               showDialog<AlertDialog>(
                 context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: Text(
-                    state.searchState == SearchState.email
-                        ? 'Search for Contact By Email'
-                        : state.searchState == SearchState.name
-                            ? 'Search for Contact By Name'
-                            : state.searchState == SearchState.horse
-                                ? 'Search for Horse By Official Name'
-                                : 'Search for Horse By NickName',
-                    textAlign: TextAlign.center,
-                  ),
-                  content: SearchDialog(userProfile: state.usersProfile!),
-                  actions: [
-                    Visibility(
-                      visible: state.searchResult.isNotEmpty ||
-                          state.horseSearchResult.isNotEmpty,
-                      child: TextButton(
-                        onPressed: homeCubit.clearSearchResults,
-                        child: const Text('Clear Search'),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        homeCubit.closeSearchForHorsesOrRiders();
-                        Navigator.of(dialogContext).pop();
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                  ],
+                builder: (dialogContext) => ProfileSearchDialog(
+                  homeContext: context,
+                  key: const Key('ProfileSearchDialog'),
                 ),
-              ).then(
-                (value) => homeCubit.closeSearchForHorsesOrRiders(),
               );
 
               debugPrint('Search Clicked');
@@ -1390,6 +1245,9 @@ Widget _skillsView({
   required HomeState state,
 }) {
   // a list of the skills in the users skilllevels showing the level of progress
+  final skillLevels = state.viewingProfile != null
+      ? state.viewingProfile?.skillLevels
+      : state.usersProfile?.skillLevels;
 
   if (state.isGuest) {
     return Column(
@@ -1426,7 +1284,7 @@ Widget _skillsView({
       runSpacing: 5,
       alignment: WrapAlignment.center,
       children: [
-        ...state.usersProfile?.skillLevels
+        ...skillLevels
                 ?.map(
                   (e) => skillLevelCard(
                     state: state,

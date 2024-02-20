@@ -14,7 +14,7 @@ import 'package:formz/formz.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
-import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/View/create_resource_dialog.dart';
+import 'package:horseandriderscompanion/Home/Resources/CreateResourceDialog/View/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/HorseProfile/cubit/add_log_entry_cubit.dart';
@@ -216,9 +216,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Handles the Navigation when the back button is pressed from Resources,
   ///  Skill Tree, Messages, HorseProfile or Viewing a Rider Profile
-  void backPressed() {
+  void backPressed(BuildContext context) {
     if (state.index == 0 && state.isViewing) {
-      goBackToUsersProfile();
+      goBackToUsersProfile(context);
     } else if (state.index == 1 &&
         state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
       navigateToTrainingPathList();
@@ -232,7 +232,7 @@ class HomeCubit extends Cubit<HomeState> {
         state.skillTreeNavigation == SkillTreeNavigation.TrainingPath) {
       navigateToTrainingPathList();
     } else if (state.index == 0 && !state.isForRider) {
-      goBackToUsersProfile();
+      profileNavigationSelected();
     } else if (state.index == 2) {
       navigateToTrainingPathList();
     }
@@ -475,211 +475,9 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  /// Monitors the Name Field's [value] in the Search Dialog
-  void nameChanged(String value) {
-    final name = Name.dirty(value);
-    emit(state.copyWith(name: name, formzStatus: Formz.validate([name])));
-  }
-
-  /// Monitors the HorseName Field's [value] in the Search Dialog
-  void horseNameChanged(String value) {
-    final name = Name.dirty(value);
-    emit(state.copyWith(name: name, formzStatus: Formz.validate([name])));
-  }
-
-  /// Monitor the Email Field's [value] in the Search Dialog
-  void emailChanged(String value) {
-    final email = Email.dirty(value);
-    emit(state.copyWith(email: email, formzStatus: Formz.validate([email])));
-  }
-
-  /// Change the [searchState]
-  void toggleSearchState({required SearchState searchState}) {
-    if (state.searchState == searchState) {
-      emit(
-        state.copyWith(
-          searchState: searchState,
-          searchType: SearchType.ititial,
-          name: const Name.pure(),
-          email: const Email.pure(),
-        ),
-      );
-    } else {
-      emit(
-        state.copyWith(
-          searchState: searchState,
-          name: const Name.pure(),
-          email: const Email.pure(),
-        ),
-      );
-    }
-  }
-
-  /// Change the [searchType]
-  void changeSearchType({required SearchType searchType}) {
-    if (searchType == state.searchType) {
-      emit(state.copyWith(searchType: SearchType.ititial));
-    } else {
-      emit(state.copyWith(searchType: searchType));
-    }
-  }
-
-  /// Search for a Rider Profile by Name
-  void searchProfilesByName() {
-    emit(state.copyWith(formzStatus: FormzStatus.submissionInProgress));
-    debugPrint('getProfile by Name for ${state.name.value}');
-    try {
-      _riderProfileRepository
-          .getProfilesByName(name: state.name.value.trim())
-          .listen((event) {
-        final results =
-            event.docs.map((e) => (e.data()) as RiderProfile).toList();
-        if (results.isNotEmpty) {
-          emit(
-            state.copyWith(
-              searchResult: results,
-              formzStatus: FormzStatus.submissionSuccess,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              formzStatus: FormzStatus.submissionFailure,
-              error: 'No Results',
-              errorSnackBar: true,
-            ),
-          );
-        }
-      });
-    } catch (e) {
-      emit(
-        state.copyWith(
-          formzStatus: FormzStatus.submissionFailure,
-          error: e.toString(),
-          errorSnackBar: true,
-        ),
-      );
-      debugPrint("Failed with error '$e': $e");
-    }
-  }
-
-  /// Search for a Horse by Name
-  void searchForHorseByName() {
-    emit(state.copyWith(formzStatus: FormzStatus.submissionInProgress));
-    try {
-      _horseProfileRepository
-          .getHorseByName(name: state.name.value.trim())
-          .listen((event) {
-        final results =
-            event.docs.map((e) => (e.data()) as HorseProfile).toList();
-        if (results.isNotEmpty) {
-          emit(
-            state.copyWith(
-              horseSearchResult: results,
-              formzStatus: FormzStatus.submissionSuccess,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              formzStatus: FormzStatus.submissionFailure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
-    } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          formzStatus: FormzStatus.submissionFailure,
-          error: e.message,
-        ),
-      );
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
-    }
-  }
-
-  ///  Search results for a horseProfile by Nick Name
-  void searchForHorseByNickName() {
-    emit(state.copyWith(formzStatus: FormzStatus.submissionInProgress));
-    try {
-      _horseProfileRepository
-          .getHorseByNickName(nickName: state.name.value.trim())
-          .listen((event) {
-        final results =
-            event.docs.map((e) => (e.data()) as HorseProfile).toList();
-        if (results.isNotEmpty) {
-          emit(
-            state.copyWith(
-              horseSearchResult: results,
-              formzStatus: FormzStatus.submissionSuccess,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              formzStatus: FormzStatus.submissionFailure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
-    } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          formzStatus: FormzStatus.submissionFailure,
-          error: e.message,
-        ),
-      );
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
-    }
-  }
-
-  // search results by Email
-  void getProfileByEmail() {
-    emit(state.copyWith(formzStatus: FormzStatus.submissionInProgress));
-    final profileResults = <RiderProfile?>[];
-    try {
-      _riderProfileRepository
-          .getRiderProfile(email: state.email.value.trim().toLowerCase())
-          .listen((event) {
-        final profile = event.data() as RiderProfile?;
-        profileResults.add(profile);
-        if (profileResults.isNotEmpty) {
-          emit(
-            state.copyWith(
-              searchResult: profileResults,
-              formzStatus: FormzStatus.submissionSuccess,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              formzStatus: FormzStatus.submissionFailure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
-    } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          formzStatus: FormzStatus.submissionFailure,
-          error: e.message,
-        ),
-      );
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
-    }
-  }
-
-  /// Clears the search results
-  void clearSearchResults() {
-    debugPrint('Clear Search Results');
-    emit(state.copyWith(searchResult: [], horseSearchResult: []));
-  }
+  /* ************************************************************************* 
+                          Search Profiles
+  ********************************************************************/
 
   /// Opens a Rider Profile Page for  [toBeViewedEmail]
   void gotoProfilePage({
@@ -711,15 +509,8 @@ class HomeCubit extends Cubit<HomeState> {
         );
       });
     } else {
-      //throw error and goto profile page
-      debugPrint('Cannot view own profile');
-      emit(
-        state.copyWith(
-          homeStatus: HomeStatus.profile,
-          errorSnackBar: true,
-          error: 'Cannot view own profile',
-        ),
-      );
+      debugPrint('Returning to Users Profile');
+      goBackToUsersProfile(context);
     }
   }
 
@@ -757,9 +548,16 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void goBackToUsersProfile() {
+  void goBackToUsersProfile(BuildContext context) {
     debugPrint('goBackToUsersProfile, setting isViewing to false');
-
+    Navigator.of(context, rootNavigator: true).pushNamed(
+      HomePage.routeName,
+      arguments: HomePageArguments(
+        horseId: null,
+        viewingProfile: null,
+        usersProfile: state.usersProfile,
+      ),
+    );
     emit(
       state.copyWith(
         isViewing: false,

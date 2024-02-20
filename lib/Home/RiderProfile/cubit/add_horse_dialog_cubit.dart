@@ -33,29 +33,29 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         .then((value) => _locationApiKey = value);
     emit(
       state.copyWith(
-        selectedCountry: _horseProfile?.countryName,
-        selectedState: _horseProfile?.stateName,
-        selectedCity: _horseProfile?.cityName,
+        id: _horseProfile?.id ?? '',
         horseProfile: _horseProfile,
         usersProfile: _usersProfile,
-        horseName: SingleWord.dirty(_horseProfile?.name ?? ''),
-        horseNickname: SingleWord.dirty(_horseProfile?.nickname ?? ''),
+        picUrl: _horseProfile?.picUrl ?? '',
+        selectedCity: _horseProfile?.cityName,
+        selectedState: _horseProfile?.stateName,
+        dateOfBirth: _horseProfile?.dateOfBirth,
+        selectedCountry: _horseProfile?.countryName,
+        locationName: _horseProfile?.locationName ?? '',
         breed: SingleWord.dirty(_horseProfile?.breed ?? ''),
         color: SingleWord.dirty(_horseProfile?.color ?? ''),
-        dateOfBirth: _horseProfile?.dateOfBirth,
-        dateOfPurchase: _horseProfile?.dateOfPurchase?.millisecondsSinceEpoch,
+        zipCode: ZipCode.dirty(_horseProfile?.zipCode ?? ''),
         gender: SingleWord.dirty(_horseProfile?.gender ?? ''),
         height: SingleWord.dirty(_horseProfile?.height ?? ''),
-        locationName: _horseProfile?.locationName ?? '',
-        picUrl: _horseProfile?.picUrl ?? '',
+        horseName: SingleWord.dirty(_horseProfile?.name ?? ''),
+        horseNickname: SingleWord.dirty(_horseProfile?.nickname ?? ''),
         purchasePrice: Numberz.dirty(_horseProfile?.purchasePrice ?? 0),
-        zipCode: ZipCode.dirty(_horseProfile?.zipCode ?? ''),
-        id: _horseProfile?.id ?? '',
+        dateOfPurchase: _horseProfile?.dateOfPurchase?.millisecondsSinceEpoch,
       ),
     );
   }
-  String _locationApiKey = '';
   String _zipApi = '';
+  String _locationApiKey = '';
   final RiderProfile? _usersProfile;
   final HorseProfile? _horseProfile;
   final KeysRepository _keysRepository;

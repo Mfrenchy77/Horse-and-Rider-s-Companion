@@ -93,6 +93,20 @@ class RiderProfileRepository {
     });
   }
 
+  /// Retrieve all profiles for zipcode
+  Stream<QuerySnapshot> getProfilesByZipcode({required String zipcode}) {
+    return _riderProfileDatabaseReference
+        .where('zipCode', isEqualTo: zipcode)
+        .snapshots()
+        .handleError((Object error) {
+      if (error is FirebaseException) {
+        handleFirebaseException(error);
+      } else {
+        debugPrint('An unknown error occurred in getProfilesByZipcode: $error');
+      }
+    });
+  }
+
   /// Delete user's RiderProfile at [email]
   Future<void> deleteRiderProfile({required String email}) async {
     try {

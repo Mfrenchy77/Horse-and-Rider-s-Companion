@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resource_item.dart';
+import 'package:horseandriderscompanion/main.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 Widget resourcesView({
@@ -43,13 +45,7 @@ Widget resourcesView({
       ),
       titleSpacing: 0,
       centerTitle: true,
-      title: const Image(
-        color: Colors.white,
-        image: AssetImage(
-          'assets/horse_text.png',
-        ),
-        height: 25,
-      ),
+      title: appBarTitle(),
     ),
     body: Center(
       child: ListView(

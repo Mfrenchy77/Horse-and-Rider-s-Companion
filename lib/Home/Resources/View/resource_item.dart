@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
-import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/View/resource_update_skills_dialog.dart';
+import 'package:horseandriderscompanion/Home/Resources/CreateResourceDialog/View/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:horseandriderscompanion/shared_prefs.dart';
@@ -360,7 +360,6 @@ Widget _ratingButtons({
               child: IconButton(
                 tooltip: 'Assosiated Skills',
                 onPressed: () {
-                 
                   //  Show the skills associated with this resource
                   showDialog<AlertDialog>(
                     context: context,

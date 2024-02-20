@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
+import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/search_confimatio_dialog.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_level.dart';
@@ -9,6 +10,7 @@ import 'package:horseandriderscompanion/Home/RiderSkillTree/skills_list.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/training_path_view.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/training_paths_list.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/main.dart';
 import 'package:searchfield/searchfield.dart';
 
 ///   This is the main view for the Skill Tree
@@ -348,13 +350,7 @@ PreferredSizeWidget _appBar({
               debugPrint('Submit Value: $p0');
             },
           )
-        : const Image(
-            color: Colors.white,
-            image: AssetImage(
-              'assets/horse_text.png',
-            ),
-            height: 25,
-          ),
+        : appBarTitle(),
     actions: _appbarActions(
       state: state,
       context: context,
@@ -382,29 +378,27 @@ PreferredSizeWidget _appBar({
                   : homeCubit.navigateToTrainingPathList();
               break;
             case SkillTreeNavigation.SkillLevel:
-            state.isFromProfile
-                ? homeCubit.profileNavigationSelected()
-                : homeCubit.navigateToSkillsList();
+              state.isFromProfile
+                  ? homeCubit.profileNavigationSelected()
+                  : homeCubit.navigateToSkillsList();
               if (isSplitScreen) {
                 state.isFromProfile
                     ? homeCubit.profileNavigationSelected()
-                    :
-                state.isFromTrainingPath
-                    ? homeCubit.navigateToTrainingPathList()
-                    : state.isFromTrainingPathList
-                        ? homeCubit.profileNavigationSelected()
-                        : homeCubit.navigateToSkillsList();
+                    : state.isFromTrainingPath
+                        ? homeCubit.navigateToTrainingPathList()
+                        : state.isFromTrainingPathList
+                            ? homeCubit.profileNavigationSelected()
+                            : homeCubit.navigateToSkillsList();
               } else {
                 state.isFromProfile
                     ? homeCubit.profileNavigationSelected()
-                    :
-                state.isFromTrainingPath
-                    ? homeCubit.navigateToTrainingPath(
-                        trainingPath: state.trainingPath,
-                      )
-                    : state.isFromTrainingPathList
-                        ? homeCubit.navigateToTrainingPathList()
-                        : homeCubit.navigateToSkillsList();
+                    : state.isFromTrainingPath
+                        ? homeCubit.navigateToTrainingPath(
+                            trainingPath: state.trainingPath,
+                          )
+                        : state.isFromTrainingPathList
+                            ? homeCubit.navigateToTrainingPathList()
+                            : homeCubit.navigateToSkillsList();
               }
               break;
             //default navigate to profile

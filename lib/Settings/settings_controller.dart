@@ -27,11 +27,14 @@ class SettingsController with ChangeNotifier {
   /// local database or the internet. The controller only knows it can load the
   /// settings from the service.
   Future<void> loadSettings() async {
-    _darkMode = _settingsService.getSavedDarkMode();
-    _seasonalMode = _settingsService.getSeasonalMode();
-
-    // Important! Inform listeners a change has occurred.
-    notifyListeners();
+    try {
+      _darkMode = _settingsService.getSavedDarkMode();
+      _seasonalMode = _settingsService.getSeasonalMode();
+      notifyListeners();
+    } catch (e) {
+      // Handle the error, log it, or show a user-friendly message
+      debugPrint('Error loading settings: $e');
+    }
   }
 
   /// Update and persist the ThemeMode based on the user's selection.
@@ -56,7 +59,7 @@ class SettingsController with ChangeNotifier {
     }
   }
 
-  ///Updare and persist the seasonal mode based on the user's selection
+  ///Update and persist the seasonal mode based on the user's selection
   void updateSeasonalMode() {
     _settingsService.updateSeasonalMode();
     notifyListeners();

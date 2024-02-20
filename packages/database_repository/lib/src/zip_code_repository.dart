@@ -1,7 +1,8 @@
-// ignore_for_file: public_member_api_docs
+// ignore_for_file: public_member_api_docs, lines_longer_than_80_chars
 
 import 'dart:convert';
 import 'package:database_repository/database_repository.dart';
+import 'package:database_repository/src/models/radius_search_response.dart';
 import 'package:http/http.dart' as http;
 
 /// Exception thrown when an API call to the Zipcodebase API fails.
@@ -32,6 +33,26 @@ class ZipcodeApiRequestException implements Exception {
   @override
   String toString() =>
       'ZipcodeApiRequestException: HTTP status code $statusCode';
+}
+
+/// Exception thrown when the Zipcodebase API returns a 403 status code.
+class ZipCodeForbidenException implements Exception {
+  ZipCodeForbidenException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'ZipCodeForbidenException: $message';
+}
+
+/// Exception thrown when the Zipcodebase API returns a 401 status code.
+class ZipCodeApiUnauthorizedException implements Exception {
+  ZipCodeApiUnauthorizedException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'ZipCodeApiUnauthorizedException: $message';
 }
 
 /// Exception thrown when there is an error parsing the
@@ -94,10 +115,60 @@ class ZipcodeRepository {
         } catch (e) {
           throw ZipcodeApiResponseParsingException(e.toString());
         }
+      } else if (response.statusCode == 403) {
+        throw ZipCodeForbidenException(response.body);
+      } else if (response.statusCode == 401) {
+        throw ZipCodeApiUnauthorizedException(response.body);
       } else {
         throw ZipcodeApiRequestException(response.statusCode);
       }
     } catch (e) {
+      throw ZipcodeApiException(e.toString());
+    }
+  }
+
+  /// Queries the Zipcodebase API for postal codes within a specified radius of
+  /// a given postal code.
+  ///
+  /// [postalCode]: The base postal code from which to calculate the radius.
+  /// [radius]: The radius within which to search for other postal codes.
+  /// [country]: The country within which the search is conducted, specified by
+  /// its ISO 3166-1 alpha-2 country code.
+  /// [unit]: The unit of measurement for the radius, either 'km' or 'miles'.
+  /// Defaults to 'km'.
+  ///
+  /// Returns a [RadiusSearchResponse] containing the list of postal codes found
+  /// within the specified radius, or throws an exception if the request fails.
+  Future<RadiusSearchResponse?> queryRadius({
+    required String postalCode,
+    required int radius,
+    // required String? country,
+    String unit = 'miles',
+  }) async {
+    // Construct the request URL with the provided parameters.
+    final url = Uri.parse(
+      '${_baseUrl}radius?apikey=$apiKey&code=$postalCode&radius=$radius&country=us&unit=miles',
+    );
+
+    try {
+      // Perform the HTTP GET request.
+      final response = await http.get(url);
+      // Check if the response status code is 200 (OK).
+      if (response.statusCode == 200) {
+        // Parse the JSON response body.
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        // Create and return the RadiusSearchResponse from the parsed JSON.
+        return RadiusSearchResponse.fromJson(json);
+      } else if (response.statusCode == 403) {
+        throw ZipCodeForbidenException(response.body);
+      } else if (response.statusCode == 401) {
+        throw ZipCodeApiUnauthorizedException(response.body);
+      } else {
+        // Throw an exception for non-200 response codes.
+        throw ZipcodeApiRequestException(response.statusCode);
+      }
+    } catch (e) {
+      // Catch and rethrow any exceptions as a ZipcodeApiException.
       throw ZipcodeApiException(e.toString());
     }
   }

@@ -45,3 +45,18 @@ extension FormatDate on int {
         .format(DateTime.fromMillisecondsSinceEpoch(this * 1000));
   }
 }
+
+/// Capitalize the first letter of each word in a string [input]
+/// and return the result
+String capitalizeWords(String input) {
+  // Split the string into words
+  final words = input.split(' ');
+  // Capitalize the first letter of each word
+  final capitalizedWords = words.map((word) {
+    if (word.isEmpty) return '';
+    // Capitalize the first letter and add the rest of the letters
+    return word[0].toUpperCase() + word.substring(1).toLowerCase();
+  });
+  // Join the words back into a single string
+  return capitalizedWords.join(' ');
+}

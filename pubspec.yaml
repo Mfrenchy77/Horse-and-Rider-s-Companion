@@ -46,7 +46,7 @@ dependencies:
   intl: any
   intl_utils: ^2.8.2
   meta: ^1.8.0
-  mockito: ^5.3.2
+  mockito: ^5.4.4
   numberpicker: ^2.1.1
   open_mail_app: ^0.4.5
   responsive_framework: ^1.1.1

@@ -10,8 +10,8 @@ import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resources_view.dart';
+import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_view.dart';
-import 'package:horseandriderscompanion/Home/RiderProfile/Views/search_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/support_message_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/horse_profile_view.dart';
@@ -50,13 +50,12 @@ class HomeView extends StatelessWidget {
 
         /// Show Search
         if (state.isSearching) {
-          showDialog<SearchDialog>(
+          showDialog<AlertDialog>(
             context: context,
-            builder: (context) => SearchDialog(
-              userProfile: state.usersProfile!,
+            builder: (context) => ProfileSearchDialog(
+              homeContext: context,
+              key: const Key('ProfileSearchDialog'),
             ),
-          ).then(
-            (value) => context.read<HomeCubit>().closeSearchForHorsesOrRiders(),
           );
         }
 
@@ -175,7 +174,8 @@ class HomeView extends StatelessWidget {
                                         .iconTheme
                                         ?.color,
                                   ),
-                                  onPressed: homeCubit.backPressed,
+                                  onPressed: () =>
+                                      homeCubit.backPressed(context),
                                 ),
                               ),
                         leadingExtendedNavRail: state.index == 0
@@ -196,7 +196,8 @@ class HomeView extends StatelessWidget {
                                         .iconTheme
                                         ?.color,
                                   ),
-                                  onPressed: homeCubit.backPressed,
+                                  onPressed: () =>
+                                      homeCubit.backPressed(context),
                                 ),
                               ),
                         useDrawer: false,

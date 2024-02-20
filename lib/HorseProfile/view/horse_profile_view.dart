@@ -27,7 +27,9 @@ Widget horseProfileView({
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: homeCubit.goBackToUsersProfile,
+          onPressed: () => state.viewingProfile != null
+              ? Navigator.of(context).pop()
+              : homeCubit.goBackToUsersProfile(context),
           icon: const Icon(
             Icons.arrow_back,
           ),
@@ -45,10 +47,12 @@ Widget horseProfileView({
           config: <Breakpoint, SlotLayoutConfig>{
             Breakpoints.large: SlotLayout.from(
               key: const Key('primary'),
-              builder: (context) => _primaryView(
-                context: context,
-                homeCubit: homeCubit,
-                state: state,
+              builder: (context) => SingleChildScrollView(
+                child: _primaryView(
+                  context: context,
+                  homeCubit: homeCubit,
+                  state: state,
+                ),
               ),
             ),
             Breakpoints.medium: SlotLayout.from(
@@ -172,8 +176,7 @@ Widget _primaryView({
   required HomeState state,
 }) {
   final horseProfile = state.horseProfile;
-  return ListView(
-    shrinkWrap: true,
+  return Column(
     children: [
       Row(
         children: [

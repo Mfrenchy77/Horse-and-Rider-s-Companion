@@ -22,23 +22,29 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         _riderProfileRepository = riderProfileRepository,
         super(const EditRiderProfileState()) {
     _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
+    _keysRepository
+        .getLocationApiKey()
+        .then((value) => _locationApiKey = value);
     emit(
       state.copyWith(
-        riderProfile: _riderProfile,
         bio: _riderProfile.bio,
+        riderProfile: _riderProfile,
         picUrl: _riderProfile.picUrl,
         riderName: _riderProfile.name,
         homeUrl: _riderProfile.homeUrl,
+        selectedCity: _riderProfile.cityName,
+        selectedState: _riderProfile.stateName,
         locationName: _riderProfile.locationName,
+        selectedCountry: _riderProfile.countryName,
         zipCode: ZipCode.dirty(_riderProfile.zipCode ?? ''),
       ),
     );
   }
 
-  late String _zipApi;
+  late String _zipApi = '';
+  String _locationApiKey = '';
   final RiderProfile _riderProfile;
   final KeysRepository _keysRepository;
-  // late final GoogleMapsPlaces _places;
   final CloudRepository _cloudRepository;
   final RiderProfileRepository _riderProfileRepository;
 
@@ -67,11 +73,10 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
   Future<void> riderProfilePicClicked() async {
     String? picUrl;
-
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
       imageQuality: 20,
+      source: ImageSource.gallery,
     );
 
     if (pickedFile != null) {
@@ -86,8 +91,8 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         emit(
           state.copyWith(
             isSubmitting: false,
-            status: SubmissionStatus.failure,
             error: 'Error uploading image',
+            status: SubmissionStatus.failure,
           ),
         );
       }
@@ -99,41 +104,58 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     emit(state.copyWith(isLocationSearch: !state.isLocationSearch));
   }
 
-//method that opens a dialog to let user choose
-// their city based on ther geo location
-  Future<void> searchForLocation() async {
-    // final value = state.zipCode.value;
-    // final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
-    // if (value.length >= 5) {
-    //   emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
-    //   try {
-    //     final response =
-    //await zipcodeRepo.queryZipcode(value, country: 'us');
-    //     if (response != null) {
-    //       debugPrint('Response: ${response.results.results.length}');
-    //       emit(
-    //         state.copyWith(
-    //           autoCompleteStatus: AutoCompleteStatus.success,
-    //           prediction: response.results,
-    //         ),
-    //       );
-    //     } else {
-    //       emit(
-    //         state.copyWith(
-    //           autoCompleteStatus: AutoCompleteStatus.error,
-    //           error: 'Error ',
-    //         ),
-    //       );
-    //     }
-    //   } catch (e) {
-    //     emit(
-    //       state.copyWith(
-    //         autoCompleteStatus: AutoCompleteStatus.error,
-    //         error: e.toString(),
-    //       ),
-    //     );
-    //   }
-    // }
+  void riderZipCodeChanged({required String value}) {
+    final zipCode = ZipCode.dirty(value);
+    emit(
+      state.copyWith(
+        zipCode: zipCode,
+        locationStatus: Formz.validate([zipCode]),
+      ),
+    );
+  }
+
+  /// Get the list of countries from the location api
+  Future<List<Country>> getCountries() async {
+    final locationRepository = LocationRepository(apiKey: _locationApiKey);
+    return locationRepository.getCountries();
+  }
+
+  /// Get the list of states from the location api
+  /// [countryIso] is the iso code for the country
+  Future<List<StateLocation>> getStates({required String countryIso}) async {
+    final locationRepository = LocationRepository(apiKey: _locationApiKey);
+    return locationRepository.getStates(countryIso: countryIso);
+  }
+
+  /// Get the list of cities from the location api
+  /// [stateIso] is the id of the state
+  /// [countryIso] is the iso code for the country
+  Future<List<City>> getCities({
+    required String stateIso,
+    required String countryIso,
+  }) async {
+    debugPrint('Getting Cities for $stateIso, $countryIso');
+    final locationRepository = LocationRepository(apiKey: _locationApiKey);
+    return locationRepository.getCities(
+      stateIso: stateIso,
+      countryCode: countryIso,
+    );
+  }
+
+  void countryChanged({
+    required String countryIso,
+    required String countryName,
+  }) {
+    emit(state.copyWith(countryIso: countryIso, selectedCountry: countryName));
+  }
+
+  void stateChanged({required String stateId, required String stateName}) {
+    emit(state.copyWith(stateId: stateId, selectedState: stateName))
+    ;
+  }
+
+  void cityChanged({required String city}) {
+    emit(state.copyWith(selectedCity: city));
   }
 
   void locationSelected({
@@ -163,24 +185,73 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     }
   }
 
-  // Future<void> getGeoPoint(Prediction prediction) async {
-  //   await _places.getDetailsByPlaceId(prediction.placeId ?? '')
-  //.then((value) {
-  //     debugPrint('Location Name: ${value.result?.formattedAddress}');
-  //     emit(
-  //       state.copyWith(
-  //         location: GeoPoint(
-  //           value.result?.geometry?.location.lat as double,
-  //           value.result?.geometry?.location.lng as double,
-  //         ),
-  //         locationName: prediction.description,
-  //         autoCompleteStatus: AutoCompleteStatus.initial,
-  //       ),
-  //     );
+  Future<void> _searchForZip() async {
+    debugPrint('Searching by Zip Code');
+    final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
 
-  //     debugPrint('State Location Name: ${state.locationName}');
-  //   });
-  // }
+    emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
+
+    if (state.countryIso != null &&
+        state.selectedCity != null &&
+        state.selectedState != null) {
+      try {
+        final zipResponse = await zipcodeRepo.queryZipcode(
+          city: state.selectedCity!,
+          country: state.countryIso!,
+          state: state.selectedState!,
+        );
+        if (zipResponse != null && zipResponse.results.results.isNotEmpty) {
+          if (zipResponse.results.results.length > 1) {
+            debugPrint('More than one result');
+            emit(
+              state.copyWith(
+                autoCompleteStatus: AutoCompleteStatus.success,
+                prediction: zipResponse.results,
+              ),
+            );
+          } else {
+            debugPrint('One result');
+            final zipCode =
+                ZipCode.dirty(zipResponse.results.results.keys.elementAt(0));
+            emit(
+              state.copyWith(
+                zipCode: zipCode,
+                locationStatus: Formz.validate([zipCode]),
+                autoCompleteStatus: AutoCompleteStatus.success,
+                prediction: zipResponse.results,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        emit(
+          state.copyWith(
+            autoCompleteStatus: AutoCompleteStatus.error,
+            error: e.toString(),
+          ),
+        );
+      }
+    } else {
+      debugPrint('No Country, State or City Selected');
+    }
+  }
+
+  void countrySelected({required String country, required String countryIso}) {
+    debugPrint('Country Selected: $country');
+    emit(state.copyWith(selectedCountry: country, countryIso: countryIso));
+  }
+
+  void stateSelected(String selectedState) {
+    debugPrint('State Selected: $selectedState');
+    emit(state.copyWith(selectedState: selectedState));
+  }
+
+  void citySelected(String city) {
+    debugPrint('City Selected: $city');
+    emit(state.copyWith(selectedCity: city));
+    _searchForZip();
+  }
+
   Future<void> updateRiderProfile() async {
     emit(state.copyWith(status: SubmissionStatus.inProgress));
     final riderProfile = state.riderProfile;

@@ -1,11 +1,10 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 
 ///Model for a Rider's Profile
 class RiderProfile {
+  /// Creates a new instance of [RiderProfile]
   RiderProfile({
     this.bio,
     this.picUrl,
@@ -13,6 +12,11 @@ class RiderProfile {
     this.zipCode,
     this.lastEditBy,
     this.subscribed,
+    this.cityName,
+    this.stateIso,
+    this.stateName,
+    this.countryIso,
+    this.countryName,
     required this.id,
     this.locationName,
     this.lastEditDate,
@@ -33,31 +37,95 @@ class RiderProfile {
     this.savedResourcesList = const [],
   });
 
+  /// whether the user is an editor
   bool? editor;
+
+  /// the rider's bio
   String? bio;
+
+  /// the rider's name
   String name;
+
+  /// the rider's zip code
   String? zipCode;
+
+  /// whether the user is a trainer
   bool? isTrainer;
+
+  /// the rider's website link
   String? homeUrl;
+
+  /// the rider's id
   final String id;
+
+  /// the last user to edit the profile
   String? lastEditBy;
+
+  /// the rider's profile picture url
   String? picUrl = '';
+
+  /// the rider's email, this as the id
   final String email;
+
+  /// the rider's location name
   String? locationName;
+
+  /// the rider's city name
+  String? cityName = '';
+
+  /// the rider's state iso
+  String? stateIso = '';
+
+  /// the rider's state name
+  String? stateName = '';
+
+  /// the rider's country iso
+  String? countryIso = '';
+
+  /// the rider's country name
+  String? countryName = '';
+
+  /// the last date the profile was edited
   DateTime? lastEditDate;
+
+  /// List of notes made on the rider's profile
   List<BaseListItem>? notes;
+
+  /// whether the user is subscribed
   bool? subscribed = false;
+
+  /// List of messages sent to the rider
   List<String>? messagesList;
+
+  /// the date the user subscribed
   DateTime? subscriptionDate;
+
+  /// List of students the rider has
   List<BaseListItem>? students;
+
+  /// the date the user's subscription ends
   DateTime? subscriptionEndDate;
+
+  /// List of skill levels the rider has
   List<SkillLevel>? skillLevels;
+
+  /// List of instructors the rider has
   List<BaseListItem>? instructors;
+
+  /// List of horses the rider owns
   List<BaseListItem>? ownedHorses;
+
+  /// List of resources the rider has saved
   List<String>? savedResourcesList;
+
+  /// List of student horses the rider has
   List<BaseListItem>? studentHorses;
+
+  /// List of profiles the rider has saved
   List<BaseListItem>? savedProfilesList;
 
+  /// Creates a new instance of [RiderProfile] from a [DocumentSnapshot]
+  // ignore: sort_constructors_first
   factory RiderProfile.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     // ignore: avoid_unused_constructor_parameters
@@ -73,9 +141,14 @@ class RiderProfile {
       picUrl: data['picUrl'] as String?,
       zipCode: data['zipCode'] as String?,
       homeUrl: data['homeUrl'] as String?,
+      cityName: data['cityName'] as String?,
+      stateIso: data['stateIso'] as String?,
       isTrainer: data['isTrainer'] as bool?,
       subscribed: data['subscribed'] as bool?,
+      stateName: data['stateName'] as String?,
+      countryIso: data['countryIso'] as String?,
       lastEditBy: data['lastEditBy'] as String?,
+      countryName: data['countryName'] as String?,
       locationName: data['locationName'] as String?,
       subscriptionDate: data['subscriptionDate'] as DateTime?,
       lastEditDate: (data['lastEditDate'] as Timestamp?)?.toDate(),
@@ -122,6 +195,8 @@ class RiderProfile {
           (data['messagesList'] as List?)?.map((e) => e as String).toList(),
     );
   }
+
+  /// Converts the [RiderProfile] to a [Map]
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -131,9 +206,14 @@ class RiderProfile {
       if (editor != null) 'editor': editor,
       if (picUrl != null) 'picUrl': picUrl,
       if (zipCode != null) 'zipCode': zipCode,
+      if (cityName != null) 'cityName': cityName,
+      if (stateIso != null) 'stateIso': stateIso,
+      if (stateName != null) 'stateName': stateName,
       if (isTrainer != null) 'isTrainer': isTrainer,
+      if (countryIso != null) 'countryIso': countryIso,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (subscribed != null) 'subscribed': subscribed,
+      if (countryName != null) 'countryName': countryName,
       if (locationName != null) 'locationName': locationName,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
       if (messagesList != null) 'messagesList': messagesList,
@@ -161,6 +241,7 @@ class RiderProfile {
     };
   }
 
+  /// Returns a copy of the [RiderProfile] with the specified fields updated
   RiderProfile copyWith({
     String? id,
     String? bio,
@@ -171,7 +252,12 @@ class RiderProfile {
     String? homeUrl,
     String? zipCode,
     bool? subscribed,
+    String? cityName,
+    String? stateIso,
+    String? stateName,
+    String? countryIso,
     String? lastEditBy,
+    String? countryName,
     String? locationName,
     DateTime? lastEditDate,
     List<BaseListItem>? notes,
@@ -196,9 +282,14 @@ class RiderProfile {
       homeUrl: homeUrl ?? this.homeUrl,
       zipCode: zipCode ?? this.zipCode,
       students: students ?? this.students,
+      cityName: cityName ?? this.cityName,
+      stateIso: stateIso ?? this.stateIso,
+      stateName: stateName ?? this.stateName,
       isTrainer: isTrainer ?? this.isTrainer,
+      countryIso: countryIso ?? this.countryIso,
       lastEditBy: lastEditBy ?? this.lastEditBy,
       subscribed: subscribed ?? this.subscribed,
+      countryName: countryName ?? this.countryName,
       skillLevels: skillLevels ?? this.skillLevels,
       ownedHorses: ownedHorses ?? this.ownedHorses,
       instructors: instructors ?? this.instructors,

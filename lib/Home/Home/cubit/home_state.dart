@@ -4,17 +4,20 @@ part of 'home_cubit.dart';
 
 enum SkillSearchState { skill, level }
 
-enum SearchType { ititial, rider, horse }
+enum SearchState { initial, searching, success }
 
 enum LevelSubmitionStatus { submitting, ititial }
 
 enum LevelSubmissionStatus { submitting, initial }
 
-enum SearchState { email, name, horse, horseNickName }
 
-enum SkillTreeStatus { categories, subCategories, skill, level }
 
-enum ResourcesSortStatus { recent, saved, oldest, mostRecommended }
+enum ResourcesSortStatus {
+  recent,
+  saved,
+  oldest,
+  mostRecommended,
+}
 
 enum SkillTreeNavigation {
   SkillList,
@@ -23,7 +26,14 @@ enum SkillTreeNavigation {
   TrainingPathList
 }
 
-enum HomeStatus { loading, profile, resource, skillTree, ridersLog, horseLog }
+enum HomeStatus {
+  loading,
+  profile,
+  resource,
+  skillTree,
+  ridersLog,
+  horseLog,
+}
 
 @immutable
 class HomeState extends Equatable {
@@ -79,14 +89,12 @@ class HomeState extends Equatable {
     this.isFromTrainingPath = false,
     this.horseSearchResult = const [],
     this.isFromTrainingPathList = false,
-    this.searchState = SearchState.name,
     this.formzStatus = FormzStatus.pure,
-    this.searchType = SearchType.ititial,
     this.homeStatus = HomeStatus.loading,
+    this.searchState = SearchState.initial,
     this.isSendingMessageToSupport = false,
     this.difficultyState = DifficultyState.all,
     this.skillSearchState = SkillSearchState.skill,
-    this.skillTreeStatus = SkillTreeStatus.categories,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.levelSubmitionStatus = LevelSubmitionStatus.ititial,
     this.levelSubmissionStatus = LevelSubmissionStatus.initial,
@@ -120,7 +128,6 @@ class HomeState extends Equatable {
   final bool isBannerAdReady;
   final List<Skill?>? skills;
   final HomeStatus homeStatus;
-  final SearchType searchType;
   final bool isFromTrainingPath;
   final List<Skill?>? allSkills;
   final FormzStatus formzStatus;
@@ -142,7 +149,6 @@ class HomeState extends Equatable {
   final List<Resource?>? resourcesList;
   final bool isSendingMessageToSupport;
   final List<Resource?>? savedResources;
-  final SkillTreeStatus skillTreeStatus;
   final DifficultyState difficultyState;
   final List<Skill?>? trainingPathSkills;
   final List<RiderProfile?> searchResult;
@@ -170,6 +176,7 @@ class HomeState extends Equatable {
     String? horseId,
     bool? isViewing,
     String? message,
+    ZipCode? zipCode,
     bool? isSnackbar,
     bool? isForRider,
     bool? isEditState,
@@ -185,7 +192,6 @@ class HomeState extends Equatable {
     List<Level?>? levels,
     bool? messageSnackBar,
     bool? isBannerAdReady,
-    SearchType? searchType,
     HomeStatus? homeStatus,
     List<Skill?>? allSkills,
     bool? isFromTrainingPath,
@@ -209,7 +215,6 @@ class HomeState extends Equatable {
     List<Resource?>? savedResources,
     bool? isSendingMessageToSupport,
     List<Skill?>? trainingPathSkills,
-    SkillTreeStatus? skillTreeStatus,
     List<Skill?>? intermediateSkills,
     DifficultyState? difficultyState,
     List<RiderProfile?>? searchResult,
@@ -242,7 +247,6 @@ class HomeState extends Equatable {
       isViewing: isViewing ?? this.isViewing,
       allSkills: allSkills ?? this.allSkills,
       searchList: searchList ?? this.searchList,
-      searchType: searchType ?? this.searchType,
       homeStatus: homeStatus ?? this.homeStatus,
       isSnackbar: isSnackbar ?? this.isSnackbar,
       isForRider: isForRider ?? this.isForRider,
@@ -272,7 +276,6 @@ class HomeState extends Equatable {
       viewingProfile: viewingProfile ?? this.viewingProfile,
       messageSnackBar: messageSnackBar ?? this.messageSnackBar,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
-      skillTreeStatus: skillTreeStatus ?? this.skillTreeStatus,
       difficultyState: difficultyState ?? this.difficultyState,
       skillSearchState: skillSearchState ?? this.skillSearchState,
       horseSearchResult: horseSearchResult ?? this.horseSearchResult,
@@ -314,7 +317,6 @@ class HomeState extends Equatable {
         isViewing,
         isSnackbar,
         isForRider,
-        searchType,
         homeStatus,
         categories,
         searchList,
@@ -343,7 +345,6 @@ class HomeState extends Equatable {
         viewingProfile,
         isBannerAdReady,
         messageSnackBar,
-        skillTreeStatus,
         difficultyState,
         skillSearchState,
         horseSearchResult,

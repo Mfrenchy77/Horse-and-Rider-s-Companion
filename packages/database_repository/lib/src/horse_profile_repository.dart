@@ -62,9 +62,15 @@ class HorseProfileRepository {
   }
 
   ///Retrieve Horse Profile using it's[id]
-
   Stream<DocumentSnapshot> getHorseProfile({required String? id}) {
     return _horseProfiledatabaseReference.doc(id).snapshots();
+  }
+
+  /// Retrieve all horse profiles for a zip code
+  Stream<QuerySnapshot> getHorseByZipCode({required String zipCode}) {
+    return _horseProfiledatabaseReference
+        .where('zipCode', isEqualTo: zipCode)
+        .snapshots();
   }
 
   ///Delete Horse Profile at [id]

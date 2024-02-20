@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
-import 'package:horseandriderscompanion/Home/Resources/View/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
+import 'package:horseandriderscompanion/Home/Resources/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
