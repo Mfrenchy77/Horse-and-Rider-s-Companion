@@ -145,13 +145,11 @@ class UpdateResourceSkills extends StatelessWidget {
                   Visibility(
                     visible: !homeState.isGuest,
                     child: TextButton(
-                      onPressed: state.status.isValidated
-                          ? () {
-                              context
-                                  .read<CreateResourceDialogCubit>()
-                                  .editResource();
-                            }
-                          : null,
+                      onPressed: () {
+                        context
+                            .read<CreateResourceDialogCubit>()
+                            .editResource();
+                      },
                       child: const Text('Update'),
                     ),
                   ),

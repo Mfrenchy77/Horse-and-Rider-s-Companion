@@ -296,37 +296,47 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchForHorseById() {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     final horseProfileResults = <HorseProfile>[];
-    try {
-      _horseProfileRepository
-          .getHorseProfileById(id: state.searchValue.toLowerCase().trim())
-          .listen((event) {
-        final horseProfile = event.data()! as HorseProfile;
-        horseProfileResults.add(horseProfile);
-        if (horseProfileResults.isNotEmpty) {
-          emit(
-            state.copyWith(
-              horseProfiles: horseProfileResults,
-              status: FormzStatus.submissionSuccess,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              status: FormzStatus.submissionFailure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
-    } on FirebaseException catch (e) {
+    if (state.searchValue.isNotEmpty) {
+      try {
+        _horseProfileRepository
+            .getHorseProfileById(id: state.searchValue.toLowerCase().trim())
+            .listen((event) {
+          final horseProfile = event.data()! as HorseProfile;
+          horseProfileResults.add(horseProfile);
+          if (horseProfileResults.isNotEmpty) {
+            emit(
+              state.copyWith(
+                horseProfiles: horseProfileResults,
+                status: FormzStatus.submissionSuccess,
+              ),
+            );
+          } else {
+            emit(
+              state.copyWith(
+                status: FormzStatus.submissionFailure,
+                error: 'No Results',
+              ),
+            );
+          }
+        });
+      } on FirebaseException catch (e) {
+        emit(
+          state.copyWith(
+            status: FormzStatus.submissionFailure,
+            error: e.message,
+          ),
+        );
+
+        debugPrint("Failed with error '${e.code}': ${e.message}");
+      }
+    } else {
       emit(
         state.copyWith(
+          isError: true,
           status: FormzStatus.submissionFailure,
-          error: e.message,
+          error: 'Please enter a valid Horse Id',
         ),
       );
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
     }
   }
 

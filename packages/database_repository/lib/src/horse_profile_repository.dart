@@ -31,7 +31,7 @@ class HorseProfileRepository {
   }
 
   /// retrieve a horse profile by its [id]
-  Stream<DocumentSnapshot> getHorseProfileById({required String? id}) {
+  Stream<DocumentSnapshot> getHorseProfileById({required String id}) {
     return _horseProfiledatabaseReference.doc(id).snapshots();
   }
 

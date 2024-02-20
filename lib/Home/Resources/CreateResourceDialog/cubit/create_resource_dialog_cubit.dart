@@ -71,6 +71,20 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       state.copyWith(
         title: title,
         status: Formz.validate([title]),
+        urlFetchedStatus: state.url.value.isNotEmpty
+            ? UrlFetchedStatus.fetched
+            : UrlFetchedStatus.initial,
+      ),
+    );
+  }
+
+  ///   Called when Editing a Resource and the
+  ///  ImageUrl is changed
+  void imageUrlChanged(String value) {
+    final imageUrl = value;
+    emit(
+      state.copyWith(
+        imageUrl: imageUrl,
       ),
     );
   }
@@ -156,16 +170,28 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   // read the url String and extract the metadata
   // update the state with the metadata
+
   Future<void> fetchUrl() async {
     final url = _checkAndModifyUrl(state.url.value.trim());
     debugPrint('fetchUrl: $url');
     emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
-    final metadatarepository = UrlMetadataRepository(apiKey: _jsonKey ?? '');
+    final metadataRepository = UrlMetadataRepository(apiKey: _jsonKey ?? '');
 
-    await metadatarepository.extractUrlMetadata(url: url).then((value) {
-      debugPrint('metadata: $value');
-      updateUrlMetadata(data: value);
-    }).catchError((Object e) {
+    try {
+      debugPrint('Fetching the metadata');
+      // First attempt: Using the API
+      final metadata = await metadataRepository.extractUrlMetadata(url: url);
+      if (metadata.title.isNotEmpty && metadata.description.isNotEmpty) {
+        updateUrlMetadata(data: metadata);
+      } else {
+        debugPrint('Scraping the webpage');
+        // If title or description is empty, attempt to scrape the webpage
+        final scrapedMetadata =
+            await metadataRepository.extractMetadataFromUrl(url);
+        updateUrlMetadata(data: scrapedMetadata);
+      }
+    } catch (e) {
+      // Handle errors from both attempts
       debugPrint('Error Fetching Url: $e');
       emit(
         state.copyWith(
@@ -175,7 +201,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           status: FormzStatus.invalid,
         ),
       );
-    });
+    }
   }
 
   ///   Called when the url is inputted and validated
@@ -183,7 +209,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   void updateUrlMetadata({required UrlMetadata data}) {
     final title = SingleWord.dirty(data.title);
     final description = SingleWord.dirty(data.description);
-    final imageUrl = data.imageUrls.first;
+    final imageUrl = data.imageUrls.first ?? '';
     debugPrint('imageUrl: $imageUrl');
     debugPrint('title: $title');
     debugPrint('description: $description');
@@ -327,6 +353,14 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         );
       }
     }
+  }
+
+  void clearMetaDataError() {
+    emit(
+      state.copyWith(
+        urlFetchedStatus: UrlFetchedStatus.initial,
+      ),
+    );
   }
 
   //  Clears the error message

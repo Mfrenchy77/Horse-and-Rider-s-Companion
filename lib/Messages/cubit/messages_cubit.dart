@@ -232,101 +232,106 @@ class MessagesCubit extends Cubit<MessagesState> {
         case MessageType.STUDENT_HORSE_REQUEST:
           debugPrint('STUDENT_HORSE_REQUEST');
           HorseProfile studentHorse;
-          _horseProfileRepository
-              .getHorseProfileById(id: message.requestItem?.id)
-              .listen((event) {
-            studentHorse = event.data() as HorseProfile;
-            debugPrint('studentHorse: $studentHorse');
-            final horseNote = BaseListItem(
-              id: DateTime.now().toString(),
-              name: 'Added ${receiverProfile.name} as a trainer',
-              date: DateTime.now(),
-              parentId: studentHorse.id,
-              message: studentHorse.name,
-            );
+          if (message.requestItem != null) {
+            _horseProfileRepository
+                .getHorseProfileById(id: message.requestItem!.id ?? '')
+                .listen((event) {
+              studentHorse = event.data() as HorseProfile;
+              debugPrint('studentHorse: $studentHorse');
+              final horseNote = BaseListItem(
+                id: DateTime.now().toString(),
+                name: 'Added ${receiverProfile.name} as a trainer',
+                date: DateTime.now(),
+                parentId: studentHorse.id,
+                message: studentHorse.name,
+              );
 
-            final senderAcceptnote = BaseListItem(
-              id: DateTime.now().toString(),
-              name: 'Added ${studentHorse.name} as a student horse',
-              date: DateTime.now(),
-              parentId: receiverProfile.email,
-              message: receiverProfile.name,
-            );
-            final receiverAcceptnote = BaseListItem(
-              id: DateTime.now().toString(),
-              name:
-                  'Added ${receiverProfile.name} as a trainer for ${studentHorse.name}',
-              date: DateTime.now(),
-              parentId: studentHorse.id,
-              message: studentHorse.name,
-            );
+              final senderAcceptnote = BaseListItem(
+                id: DateTime.now().toString(),
+                name: 'Added ${studentHorse.name} as a student horse',
+                date: DateTime.now(),
+                parentId: receiverProfile.email,
+                message: receiverProfile.name,
+              );
+              final receiverAcceptnote = BaseListItem(
+                id: DateTime.now().toString(),
+                name:
+                    'Added ${receiverProfile.name} as a trainer for ${studentHorse.name}',
+                date: DateTime.now(),
+                parentId: studentHorse.id,
+                message: studentHorse.name,
+              );
 
-            if (studentHorse.instructors == null ||
-                studentHorse.instructors!.isEmpty) {
-              studentHorse.instructors = [receiverItem];
-            } else {
-              studentHorse.instructors?.removeWhere(
-                (element) => element.id == receiverItem.id,
-              );
-              studentHorse.instructors?.add(
-                receiverItem,
-              );
-            }
-            studentHorse.notes?.add(horseNote);
-
-            if (receiverProfile.studentHorses == null ||
-                receiverProfile.studentHorses!.isEmpty) {
-              receiverProfile.studentHorses = [
-                message.requestItem as BaseListItem,
-              ];
-            } else {
-              receiverProfile.studentHorses?.removeWhere(
-                (element) => element.id == message.requestItem?.id,
-              );
-              receiverProfile.studentHorses
-                  ?.add(message.requestItem as BaseListItem);
-            }
-            receiverProfile.notes?.add(senderAcceptnote);
-            riderProfile.notes?.add(receiverAcceptnote);
-            try {
-              _horseProfileRepository.createOrUpdateHorseProfile(
-                horseProfile: studentHorse,
-              );
-              _riderProfileRepository
-                ..createOrUpdateRiderProfile(
-                  riderProfile: riderProfile,
-                )
-                ..createOrUpdateRiderProfile(
-                  riderProfile: receiverProfile,
+              if (studentHorse.instructors == null ||
+                  studentHorse.instructors!.isEmpty) {
+                studentHorse.instructors = [receiverItem];
+              } else {
+                studentHorse.instructors?.removeWhere(
+                  (element) => element.id == receiverItem.id,
                 );
-              message.messageState = MessageState.READ;
-              _messagesRepository
-                  .createOrUpdateMessage(
-                message: message,
-                id: message.messsageId,
-              )
-                  .then((value) {
-                emit(state.copyWith(acceptStatus: AcceptStatus.accepted));
+                studentHorse.instructors?.add(
+                  receiverItem,
+                );
+              }
+              studentHorse.notes?.add(horseNote);
+
+              if (receiverProfile.studentHorses == null ||
+                  receiverProfile.studentHorses!.isEmpty) {
+                receiverProfile.studentHorses = [
+                  message.requestItem as BaseListItem,
+                ];
+              } else {
+                receiverProfile.studentHorses?.removeWhere(
+                  (element) => element.id == message.requestItem?.id,
+                );
+                receiverProfile.studentHorses
+                    ?.add(message.requestItem as BaseListItem);
+              }
+              receiverProfile.notes?.add(senderAcceptnote);
+              riderProfile.notes?.add(receiverAcceptnote);
+              try {
+                _horseProfileRepository.createOrUpdateHorseProfile(
+                  horseProfile: studentHorse,
+                );
+                _riderProfileRepository
+                  ..createOrUpdateRiderProfile(
+                    riderProfile: riderProfile,
+                  )
+                  ..createOrUpdateRiderProfile(
+                    riderProfile: receiverProfile,
+                  );
+                message.messageState = MessageState.READ;
+                _messagesRepository
+                    .createOrUpdateMessage(
+                  message: message,
+                  id: message.messsageId,
+                )
+                    .then((value) {
+                  emit(state.copyWith(acceptStatus: AcceptStatus.accepted));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.blue,
+                      content: Text(
+                        'Added ${receiverProfile.name} as a trainer for ${studentHorse.name}',
+                      ),
+                    ),
+                  );
+                });
+              } on FirebaseException catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: Colors.blue,
-                    content: Text(
-                      'Added ${receiverProfile.name} as a trainer for ${studentHorse.name}',
-                    ),
+                    backgroundColor: Colors.red,
+                    content: Text('Failed: ${e.message!}'),
                   ),
                 );
-              });
-            } on FirebaseException catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.red,
-                  content: Text('Failed: ${e.message!}'),
-                ),
-              );
-              emit(state.copyWith(acceptStatus: AcceptStatus.waiting));
-              debugPrint(e.toString());
-            }
-          });
+                emit(state.copyWith(acceptStatus: AcceptStatus.waiting));
+                debugPrint(e.toString());
+              }
+            });
+          } else {
+            debugPrint('message.requestItem is null');
+            emit(state.copyWith(acceptStatus: AcceptStatus.waiting));
+          }
 
           break;
         case MessageType.STUDENT_REQUEST:

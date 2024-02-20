@@ -151,7 +151,7 @@ Widget resourceItem({
                                     maxLines: 7,
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.center,
-                                    '${resource.description}',
+                                    resource.description?? '',
                                     style: const TextStyle(fontSize: 16),
                                   ),
                                 ),

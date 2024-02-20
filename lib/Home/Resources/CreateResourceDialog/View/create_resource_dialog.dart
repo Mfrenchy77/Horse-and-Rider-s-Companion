@@ -44,9 +44,34 @@ class CreateResourcDialog extends StatelessWidget {
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listener: (context, state) {
+            final cubit = context.read<CreateResourceDialogCubit>();
             if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
               titleController.text = state.title.value;
               descriptionController.text = state.description.value;
+            }
+            // show a dialog instructing user to enter the title and description
+            //in manually
+            if (state.urlFetchedStatus == UrlFetchedStatus.error) {
+              showDialog<AlertDialog>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Error Fetching Website Information'),
+                  content: const Text(
+                    'Please enter the title and description manually\nTo get '
+                    'the image, you can right click on the image and select '
+                    '"Copy Image Address" and paste it in the image field.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        cubit.clearMetaDataError();
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              );
             }
             if (state.status.isSubmissionSuccess) {
               Navigator.of(context).pop();
@@ -123,6 +148,17 @@ class CreateResourcDialog extends StatelessWidget {
                               ],
                             ),
                           ),
+                          Visibility(
+                            visible: state.urlFetchedStatus ==
+                                    UrlFetchedStatus.fetched ||
+                                state.urlFetchedStatus ==
+                                    UrlFetchedStatus.initial,
+                            child: _imageField(
+                              context: context,
+                              resource: resource,
+                              state: state,
+                            ),
+                          ),
                           _titleField(
                             titleController: titleController,
                             state: state,
@@ -195,55 +231,33 @@ class CreateResourcDialog extends StatelessWidget {
                   ],
                 ),
               );
-              // : Scaffold(
-              //     appBar: AppBar(
-              //       title: const Text('Create New Resource'),
-              //     ),
-              //     body: AlertDialog(
-              //       // backgroundColor: COLOR_CONST.DEFAULT_5,
-              //       scrollable: true,
-              //       //titleTextStyle: FONT_CONST.MEDIUM_WHITE,
-              //       title: const Text('Create New Resource'),
-              //       content: Padding(
-              //         padding: const EdgeInsets.all(8),
-              //         child: Form(
-              //           child: Column(
-              //             children: <Widget>[
-              //               ///   Resource Url
-              //               _urlField(context: context, resource: resource)
-              //             ],
-              //           ),
-              //         ),
-              //       ),
-              //       actions: [
-              //         if (state.status.isSubmissionInProgress)
-              //           const CircularProgressIndicator()
-              //         else
-              //           ElevatedButton(
-              //             style: ElevatedButton.styleFrom(
-              //               backgroundColor: HorseAndRidersTheme()
-              //                   .getTheme()
-              //                   .primaryColor,
-              //             ),
-              //             onPressed: !state.status.isValid
-              //                 ? null
-              //                 : () {
-              //                     context
-              //                         .read<CreateResourceDialogCubit>()
-              //                         .createResource();
-              //                     //Navigator.pop(context);
-              //                   },
-              //             child: const Text('Submit'),
-              //           )
-              //       ],
-              //     ),
-              //   );
             },
           ),
         ),
       ),
     );
   }
+}
+
+/// Field that user's can input the image url manually
+Widget _imageField({
+  required BuildContext context,
+  required Resource? resource,
+  required CreateResourceDialogState state,
+}) {
+  return TextFormField(
+    initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
+        ? state.imageUrl
+        : resource?.thumbnail ?? '',
+    onChanged: (url) =>
+        context.read<CreateResourceDialogCubit>().imageUrlChanged(url),
+    keyboardType: TextInputType.url,
+    decoration: const InputDecoration(
+      labelText: 'Image',
+      hintText: 'Enter a Web Address',
+      icon: Icon(Icons.arrow_circle_down),
+    ),
+  );
 }
 
 Widget _image({

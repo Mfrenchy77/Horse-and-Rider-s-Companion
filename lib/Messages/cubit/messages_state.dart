@@ -9,8 +9,10 @@ enum GroupSort { createdDate, lastupdatedDate, unread }
 class MessagesState extends Equatable {
   const MessagesState({
     this.group,
+    this.error,
     this.message,
     this.text = '',
+    this.isError = false,
     this.groups = const [],
     this.messages = const [],
     this.status = MessagesStatus.groups,
@@ -18,7 +20,9 @@ class MessagesState extends Equatable {
     this.acceptStatus = AcceptStatus.waiting,
   });
   final String text;
+  final bool isError;
   final Group? group;
+  final String? error;
   final Message? message;
   final GroupSort groupSort;
   final List<Group?> groups;
@@ -29,6 +33,8 @@ class MessagesState extends Equatable {
   MessagesState copyWith({
     Group? group,
     String? text,
+    bool? isError,
+    String? error,
     Message? message,
     List<Group?>? groups,
     GroupSort? groupSort,
@@ -38,9 +44,11 @@ class MessagesState extends Equatable {
   }) {
     return MessagesState(
       text: text ?? this.text,
+      error: error ?? this.error,
       group: group ?? this.group,
       groups: groups ?? this.groups,
       status: status ?? this.status,
+      isError: isError ?? this.isError,
       message: message ?? this.message,
       messages: messages ?? this.messages,
       groupSort: groupSort ?? this.groupSort,
@@ -52,8 +60,10 @@ class MessagesState extends Equatable {
   List<Object?> get props => [
         text,
         group,
+        error,
         status,
         groups,
+        isError,
         message,
         messages,
         groupSort,
