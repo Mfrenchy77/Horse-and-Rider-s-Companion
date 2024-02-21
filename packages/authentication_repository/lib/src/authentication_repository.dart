@@ -256,6 +256,35 @@ class AuthenticationRepository {
   @visibleForTesting
   static const userCacheKey = '__user_cache_key__';
 
+// Caches the current Firebase user
+  Future<void> _cacheCurrentUser() async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser != null) {
+      final user = firebaseUser.toUser;
+      await _cacheUser(user);
+    } else {
+      await _clearCachedUser();
+    }
+  }
+
+  /// Saves the User object to cache
+  Future<void> _cacheUser(User user) async {
+    final userData = user.toJson();
+    _cache.write(key: userCacheKey, value: userData);
+  }
+
+  /// Retrieves the cached user data
+  User? getCachedUser() {
+    final userData = _cache.read<Map<String, dynamic>>(key: userCacheKey);
+    return userData != null ? User.fromJson(userData) : null;
+  }
+
+  /// Clears the cached user data
+  Future<void> _clearCachedUser() async {
+    debugPrint('Clearing cached user');
+    _cache.remove(key: userCacheKey);
+  }
+
   /// Stream of [User] which will emit the current user when
   /// the authentication state changes.
   ///
@@ -283,23 +312,35 @@ class AuthenticationRepository {
     required String password,
   }) async {
     try {
-      await _firebaseAuth
-          .createUserWithEmailAndPassword(
-            email: email,
-            password: password,
-          )
-          .then(
-            (value) => _firebaseAuth.currentUser!.updateDisplayName(name).then(
-                  (value) => _firebaseAuth.currentUser!.reload().then(
-                        (value) =>
-                            _firebaseAuth.currentUser!.sendEmailVerification(),
-                      ),
-                ),
-          );
+      // Create user account
+      await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Safely access the current user with null check
+      final currentUser = _firebaseAuth.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not found after registration.');
+      }
+
+      // Update display name and reload user profile
+      await currentUser.updateDisplayName(name);
+      await currentUser.reload();
+
+      //Cache the user
+      await _cacheCurrentUser();
+
+      // Send email verification
+      await currentUser.sendEmailVerification();
+
+      // Optionally, update the cache with the new user information if necessary
+      // _cache.write(key: userCacheKey, value: currentUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw SignUpWithEmailAndPasswordFailure.fromCode(e.code);
-    } catch (_) {
-      throw const SignUpWithEmailAndPasswordFailure();
+    } catch (e) {
+      // Log or handle other exceptions here
+      throw Exception('Failed to sign up: $e');
     }
   }
 
@@ -307,6 +348,8 @@ class AuthenticationRepository {
   Future<void> signInAsGuest() async {
     try {
       await _firebaseAuth.signInAnonymously();
+      // Cache the current guest user
+      await _cacheCurrentUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInAsGuestFailure.fromCode(e.code);
     } catch (_) {
@@ -336,6 +379,8 @@ class AuthenticationRepository {
       }
 
       await _firebaseAuth.signInWithCredential(credential);
+      // Cache the current user after successful Google sign-in
+      await _cacheCurrentUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInWithGoogleFailure.fromCode(e.code);
     } catch (_) {
@@ -355,6 +400,9 @@ class AuthenticationRepository {
         email: email,
         password: password,
       );
+
+      // Cache the current user after successful login
+      await _cacheCurrentUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInWithEmailAndPasswordFailure.fromCode(e.code);
     } catch (_) {
@@ -367,9 +415,23 @@ class AuthenticationRepository {
   Future<void> forgotPassword({required String email}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      // Catch FirebaseAuthException and convert to ResetPasswordFailure
+      throw ResetPasswordFailure.fromCode(e.code);
     } catch (e) {
-      print(e);
+      // Handle other types of exceptions
+      throw const ResetPasswordFailure(); // Default error if unknown exception type
     }
+  }
+
+  /// Returns the current user's email verification status
+  /// as a stream of [bool] values.
+  Stream<bool> getEmailVerificationStatus() async* {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      yield user.emailVerified;
+    }
+    yield false;
   }
 
   /// Signs out the current user which will emit
@@ -377,14 +439,35 @@ class AuthenticationRepository {
   ///
   /// Throws a [LogOutFailure] if an exception occurs.
   Future<void> logOut() async {
+    debugPrint('Logging out');
     try {
       await Future.wait([
         _firebaseAuth.signOut(),
         _googleSignIn.signOut(),
       ]);
+      // Clear the cached user on logout
+      await _clearCachedUser();
     } catch (_) {
       throw LogOutFailure();
     }
+  }
+
+  /// Reloads the current user
+
+  Future<void> reloadCurrentUser() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.reload();
+    }
+  }
+
+  /// Returns the current user's email verification status
+  bool isEmailVerified() {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      return user.emailVerified;
+    }
+    return false;
   }
 }
 
@@ -396,7 +479,7 @@ extension on firebase_auth.User {
       photo: photoURL,
       name: displayName ?? '',
       isGuest: isAnonymous,
-      emailVerfified: emailVerified,
+      emailVerified: emailVerified,
     );
   }
 }

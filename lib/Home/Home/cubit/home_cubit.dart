@@ -39,82 +39,62 @@ class HomeCubit extends Cubit<HomeState> {
     required SkillTreeRepository skillTreeRepository,
     required HorseProfileRepository horseProfileRepository,
     required RiderProfileRepository riderProfileRepository,
+    required AuthenticationRepository authenticationRepository,
   })  : _messagesRepository = messagesRepository,
         _skillTreeRepository = skillTreeRepository,
         _resourcesRepository = resourcesRepository,
         _horseProfileRepository = horseProfileRepository,
         _riderProfileRepository = riderProfileRepository,
+        _authenticationRepository = authenticationRepository,
         super(const HomeState()) {
-    emit(state.copyWith(viewingProfile: viewingProfile));
-    if (usersProfile != null) {
-      debugPrint('Users Profile: ${usersProfile.email}');
-      emit(state.copyWith(usersProfile: usersProfile));
-    } else {
-      debugPrint('userProfile is null');
-    }
-    if (!user.isGuest) {
-      debugPrint('Trying to get Rider Profile for ${user.email}');
-      _riderProfileSubscription = _riderProfileRepository
-          .getRiderProfile(email: user.email)
-          .listen((event) {
-        final profile = event.data() as RiderProfile?;
-        debugPrint('Received Rider Profile: ${profile?.name}');
+    debugPrint('Is Guest: ${user.isGuest}');
+    debugPrint('HorseId: $horseId');
+    debugPrint('UsersProfile: $usersProfile');
+    debugPrint('ViewingProfile: $viewingProfile');
 
-        if (profile != null) {
-          emit(state.copyWith(usersProfile: profile));
-        } else {
-          debugPrint('Creating Rider Profile for ${user.name}');
-          createRiderProfile(user: user);
-        }
-        profileNavigationSelected();
-      });
-    } else {
-      debugPrint('User is a Guest');
-      // ignore: avoid_redundant_argument_values
-      emit(state.copyWith(usersProfile: null, isGuest: true));
-      profileNavigationSelected();
-    }
-    if (horseId != null) {
-      horseProfileSelected(id: horseId);
-    }
+    _initialNavigation(
+      user: user,
+      horseId: horseId,
+      usersProfile: usersProfile,
+      viewingProfile: viewingProfile,
+    );
+    _checkEmailVerificationStatus();
 
-    ///   Stream to listen to changes in HorseProfile and retrieves
-    ///   the owner's profile if not the user
-    // if (horseId != null) {
-    //   if (state.horseProfile == null || state.horseProfile?.id != horseId) {
-    //     debugPrint('Getting HorseProfile for $horseId');
-    //     _horseProfileSubscription = _horseProfileRepository
-    //         .getHorseProfileById(id: horseId)
-    //         .listen((event) {
-    //       final horseProfile = event.data() as HorseProfile?;
-    //       debugPrint('HorseProfile: ${horseProfile?.name}');
-    //       if (!_isOwner()) {
-    //         _riderProfileRepository
-    //             .getRiderProfile(email: horseProfile?.currentOwnerId)
-    //             .listen((event) {
-    //           final ownersProfile = event.data() as RiderProfile?;
-    //           debugPrint('Owners Profile: ${ownersProfile?.name}');
-    //           emit(state.copyWith(ownersProfile: ownersProfile));
-    //         });
-    //       } else {
-    //         debugPrint('User is the Owner');
-    //         emit(state.copyWith(ownersProfile: usersProfile));
-    //       }
-    //       debugPrint('Setting HorseProfile');
-    //       emit(
-    //         state.copyWith(
-    //           horseProfile: horseProfile,
-    //           isOwner: _isOwner(),
-    //           isForRider: false,
-    //         ),
-    //       );
-    //     });
-    //   } else {
-    //     debugPrint('HorseProfile already set');
-    //   }
+    // emit(state.copyWith(viewingProfile: viewingProfile));
+    // if (usersProfile != null) {
+    //   debugPrint('Users Profile: ${usersProfile.email}');
+    //   emit(state.copyWith(usersProfile: usersProfile));
     // } else {
-    //   debugPrint('HorseId is null');
+    //   debugPrint('userProfile is null');
     // }
+    // if (!user.isGuest) {
+    //   debugPrint(
+    //     'Trying to get Rider Profile for ${user.name} Email: ${user.email}',
+    //   );
+    //   _riderProfileSubscription = _riderProfileRepository
+    //       .getRiderProfile(email: user.email)
+    //       .listen((event) {
+    //     final profile = event.data() as RiderProfile?;
+    //     debugPrint('Received Rider Profile: ${profile?.name}');
+
+    //     if (profile != null) {
+    //       emit(state.copyWith(usersProfile: profile));
+    //     } else {
+    //       debugPrint('Creating Rider Profile for ${user.name}');
+    //       createRiderProfile(user: user);
+    //     }
+    //     profileNavigationSelected();
+    //   });
+    // } else {
+    //   debugPrint('User is a Guest');
+    //   // ignore: avoid_redundant_argument_values
+    //   emit(state.copyWith(usersProfile: null, isGuest: true));
+    //   profileNavigationSelected();
+    // }
+    // if (horseId != null) {
+    //   horseProfileSelected(id: horseId);
+    // }
+    ///Stream for User, if email is verified, dismiss the email verification view
 
     ///   Stream of Resources
 
@@ -182,6 +162,8 @@ class HomeCubit extends Cubit<HomeState> {
   final SkillTreeRepository _skillTreeRepository;
   final HorseProfileRepository _horseProfileRepository;
   final RiderProfileRepository _riderProfileRepository;
+  final AuthenticationRepository _authenticationRepository;
+  Timer? _emailVerificationTimer;
 
   ///   Streams
   StreamSubscription<DocumentSnapshot<Object?>>? _riderProfileSubscription;
@@ -214,6 +196,117 @@ class HomeCubit extends Cubit<HomeState> {
                           Navigation
   *************************************************************************** */
 
+  /// This method is responsible for emitting the appropriate [HomeState]
+  /// based on various factors including whether the user is a guest, if their
+  /// email has been verified, and if they have an existing rider profile. It
+  /// also handles the scenario where a specific horse profile or viewing
+  /// profile is to be selected.
+  ///
+  /// Parameters:
+  /// - [user]: The current user.
+  /// - [horseId]: The ID of a horse profile, if one is to be selected.
+  /// - [usersProfile]: The authenticated user's rider profile, if it exists.
+  /// - [viewingProfile]: An optional profile that the user is viewing.
+  void _initialNavigation({
+    required User user,
+    required String? horseId,
+    required RiderProfile? usersProfile,
+    required RiderProfile? viewingProfile,
+  }) {
+    // Handle guest users by setting the state to guest view and exiting early.
+    if (user.isGuest) {
+      debugPrint('User is a Guest');
+      emit(
+        state.copyWith(
+          // ignore: avoid_redundant_argument_values
+          usersProfile: null,
+          isGuest: true,
+        ),
+      );
+      profileNavigationSelected();
+      return;
+    }
+
+    // For authenticated users,
+    // prompt for email verification if not yet verified.
+    if (!user.emailVerified) {
+      debugPrint('User email is not verified');
+      emit(
+        state.copyWith(
+          user: user,
+          showEmailVerification: true,
+          homeStatus: HomeStatus.emailVerificationNeeded,
+          viewingProfile: viewingProfile,
+        ),
+      );
+      return;
+    }
+
+    // If the user's email is verified but they do not have a rider profile,
+    //check the database for a rider profile. if it does not exist, prompt the
+    // user to create one.
+
+    if (usersProfile == null) {
+      _getRiderProfile(user: user);
+      return;
+    }
+
+    // If a viewing profile is specified,
+    // update the state to reflect that the user is viewing another profile.
+    // This branch is only reached if the user's email
+    // is verified and they have a rider profile.
+    if (viewingProfile != null) {
+      debugPrint('User is viewing: ${viewingProfile.name}');
+      emit(
+        state.copyWith(
+          isViewing: true,
+          homeStatus: HomeStatus.profile,
+          usersProfile: usersProfile,
+          viewingProfile: viewingProfile,
+        ),
+      );
+    }
+    // If a horseId is provided,
+    // select the horse profile.
+    // Note: This could potentially override viewing another profile.
+    else if (horseId != null) {
+      debugPrint('Viewing Horse Profile: $horseId');
+      horseProfileSelected(id: horseId);
+    }
+    // If no specific navigation condition is met,
+    // simply emit the state indicating the user is viewing their own profile.
+    else {
+      debugPrint("User's profile: ${usersProfile.name} is setup "
+          'and Email is verified');
+      emit(
+        state.copyWith(
+          usersProfile: usersProfile,
+        ),
+      );
+      profileNavigationSelected();
+    }
+  }
+
+  void _checkEmailVerificationStatus() {
+    _emailVerificationTimer?.cancel(); // Cancel any existing timer
+    _emailVerificationTimer =
+        Timer.periodic(const Duration(seconds: 10), (_) async {
+      await _authenticationRepository.reloadCurrentUser();
+      final isVerified = _authenticationRepository.isEmailVerified();
+      emit(
+        state.copyWith(
+          showEmailVerification: !isVerified,
+        ),
+      );
+
+      if (isVerified) {
+        debugPrint('Email is verified in Timer');
+        clearEmailVerificationDialog();
+        _emailVerificationTimer?.cancel();
+      }
+    });
+  }
+
   /// Handles the Navigation when the back button is pressed from Resources,
   ///  Skill Tree, Messages, HorseProfile or Viewing a Rider Profile
   void backPressed(BuildContext context) {
@@ -244,35 +337,92 @@ class HomeCubit extends Cubit<HomeState> {
 
   ///   Called when a new [user] creates and account,
   ///   but a Horse and Rider Profile   is not set up for them
-  Future<void> createRiderProfile({required User user}) async {
-    debugPrint(
-      '111   111   Creating a New Profile for ${user.name}   !!!   !!!',
-    );
-
-    final note = BaseListItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: '${user.name} joined Horse and Rider Companion!',
-      date: DateTime.now(),
-      message: user.name,
-      parentId: user.email,
-    );
-
-    final riderProfile = RiderProfile(
-      id: user.id,
-      picUrl: user.photo,
-      name: user.name,
-      email: user.email,
-      lastEditBy: user.name,
-      lastEditDate: DateTime.now(),
-      notes: [note],
-    );
-    try {
-      await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: riderProfile,
+  Future<void> createRiderProfile({
+    required User? user,
+    required String name,
+  }) async {
+    if (user != null) {
+      final String finalName;
+      if (name != user.name) {
+        finalName = name;
+      } else {
+        finalName = user.name;
+      }
+      debugPrint(
+        '111   111   Creating a New Profile for $finalName   !!!   !!!',
       );
-    } on FirebaseException catch (e) {
-      debugPrint('Error: ${e.message}');
-      emit(state.copyWith(error: e.toString(), errorSnackBar: true));
+
+      final note = BaseListItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: '$finalName joined Horse and Rider Companion!',
+        date: DateTime.now(),
+        message: user.name,
+        parentId: user.email,
+      );
+
+      final riderProfile = RiderProfile(
+        id: user.id,
+        picUrl: user.photo,
+        name: finalName,
+        email: user.email,
+        lastEditBy: user.name,
+        lastEditDate: DateTime.now(),
+        notes: [note],
+      );
+      try {
+        await _riderProfileRepository
+            .createOrUpdateRiderProfile(
+              riderProfile: riderProfile,
+            )
+            .then((value) => _getRiderProfile(user: user));
+      } on FirebaseException catch (e) {
+        debugPrint('Error: ${e.message}');
+        emit(state.copyWith(error: e.toString(), errorSnackBar: true));
+      }
+    } else {
+      debugPrint('User is null');
+      emit(state.copyWith(error: 'User is null', errorSnackBar: true));
+    }
+  }
+
+  /// Retrieves the user's profile from the database if it exists.
+  /// If the profile does not exist, the user is prompted to create one.
+  void _getRiderProfile({required User user}) {
+    if (!user.isGuest) {
+      debugPrint(
+        'Trying to get Rider Profile for ${user.name} Email: ${user.email}',
+      );
+      _riderProfileSubscription = _riderProfileRepository
+          .getRiderProfile(email: user.email)
+          .listen((event) {
+        final profile = event.data() as RiderProfile?;
+        debugPrint('Received Rider Profile: ${profile?.name}');
+
+        if (profile != null) {
+          debugPrint('User Profile: ${profile.email} Setting homeStatus');
+          emit(
+            state.copyWith(
+              usersProfile: profile,
+              user: user,
+              showProfileSetup: false,
+            ),
+          );
+          profileNavigationSelected();
+        } else {
+          emit(
+            state.copyWith(
+              homeStatus: HomeStatus.profileSetup,
+              user: user,
+              showProfileSetup: true,
+            ),
+          );
+        }
+      });
+    } else {
+      debugPrint('User is a Guest');
+      // ignore: avoid_redundant_argument_values
+      emit(state.copyWith(usersProfile: null, isGuest: true, user: user));
+      profileNavigationSelected();
     }
   }
 
@@ -467,12 +617,14 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Navigates to the Rider Profile Screen
   void profileNavigationSelected() {
+    debugPrint('Profile Navigation Selected HomeStatus: ${state.homeStatus}');
     emit(
       state.copyWith(
         index: 0,
         homeStatus: HomeStatus.profile,
       ),
     );
+    debugPrint('Profile Navigation Selected HomeStatus: ${state.homeStatus}');
   }
 
   /* ************************************************************************* 
@@ -2680,6 +2832,18 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  /// Clear Email Verifiacation Dialog
+  void clearEmailVerificationDialog() {
+    debugPrint('Clearing Email Verification Dialog');
+    emit(state.copyWith(showEmailVerification: false));
+  }
+
+  /// Clear the Profile Setup Dialog
+  void clearProfileSetupDialog() {
+    debugPrint('Clearing Profile Setup Dialog');
+    emit(state.copyWith(showProfileSetup: false));
+  }
+
   ///   Clear the snackbars
   void clearSnackBar() {
     emit(
@@ -2701,6 +2865,7 @@ class HomeCubit extends Cubit<HomeState> {
     _groupsStream?.cancel();
     _resourcesStream.cancel();
     _trainingPathsStream.cancel();
+    _emailVerificationTimer?.cancel();
     _riderProfileSubscription?.cancel();
     _horseProfileSubscription?.cancel();
     return super.close();

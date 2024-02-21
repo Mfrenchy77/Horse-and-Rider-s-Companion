@@ -19,13 +19,13 @@ late final FirebaseAuth auth;
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = AppBlocObserver();
   await FirebaseInitialization.initializeFirebase();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await SharedPrefs().init();
   await AdsInitialization.initializeAds();
   FlutterNativeSplash.remove();
 
-  Bloc.observer = AppBlocObserver();
   final authenticationRepository = AuthenticationRepository();
   authenticationRepository.user.listen((value) {
     debugPrint('User is $value');

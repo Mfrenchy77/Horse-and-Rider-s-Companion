@@ -23,19 +23,19 @@ class App extends StatelessWidget {
   const App({
     super.key,
     required this.settingsController,
-    required this.authenticationRepository,
-  });
+    required AuthenticationRepository authenticationRepository,
+  }) : _authenticationRepository = authenticationRepository;
 
-  final AuthenticationRepository authenticationRepository;
+  final AuthenticationRepository _authenticationRepository;
   final SettingsController settingsController;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider.value(
-      value: authenticationRepository,
+      value: _authenticationRepository,
       child: BlocProvider(
         create: (context) => AppBloc(
-          authenticationRepository: authenticationRepository,
+          authenticationRepository: _authenticationRepository,
         ),
         child: AppView(settingsController: settingsController),
       ),

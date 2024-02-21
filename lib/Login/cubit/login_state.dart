@@ -23,17 +23,42 @@ class LoginState extends Equatable {
     this.confirmedPassword = const ConfirmedPassword.pure(),
   });
 
+  /// Used the name of the user while Registering
   final Name name;
+
+  /// Used the email of the user while Registering or Logging in
   final Email email;
+
+  /// If true, an error message will be shown
   final bool isError;
+
+  /// The password of the user for logging in registered account
+  ///  and confirming the password while registering
   final Password password;
+
+  /// The status of the form
   final FormzStatus status;
+
+  /// The error message to be shown
   final String errorMessage;
+
+  /// If true, the forgot password email has been sent
   final bool forgotEmailSent;
+
+  /// If true, the email dialog will be shown
   final bool showEmailDialog;
+
+  /// If true, the password will be visible
   final bool isPasswordVisible;
+
+  /// The different page statuses:
+  ///  login, register, forgot, awitingEmailVerification
   final LoginPageStatus pageStatus;
+
+  /// The result of opening the mail app for mobile useres
   final OpenMailAppResult? mailAppResult;
+
+  /// The confirmed password of the user while registering
   final ConfirmedPassword confirmedPassword;
 
   @override

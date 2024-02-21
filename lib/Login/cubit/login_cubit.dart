@@ -1,14 +1,11 @@
-import 'dart:io';
-
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
-import 'package:horseandriderscompanion/generated/l10n.dart';
 import 'package:open_mail_app/open_mail_app.dart';
-import 'package:url_launcher/url_launcher_string.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 part 'login_state.dart';
 
@@ -26,7 +23,12 @@ class LoginCubit extends Cubit<LoginState> {
   }
 
   void gotoRegister() {
-    emit(state.copyWith(pageStatus: LoginPageStatus.register));
+    emit(
+      state.copyWith(
+        pageStatus: LoginPageStatus.register,
+        status: FormzStatus.pure,
+      ),
+    );
   }
 
   void gotoforgot() {
@@ -37,39 +39,34 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(pageStatus: LoginPageStatus.awitingEmailVerification));
   }
 
-  //mehtod that opens a users email app
   Future<void> openEmailApp({
     required BuildContext context,
     required String email,
   }) async {
     debugPrint('openEmailApp: $email');
+    final emailUri = Uri(scheme: 'mailto', path: email);
 
-    if (Platform.isAndroid || Platform.isIOS) {
-      await OpenMailApp.openMailApp().then((value) {
-        if (!value.didOpen && !value.canOpen) {
-          // ignore: use_build_context_synchronously
-          emit(
-            state.copyWith(
-              isError: true,
-              errorMessage: S.of(context).login_page_open_email_app_error,
-            ),
-          );
-        } else if (!value.didOpen && value.canOpen) {
-          emit(state.copyWith(showEmailDialog: true, mailAppResult: value));
-        }
-      });
-    } else {
-      final url = 'mailto:$email';
-      if (await canLaunchUrlString(url)) {
-        await launchUrlString(url);
-      } else {
-        emit(
-          state.copyWith(
-            isError: true,
-            errorMessage: 'Could not launch $url',
-          ),
-        );
-      }
+    if (!await canLaunchUrl(emailUri)) {
+      emit(
+        state.copyWith(
+          showEmailDialog: false,
+          isError: true,
+          errorMessage: 'Unable to open email app',
+        ),
+      );
+      return;
+    }
+
+    try {
+      await launchUrl(emailUri);
+    } catch (e) {
+      emit(
+        state.copyWith(
+          showEmailDialog: false,
+          isError: true,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -149,7 +146,13 @@ class LoginCubit extends Cubit<LoginState> {
           .then((value) {
         debugPrint('Open Email App for: ${state.email.value}');
         openEmailApp(email: state.email.value, context: context);
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        emit(
+          state.copyWith(
+            status: FormzStatus.submissionInProgress,
+            pageStatus: LoginPageStatus.awitingEmailVerification,
+            showEmailDialog: true,
+          ),
+        );
       });
     } on SignUpWithEmailAndPasswordFailure catch (e) {
       emit(
@@ -257,12 +260,14 @@ class LoginCubit extends Cubit<LoginState> {
         // openEmailApp(email: state.email.value);
         emit(
           state.copyWith(
-            status: FormzStatus.submissionSuccess,
+            status: FormzStatus.submissionInProgress,
+            pageStatus: LoginPageStatus.awitingEmailVerification,
             forgotEmailSent: true,
           ),
         );
       });
     } on ResetPasswordFailure catch (e) {
+      debugPrint('ResetPasswordFailure: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -271,6 +276,7 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
+      debugPrint('ResetPasswordFailure: Unknown');
       emit(
         state.copyWith(
           isError: true,
@@ -288,42 +294,5 @@ class LoginCubit extends Cubit<LoginState> {
         email: const Email.pure(),
       ),
     );
-  }
-
-  void showNoMailAppsDialog(BuildContext context) {
-    showDialog<AlertDialog>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Open Mail App'),
-          content: const Text('No mail apps installed'),
-          actions: <Widget>[
-            ElevatedButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      ).closed.then((value) {
-        clearError();
-      });
   }
 }

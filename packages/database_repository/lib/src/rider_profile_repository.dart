@@ -46,7 +46,7 @@ class RiderProfileRepository {
   }
 
   /// Retrieve the user's profile using [email]
-  Stream<DocumentSnapshot> getRiderProfile({required String? email}) {
+  Stream<DocumentSnapshot> getRiderProfile({required String email}) {
     return _riderProfileDatabaseReference
         .doc(_convertEmailToPath(email: email))
         .snapshots()

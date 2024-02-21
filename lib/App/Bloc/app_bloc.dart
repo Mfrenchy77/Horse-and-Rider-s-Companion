@@ -12,30 +12,23 @@ class AppBloc extends Bloc<AppEvent, AppState> {
   AppBloc({required AuthenticationRepository authenticationRepository})
       : _authenticationRepository = authenticationRepository,
         super(
-          //TODO: this is where the app state is set to authenticated or unauthenticated
-          authenticationRepository.currentUser.emailVerfified
+          authenticationRepository.currentUser.isNotEmpty
               ? AppState.authenticated(authenticationRepository.currentUser)
               : const AppState.unauthenticated(),
         ) {
-    on<AppUserChanged>(_onUserChanged);
+    on<_AppUserChanged>(_onUserChanged);
     on<AppLogoutRequested>(_onLogoutRequested);
     _userSubscription = _authenticationRepository.user.listen(
-      (user) => add(AppUserChanged(user)),
+      (user) => add(_AppUserChanged(user)),
     );
   }
+
   final AuthenticationRepository _authenticationRepository;
   late final StreamSubscription<User> _userSubscription;
 
-  void _onUserChanged(
-    AppUserChanged event,
-    Emitter<AppState> emit,
-  ) {
-    debugPrint(
-      'EmailVerified: ${event.user.emailVerfified}',
-    );
-
+  void _onUserChanged(_AppUserChanged event, Emitter<AppState> emit) {
     emit(
-      event.user.emailVerfified
+      event.user.isNotEmpty
           ? AppState.authenticated(event.user)
           : const AppState.unauthenticated(),
     );

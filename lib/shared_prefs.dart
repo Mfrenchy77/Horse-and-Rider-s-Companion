@@ -4,65 +4,87 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// A singleton class that abstracts `SharedPreferences` operations
+/// to persist user preferences across app launches.
 class SharedPrefs {
+  /// Factory constructor to return the same instance of [SharedPrefs].
   factory SharedPrefs() => SharedPrefs._internal();
 
+  /// Private constructor for the singleton pattern.
   SharedPrefs._internal();
 
-  // constants.dart
-
+  /// Constants to use as keys for storing preferences.
   static const String PREF_DARK_MODE = 'ThemeMode';
   static const String PREF_SEASONAL_MODE = 'SeasonalMode';
+
+  /// The instance of [SharedPreferences] used for
+  ///  storing and retrieving preferences.
   static late SharedPreferences _sharedPrefs;
 
+  /// Initializes the [SharedPreferences] instance asynchronously.
+  /// This method needs to be called before
+  /// accessing other [SharedPrefs] methods.
   Future<void> init() async {
     _sharedPrefs = await SharedPreferences.getInstance();
   }
 
+  /// Retrieves the user's preference for seasonal mode.
+  /// Returns `true` if seasonal mode is enabled, `false` otherwise.
+  /// Defaults to `true` if the preference has not been set.
   bool isSeasonalMode() {
     return _sharedPrefs.getBool(PREF_SEASONAL_MODE) ?? true;
   }
 
+  /// Sets the user's preference for seasonal mode.
   void setSeasonalMode({required bool isSeasonal}) {
     _sharedPrefs.setBool(PREF_SEASONAL_MODE, isSeasonal);
   }
 
+  /// Determines if the dark mode is enabled based on the user's preference.
+  /// Returns `true` for dark mode, `false`
+  /// for light mode, and follows system theme if set to `system`.
   bool get isDarkMode {
-    if (_sharedPrefs.getString(PREF_DARK_MODE) == 'light') {
-      return false;
-    } else if (_sharedPrefs.getString(PREF_DARK_MODE) == 'dark') {
-      return true;
-    } else if (_sharedPrefs.getString(PREF_DARK_MODE) == 'system') {
-      return SchedulerBinding.instance.platformDispatcher.platformBrightness ==
-          Brightness.dark;
-    } else {
-      return false;
+    final themePref = _sharedPrefs.getString(PREF_DARK_MODE);
+    switch (themePref) {
+      case 'light':
+        return false;
+      case 'dark':
+        return true;
+      case 'system':
+        return SchedulerBinding
+                .instance.platformDispatcher.platformBrightness ==
+            Brightness.dark;
+      default:
+        return false;
     }
   }
 
+  /// Sets the dark mode preference as a string value.
   void setDarkMode({required String isDark}) {
     _sharedPrefs.setString(PREF_DARK_MODE, isDark);
   }
 
+  /// Sets the dark mode preference as a boolean value.
   void setDarkModeBool({required bool isDark}) {
     _sharedPrefs.setString(PREF_DARK_MODE, isDark ? 'dark' : 'light');
   }
 
+  /// Retrieves the saved theme mode preference as a string.
+  /// Defaults to 'light' if no preference has been set.
   String getSavedThemeMode() {
     return _sharedPrefs.getString(PREF_DARK_MODE) ?? 'light';
   }
 
+  /// Converts the saved theme mode preference to a [ThemeMode] enum.
   ThemeMode getSavedThemeModeThemeMode() {
-    final themeMode = _sharedPrefs.getString(PREF_DARK_MODE) ?? 'light';
-    if (themeMode == 'light') {
-      return ThemeMode.light;
-    } else if (themeMode == 'dark') {
-      return ThemeMode.dark;
-    } else {
-      return ThemeMode.system;
+    final themeMode = getSavedThemeMode();
+    switch (themeMode) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
     }
   }
-  // void setDarkMode({required bool isDark}) {
-  //   _sharedPrefs.setBool(PREF_DARK_MODE, isDark);
-  //
 }

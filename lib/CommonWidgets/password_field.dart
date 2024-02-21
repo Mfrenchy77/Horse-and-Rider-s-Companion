@@ -1,81 +1,93 @@
-// // ignore_for_file: avoid_print
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
 
-// import 'package:flutter/material.dart';
+class PasswordField extends StatelessWidget {
+  const PasswordField({
+    required this.isConfirmation,
+    super.key,
+  });
+  final bool isConfirmation;
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LoginCubit, LoginState>(
+      builder: (context, state) {
+        final cubit = context.read<LoginCubit>();
+        return TextFormField(
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+          textInputAction:
+              isConfirmation ? TextInputAction.send : TextInputAction.next,
+          onFieldSubmitted: (value) => value.isNotEmpty
+              ? handleEnter(
+                  cubit: cubit,
+                  isConfirmation: isConfirmation,
+                  state: state,
+                  context: context,
+                )
+              : null,
+          onChanged: (value) => isConfirmation
+              ? cubit.confirmedPasswordChanged(value)
+              : cubit.passwordChanged(value),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter some text';
+            }
 
-// enum PasswordState { login, register }
+            if (value.length < 6) {
+              return 'Password must be at least 6 characters';
+            }
+            return null;
+          },
+          obscureText: !state.isPasswordVisible,
+          decoration: InputDecoration(
+            labelText: isConfirmation ? 'Re-Enter Password' : 'Password',
+            labelStyle: const TextStyle(
+              color: Colors.white54,
+            ),
+            hintText:
+                isConfirmation ? 'Confirm you password' : 'Enter your password',
+            hintStyle: const TextStyle(
+              color: Colors.white54,
+            ),
+            prefixIcon: const Icon(
+              Icons.lock_outline_rounded,
+              color: Colors.white54,
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                state.isPasswordVisible
+                    ? Icons.visibility_off
+                    : Icons.visibility,
+                color: Colors.white54,
+              ),
+              onPressed: () {
+                // ignore: avoid_print
+                debugPrint('show/hide password');
+                cubit.togglePasswordVisible();
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
-// class PasswordField extends StatefulWidget {
-//   const PasswordField({super.key, required this.passwordState});
-//   final PasswordState passwordState;
-
-//   @override
-//   // ignore: no_logic_in_create_state
-//   State<PasswordField> createState() => PasswordFieldState(passwordState);
-// }
-
-// class PasswordFieldState extends State<PasswordField> {
-//   PasswordFieldState(this.passwordState);
-//   final PasswordState passwordState;
-
-//   bool isPasswordVisible = false;
-//   @override
-//   Widget build(BuildContext context) {
-//     return
-//         //password
-//         TextFormField(
-//       onChanged: (value) {
-//         //TODO fix this with current cubit method
-//         // switch (passwordState) {
-//         //   case PasswordState.login:
-//         //     return context
-//         //         .read<LoginBloc>()
-//         //         .add(LoginPasswordChangedEvent(password: value));
-
-//         //   case PasswordState.register:
-//         //     return context
-//         //         .read<RegisterBloc>()
-//         //         .add(RegisterPasswordChangedEvent(password: value));
-//         // }
-//         // switch (passwordState) {
-//         //   case PasswordState.login:
-//         //     return context
-//         //         .read<LoginBloc>()
-//         //         .add(LoginPasswordChangedEvent(password: value));
-
-//         //   case PasswordState.register:
-//         //     return context
-//         //         .read<RegisterBloc>()
-//         //         .add(RegisterPasswordChangedEvent(password: value));
-//         // }
-//       },
-//       validator: (value) {
-//         if (value == null || value.isEmpty) {
-//           return 'Please enter some text';
-//         }
-
-//         if (value.length < 6) {
-//           return 'Password must be at least 6 characters';
-//         }
-//         return null;
-//       },
-//       obscureText: !isPasswordVisible,
-//       decoration: InputDecoration(
-//         labelText: 'Password',
-//         hintText: 'Enter your password',
-//         prefixIcon: const Icon(Icons.lock_outline_rounded),
-//         border: const UnderlineInputBorder(),
-//         suffixIcon: IconButton(
-//           icon:
-//               Icon(isPasswordVisible ?
-// Icons.visibility_off : Icons.visibility),
-//           onPressed: () {
-//             print('show/hide password');
-//             setState(() {
-//               isPasswordVisible = !isPasswordVisible;
-//             });
-//           },
-//         ),
-//       ),
-//     );
-//   }
-// }
+/// Handle the password field when the user presses enter
+void handleEnter({
+  required LoginCubit cubit,
+  required bool isConfirmation,
+  required LoginState state,
+  required BuildContext context,
+}) {
+  // if page status is login then log in with credentials
+  // if confirmation is true then log in with sign up
+  // else move to next field
+  state.pageStatus == LoginPageStatus.login
+      ? cubit.logInWithCredentials()
+      : isConfirmation
+          ? cubit.signUpFormSubmitted(context: context)
+          : FocusScope.of(context).nextFocus();
+}

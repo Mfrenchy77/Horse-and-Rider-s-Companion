@@ -21,4 +21,13 @@ class CacheClient {
     if (value is T) return value;
     return null;
   }
+
+  /// Removes the value for the provided [key] from the in-memory cache.
+  /// Returns the removed value, if any.
+  /// Returns `null` if no value exists for the provided key.
+  T? remove<T extends Object>({required String key}) {
+    final value = _cache.remove(key);
+    if (value is T) return value;
+    return null;
+  }
 }
