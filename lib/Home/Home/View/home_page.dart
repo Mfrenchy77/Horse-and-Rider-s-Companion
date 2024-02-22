@@ -9,7 +9,7 @@ import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  static const routeName = '/riderHome';
+  static const routeName = '/home';
 
   static Page<void> page() => const MaterialPage<void>(child: HomePage());
 

@@ -9,19 +9,29 @@ import 'package:url_launcher/url_launcher.dart';
 
 part 'login_state.dart';
 
+/// {@template login_cubit}
+/// A Cubit that manages the state of the login flow.
+///
+/// It handles user input for login, registration, and password reset,
+/// as well as toggling password visibility and navigating between
+/// authentication pages.
+/// {@endtemplate}
 class LoginCubit extends Cubit<LoginState> {
+  /// {@macro login_cubit}
   LoginCubit(this._authenticationRepository) : super(const LoginState());
-
   final AuthenticationRepository _authenticationRepository;
 
+  /// Toggles the visibility of the password field.
   void togglePasswordVisible() {
     emit(state.copyWith(isPasswordVisible: !state.isPasswordVisible));
   }
 
+  /// Updates the state to navigate to the login page.
   void gotoLogin() {
     emit(state.copyWith(pageStatus: LoginPageStatus.login));
   }
 
+  /// Updates the state to navigate to the registration page.
   void gotoRegister() {
     emit(
       state.copyWith(
@@ -31,19 +41,20 @@ class LoginCubit extends Cubit<LoginState> {
     );
   }
 
+  /// Updates the state to navigate to the forgot password page.
   void gotoforgot() {
     emit(state.copyWith(pageStatus: LoginPageStatus.forgot));
   }
 
+  /// Updates the state to indicate that email verification is pending.
   void awitingEmailVerification() {
     emit(state.copyWith(pageStatus: LoginPageStatus.awitingEmailVerification));
   }
 
+  /// Opens the default email application for the provided email address.
   Future<void> openEmailApp({
-    required BuildContext context,
     required String email,
   }) async {
-    debugPrint('openEmailApp: $email');
     final emailUri = Uri(scheme: 'mailto', path: email);
 
     if (!await canLaunchUrl(emailUri)) {
@@ -70,30 +81,31 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Clears the flag indicating that the email dialog should be shown.
   void clearEmailDialog() {
     // ignore: avoid_redundant_argument_values
     emit(state.copyWith(showEmailDialog: false, mailAppResult: null));
   }
 
+  /// Clears any error messages.
   void clearError() {
     emit(state.copyWith(isError: false, errorMessage: ''));
   }
 
+  /// Updates the state with the new name value.
   void nameChanged(String value) {
     final name = Name.dirty(value);
     emit(
       state.copyWith(
         name: name,
-        status: Formz.validate([
-          name,
-          state.email,
-          state.password,
-          state.confirmedPassword,
-        ]),
+        status: Formz.validate(
+          [name, state.email, state.password, state.confirmedPassword],
+        ),
       ),
     );
   }
 
+  /// Updates the state with the new email value.
   void emailChanged(String value) {
     final email = Email.dirty(value);
     emit(
@@ -104,6 +116,7 @@ class LoginCubit extends Cubit<LoginState> {
     );
   }
 
+  /// Updates the state with the new password value.
   void passwordChanged(String value) {
     final password = Password.dirty(value);
     emit(
@@ -114,46 +127,38 @@ class LoginCubit extends Cubit<LoginState> {
     );
   }
 
+  /// Updates the state with the new confirmed password value.
   void confirmedPasswordChanged(String value) {
-    final confirmedPassword = ConfirmedPassword.dirty(
-      password: state.password.value,
-      value: value,
-    );
+    final confirmedPassword =
+        ConfirmedPassword.dirty(password: state.password.value, value: value);
     emit(
       state.copyWith(
         confirmedPassword: confirmedPassword,
-        status: Formz.validate([
-          state.email,
-          state.password,
-          state.name,
-          confirmedPassword,
-        ]),
+        status: Formz.validate(
+          [state.email, state.password, state.name, confirmedPassword],
+        ),
       ),
     );
   }
 
+  /// Submits the sign-up form.
   Future<void> signUpFormSubmitted({required BuildContext context}) async {
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      debugPrint('signUpFormSubmitted: ${state.name.value}');
-      await _authenticationRepository
-          .signUp(
+      await _authenticationRepository.signUp(
         name: state.name.value,
         email: state.email.value,
         password: state.password.value,
-      )
-          .then((value) {
-        debugPrint('Open Email App for: ${state.email.value}');
-        openEmailApp(email: state.email.value, context: context);
-        emit(
-          state.copyWith(
-            status: FormzStatus.submissionInProgress,
-            pageStatus: LoginPageStatus.awitingEmailVerification,
-            showEmailDialog: true,
-          ),
-        );
-      });
+      );
+      await openEmailApp(email: state.email.value);
+      emit(
+        state.copyWith(
+          status: FormzStatus.submissionInProgress,
+          pageStatus: LoginPageStatus.awitingEmailVerification,
+          showEmailDialog: true,
+        ),
+      );
     } on SignUpWithEmailAndPasswordFailure catch (e) {
       emit(
         state.copyWith(
@@ -173,6 +178,7 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Logs in with the provided email and password.
   Future<void> logInWithCredentials() async {
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
@@ -201,6 +207,7 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Logs in with Google authentication.
   Future<void> logInWithGoogle() async {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
@@ -225,7 +232,7 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
-  /// Login as a guest
+  /// Logs in as a guest.
   Future<void> logInAsGuest() async {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
@@ -250,24 +257,20 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Sends a forgot password email.
   Future<void> sendForgotPasswordEmail() async {
     if (!state.email.valid) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      await _authenticationRepository
-          .forgotPassword(email: state.email.value)
-          .then((value) {
-        // openEmailApp(email: state.email.value);
-        emit(
-          state.copyWith(
-            status: FormzStatus.submissionInProgress,
-            pageStatus: LoginPageStatus.awitingEmailVerification,
-            forgotEmailSent: true,
-          ),
-        );
-      });
+      await _authenticationRepository.forgotPassword(email: state.email.value);
+      emit(
+        state.copyWith(
+          status: FormzStatus.submissionInProgress,
+          pageStatus: LoginPageStatus.awitingEmailVerification,
+          forgotEmailSent: true,
+        ),
+      );
     } on ResetPasswordFailure catch (e) {
-      debugPrint('ResetPasswordFailure: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -276,7 +279,6 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
-      debugPrint('ResetPasswordFailure: Unknown');
       emit(
         state.copyWith(
           isError: true,
@@ -287,12 +289,8 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Clears the flag indicating a forgot email has been sent.
   void clearForgotEmailSent() {
-    emit(
-      state.copyWith(
-        forgotEmailSent: false,
-        email: const Email.pure(),
-      ),
-    );
+    emit(state.copyWith(forgotEmailSent: false, email: const Email.pure()));
   }
 }
