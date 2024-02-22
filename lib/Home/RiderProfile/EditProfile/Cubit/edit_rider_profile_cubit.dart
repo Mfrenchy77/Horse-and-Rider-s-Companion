@@ -1,6 +1,8 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -12,11 +14,13 @@ part 'edit_rider_profile_state.dart';
 
 class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   EditRiderProfileCubit({
-    required RiderProfile riderProfile,
+    required User? user,
+    required RiderProfile? riderProfile,
     required KeysRepository keysRepository,
     required CloudRepository cloudRepository,
     required RiderProfileRepository riderProfileRepository,
-  })  : _riderProfile = riderProfile,
+  })  : _user = user,
+        _riderProfile = riderProfile,
         _keysRepository = keysRepository,
         _cloudRepository = cloudRepository,
         _riderProfileRepository = riderProfileRepository,
@@ -27,23 +31,26 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         .then((value) => _locationApiKey = value);
     emit(
       state.copyWith(
-        bio: _riderProfile.bio,
+        user: _user,
+        bio: _riderProfile?.bio,
         riderProfile: _riderProfile,
-        picUrl: _riderProfile.picUrl,
-        riderName: _riderProfile.name,
-        homeUrl: _riderProfile.homeUrl,
-        selectedCity: _riderProfile.cityName,
-        selectedState: _riderProfile.stateName,
-        locationName: _riderProfile.locationName,
-        selectedCountry: _riderProfile.countryName,
-        zipCode: ZipCode.dirty(_riderProfile.zipCode ?? ''),
+        picUrl: _riderProfile?.picUrl,
+        homeUrl: _riderProfile?.homeUrl,
+        selectedCity: _riderProfile?.cityName,
+        selectedState: _riderProfile?.stateName,
+        locationName: _riderProfile?.locationName,
+        selectedCountry: _riderProfile?.countryName,
+        riderName: _user?.name ?? _riderProfile?.name,
+        id: _user != null ? user?.id : _riderProfile?.id,
+        zipCode: ZipCode.dirty(_riderProfile?.zipCode ?? ''),
       ),
     );
   }
 
+  final User? _user;
   late String _zipApi = '';
   String _locationApiKey = '';
-  final RiderProfile _riderProfile;
+  final RiderProfile? _riderProfile;
   final KeysRepository _keysRepository;
   final CloudRepository _cloudRepository;
   final RiderProfileRepository _riderProfileRepository;
@@ -83,7 +90,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       emit(state.copyWith(isSubmitting: true));
       picUrl = await _cloudRepository.addRiderPhoto(
         file: pickedFile,
-        riderId: _riderProfile.id,
+        riderId: state.id,
       );
       if (picUrl != null) {
         emit(state.copyWith(picUrl: picUrl, isSubmitting: false));
@@ -150,8 +157,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   }
 
   void stateChanged({required String stateId, required String stateName}) {
-    emit(state.copyWith(stateId: stateId, selectedState: stateName))
-    ;
+    emit(state.copyWith(stateId: stateId, selectedState: stateName));
   }
 
   void cityChanged({required String city}) {
@@ -260,14 +266,14 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
     // Create a new instance of riderProfile with updated values
     final updatedRiderProfile = riderProfile?.copyWith(
+      id: state.id,
       bio: state.bio,
       picUrl: state.picUrl,
       name: state.riderName,
       homeUrl: state.homeUrl,
       lastEditDate: DateTime.now(),
       zipCode: state.zipCode.value,
-      lastEditBy: _riderProfile
-          .name, // Ensure _riderProfile.name is the correct reference
+      lastEditBy: state.riderName,
       locationName: state.locationName,
     );
 
@@ -284,6 +290,52 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       }
     } else {
       debugPrint('Rider Profile is null');
+    }
+  }
+
+  ///   Called when a new user creates and account,
+  ///   but a Horse and Rider Profile   is not set up for them
+  Future<void> createRiderProfile() async {
+    if (state.user?.name != null) {
+      final String finalName;
+      if (state.riderName != state.user?.name) {
+        finalName = state.riderName;
+      } else {
+        finalName = state.user?.name ?? '';
+      }
+      debugPrint(
+        '111   111   Creating a New Profile for $finalName   !!!   !!!',
+      );
+
+      final note = BaseListItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: '$finalName joined Horse and Rider Companion!',
+        date: DateTime.now(),
+        message: state.user?.name,
+        parentId: state.user?.email,
+      );
+
+      final riderProfile = RiderProfile(
+        id: state.id,
+        picUrl: state.picUrl,
+        name: finalName,
+        email: state.user?.email ?? '',
+        lastEditBy: finalName,
+        lastEditDate: DateTime.now(),
+        notes: [note],
+      );
+      try {
+        await _riderProfileRepository.createOrUpdateRiderProfile(
+          riderProfile: riderProfile,
+        );
+        //.then((value) =>  _getRiderProfile(user: user));
+      } on FirebaseException catch (e) {
+        debugPrint('Error: ${e.message}');
+        emit(state.copyWith(error: e.toString(), isError: true));
+      }
+    } else {
+      debugPrint('User is null');
+      emit(state.copyWith(error: 'User is null', isError: true));
     }
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
-import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
+import 'package:horseandriderscompanion/Auth/cubit/login_cubit.dart';
 
 class AuthButton extends StatelessWidget {
   const AuthButton({super.key});

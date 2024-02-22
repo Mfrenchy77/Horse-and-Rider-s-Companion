@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
-import 'package:horseandriderscompanion/Home/RiderProfile/cubit/edit_rider_profile_cubit.dart';
+import 'package:horseandriderscompanion/Home/RiderProfile/EditProfile/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/utils/view_utils.dart';
 import 'package:image_picker/image_picker.dart';
 

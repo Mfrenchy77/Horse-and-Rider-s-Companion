@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/CreateSkillTreeDialogs/cubit/skill_create_dialog_cubit.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class CreateSkillDialog extends StatelessWidget {
   const CreateSkillDialog({

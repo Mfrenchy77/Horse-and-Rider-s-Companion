@@ -7,11 +7,11 @@ import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_bloc.dart';
+import 'package:horseandriderscompanion/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_view.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
-import 'package:horseandriderscompanion/Home/Home/View/profile_setup.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resources_view.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_search_dialog.dart';
@@ -19,7 +19,6 @@ import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_view.dar
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/support_message_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/horse_profile_view.dart';
-import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -423,7 +422,7 @@ void _showEmailVerificationDialog(
               ElevatedButton(
                 onPressed: () {
                   context.read<AppBloc>().add(AppLogoutRequested());
-                  Navigator.pushReplacementNamed(context, LoginPage.routeName);
+                  Navigator.pushReplacementNamed(context, AuthPage.routeName);
                 },
                 child: const Text('Logout'),
               ),

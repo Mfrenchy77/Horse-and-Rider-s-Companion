@@ -6,6 +6,7 @@ import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart'
     as adaptive;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_bloc.dart';
+import 'package:horseandriderscompanion/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/example_skill.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
@@ -14,7 +15,6 @@ import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
-import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/generated/l10n.dart';
@@ -359,7 +359,7 @@ Widget _profile({
 
                 Navigator.pushReplacementNamed(
                   context,
-                  LoginPage.routeName,
+                  AuthPage.routeName,
                 );
               },
               child: const Text('Create Account/Login'),
@@ -894,7 +894,7 @@ Widget? _drawer({
             onTap: () {
               context.read<AppBloc>().add(AppLogoutRequested());
 
-              Navigator.pushReplacementNamed(context, LoginPage.routeName);
+              Navigator.pushReplacementNamed(context, AuthPage.routeName);
             },
           ),
           //Log Book List Tile

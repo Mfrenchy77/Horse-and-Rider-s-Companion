@@ -420,7 +420,7 @@ class AuthenticationRepository {
       throw ResetPasswordFailure.fromCode(e.code);
     } catch (e) {
       // Handle other types of exceptions
-      throw const ResetPasswordFailure(); // Default error if unknown exception type
+      throw const ResetPasswordFailure(); 
     }
   }
 

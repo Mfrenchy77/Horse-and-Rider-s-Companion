@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Auth/cubit/login_cubit.dart';
+import 'package:horseandriderscompanion/Auth/forgot_view.dart';
+import 'package:horseandriderscompanion/Auth/login_view.dart';
+import 'package:horseandriderscompanion/Auth/register_view.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/Home/Home/View/email_verification_needed.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
-import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
-import 'package:horseandriderscompanion/Login/view/forgot_view.dart';
-import 'package:horseandriderscompanion/Login/view/login_view.dart';
-import 'package:horseandriderscompanion/Login/view/register_view.dart';
 import 'package:horseandriderscompanion/utils/MyConstants/COLOR_CONST.dart';
 import 'package:open_mail_app/open_mail_app.dart';
-import 'package:responsive_framework/responsive_framework.dart';
+import 'package:responsive_framework/max_width_box.dart';
+import 'package:responsive_framework/responsive_breakpoints.dart';
 
 class AuthView extends StatelessWidget {
   const AuthView({super.key});
@@ -201,73 +202,3 @@ Widget getView({
       );
   }
 }
-   
-
-
-
-
-
-      // child: BlocBuilder<LoginCubit, LoginState>(
-      //   builder: (context, state) {
-      //     if (state.pageStatus == LoginPageStatus.login) {
-      //       return loginView(
-      //         context: context,
-      //         state: state,
-      //         isSmallScreen: isSmallScreen,
-      //       );
-      //     } else if (state.pageStatus == LoginPageStatus.register) {
-      //       return registerView(
-      //         state: state,
-      //         context: context,
-      //         isSmallScreen: isSmallScreen,
-      //       );
-      //     } else if (state.pageStatus == LoginPageStatus.forgot) {
-      //       return forgotView(
-      //         context: context,
-      //         state: state,
-      //         isSmallScreen: isSmallScreen,
-      //       );
-      //     } else {
-      //       return const Center(
-      //         child: Logo(
-      //           screenName: '',
-      //         ),
-      //       );
-      //     }
-      //   },
-
-      
-      
-    
-
-
-
-//         if (state.pageStatus == LoginPageStatus.login) {
-//           return loginView(
-//             context: context,
-//             state: state,
-//             isSmallScreen: isSmallScreen,
-//           );
-//         } else if (state.pageStatus == LoginPageStatus.register) {
-//           return registerView(
-//             state: state,
-//             context: context,
-//             isSmallScreen: isSmallScreen,
-//           );
-//         } else if (state.pageStatus == LoginPageStatus.forgot) {
-//           return forgotView(
-//             context: context,
-//             state: state,
-//             isSmallScreen: isSmallScreen,
-//           );
-//         } else {
-//           return const Center(
-//             child: Logo(
-//               screenName: '',
-//             ),
-//           );
-//         }
-//       },
-//     );
-//   }
-// }

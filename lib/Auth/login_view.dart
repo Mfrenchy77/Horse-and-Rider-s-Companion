@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/CommonWidgets/auth_button.dart';
-import 'package:horseandriderscompanion/CommonWidgets/email_field.dart';
-import 'package:horseandriderscompanion/CommonWidgets/forgot_link.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/auth_button.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/email_field.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/forgot_link.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/google_login_button.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/password_field.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/registration_link.dart';
+import 'package:horseandriderscompanion/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/CommonWidgets/google_login_button.dart';
-import 'package:horseandriderscompanion/CommonWidgets/password_field.dart';
-import 'package:horseandriderscompanion/CommonWidgets/registration_link.dart';
-import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
 
 Widget loginView() {
   return Column(

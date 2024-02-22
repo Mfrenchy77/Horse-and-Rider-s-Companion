@@ -123,7 +123,6 @@ Widget _noteItem({
   required HomeCubit cubit,
   required BaseListItem note,
 }) {
-  final isDark = SharedPrefs().isDarkMode;
   debugPrint('Message length: ${note.name?.length}');
   return Column(
     

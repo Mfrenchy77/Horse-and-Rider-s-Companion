@@ -5,9 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
-import 'package:horseandriderscompanion/Login/view/login_page.dart';
 import 'package:horseandriderscompanion/Messages/view/messages_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
@@ -101,7 +101,7 @@ class AppView extends StatelessWidget {
                   case AppStatus.authenticated:
                     return const HomePage();
                   case AppStatus.unauthenticated:
-                    return const LoginPage();
+                    return const AuthPage();
                 }
               },
             ),
@@ -117,8 +117,8 @@ class AppView extends StatelessWidget {
                       );
                     case SettingsView.routeName:
                       return SettingsView(controller: settingsController);
-                    case LoginPage.routeName:
-                      return const LoginPage();
+                    case AuthPage.routeName:
+                      return const AuthPage();
                     case HomePage.routeName:
                       return const HomePage();
                     case MessagesPage.routeName:

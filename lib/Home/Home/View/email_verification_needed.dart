@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 
 Widget emailVerificationDialog() {
   return const AlertDialog(
@@ -7,10 +8,12 @@ Widget emailVerificationDialog() {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          Logo(screenName: 'Email Verification Needed'),
+          SizedBox(height: 20),
           Text(
             'Please verify your email before using the app',
           ),
-          SizedBox(height: 20),
+
           // ElevatedButton(
           //   onPressed: () {
           //     context.read<AppBloc>().add(AppLogoutRequested());

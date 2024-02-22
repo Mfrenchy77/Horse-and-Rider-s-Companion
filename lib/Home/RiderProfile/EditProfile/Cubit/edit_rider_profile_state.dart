@@ -6,8 +6,10 @@ enum AutoCompleteStatus { loading, success, initial, error }
 
 class EditRiderProfileState extends Equatable {
   const EditRiderProfileState({
+    this.user,
     this.picUrl,
     this.stateId,
+    this.id = '',
     this.bio = '',
     this.countryIso,
     this.prediction,
@@ -27,28 +29,79 @@ class EditRiderProfileState extends Equatable {
     this.locationStatus = FormzStatus.pure,
     this.autoCompleteStatus = AutoCompleteStatus.initial,
   });
+
+  /// Id of the rider/user
+  final String id;
+
+  /// Nullable User to determine if the user is
+  /// registered or not
+  final User? user;
+
+  /// The bio of the rider
   final String bio;
+
+  /// Boolean to determine if there is an error
   final bool isError;
+
+  /// The error message
   final String error;
+
+  /// The picture url of the rider
   final String? picUrl;
+
+  /// The home url of the rider
   final String homeUrl;
+
+  /// The state id of the rider
   final String? stateId;
+
+  /// The zip code of the rider
   final ZipCode zipCode;
+
+  /// The name of the rider
   final String riderName;
+
+  /// Boolean to determine if the form is submitting
   final bool isSubmitting;
+
+  /// The country iso of the rider
   final String? countryIso;
+
+  /// The location name of the rider
   final String locationName;
+
+  /// The selected city of the rider
   final String? selectedCity;
+
+  /// The selected state of the rider
   final String? selectedState;
+
+  /// Boolean to determine if the location is being searched
   final bool isLocationSearch;
+
+  /// The selected country of the rider
   final String? selectedCountry;
+
+  /// The status of the submission
   final SubmissionStatus status;
+
+  /// The rider profile
   final RiderProfile? riderProfile;
+
+  /// The status of the location
   final FormzStatus locationStatus;
+
+  /// The prediction of the postal code
   final PostalCodeResults? prediction;
+
+  /// The status of the auto complete
   final AutoCompleteStatus autoCompleteStatus;
 
+  /// The copyWith method is used to create a new instance of
+  ///  the [EditRiderProfileState]
   EditRiderProfileState copyWith({
+    String? id,
+    User? user,
     String? bio,
     bool? isError,
     String? error,
@@ -71,7 +124,9 @@ class EditRiderProfileState extends Equatable {
     AutoCompleteStatus? autoCompleteStatus,
   }) {
     return EditRiderProfileState(
+      id: id ?? this.id,
       bio: bio ?? this.bio,
+      user: user ?? this.user,
       error: error ?? this.error,
       picUrl: picUrl ?? this.picUrl,
       status: status ?? this.status,
@@ -94,9 +149,12 @@ class EditRiderProfileState extends Equatable {
     );
   }
 
+  /// The props for the [Equatable] package
   @override
   List<Object?> get props => [
+        id,
         bio,
+        user,
         error,
         picUrl,
         status,

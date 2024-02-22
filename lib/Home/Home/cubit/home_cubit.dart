@@ -16,7 +16,7 @@ import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
 import 'package:horseandriderscompanion/Home/Resources/CreateResourceDialog/View/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/add_horse_dialog.dart';
-import 'package:horseandriderscompanion/Home/RiderProfile/Views/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/Home/RiderProfile/EditProfile/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/HorseProfile/cubit/add_log_entry_cubit.dart';
 import 'package:horseandriderscompanion/Messages/view/messages_page.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';

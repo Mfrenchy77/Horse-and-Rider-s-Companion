@@ -2,20 +2,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
+import 'package:horseandriderscompanion/Auth/cubit/login_cubit.dart';
 
 // Widget that has a text button that takes you to the Registration Page
-class LoginLink extends StatelessWidget {
-  const LoginLink({super.key});
+class RegistationLink extends StatelessWidget {
+  const RegistationLink({super.key});
 
   @override
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: () {
-        context.read<LoginCubit>().gotoLogin();
+        context.read<LoginCubit>().gotoRegister();
       },
       child: const Text(
-        'Already Have an Account Already? Sign in',
+        'No Account Yet? Create one',
         style: TextStyle(color: Colors.white54),
       ),
     );

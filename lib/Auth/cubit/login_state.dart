@@ -1,64 +1,68 @@
 part of 'login_cubit.dart';
 
+/// Enum defining the different pages or states the login flow can be in.
 enum LoginPageStatus {
   login,
-  register,
   forgot,
+  register,
   awitingEmailVerification,
 }
 
+/// {@template login_state}
+/// The state of the login flow, including form inputs, validation status,
+/// error messages, and the current page status.
+/// {@endtemplate}
 class LoginState extends Equatable {
+  /// Creates a [LoginState].
   const LoginState({
     this.mailAppResult,
     this.isError = false,
     this.errorMessage = '',
     this.forgotEmailSent = false,
     this.showEmailDialog = false,
+    this.name = const Name.pure(),
     this.isPasswordVisible = false,
     this.status = FormzStatus.pure,
-    this.name = const Name.pure(),
     this.email = const Email.pure(),
     this.password = const Password.pure(),
     this.pageStatus = LoginPageStatus.login,
     this.confirmedPassword = const ConfirmedPassword.pure(),
   });
 
-  /// Used the name of the user while Registering
+  /// The name entered by the user, mainly used during registration.
   final Name name;
 
-  /// Used the email of the user while Registering or Logging in
+  /// The email entered by the user, used for both login and registration.
   final Email email;
 
-  /// If true, an error message will be shown
+  /// Indicates if an error has occurred.
   final bool isError;
 
-  /// The password of the user for logging in registered account
-  ///  and confirming the password while registering
+  /// The password entered by the user, used for login.
   final Password password;
 
-  /// The status of the form
+  /// The current form validation status.
   final FormzStatus status;
 
-  /// The error message to be shown
+  /// Error message to display to the user.
   final String errorMessage;
 
-  /// If true, the forgot password email has been sent
+  /// Indicates if the password reset email has been sent.
   final bool forgotEmailSent;
 
-  /// If true, the email dialog will be shown
+  /// Controls whether the email dialog is shown.
   final bool showEmailDialog;
 
-  /// If true, the password will be visible
+  /// Toggles the visibility of the password input.
   final bool isPasswordVisible;
 
-  /// The different page statuses:
-  ///  login, register, forgot, awitingEmailVerification
+  /// The current page status in the login flow.
   final LoginPageStatus pageStatus;
 
-  /// The result of opening the mail app for mobile useres
+  /// Result of attempting to open the mail app, used in email verification.
   final OpenMailAppResult? mailAppResult;
 
-  /// The confirmed password of the user while registering
+  /// The confirmed password entered by the user, used for registration.
   final ConfirmedPassword confirmedPassword;
 
   @override
@@ -77,6 +81,8 @@ class LoginState extends Equatable {
         confirmedPassword,
       ];
 
+  /// Returns a copy of this [LoginState] with the given fields replaced with
+  /// the new values.
   LoginState copyWith({
     Name? name,
     Email? email,

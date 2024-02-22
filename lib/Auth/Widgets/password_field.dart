@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/Login/cubit/login_cubit.dart';
+import 'package:horseandriderscompanion/Auth/cubit/login_cubit.dart';
 
 class PasswordField extends StatelessWidget {
   const PasswordField({
