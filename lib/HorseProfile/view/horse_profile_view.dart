@@ -26,9 +26,10 @@ Widget horseProfileView({
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () => state.viewingProfile != null
-              ? Navigator.of(context).pop()
-              : homeCubit.goBackToUsersProfile(context),
+          onPressed: () => homeCubit.goBackToUsersProfile(context),
+          // onPressed: () => state.viewingProfile != null
+          //     ? Navigator.of(context).pop()
+          //     : homeCubit.goBackToUsersProfile(context),
           icon: const Icon(
             Icons.arrow_back,
           ),

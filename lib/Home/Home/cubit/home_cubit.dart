@@ -210,6 +210,7 @@ class HomeCubit extends Cubit<HomeState> {
           usersProfile: usersProfile,
         ),
       );
+      profileNavigationSelected();
     }
   }
 
@@ -588,6 +589,7 @@ class HomeCubit extends Cubit<HomeState> {
         horseProfile: null,
         index: 0,
         isForRider: true,
+        homeStatus: HomeStatus.profile,
       ),
     );
   }
