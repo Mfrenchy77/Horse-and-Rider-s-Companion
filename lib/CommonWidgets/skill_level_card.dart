@@ -40,7 +40,8 @@ Widget skillLevelCard({
           ),
           subtitle: Text(
             '${skillLevel.levelState.toString().split('.').last} '
-            '${skillLevel.verified ? ' \n' '(Verified by: ${skillLevel.lastEditBy})' : ''}',
+            '${skillLevel.verified ? ' \n (Verified by: '
+                '${skillLevel.lastEditBy})' : ''}',
             textAlign: TextAlign.center,
           ),
           onTap: state.isGuest

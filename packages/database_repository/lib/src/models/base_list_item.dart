@@ -19,6 +19,7 @@ class BaseListItem {
     this.isCollapsed,
   });
 
+  /// Not sure what this is used for
   int? depth;
 
   /// If BaseListItem is for a Log Entry, this is the date of the log entry
@@ -26,22 +27,23 @@ class BaseListItem {
 
   /// If BaseListItem is a Rating, this is the users email who rated the
   ///  resource.
-  /// 
+  ///
   ///  If it is a Log Entry, this is the date of the log entry.
-  /// 
+  ///
   ///  If it is a Instructor Request, this is the user making the request's
   ///  email.
-  /// 
+  ///
   ///  If it is a Contact, this is the contact's email.
   final String? id;
 
   /// If BaseListItem is a Log Entry, this is the Users Name who made the log
   ///  entry.
   String? message;
+
   /// If the BaseListItem is a Log Entry, this is the Tag
-  /// 
+  ///
   /// If the BaseListItem is an Instructor Request, this is the users Thumbnail.
-  /// 
+  ///
   /// If it is a Contact, this is the contact's thumbnail.
   String? imageUrl;
 
@@ -49,16 +51,16 @@ class BaseListItem {
   String? parentId;
 
   /// If BaseListItem is a Rating, this is used to notate a positive rating.
-  /// 
+  ///
   /// If it is a Instructor Request, this is used to notate if the request
   /// has been accepted or not.
   bool? isSelected;
 
   /// If BaseListItem is a Rating, this is used to notate a negative rating.
-  /// 
+  ///
   /// If it is a Instructor Request, this is used to notate if the request
   /// is for a Horse or a Rider. True if Rider, False if Horse.
-  /// 
+  ///
   ///  If it is a
   /// Contact, this is used to notate if the contact is a Horse or a Rider.
   /// True if Rider, False if Horse.
@@ -66,10 +68,10 @@ class BaseListItem {
 
   /// If BaseListItem is a Log Entry, this is used to hold the log entry
   ///  message.
-  /// 
+  ///
   ///  If it is a Instructor Request, this is used to hold the name of the user
   ///  making the request.
-  /// 
+  ///
   ///  If it is a Contact, this is used to hold the contact's name.
   final String? name;
 

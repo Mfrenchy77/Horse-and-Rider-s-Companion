@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/Auth/login_view.dart';
 import 'package:horseandriderscompanion/Auth/register_view.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
-import 'package:horseandriderscompanion/Home/Home/View/email_verification_needed.dart';
 import 'package:horseandriderscompanion/Home/Home/View/home_page.dart';
 import 'package:horseandriderscompanion/utils/MyConstants/COLOR_CONST.dart';
 import 'package:open_mail_app/open_mail_app.dart';
@@ -31,9 +31,10 @@ class AuthView extends StatelessWidget {
           }
           final cubit = context.read<LoginCubit>();
           if (state.pageStatus == LoginPageStatus.awitingEmailVerification) {
+            context.read<LoginCubit>().checkEmailVerificationStatus();
             showDialog<AlertDialog>(
               context: context,
-              builder: (_) => emailVerificationDialog(),
+              builder: (_) => EmailVerificationDialog(email: state.email.value),
             );
             if (state.mailAppResult != null) {
               showDialog<MailAppPickerDialog>(
@@ -46,22 +47,7 @@ class AuthView extends StatelessWidget {
               ).then((value) => cubit.clearEmailDialog());
             }
           }
-          if (state.showEmailDialog) {
-            showDialog<AlertDialog>(
-              context: context,
-              builder: (_) => emailVerificationDialog(),
-            );
-            if (state.mailAppResult != null) {
-              showDialog<MailAppPickerDialog>(
-                context: context,
-                builder: (_) {
-                  return MailAppPickerDialog(
-                    mailApps: state.mailAppResult!.options,
-                  );
-                },
-              ).then((value) => cubit.clearEmailDialog());
-            }
-          }
+
           if (state.isError) {
             debugPrint('Error: ${state.errorMessage}');
             SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -195,10 +181,6 @@ Widget getView({
     case LoginPageStatus.forgot:
       return forgotView();
     case LoginPageStatus.awitingEmailVerification:
-      return const Center(
-        child: Logo(
-          screenName: 'Email Verification',
-        ),
-      );
+      return loginView();
   }
 }

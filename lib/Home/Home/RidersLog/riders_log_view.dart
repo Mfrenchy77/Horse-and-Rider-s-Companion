@@ -4,7 +4,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:intl/intl.dart';
 
 class LogView extends StatelessWidget {
@@ -21,8 +20,7 @@ class LogView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: 
-        Scaffold(
+      child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
           title: Text(
@@ -125,7 +123,6 @@ Widget _noteItem({
 }) {
   debugPrint('Message length: ${note.name?.length}');
   return Column(
-    
     mainAxisSize: MainAxisSize.min,
     children: [
       Row(
@@ -140,7 +137,6 @@ Widget _noteItem({
               ),
             ),
           ),
-       
           Expanded(
             flex: 7,
             child: Padding(

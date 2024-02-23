@@ -31,7 +31,7 @@ class SkillLevel {
   SkillLevel.fromJson(Map<String, Object?> json)
       : this(
           skillId: json['skillId']! as String,
-          skillName: json['skillName'] as String,
+          skillName: json['skillName']! as String,
           verified: json['verified']! as bool,
           lastEditBy: json['lastEditBy']! as String,
           lastEditDate: (json['lastEditDate']! as Timestamp).toDate(),

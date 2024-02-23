@@ -1,19 +1,15 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
-import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:horseandriderscompanion/App/Bloc/app_bloc.dart';
-import 'package:horseandriderscompanion/Auth/auth_page.dart';
-import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_view.dart';
 import 'package:horseandriderscompanion/Home/Home/RidersLog/riders_log_view.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resources_view.dart';
+import 'package:horseandriderscompanion/Home/RiderProfile/EditProfile/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/profile_view.dart';
 import 'package:horseandriderscompanion/Home/RiderProfile/Views/support_message_dialog.dart';
@@ -26,73 +22,23 @@ class HomeView extends StatelessWidget {
   const HomeView({super.key});
   @override
   Widget build(BuildContext context) {
-    final authenticationRepository = context.read<AuthenticationRepository>();
-    // ignore: avoid_unnecessary_containers
     return BlocListener<HomeCubit, HomeState>(
       listener: (context, state) {
         final homeCubit = context.read<HomeCubit>();
 
-        /// Open a Dialog to Show Email Verification Needed.
-        if (state.showEmailVerification) {
-          _showEmailVerificationDialog(
-            context,
-            state,
-            authenticationRepository,
-          );
-        } else {
-          homeCubit.clearEmailVerificationDialog();
-        }
-
         /// Open a Dialog to Show Profile Setup if the user is a not a guest
         /// and the use profile is null
-        if (state.showProfileSetup) {
-          final nameController =
-              TextEditingController(text: state.user?.name ?? '');
-          debugPrint('Profile Setup, Showing Dialog');
-          showDialog<AlertDialog>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Verify Name to Complete Setup'),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const Text(
-                      'Welcome to Horse and Riders Companion, verify your name'
-                      ' and complete your profile setup',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    gap(),
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Enter your full name',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: <Widget>[
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    homeCubit
-                      ..createRiderProfile(
-                        user: state.user,
-                        name: nameController.text,
-                      )
-                      ..clearProfileSetupDialog();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Complete Profile'),
-                ),
-              ],
-            ),
-          );
+        if (state.homeStatus == HomeStatus.profileSetup) {
+          debugPrint('Show Profile Setup Dialog');
+          if (!state.showingProfileSetup) {
+            homeCubit.profileSetupIsShown();
+            showDialog<AlertDialog>(
+              barrierDismissible: false,
+              context: context,
+              builder: (context) =>
+                  EditRiderProfileDialog(riderProfile: null, user: state.user),
+            ).then((value) => homeCubit.resetProfileSetup());
+          }
         }
 
         ///Open a dialog to send a message to support
@@ -188,15 +134,8 @@ class HomeView extends StatelessWidget {
       },
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
-          // check if usersProfile , viewingProfile and state.isGuest are null
           final homeCubit = context.read<HomeCubit>();
-          // if (state.homeStatus == HomeStatus.profileSetup) {
-          //   return profileSetup(
-          //     context: context,
-          //     homeCubit: homeCubit,
-          //     state: state,
-          //   );
-          // } else {
+
           return SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
@@ -304,51 +243,51 @@ Widget _mainView({
   required HomeState state,
   required HomeCubit homeCubit,
 }) {
-  if (state.homeStatus == HomeStatus.profile) {
-    return state.isForRider
-        ? profileView(
-            context: context,
-            homeCubit: homeCubit,
-            state: state,
-          )
-        : horseProfileView(
-            context: context,
-            state: state,
-            homeCubit: homeCubit,
-          );
-  } else if (state.homeStatus == HomeStatus.ridersLog) {
-    // Display the Rider's Log View.
-    return LogView(
-      state: state,
-      isRider: true,
-      cubit: homeCubit,
-    );
-  } else if (state.homeStatus == HomeStatus.horseLog) {
-    // Display the Horse Log View.
-    return LogView(
-      state: state,
-      isRider: false,
-      cubit: homeCubit,
-    );
-  } else if (state.homeStatus == HomeStatus.skillTree) {
-    // Navigate to the Skill Tree View.
-    return skillTreeView(
-      context: context,
-      homeCubit: homeCubit,
-      state: state,
-    );
-  } else if (state.homeStatus == HomeStatus.resource) {
-    // Navigate to the Resources View.
-    return resourcesView(
-      context: context,
-      homeCubit: homeCubit,
-      state: state,
-    );
-  } else if (state.homeStatus == HomeStatus.loading) {
-    // Display the Loading View.
-    return loadingView();
-  } else {
-    return errorView(context);
+  switch (state.homeStatus) {
+    case HomeStatus.profile:
+      return state.isForRider
+          ? profileView(
+              context: context,
+              homeCubit: homeCubit,
+              state: state,
+            )
+          : horseProfileView(
+              context: context,
+              state: state,
+              homeCubit: homeCubit,
+            );
+    case HomeStatus.ridersLog:
+      return LogView(
+        state: state,
+        isRider: true,
+        cubit: homeCubit,
+      );
+    case HomeStatus.horseLog:
+      return LogView(
+        state: state,
+        isRider: false,
+        cubit: homeCubit,
+      );
+    case HomeStatus.skillTree:
+      return skillTreeView(
+        context: context,
+        homeCubit: homeCubit,
+        state: state,
+      );
+    case HomeStatus.resource:
+      return resourcesView(
+        context: context,
+        homeCubit: homeCubit,
+        state: state,
+      );
+    case HomeStatus.loading:
+      return loadingView();
+    case HomeStatus.profileSetup:
+      return profileView(
+        context: context,
+        homeCubit: homeCubit,
+        state: state,
+      );
   }
 }
 
@@ -379,60 +318,6 @@ List<NavigationDestination> _buildDestinations({required bool isForRider}) {
       label: 'Resources',
     ),
   ];
-}
-
-void _showEmailVerificationDialog(
-  BuildContext context,
-  HomeState state,
-  AuthenticationRepository authenticationRepository,
-) {
-  // This flag is to ensure we only try to pop the dialog if it's shown.
-  var dialogShown = false;
-  debugPrint('Email Verification Needed, Showing Dialog');
-  showDialog<AlertDialog>(
-    context: context,
-    // Make dialog not dismissible by tapping outside
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      dialogShown = true;
-      return StreamBuilder<bool>(
-        stream: authenticationRepository.getEmailVerificationStatus(),
-        builder: (context, snapshot) {
-          final isEmailVerified = snapshot.data ?? false;
-          if (isEmailVerified && dialogShown) {
-            debugPrint('Email Verified, Closing Dialog');
-            Future.microtask(
-              () => Navigator.of(dialogContext, rootNavigator: true)
-                  .pop('dialog'),
-            );
-            // Prevent further attempts to pop the dialog
-            dialogShown = false;
-          }
-
-          // Dialog content remains the same, it's the StreamBuilder's job
-          // to decide when to close it
-          return AlertDialog(
-            title: const Text('Email Verification Needed'),
-            content: Text(
-              'An Email was sent to ${state.user?.email} '
-              'please verify your email',
-              style: const TextStyle(fontSize: 16),
-            ),
-            actions: <Widget>[
-              ElevatedButton(
-                onPressed: () {
-                  context.read<AppBloc>().add(AppLogoutRequested());
-                  Navigator.pushReplacementNamed(context, AuthPage.routeName);
-                },
-                child: const Text('Logout'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-    // In case the dialog is dismissed by other means
-  ).then((_) => dialogShown = false);
 }
 
 Widget _bannerAd() {

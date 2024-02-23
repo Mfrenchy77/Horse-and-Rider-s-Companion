@@ -113,7 +113,8 @@ class UrlMetadataRepository {
   /// Fetches and extracts metadata from the specified [url].
   ///
   /// Returns an instance of [UrlMetadata] containing the extracted information.
-  /// Throws [MetadataExtractionException] for any errors encountered during the process.
+  /// Throws [MetadataExtractionException] for any errors
+  ///  encountered during the process.
   Future<UrlMetadata> extractMetadataFromUrl(String url) async {
     http.Response response;
     try {

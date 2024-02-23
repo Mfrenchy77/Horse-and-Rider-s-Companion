@@ -191,7 +191,8 @@ class ProfileSearchDialog extends StatelessWidget {
     }
   }
 
-  /// Drop down for location search area, visible only when search type is location
+  /// Drop down for location search area,
+  ///  visible only when search type is location
   Widget _locationDropDown({
     required BuildContext context,
     required ProfileSearchCubit cubit,

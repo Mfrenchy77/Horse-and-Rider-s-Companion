@@ -1,6 +1,5 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -183,31 +182,4 @@ Widget _skillNodeCard({
   } else {
     return const Text('');
   }
-}
-
-Widget _buildHorizontalDividerLine(int index, int totalChildren) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Expanded(
-        flex: index == 0 ? 0 : 1,
-        child: const Divider(
-          color: Colors.black,
-          thickness: 2,
-        ),
-      ),
-      Container(
-        height: 10,
-        width: 2,
-        color: Colors.black,
-      ),
-      Expanded(
-        flex: index == totalChildren - 1 ? 0 : 1,
-        child: const Divider(
-          color: Colors.black,
-          thickness: 2,
-        ),
-      ),
-    ],
-  );
 }

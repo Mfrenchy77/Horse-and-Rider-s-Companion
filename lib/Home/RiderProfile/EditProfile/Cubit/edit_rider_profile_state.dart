@@ -22,6 +22,7 @@ class EditRiderProfileState extends Equatable {
     this.riderName = '',
     this.isError = false,
     this.locationName = '',
+    this.isTrainer = false,
     this.isSubmitting = false,
     this.isLocationSearch = false,
     this.zipCode = const ZipCode.pure(),
@@ -48,6 +49,9 @@ class EditRiderProfileState extends Equatable {
 
   /// The picture url of the rider
   final String? picUrl;
+
+  /// Whether the user is a trainer/instructor or not
+  final bool isTrainer;
 
   /// The home url of the rider
   final String homeUrl;
@@ -107,6 +111,7 @@ class EditRiderProfileState extends Equatable {
     String? error,
     String? picUrl,
     String? stateId,
+    bool? isTrainer,
     String? homeUrl,
     ZipCode? zipCode,
     String? riderName,
@@ -134,6 +139,7 @@ class EditRiderProfileState extends Equatable {
       homeUrl: homeUrl ?? this.homeUrl,
       zipCode: zipCode ?? this.zipCode,
       stateId: stateId ?? this.stateId,
+      isTrainer: isTrainer ?? this.isTrainer,
       riderName: riderName ?? this.riderName,
       prediction: prediction ?? this.prediction,
       countryIso: countryIso ?? this.countryIso,
@@ -162,6 +168,7 @@ class EditRiderProfileState extends Equatable {
         isError,
         zipCode,
         stateId,
+        isTrainer,
         riderName,
         countryIso,
         prediction,

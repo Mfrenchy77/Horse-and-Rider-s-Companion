@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -20,6 +22,8 @@ class LoginCubit extends Cubit<LoginState> {
   /// {@macro login_cubit}
   LoginCubit(this._authenticationRepository) : super(const LoginState());
   final AuthenticationRepository _authenticationRepository;
+
+  Timer? _emailVerificationTimer;
 
   /// Toggles the visibility of the password field.
   void togglePasswordVisible() {
@@ -146,20 +150,39 @@ class LoginCubit extends Cubit<LoginState> {
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      await _authenticationRepository.signUp(
+      await _authenticationRepository
+          .signUp(
         name: state.name.value,
         email: state.email.value,
         password: state.password.value,
-      );
-      await openEmailApp(email: state.email.value);
-      emit(
-        state.copyWith(
-          status: FormzStatus.submissionInProgress,
-          pageStatus: LoginPageStatus.awitingEmailVerification,
-          showEmailDialog: true,
-        ),
-      );
+      )
+          .then((value) async {
+        if (value == null) {
+          debugPrint('User not created');
+          emit(
+            state.copyWith(
+              isError: true,
+              errorMessage: 'Error: User not created',
+              status: FormzStatus.submissionFailure,
+            ),
+          );
+        } else if (!value.emailVerified) {
+          debugPrint('Email not verified');
+          await openEmailApp(email: state.email.value);
+          emit(
+            state.copyWith(
+              status: FormzStatus.pure,
+              pageStatus: LoginPageStatus.awitingEmailVerification,
+              showEmailDialog: true,
+            ),
+          );
+        } else {
+          debugPrint('Success Login, go to HomePage');
+          emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        }
+      });
     } on SignUpWithEmailAndPasswordFailure catch (e) {
+      debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -168,6 +191,7 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
+      debugPrint('Submission Failure');
       emit(
         state.copyWith(
           isError: true,
@@ -183,12 +207,37 @@ class LoginCubit extends Cubit<LoginState> {
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      await _authenticationRepository.logInWithEmailAndPassword(
+      await _authenticationRepository
+          .logInWithEmailAndPassword(
         email: state.email.value,
         password: state.password.value,
-      );
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      )
+          .then((value) {
+        if (value == null) {
+          debugPrint('User not created');
+          emit(
+            state.copyWith(
+              isError: true,
+              errorMessage: 'Error: User not created',
+              status: FormzStatus.submissionFailure,
+            ),
+          );
+        } else if (!value.emailVerified) {
+          debugPrint('Email not verified');
+          emit(
+            state.copyWith(
+              status: FormzStatus.pure,
+              pageStatus: LoginPageStatus.awitingEmailVerification,
+              showEmailDialog: true,
+            ),
+          );
+        } else {
+          debugPrint('Success Login, go to HomePage');
+          emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        }
+      });
     } on LogInWithEmailAndPasswordFailure catch (e) {
+      debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -197,6 +246,7 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
+      debugPrint('Submission Failure');
       emit(
         state.copyWith(
           isError: true,
@@ -209,11 +259,13 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Logs in with Google authentication.
   Future<void> logInWithGoogle() async {
+    debugPrint('Log in with Google');
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       await _authenticationRepository.logInWithGoogle();
       emit(state.copyWith(status: FormzStatus.submissionSuccess));
     } on LogInWithGoogleFailure catch (e) {
+      debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -222,6 +274,7 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
+      debugPrint('Submission Failure');
       emit(
         state.copyWith(
           isError: true,
@@ -234,11 +287,35 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Logs in as a guest.
   Future<void> logInAsGuest() async {
+    debugPrint('Log in as Guest');
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      await _authenticationRepository.signInAsGuest();
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      await _authenticationRepository.signInAsGuest().then((value) {
+        if (value == null) {
+          debugPrint('User not created');
+          emit(
+            state.copyWith(
+              isError: true,
+              errorMessage: 'Error: User not created',
+              status: FormzStatus.submissionFailure,
+            ),
+          );
+        } else if (!value.emailVerified) {
+          debugPrint('Email not verified');
+          emit(
+            state.copyWith(
+              status: FormzStatus.submissionInProgress,
+              pageStatus: LoginPageStatus.awitingEmailVerification,
+              showEmailDialog: true,
+            ),
+          );
+        } else {
+          debugPrint('Success Login, go to HomePage');
+          emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        }
+      });
     } on LogInAsGuestFailure catch (e) {
+      debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -247,6 +324,7 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
+      debugPrint('Submission Failure');
       emit(
         state.copyWith(
           isError: true,
@@ -257,20 +335,44 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Peroiodically checks the email verification status.
+  void checkEmailVerificationStatus() {
+    _emailVerificationTimer?.cancel();
+    _emailVerificationTimer =
+        Timer.periodic(const Duration(seconds: 10), (_) async {
+      debugPrint('Checking Email Verification Status');
+      await _authenticationRepository.reloadCurrentUser();
+      final isVerified = _authenticationRepository.isEmailVerified();
+
+      if (isVerified) {
+        _emailVerificationTimer?.cancel();
+        debugPrint('Email is verified in Timer');
+        emit(
+          state.copyWith(
+            status: FormzStatus.submissionSuccess,
+            showEmailDialog: false,
+          ),
+        );
+      }
+    });
+  }
+
   /// Sends a forgot password email.
   Future<void> sendForgotPasswordEmail() async {
+    debugPrint('Send Forgot Password Email');
     if (!state.email.valid) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       await _authenticationRepository.forgotPassword(email: state.email.value);
       emit(
         state.copyWith(
-          status: FormzStatus.submissionInProgress,
+          status: FormzStatus.pure,
           pageStatus: LoginPageStatus.awitingEmailVerification,
           forgotEmailSent: true,
         ),
       );
     } on ResetPasswordFailure catch (e) {
+      debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -279,6 +381,7 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (_) {
+      debugPrint('Submission Failure');
       emit(
         state.copyWith(
           isError: true,
@@ -292,5 +395,11 @@ class LoginCubit extends Cubit<LoginState> {
   /// Clears the flag indicating a forgot email has been sent.
   void clearForgotEmailSent() {
     emit(state.copyWith(forgotEmailSent: false, email: const Email.pure()));
+  }
+
+  @override
+  Future<void> close() {
+    _emailVerificationTimer?.cancel();
+    return super.close();
   }
 }

@@ -4,7 +4,7 @@ abstract class AppEvent extends Equatable {
   const AppEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 
@@ -14,8 +14,8 @@ class _AppUserChanged extends AppEvent {
   @visibleForTesting
   const _AppUserChanged(this.user);
 
-  final User user;
+  final User? user;
 
   @override
-  List<Object> get props => [user];
+  List<Object?> get props => [user];
 }

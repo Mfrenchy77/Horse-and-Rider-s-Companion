@@ -6,7 +6,6 @@ import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/Home/Resources/View/resource_item.dart';
-import 'package:horseandriderscompanion/main.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 Widget resourcesView({
@@ -100,8 +99,6 @@ Widget resourcesView({
   );
 }
 
-// TODO(mfrenchy): This is all wonky and needs to be fixed
-// items are not in the right order
 List<Widget> _appBarActions({
   required HomeState state,
   required HomeCubit homeCubit,

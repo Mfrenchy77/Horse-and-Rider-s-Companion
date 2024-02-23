@@ -14,7 +14,6 @@ import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/HorseProfile/view/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
 import 'package:intl/intl.dart';
 
 Widget horseProfileView({
@@ -425,7 +424,6 @@ Widget _logBookButton({
                 horseProfile: state.horseProfile,
               ),
             );
-            context.read<HomeCubit>().addLogEntry(context: context);
           },
           icon: const Icon(
             Icons.add,
@@ -546,47 +544,6 @@ Widget _horseAge({required HorseProfile? horseProfile}) {
   );
 }
 
-Widget _horsePhoto({required HorseProfile? horseProfile}) {
-  debugPrint('Horse photo url: ${horseProfile?.picUrl}');
-  final isDark = SharedPrefs().isDarkMode;
-  return Row(
-    children: [
-      //Horse Photo
-      Padding(
-        padding: const EdgeInsets.all(8),
-        child: horseProfile?.picUrl != null && horseProfile!.picUrl!.isNotEmpty
-            ? CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.grey,
-                foregroundImage: NetworkImage(horseProfile.picUrl ?? ''),
-              )
-            : CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.transparent,
-                foregroundImage: AssetImage(
-                  isDark
-                      ? 'assets/horse_icon_dark.png'
-                      : 'assets/horse_icon_01.png',
-                ),
-              ),
-      ),
-      Expanded(
-        flex: 6,
-        child: Text(
-          '${horseProfile?.name}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            // color: COLOR_CONST.WHITE,
-            fontWeight: FontWeight.bold,
-            fontSize: 30,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
 Widget _horseLocation({required HorseProfile? horseProfile}) {
   return Row(
     children: [
@@ -650,50 +607,6 @@ Widget _horseHeight({required HorseProfile? horseProfile}) {
   );
 }
 
-Widget _addLogEntryButton({
-  required BuildContext context,
-  required HorseProfile horseProfile,
-  required RiderProfile riderProfile,
-}) {
-  return ElevatedButton(
-    onPressed: () {
-      showDialog<AddLogEntryDialog>(
-        context: context,
-        builder: (context) => AddLogEntryDialog(
-          riderProfile: riderProfile,
-          horseProfile: horseProfile,
-        ),
-      );
-      context.read<HomeCubit>().addLogEntry(context: context);
-    },
-    child: const Text('Add an Entry into the Log'),
-  );
-}
-
-Widget _notes({required HorseProfile? horseProfile}) {
-  final notes = horseProfile?.notes;
-
-  if (notes != null && notes.isNotEmpty) {
-    if (notes.length > 1) {
-      notes.sort(
-        (a, b) => a.date!.compareTo(b.date as DateTime),
-      );
-    }
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: horseProfile?.notes?.length,
-      itemBuilder: (BuildContext context, int index) {
-        final note = horseProfile?.notes?[index];
-        return _noteItem(note: note);
-      },
-    );
-  } else {
-    return const Text('No Entries in the Log');
-  }
-}
-
 // Widget that allows the user if the horse is
 // notOwned to request to be studenthorse from the owner
 Widget _requestToBeStudentHorseButton({
@@ -719,42 +632,5 @@ Widget _requestToBeStudentHorseButton({
             : 'Request to be Student Horse',
       ),
     ),
-  );
-}
-
-Widget _noteItem({required BaseListItem? note}) {
-  final isDark = SharedPrefs().isDarkMode;
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      IntrinsicHeight(
-        child: Row(
-          children: [
-            SizedBox(
-              width: 40,
-              height: 100,
-              child: Center(
-                child: Text(
-                  DateFormat('MMM\r\nd\r\nyyyy')
-                      .format(note?.date ?? DateTime.now()),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-            VerticalDivider(
-              color: isDark ? Colors.white : Colors.black,
-            ),
-            Expanded(
-              flex: 7,
-              child: Text(
-                note?.name ?? '',
-                textAlign: TextAlign.start,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
   );
 }

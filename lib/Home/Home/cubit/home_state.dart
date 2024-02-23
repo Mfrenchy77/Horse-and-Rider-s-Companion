@@ -32,7 +32,6 @@ enum HomeStatus {
   skillTree,
   ridersLog,
   profileSetup,
-  emailVerificationNeeded,
 }
 
 @immutable
@@ -84,13 +83,12 @@ class HomeState extends Equatable {
     this.isBannerAdReady = false,
     this.messageSnackBar = false,
     this.trainingPaths = const [],
-    this.showProfileSetup = false,
     this.name = const Name.pure(),
     this.isDescriptionHidden = true,
     this.email = const Email.pure(),
     this.isFromTrainingPath = false,
+    this.showingProfileSetup = false,
     this.horseSearchResult = const [],
-    this.showEmailVerification = false,
     this.isFromTrainingPathList = false,
     this.formzStatus = FormzStatus.pure,
     this.homeStatus = HomeStatus.loading,
@@ -131,17 +129,16 @@ class HomeState extends Equatable {
   final List<Level?>? levels;
   final bool isBannerAdReady;
   final List<Skill?>? skills;
-  final bool showProfileSetup;
   final HomeStatus homeStatus;
   final bool isFromTrainingPath;
   final List<Skill?>? allSkills;
   final FormzStatus formzStatus;
   final SearchState searchState;
+  final bool showingProfileSetup;
   final SubCategory? subCategory;
   final bool isDescriptionHidden;
   final List<String?>? searchList;
   final List<Skill?>? introSkills;
-  final bool showEmailVerification;
   final List<Skill?>? sortedSkills;
   final TrainingPath? trainingPath;
   final HorseProfile? horseProfile;
@@ -199,13 +196,13 @@ class HomeState extends Equatable {
     List<Level?>? levels,
     bool? messageSnackBar,
     bool? isBannerAdReady,
-    bool? showProfileSetup,
     HomeStatus? homeStatus,
     List<Skill?>? allSkills,
     bool? isFromTrainingPath,
     SubCategory? subCategory,
     SearchState? searchState,
     FormzStatus? formzStatus,
+    bool? showingProfileSetup,
     List<String?>? searchList,
     bool? isDescriptionHidden,
     List<Skill?>? introSkills,
@@ -213,7 +210,6 @@ class HomeState extends Equatable {
     List<Skill?>? sortedSkills,
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
-    bool? showEmailVerification,
     RiderProfile? ownersProfile,
     bool? isFromTrainingPathList,
     List<Skill?>? advancedSkills,
@@ -287,18 +283,16 @@ class HomeState extends Equatable {
       messageSnackBar: messageSnackBar ?? this.messageSnackBar,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       difficultyState: difficultyState ?? this.difficultyState,
-      showProfileSetup: showProfileSetup ?? this.showProfileSetup,
       skillSearchState: skillSearchState ?? this.skillSearchState,
       horseSearchResult: horseSearchResult ?? this.horseSearchResult,
       isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
       intermediateSkills: intermediateSkills ?? this.intermediateSkills,
       trainingPathSkills: trainingPathSkills ?? this.trainingPathSkills,
+      showingProfileSetup: showingProfileSetup ?? this.showingProfileSetup,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       isDescriptionHidden: isDescriptionHidden ?? this.isDescriptionHidden,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
       levelSubmitionStatus: levelSubmitionStatus ?? this.levelSubmitionStatus,
-      showEmailVerification:
-          showEmailVerification ?? this.showEmailVerification,
       levelSubmissionStatus:
           levelSubmissionStatus ?? this.levelSubmissionStatus,
       isFromTrainingPathList:
@@ -360,18 +354,17 @@ class HomeState extends Equatable {
         isBannerAdReady,
         messageSnackBar,
         difficultyState,
-        showProfileSetup,
         skillSearchState,
         horseSearchResult,
         isFromTrainingPath,
         trainingPathSkills,
         intermediateSkills,
         isDescriptionHidden,
+        showingProfileSetup,
         resourcesSortStatus,
         skillTreeNavigation,
         levelSubmitionStatus,
         levelSubmissionStatus,
-        showEmailVerification,
         isFromTrainingPathList,
         isSendingMessageToSupport,
       ];

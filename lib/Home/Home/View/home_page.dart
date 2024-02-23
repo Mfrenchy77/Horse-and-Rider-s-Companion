@@ -1,4 +1,3 @@
-import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,7 +37,6 @@ class HomePage extends StatelessWidget {
         skillTreeRepository: SkillTreeRepository(),
         horseProfileRepository: HorseProfileRepository(),
         riderProfileRepository: RiderProfileRepository(),
-        authenticationRepository: AuthenticationRepository(),
       ),
       child: const HomeView(
         key: Key('HomeView'),

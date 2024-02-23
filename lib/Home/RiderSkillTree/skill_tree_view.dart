@@ -10,7 +10,6 @@ import 'package:horseandriderscompanion/Home/RiderSkillTree/skills_list.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/training_path_view.dart';
 import 'package:horseandriderscompanion/Home/RiderSkillTree/training_paths_list.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/main.dart';
 import 'package:searchfield/searchfield.dart';
 
 ///   This is the main view for the Skill Tree
@@ -409,14 +408,12 @@ PreferredSizeWidget _appBar({
   );
 }
 
-// FIXME: this is a mess
 List<Widget> _appbarActions({
   required HomeState state,
   required HomeCubit homeCubit,
   required BuildContext context,
   required FocusNode skillTreeFocus,
 }) {
-  final isMobile = MediaQuery.of(context).size.width < 800;
   final actions = <Widget>[];
   final isEditor = state.usersProfile?.editor ?? false;
 
@@ -479,57 +476,6 @@ List<Widget> _appbarActions({
     },
   );
 
-//icon for navigating to the skills list
-  final Widget skillsList = Visibility(
-    visible: !isMobile,
-    child: Visibility(
-      visible:
-          state.skillTreeNavigation == SkillTreeNavigation.TrainingPathList ||
-              state.skillTreeNavigation == SkillTreeNavigation.TrainingPath ||
-              state.skillTreeNavigation == SkillTreeNavigation.SkillLevel,
-      child: Tooltip(
-        message: 'Skills',
-        child: IconButton(
-          icon: const Icon(Icons.list),
-          onPressed: homeCubit.navigateToSkillsList,
-        ),
-      ),
-    ),
-  );
-  // icon for editing the skill tree
-  final Widget editIcon = Visibility(
-    visible: !isMobile,
-    child: Visibility(
-      visible: state.usersProfile?.editor ?? false,
-      child: Tooltip(
-        message: state.isEditState ? 'Done Editing' : 'Edit Skill Tree',
-        child: Switch(
-          value: state.isEditState,
-          onChanged: (value) {
-            homeCubit.toggleIsEditState();
-          },
-        ),
-      ),
-    ),
-  );
-// training paths
-  final Widget trainingPaths = Visibility(
-    visible: !isMobile,
-    child: Visibility(
-      visible: state.skillTreeNavigation == SkillTreeNavigation.SkillList,
-      child: Tooltip(
-        message: 'Training Paths',
-        child: IconButton(
-          icon: const Icon(Icons.account_tree_outlined),
-          onPressed: () {
-            // open the sort dialog
-            homeCubit.navigateToTrainingPathList();
-          },
-        ),
-      ),
-    ),
-  );
-
   //Search
   final Widget search = Visibility(
     visible: !state.isSearch,
@@ -568,33 +514,9 @@ List<Widget> _appbarActions({
     ),
   );
 
-  //difficulty
-  final Widget difficulty = Visibility(
-    visible: !isMobile,
-    child: Visibility(
-      visible: state.skillTreeNavigation == SkillTreeNavigation.SkillList,
-      child: Tooltip(
-        message: 'Sort by Difficulty',
-        child: IconButton(
-          icon: const Icon(Icons.sort),
-          onPressed: () {
-            // open the sort dialog
-            homeCubit.openDifficultySelectDialog(
-              context: context,
-              subCategory: state.subCategory,
-            );
-          },
-        ),
-      ),
-    ),
-  );
   actions
     ..add(search)
     ..add(skillsPopupMenu);
-  // ..add(skillsList)
-  // ..add(trainingPaths)
-  // ..add(difficulty)
-  // ..add(editIcon)
-  // ;
+
   return actions;
 }

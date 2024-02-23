@@ -260,8 +260,8 @@ class AuthenticationRepository {
   Future<void> _cacheCurrentUser() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
-      final user = firebaseUser.toUser;
-      await _cacheUser(user);
+      final user = firebaseUser.toAppUser();
+      await _cacheUser(user!);
     } else {
       await _clearCachedUser();
     }
@@ -289,10 +289,10 @@ class AuthenticationRepository {
   /// the authentication state changes.
   ///
   /// Emits [User.empty] if the user is not authenticated.
-  Stream<User> get user {
+  Stream<User?> get user {
     return _firebaseAuth.authStateChanges().map((firebaseUser) {
-      final user = firebaseUser == null ? User.empty : firebaseUser.toUser;
-      _cache.write(key: userCacheKey, value: user);
+      final user = firebaseUser == null ? User.empty : firebaseUser.toAppUser();
+      _cache.write<User>(key: userCacheKey, value: user!);
       return user;
     });
   }
@@ -306,7 +306,7 @@ class AuthenticationRepository {
   /// Creates a new user with the provided [name] and [email] and [password].
   ///
   /// Throws a [SignUpWithEmailAndPasswordFailure] if an exception occurs.
-  Future<void> signUp({
+  Future<User?> signUp({
     required String name,
     required String email,
     required String password,
@@ -333,7 +333,7 @@ class AuthenticationRepository {
 
       // Send email verification
       await currentUser.sendEmailVerification();
-
+      return currentUser.toAppUser();
       // Optionally, update the cache with the new user information if necessary
       // _cache.write(key: userCacheKey, value: currentUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
@@ -345,11 +345,12 @@ class AuthenticationRepository {
   }
 
   /// Allow the user to sign in as a guest
-  Future<void> signInAsGuest() async {
+  Future<User?> signInAsGuest() async {
     try {
       await _firebaseAuth.signInAnonymously();
       // Cache the current guest user
       await _cacheCurrentUser();
+      return _firebaseAuth.currentUser!.toAppUser()!;
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInAsGuestFailure.fromCode(e.code);
     } catch (_) {
@@ -391,7 +392,7 @@ class AuthenticationRepository {
   /// Signs in with the provided [email] and [password].
   ///
   /// Throws a [LogInWithEmailAndPasswordFailure] if an exception occurs.
-  Future<void> logInWithEmailAndPassword({
+  Future<User?> logInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
@@ -403,6 +404,7 @@ class AuthenticationRepository {
 
       // Cache the current user after successful login
       await _cacheCurrentUser();
+      return _firebaseAuth.currentUser?.toAppUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInWithEmailAndPasswordFailure.fromCode(e.code);
     } catch (_) {
@@ -420,7 +422,7 @@ class AuthenticationRepository {
       throw ResetPasswordFailure.fromCode(e.code);
     } catch (e) {
       // Handle other types of exceptions
-      throw const ResetPasswordFailure(); 
+      throw const ResetPasswordFailure();
     }
   }
 
@@ -471,15 +473,22 @@ class AuthenticationRepository {
   }
 }
 
-extension on firebase_auth.User {
-  User get toUser {
-    return User(
-      id: uid,
-      email: email ?? '',
-      photo: photoURL,
-      name: displayName ?? '',
-      isGuest: isAnonymous,
-      emailVerified: emailVerified,
-    );
+/// Extension on [firebase_auth.User] to convert to [User]
+extension UserConversion on firebase_auth.User? {
+  /// Converts a [firebase_auth.User] to a [User]
+  User? toAppUser() {
+    final firebaseUser = this;
+    if (firebaseUser == null) {
+      return null;
+    } else {
+      return User(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        photo: firebaseUser.photoURL,
+        name: firebaseUser.displayName ?? '',
+        isGuest: firebaseUser.isAnonymous,
+        emailVerified: firebaseUser.emailVerified,
+      );
+    }
   }
 }

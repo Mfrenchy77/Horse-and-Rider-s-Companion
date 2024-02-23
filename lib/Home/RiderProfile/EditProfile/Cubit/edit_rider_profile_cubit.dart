@@ -74,6 +74,11 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     );
   }
 
+  /// Toggle the trainer status
+  void toggleTrainerStatus() {
+    emit(state.copyWith(isTrainer: !state.isTrainer));
+  }
+
   void riderHomeUrlChanged({required String value}) {
     emit(state.copyWith(homeUrl: value));
   }
@@ -271,10 +276,16 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       picUrl: state.picUrl,
       name: state.riderName,
       homeUrl: state.homeUrl,
+      stateIso: state.stateId,
+      isTrainer: state.isTrainer,
+      lastEditBy: state.riderName,
+      cityName: state.selectedCity,
       lastEditDate: DateTime.now(),
       zipCode: state.zipCode.value,
-      lastEditBy: state.riderName,
+      countryIso: state.countryIso,
+      stateName: state.selectedState,
       locationName: state.locationName,
+      countryName: state.selectedCountry,
     );
 
     if (updatedRiderProfile != null) {
@@ -317,18 +328,30 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
       final riderProfile = RiderProfile(
         id: state.id,
-        picUrl: state.picUrl,
-        name: finalName,
-        email: state.user?.email ?? '',
-        lastEditBy: finalName,
-        lastEditDate: DateTime.now(),
         notes: [note],
+        bio: state.bio,
+        name: finalName,
+        picUrl: state.picUrl,
+        lastEditBy: finalName,
+        homeUrl: state.homeUrl,
+        stateIso: state.stateId,
+        lastEditDate: DateTime.now(),
+        zipCode: state.zipCode.value,
+        cityName: state.selectedCity,
+        countryIso: state.countryIso,
+        email: state.user?.email ?? '',
+        stateName: state.selectedState,
+        locationName: state.locationName,
+        countryName: state.selectedCountry,
       );
       try {
-        await _riderProfileRepository.createOrUpdateRiderProfile(
-          riderProfile: riderProfile,
-        );
-        //.then((value) =>  _getRiderProfile(user: user));
+        await _riderProfileRepository
+            .createOrUpdateRiderProfile(
+              riderProfile: riderProfile,
+            )
+            .then(
+              (value) => emit(state.copyWith(status: SubmissionStatus.success)),
+            );
       } on FirebaseException catch (e) {
         debugPrint('Error: ${e.message}');
         emit(state.copyWith(error: e.toString(), isError: true));

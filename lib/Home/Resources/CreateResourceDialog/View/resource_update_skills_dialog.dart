@@ -102,7 +102,8 @@ class UpdateResourceSkills extends StatelessWidget {
                             const Divider(),
                             gap(),
                             const Text(
-                                'Add or Remove Skills from this Resource'),
+                              'Add or Remove Skills from this Resource',
+                            ),
                             smallGap(),
                             SingleChildScrollView(
                               child: Wrap(

@@ -98,13 +98,6 @@ Widget profileView({
                               ),
                             ),
                           ),
-                          // 'Skills',
-                          // textAlign: TextAlign.center,
-                          // style: TextStyle(
-                          //   fontWeight: FontWeight.w200,
-                          //   fontSize: 30,
-                          //   color: Colors.white,
-                          // ),
                         ),
                       ),
                     ),
@@ -429,18 +422,6 @@ Widget _profile({
               ),
             ),
             gap(),
-            // TODO(mfrenchy77): Move this to edit profile
-            // Visibility(
-            //   visible: state.usersProfile != null,
-            //   child: Center(
-            //     child: _trainerQuestion(
-            //       context: context,
-            //       usersProfile: state.usersProfile,
-            //       homeCubit: homeCubit,
-            //     ),
-            //   ),
-            // ),
-            gap(),
             Visibility(
               visible: state.usersProfile != null,
               child: Center(
@@ -507,7 +488,6 @@ Widget _logBookButton({
                   horseProfile: null,
                 ),
               );
-              context.read<HomeCubit>().addLogEntry(context: context);
             },
             icon: const Icon(
               Icons.add,
@@ -532,7 +512,7 @@ Widget _lists({
     children: [
       Visibility(
         visible: state.viewingProfile?.instructors?.isNotEmpty ??
-            state.usersProfile!.instructors?.isNotEmpty ??
+            state.usersProfile?.instructors?.isNotEmpty ??
             false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -584,7 +564,7 @@ Widget _lists({
       gap(),
       Visibility(
         visible: state.viewingProfile?.students?.isNotEmpty ??
-            state.usersProfile!.students?.isNotEmpty ??
+            state.usersProfile?.students?.isNotEmpty ??
             false,
         child: Column(
           children: [
@@ -611,7 +591,7 @@ Widget _lists({
                           ),
                         )
                         .toList() ??
-                    state.usersProfile!.students
+                    state.usersProfile?.students
                         ?.map(
                           (e) => _profileCard(
                             context: context,
@@ -629,7 +609,7 @@ Widget _lists({
       gap(),
       Visibility(
         visible: state.viewingProfile?.ownedHorses?.isNotEmpty ??
-            state.usersProfile!.ownedHorses?.isNotEmpty ??
+            state.usersProfile?.ownedHorses?.isNotEmpty ??
             false,
         child: Column(
           children: [
@@ -655,7 +635,7 @@ Widget _lists({
                           ),
                         )
                         .toList() ??
-                    state.usersProfile!.ownedHorses
+                    state.usersProfile?.ownedHorses
                         ?.map(
                           (e) => _profileCard(
                             context: context,
@@ -673,7 +653,7 @@ Widget _lists({
       //student horses
       Visibility(
         visible: state.viewingProfile?.studentHorses?.isNotEmpty ??
-            state.usersProfile!.studentHorses?.isNotEmpty ??
+            state.usersProfile?.studentHorses?.isNotEmpty ??
             false,
         child: Column(
           children: [
@@ -699,7 +679,7 @@ Widget _lists({
                           ),
                         )
                         .toList() ??
-                    state.usersProfile!.studentHorses
+                    state.usersProfile?.studentHorses
                         ?.map(
                           (e) => _profileCard(
                             context: context,
@@ -745,105 +725,36 @@ List<Widget>? _appBarActions({
         },
         icon: const Icon(Icons.search),
       ),
-      if (isUser)
-        //   Tooltip(
-        //     message: 'Messages',
-        //     child: NotificationIcon(
-        //       iconData: Icons.mail,
-        //       notificationCount: state.unreadMessages,
-        //       onTap: () => homeCubit.openMessages(context: context),
-        //     ),
-        //   ),
-        // if (isUser &&
-        //     ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP)) ...[
-        //   gap(),
-        //   Visibility(
-        //     visible: usersProfile.editor ?? false,
-        //     child: Tooltip(
-        //       message: 'Edit Profile',
-        //       child: IconButton(
-        //         iconSize: iconSize,
-        //         onPressed: () => showDialog<EditRiderProfileDialog>(
-        //           context: context,
-        //           builder: (context) => EditRiderProfileDialog(
-        //             riderProfile: usersProfile,
-        //           ),
-        //         ),
-        //         icon: const Icon(Icons.edit),
-        //       ),
-        //     ),
-        //   ),
-        // ],
-        // if (isAuthorized &&
-        //     ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP)) ...[
-        //   gap(),
-        //   Tooltip(
-        //     message: 'Log Book',
-        //     child: IconButton(
-        //       iconSize: iconSize,
-        //       onPressed: () => homeCubit.openLogBook(context),
-        //       icon: const Icon(HorseAndRiderIcons.riderLogIcon),
-        //     ),
-        //   ),
-        // ],
-        // if (ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP)) ...[
-        //   gap(),
-        //   Tooltip(
-        //     message: 'Settings',
-        //     child: IconButton(
-        //       iconSize: iconSize,
-        //       onPressed: () => Navigator.of(context, rootNavigator: true)
-        //           .restorablePushNamed(SettingsView.routeName),
-        //       icon: const Icon(Icons.settings),
-        //     ),
-        //   ),
-        // ],
-        // if (isUser &&
-        //     ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP)) ...[
-        //   gap(),
-        //   Tooltip(
-        //     message: 'Add Horse',
-        //     child: IconButton(
-        //       iconSize: iconSize,
-        //       onPressed: () => homeCubit.openAddHorseDialog(
-        //         context: context,
-        //         horseProfile: null,
-        //         isEdit: false,
-        //       ),
-        //       icon: const Icon(HorseAndRiderIcons.horseIconAdd),
-        //     ),
-        //   ),
-        //   gap(),
-        // ],
-        PopupMenuButton<String>(
-          itemBuilder: (BuildContext menuContext) => <PopupMenuEntry<String>>[
-            const PopupMenuItem(value: 'Edit', child: Text('Edit')),
-            const PopupMenuItem(value: 'Log Book', child: Text('Log Book')),
-            const PopupMenuItem(value: 'Add Horse', child: Text('Add Horse')),
-            const PopupMenuItem(value: 'Settings', child: Text('Settings')),
-          ],
-          onSelected: (value) {
-            switch (value) {
-              case 'Edit':
-                homeCubit.openEditDialog(context: context);
-                break;
-              case 'Log Book':
-                homeCubit.openLogBook(cubit: homeCubit, context: context);
-                break;
-              case 'Add Horse':
-                homeCubit.openAddHorseDialog(
-                  context: context,
-                  horseProfile: null,
-                  isEdit: false,
-                );
-                break;
-              case 'Settings':
-                Navigator.of(context, rootNavigator: true)
-                    .restorablePushNamed(SettingsView.routeName);
-                break;
-            }
-          },
-        ),
+
+      PopupMenuButton<String>(
+        itemBuilder: (BuildContext menuContext) => <PopupMenuEntry<String>>[
+          const PopupMenuItem(value: 'Edit', child: Text('Edit Profile')),
+          const PopupMenuItem(value: 'Log Book', child: Text('Log Book')),
+          const PopupMenuItem(value: 'Add Horse', child: Text('Add Horse')),
+          const PopupMenuItem(value: 'Settings', child: Text('Settings')),
+        ],
+        onSelected: (value) {
+          switch (value) {
+            case 'Edit':
+              homeCubit.openEditDialog(context: context);
+              break;
+            case 'Log Book':
+              homeCubit.openLogBook(cubit: homeCubit, context: context);
+              break;
+            case 'Add Horse':
+              homeCubit.openAddHorseDialog(
+                context: context,
+                horseProfile: null,
+                isEdit: false,
+              );
+              break;
+            case 'Settings':
+              Navigator.of(context, rootNavigator: true)
+                  .restorablePushNamed(SettingsView.routeName);
+              break;
+          }
+        },
+      ),
     ];
   } else {
     return null;
@@ -1184,58 +1095,6 @@ Widget _savedLists({
         ),
       );
     },
-  );
-}
-
-Widget _trainerQuestion({
-  required BuildContext context,
-  required RiderProfile? usersProfile,
-  required HomeCubit homeCubit,
-}) {
-  bool showIsTrainer;
-  if (usersProfile?.isTrainer == null) {
-    showIsTrainer = true;
-  } else if (usersProfile?.isTrainer == false) {
-    showIsTrainer = false;
-  } else {
-    showIsTrainer = true;
-  }
-
-  return Visibility(
-    visible: showIsTrainer,
-    child: Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20),
-      child: Row(
-        children: [
-          const Expanded(
-            flex: 6,
-            child: Text(
-              'Are you a Trainer/Instructor?',
-            ),
-          ),
-          const Text(
-            'Yes',
-          ),
-          Checkbox(
-            value: false,
-            onChanged: (value) => homeCubit.toggleIsTrainerState(
-              isTrainer: true,
-              context: context,
-            ),
-          ),
-          const Text(
-            'No',
-          ),
-          Checkbox(
-            value: false,
-            onChanged: (value) => homeCubit.toggleIsTrainerState(
-              isTrainer: false,
-              context: context,
-            ),
-          ),
-        ],
-      ),
-    ),
   );
 }
 
