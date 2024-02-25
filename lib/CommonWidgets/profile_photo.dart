@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 Widget profilePhoto({
   required BuildContext context,

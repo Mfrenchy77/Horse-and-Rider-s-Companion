@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
-import 'package:horseandriderscompanion/utils/MyConstants/COLOR_CONST.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 enum ThemeSeasons {
   main,

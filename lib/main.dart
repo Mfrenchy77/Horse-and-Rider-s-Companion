@@ -12,7 +12,7 @@ import 'package:horseandriderscompanion/Initialization/ads_initialization.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_initialization.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 late final FirebaseApp app;
 late final FirebaseAuth auth;

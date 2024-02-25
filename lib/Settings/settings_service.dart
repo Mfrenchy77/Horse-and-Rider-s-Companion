@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 /// A service that stores and retrieves user settings.
 class SettingsService {

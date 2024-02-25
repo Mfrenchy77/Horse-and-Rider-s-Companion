@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 Widget profileItem({

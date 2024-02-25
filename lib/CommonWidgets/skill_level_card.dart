@@ -1,6 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/Home/Home/cubit/home_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
 
 Widget skillLevelCard({
   required BuildContext context,

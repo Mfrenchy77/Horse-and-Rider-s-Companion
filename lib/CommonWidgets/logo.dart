@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 //Widget that show the Horse and Riders Logo and the current page
 class Logo extends StatelessWidget {

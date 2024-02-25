@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/generated/l10n.dart';
-import 'package:horseandriderscompanion/shared_prefs.dart';
 
 /// Displays the various settings that can be customized by the user.
 ///
