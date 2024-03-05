@@ -349,7 +349,9 @@ PreferredSizeWidget _appBar({
               debugPrint('Submit Value: $p0');
             },
           )
-        : appBarTitle(),
+        : const AppTitle(
+            key: Key('appTitle'),
+          ),
     actions: _appbarActions(
       state: state,
       context: context,

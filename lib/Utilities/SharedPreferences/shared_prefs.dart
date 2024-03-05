@@ -87,4 +87,33 @@ class SharedPrefs {
         return ThemeMode.system;
     }
   }
+
+/// Sets the User's Preference as [bool] for "Hands" or "Centimeters"
+/// for viewing the horses height. Default is "Hands".
+  void setHeightPreference({required bool isHands}) {
+    _sharedPrefs.setBool('HeightPreference', isHands);
+  }
+
+  /// Retrieves the user's preference for viewing the horse's height.
+  /// Returns `true` if the user prefers to view the height in hands,
+  /// `false` if the user prefers to view the height in centimeters.
+  /// Defaults to `true` if the preference has not been set.
+  bool isHeightInHands() {
+    return _sharedPrefs.getBool('HeightPreference') ?? true;
+  }
+
+  /// Sets the User's Preference as [bool] for "Pounds" or "Kilograms"
+  /// for viewing the horses weight. Default is "Pounds".
+  void setWeightPreference({required bool isPounds}) {
+    _sharedPrefs.setBool('WeightPreference', isPounds);
+  }
+
+  /// Retrieves the user's preference for viewing the horse's weight.
+  /// Returns `true` if the user prefers to view the weight in pounds,
+  /// `false` if the user prefers to view the weight in kilograms.
+  /// Defaults to `true` if the preference has not been set.
+  bool isWeightInPounds() {
+    return _sharedPrefs.getBool('WeightPreference') ?? true;
+  }
+
 }

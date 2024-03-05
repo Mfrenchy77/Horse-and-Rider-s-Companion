@@ -159,8 +159,7 @@ Widget _groupItem({
             ),
             style: TextStyle(color: textColor),
           ),
-          leading: profilePhoto(
-            context: context,
+          leading: ProfilePhoto(
             size: 40,
             profilePicUrl: group.recentMessage?.senderProfilePicUrl,
           ),

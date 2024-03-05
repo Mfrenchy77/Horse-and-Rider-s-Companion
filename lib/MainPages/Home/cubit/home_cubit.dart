@@ -14,15 +14,13 @@ import 'package:formz/formz.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/MainPages/Home/home_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/view/messages_page.dart';
-import 'package:horseandriderscompanion/MainPages/Profile/Dialogs/AddHorseDialog/add_horse_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profile/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Profile/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profile/Dialogs/log_view_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/ad_helper.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
-import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'home_state.dart';
@@ -222,7 +220,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   void resetProfileSetup() {
     debugPrint('Changing showingProfileSetup to false');
-    emit(state.copyWith(showingProfileSetup: false));
+    emit(state.copyWith(homeStatus: HomeStatus.profile));
   }
 
   /// Handles the Navigation when the back button is pressed from Resources,
@@ -337,96 +335,81 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  ///   Open the Rider's Log Book
-  void openLogBook({
-    required HomeCubit cubit,
-    required BuildContext context,
-  }) {
-    showDialog<LogViewDialog>(
-      context: context,
-      builder: (context) => LogViewDialog(
-        cubit: cubit,
-        isRider: state.isForRider,
-        state: state,
-      ),
-    );
-  }
+  // ///   Open the Rider's Log Book
+  // void openLogBook({
+  //   required HomeCubit cubit,
+  //   required BuildContext context,
+  // }) {
+  //   showDialog<LogViewDialog>(
+  //     context: context,
+  //     builder: (context) => LogViewDialog(
+  //       isRider: state.isForRider,
+  //     ),
+  //   );
+  // }
 
-  /// return a chip with a color based on the Log Tag
-  Widget logTagChip({required String? tagString}) {
-    final tag = convertStringToLogTag(tagString);
-    return Chip(
-      avatar: _logTagIcon(tag: tag),
-      label: Text(
-        _logTagText(tag: tag),
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: _logTagColor(tag: tag),
-    );
-  }
+  // LogTag convertStringToLogTag(String? tag) {
+  //   switch (tag) {
+  //     case 'LogTag.Show':
+  //       return LogTag.Show;
+  //     case 'LogTag.Training':
+  //       return LogTag.Training;
+  //     case 'LogTag.Health':
+  //       return LogTag.Health;
+  //     case 'LogTag.Other':
+  //       return LogTag.Other;
+  //     default:
+  //       return LogTag.Other;
+  //   }
+  // }
 
-  LogTag convertStringToLogTag(String? tag) {
-    switch (tag) {
-      case 'LogTag.Show':
-        return LogTag.Show;
-      case 'LogTag.Training':
-        return LogTag.Training;
-      case 'LogTag.Health':
-        return LogTag.Health;
-      case 'LogTag.Other':
-        return LogTag.Other;
-      default:
-        return LogTag.Other;
-    }
-  }
+  // /// returns a icon for an avatar based on the Log Tag
+  // Icon _logTagIcon({required LogTag? tag}) {
+  //   switch (tag) {
+  //     case LogTag.Show:
+  //       return const Icon(HorseAndRiderIcons.horseIcon);
+  //     case LogTag.Training:
+  //       return const Icon(HorseAndRiderIcons.horseSkillIcon);
+  //     case LogTag.Health:
+  //       return const Icon(Icons.local_hospital);
+  //     case LogTag.Other:
+  //       return const Icon(Icons.more_horiz);
+  //     case null:
+  //       return const Icon(HorseAndRiderIcons.horseIcon);
+  //   }
+  // }
 
-  /// returns a icon for an avatar based on the Log Tag
-  Icon _logTagIcon({required LogTag? tag}) {
-    switch (tag) {
-      case LogTag.Show:
-        return const Icon(HorseAndRiderIcons.horseIcon);
-      case LogTag.Training:
-        return const Icon(HorseAndRiderIcons.horseSkillIcon);
-      case LogTag.Health:
-        return const Icon(Icons.local_hospital);
-      case LogTag.Other:
-        return const Icon(Icons.more_horiz);
-      case null:
-        return const Icon(HorseAndRiderIcons.horseIcon);
-    }
-  }
+  // /// returns text base on Log Tag
+  // String _logTagText({required LogTag? tag}) {
+  //   switch (tag) {
+  //     case LogTag.Show:
+  //       return 'Show';
+  //     case LogTag.Training:
+  //       return 'Training';
+  //     case LogTag.Health:
+  //       return 'Health';
+  //     case LogTag.Other:
+  //       return 'Other';
+  //     case null:
+  //       return 'Other';
+  //   }
+  // }
 
-  /// returns text base on Log Tag
-  String _logTagText({required LogTag? tag}) {
-    switch (tag) {
-      case LogTag.Show:
-        return 'Show';
-      case LogTag.Training:
-        return 'Training';
-      case LogTag.Health:
-        return 'Health';
-      case LogTag.Other:
-        return 'Other';
-      case null:
-        return 'Other';
-    }
-  }
-
-  /// returns a color based on the Log Tag
-  Color _logTagColor({required LogTag? tag}) {
-    switch (tag) {
-      case LogTag.Show:
-        return Colors.blue;
-      case LogTag.Training:
-        return Colors.green;
-      case LogTag.Health:
-        return Colors.red;
-      case LogTag.Other:
-        return Colors.grey;
-      case null:
-        return Colors.grey;
-    }
-  }
+  // /// returns a color based on the Log Tag
+  // Color _logTagColor({required LogTag? tag}) {
+  //   switch (tag) {
+  //     case LogTag.Show:
+  //       return Colors.blue;
+  //     case LogTag.Training:
+  //       return Colors.green;
+  //     case LogTag.Health:
+  //       return Colors.red;
+  //     case LogTag.Other:
+  //       return Colors.grey;
+  //     case null:
+  //       return Colors.grey;
+  //   }
+  // }
 
   /// Opens the Add/Edit Horse Dialog
   void openAddHorseDialog({
@@ -522,13 +505,17 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         );
         Navigator.of(context, rootNavigator: true).pushNamed(
-          HomePage.routeName,
-          arguments: HomePageArguments(
-            horseId: null,
-            viewingProfile: value.data() as RiderProfile,
-            usersProfile: state.usersProfile,
-          ),
+          RiderProfilePage.routeName,
+        
         );
+        // Navigator.of(context, rootNavigator: true).pushNamed(
+        //   HomePage.routeName,
+        //   arguments: HomePageArguments(
+        //     horseId: null,
+        //     viewingProfile: value.data() as RiderProfile,
+        //     usersProfile: state.usersProfile,
+        //   ),
+        // );
       });
     } else {
       debugPrint('Returning to Users Profile');
@@ -573,13 +560,17 @@ class HomeCubit extends Cubit<HomeState> {
   void goBackToUsersProfile(BuildContext context) {
     debugPrint('goBackToUsersProfile, setting isViewing to false');
     Navigator.of(context, rootNavigator: true).pushNamed(
-      HomePage.routeName,
-      arguments: HomePageArguments(
-        horseId: null,
-        viewingProfile: null,
-        usersProfile: state.usersProfile,
-      ),
+      RiderProfilePage.routeName,
+      
     );
+    // Navigator.of(context, rootNavigator: true).pushNamed(
+    //   HomePage.routeName,
+    //   arguments: HomePageArguments(
+    //     horseId: null,
+    //     viewingProfile: null,
+    //     usersProfile: state.usersProfile,
+    //   ),
+    // );
     emit(
       state.copyWith(
         isViewing: false,

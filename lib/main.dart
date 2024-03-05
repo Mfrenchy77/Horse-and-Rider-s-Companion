@@ -2,6 +2,7 @@
 
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
+import 'package:database_repository/database_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,13 @@ Future<void> main() async {
   await AdsInitialization.initializeAds();
   FlutterNativeSplash.remove();
 
+  final messagesRepository = MessagesRepository();
+  final skillTreeRepository = SkillTreeRepository();
+  final resourcesRepository = ResourcesRepository();
+  final riderProfileRepository = RiderProfileRepository();
+  final horseProfileRepository = HorseProfileRepository();
   final authenticationRepository = AuthenticationRepository();
+
   authenticationRepository.user.listen((value) {
     debugPrint('User is $value');
   });
@@ -34,8 +41,12 @@ Future<void> main() async {
   await settingsController.loadSettings();
   runApp(
     App(
-      // auth: auth,
+      messagesRepository: messagesRepository,
       settingsController: settingsController,
+      skillTreeRepository: skillTreeRepository,
+      resourcesRepository: resourcesRepository,
+      riderProfileRepository: riderProfileRepository,
+      horseProfileRepository: horseProfileRepository,
       authenticationRepository: authenticationRepository,
     ),
   );

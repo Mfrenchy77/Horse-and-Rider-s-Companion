@@ -8,7 +8,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
-import 'package:horseandriderscompanion/MainPages/Home/home_page.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:open_mail_app/open_mail_app.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -24,17 +24,20 @@ class AuthView extends StatelessWidget {
       backgroundColor: ColorConst.backgroundDark,
       body: BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
-          if (state.status.isSubmissionSuccess) {
-            debugPrint('Success Login, go to HomePage');
-            Navigator.pushReplacementNamed(context, HomePage.routeName);
-          }
           final cubit = context.read<LoginCubit>();
-          if (state.pageStatus == LoginPageStatus.awitingEmailVerification) {
-            context.read<LoginCubit>().checkEmailVerificationStatus();
-            showDialog<AlertDialog>(
-              context: context,
-              builder: (_) => EmailVerificationDialog(email: state.email.value),
-            );
+          if (state.status.isSubmissionSuccess) {
+            debugPrint('Success Pop?');
+            Navigator.pushNamed(context, RiderProfilePage.routeName);
+
+            //     debugPrint('Success Pop?');
+            //  //   Navigator.popAndPushNamed(context, RiderProfilePage.routeName);
+            //   }
+            //   if (state.pageStatus == LoginPageStatus.awitingEmailVerification) {
+            //     context.read<LoginCubit>().checkEmailVerificationStatus();
+            //     showDialog<AlertDialog>(
+            //       context: context,
+            //       builder: (_) => EmailVerificationDialog(email: state.email.value),
+            //     );
             if (state.mailAppResult != null) {
               showDialog<MailAppPickerDialog>(
                 context: context,

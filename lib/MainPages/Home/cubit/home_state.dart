@@ -37,7 +37,6 @@ enum HomeStatus {
 @immutable
 class HomeState extends Equatable {
   const HomeState({
-    this.user,
     this.skill,
     this.skills,
     this.levels,
@@ -70,6 +69,7 @@ class HomeState extends Equatable {
     this.snackBar = false,
     this.isViewing = false,
     this.searchQuery = '',
+    this.user = User.empty,
     this.isForRider = true,
     this.unreadMessages = 0,
     this.trainingPathSkills,
@@ -103,7 +103,7 @@ class HomeState extends Equatable {
   });
   final int index;
   final Name name;
-  final User? user;
+  final User user;
   final Email email;
   final Skill? skill;
   final String error;

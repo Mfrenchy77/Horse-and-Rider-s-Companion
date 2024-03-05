@@ -17,6 +17,7 @@ class LoginState extends Equatable {
   const LoginState({
     this.mailAppResult,
     this.isError = false,
+    this.isGuest = false,
     this.errorMessage = '',
     this.forgotEmailSent = false,
     this.showEmailDialog = false,
@@ -37,6 +38,9 @@ class LoginState extends Equatable {
 
   /// Indicates if an error has occurred.
   final bool isError;
+
+  /// Indicates if the user is a signing in as a guest.
+  final bool isGuest;
 
   /// The password entered by the user, used for login.
   final Password password;
@@ -65,28 +69,13 @@ class LoginState extends Equatable {
   /// The confirmed password entered by the user, used for registration.
   final ConfirmedPassword confirmedPassword;
 
-  @override
-  List<Object?> get props => [
-        name,
-        email,
-        status,
-        isError,
-        password,
-        pageStatus,
-        errorMessage,
-        mailAppResult,
-        forgotEmailSent,
-        showEmailDialog,
-        isPasswordVisible,
-        confirmedPassword,
-      ];
-
   /// Returns a copy of this [LoginState] with the given fields replaced with
   /// the new values.
   LoginState copyWith({
     Name? name,
     Email? email,
     bool? isError,
+    bool? isGuest,
     Password? password,
     FormzStatus? status,
     String? errorMessage,
@@ -102,6 +91,7 @@ class LoginState extends Equatable {
       email: email ?? this.email,
       status: status ?? this.status,
       isError: isError ?? this.isError,
+      isGuest: isGuest ?? this.isGuest,
       password: password ?? this.password,
       pageStatus: pageStatus ?? this.pageStatus,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -112,4 +102,21 @@ class LoginState extends Equatable {
       confirmedPassword: confirmedPassword ?? this.confirmedPassword,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        name,
+        email,
+        status,
+        isGuest,
+        isError,
+        password,
+        pageStatus,
+        errorMessage,
+        mailAppResult,
+        forgotEmailSent,
+        showEmailDialog,
+        isPasswordVisible,
+        confirmedPassword,
+      ];
 }

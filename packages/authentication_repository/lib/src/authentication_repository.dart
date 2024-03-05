@@ -350,7 +350,7 @@ class AuthenticationRepository {
       await _firebaseAuth.signInAnonymously();
       // Cache the current guest user
       await _cacheCurrentUser();
-      return _firebaseAuth.currentUser!.toAppUser()!;
+      return _firebaseAuth.currentUser?.toAppUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInAsGuestFailure.fromCode(e.code);
     } catch (_) {

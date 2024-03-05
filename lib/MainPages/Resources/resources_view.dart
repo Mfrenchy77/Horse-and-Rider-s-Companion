@@ -44,7 +44,9 @@ Widget resourcesView({
       ),
       titleSpacing: 0,
       centerTitle: true,
-      title: appBarTitle(),
+      title: const AppTitle(
+        key: Key('appTitle'),
+      ),
     ),
     body: Center(
       child: ListView(

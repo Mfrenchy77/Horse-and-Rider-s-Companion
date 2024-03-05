@@ -73,6 +73,11 @@ class HorseAndRidersTheme {
     }
   }
 
+  /// returns true if the theme is dark
+  bool isDarkTheme() {
+    return SharedPrefs().isDarkMode;
+  }
+
   ThemeData getTheme() {
     final isDarkTheme = SharedPrefs().isDarkMode;
     if (isDarkTheme) {

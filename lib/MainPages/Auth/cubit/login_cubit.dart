@@ -21,12 +21,34 @@ part 'login_state.dart';
 class LoginCubit extends Cubit<LoginState> {
   /// {@macro login_cubit}
   LoginCubit(this._authenticationRepository) : super(const LoginState());
+  //   _userSubscription = _authenticationRepository.user.listen((user) {
+  //     if (user != null) {
+  //       if (user.emailVerified) {
+  //         emit(
+  //           state.copyWith(
+  //             status: FormzStatus.submissionSuccess,
+  //           ),
+  //         );
+  //       } else if (user.email.isNotEmpty && !user.emailVerified) {
+  //         emit(
+  //           state.copyWith(
+  //             status: FormzStatus.pure,
+  //             pageStatus: LoginPageStatus.awitingEmailVerification,
+  //           ),
+  //         );
+  //       }
+  //     }
+  //   });
+  // }
+
   final AuthenticationRepository _authenticationRepository;
 
+  // late final StreamSubscription<User?> _userSubscription;
   Timer? _emailVerificationTimer;
 
   /// Toggles the visibility of the password field.
   void togglePasswordVisible() {
+    debugPrint('Toggle Password Visibility');
     emit(state.copyWith(isPasswordVisible: !state.isPasswordVisible));
   }
 
@@ -59,7 +81,7 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> openEmailApp({
     required String email,
   }) async {
-    final emailUri = Uri(scheme: 'mailto', path: email);
+    final emailUri = Uri(path: email);
 
     if (!await canLaunchUrl(emailUri)) {
       emit(
@@ -166,7 +188,21 @@ class LoginCubit extends Cubit<LoginState> {
               status: FormzStatus.submissionFailure,
             ),
           );
-        } else if (!value.emailVerified) {
+          // } else if (!value.emailVerified) {
+          //   debugPrint('Email not verified');
+          //   await openEmailApp(email: state.email.value);
+          //   emit(
+          //     state.copyWith(
+          //       status: FormzStatus.pure,
+          //       pageStatus: LoginPageStatus.awitingEmailVerification,
+          //       showEmailDialog: true,
+          //     ),
+          //   );
+        } else if (value.emailVerified) {
+          //debugPrint('Success Login, go to HomePage');
+
+          emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        } else {
           debugPrint('Email not verified');
           await openEmailApp(email: state.email.value);
           emit(
@@ -176,9 +212,6 @@ class LoginCubit extends Cubit<LoginState> {
               showEmailDialog: true,
             ),
           );
-        } else {
-          debugPrint('Success Login, go to HomePage');
-          emit(state.copyWith(status: FormzStatus.submissionSuccess));
         }
       });
     } on SignUpWithEmailAndPasswordFailure catch (e) {
@@ -222,17 +255,17 @@ class LoginCubit extends Cubit<LoginState> {
               status: FormzStatus.submissionFailure,
             ),
           );
-        } else if (!value.emailVerified) {
-          debugPrint('Email not verified');
-          emit(
-            state.copyWith(
-              status: FormzStatus.pure,
-              pageStatus: LoginPageStatus.awitingEmailVerification,
-              showEmailDialog: true,
-            ),
-          );
+          // } else if (!value.emailVerified) {
+          //   debugPrint('Email not verified');
+          //   emit(
+          //     state.copyWith(
+          //       status: FormzStatus.pure,
+          //       pageStatus: LoginPageStatus.awitingEmailVerification,
+          //       showEmailDialog: true,
+          //     ),
+          //   );
         } else {
-          debugPrint('Success Login, go to HomePage');
+          // debugPrint('Success Login, go to HomePage');
           emit(state.copyWith(status: FormzStatus.submissionSuccess));
         }
       });
@@ -300,18 +333,14 @@ class LoginCubit extends Cubit<LoginState> {
               status: FormzStatus.submissionFailure,
             ),
           );
-        } else if (!value.emailVerified) {
-          debugPrint('Email not verified');
+        } else {
+          // debugPrint('Success Login, go to HomePage');
           emit(
             state.copyWith(
-              status: FormzStatus.submissionInProgress,
-              pageStatus: LoginPageStatus.awitingEmailVerification,
-              showEmailDialog: true,
+              isGuest: true,
+              status: FormzStatus.submissionSuccess,
             ),
           );
-        } else {
-          debugPrint('Success Login, go to HomePage');
-          emit(state.copyWith(status: FormzStatus.submissionSuccess));
         }
       });
     } on LogInAsGuestFailure catch (e) {
@@ -399,6 +428,7 @@ class LoginCubit extends Cubit<LoginState> {
 
   @override
   Future<void> close() {
+    // _userSubscription.cancel();
     _emailVerificationTimer?.cancel();
     return super.close();
   }

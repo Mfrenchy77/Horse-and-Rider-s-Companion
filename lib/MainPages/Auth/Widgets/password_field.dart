@@ -8,25 +8,34 @@ class PasswordField extends StatelessWidget {
     super.key,
   });
   final bool isConfirmation;
+
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<LoginCubit>();
+    // Create a FocusNode for the text field
+    final FocusNode passwordFocusNode = FocusNode();
+
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
-        final cubit = context.read<LoginCubit>();
         return TextFormField(
+          focusNode: passwordFocusNode,
           style: const TextStyle(
             color: Colors.white,
           ),
-          textInputAction:
-              isConfirmation ? TextInputAction.send : TextInputAction.next,
-          onFieldSubmitted: (value) => value.isNotEmpty
-              ? handleEnter(
-                  cubit: cubit,
-                  isConfirmation: isConfirmation,
-                  state: state,
-                  context: context,
-                )
-              : null,
+          textInputAction: TextInputAction.done,
+          onFieldSubmitted: (value) {
+            if (passwordFocusNode.hasFocus) {
+              // Only proceed with form submission if the password field has focus
+              if (state.pageStatus == LoginPageStatus.login) {
+                cubit.logInWithCredentials();
+              } else if (isConfirmation &&
+                  state.pageStatus == LoginPageStatus.register) {
+                cubit.signUpFormSubmitted(context: context);
+              }
+              // Ensure the focus is moved or cleared after submission
+              passwordFocusNode.unfocus();
+            }
+          },
           onChanged: (value) => isConfirmation
               ? cubit.confirmedPasswordChanged(value)
               : cubit.passwordChanged(value),
@@ -43,18 +52,14 @@ class PasswordField extends StatelessWidget {
           obscureText: !state.isPasswordVisible,
           decoration: InputDecoration(
             labelText: isConfirmation ? 'Re-Enter Password' : 'Password',
-            labelStyle: const TextStyle(
-              color: Colors.white54,
-            ),
-            hintText:
-                isConfirmation ? 'Confirm you password' : 'Enter your password',
+            hintText: isConfirmation
+                ? 'Confirm your password'
+                : 'Enter your password',
             hintStyle: const TextStyle(
               color: Colors.white54,
             ),
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: Colors.white54,
-            ),
+            prefixIcon:
+                const Icon(Icons.lock_outline_rounded, color: Colors.white54),
             suffixIcon: IconButton(
               icon: Icon(
                 state.isPasswordVisible
@@ -62,32 +67,11 @@ class PasswordField extends StatelessWidget {
                     : Icons.visibility,
                 color: Colors.white54,
               ),
-              onPressed: () {
-                // ignore: avoid_print
-                debugPrint('show/hide password');
-                cubit.togglePasswordVisible();
-              },
+              onPressed: () => cubit.togglePasswordVisible(),
             ),
           ),
         );
       },
     );
   }
-}
-
-/// Handle the password field when the user presses enter
-void handleEnter({
-  required LoginCubit cubit,
-  required bool isConfirmation,
-  required LoginState state,
-  required BuildContext context,
-}) {
-  // if page status is login then log in with credentials
-  // if confirmation is true then log in with sign up
-  // else move to next field
-  state.pageStatus == LoginPageStatus.login
-      ? cubit.logInWithCredentials()
-      : isConfirmation
-          ? cubit.signUpFormSubmitted(context: context)
-          : FocusScope.of(context).nextFocus();
 }

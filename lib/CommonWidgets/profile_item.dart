@@ -31,8 +31,10 @@ Widget profileItem({
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            profilePhoto(
-                size: size, profilePicUrl: profilePicUrl, context: context,),
+            ProfilePhoto(
+              size: size,
+              profilePicUrl: profilePicUrl,
+            ),
             smallGap(),
             Text(
               profileName,
