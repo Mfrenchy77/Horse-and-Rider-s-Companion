@@ -5,11 +5,11 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_pr
 class RiderProfilePage extends StatelessWidget {
   const RiderProfilePage({super.key});
   static const routeName = '/riderProfile';
-  static Page<void> page() =>
-      const MaterialPage<void>(child: RiderProfilePage());
-  static Route<void> route() {
-    return MaterialPageRoute<void>(builder: (_) => const RiderProfilePage());
-  }
+  // static Page<void> page() =>
+  //     const MaterialPage<void>(child: RiderProfilePage());
+  // static Route<void> route() {
+  //   return MaterialPageRoute<void>(builder: (_) => const RiderProfilePage());
+  // }
 
   @override
   Widget build(BuildContext context) {

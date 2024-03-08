@@ -2,11 +2,49 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/CommonWidgets/app_bar_back_button.dart';
+import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/resource_item.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_floating_action_button.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_list_view.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_overflow_menu.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_search_title.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+
+class ResourcesView extends StatelessWidget {
+  const ResourcesView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      floatingActionButton: const ResourcesFloatingActionButton(
+        key: Key('resourcesFloatingActionButton'),
+      ),
+      appBar: AppBar(
+        leading: const AppBarBackButton(
+          key: Key('appBarBackButton'),
+        ),
+        centerTitle: true,
+        title: const ResourcesSearchTitle(
+          key: Key('resourcesSearchTitle'),
+        ),
+        actions: const [
+          AppBarSearchButton(
+            key: Key('appBarSearchButton'),
+          ),
+          ResourcesOverflowMenu(
+            key: Key('resourcesOverflowMenu'),
+          ),
+        ],
+      ),
+      body: const ResourcesListView(
+        key: Key('resourcesListView'),
+      ),
+    );
+  }
+}
 
 Widget resourcesView({
   required BuildContext context,
@@ -14,17 +52,8 @@ Widget resourcesView({
   required HomeState state,
 }) {
   return Scaffold(
-    floatingActionButton: Visibility(
-      visible: !state.isGuest,
-      child: FloatingActionButton(
-        onPressed: () => homeCubit.createOrEditResource(
-          resource: null,
-          context: context,
-        ),
-        child: const Icon(
-          Icons.add,
-        ),
-      ),
+    floatingActionButton: const ResourcesFloatingActionButton(
+      key: Key('resourcesFloatingActionButton'),
     ),
     appBar: AppBar(
       leading: Visibility(
@@ -48,55 +77,8 @@ Widget resourcesView({
         key: Key('appTitle'),
       ),
     ),
-    body: Center(
-      child: ListView(
-        children: [
-          Text(
-            state.resourcesSortStatus == ResourcesSortStatus.oldest
-                ? 'Resources - Oldest'
-                : state.resourcesSortStatus ==
-                        ResourcesSortStatus.mostRecommended
-                    ? 'Resources - Most Recommended'
-                    : state.resourcesSortStatus == ResourcesSortStatus.recent
-                        ? 'Resources - Most Recent'
-                        : 'Resources - Saved',
-            style: const TextStyle(fontSize: 24),
-          ),
-          smallGap(),
-          if (state.resourcesSortStatus == ResourcesSortStatus.saved)
-            state.savedResources != null
-                ? Wrap(
-                    alignment: WrapAlignment.center,
-                    runSpacing: 4,
-                    children: state.savedResources!
-                        .map(
-                          (e) => resourceItem(
-                            resource: e!,
-                            isResourceList: true,
-                            usersWhoRated: e.usersWhoRated,
-                          ),
-                        )
-                        .toList(),
-                  )
-                : const Text('No Resources Found')
-          else
-            state.allResources != null
-                ? Wrap(
-                    alignment: WrapAlignment.center,
-                    runSpacing: 4,
-                    children: state.allResources!
-                        .map(
-                          (e) => resourceItem(
-                            resource: e!,
-                            isResourceList: true,
-                            usersWhoRated: e.usersWhoRated,
-                          ),
-                        )
-                        .toList(),
-                  )
-                : const Text('No Resources Found'),
-        ],
-      ),
+    body: const ResourcesListView(
+      key: Key('resourcesListView'),
     ),
   );
 }

@@ -30,8 +30,9 @@ class ProfileSkills extends StatelessWidget {
               const Center(
                 child: Text(
                   'This is where the skills that you are working on and '
-                  'proficent in will be displayed.  If a trainer or instructor has '
-                  'verified the skill, it will marked as such and in yellow.',
+                  'proficent in will be displayed.  If a trainer or '
+                  'instructor has verified the skill, '
+                  'it will marked as such and in yellow.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,

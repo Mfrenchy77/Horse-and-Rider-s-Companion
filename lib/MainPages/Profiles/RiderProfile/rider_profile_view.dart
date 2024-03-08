@@ -20,103 +20,103 @@ class RiderProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<AppCubit>().state;
-    final isGuest = context.select((AppCubit cubit) => cubit.state.isGuest);
-    final viewingProfile =
-        context.select((AppCubit cubit) => cubit.state.viewingProfile);
-
-    return Scaffold(
-      appBar: AppBar(
-        //back if viewing profile
-        leading: !state.isGuest && state.viewingProfile != null
-            ? const ProfileBackButton(
-                key: Key('ProfileBackButton'),
-              )
-            : null,
-        title: const AppTitle(
-          key: Key('appTitle'),
-        ),
-        actions: const <Widget>[
-          ProfileSearchButton(
-            key: Key('RiderSearchButton'),
-          ),
-          RiderProfileOverFlowMenu(
-            key: Key('RiderProfileOverFlowMenu'),
-          ),
-        ],
-      ),
-      drawer:
-          isGuest || viewingProfile != null ? null : const UserProfileDrawer(),
-      body: AdaptiveLayout(
-        secondaryBody: SlotLayout(
-          config: <Breakpoint, SlotLayoutConfig>{
-            Breakpoints.large: SlotLayout.from(
-              key: const Key('smallProfileSecondaryBody'),
-              builder: (context) => ListView(
-                children: [
-                  const ProfileSkillsBanner(
-                    key: Key('ProfileSkillsBanner'),
-                  ),
-                  gap(),
-                  const ProfileSkills(
-                    key: Key('ProfileSkills'),
-                  ),
-                ],
-              ),
+    return BlocBuilder<AppCubit, AppState>(
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            //back if viewing profile
+            leading: !state.isGuest && state.viewingProfile != null
+                ? const ProfileBackButton(
+                    key: Key('ProfileBackButton'),
+                  )
+                : null,
+            title: const AppTitle(
+              key: Key('appTitle'),
             ),
-          },
-        ),
-        body: SlotLayout(
-          config: <Breakpoint, SlotLayoutConfig>{
-            Breakpoints.small: SlotLayout.from(
-              key: const Key('smallProfilePrimaryBody'),
-              builder: (context) => SingleChildScrollView(
-                child: Column(
-                  // needed for scrolling on mobile web
-                  children: [
-                    const PrimaryRiderView(
+            actions: const <Widget>[
+              ProfileSearchButton(
+                key: Key('RiderSearchButton'),
+              ),
+              RiderProfileOverFlowMenu(
+                key: Key('RiderProfileOverFlowMenu'),
+              ),
+            ],
+          ),
+          drawer: state.isGuest || state.viewingProfile != null
+              ? null
+              : const UserProfileDrawer(),
+          body: AdaptiveLayout(
+            secondaryBody: SlotLayout(
+              config: <Breakpoint, SlotLayoutConfig>{
+                Breakpoints.large: SlotLayout.from(
+                  key: const Key('smallProfileSecondaryBody'),
+                  builder: (context) => ListView(
+                    children: [
+                      const ProfileSkillsBanner(
+                        key: Key('ProfileSkillsBanner'),
+                      ),
+                      gap(),
+                      const ProfileSkills(
+                        key: Key('ProfileSkills'),
+                      ),
+                    ],
+                  ),
+                ),
+              },
+            ),
+            body: SlotLayout(
+              config: <Breakpoint, SlotLayoutConfig>{
+                Breakpoints.small: SlotLayout.from(
+                  key: const Key('smallProfilePrimaryBody'),
+                  builder: (context) => SingleChildScrollView(
+                    child: Column(
+                      // needed for scrolling on mobile web
+                      children: [
+                        const PrimaryRiderView(
+                          key: Key('ProfileView'),
+                        ),
+                        const SkillsTextButton(
+                          key: Key('SkillsTextButton'),
+                        ),
+                        gap(),
+                        const ProfileSkills(
+                          key: Key('ProfileSkills'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Breakpoints.medium: SlotLayout.from(
+                  key: const Key('mediumProfilePrimaryBody'),
+                  builder: (context) => ListView(
+                    shrinkWrap: true,
+                    children: [
+                      const PrimaryRiderView(
+                        key: Key('ProfileView'),
+                      ),
+                      const SkillsTextButton(
+                        key: Key('SkillsTextButton'),
+                      ),
+                      gap(),
+                      const ProfileSkills(
+                        key: Key('ProfileSkills'),
+                      ),
+                    ],
+                  ),
+                ),
+                Breakpoints.large: SlotLayout.from(
+                  key: const Key('largeProfilePrimaryBody'),
+                  builder: (context) => const SingleChildScrollView(
+                    child: PrimaryRiderView(
                       key: Key('ProfileView'),
                     ),
-                    const SkillsTextButton(
-                      key: Key('SkillsTextButton'),
-                    ),
-                    gap(),
-                    const ProfileSkills(
-                      key: Key('ProfileSkills'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              },
             ),
-            Breakpoints.medium: SlotLayout.from(
-              key: const Key('mediumProfilePrimaryBody'),
-              builder: (context) => ListView(
-                shrinkWrap: true,
-                children: [
-                  const PrimaryRiderView(
-                    key: Key('ProfileView'),
-                  ),
-                  const SkillsTextButton(
-                    key: Key('SkillsTextButton'),
-                  ),
-                  gap(),
-                  const ProfileSkills(
-                    key: Key('ProfileSkills'),
-                  ),
-                ],
-              ),
-            ),
-            Breakpoints.large: SlotLayout.from(
-              key: const Key('largeProfilePrimaryBody'),
-              builder: (context) => const SingleChildScrollView(
-                child: PrimaryRiderView(
-                  key: Key('ProfileView'),
-                ),
-              ),
-            ),
-          },
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -23,6 +23,18 @@ class SettingsService {
     return SharedPrefs().isSeasonalMode();
   }
 
+  /// Loads the User's preferred unit for displaying horse's height
+  ///  true for hands, false for centimeters
+  bool getHorseHeightUnit() {
+    return SharedPrefs().isHeightInHands();
+  }
+
+  /// Loads the User's preferred unit for displaying horse's weight
+  /// true for pounds, false for kilograms
+  bool getHorseWeightUnit() {
+    return SharedPrefs().isWeightInPounds();
+  }
+
   /// Persists the user's preferred ThemeMode to local storage.
   Future<void> updateDarkMode(ThemeMode theme) async {
     // Use the shared_preferences package to persist settings locally or the
@@ -51,5 +63,15 @@ class SettingsService {
 
   ThemeData getThemeMode() {
     return HorseAndRidersTheme().getTheme();
+  }
+
+  /// Persists the user's preferred unit for displaying horse's height
+  Future<void> updateHorseHeightUnit({required bool isHands}) async {
+    SharedPrefs().setHeightPreference(isHands: isHands);
+  }
+
+  /// Persists the user's preferred unit for displaying horse's weight
+  Future<void> updateHorseWeightUnit({required bool isPounds}) async {
+    SharedPrefs().setWeightPreference(isPounds: isPounds);
   }
 }

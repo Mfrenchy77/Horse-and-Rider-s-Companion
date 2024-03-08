@@ -3,12 +3,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
-import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:open_mail_app/open_mail_app.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -18,8 +16,7 @@ class AuthView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSmallScreen =
-        ResponsiveBreakpoints.of(context).smallerOrEqualTo(TABLET);
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       backgroundColor: ColorConst.backgroundDark,
       body: BlocListener<LoginCubit, LoginState>(
@@ -27,17 +24,7 @@ class AuthView extends StatelessWidget {
           final cubit = context.read<LoginCubit>();
           if (state.status.isSubmissionSuccess) {
             debugPrint('Success Pop?');
-            Navigator.pushNamed(context, RiderProfilePage.routeName);
-
-            //     debugPrint('Success Pop?');
-            //  //   Navigator.popAndPushNamed(context, RiderProfilePage.routeName);
-            //   }
-            //   if (state.pageStatus == LoginPageStatus.awitingEmailVerification) {
-            //     context.read<LoginCubit>().checkEmailVerificationStatus();
-            //     showDialog<AlertDialog>(
-            //       context: context,
-            //       builder: (_) => EmailVerificationDialog(email: state.email.value),
-            //     );
+            // context.push(RiderProfilePage.routeName,);
             if (state.mailAppResult != null) {
               showDialog<MailAppPickerDialog>(
                 context: context,

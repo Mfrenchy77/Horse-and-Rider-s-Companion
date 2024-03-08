@@ -10,21 +10,23 @@ import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'skill_create_dialog_state.dart';
 
+
+// TODO():This needs to be reworked
 class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   CreateSkillDialogCubit({
     required Skill? skill,
     required String? name,
     required bool isForRider,
-    required List<SubCategory?>? allSubCategories,
+    //required List<SubCategory?>? allSubCategories,
     required SkillTreeRepository skillsRepository,
   })  : _name = name,
         _skill = skill,
         _isForRider = isForRider,
-        _allSubCategories = allSubCategories,
+       // _allSubCategories = allSubCategories,
         _skillsRepository = skillsRepository,
         super(const CreateSkillDialogState()) {
-    emit(state.copyWith(allSubCategories: _allSubCategories));
-    _setTheSubCategoryList();
+   // emit(state.copyWith(allSubCategories: _allSubCategories));
+    //_setTheSubCategoryList();
   }
 
 // this is the skill that is being edited
@@ -34,7 +36,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   //
   final String? _name;
   final SkillTreeRepository _skillsRepository;
-  final List<SubCategory?>? _allSubCategories;
+ // final List<SubCategory?>? _allSubCategories;
 
   /// Called when the new Skill Name changes
   void skillNameChanged(String value) {
@@ -86,32 +88,32 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
 // create a list of subcategories and a list of
 // subcategories that the skill is in
 
-  void _setTheSubCategoryList() {
-    if (_skill != null) {
-      //  get the subcategories that the skill is in
-      if (state.allSubCategories != null) {
-        final subCategories = _allSubCategories!
-            .where((element) => element!.skills.contains(_skill!.id))
-            .toList();
+  // void _setTheSubCategoryList() {
+  //   if (_skill != null) {
+  //     //  get the subcategories that the skill is in
+  //     if (state.allSubCategories != null) {
+  //       final subCategories = _allSubCategories!
+  //           .where((element) => element!.skills.contains(_skill!.id))
+  //           .toList();
 
-        emit(
-          state.copyWith(
-            difficulty: _skill?.difficulty ?? DifficultyState.introductory,
-            subCategoryList: subCategories,
-          ),
-        );
-      } else {
-        debugPrint('No SubCategories');
-        emit(
-          state.copyWith(
-            subCategoryList: [],
-          ),
-        );
-      }
-    } else {
-      debugPrint('No Skill');
-    }
-  }
+  //       emit(
+  //         state.copyWith(
+  //           difficulty: _skill?.difficulty ?? DifficultyState.introductory,
+  //           subCategoryList: subCategories,
+  //         ),
+  //       );
+  //     } else {
+  //       debugPrint('No SubCategories');
+  //       emit(
+  //         state.copyWith(
+  //           subCategoryList: [],
+  //         ),
+  //       );
+  //     }
+  //   } else {
+  //     debugPrint('No Skill');
+  //   }
+  // }
 
 // user selects a subcategory to add to the skillid to its skills list
   Future<void> updateSubCategoryList({required SubCategory subCategory}) async {

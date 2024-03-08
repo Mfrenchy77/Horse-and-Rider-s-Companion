@@ -23,8 +23,8 @@ dependencies:
   flutter:
     sdk: flutter
  
-  http: ^1.1.2
   html: ^0.15.0
+  http: ^1.1.2
   
   image_picker: ^1.0.4
 

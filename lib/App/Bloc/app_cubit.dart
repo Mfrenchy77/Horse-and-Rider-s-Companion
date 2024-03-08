@@ -1,3 +1,5 @@
+// ignore_for_file: cast_nullable_to_non_nullable
+
 import 'dart:async';
 
 import 'package:authentication_repository/authentication_repository.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 part 'app_state.dart';
 
@@ -47,8 +50,10 @@ class AppCubit extends Cubit<AppState> {
   StreamSubscription<DocumentSnapshot<Object?>>? _usersProfileSubscription;
   StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
   late final StreamSubscription<RiderProfile?> _viewingProfileSubscription;
-  late final StreamSubscription<List<Skill>> _skillsSubscription;
-  late final StreamSubscription<List<Resource>> _resourcesSubscription;
+  StreamSubscription<QuerySnapshot<Object?>>? _skillsSubscription;
+  StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _resourcesStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _trainingPathsStream;
 
 /* **************************************************************************
 
@@ -72,6 +77,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void _getRiderProfile({required User user}) {
+    _getSkillTreeLists();
     if (user.isGuest) {
       debugPrint('Guest User');
       emit(
@@ -186,6 +192,85 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Updates the skill level for the rider
+  void _updateRiderSkillLevel(
+    RiderProfile? riderProfile,
+    LevelState levelState,
+    BaseListItem note,
+  ) {
+    if (riderProfile != null) {
+      if (state.skill != null) {
+        final timestamp = DateTime.now();
+        final skillLevel = riderProfile.skillLevels?.firstWhere(
+              (element) => element.skillId == state.skill?.id,
+              orElse: () => SkillLevel(
+                lastEditDate: timestamp,
+                skillId: state.skill!.id,
+                skillName: state.skill!.skillName,
+                lastEditBy: state.usersProfile?.name,
+              ),
+            ) ??
+            SkillLevel(
+              lastEditDate: timestamp,
+              skillId: state.skill!.id,
+              skillName: state.skill!.skillName,
+              lastEditBy: state.usersProfile?.name,
+            );
+
+        riderProfile.skillLevels?.remove(skillLevel);
+        riderProfile.skillLevels?.add(
+          SkillLevel(
+            levelState: levelState,
+            lastEditDate: timestamp,
+            skillId: state.skill!.id,
+            skillName: state.skill!.skillName,
+            lastEditBy: state.usersProfile?.name,
+          ),
+        );
+
+        _addNoteToProfile(riderProfile, note);
+      }
+    } else {
+      debugPrint('riderProfile is null');
+    }
+  }
+
+// Adds a note to the rider's profile
+  void _addNoteToProfile(RiderProfile riderProfile, BaseListItem note) {
+    riderProfile.notes ??= []; // Ensure the notes list is initialized
+    riderProfile.notes!.add(note);
+    _persistRiderProfileChanges(riderProfile);
+  }
+
+  /// Persists the changes to the rider profile to the repository
+  void _persistRiderProfileChanges(
+    RiderProfile? riderProfile,
+  ) {
+    if (riderProfile != null) {
+      try {
+        _riderProfileRepository
+            .createOrUpdateRiderProfile(riderProfile: riderProfile)
+            .then(
+              (value) => emit(
+                state.copyWith(
+                  isMessage: true,
+                  errorMessage: "Updated ${riderProfile.name}'s profile",
+                ),
+              ),
+            );
+      } catch (error) {
+        emit(
+          state.copyWith(
+            isError: true,
+            errorMessage: "Failed to update ${riderProfile.name}'s profile  ",
+          ),
+        );
+      }
+    } else {
+      debugPrint('riderProfile is null');
+    }
+  }
+
   /// Called when User finishes setting up their profile
   void resetProfileSetup() {
     debugPrint('Changing showingProfileSetup to false');
@@ -194,6 +279,17 @@ class AppCubit extends Cubit<AppState> {
 
   void test(String test) {
     debugPrint('Testing From $test');
+  }
+
+  /// Returns the current profile being viewed
+  RiderProfile? determineCurrentProfile() {
+    if (state.viewingProfile != null) {
+      return state.viewingProfile!;
+    } else if (state.usersProfile != null) {
+      return state.usersProfile!;
+    } else {
+      return null;
+    }
   }
 
   Future<void> logOutRequested() async {
@@ -284,6 +380,73 @@ class AppCubit extends Cubit<AppState> {
         debugPrint('Failed to get Horse Profile: $e');
         emit(state.copyWith(errorMessage: e.message.toString()));
       }
+    }
+  }
+
+  void _persistHorseProfileChanges(HorseProfile horseProfile) {
+    debugPrint('Persisting Horse Profile Changes');
+    try {
+      _horseProfileRepository
+          .createOrUpdateHorseProfile(horseProfile: horseProfile)
+          .then(
+            (value) => emit(
+              state.copyWith(
+                isMessage: true,
+                errorMessage: "${state.horseProfile?.name}'s profile updated",
+              ),
+            ),
+          );
+    } catch (error) {
+      debugPrint('Error: $error');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: "Error updating ${state.horseProfile?.name}'s profile",
+        ),
+      );
+    }
+  }
+
+  void _updateHorseSkillLevel(
+    HorseProfile horseProfile,
+    LevelState levelState,
+    BaseListItem note,
+  ) {
+    if (state.horseProfile != null && state.skill != null) {
+      final timestamp = DateTime.now();
+      final updatedSkillLevels = horseProfile.skillLevels ?? [];
+
+      // Attempt to find existing skill level index
+      final existingIndex = updatedSkillLevels
+          .indexWhere((element) => element.skillId == state.skill?.id);
+
+      // Replace or add the skill level
+      if (existingIndex != -1) {
+        updatedSkillLevels[existingIndex] = SkillLevel(
+          levelState: levelState,
+          lastEditDate: timestamp,
+          skillId: state.skill!.id,
+          skillName: state.skill!.skillName,
+          lastEditBy: state.usersProfile?.name,
+        );
+      } else {
+        updatedSkillLevels.add(
+          SkillLevel(
+            levelState: levelState,
+            lastEditDate: timestamp,
+            skillId: state.skill!.id,
+            skillName: state.skill!.skillName,
+            lastEditBy: state.usersProfile?.name,
+          ),
+        );
+      }
+
+      // Update the horse profile with the new list
+      horseProfile.skillLevels = updatedSkillLevels;
+      debugPrint('Skills: ${horseProfile.skillLevels?.length}');
+      _addNoteToHorseProfile(horseProfile, note);
+    } else {
+      debugPrint('horse Profile or skill is null');
     }
   }
 
@@ -435,6 +598,13 @@ class AppCubit extends Cubit<AppState> {
       );
   }
 
+  /// Adds a note to the horse's profile and persists the changes
+  void _addNoteToHorseProfile(HorseProfile horseProfile, BaseListItem note) {
+    horseProfile.notes ??= []; // Ensure the notes list is initialized
+    horseProfile.notes!.add(note);
+    _persistHorseProfileChanges(horseProfile);
+  }
+
   void navigateToMessagesPage(BuildContext context, Group group) {
     // Navigator.of(context, rootNavigator: true).restorablePushNamed(
     //   MessagesPage.routeName,
@@ -493,6 +663,784 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+/* **************************************************************************
+
+******************************* Skills Tree **********************************
+
+***************************************************************************** */
+
+  /// Retrieves the Skills from the database if needed
+
+  void _getSkillTreeLists() {
+    _getSkills();
+    _getTrainingPaths();
+    _getResources();
+  }
+
+  void _getSkills() {
+    debugPrint('getting Skills called');
+    if (state.allSkills.isEmpty) {
+      debugPrint('Skills not retrieved yet');
+      _skillsSubscription = _skillTreeRepository.getSkills().listen((event) {
+        final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList()
+          ..sort((a, b) => a!.position.compareTo(b!.position));
+        debugPrint('Skills Retrieved: ${skills.length}');
+
+        emit(
+          state.copyWith(
+            allSkills: skills,
+            sortedSkills: sortedSkills(),
+          ),
+        );
+      });
+    } else {
+      debugPrint('Skills already retrieved');
+    }
+  }
+
+  void _getTrainingPaths() {
+    debugPrint('Get TrainingPaths Called');
+    if (state.trainingPaths.isEmpty) {
+      debugPrint('Training Paths not retrieved yet');
+      _trainingPathsStream =
+          _skillTreeRepository.getAllTrainingPaths().listen((event) {
+        final trainingPaths =
+            event.docs.map((doc) => (doc.data()) as TrainingPath?).toList();
+        debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
+        emit(state.copyWith(trainingPaths: trainingPaths));
+      });
+    } else {
+      debugPrint('Training Paths already retrieved');
+    }
+  }
+
+  void _getResources() {
+    debugPrint('Get Resources Called');
+    if (state.resources.isEmpty) {
+      debugPrint('Resources not retrieved yet');
+      _resourcesStream = _resourcesRepository.getResources().listen((event) {
+        final resources =
+            event.docs.map((doc) => (doc.data()) as Resource?).toList();
+        debugPrint('Resources Retrieved: ${resources.length}');
+        emit(state.copyWith(resources: resources));
+      });
+    } else {
+      debugPrint('Resources already retrieved');
+    }
+  }
+
+  // /// Returns a list of skills that are either for a
+  // /// horse or rider
+  // List<Skill?> getHorseOrRiderSkills() {
+  //   final sortedSkills = state.allSkills
+  //       .where(
+  //         (element) => element?.rider == state.isForRider,
+  //       )
+  //       .toList();
+  //   debugPrint('Skills Retrieved: ${sortedSkills.length}');
+  //   return sortedSkills;
+  // }
+
+  /// Adds a Resource to the selected Skill
+
+  void addResourceToSkill({
+    required Resource? resource,
+    required Skill? skill,
+  }) {
+    if (resource != null) {
+      debugPrint('Resource Selected: ${resource.name}');
+
+      if (skill != null) {
+        debugPrint('Skill Selected: ${skill.skillName}');
+        final skillTreeIds = resource.skillTreeIds ?? [];
+
+        // Toggle the presence of skill.id in skillTreeIds
+        if (skillTreeIds.contains(skill.id)) {
+          skillTreeIds.remove(skill.id);
+        } else {
+          skillTreeIds.add(skill.id);
+        }
+
+        resource.skillTreeIds = skillTreeIds;
+
+        try {
+          _resourcesRepository.createOrUpdateResource(resource: resource);
+        } catch (e) {
+          debugPrint('Error: $e');
+          emit(state.copyWith(errorMessage: e.toString(), isError: true));
+        }
+      } else {
+        debugPrint('skill is null');
+        emit(state.copyWith(errorMessage: 'skill is null', isError: true));
+      }
+    } else {
+      debugPrint('resource is null');
+      emit(state.copyWith(errorMessage: 'resource is null', isError: true));
+    }
+  }
+
+  /// Search icon pressed and initiating a search
+  Future<void> search() async {
+    debugPrint('search');
+    emit(state.copyWith(isSearch: true, searchList: _getSearchList()));
+  }
+
+  /// Toggle the Edit State
+  void toggleIsEditState() {
+    emit(state.copyWith(isEdit: !state.isEdit));
+  }
+
+  /// Difficulty Filter Changed
+  void difficultyFilterChanged({required DifficultyState difficultyState}) {
+    emit(state.copyWith(difficultyState: difficultyState));
+  }
+
+  /// Set the from Skills state
+  void setFromSkills() {
+    emit(
+      state.copyWith(
+        isFromTrainingPath: false,
+        isFromTrainingPathList: false,
+      ),
+    );
+  }
+
+  ///    Called when a [level] is selected and we
+  ///    want to change the [levelState] of the SkillLevel in the
+  ///    Rider or Horse's profile
+  void levelSelected({required LevelState levelState}) {
+    if (state.isForRider) {
+      if (state.viewingProfile != null) {
+        // process the level change for the viewing profile
+        // and add a note to the user's
+        debugPrint('Changing ${state.viewingProfile?.name} ${state.skill} '
+            'to $levelState');
+        final note = BaseListItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          date: DateTime.now(),
+          message: state.usersProfile?.name,
+          parentId: state.usersProfile?.email,
+          name: '${state.usersProfile?.name} changed ${state.skill?.skillName} '
+              'level to ${levelState.name} ',
+        );
+        final newViewingProfile = state.viewingProfile;
+        _updateRiderSkillLevel(newViewingProfile, levelState, note);
+        final newUsersProfile = state.usersProfile;
+        _addNoteToProfile(
+          newUsersProfile!,
+          BaseListItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            date: DateTime.now(),
+            message: state.usersProfile?.name,
+            parentId: state.usersProfile?.email,
+            name: "Changed ${state.viewingProfile?.name}'s "
+                " skill '${state.skill?.skillName}' "
+                'level to ${levelState.name} ',
+          ),
+        );
+      } else {
+        // process the level change for the user's profile
+        // add a note to the user's profile
+        debugPrint(
+            'Changing ${state.usersProfile?.name} ${state.skill?.skillName} '
+            'to $levelState');
+        final newUsersProfile = state.usersProfile;
+        final note = BaseListItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          date: DateTime.now(),
+          message: state.usersProfile?.name,
+          parentId: state.usersProfile?.email,
+          name: 'Changed their ${state.skill?.skillName} level '
+              'to ${levelState.name}',
+        );
+        _updateRiderSkillLevel(newUsersProfile, levelState, note);
+      }
+    } else {
+      // process the level change for the horse's profile
+      // add a note to the horse's profile and the user's profile
+      debugPrint('Changing ${state.horseProfile?.name} ${state.skill} '
+          'to $levelState');
+      final newHorseProfile = state.horseProfile;
+      final note = BaseListItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        date: DateTime.now(),
+        message: state.usersProfile?.name,
+        parentId: state.usersProfile?.email,
+        name: '${state.usersProfile?.name} changed skill'
+            " '${state.skill?.skillName}' to ${levelState.name}",
+      );
+      _updateHorseSkillLevel(newHorseProfile!, levelState, note);
+      final newUsersProfile = state.usersProfile;
+      _addNoteToProfile(
+        newUsersProfile!,
+        BaseListItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          date: DateTime.now(),
+          message: state.usersProfile?.name,
+          parentId: state.usersProfile?.email,
+          name: "Changed ${state.horseProfile?.name}'s "
+              "skill '${state.skill?.skillName}' to ${levelState.name}",
+        ),
+      );
+    }
+  }
+
+  /// Returns the color for the level of the skill based on the [levelState]
+  Color levelColor({
+    required LevelState levelState,
+    required Skill skill,
+  }) {
+    // Determine whether we are dealing with a rider or a horse profile.
+    final currentProfile =
+        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+    var isVerified = false;
+
+    if (currentProfile != null) {
+      final skillLevels = currentProfile is RiderProfile
+          ? currentProfile.skillLevels
+          : (currentProfile as HorseProfile).skillLevels;
+
+      if (skillLevels != null && skillLevels.isNotEmpty) {
+        final skillLevel = skillLevels.firstWhere(
+          (element) => element.skillId == skill.id,
+          orElse: () => SkillLevel(
+            skillId: skill.id,
+            skillName: skill.skillName,
+            lastEditBy: state.usersProfile?.name,
+            lastEditDate: DateTime.now(),
+          ),
+        );
+
+        if (state.isForRider) {
+          if (skillLevel.lastEditBy != null &&
+              skillLevel.lastEditBy != state.usersProfile?.name) {
+            isVerified = true;
+          }
+        } else {
+          if (skillLevel.lastEditBy != null &&
+              skillLevel.lastEditBy != state.horseProfile?.currentOwnerName) {
+            isVerified = true;
+          }
+        }
+        if (skillLevel.levelState.index >= levelState.index) {
+          return isVerified ? Colors.yellow : Colors.blue;
+        }
+      }
+    } else {
+      debugPrint('Profile is not determined');
+      return Colors.grey;
+    }
+    return Colors.grey;
+  }
+
+  /// Returns the learningDescription for the current skill or the
+  /// proficientDescription for the current skill
+  /// depending on the current levelState null if rider is guest
+  String getLevelProgressDescription() {
+    final skill = state.skill;
+    final riderProfile = determineCurrentProfile();
+    if (skill != null) {
+      if (riderProfile != null) {
+        if (riderProfile.skillLevels != null &&
+            riderProfile.skillLevels!.isNotEmpty) {
+          final skillLevel = riderProfile.skillLevels?.firstWhere(
+            (element) => element.skillId == skill.id,
+            orElse: () => SkillLevel(
+              skillName: skill.skillName,
+              skillId: skill.id,
+              lastEditBy: state.usersProfile?.name,
+              lastEditDate: DateTime.now(),
+            ),
+          );
+          if (skillLevel?.levelState == LevelState.NO_PROGRESS) {
+            return skill.learningDescription ??
+                'To be considered "Learning"'
+                    ' you should be actively working on this skill and '
+                    'trying to improve';
+          } else if (skillLevel?.levelState == LevelState.LEARNING) {
+            return skill.proficientDescription ??
+                'To be considered '
+                    '"Proficient" you should be able to do ${skill.skillName} '
+                    'with out assistance';
+          } else if (skillLevel?.levelState == LevelState.PROFICIENT) {
+            return 'You should be able to do ${skill.skillName} without'
+                ' assistance anymore';
+          } else {
+            return '';
+          }
+        } else {
+          debugPrint('skillLevels is null');
+          return '';
+        }
+      } else {
+        return '';
+      }
+    } else {
+      debugPrint('skill is null');
+      return '';
+    }
+  }
+
+  ///Sort skills by state.isForRider and return the sorted list
+  List<Skill?> _sortSkillsByType(List<Skill?> skills) {
+    debugPrint('Sorting Skills by ${state.isForRider ? 'Rider' : 'Horse'}');
+    final sortedSkills = skills
+        .where(
+          (element) => element?.rider == state.isForRider,
+        )
+        .toList();
+    return sortedSkills;
+  }
+
+  /// Sorts the skills based on the difficulty
+  List<Skill?> sortedSkills() {
+    debugPrint('Sorting Skills by ${state.difficultyState}');
+    final skills = _sortSkillsByType(state.allSkills);
+    const difficultyOrder = {
+      DifficultyState.introductory: 1,
+      DifficultyState.intermediate: 2,
+      DifficultyState.advanced: 3,
+    };
+    switch (state.difficultyState) {
+      case DifficultyState.introductory:
+        return skills
+            .where(
+              (element) => element?.difficulty == DifficultyState.introductory,
+            )
+            .toList()
+          ..sort(
+            (a, b) => difficultyOrder[a?.difficulty]!
+                .compareTo(difficultyOrder[b?.difficulty]!),
+          );
+      case DifficultyState.intermediate:
+        return skills
+            .where(
+              (element) => element?.difficulty == DifficultyState.intermediate,
+            )
+            .toList()
+          ..sort(
+            (a, b) => difficultyOrder[a?.difficulty]!
+                .compareTo(difficultyOrder[b?.difficulty]!),
+          );
+      case DifficultyState.advanced:
+        return skills
+            .where((element) => element?.difficulty == DifficultyState.advanced)
+            .toList()
+          ..sort(
+            (a, b) => difficultyOrder[a?.difficulty]!
+                .compareTo(difficultyOrder[b?.difficulty]!),
+          );
+      case DifficultyState.all:
+        return skills
+          ..sort(
+            (a, b) => difficultyOrder[a?.difficulty]!
+                .compareTo(difficultyOrder[b?.difficulty]!),
+          );
+    }
+  }
+
+  /// Returns the Search List for the SkillTree state
+  List<String?> _getSearchList() {
+    switch (state.skillTreeNavigation) {
+      case SkillTreeNavigation.SkillList:
+        return sortedSkills().map((e) => e?.skillName).toList();
+      case SkillTreeNavigation.TrainingPathList:
+        return state.trainingPaths.map((e) => e?.name).toList();
+      case SkillTreeNavigation.SkillLevel:
+        return state.resources.map((e) => e?.name).toList();
+      case SkillTreeNavigation.TrainingPath:
+        return sortedSkills().map((e) => e?.skillName).toList();
+    }
+  }
+
+  /// Search for Skills query
+  void skillSearchQueryChanged({required String searchQuery}) {
+    final searchList = sortedSkills()
+        .map((e) => e?.skillName)
+        .toList()
+        .where(
+          (element) =>
+              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+              false,
+        )
+        .toList();
+    emit(state.copyWith(searchList: searchList));
+  }
+
+  /// Search for Resources query
+  void resourceSearchQueryChanged({required String searchQuery}) {
+    final searchList = state.resources
+        .map((e) => e?.name)
+        .toList()
+        .where(
+          (element) =>
+              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+              false,
+        )
+        .toList();
+    emit(state.copyWith(searchList: searchList));
+  }
+
+  /// Search for Training Paths query
+  void trainingPathSearchQueryChanged({required String searchQuery}) {
+    final searchList = state.trainingPaths
+        .map((e) => e?.name)
+        .toList()
+        .where(
+          (element) =>
+              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+              false,
+        )
+        .toList();
+    emit(state.copyWith(searchList: searchList));
+  }
+
+  /// Toggle the search state
+  void toggleSearch() {
+    emit(state.copyWith(isSearch: !state.isSearch));
+  }
+
+  /// Children of the [skillNode] sorted by position
+  List<SkillNode> childrenNodes({required SkillNode skillNode}) {
+    final children = <SkillNode>[];
+    for (final child in state.trainingPath!.skillNodes) {
+      if (child != null && child.parentId == skillNode.id) children.add(child);
+    }
+    children.sort((a, b) => a.position.compareTo(b.position));
+    return children;
+  }
+
+  /* **************************************************************************
+
+******************************* Resources **********************************
+
+***************************************************************************** */
+  /// Determines if the resource is new
+  bool isNewResource(Resource resource) {
+    final now = DateTime.now();
+    final difference = now.difference(resource.lastEditDate!);
+    return difference.inDays < 10;
+  }
+
+// TODO(mfrenchy): add th ability to open the resource locally https://pub.dev/packages/flutter_inappwebview
+  ///   Single Resource is Selected and is being viewed
+  Future<void> openResource({required String? url}) async {
+    final uri = Uri.parse(url!);
+    if (!await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    )) {
+      throw Exception('Could Not Launch: $uri');
+    }
+  }
+
+  void updateResourceSortStatus(ResourcesSortStatus status) {
+    switch (status) {
+      case ResourcesSortStatus.mostRecommended:
+        sortMostRecommended();
+        break;
+      case ResourcesSortStatus.recent:
+        sortByNew();
+        break;
+      case ResourcesSortStatus.oldest:
+        sortByOld();
+        break;
+      case ResourcesSortStatus.saved:
+        sortBySaved();
+        break;
+    }
+  }
+
+  /// Sort the resources by the ones with the highest rating
+  void sortMostRecommended() {
+    final sortedList = state.resources
+      ..sort(
+        (a, b) => (b!.rating!).compareTo(a!.rating!),
+      );
+    emit(
+      state.copyWith(
+        resources: sortedList,
+        resourcesSortStatus: ResourcesSortStatus.mostRecommended,
+      ),
+    );
+  }
+
+  ///  Sort the resources by the newest last edit date
+  void sortByNew() {
+    debugPrint('Sorting by New');
+    final sortedList = state.resources
+      ..sort(
+        (a, b) => (b?.lastEditDate as DateTime)
+            .compareTo(a!.lastEditDate as DateTime),
+      );
+    emit(
+      state.copyWith(
+        resources: sortedList,
+        resourcesSortStatus: ResourcesSortStatus.recent,
+      ),
+    );
+  }
+
+  /// Sort the resources by the ones that have the oldest
+  /// last edit date
+  void sortByOld() {
+    debugPrint('Sorting by Old');
+    final sortedList = state.resources
+      ..sort(
+        (a, b) => (a!.lastEditDate as DateTime)
+            .compareTo(b?.lastEditDate as DateTime),
+      );
+    emit(
+      state.copyWith(
+        resources: sortedList,
+        resourcesSortStatus: ResourcesSortStatus.oldest,
+      ),
+    );
+  }
+
+  /// Sort the resources by the ones that have been saved
+  /// by the user
+  void sortBySaved() {
+    debugPrint('Sorting by Saved');
+    final savedResources = <Resource>[];
+    if (state.usersProfile != null) {
+      if (state.usersProfile?.savedResourcesList != null) {
+        for (final resource in state.resources) {
+          if (state.usersProfile!.savedResourcesList!.contains(resource!.id)) {
+            savedResources.add(resource);
+          }
+        }
+      }
+    }
+    emit(
+      state.copyWith(
+        savedResources: savedResources,
+        resourcesSortStatus: ResourcesSortStatus.saved,
+      ),
+    );
+  }
+
+  ///   Save [resource] to the users profile saved resources list
+  void saveResource({required Resource resource}) {
+    final currentUserProfile = state.usersProfile;
+    if (currentUserProfile != null) {
+      List<String> savedResourcesList;
+      if (currentUserProfile.savedResourcesList != null) {
+        savedResourcesList =
+            currentUserProfile.savedResourcesList as List<String>;
+      } else {
+        savedResourcesList = [];
+      }
+
+      if (!savedResourcesList.contains(resource.id)) {
+        savedResourcesList.add(resource.id as String);
+      } else {
+        savedResourcesList.remove(resource.id);
+      }
+      currentUserProfile.savedResourcesList = savedResourcesList;
+
+      _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: currentUserProfile,
+      );
+    } else {
+      // Handle the case where the user profile is not available
+      debugPrint('User profile is not available');
+      emit(
+        state.copyWith(
+          errorMessage:
+              'Unautherized to Edit Resources, Login or Create an account',
+          isError: true,
+        ),
+      );
+    }
+  }
+
+  ///  User has clicked the recommend [resource] button
+  void reccomendResource({required Resource resource}) {
+    final editedresource = resource;
+    _setNewPositiveRating(resource: editedresource);
+    _resourcesRepository.createOrUpdateResource(resource: editedresource);
+  }
+
+  ///  User has clicked the dont recommend [resource] button
+  void dontReccomendResource({required Resource resource}) {
+    final editedresource = resource;
+    _setNewNegativeRating(resource: editedresource);
+    _resourcesRepository.createOrUpdateResource(resource: editedresource);
+  }
+
+  ///   Sets the new Rating on the [resource] based on whether or not they rated
+  Resource _setNewPositiveRating({required Resource resource}) {
+    final userEmail = state.usersProfile?.email as String;
+
+    ///   List item with user and rated is true
+    final newuser = BaseListItem(
+      id: userEmail,
+      isSelected: true,
+      isCollapsed: false,
+    );
+
+    ///   List with the user and rated value loaded in
+    final newUsersWhoRated = [newuser];
+
+    /// New Ratings
+    final newPositiveRating = resource.rating! + 1;
+    final newDoublePositveRating = resource.rating! + 2;
+    final newNegativeRating = resource.rating! - 1;
+
+    ///   Reference to the user
+    final user = resource.usersWhoRated
+        ?.firstWhere((element) => element?.id == userEmail);
+
+    /// All Conditions possible
+    if (resource.usersWhoRated != null) {
+      ///   'List is not NULL
+      if (user != null) {
+        ///   Found UserWhoRated
+        if (user.isSelected == null && user.isCollapsed == null) {
+          ///   Never Rated before addding User and +1
+          resource.usersWhoRated?.add(newuser);
+          resource.rating = newPositiveRating;
+          return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
+        } else if (user.isSelected == true && user.isCollapsed == false) {
+          ///   Already Positive Rating, -1
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isSelected = false;
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isCollapsed = false;
+          resource.rating = newNegativeRating;
+          return resource;
+        } else if (user.isSelected == false && user.isCollapsed == false) {
+          ///   User does not have a registered rateing +1
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isSelected = true;
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isCollapsed = false;
+          resource.rating = newPositiveRating;
+          return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
+        } else if (user.isSelected == false && user.isCollapsed == true) {
+          ///   User already rated NEGATIVE, adding +2
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isSelected = true;
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isCollapsed = false;
+          resource.rating = newDoublePositveRating;
+          return resource;
+        } else {
+          ///   Unexpeted Condition  NULL
+          return resource;
+        }
+      } else {
+        ///   No UserWhoRated Found, Adding one
+        resource.usersWhoRated?.add(newuser);
+        resource.rating = newPositiveRating;
+        return resource;
+      }
+    } else {
+      ///   UserWhoRated List is null adding and a +1
+      resource
+        ..usersWhoRated = newUsersWhoRated
+        ..rating = newPositiveRating;
+      return resource;
+    }
+  }
+
+  ///   Sets the new Rating on the [resource] based on whether or not they rated
+  Resource _setNewNegativeRating({required Resource resource}) {
+    final userEmail = state.usersProfile!.email;
+
+    ///   List item with user and rated is true
+    final newuser = BaseListItem(
+      id: userEmail,
+      isSelected: false,
+      isCollapsed: true,
+    );
+
+    ///   List with the user and rated value loaded in
+    final newUsersWhoRated = [newuser];
+
+    ///   New Rating Conditions
+    final newPositiveRating = resource.rating! + 1;
+    final newNegativeRating = resource.rating! - 1;
+    final newDoubleNegativeRating = resource.rating! - 2;
+
+    ///   Reference to the User
+    final user = resource.usersWhoRated
+        ?.firstWhere((element) => element?.id == userEmail);
+
+    if (resource.usersWhoRated != null) {
+      ///  List is not NULL
+      if (user != null) {
+        ///  Found UserWhoRated
+        if (user.isSelected == null && user.isCollapsed == null) {
+          ///   Never Rated before addding User and -1
+          resource.usersWhoRated?.add(newuser);
+          resource.rating = newNegativeRating;
+          return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
+        } else if (user.isSelected == false && user.isCollapsed == true) {
+          ///   Already Negative Rating, +1
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isSelected = false;
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isCollapsed = false;
+          resource.rating = newPositiveRating;
+          return resource;
+        } else if (user.isSelected == false && user.isCollapsed == false) {
+          ///   User does not have a registered rating -1
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isSelected = false;
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isCollapsed = true;
+          resource.rating = newNegativeRating;
+          return resource;
+          // ignore: use_if_null_to_convert_nulls_to_bools
+        } else if (user.isSelected == true && user.isCollapsed == false) {
+          ///   User already rated POSITIVE, adding -2
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isSelected = false;
+          resource.usersWhoRated
+              ?.firstWhere((element) => element?.id == userEmail)
+              ?.isCollapsed = true;
+          resource.rating = newDoubleNegativeRating;
+          return resource;
+        } else {
+          ///   Unexpeted Condition  NULL
+          return resource;
+        }
+      } else {
+        ///   No UserWhoRated Found, Adding one and -1
+        resource.usersWhoRated?.add(newuser);
+        resource.rating = newNegativeRating;
+        return resource;
+      }
+    } else {
+      ///   UserWhoRated List is null adding and a -1
+      resource
+        ..usersWhoRated = newUsersWhoRated
+        ..rating = newNegativeRating;
+      return resource;
+    }
+  }
+
+  /// Delete a [resource] from the database
+  void deleteResource(Resource resource) {
+    _resourcesRepository.deleteResource(resource: resource);
+  }
+
   /* **************************************************************
    
    **************************    Navigation**************************
@@ -543,6 +1491,7 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Navigates to the List of Skills
   void navigateToSkillsList() {
     debugPrint('navigateToSkillsList');
     emit(
@@ -557,6 +1506,80 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
+  /// Navigates to a the Skill Level Screen in the Skill Tree
+
+  void navigateToSkillLevel({
+    required Skill? skill,
+  }) {
+    debugPrint('navigateToSkillLevel for ${skill?.skillName}');
+    emit(
+      state.copyWith(
+        index: 1,
+        skill: skill,
+        isSearch: false,
+        isFromProfile: state.index == 0,
+        pageStatus: AppPageStatus.skillTree,
+        skillTreeNavigation: SkillTreeNavigation.SkillLevel,
+      ),
+    );
+  }
+
+  /// Navigates to the List of Training Paths
+  void navigateToTrainingPathList() {
+    debugPrint('navigateToTrainingPathList');
+    emit(
+      state.copyWith(
+        index: 1,
+        pageStatus: AppPageStatus.skillTree,
+        skillTreeNavigation: SkillTreeNavigation.TrainingPathList,
+        isFromProfile: state.index == 0,
+      ),
+    );
+  }
+
+  /// Navigates to a  Training Path
+  void navigateToTrainingPath({
+    required TrainingPath? trainingPath,
+  }) {
+    debugPrint('navigateToTrainingPath for ${trainingPath?.name}');
+    emit(
+      state.copyWith(
+        index: 1,
+        pageStatus: AppPageStatus.skillTree,
+        trainingPath: trainingPath,
+        isFromProfile: state.index == 0,
+        skillTreeNavigation: SkillTreeNavigation.TrainingPath,
+      ),
+    );
+  }
+
+  /// Navigates to the Settings Page
+  void navigateToSettings() {
+    debugPrint('navigateToSettings');
+    emit(
+      state.copyWith(
+        index: 0,
+        pageStatus: AppPageStatus.settings,
+      ),
+    );
+  }
+
+  /// Navigates to the Messages Page
+  void navigateToMessages() {
+    debugPrint('navigateToMessages');
+    emit(
+      state.copyWith(
+        index: 0,
+        pageStatus: AppPageStatus.messages,
+      ),
+    );
+  }
+
+  /// Create Error
+  void createError(String message) {
+    emit(state.copyWith(isError: true, errorMessage: message));
+  }
+
   /// Clears the Error Message and Snackbar
   void clearErrorMessage() {
     emit(state.copyWith(isMessage: false, errorMessage: ''));
@@ -569,8 +1592,9 @@ class AppCubit extends Cubit<AppState> {
 
   @override
   Future<void> close() {
-    _resourcesSubscription.cancel();
-    _skillsSubscription.cancel();
+    _resourcesStream?.cancel();
+    _trainingPathsStream?.cancel();
+    _skillsSubscription?.cancel();
     _viewingProfileSubscription.cancel();
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();

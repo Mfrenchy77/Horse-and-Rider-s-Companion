@@ -16,17 +16,17 @@ class CreateSkillDialog extends StatelessWidget {
     required this.isRider,
     required int position,
     required String? userName,
-    required List<SubCategory?>? allSubCategories,
+   // required List<SubCategory?>? allSubCategories,
   })  : _userName = userName,
-        _position = position,
-        _allSubCategories = allSubCategories;
+        _position = position;
+       // _allSubCategories = allSubCategories;
 
   final bool isEdit;
   final Skill? skill;
   final bool isRider;
   final int _position;
   final String? _userName;
-  final List<SubCategory?>? _allSubCategories;
+ // final List<SubCategory?>? _allSubCategories;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class CreateSkillDialog extends StatelessWidget {
           skill: skill,
           name: _userName,
           isForRider: isRider,
-          allSubCategories: _allSubCategories,
+         // allSubCategories: _allSubCategories,
           skillsRepository: context.read<SkillTreeRepository>(),
         ),
         child: BlocListener<CreateSkillDialogCubit, CreateSkillDialogState>(

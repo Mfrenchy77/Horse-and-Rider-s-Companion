@@ -60,8 +60,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   // Navigate to the log book page
                   showDialog<AlertDialog>(
                     context: context,
-                    builder: (context) => logViewDialog(
-                      context: context,
+                    builder: (context) => LogViewDialog(
                       name: state.viewingProfile?.name ??
                           state.usersProfile!.name,
                       notes: state.viewingProfile?.notes ??

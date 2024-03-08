@@ -4,8 +4,8 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
@@ -17,8 +17,8 @@ class UpdateResourceSkills extends StatelessWidget {
     required this.homeCubit,
     required this.userProfile,
   });
-  final HomeState homeState;
-  final HomeCubit homeCubit;
+  final AppState homeState;
+  final AppCubit homeCubit;
   final Resource? resource;
   final List<Skill?>? skills;
   final RiderProfile? userProfile;
@@ -79,12 +79,7 @@ class UpdateResourceSkills extends StatelessWidget {
                                 ?.map(
                                   (e) => TextButton(
                                     onPressed: () {
-                                      homeCubit.navigateToSkillLevel(
-                                        skill: e,
-                                        isSplitScreen:
-                                            MediaQuery.of(context).size.width >
-                                                800,
-                                      );
+                                      homeCubit.navigateToSkillLevel(skill: e);
                                       debugPrint('Skill: ${e?.skillName}');
                                       Navigator.pop(context);
                                     },
@@ -109,25 +104,22 @@ class UpdateResourceSkills extends StatelessWidget {
                               child: Wrap(
                                 spacing: 8,
                                 children: homeCubit.state.allSkills
-                                        ?.map(
-                                          (e) => FilterChip(
-                                            label: Text(e?.skillName ?? ''),
-                                            selected: state
-                                                    .resource?.skillTreeIds
-                                                    ?.contains(e?.id) ??
-                                                false,
-                                            onSelected: (value) {
-                                              context
-                                                  .read<
-                                                      CreateResourceDialogCubit>()
-                                                  .resourceSkillsChanged(
-                                                    e?.id ?? '',
-                                                  );
-                                            },
-                                          ),
-                                        )
-                                        .toList() ??
-                                    [const Text('No Skills Found')],
+                                    .map(
+                                      (e) => FilterChip(
+                                        label: Text(e?.skillName ?? ''),
+                                        selected: state.resource?.skillTreeIds
+                                                ?.contains(e?.id) ??
+                                            false,
+                                        onSelected: (value) {
+                                          context
+                                              .read<CreateResourceDialogCubit>()
+                                              .resourceSkillsChanged(
+                                                e?.id ?? '',
+                                              );
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                           ],

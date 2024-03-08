@@ -4,7 +4,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -70,57 +69,6 @@ class LogViewDialog extends StatelessWidget {
   }
 }
 
-Widget logViewDialog({
-  required BuildContext context,
-  required String name,
-  required List<BaseListItem>? notes,
-  required bool isRider,
-}) {
-  return Dialog(
-    child: Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: _logentryTitle(isRider: isRider, name: name),
-        actions: const [
-          AddLogEntry(
-            key: Key('AddLogEntry'),
-          ),
-          Icon(Icons.person),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: _logBookList(
-                notes: notes,
-                isRider: isRider,
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
 Widget _logentryTitle({required bool isRider, required String name}) {
   return Text(
     "$name's Log",
@@ -173,50 +121,6 @@ class AddLogEntry extends StatelessWidget {
   }
 }
 
-// Widget _addLogEntry({
-//   required bool isRider,
-// }) {
-//   debugPrint('Is Rider: $isRider');
-//   if (isRider) {
-//     return BlocBuilder<RiderProfileCubit, RiderProfileState>(
-//       builder: (context, state) {
-//         return IconButton(
-//           tooltip: 'Add Log Entry',
-//           onPressed: () {
-//             showDialog<AddLogEntryDialog>(
-//               context: context,
-//               builder: (context) => AddLogEntryDialog(
-//                 riderProfile: state.viewingProfile ?? state.usersProfile!,
-//                 horseProfile: null,
-//               ),
-//             );
-//           },
-//           icon: const Icon(Icons.add),
-//         );
-//       },
-//     );
-//   } else {
-//     // TODO(mfrenchy77): Change this to HorseProfileCubit
-//     return BlocBuilder<HomeCubit, HomeState>(
-//       builder: (context, state) {
-//         return IconButton(
-//           tooltip: 'Add Log Entry',
-//           onPressed: () {
-//             showDialog<AddLogEntryDialog>(
-//               context: context,
-//               builder: (context) => AddLogEntryDialog(
-//                 riderProfile: state.usersProfile!,
-//                 horseProfile: state.horseProfile,
-//               ),
-//             );
-//           },
-//           icon: const Icon(Icons.add),
-//         );
-//       },
-//     );
-//   }
-// }
-
 Widget _logBookList({
   required bool isRider,
   required List<BaseListItem>? notes,
@@ -264,83 +168,35 @@ class LogBookListRider extends StatelessWidget {
   }
 }
 
-// Widget _logBookListForRider() {
-//   return BlocBuilder<RiderProfileCubit, RiderProfileState>(
-//     builder: (context, state) {
-//       final profile = state.viewingProfile ?? state.usersProfile;
-//       final notes = profile?.notes;
-
-//       if (notes != null || notes!.isNotEmpty) {
-//         notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
-//         return ListView.builder(
-//           shrinkWrap: true,
-//           itemCount: notes.length,
-//           itemBuilder: (context, index) {
-//             final note = notes[index];
-//             return _noteItem(
-//               note: note,
-//             );
-//           },
-//         );
-//       } else {
-//         return const Text('No Entries in the Log');
-//       }
-//     },
-//   );
-// }
-
 class LogBookListHorse extends StatelessWidget {
   const LogBookListHorse({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<HomeCubit>().state;
-    final profile = state.horseProfile;
-    final notes = profile?.notes;
+    return BlocBuilder<AppCubit, AppState>(
+      builder: (context, state) {
+        final profile = state.horseProfile;
+        final notes = profile?.notes;
 
-    if (notes != null || notes!.isNotEmpty) {
-      notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
-      return ListView.builder(
-        shrinkWrap: true,
-        itemCount: notes.length,
-        itemBuilder: (context, index) {
-          final note = notes[index];
-          return _noteItem(
-            note: note,
+        if (notes != null || notes!.isNotEmpty) {
+          notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
+          return ListView.builder(
+            shrinkWrap: true,
+            itemCount: notes.length,
+            itemBuilder: (context, index) {
+              final note = notes[index];
+              return _noteItem(
+                note: note,
+              );
+            },
           );
-        },
-      );
-    } else {
-      return const Text('No Entries in the Log');
-    }
+        } else {
+          return const Text('No Entries in the Log');
+        }
+      },
+    );
   }
 }
-
-// Widget _logBookListForHorse() {
-//   //TODO: Change this to HorseProfileCubit
-//   return BlocBuilder<HomeCubit, HomeState>(
-//     builder: (context, state) {
-//       final profile = state.horseProfile;
-//       final notes = profile?.notes;
-
-//       if (notes != null || notes!.isNotEmpty) {
-//         notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
-//         return ListView.builder(
-//           shrinkWrap: true,
-//           itemCount: notes.length,
-//           itemBuilder: (context, index) {
-//             final note = notes[index];
-//             return _noteItem(
-//               note: note,
-//             );
-//           },
-//         );
-//       } else {
-//         return const Text('No Entries in the Log');
-//       }
-//     },
-//   );
-// }
 
 Widget _noteItem({
   required BaseListItem note,
@@ -388,51 +244,6 @@ Widget _noteItem({
   );
 }
 
-//   return Column(
-//     mainAxisSize: MainAxisSize.min,
-//     children: [
-//       IntrinsicHeight(
-//         child: Row(
-//           children: [
-//             Expanded(
-//               flex: 2,
-//               child: Center(
-//                 child: Text(
-//                   DateFormat('MM/dd/yy').format(note.date ?? DateTime.now()),
-//                   textAlign: TextAlign.center,
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//               ),
-//             ),
-//             VerticalDivider(
-//               thickness: 2,
-//               color: isDark ? Colors.white : Colors.black,
-//             ),
-//             Expanded(
-//               flex: 7,
-//               child: Padding(
-//                 padding: const EdgeInsets.only(bottom: 8),
-//                 child: Row(
-//                   children: [
-//                     cubit.logTagChip(tagString: note.imageUrl),
-//                     smallGap(),
-//                     Expanded(
-//                       child: Text(
-//                         note.name ?? '',
-//                         textAlign: TextAlign.start,
-//                         style: const TextStyle(fontSize: 16),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     ],
-//   );
-// }
 /// return a chip with a color based on the Log Tag
 Widget _logTagChip({required String? tagString}) {
   final tag = convertStringToLogTag(tagString);

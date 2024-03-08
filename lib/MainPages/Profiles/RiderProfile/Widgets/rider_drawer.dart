@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/view/messages_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_list.dart';
-import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/generated/l10n.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class UserProfileDrawer extends StatelessWidget {
@@ -19,6 +16,7 @@ class UserProfileDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final cubit = context.read<AppCubit>();
         return Drawer(
           child: ListView(
             children: [
@@ -67,8 +65,7 @@ class UserProfileDrawer extends StatelessWidget {
                 title: const Text('Log Book'),
                 onTap: () => showDialog<AlertDialog>(
                   context: context,
-                  builder: (context) => logViewDialog(
-                    context: context,
+                  builder: (context) => LogViewDialog(
                     name:
                         state.viewingProfile?.name ?? state.usersProfile!.name,
                     notes: state.viewingProfile?.notes ??
@@ -164,17 +161,7 @@ class UserProfileDrawer extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.mail),
                 title: const Text('Messages'),
-                onTap: () {
-                  //closes the drawer
-                  debugPrint('Messages');
-                  Navigator.of(context, rootNavigator: true).pushNamed(
-                    MessagesPage.routeName,
-                    arguments: MessageArguments(
-                      group: null,
-                      riderProfile: state.usersProfile,
-                    ),
-                  );
-                },
+                onTap: cubit.navigateToMessages,
               ),
 
               Divider(
@@ -185,9 +172,8 @@ class UserProfileDrawer extends StatelessWidget {
 
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: Text(S.of(context).settings_text),
-                onTap: () => Navigator.of(context, rootNavigator: true)
-                    .restorablePushNamed(SettingsView.routeName),
+                title: const Text('Settings'),
+                onTap: cubit.navigateToSettings,
               ),
 
               ListTile(

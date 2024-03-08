@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:horseandriderscompanion/MainPages/Home/home_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/view/messages_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
@@ -122,11 +121,11 @@ class HomeCubit extends Cubit<HomeState> {
   final RiderProfileRepository _riderProfileRepository;
 
   ///   Streams
-  StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
-  late final StreamSubscription<QuerySnapshot<Object?>> _skillsStream;
-  late final StreamSubscription<QuerySnapshot<Object?>> _resourcesStream;
   StreamSubscription<DocumentSnapshot<Object?>>? _riderProfileSubscription;
   StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
+  late final StreamSubscription<QuerySnapshot<Object?>> _skillsStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
+  late final StreamSubscription<QuerySnapshot<Object?>> _resourcesStream;
   late final StreamSubscription<QuerySnapshot<Object?>> _trainingPathsStream;
 
   /// Ads

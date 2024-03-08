@@ -17,11 +17,17 @@ class SettingsController with ChangeNotifier {
   // also persisting the changes with the SettingsService.
   late ThemeMode _darkMode;
   late bool _seasonalMode;
+
+  late bool _isHands;
+  late bool _isPounds;
+
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get darkMode => _darkMode;
   bool get seasonalMode => _seasonalMode;
   ThemeData get theme => HorseAndRidersTheme().getLightTheme();
   ThemeData get darkTheme => HorseAndRidersTheme().getDarkTheme();
+  bool get isHands => _isHands;
+  bool get isPounds => _isPounds;
 
   /// Load the user's settings from the SettingsService. It may load from a
   /// local database or the internet. The controller only knows it can load the
@@ -30,6 +36,8 @@ class SettingsController with ChangeNotifier {
     try {
       _darkMode = _settingsService.getSavedDarkMode();
       _seasonalMode = _settingsService.getSeasonalMode();
+      _isHands = _settingsService.getHorseHeightUnit();
+      _isPounds = _settingsService.getHorseWeightUnit();
       notifyListeners();
     } catch (e) {
       // Handle the error, log it, or show a user-friendly message
@@ -41,14 +49,9 @@ class SettingsController with ChangeNotifier {
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
     if (newThemeMode == null) {
       return;
-    }
-    // Do not perform any work if new and old ThemeMode are identical
-    else if (newThemeMode == _darkMode) {
+    } else if (newThemeMode == _darkMode) {
       return;
-    }
-
-    // Otherwise, store the new ThemeMode in memory
-    else {
+    } else {
       _darkMode = newThemeMode;
 
       // Persist the changes to a local database or the internet using the
@@ -60,8 +63,25 @@ class SettingsController with ChangeNotifier {
   }
 
   ///Update and persist the seasonal mode based on the user's selection
-  void updateSeasonalMode() {
-    _settingsService.updateSeasonalMode();
+  Future<void> updateSeasonalMode() async {
+    _seasonalMode = !_seasonalMode; // Toggle the current value
+    await _settingsService.updateSeasonalMode();
+    notifyListeners();
+  }
+
+  /// Update and persist the user's preferred unit for displaying horse's height
+  Future<void> updateHorseHeightUnit() async {
+    // Toggle the current value
+    _isHands = !_isHands;
+    await _settingsService.updateHorseHeightUnit(isHands: _isHands);
+    notifyListeners();
+  }
+
+  /// Update and persist the user's preferred unit for displaying horse's weight
+  Future<void> updateHorseWeightUnit() async {
+    // Toggle the current value
+    _isPounds = !_isPounds;
+    await _settingsService.updateHorseWeightUnit(isPounds: _isPounds);
     notifyListeners();
   }
 }

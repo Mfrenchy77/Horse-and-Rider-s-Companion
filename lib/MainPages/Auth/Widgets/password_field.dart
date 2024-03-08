@@ -12,8 +12,7 @@ class PasswordField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<LoginCubit>();
-    // Create a FocusNode for the text field
-    final FocusNode passwordFocusNode = FocusNode();
+    final passwordFocusNode = FocusNode();
 
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
@@ -25,14 +24,12 @@ class PasswordField extends StatelessWidget {
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (value) {
             if (passwordFocusNode.hasFocus) {
-              // Only proceed with form submission if the password field has focus
               if (state.pageStatus == LoginPageStatus.login) {
                 cubit.logInWithCredentials();
               } else if (isConfirmation &&
                   state.pageStatus == LoginPageStatus.register) {
                 cubit.signUpFormSubmitted(context: context);
               }
-              // Ensure the focus is moved or cleared after submission
               passwordFocusNode.unfocus();
             }
           },
@@ -67,7 +64,7 @@ class PasswordField extends StatelessWidget {
                     : Icons.visibility,
                 color: Colors.white54,
               ),
-              onPressed: () => cubit.togglePasswordVisible(),
+              onPressed: cubit.togglePasswordVisible,
             ),
           ),
         );

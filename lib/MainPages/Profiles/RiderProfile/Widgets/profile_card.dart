@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
-import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
 
 class ProfileCard extends StatelessWidget {
   const ProfileCard({super.key, required this.baseItem});

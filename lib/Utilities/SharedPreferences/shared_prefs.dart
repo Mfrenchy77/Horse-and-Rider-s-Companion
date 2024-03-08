@@ -16,6 +16,8 @@ class SharedPrefs {
   /// Constants to use as keys for storing preferences.
   static const String PREF_DARK_MODE = 'ThemeMode';
   static const String PREF_SEASONAL_MODE = 'SeasonalMode';
+  static const String PREF_HEIGHT_PREFERENCE = 'HeightPreference';
+  static const String PREF_WEIGHT_PREFERENCE = 'WeightPreference';
 
   /// The instance of [SharedPreferences] used for
   ///  storing and retrieving preferences.
@@ -88,10 +90,10 @@ class SharedPrefs {
     }
   }
 
-/// Sets the User's Preference as [bool] for "Hands" or "Centimeters"
-/// for viewing the horses height. Default is "Hands".
+  /// Sets the User's Preference as [bool] for "Hands" or "Centimeters"
+  /// for viewing the horses height. Default is "Hands".
   void setHeightPreference({required bool isHands}) {
-    _sharedPrefs.setBool('HeightPreference', isHands);
+    _sharedPrefs.setBool(PREF_HEIGHT_PREFERENCE, isHands);
   }
 
   /// Retrieves the user's preference for viewing the horse's height.
@@ -99,13 +101,13 @@ class SharedPrefs {
   /// `false` if the user prefers to view the height in centimeters.
   /// Defaults to `true` if the preference has not been set.
   bool isHeightInHands() {
-    return _sharedPrefs.getBool('HeightPreference') ?? true;
+    return _sharedPrefs.getBool(PREF_HEIGHT_PREFERENCE) ?? true;
   }
 
   /// Sets the User's Preference as [bool] for "Pounds" or "Kilograms"
   /// for viewing the horses weight. Default is "Pounds".
   void setWeightPreference({required bool isPounds}) {
-    _sharedPrefs.setBool('WeightPreference', isPounds);
+    _sharedPrefs.setBool(PREF_WEIGHT_PREFERENCE, isPounds);
   }
 
   /// Retrieves the user's preference for viewing the horse's weight.
@@ -113,7 +115,6 @@ class SharedPrefs {
   /// `false` if the user prefers to view the weight in kilograms.
   /// Defaults to `true` if the preference has not been set.
   bool isWeightInPounds() {
-    return _sharedPrefs.getBool('WeightPreference') ?? true;
+    return _sharedPrefs.getBool(PREF_WEIGHT_PREFERENCE) ?? true;
   }
-
 }

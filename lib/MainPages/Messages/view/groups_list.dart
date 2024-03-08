@@ -8,7 +8,6 @@ import 'package:horseandriderscompanion/MainPages/Messages/cubit/messages_cubit.
 import 'package:horseandriderscompanion/MainPages/Messages/view/mesage_contact_search_dialog.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
-import 'package:horseandriderscompanion/generated/l10n.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class GroupsList extends StatelessWidget {
@@ -26,7 +25,7 @@ class GroupsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(S.of(context).messages_text),
+        title: const Text('Messages'),
         actions: [
           ResponsiveVisibility(
             visibleConditions: const [
@@ -87,7 +86,7 @@ class GroupsList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${S.of(context).messages_text}: - ${messagesCubit.sortedMessagesText()}',
+              'Messages: - ${messagesCubit.sortedMessagesText()}',
             ),
             groupsList(
               context: context,
@@ -164,17 +163,17 @@ Widget _groupItem({
             profilePicUrl: group.recentMessage?.senderProfilePicUrl,
           ),
           title: Text(
-            partiesList ?? S.of(context).messages_unknown,
+            partiesList ?? 'Unknown',
             style: TextStyle(
               color: textColor,
             ),
           ),
           subtitle: Text(
             group.recentMessage?.sender == userProfile.name
-                ? '${S.of(context).messages_you_text}: ${group.recentMessage?.message}'
+                ? 'You: ${group.recentMessage?.message}'
                 : group.recentMessage?.message ?? '',
             style: TextStyle(color: textColor, fontSize: 12),
           ),
         )
-      : Text(S.of(context).messages_none);
+      : const Text('No Messages');
 }

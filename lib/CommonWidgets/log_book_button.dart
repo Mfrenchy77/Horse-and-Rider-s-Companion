@@ -6,7 +6,8 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dial
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 ///{@template log_book_button}
-///LogBookButton widget displays the buttons to open the log book and add an entry
+///LogBookButton widget displays the buttons to open the
+///log book and add an entry
 ///{@endtemplate}
 class LogBookButton extends StatelessWidget {
   ///{@macro log_book_button}

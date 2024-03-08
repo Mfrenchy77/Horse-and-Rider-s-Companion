@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class GuestLoginButton extends StatelessWidget {
