@@ -57,8 +57,8 @@ class CreateResourcDialog extends StatelessWidget {
                 builder: (context) => AlertDialog(
                   title: const Text('Error Fetching Website Information'),
                   content: const Text(
-                    'Please enter the title and description manually\nTo get '
-                    'the image, you can right click on the image and select '
+                    'Please enter the title and description manually\n\nTo get '
+                    'an image, you can right click on the image and select '
                     '"Copy Image Address" and paste it in the image field.',
                   ),
                   actions: [
@@ -135,29 +135,19 @@ class CreateResourcDialog extends StatelessWidget {
                             child:
                                 const Text('Fetching Website Information...'),
                           ),
-                          Visibility(
-                            visible: state.urlFetchedStatus ==
-                                UrlFetchedStatus.fetched,
-                            child: Column(
-                              children: [
-                                _image(
-                                  context: context,
-                                  resource: resource,
-                                  state: state,
-                                ),
-                              ],
-                            ),
+                          Column(
+                            children: [
+                              _image(
+                                context: context,
+                                resource: resource,
+                                state: state,
+                              ),
+                            ],
                           ),
-                          Visibility(
-                            visible: state.urlFetchedStatus ==
-                                    UrlFetchedStatus.fetched ||
-                                state.urlFetchedStatus ==
-                                    UrlFetchedStatus.initial,
-                            child: _imageField(
-                              context: context,
-                              resource: resource,
-                              state: state,
-                            ),
+                          _imageField(
+                            context: context,
+                            resource: resource,
+                            state: state,
                           ),
                           _titleField(
                             titleController: titleController,
@@ -217,15 +207,12 @@ class CreateResourcDialog extends StatelessWidget {
                       const CircularProgressIndicator()
                     else
                       ElevatedButton(
-                        onPressed:
-                            state.urlFetchedStatus != UrlFetchedStatus.fetched
-                                ? null
-                                : () {
-                                    context
-                                        .read<CreateResourceDialogCubit>()
-                                        .editResource();
-                                    Navigator.pop(context);
-                                  },
+                        onPressed: () {
+                          context
+                              .read<CreateResourceDialogCubit>()
+                              .editResource();
+                          Navigator.pop(context);
+                        },
                         child: const Text('Submit'),
                       ),
                   ],
@@ -274,10 +261,9 @@ Widget _image({
         borderRadius: BorderRadius.circular(10),
       ),
       child: ImageNetwork(
+        onError: const Image(image: AssetImage('assets/horse_icon.png')),
         debugPrint: true,
-        image: state.urlFetchedStatus == UrlFetchedStatus.fetched
-            ? state.imageUrl
-            : resource?.thumbnail ?? '',
+        image: resource?.thumbnail ?? state.imageUrl,
         height: 200,
         width: 200,
       ),

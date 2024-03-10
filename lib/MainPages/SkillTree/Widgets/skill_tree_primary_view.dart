@@ -4,7 +4,6 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skills_list.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_path_view.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_paths_list.dart';
 
 class SkillTreePrimaryView extends StatelessWidget {
   const SkillTreePrimaryView({super.key});
@@ -20,7 +19,7 @@ class SkillTreePrimaryView extends StatelessWidget {
               key: Key('trainingPathView'),
             );
           case SkillTreeNavigation.TrainingPathList:
-            return const TrainingPathListView(
+            return const SkillLevelView(
               key: Key('trainingPathListView'),
             );
           case SkillTreeNavigation.SkillList:

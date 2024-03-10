@@ -12,6 +12,7 @@ class SkillLevelCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final cubit = context.read<AppCubit>();
         return SizedBox(
           width: 200,
           child: Card(
@@ -54,15 +55,10 @@ class SkillLevelCard extends StatelessWidget {
                 onTap: state.isGuest
                     ? null
                     : () {
-                        // final skill = state.allSkills?.firstWhere(
-                        //   (element) => element?.id == skillLevel.skillId,
-                        // );
-
-                        // homeCubit.navigateToSkillLevel(
-                        //   isSplitScreen:
-                        //       MediaQuery.of(context).size.width > 1200,
-                        //   skill: skill,
-                        // );
+                        cubit.navigateToSkillLevel(
+                          skill:
+                              cubit.getSkillFromSkillName(skillLevel.skillName),
+                        );
                       },
               ),
             ),

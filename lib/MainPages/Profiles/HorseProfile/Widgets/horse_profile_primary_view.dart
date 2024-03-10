@@ -18,59 +18,63 @@ class HorseProfilePrimaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          const HorseProfileName(
-            key: Key('horseProfileName'),
+    return Column(
+      children: [
+        const HorseProfileName(
+          key: Key('horseProfileName'),
+        ),
+        gap(),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              const CurrentOwner(
+                key: Key('currentOwner'),
+              ),
+              gap(),
+              const HorseNickName(
+                key: Key('horseNickName'),
+              ),
+              gap(),
+              const HorseLocation(
+                key: Key('horseLocation'),
+              ),
+              gap(),
+              const HorseAge(
+                key: Key('horseAge'),
+              ),
+              gap(),
+              const HorseColor(
+                key: Key('horseColor'),
+              ),
+              gap(),
+              const HorseBreed(
+                key: Key('horseBreed'),
+              ),
+              gap(),
+              const HorseGender(
+                key: Key('horseGender'),
+              ),
+              gap(),
+              const HorseHeight(
+                key: Key('horseHeight'),
+              ),
+              gap(),
+              const HorseDateOfBirth(
+                key: Key('horseDateOfBirth'),
+              ),
+              gap(),
+              const StudentHorseRequestButton(
+                key: Key('studentHorseRequestButton'),
+              ),
+              gap(),
+              const LogBookButton(
+                key: Key('logBookButton'),
+              ),
+            ],
           ),
-          gap(),
-          const CurrentOwner(
-            key: Key('currentOwner'),
-          ),
-          gap(),
-          const HorseNickName(
-            key: Key('horseNickName'),
-          ),
-          gap(),
-          const HorseLocation(
-            key: Key('horseLocation'),
-          ),
-          gap(),
-          const HorseAge(
-            key: Key('horseAge'),
-          ),
-          gap(),
-          const HorseColor(
-            key: Key('horseColor'),
-          ),
-          gap(),
-          const HorseBreed(
-            key: Key('horseBreed'),
-          ),
-          gap(),
-          const HorseGender(
-            key: Key('horseGender'),
-          ),
-          gap(),
-          const HorseHeight(
-            key: Key('horseHeight'),
-          ),
-          gap(),
-          const HorseDateOfBirth(
-            key: Key('horseDateOfBirth'),
-          ),
-          gap(),
-          const StudentHorseRequestButton(
-            key: Key('studentHorseRequestButton'),
-          ),
-          gap(),
-          const LogBookButton(
-            key: Key('logBookButton'),
-          ),
-        ],
-      ),
+        )
+      ],
     );
   }
 }

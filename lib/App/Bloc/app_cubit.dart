@@ -82,6 +82,7 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Guest User');
       emit(
         state.copyWith(
+          status: AppStatus.authenticated,
           isGuest: true,
           pageStatus: AppPageStatus.profile,
           user: user,
@@ -91,6 +92,7 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('User Email Not Verified');
       emit(
         state.copyWith(
+          status: AppStatus.authenticated,
           isGuest: false,
           pageStatus: AppPageStatus.awitingEmailVerification,
           user: user,
@@ -106,16 +108,24 @@ class AppCubit extends Cubit<AppState> {
           debugPrint('User Profile exists: ${profile.email}');
           emit(
             state.copyWith(
+              status: AppStatus.authenticated,
               user: user,
               isGuest: false,
               usersProfile: profile,
-              pageStatus: AppPageStatus.profile,
             ),
           );
+          if (state.index == 0) {
+            emit(
+              state.copyWith(
+                pageStatus: AppPageStatus.profile,
+              ),
+            );
+          }
         } else {
           debugPrint('No User Profile, needs setup');
           emit(
             state.copyWith(
+              status: AppStatus.authenticated,
               user: user,
               pageStatus: AppPageStatus.profileSetup,
             ),
@@ -174,9 +184,9 @@ class AppCubit extends Cubit<AppState> {
               isViewing: true,
             ),
           );
-          Navigator.of(context, rootNavigator: true).pushNamed(
-            RiderProfilePage.routeName,
-          );
+          // Navigator.of(context, rootNavigator: true).pushNamed(
+          //   RiderProfilePage.routeName,
+          // );
         } else {
           emit(
             state.copyWith(
@@ -295,6 +305,7 @@ class AppCubit extends Cubit<AppState> {
   Future<void> logOutRequested() async {
     emit(
       state.copyWith(
+        status: AppStatus.unauthenticated,
         user: User.empty,
         // ignore: avoid_redundant_argument_values
         usersProfile: null,
@@ -320,7 +331,14 @@ class AppCubit extends Cubit<AppState> {
   void horseProfileSelected({
     required String id,
   }) {
-    emit(state.copyWith(index: 0, isForRider: false, horseId: id));
+    emit(
+      state.copyWith(
+        index: 0,
+        horseId: id,
+        isForRider: false,
+        pageStatus: AppPageStatus.profile,
+      ),
+    );
     _getHorseProfile(id: id);
   }
 
@@ -335,6 +353,7 @@ class AppCubit extends Cubit<AppState> {
           isForRider: false,
           horseId: state.horseProfile?.id,
           horseProfile: state.horseProfile,
+          pageStatus: AppPageStatus.profile,
         ),
       );
     } else {
@@ -360,6 +379,7 @@ class AppCubit extends Cubit<AppState> {
                     horseId: horseProfile.id,
                     horseProfile: horseProfile,
                     ownersProfile: ownerProfile,
+                    pageStatus: AppPageStatus.profile,
                   ),
                 );
               });
@@ -378,7 +398,12 @@ class AppCubit extends Cubit<AppState> {
         });
       } on FirebaseException catch (e) {
         debugPrint('Failed to get Horse Profile: $e');
-        emit(state.copyWith(errorMessage: e.message.toString()));
+        emit(
+          state.copyWith(
+            pageStatus: AppPageStatus.error,
+            errorMessage: e.message.toString(),
+          ),
+        );
       }
     }
   }
@@ -672,9 +697,13 @@ class AppCubit extends Cubit<AppState> {
   /// Retrieves the Skills from the database if needed
 
   void _getSkillTreeLists() {
-    _getSkills();
-    _getTrainingPaths();
-    _getResources();
+    if (state.status == AppStatus.authenticated) {
+      _getSkills();
+      _getTrainingPaths();
+      _getResources();
+    } else {
+      debugPrint('Do not get Skill Tree Items: User not authenticated');
+    }
   }
 
   void _getSkills() {
@@ -729,6 +758,13 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  Skill getSkillFromSkillName(String skillName) {
+    final skill = state.allSkills.firstWhere(
+      (element) => element?.skillName == skillName,
+      orElse: () => null,
+    );
+    return skill!;
+  }
   // /// Returns a list of skills that are either for a
   // /// horse or rider
   // List<Skill?> getHorseOrRiderSkills() {
@@ -1134,6 +1170,25 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Gets the user rating for the [resource] or creates a new one
+  BaseListItem? getUserRatingForResource(Resource resource) {
+    final newRatingUser = BaseListItem(
+      id: state.usersProfile?.email ?? '',
+      isCollapsed: false,
+      isSelected: false,
+    );
+
+    final usersRating = resource.usersWhoRated?.firstWhere(
+      (element) => element?.id == state.usersProfile?.email,
+      orElse: BaseListItem.new,
+    );
+    if (resource.usersWhoRated == null) {
+      return newRatingUser;
+    } else {
+      return usersRating;
+    }
+  }
+
   void updateResourceSortStatus(ResourcesSortStatus status) {
     switch (status) {
       case ResourcesSortStatus.mostRecommended:
@@ -1253,6 +1308,12 @@ class AppCubit extends Cubit<AppState> {
         ),
       );
     }
+  }
+
+  /// Determines if user has rated the [resource] positively or not
+  bool isRatingPositive(Resource resource) {
+    final rating = getUserRatingForResource(resource);
+    return rating?.isSelected ?? false;
   }
 
   ///  User has clicked the recommend [resource] button
@@ -1473,11 +1534,23 @@ class AppCubit extends Cubit<AppState> {
         emit(
           state.copyWith(
             index: index,
-            pageStatus: AppPageStatus.resource,
+            pageStatus: AppPageStatus.resourceList,
           ),
         );
         break;
     }
+  }
+
+
+  /// Navigate to the Horse Profile Page
+  void navigateToHorseProfile(HorseProfile horseProfile) {
+    emit(
+      state.copyWith(
+        index: 0,
+        pageStatus: AppPageStatus.profile,
+        horseProfile: horseProfile,
+      ),
+    );
   }
 
   /// Handles the back button press
@@ -1571,6 +1644,28 @@ class AppCubit extends Cubit<AppState> {
       state.copyWith(
         index: 0,
         pageStatus: AppPageStatus.messages,
+      ),
+    );
+  }
+
+  /// Navigates to the Resources Page
+  void navigateToResources(Resource resource) {
+    debugPrint('navigateToResources');
+    emit(
+      state.copyWith(
+        index: 2,
+        resource: resource,
+        pageStatus: AppPageStatus.resourceList,
+      ),
+    );
+  }
+
+  void navigateToResourceComments(Resource resource) {
+    debugPrint('navigateToResourceComments');
+    emit(
+      state.copyWith(
+        resource: resource,
+        pageStatus: AppPageStatus.resource,
       ),
     );
   }

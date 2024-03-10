@@ -4,16 +4,16 @@ import 'package:horseandriderscompanion/MainPages/Resources/resources_view.dart'
 
 class ResourcesPage extends StatelessWidget {
   const ResourcesPage({super.key});
-  static const routeName = '/resources';
-  static Page<void> page() => const MaterialPage<void>(child: ResourcesPage());
-  static Route<void> route() {
-    return MaterialPageRoute<void>(builder: (_) => const ResourcesPage());
-  }
-
+  static const path = 'Resources';
+  static const guestResources = 'GuestResources';
+  static const horseResources = 'HorseResources';
+  static const userProfileResourceName = 'UserProfileResourcePage';
+  static const horseProfileResourceName = 'HorseProfileResourcePage';
+  static const guestProfileResourceName = 'GuestProfileResourcePage';
   @override
   Widget build(BuildContext context) {
     return const NavigatorView(
-      body: ResourcesView(
+      child: ResourcesView(
         key: Key('resourcesView'),
       ),
     );

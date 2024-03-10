@@ -10,32 +10,28 @@ class LoadingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: ColorConst.backgroundDark,
-            //back button loggin out the user
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: cubit.logOutRequested,
-            ),
-          ),
-          backgroundColor: ColorConst.backgroundDark,
-          body: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Logo(forceDark: true, screenName: 'Loading...'),
-                gap(),
-                const CircularProgressIndicator(),
-              ],
-            ),
-          ),
-        );
-      },
+    final cubit = context.read<AppCubit>();
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: ColorConst.backgroundDark,
+        //back button loggin out the user
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: cubit.logOutRequested,
+        ),
+      ),
+      backgroundColor: ColorConst.backgroundDark,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Logo(forceDark: true, screenName: 'Loading...'),
+            gap(),
+            const CircularProgressIndicator(),
+          ],
+        ),
+      ),
     );
   }
 }

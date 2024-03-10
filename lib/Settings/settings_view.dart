@@ -15,7 +15,8 @@ class SettingsView extends StatelessWidget {
     required this.controller,
   });
 
-  static const routeName = '/settings';
+  static const routeName = 'Settings';
+  static const name = 'SettingsView';
 
   final SettingsController controller;
 

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// This is the reusable navigator that shows
@@ -17,9 +17,9 @@ class NavigatorView extends StatelessWidget {
   /// {@macro key}
   const NavigatorView({
     super.key,
-    required this.body,
+    required this.child,
   });
-  final Widget body;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -81,61 +81,62 @@ class NavigatorView extends StatelessWidget {
                       end: 1200,
                     ),
                     largeBreakpoint: const WidthPlatformBreakpoint(begin: 1200),
-                    leadingUnextendedNavRail: state.index == 0
-                        ? const Image(
-                            color: Colors.white,
-                            fit: BoxFit.contain,
-                            image: AssetImage('assets/horse_logo.png'),
-                            height: 40,
-                          )
-                        : Visibility(
-                            visible: state.index != 0 || state.isViewing,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.arrow_back,
-                                color: HorseAndRidersTheme()
-                                    .getTheme()
-                                    .appBarTheme
-                                    .iconTheme
-                                    ?.color,
-                              ),
-                              onPressed: cubit.backPressed,
-                            ),
-                          ),
-                    leadingExtendedNavRail: state.index == 0
-                        ? const Image(
-                            color: Colors.white,
-                            fit: BoxFit.contain,
-                            image: AssetImage('assets/horse_logo.png'),
-                            height: 40,
-                          )
-                        : Visibility(
-                            visible: state.index != 0 || state.isViewing,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.arrow_back,
-                                color: HorseAndRidersTheme()
-                                    .getTheme()
-                                    .appBarTheme
-                                    .iconTheme
-                                    ?.color,
-                              ),
-                              onPressed: cubit.backPressed,
-                            ),
-                          ),
+                    leadingUnextendedNavRail: const Image(
+                      color: Colors.white,
+                      fit: BoxFit.contain,
+                      image: AssetImage('assets/horse_logo.png'),
+                      height: 40,
+                    ),
+                    //   ) state.index == 0
+                    // ?
+                    // : Visibility(
+                    //     visible: state.index != 0 || state.isViewing,
+                    //     child: IconButton(
+                    //       icon: Icon(
+                    //         Icons.arrow_back,
+                    //         color: HorseAndRidersTheme()
+                    //             .getTheme()
+                    //             .appBarTheme
+                    //             .iconTheme
+                    //             ?.color,
+                    //       ),
+                    //       onPressed: cubit.backPressed,
+                    //     ),
+                    //   ),
+                    leadingExtendedNavRail: const Image(
+                      color: Colors.white,
+                      fit: BoxFit.contain,
+                      image: AssetImage('assets/horse_logo.png'),
+                      height: 40,
+                    ),
+                    //    state.index == 0
+                    // ?
+                    // : Visibility(
+                    //     visible: state.index != 0 || state.isViewing,
+                    //     child: IconButton(
+                    //       icon: Icon(
+                    //         Icons.arrow_back,
+                    //         color: HorseAndRidersTheme()
+                    //             .getTheme()
+                    //             .appBarTheme
+                    //             .iconTheme
+                    //             ?.color,
+                    //       ),
+                    //       onPressed: cubit.backPressed,
+                    //     ),
+                    //   ),
                     useDrawer: false,
                     destinations:
                         _buildDestinations(isForRider: state.isForRider),
                     selectedIndex: state.index,
-                    onSelectedIndexChange: (p0) =>
-                        context.read<AppCubit>().changeIndex(p0),
+                    onSelectedIndexChange: (p0) => _onTap(p0, cubit),
                     body: (_) => AdaptiveLayout(
                       internalAnimations: false,
                       body: SlotLayout(
                         config: <Breakpoint, SlotLayoutConfig>{
                           Breakpoints.standard: SlotLayout.from(
                             key: const Key('mainView'),
-                            builder: (_) => body,
+                            builder: (_) => child,
                           ),
                         },
                       ),
@@ -151,6 +152,14 @@ class NavigatorView extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _onTap(int index, AppCubit cubit) {
+    // body.goBranch(
+    //   index,
+    //   initialLocation: index == body.currentIndex,
+    // );
+    cubit.changeIndex(index);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 
 /// This is the ErrorPage widget
 /// for the entire app
@@ -6,7 +7,10 @@ import 'package:flutter/material.dart';
 Widget errorView(BuildContext context) {
   return Stack(
     children: [
-      Image.asset('assets/error_color.png', fit: BoxFit.cover),
+      const Logo(
+        screenName: 'Error: Something went wrong',
+        forceDark: true,
+      ),
       Center(
         child: ElevatedButton(
           onPressed: () => Navigator.of(context).pop(),

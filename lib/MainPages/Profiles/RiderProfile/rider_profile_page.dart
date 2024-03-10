@@ -3,18 +3,16 @@ import 'package:horseandriderscompanion/MainPages/Navigator/navigator_view.dart'
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_view.dart';
 
 class RiderProfilePage extends StatelessWidget {
-  const RiderProfilePage({super.key});
-  static const routeName = '/riderProfile';
-  // static Page<void> page() =>
-  //     const MaterialPage<void>(child: RiderProfilePage());
-  // static Route<void> route() {
-  //   return MaterialPageRoute<void>(builder: (_) => const RiderProfilePage());
-  // }
+  const RiderProfilePage({super.key, required this.id});
+  static const name = 'RiderProfilePage';
+  static const path = '/RiderProfile/:id';
+
+  final String id;
 
   @override
   Widget build(BuildContext context) {
     return const NavigatorView(
-      body: RiderProfileView(
+      child: RiderProfileView(
         key: Key('RiderProfileView'),
       ),
     );

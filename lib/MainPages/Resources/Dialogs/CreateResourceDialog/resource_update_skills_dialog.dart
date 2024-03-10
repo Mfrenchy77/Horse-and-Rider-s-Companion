@@ -11,17 +11,9 @@ import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResour
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
     super.key,
-    required this.homeState,
-    required this.skills,
     required this.resource,
-    required this.homeCubit,
-    required this.userProfile,
   });
-  final AppState homeState;
-  final AppCubit homeCubit;
   final Resource? resource;
-  final List<Skill?>? skills;
-  final RiderProfile? userProfile;
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -35,10 +27,10 @@ class UpdateResourceSkills extends StatelessWidget {
       ],
       child: BlocProvider(
         create: (context) => CreateResourceDialogCubit(
-          skills: skills,
+          skills: context.read<AppCubit>().state.allSkills,
           resource: resource,
           isEdit: resource != null,
-          usersProfile: userProfile,
+          usersProfile: context.read<AppCubit>().state.usersProfile,
           keysRepository: context.read<KeysRepository>(),
           resourcesRepository: context.read<ResourcesRepository>(),
         ),
@@ -64,6 +56,7 @@ class UpdateResourceSkills extends StatelessWidget {
           child:
               BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
             builder: (context, state) {
+              final cubit = context.read<AppCubit>();
               return AlertDialog(
                 title: const Text('Associated Skills for:'),
                 content: SingleChildScrollView(
@@ -79,7 +72,7 @@ class UpdateResourceSkills extends StatelessWidget {
                                 ?.map(
                                   (e) => TextButton(
                                     onPressed: () {
-                                      homeCubit.navigateToSkillLevel(skill: e);
+                                      cubit.navigateToSkillLevel(skill: e);
                                       debugPrint('Skill: ${e?.skillName}');
                                       Navigator.pop(context);
                                     },
@@ -91,7 +84,7 @@ class UpdateResourceSkills extends StatelessWidget {
                       ),
                       gap(),
                       Visibility(
-                        visible: !homeState.isGuest,
+                        visible: !cubit.state.isGuest,
                         child: Column(
                           children: [
                             const Divider(),
@@ -103,7 +96,7 @@ class UpdateResourceSkills extends StatelessWidget {
                             SingleChildScrollView(
                               child: Wrap(
                                 spacing: 8,
-                                children: homeCubit.state.allSkills
+                                children: cubit.state.allSkills
                                     .map(
                                       (e) => FilterChip(
                                         label: Text(e?.skillName ?? ''),
@@ -136,7 +129,7 @@ class UpdateResourceSkills extends StatelessWidget {
                     child: const Text('Close'),
                   ),
                   Visibility(
-                    visible: !homeState.isGuest,
+                    visible: !cubit.state.isGuest,
                     child: TextButton(
                       onPressed: () {
                         context

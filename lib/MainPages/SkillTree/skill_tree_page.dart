@@ -4,8 +4,13 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart
 
 class SkillTreePage extends StatelessWidget {
   const SkillTreePage({super.key});
+  static const userSkillTreeName = 'UserSkillTreePage';
+  static const guestSkillTreeName = 'GuestSkillTreePage';
+  static const horseSkillTreeName = 'HorseSkillTreePage';
 
-  static const routeName = '/skillTree';
+  static const path = 'SkillTree';
+  static const guestSkillTreePath = 'GuestSkillTree';
+  static const horseSkillTreePath = 'HorseSkillTree';
   static Page<void> page() => const MaterialPage<void>(child: SkillTreePage());
   static Route<void> route() {
     return MaterialPageRoute<void>(builder: (_) => const SkillTreePage());
@@ -14,7 +19,7 @@ class SkillTreePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const NavigatorView(
-      body: SkillTreeView(
+      child: SkillTreeView(
         key: Key('skillTreeView'),
       ),
     );

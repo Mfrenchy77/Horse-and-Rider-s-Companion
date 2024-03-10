@@ -7,7 +7,8 @@ import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
 
-  static const routeName = '/login';
+  static const routeName = '/';
+  static const name = 'AuthPage';
 
   static Page<void> page() => const MaterialPage<void>(child: AuthPage());
   static Route<void> route() {

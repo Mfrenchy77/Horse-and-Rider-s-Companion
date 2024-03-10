@@ -11,8 +11,6 @@ class ResourcesListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        debugPrint('Resources: ${state.resources.length}');
-        debugPrint('Saved Resources: ${state.savedResources.length}');
         return Center(
           child: ListView(
             children: [

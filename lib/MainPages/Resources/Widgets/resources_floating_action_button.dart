@@ -11,7 +11,7 @@ class ResourcesFloatingActionButton extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Visibility(
-          visible: state.usersProfile?.editor ?? false || state.isGuest,
+          visible: !state.isGuest,
           child: FloatingActionButton(
             tooltip: 'Add a new resource',
             onPressed: () => showDialog<CreateResourcDialog>(

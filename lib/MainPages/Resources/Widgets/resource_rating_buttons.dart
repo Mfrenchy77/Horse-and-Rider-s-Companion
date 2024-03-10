@@ -11,23 +11,21 @@ import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 class ResourceRatingButtons extends StatelessWidget {
   const ResourceRatingButtons({
     super.key,
-    required this.rater,
     required this.resource,
   });
-  final BaseListItem? rater;
   final Resource resource;
   @override
   Widget build(BuildContext context) {
     var isPositiveSelected = false;
     var isNegativeSelected = false;
 
-    isNegativeSelected = rater?.isCollapsed ?? false;
-    isPositiveSelected = rater?.isSelected ?? false;
-
     final isDark = SharedPrefs().isDarkMode;
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
+        final rater = cubit.getUserRatingForResource(resource);
+        isNegativeSelected = rater?.isCollapsed ?? false;
+        isPositiveSelected = rater?.isSelected ?? false;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -92,11 +90,7 @@ class ResourceRatingButtons extends StatelessWidget {
                     context: context,
                     builder: (context) {
                       return UpdateResourceSkills(
-                        homeState: state,
                         resource: resource,
-                        homeCubit: cubit,
-                        skills: state.allSkills,
-                        userProfile: state.usersProfile,
                       );
                     },
                   );

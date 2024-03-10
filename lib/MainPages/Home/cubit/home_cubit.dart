@@ -503,10 +503,10 @@ class HomeCubit extends Cubit<HomeState> {
             isViewing: true,
           ),
         );
-        Navigator.of(context, rootNavigator: true).pushNamed(
-          RiderProfilePage.routeName,
+        // Navigator.of(context, rootNavigator: true).pushNamed(
+        //   RiderProfilePage.routeName,
         
-        );
+        // );
         // Navigator.of(context, rootNavigator: true).pushNamed(
         //   HomePage.routeName,
         //   arguments: HomePageArguments(
@@ -558,10 +558,10 @@ class HomeCubit extends Cubit<HomeState> {
 
   void goBackToUsersProfile(BuildContext context) {
     debugPrint('goBackToUsersProfile, setting isViewing to false');
-    Navigator.of(context, rootNavigator: true).pushNamed(
-      RiderProfilePage.routeName,
+    // Navigator.of(context, rootNavigator: true).pushNamed(
+    //   RiderProfilePage.routeName,
       
-    );
+    // );
     // Navigator.of(context, rootNavigator: true).pushNamed(
     //   HomePage.routeName,
     //   arguments: HomePageArguments(

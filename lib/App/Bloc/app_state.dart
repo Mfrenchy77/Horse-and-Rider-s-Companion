@@ -10,8 +10,8 @@ enum AppStatus {
 
 /// The Sort State of the Resources
 enum ResourcesSortStatus {
-  recent,
   saved,
+  recent,
   oldest,
   mostRecommended,
 }
@@ -27,12 +27,14 @@ enum SkillTreeNavigation {
 /// The Page Status of the App
 enum AppPageStatus {
   auth,
-  loading,
+  error,
   profile,
+  loading,
   settings,
   messages,
   resource,
   skillTree,
+  resourceList,
   profileSetup,
   awitingEmailVerification,
 }
@@ -40,6 +42,7 @@ enum AppPageStatus {
 class AppState extends Equatable {
   const AppState._({
     this.skill,
+    this.resource,
     this.bannerAd,
     this.index = 0,
     this.horseId = '',
@@ -49,10 +52,10 @@ class AppState extends Equatable {
     this.ownersProfile,
     this.viewingProfile,
     this.isEdit = false,
+    required this.status,
     this.isGuest = false,
     this.isError = false,
     this.isSearch = false,
-    required this.status,
     this.isMessage = false,
     this.errorMessage = '',
     this.isViewing = false,
@@ -114,6 +117,9 @@ class AppState extends Equatable {
 
   /// The current status of the app(whether the user is authenticated or not).
   final AppStatus status;
+
+  /// The Resource being viewed.
+  final Resource? resource;
 
   /// Whether Navigation is coming from Profile.
   final bool isFromProfile;
@@ -192,6 +198,7 @@ class AppState extends Equatable {
     bool? isViewing,
     bool? isForRider,
     AppStatus? status,
+    Resource? resource,
     BannerAd? bannerAd,
     bool? isFromProfile,
     String? errorMessage,
@@ -223,6 +230,7 @@ class AppState extends Equatable {
       isError: isError ?? this.isError,
       horseId: horseId ?? this.horseId,
       isGuest: isGuest ?? this.isGuest,
+      resource: resource ?? this.resource,
       isSearch: isSearch ?? this.isSearch,
       bannerAd: bannerAd ?? this.bannerAd,
       isMessage: isMessage ?? this.isMessage,
@@ -262,6 +270,7 @@ class AppState extends Equatable {
         isGuest,
         horseId,
         isError,
+        resource,
         bannerAd,
         isSearch,
         isMessage,

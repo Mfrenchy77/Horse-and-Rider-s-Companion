@@ -6,8 +6,8 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 class ProfileName extends StatelessWidget {
   const ProfileName({
     super.key,
-    required this.name,
-    required this.profilePicUrl,
+    this.name,
+    this.profilePicUrl,
   });
   final String? name;
   final String? profilePicUrl;

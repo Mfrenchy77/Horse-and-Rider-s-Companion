@@ -24,10 +24,21 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         _resourcesRepository = resourcesRepository,
         super(const CreateResourceDialogState()) {
     _keysRepository.getJsonLinkApiKey().then((value) => _jsonKey = value);
-    // if (resource != null) {
-    //   urlChanged(resource.url.toString());
-    //   // list of skills that are in the resourceids
-    // }
+    if (resource != null) {
+      emit(
+        state.copyWith(
+          title: SingleWord.dirty(resource.name ?? ''),
+          description: SingleWord.dirty(resource.description ?? ''),
+          imageUrl: resource.thumbnail,
+          url: Url.dirty(resource.url ?? ''),
+          status: Formz.validate([
+            SingleWord.dirty(resource.name ?? ''),
+            SingleWord.dirty(resource.description ?? ''),
+            Url.dirty(resource.url ?? ''),
+          ]),
+        ),
+      );
+    }
     emit(
       state.copyWith(
         skills: _skills,
