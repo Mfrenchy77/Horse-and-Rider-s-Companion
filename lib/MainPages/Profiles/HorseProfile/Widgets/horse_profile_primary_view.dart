@@ -73,7 +73,7 @@ class HorseProfilePrimaryView extends StatelessWidget {
               ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
