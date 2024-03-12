@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResour
 
 class ResourceInfoBar extends StatelessWidget {
   const ResourceInfoBar({super.key});
+//FIXME: Something here is causing craziness
 
   @override
   Widget build(BuildContext context) {

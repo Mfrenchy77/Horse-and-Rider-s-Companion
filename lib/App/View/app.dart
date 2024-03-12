@@ -259,8 +259,10 @@ class AppView extends StatelessWidget {
                   debugPrint('ResourcesPage for Guest');
 
                   !state.isForRider
-                      ? router.goNamed('guestResources',
-                          pathParameters: {'horseId': state.horseProfile!.id})
+                      ? router.goNamed(
+                          'guestResources',
+                          pathParameters: {'horseId': state.horseProfile!.id},
+                        )
                       : router.goNamed('guestResources');
                 } else if (state.isForRider) {
                   debugPrint('ResourcesPage for Rider');

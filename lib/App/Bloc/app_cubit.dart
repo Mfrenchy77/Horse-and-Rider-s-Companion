@@ -9,7 +9,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1541,7 +1540,6 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-
   /// Navigate to the Horse Profile Page
   void navigateToHorseProfile(HorseProfile horseProfile) {
     emit(
@@ -1687,12 +1685,13 @@ class AppCubit extends Cubit<AppState> {
 
   @override
   Future<void> close() {
+    _groupsStream?.cancel();
     _resourcesStream?.cancel();
     _trainingPathsStream?.cancel();
     _skillsSubscription?.cancel();
-    _viewingProfileSubscription.cancel();
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();
+    _viewingProfileSubscription.cancel();
 
     _userSubscription.cancel();
     return super.close();
