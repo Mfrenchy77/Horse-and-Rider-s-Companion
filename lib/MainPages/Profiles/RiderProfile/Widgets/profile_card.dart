@@ -30,6 +30,7 @@ class ProfileCard extends StatelessWidget {
               ),
               onTap: () {
                 if (baseItem.isCollapsed!) {
+                  cubit.setLoading();
                   context.pushNamed<bool>(
                     ViewingProfilePage.name,
                     pathParameters: {
@@ -40,6 +41,7 @@ class ProfileCard extends StatelessWidget {
                     debugPrint('Returned from ViewingProfilePage: $value');
                   });
                 } else {
+                  cubit.setLoading();
                   debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
                   context.pushNamed(
                     HorseProfilePage.name,

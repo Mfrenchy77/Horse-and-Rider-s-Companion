@@ -13,20 +13,19 @@ class LoadingPage extends StatelessWidget {
     final cubit = context.read<AppCubit>();
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: ColorConst.backgroundDark,
         //back button loggin out the user
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: cubit.logOutRequested,
         ),
       ),
-      backgroundColor: ColorConst.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Logo(forceDark: true, screenName: 'Loading...'),
+            const Logo(screenName: 'Loading...'),
             gap(),
             const CircularProgressIndicator(),
           ],

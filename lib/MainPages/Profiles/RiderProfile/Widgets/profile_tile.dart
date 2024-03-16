@@ -28,14 +28,32 @@ class ProfileTile extends StatelessWidget {
               baseItem.name ?? '',
               textAlign: TextAlign.center,
             ),
-            onTap: () => baseItem.isCollapsed!
-                ? context.goNamed(ViewingProfilePage.name, pathParameters: {
-                    ViewingProfilePage.pathParams: baseItem.id!,
-                  },)
-                // ? cubit.setViewingProfile(baseItem.id ?? '')
-                : context.goNamed(HorseProfilePage.name, pathParameters: {
-                    HorseProfilePage.pathParams: baseItem.id!,
-                  },),
+           onTap: () {
+                if (baseItem.isCollapsed!) {
+                  cubit.setLoading();
+                  context.pushNamed<bool>(
+                    ViewingProfilePage.name,
+                    pathParameters: {
+                      ViewingProfilePage.pathParams: baseItem.id!,
+                    },
+                  ).then((value) {
+                    cubit.resetFromHorseProfile();
+                    debugPrint('Returned from ViewingProfilePage: $value');
+                  });
+                } else {
+                  cubit.setLoading();
+                  debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
+                  context.pushNamed(
+                    HorseProfilePage.name,
+                    pathParameters: {
+                      HorseProfilePage.pathParams: baseItem.id!,
+                    },
+                  ).then((value) {
+                    cubit.resetFromHorseProfile();
+                    debugPrint('Returned from HorseProfilePage: $value');
+                  });
+                }
+              },
           ),
         );
       },

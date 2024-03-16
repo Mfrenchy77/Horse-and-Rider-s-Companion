@@ -67,11 +67,12 @@ class AppCubit extends Cubit<AppState> {
           '\nUserGuest: ${user?.isGuest} '
           '\nUserId: ${user?.id}');
       if (user != null && user.id.isNotEmpty) {
+        emit(state.copyWith(pageStatus: AppPageStatus.loading));
         debugPrint('User is authenticated');
         _getRiderProfile(user: user);
       } else {
         debugPrint('User is unauthenticated or email not verified');
-        emit(state.copyWith(isGuest: true));
+        emit(state.copyWith(isGuest: true, pageStatus: AppPageStatus.loaded));
       }
     });
   }
@@ -82,8 +83,8 @@ class AppCubit extends Cubit<AppState> {
       emit(
         state.copyWith(
           status: AppStatus.authenticated,
+          pageStatus: AppPageStatus.loaded,
           isGuest: true,
-          //pageStatus: AppPageStatus.profile,
           user: user,
         ),
       );
@@ -91,10 +92,10 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('User Email Not Verified');
       emit(
         state.copyWith(
-          status: AppStatus.authenticated,
-          isGuest: false,
-          pageStatus: AppPageStatus.awitingEmailVerification,
           user: user,
+          isGuest: false,
+          status: AppStatus.authenticated,
+          pageStatus: AppPageStatus.awitingEmailVerification,
         ),
       );
     } else {
@@ -107,25 +108,19 @@ class AppCubit extends Cubit<AppState> {
           debugPrint('User Profile exists: ${profile.email}');
           emit(
             state.copyWith(
-              status: AppStatus.authenticated,
               user: user,
               isGuest: false,
               usersProfile: profile,
+              status: AppStatus.authenticated,
+              pageStatus: AppPageStatus.loaded,
             ),
           );
-          // if (state.index == 0) {
-          //   emit(
-          //     state.copyWith(
-          //       pageStatus: AppPageStatus.profile,
-          //     ),
-          //   );
-          // }
         } else {
           debugPrint('No User Profile, needs setup');
           emit(
             state.copyWith(
-              status: AppStatus.authenticated,
               user: user,
+              status: AppStatus.authenticated,
               pageStatus: AppPageStatus.profileSetup,
             ),
           );
@@ -163,7 +158,10 @@ class AppCubit extends Cubit<AppState> {
           final viewingProfile = value.data()! as RiderProfile;
           debugPrint('Viewing Profile Retrieved: ${viewingProfile.name}');
           emit(
-            state.copyWith(viewingProfile: viewingProfile),
+            state.copyWith(
+              viewingProfile: viewingProfile,
+              pageStatus: AppPageStatus.loaded,
+            ),
           );
         } else {
           emit(
@@ -370,7 +368,7 @@ class AppCubit extends Cubit<AppState> {
           isForRider: false,
           horseId: state.horseProfile?.id,
           horseProfile: state.horseProfile,
-          pageStatus: AppPageStatus.profile,
+          pageStatus: AppPageStatus.loaded,
         ),
       );
     } else {
@@ -1554,6 +1552,15 @@ class AppCubit extends Cubit<AppState> {
         );
         break;
     }
+  }
+
+  /// Set the page status to Loading
+  void setLoading() {
+    emit(
+      state.copyWith(
+        pageStatus: AppPageStatus.loading,
+      ),
+    );
   }
 
   void navigateToProfile() {

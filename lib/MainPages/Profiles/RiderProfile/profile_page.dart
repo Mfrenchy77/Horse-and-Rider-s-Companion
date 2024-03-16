@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Guest/guest_profile_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_view.dart';
 
@@ -15,12 +16,18 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        // show a loading page while the profile is loading
+        if (state.pageStatus == AppPageStatus.loading) {
+          return const LoadingPage();
+        }
+        // show the profile
+
         return state.isGuest
             ? const GuestProfileView(
                 key: Key('GuestProfileView'),
               )
-            :  RiderProfileView(
-              profile: state.usersProfile!,
+            : RiderProfileView(
+                profile: state.usersProfile!,
                 key: const Key('RiderProfileView'),
               );
       },

@@ -28,6 +28,7 @@ enum SkillTreeNavigation {
 enum AppPageStatus {
   auth,
   error,
+  loaded,
   profile,
   loading,
   settings,
@@ -72,7 +73,7 @@ class AppState extends Equatable {
     this.savedResources = const [],
     this.isFromTrainingPath = false,
     this.isFromTrainingPathList = false,
-    this.pageStatus = AppPageStatus.profile,
+    this.pageStatus = AppPageStatus.loading,
     this.difficultyState = DifficultyState.all,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.skillTreeNavigation = SkillTreeNavigation.SkillList,
@@ -139,7 +140,6 @@ class AppState extends Equatable {
 
   /// Whether Navigation is coming from the TrainingPath section.
   final bool isFromTrainingPath;
-
 
   /// The current page status of the app.
   final AppPageStatus pageStatus;
