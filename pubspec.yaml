@@ -32,10 +32,11 @@ dependencies:
   go_router: ^13.2.0
   google_mobile_ads: ^4.0.0
   google_sign_in: ^6.0.2
-  html: ^0.15.4
-  http: ^1.1.2
+  # html: ^0.15.4
+  # http: ^1.1.2
   image_network: ^2.5.4+1
   image_picker: ^1.0.4
+  intl: ^0.18.1
   mockito: ^5.4.4
   numberpicker: ^2.1.1
   open_mail_app: ^0.4.5

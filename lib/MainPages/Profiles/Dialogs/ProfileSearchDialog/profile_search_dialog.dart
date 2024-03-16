@@ -2,10 +2,13 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/Cubit/profile_search_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -53,7 +56,6 @@ class ProfileSearchDialog extends StatelessWidget {
             builder: (context, state) {
               final cubit = context.read<ProfileSearchCubit>();
               return AlertDialog(
-                
                 title: Text(_getSearchType(state.searchType)),
                 content: SingleChildScrollView(
                   child: Column(
@@ -422,10 +424,14 @@ class ProfileSearchDialog extends StatelessWidget {
                       context: context,
                       onTap: () {
                         Navigator.of(context).pop();
-                        homeContext.read<HomeCubit>().gotoProfilePage(
-                              context: context,
-                              toBeViewedEmail: profile.email,
-                            );
+                        context.goNamed(
+                          ViewingProfilePage.name,
+                          pathParameters: {'id': profile.email},
+                        );
+                        // context.goNamed(
+                        //   ViewingProfilePage.name,
+                        //   pathParameters: {'id': profile.email},
+                        // );
                       },
                     ),
                   )
@@ -452,10 +458,14 @@ class ProfileSearchDialog extends StatelessWidget {
                       context: context,
                       onTap: () {
                         Navigator.of(context).pop();
-                        homeContext
-                            .read<HomeCubit>()
-                            .horseProfileSelected(id: horseProfile.id);
+                        context.read<HomeCubit>().horseProfileSelected(
+                              id: horseProfile.id,
+                            );
                       },
+                      //   homeContext
+                      //       .read<HomeCubit>()
+                      //       .horseProfileSelected(id: horseProfile.id);
+                      // },
                     ),
                   )
                   .toList(),

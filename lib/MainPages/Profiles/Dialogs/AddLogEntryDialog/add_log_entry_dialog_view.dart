@@ -10,10 +10,10 @@ import 'package:intl/intl.dart';
 class AddLogEntryDialog extends StatelessWidget {
   const AddLogEntryDialog({
     super.key,
-    required this.riderProfile,
+    required this.usersProfile,
     required this.horseProfile,
   });
-  final RiderProfile riderProfile;
+  final RiderProfile usersProfile;
   final HorseProfile? horseProfile;
   @override
   Widget build(BuildContext context) {
@@ -28,6 +28,7 @@ class AddLogEntryDialog extends StatelessWidget {
       ],
       child: BlocProvider(
         create: (context) => AddLogEntryCubit(
+          usersProfile: usersProfile,
           riderProfileRepository: context.read<RiderProfileRepository>(),
           horseProfileRepository: context.read<HorseProfileRepository>(),
         ),
@@ -39,8 +40,9 @@ class AddLogEntryDialog extends StatelessWidget {
             return AlertDialog(
               titlePadding: const EdgeInsets.all(10),
               title: Text(
-                'Add New Log Entry For \n'
-                '${horseProfile?.name ?? riderProfile.name}',
+                horseProfile == null
+                    ? 'Add New Log Entry'
+                    : 'Add New Log Entry For \n${horseProfile?.name}',
                 textAlign: TextAlign.center,
               ),
               insetPadding: const EdgeInsets.all(10),
@@ -60,7 +62,6 @@ class AddLogEntryDialog extends StatelessWidget {
                   _logEntry(
                     state: state,
                     context: context,
-                    rider: riderProfile,
                     horseProfile: horseProfile,
                   ),
                   gap(),
@@ -86,7 +87,6 @@ class AddLogEntryDialog extends StatelessWidget {
                 _submitButton(
                   context: context,
                   state: state,
-                  riderProfile: riderProfile,
                   horseProfile: horseProfile,
                 ),
               ],
@@ -208,7 +208,6 @@ Widget _logTag({
 
 ///   Log Entry
 Widget _logEntry({
-  required RiderProfile rider,
   required BuildContext context,
   required AddLogEntryState state,
   required HorseProfile? horseProfile,
@@ -223,8 +222,8 @@ Widget _logEntry({
     textCapitalization: TextCapitalization.sentences,
     decoration: InputDecoration(
       labelText: 'Log Entry',
-      hintText: 'Enter a detailed log entry for '
-          '${horseProfile?.name ?? rider.name}',
+      hintText: 'Enter a detailed description of '
+          'the information you want to log',
       icon: horseProfile != null
           ? const Icon(HorseAndRiderIcons.horseLogIcon)
           : const Icon(HorseAndRiderIcons.riderLogIcon),
@@ -236,7 +235,6 @@ Widget _logEntry({
 Widget _submitButton({
   required BuildContext context,
   required AddLogEntryState state,
-  required RiderProfile riderProfile,
   required HorseProfile? horseProfile,
 }) {
   return FilledButton(
@@ -244,7 +242,6 @@ Widget _submitButton({
         ? null
         : () {
             context.read<AddLogEntryCubit>().addLogEntry(
-                  riderProfile: riderProfile,
                   horseProfile: horseProfile,
                 );
           },

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/MainPages/Navigator/navigator_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 
 class SkillTreePage extends StatelessWidget {
@@ -8,7 +7,7 @@ class SkillTreePage extends StatelessWidget {
   static const guestSkillTreeName = 'GuestSkillTreePage';
   static const horseSkillTreeName = 'HorseSkillTreePage';
 
-  static const path = 'SkillTree';
+  static const path = '/SkillTree';
   static const guestSkillTreePath = 'GuestSkillTree';
   static const horseSkillTreePath = 'HorseSkillTree';
   static Page<void> page() => const MaterialPage<void>(child: SkillTreePage());
@@ -18,10 +17,12 @@ class SkillTreePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const NavigatorView(
-      child: SkillTreeView(
-        key: Key('skillTreeView'),
-      ),
+    return
+        //  const NavigatorView(
+        //   child:
+        const SkillTreeView(
+      key: Key('skillTreeView'),
+      // ),
     );
   }
 }

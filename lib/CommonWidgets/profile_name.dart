@@ -40,7 +40,7 @@ class ProfileName extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    name ?? '',
+                    name ?? 'Welocme, Guest',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 30,

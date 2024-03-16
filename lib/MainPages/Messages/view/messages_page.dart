@@ -4,18 +4,16 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/messages_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/view/groups_list.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/view/messages_view.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class MessagesPage extends StatelessWidget {
   const MessagesPage({
     super.key,
   });
 
-  static const routeName = 'Messages';
+  static const path = 'Messages';
   static const name = 'MessagesPage';
   @override
   Widget build(BuildContext context) {

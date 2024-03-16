@@ -17,20 +17,17 @@ class ProfileSearchButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        return Visibility(
-          visible: state.usersProfile != null,
-          child: IconButton(
-            onPressed: () {
-              showDialog<AlertDialog>(
-                context: context,
-                builder: (dialogContext) => ProfileSearchDialog(
-                  homeContext: context,
-                  key: const Key('ProfileSearchDialog'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.search),
-          ),
+        return IconButton(
+          onPressed: () {
+            showDialog<AlertDialog>(
+              context: context,
+              builder: (dialogContext) => ProfileSearchDialog(
+                homeContext: context,
+                key: const Key('ProfileSearchDialog'),
+              ),
+            );
+          },
+          icon: const Icon(Icons.search),
         );
       },
     );

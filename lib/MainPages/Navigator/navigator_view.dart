@@ -19,7 +19,7 @@ class NavigatorView extends StatelessWidget {
     super.key,
     required this.child,
   });
-  final Widget child;
+  final StatefulNavigationShell child;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +74,7 @@ class NavigatorView extends StatelessWidget {
               children: [
                 Expanded(
                   child: AdaptiveScaffold(
+                    appBar: AppBar(),
                     internalAnimations: false,
                     smallBreakpoint: const WidthPlatformBreakpoint(end: 800),
                     mediumBreakpoint: const WidthPlatformBreakpoint(
@@ -128,8 +129,8 @@ class NavigatorView extends StatelessWidget {
                     useDrawer: false,
                     destinations:
                         _buildDestinations(isForRider: state.isForRider),
-                    selectedIndex: state.index,
-                    onSelectedIndexChange: (p0) => _onTap(p0, cubit),
+                    selectedIndex: child.currentIndex,
+                    onSelectedIndexChange: (p0) => _onTap(p0, cubit, child),
                     body: (_) => AdaptiveLayout(
                       internalAnimations: false,
                       body: SlotLayout(
@@ -154,11 +155,11 @@ class NavigatorView extends StatelessWidget {
     );
   }
 
-  void _onTap(int index, AppCubit cubit) {
-    // body.goBranch(
-    //   index,
-    //   initialLocation: index == body.currentIndex,
-    // );
+  void _onTap(int index, AppCubit cubit, StatefulNavigationShell body) {
+    body.goBranch(
+      index,
+      initialLocation: index == body.currentIndex,
+    );
     cubit.changeIndex(index);
   }
 }

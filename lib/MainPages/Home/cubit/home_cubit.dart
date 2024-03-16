@@ -12,10 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/view/messages_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/ad_helper.dart';
@@ -505,7 +503,7 @@ class HomeCubit extends Cubit<HomeState> {
         );
         // Navigator.of(context, rootNavigator: true).pushNamed(
         //   RiderProfilePage.routeName,
-        
+
         // );
         // Navigator.of(context, rootNavigator: true).pushNamed(
         //   HomePage.routeName,
@@ -560,7 +558,7 @@ class HomeCubit extends Cubit<HomeState> {
     debugPrint('goBackToUsersProfile, setting isViewing to false');
     // Navigator.of(context, rootNavigator: true).pushNamed(
     //   RiderProfilePage.routeName,
-      
+
     // );
     // Navigator.of(context, rootNavigator: true).pushNamed(
     //   HomePage.routeName,
@@ -1094,15 +1092,15 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   ///   Open the Messages Page
-  void openMessages({required BuildContext context}) {
-    Navigator.of(context, rootNavigator: true).pushNamed(
-      MessagesPage.routeName,
-      arguments: MessageArguments(
-        group: null,
-        riderProfile: state.usersProfile,
-      ),
-    );
-  }
+  // void openMessages({required BuildContext context}) {
+  //   Navigator.of(context, rootNavigator: true).pushNamed(
+  //     MessagesPage.routeName,
+  //     arguments: MessageArguments(
+  //       group: null,
+  //       riderProfile: state.usersProfile,
+  //     ),
+  //   );
+  // }
 
   // /// Opens the Horse Profile Page
   // void _gotoHorseHomePage({
@@ -1250,7 +1248,7 @@ class HomeCubit extends Cubit<HomeState> {
       ..createOrUpdateGroup(group: group)
       ..createOrUpdateMessage(message: message, id: message.messsageId);
 
-    navigateToMessagesPage(context, group);
+   // navigateToMessagesPage(context, group);
   }
 
   BaseListItem _createRequestHorse(HorseProfile horseProfile) {
@@ -1330,15 +1328,15 @@ class HomeCubit extends Cubit<HomeState> {
       );
   }
 
-  void navigateToMessagesPage(BuildContext context, Group group) {
-    Navigator.of(context, rootNavigator: true).restorablePushNamed(
-      MessagesPage.routeName,
-      arguments: MessageArguments(
-        group: group,
-        riderProfile: state.usersProfile,
-      ),
-    );
-  }
+  // void navigateToMessagesPage(BuildContext context, Group group) {
+  //   Navigator.of(context, rootNavigator: true).restorablePushNamed(
+  //     MessagesPage.routeName,
+  //     arguments: MessageArguments(
+  //       group: group,
+  //       riderProfile: state.usersProfile,
+  //     ),
+  //   );
+  // }
 
   void transferHorseProfile() {
     emit(

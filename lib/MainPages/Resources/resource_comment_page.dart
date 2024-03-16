@@ -9,13 +9,9 @@ import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_rat
 class ResourceCommentPage extends StatelessWidget {
   const ResourceCommentPage({super.key, required this.id});
 
+  static const pathParams = 'resourceId';
+  static const name = 'ResourceCommentPage';
   static const path = 'Comments/:resourceId';
-  // static const guestResourceCommentPath = 'GuestCommentPage/:resourceId';
-  // static const horseResourceCommentPath = 'HorseCommentPage/:resourceId';
-
-  // static const userProfileResourceName = 'UserProfileResourcePage';
-  // static const horseProfileResourceName = 'HorseProfileResourcePage';
-  // static const guestProfileResourceName = 'GuestProfileResourcePage';
 
   final String id;
 
@@ -35,8 +31,9 @@ class ResourceCommentPage extends StatelessWidget {
             endIndent: 5,
             indent: 5,
           ),
-          const ResourceInfoBar(
-            key: Key('ResourceInfoBar'),
+          ResourceInfoBar(
+            resource: context.read<AppCubit>().state.resource!,
+            key: const Key('ResourceInfoBar'),
           ),
           smallGap(),
           Divider(

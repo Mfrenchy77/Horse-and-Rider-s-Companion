@@ -60,6 +60,7 @@ class AppCubit extends Cubit<AppState> {
 
 ***************************************************************************** */
   void _beginListeningForUserChanges() {
+    _getSkillTreeLists();
     _userSubscription = _authenticationRepository.user.listen((user) {
       debugPrint('Listening for user changes: '
           '\nUserEmail: ${user?.email} '
@@ -70,20 +71,19 @@ class AppCubit extends Cubit<AppState> {
         _getRiderProfile(user: user);
       } else {
         debugPrint('User is unauthenticated or email not verified');
-        emit(state.copyWith(pageStatus: AppPageStatus.auth));
+        emit(state.copyWith(isGuest: true));
       }
     });
   }
 
   void _getRiderProfile({required User user}) {
-    _getSkillTreeLists();
     if (user.isGuest) {
       debugPrint('Guest User');
       emit(
         state.copyWith(
           status: AppStatus.authenticated,
           isGuest: true,
-          pageStatus: AppPageStatus.profile,
+          //pageStatus: AppPageStatus.profile,
           user: user,
         ),
       );
@@ -113,13 +113,13 @@ class AppCubit extends Cubit<AppState> {
               usersProfile: profile,
             ),
           );
-          if (state.index == 0) {
-            emit(
-              state.copyWith(
-                pageStatus: AppPageStatus.profile,
-              ),
-            );
-          }
+          // if (state.index == 0) {
+          //   emit(
+          //     state.copyWith(
+          //       pageStatus: AppPageStatus.profile,
+          //     ),
+          //   );
+          // }
         } else {
           debugPrint('No User Profile, needs setup');
           emit(
@@ -132,19 +132,6 @@ class AppCubit extends Cubit<AppState> {
         }
       });
     }
-  }
-
-  /// Set viewingProfile to Null
-  void clearViewingProfile() {
-    emit(
-      state.copyWith(
-        // ignore: avoid_redundant_argument_values
-        viewingProfile: null,
-        // ignore: avoid_redundant_argument_values
-        horseProfile: null,
-        isForRider: true,
-      ),
-    );
   }
 
   bool isAuthorized() {
@@ -161,31 +148,23 @@ class AppCubit extends Cubit<AppState> {
         false;
   }
 
-  /// Opens a Rider Profile Page for  [toBeViewedEmail]
-  void gotoProfilePage({
-    required BuildContext context,
-    required String toBeViewedEmail,
+  /// Opens a Rider Profile Page for  [email]
+  void getProfileToBeViewed({
+    required String email,
   }) {
-    debugPrint(
-      'gotoProfilePage for $toBeViewedEmail, for User: '
-      '${state.usersProfile?.email}',
-    );
-    if (state.usersProfile?.email != toBeViewedEmail) {
+    debugPrint('getting Profile for $email');
+
+    if (state.usersProfile?.email != email) {
       _riderProfileRepository
-          .getRiderProfile(email: toBeViewedEmail.toLowerCase())
+          .getRiderProfile(email: email.toLowerCase())
           .first
           .then((value) {
         if (value.data() != null) {
           final viewingProfile = value.data()! as RiderProfile;
+          debugPrint('Viewing Profile Retrieved: ${viewingProfile.name}');
           emit(
-            state.copyWith(
-              viewingProfile: viewingProfile,
-              isViewing: true,
-            ),
+            state.copyWith(viewingProfile: viewingProfile),
           );
-          // Navigator.of(context, rootNavigator: true).pushNamed(
-          //   RiderProfilePage.routeName,
-          // );
         } else {
           emit(
             state.copyWith(
@@ -199,6 +178,45 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Returning to Users Profile');
       // goBackToUsersProfile(context);
     }
+  }
+
+  /// Back Button Pressed in the Viewing Profile or Horse Profile
+  void profileBackButtonPressed() {
+    debugPrint('Back to Users Profile/Guest Profile');
+
+    if (!state.isForRider) {
+      emit(
+        state.copyWith(
+          horseId: '',
+          isForRider: true,
+          // ignore: avoid_redundant_argument_values
+          horseProfile: null,
+        ),
+      );
+    }
+    if (state.isViewing) {
+      emit(
+        state.copyWith(
+          isViewing: false,
+          // ignore: avoid_redundant_argument_values
+          viewingProfile: null,
+          viewingProfielEmail: '',
+        ),
+      );
+    }
+
+    // emit(
+    //   state.copyWith(
+    //     // ignore: avoid_redundant_argument_values
+    //     viewingProfile: null,
+    //     // ignore: avoid_redundant_argument_values
+    //     horseProfile: null,
+    //     viewingProfielEmail: '',
+    //     isForRider: true,
+    //     isViewing: false,
+    //   ),
+    // );
+    // navigateToProfile();
   }
 
   /// Updates the skill level for the rider
@@ -283,7 +301,7 @@ class AppCubit extends Cubit<AppState> {
   /// Called when User finishes setting up their profile
   void resetProfileSetup() {
     debugPrint('Changing showingProfileSetup to false');
-    emit(state.copyWith(pageStatus: AppPageStatus.profile));
+    emit(state.copyWith(pageStatus: AppPageStatus.profile, isForRider: true));
   }
 
   void test(String test) {
@@ -312,12 +330,12 @@ class AppCubit extends Cubit<AppState> {
         horseProfile: null,
         // ignore: avoid_redundant_argument_values
         viewingProfile: null,
-        pageStatus: AppPageStatus.auth,
-        isGuest: false,
+        isGuest: true,
       ),
     );
 
     await _authenticationRepository.logOut();
+    navigateToAuth();
   }
 
 /* ***************************************************************************
@@ -327,28 +345,28 @@ class AppCubit extends Cubit<AppState> {
 ***************************************************************************** */
 
   /// Handles the selection of a Horse Profile
-  void horseProfileSelected({
-    required String id,
-  }) {
-    emit(
-      state.copyWith(
-        index: 0,
-        horseId: id,
-        isForRider: false,
-        pageStatus: AppPageStatus.profile,
-      ),
-    );
-    _getHorseProfile(id: id);
-  }
+  // void horseProfileSelected({
+  //   required String id,
+  // }) {
+  //   emit(
+  //     state.copyWith(
+  //       index: 0,
+  //       horseId: id,
+  //       isForRider: false,
+  //       pageStatus: AppPageStatus.profile,
+  //     ),
+  //   );
+  //   // _getHorseProfile(id: id);
+  // }
 
   /// Retrieves the Horse Profile from the database if needed
-  Future<void> _getHorseProfile({required String id}) async {
+  Future<void> getHorseProfile({required String id}) async {
     debugPrint('getHorseProfile for $id');
     if (state.horseProfile?.id == id) {
       debugPrint('Horse Profile already retrieved');
       emit(
         state.copyWith(
-          index: 0,
+          //  index: 0,
           isForRider: false,
           horseId: state.horseProfile?.id,
           horseProfile: state.horseProfile,
@@ -373,12 +391,12 @@ class AppCubit extends Cubit<AppState> {
                 debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
                 emit(
                   state.copyWith(
-                    index: 0,
+                    // index: 0,
                     isForRider: false,
                     horseId: horseProfile.id,
                     horseProfile: horseProfile,
                     ownersProfile: ownerProfile,
-                    pageStatus: AppPageStatus.profile,
+                    // pageStatus: AppPageStatus.profile,
                   ),
                 );
               });
@@ -696,13 +714,11 @@ class AppCubit extends Cubit<AppState> {
   /// Retrieves the Skills from the database if needed
 
   void _getSkillTreeLists() {
-    if (state.status == AppStatus.authenticated) {
-      _getSkills();
-      _getTrainingPaths();
-      _getResources();
-    } else {
-      debugPrint('Do not get Skill Tree Items: User not authenticated');
-    }
+    debugPrint('getSkillTreeLists');
+
+    _getSkills();
+    _getTrainingPaths();
+    _getResources();
   }
 
   void _getSkills() {
@@ -1540,6 +1556,24 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  void navigateToProfile() {
+    emit(
+      state.copyWith(
+        index: 0,
+        pageStatus: AppPageStatus.profile,
+      ),
+    );
+  }
+
+  void navigateToAuth() {
+    emit(
+      state.copyWith(
+        index: 0,
+        pageStatus: AppPageStatus.auth,
+      ),
+    );
+  }
+
   /// Navigate to the Horse Profile Page
   void navigateToHorseProfile(HorseProfile horseProfile) {
     emit(
@@ -1547,6 +1581,53 @@ class AppCubit extends Cubit<AppState> {
         index: 0,
         pageStatus: AppPageStatus.profile,
         horseProfile: horseProfile,
+      ),
+    );
+  }
+
+  void setHorseProfile() {
+    emit(
+      state.copyWith(
+        isForRider: false,
+      ),
+    );
+  }
+
+  /// Resets from Horse Profile to the Rider Profile
+  void resetFromHorseProfile() {
+    debugPrint('resetFromHorseProfile');
+    emit(
+      state.copyWith(
+        index: 0,
+        isViewing: false,
+        // ignore: avoid_redundant_argument_values
+        horseId: null,
+        isForRider: true,
+        // ignore: avoid_redundant_argument_values
+        horseProfile: null,
+        pageStatus: AppPageStatus.profile,
+      ),
+    );
+  }
+
+  void setViewingProfile() {
+    emit(
+      state.copyWith(
+        isViewing: true,
+      ),
+    );
+  }
+
+  /// Resets From Viewing Profile to the Users Profile
+  void resetFromViewingProfile() {
+    debugPrint('resetFromViewingProfile');
+    emit(
+      state.copyWith(
+        index: 0,
+        isViewing: false,
+        // ignore: avoid_redundant_argument_values
+        viewingProfile: null,
+        pageStatus: AppPageStatus.profile,
       ),
     );
   }
@@ -1676,6 +1757,11 @@ class AppCubit extends Cubit<AppState> {
   /// Clears the Error Message and Snackbar
   void clearErrorMessage() {
     emit(state.copyWith(isMessage: false, errorMessage: ''));
+  }
+
+  /// Create a Snackbar Message
+  void createMessage(String message) {
+    emit(state.copyWith(isMessage: true, errorMessage: message));
   }
 
   /// Clear the MessageSnackbar

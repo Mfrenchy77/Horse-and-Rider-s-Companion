@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
-import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Guest/Widgets/guest_profile_primary_view.dart';
@@ -19,12 +19,13 @@ class GuestProfileView extends StatelessWidget {
           key: Key('appTitle'),
         ),
         actions: const [
-          AppBarSearchButton(
-            key: Key('appBarSearchButton'),
+          ProfileSearchButton(
+            key: Key('GuestSearchButton'),
           ),
         ],
       ),
       body: AdaptiveLayout(
+        internalAnimations: false,
         body: SlotLayout(
           config: <Breakpoint, SlotLayoutConfig>{
             Breakpoints.large: SlotLayout.from(

@@ -320,7 +320,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
       final note = BaseListItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: '$finalName joined Horse and Rider Companion!',
+        name: "$finalName joined Horse & Rider's Companion!",
         date: DateTime.now(),
         message: state.user?.name,
         parentId: state.user?.email,

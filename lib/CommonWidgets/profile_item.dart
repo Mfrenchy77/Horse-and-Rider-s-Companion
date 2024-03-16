@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 Widget profileItem({
   required String profileName,
@@ -10,18 +9,18 @@ Widget profileItem({
   required BuildContext context,
   required GestureTapCallback onTap,
 }) {
-  double size;
-  if (ResponsiveBreakpoints.of(context).equals(MOBILE)) {
-    size = 40;
-  } else if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
-    size = 50;
-  } else if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
-    size = 70;
-  } else if (ResponsiveBreakpoints.of(context).largerThan(DESKTOP)) {
-    size = 80;
-  } else {
-    size = 50;
-  }
+  // double size;
+  // if (ResponsiveBreakpoints.of(context).equals(MOBILE)) {
+  //   size = 40;
+  // } else if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
+  //   size = 50;
+  // } else if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
+  //   size = 70;
+  // } else if (ResponsiveBreakpoints.of(context).largerThan(DESKTOP)) {
+  //   size = 80;
+  // } else {
+  //   size = 50;
+  // }
 
   return Center(
     child: Padding(
@@ -32,7 +31,7 @@ Widget profileItem({
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ProfilePhoto(
-              size: size,
+              size: 60,
               profilePicUrl: profilePicUrl,
             ),
             smallGap(),

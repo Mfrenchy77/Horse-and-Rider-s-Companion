@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
@@ -56,7 +55,7 @@ class UserProfileDrawer extends StatelessWidget {
                 onTap: () {
                   context.read<AppCubit>().logOutRequested();
 
-                  Navigator.popAndPushNamed(context, AuthPage.routeName);
+                  //Navigator.popAndPushNamed(context, AuthPage.routeName);
                 },
               ),
               //Log Book List Tile

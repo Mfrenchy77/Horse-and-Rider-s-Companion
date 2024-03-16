@@ -1,3 +1,4 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,27 +10,28 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/back_button.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
 
 class RiderProfileView extends StatelessWidget {
   const RiderProfileView({
+    required this.profile,
     super.key,
   });
-
+  final RiderProfile profile;
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
-            //back if viewing profile
-            leading: !state.isGuest && state.viewingProfile != null
-                ? const ProfileBackButton(
-                    key: Key('ProfileBackButton'),
-                  )
-                : null,
+            // // back if viewing profile
+            // leading: state.viewingProfile != null
+            //     ? const ProfileBackButton(
+            //         key: Key('ProfileBackButton'),
+            //       )
+            //     : null,
             title: const AppTitle(
               key: Key('appTitle'),
             ),
@@ -46,6 +48,7 @@ class RiderProfileView extends StatelessWidget {
               ? null
               : const UserProfileDrawer(),
           body: AdaptiveLayout(
+            internalAnimations: false,
             secondaryBody: SlotLayout(
               config: <Breakpoint, SlotLayoutConfig>{
                 Breakpoints.large: SlotLayout.from(
@@ -56,8 +59,9 @@ class RiderProfileView extends StatelessWidget {
                         key: Key('ProfileSkillsBanner'),
                       ),
                       gap(),
-                      const ProfileSkills(
-                        key: Key('ProfileSkills'),
+                      ProfileSkills(
+                        skillLevels: profile.skillLevels,
+                        key: const Key('ProfileSkills'),
                       ),
                     ],
                   ),
@@ -72,15 +76,17 @@ class RiderProfileView extends StatelessWidget {
                     child: Column(
                       // needed for scrolling on mobile web
                       children: [
-                        const PrimaryRiderView(
-                          key: Key('ProfileView'),
+                        PrimaryRiderView(
+                          profile: profile,
+                          key: const Key('ProfileView'),
                         ),
                         const SkillsTextButton(
                           key: Key('SkillsTextButton'),
                         ),
                         gap(),
-                        const ProfileSkills(
-                          key: Key('ProfileSkills'),
+                        ProfileSkills(
+                          skillLevels: profile.skillLevels,
+                          key: const Key('ProfileSkills'),
                         ),
                       ],
                     ),
@@ -91,24 +97,27 @@ class RiderProfileView extends StatelessWidget {
                   builder: (context) => ListView(
                     shrinkWrap: true,
                     children: [
-                      const PrimaryRiderView(
-                        key: Key('ProfileView'),
+                      PrimaryRiderView(
+                        profile: profile,
+                        key: const Key('ProfileView'),
                       ),
                       const SkillsTextButton(
                         key: Key('SkillsTextButton'),
                       ),
                       gap(),
-                      const ProfileSkills(
-                        key: Key('ProfileSkills'),
+                      ProfileSkills(
+                        skillLevels: profile.skillLevels,
+                        key: const Key('ProfileSkills'),
                       ),
                     ],
                   ),
                 ),
                 Breakpoints.large: SlotLayout.from(
                   key: const Key('largeProfilePrimaryBody'),
-                  builder: (context) => const SingleChildScrollView(
+                  builder: (context) => SingleChildScrollView(
                     child: PrimaryRiderView(
-                      key: Key('ProfileView'),
+                      profile: profile,
+                      key: const Key('ProfileView'),
                     ),
                   ),
                 ),

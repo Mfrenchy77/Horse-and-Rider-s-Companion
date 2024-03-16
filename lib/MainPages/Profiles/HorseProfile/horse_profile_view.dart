@@ -1,5 +1,6 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
@@ -10,18 +11,17 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart
 import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_primary_view.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/back_button.dart';
 
 class HorseProfileView extends StatelessWidget {
-  const HorseProfileView({super.key});
-
+  const HorseProfileView({super.key, required this.horseProfile});
+  final HorseProfile horseProfile;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: const ProfileBackButton(
-          key: Key('backButton'),
-        ),
+        // leading: const ProfileBackButton(
+        //   key: Key('backButton'),
+        // ),
         actions: const [
           ProfileSearchButton(
             key: Key('HorseSearchButton'),
@@ -35,13 +35,15 @@ class HorseProfileView extends StatelessWidget {
         ),
       ),
       body: AdaptiveLayout(
+        internalAnimations: false,
         body: SlotLayout(
           config: <Breakpoint, SlotLayoutConfig>{
             Breakpoints.large: SlotLayout.from(
               key: const Key('primary'),
-              builder: (context) => const SingleChildScrollView(
+              builder: (context) => SingleChildScrollView(
                 child: HorseProfilePrimaryView(
-                  key: Key('HorseProfilePrimaryView'),
+                  horseProfile: horseProfile,
+                  key: const Key('HorseProfilePrimaryView'),
                 ),
               ),
             ),
@@ -49,16 +51,18 @@ class HorseProfileView extends StatelessWidget {
               key: const Key('primary'),
               builder: (context) => ListView(
                 children: [
-                  const HorseProfilePrimaryView(
-                    key: Key('HorseProfilePrimaryView'),
+                  HorseProfilePrimaryView(
+                    horseProfile: horseProfile,
+                    key: const Key('HorseProfilePrimaryView'),
                   ),
                   gap(),
                   const SkillsTextButton(
                     key: Key('SkillsTextButton'),
                   ),
                   gap(),
-                  const ProfileSkills(
-                    key: Key('ProfileSkills'),
+                  ProfileSkills(
+                    skillLevels: horseProfile.skillLevels,
+                    key: const Key('ProfileSkills'),
                   ),
                 ],
               ),
@@ -67,16 +71,18 @@ class HorseProfileView extends StatelessWidget {
               key: const Key('primary'),
               builder: (context) => ListView(
                 children: [
-                  const HorseProfilePrimaryView(
-                    key: Key('HorseProfilePrimaryView'),
+                  HorseProfilePrimaryView(
+                    horseProfile: horseProfile,
+                    key: const Key('HorseProfilePrimaryView'),
                   ),
                   gap(),
                   const SkillsTextButton(
                     key: Key('SkillsTextButton'),
                   ),
                   gap(),
-                  const ProfileSkills(
-                    key: Key('ProfileSkills'),
+                  ProfileSkills(
+                    skillLevels: horseProfile.skillLevels,
+                    key: const Key('ProfileSkills'),
                   ),
                 ],
               ),
@@ -93,8 +99,9 @@ class HorseProfileView extends StatelessWidget {
                     key: Key('ProfileSkillsBanner'),
                   ),
                   gap(),
-                  const ProfileSkills(
-                    key: Key('ProfileSkills'),
+                  ProfileSkills(
+                    skillLevels: horseProfile.skillLevels,
+                    key: const Key('ProfileSkills'),
                   ),
                 ],
               ),

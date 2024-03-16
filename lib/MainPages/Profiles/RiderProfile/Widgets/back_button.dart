@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
+import 'package:horseandriderscompanion/App/View/app.dart';
 
 /// {@template profile_back_button}
 /// ProfileBackButton widget is a button that navigates back to the profle page
@@ -16,10 +18,15 @@ class ProfileBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
     return IconButton(
+      tooltip: cubit.state.isForRider
+          ? 'Back to Rider Profile'
+          : 'Back to Horse Profile',
       icon: const Icon(Icons.arrow_back),
-      onPressed: () => cubit
-        ..clearViewingProfile()
-        ..changeIndex(0),
+      onPressed: () {
+        context.pop();
+        cubit.profileBackButtonPressed();
+      },
+      // ..changeIndex(0),
     );
   }
 }

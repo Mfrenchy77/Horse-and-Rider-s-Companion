@@ -91,7 +91,7 @@ class AddLogEntry extends StatelessWidget {
               showDialog<AddLogEntryDialog>(
                 context: context,
                 builder: (context) => AddLogEntryDialog(
-                  riderProfile: state.viewingProfile ?? state.usersProfile!,
+                  usersProfile: state.usersProfile!,
                   horseProfile: null,
                 ),
               );
@@ -107,7 +107,7 @@ class AddLogEntry extends StatelessWidget {
                 showDialog<AddLogEntryDialog>(
                   context: context,
                   builder: (context) => AddLogEntryDialog(
-                    riderProfile: state.usersProfile!,
+                    usersProfile: state.usersProfile!,
                     horseProfile: state.horseProfile,
                   ),
                 );

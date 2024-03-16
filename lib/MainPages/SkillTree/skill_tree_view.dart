@@ -27,6 +27,7 @@ class SkillTreeView extends StatelessWidget {
         ],
       ),
       body: AdaptiveLayout(
+        internalAnimations: false,
         body: SlotLayout(
           config: <Breakpoint, SlotLayoutConfig>{
             Breakpoints.small: SlotLayout.from(

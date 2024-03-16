@@ -11,12 +11,14 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   AddLogEntryCubit({
     required HorseProfileRepository horseProfileRepository,
     required RiderProfileRepository riderProfileRepository,
+    required this.usersProfile,
   })  : _horseProfileRepository = horseProfileRepository,
         _riderProfileRepository = riderProfileRepository,
         super(AddLogEntryState(date: DateTime.now()));
 
   final HorseProfileRepository _horseProfileRepository;
   final RiderProfileRepository _riderProfileRepository;
+  final RiderProfile usersProfile;
 
   /// Changed the log entry value
   void logEntryChanged({required String value}) {
@@ -38,9 +40,9 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
 
   /// Process the log entry and persist it to the database
   void addLogEntry({
-    required RiderProfile riderProfile,
     required HorseProfile? horseProfile,
   }) {
+    final riderProfile = usersProfile;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     if (horseProfile != null) {
       // add the log entry for the horse

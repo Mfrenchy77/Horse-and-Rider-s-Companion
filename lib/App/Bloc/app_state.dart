@@ -50,10 +50,10 @@ class AppState extends Equatable {
     this.trainingPath,
     this.horseProfile,
     this.ownersProfile,
+    this.isGuest = true,
     this.viewingProfile,
     this.isEdit = false,
     required this.status,
-    this.isGuest = false,
     this.isError = false,
     this.isSearch = false,
     this.isMessage = false,
@@ -68,10 +68,11 @@ class AppState extends Equatable {
     this.sortedSkills = const [],
     this.isBannerAdReady = false,
     this.trainingPaths = const [],
+    this.viewingProfielEmail = '',
     this.savedResources = const [],
     this.isFromTrainingPath = false,
     this.isFromTrainingPathList = false,
-    this.pageStatus = AppPageStatus.loading,
+    this.pageStatus = AppPageStatus.profile,
     this.difficultyState = DifficultyState.all,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.skillTreeNavigation = SkillTreeNavigation.SkillList,
@@ -139,6 +140,7 @@ class AppState extends Equatable {
   /// Whether Navigation is coming from the TrainingPath section.
   final bool isFromTrainingPath;
 
+
   /// The current page status of the app.
   final AppPageStatus pageStatus;
 
@@ -150,6 +152,9 @@ class AppState extends Equatable {
 
   /// The List of Skills that are sorted by difficulty and isForRider
   final List<Skill?> sortedSkills;
+
+  /// The email of the profile to be viewed.
+  final String viewingProfielEmail;
 
   /// The current Training Path being viewed.
   final TrainingPath? trainingPath;
@@ -213,6 +218,7 @@ class AppState extends Equatable {
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
     RiderProfile? ownersProfile,
+    String? viewingProfielEmail,
     bool? isFromTrainingPathList,
     RiderProfile? viewingProfile,
     List<Resource?>? savedResources,
@@ -245,14 +251,15 @@ class AppState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       horseProfile: horseProfile ?? this.horseProfile,
       usersProfile: usersProfile ?? this.usersProfile,
+      trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: ownersProfile ?? this.ownersProfile,
       isFromProfile: isFromProfile ?? this.isFromProfile,
-      trainingPaths: trainingPaths ?? this.trainingPaths,
       savedResources: savedResources ?? this.savedResources,
       viewingProfile: viewingProfile ?? this.viewingProfile,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       difficultyState: difficultyState ?? this.difficultyState,
       isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
+      viewingProfielEmail: viewingProfielEmail ?? this.viewingProfielEmail,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
       isFromTrainingPathList:
@@ -295,6 +302,7 @@ class AppState extends Equatable {
         isFromTrainingPath,
         skillTreeNavigation,
         resourcesSortStatus,
+        viewingProfielEmail,
         isFromTrainingPathList,
       ];
 }

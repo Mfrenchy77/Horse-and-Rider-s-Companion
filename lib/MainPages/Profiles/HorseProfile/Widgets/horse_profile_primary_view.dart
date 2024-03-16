@@ -1,4 +1,7 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/log_book_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/current_owner.dart';
@@ -14,10 +17,11 @@ import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/student_horse_request_button.dart';
 
 class HorseProfilePrimaryView extends StatelessWidget {
-  const HorseProfilePrimaryView({super.key});
-
+  const HorseProfilePrimaryView({super.key, required this.horseProfile});
+  final HorseProfile horseProfile;
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<AppCubit>();
     return Column(
       children: [
         const HorseProfileName(
@@ -68,8 +72,11 @@ class HorseProfilePrimaryView extends StatelessWidget {
                 key: Key('studentHorseRequestButton'),
               ),
               gap(),
-              const LogBookButton(
-                key: Key('logBookButton'),
+              LogBookButton(
+                profile:
+                    cubit.state.viewingProfile ?? cubit.state.usersProfile!,
+                horseProfile: horseProfile,
+                key: const Key('logBookButton'),
               ),
             ],
           ),
