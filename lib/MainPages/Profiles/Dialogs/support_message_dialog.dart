@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
+import 'package:horseandriderscompanion/App/app.dart';
 
 class SupportMessageDialog extends StatelessWidget {
   const SupportMessageDialog({super.key});
@@ -8,11 +8,16 @@ class SupportMessageDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     {
-      return BlocBuilder<HomeCubit, HomeState>(
-        builder: (context, state) {
-          final homeCubit = context.read<HomeCubit>();
-          return Scaffold(
-            body: AlertDialog(
+      return BlocListener<AppCubit, AppState>(
+        listener: (context, state) {
+          if (state.messageToSupportStatus == MessageToSupportStatus.success) {
+            Navigator.of(context).pop();
+          }
+        },
+        child: BlocBuilder<AppCubit, AppState>(
+          builder: (context, state) {
+            final homeCubit = context.read<AppCubit>();
+            return AlertDialog(
               title: const Text('Send Message to Support'),
               content: TextFormField(
                 textInputAction: TextInputAction.newline,
@@ -29,14 +34,20 @@ class SupportMessageDialog extends StatelessWidget {
                   onPressed: Navigator.of(context).pop,
                   child: const Text('Cancel'),
                 ),
-                TextButton(
-                  onPressed: homeCubit.sendMessageToSupport,
-                  child: const Text('Send'),
-                ),
+                if (state.messageToSupportStatus ==
+                    MessageToSupportStatus.sending)
+                  const CircularProgressIndicator()
+                else
+                  FilledButton(
+                    onPressed: state.errorMessage.isEmpty
+                        ? null
+                        : homeCubit.sendMessageToSupport,
+                    child: const Text('Send'),
+                  ),
               ],
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     }
   }

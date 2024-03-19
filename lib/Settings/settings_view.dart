@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -22,13 +20,12 @@ class SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appCubit = context.read<AppCubit>();
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: appCubit.resetProfileSetup,
-        ),
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back),
+        //   onPressed: appCubit.resetProfileSetup,
+        // ),
         title: const Text('Settings'),
       ),
       body: AnimatedBuilder(

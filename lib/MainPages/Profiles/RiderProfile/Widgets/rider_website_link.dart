@@ -6,13 +6,21 @@ class RiderWebsiteLink extends StatelessWidget {
   final String? homeUrl;
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: homeUrl == null ? null : () => launchUrl(Uri.parse(homeUrl ?? '')),
-      child: const Text(
-        'Website Link',
-        style: TextStyle(
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
+    return Visibility(
+      visible: homeUrl != null && homeUrl!.isNotEmpty,
+      child: Tooltip(
+        message: 'Open website: $homeUrl',
+        child: InkWell(
+          onTap: homeUrl == null
+              ? null
+              : () => launchUrl(Uri.parse(homeUrl ?? '')),
+          child: const Text(
+            'Website Link',
+            style: TextStyle(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
+          ),
         ),
       ),
     );

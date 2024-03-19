@@ -5,9 +5,12 @@ class RiderLocation extends StatelessWidget {
   final String? locationName;
   @override
   Widget build(BuildContext context) {
+    final displayText = (locationName?.isNotEmpty ?? false)
+        ? locationName!
+        : 'Location not available';
     return Center(
       child: Text(
-        locationName ?? 'Location not available',
+        displayText,
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontStyle: FontStyle.italic,

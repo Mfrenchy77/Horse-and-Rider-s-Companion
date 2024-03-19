@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
@@ -50,8 +51,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   break;
                 case 1:
                   // Navigate to the settings page
-                  Navigator.of(context, rootNavigator: true)
-                      .restorablePushNamed(SettingsView.routeName);
+                  context.goNamed(SettingsView.name);
                   break;
                 case 2:
                   // Log out

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_list.dart';
+import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -160,7 +163,12 @@ class UserProfileDrawer extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.mail),
                 title: const Text('Messages'),
-                onTap: cubit.navigateToMessages,
+                onTap: () {
+                  //closes the drawer
+                  Navigator.pop(context);
+                  //opens the messages page
+                  context.goNamed(MessagesPage.name);
+                },
               ),
 
               Divider(
@@ -172,7 +180,12 @@ class UserProfileDrawer extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('Settings'),
-                onTap: cubit.navigateToSettings,
+                onTap: () {
+                  //closes the drawer
+                  Navigator.pop(context);
+                  //opens the settings page
+                  context.goNamed(SettingsView.name);
+                },
               ),
 
               ListTile(

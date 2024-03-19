@@ -1,7 +1,9 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 
 /// A card to display a skill level.
 class SkillLevelCard extends StatelessWidget {
@@ -55,6 +57,7 @@ class SkillLevelCard extends StatelessWidget {
                 onTap: state.isGuest
                     ? null
                     : () {
+                        context.pushNamed(SkillTreePage.name);
                         cubit.navigateToSkillLevel(
                           skill:
                               cubit.getSkillFromSkillName(skillLevel.skillName),

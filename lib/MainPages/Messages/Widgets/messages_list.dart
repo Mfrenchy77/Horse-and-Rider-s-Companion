@@ -1,0 +1,45 @@
+import 'package:database_repository/database_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list_item.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list_overflow_menu.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_search_button.dart';
+
+/// The list of a user's messages
+class MessagesList extends StatelessWidget {
+  const MessagesList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AppCubit, AppState>(
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Messages'),
+            actions: const [
+              MessagesSearchButton(
+                key: Key('messagesSearchButton'),
+              ),
+              MessagesListOverflowMenu(
+                key: Key('messagesListOverflowMenu'),
+              ),
+            ],
+          ),
+          body: state.conversationsState == ConversationsState.loading
+              ? const LoadingPage()
+              : ListView(
+                  children: state.conversations
+                          ?.map(
+                            (Group conversation) =>
+                                MessagesListItem(conversation: conversation),
+                          )
+                          .toList() ??
+                      [const Text('No Messages')],
+                ),
+        );
+      },
+    );
+  }
+}

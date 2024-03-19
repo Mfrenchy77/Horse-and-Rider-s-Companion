@@ -32,14 +32,14 @@ class Logo extends StatelessWidget {
             screenName,
             textAlign: TextAlign.center,
             style: isSmallScreen
-                ? Theme.of(context).textTheme.headlineSmall?.copyWith(
+                ? Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: forceDark != null
                           ? Colors.white
                           : isDark
                               ? Colors.white
                               : Colors.black,
                     )
-                : Theme.of(context).textTheme.headlineMedium?.copyWith(
+                : Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: forceDark != null
                           ? Colors.white
                           : isDark

@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
-import 'package:horseandriderscompanion/MainPages/Home/cubit/home_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/Cubit/profile_search_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -423,15 +423,12 @@ class ProfileSearchDialog extends StatelessWidget {
                       profilePicUrl: profile.picUrl ?? '',
                       context: context,
                       onTap: () {
-                        Navigator.of(context).pop();
                         context.goNamed(
                           ViewingProfilePage.name,
                           pathParameters: {'id': profile.email},
                         );
-                        // context.goNamed(
-                        //   ViewingProfilePage.name,
-                        //   pathParameters: {'id': profile.email},
-                        // );
+
+                        Navigator.of(context).pop();
                       },
                     ),
                   )
@@ -457,10 +454,13 @@ class ProfileSearchDialog extends StatelessWidget {
                       profilePicUrl: horseProfile.picUrl ?? '',
                       context: context,
                       onTap: () {
+                        context.goNamed(
+                          HorseProfilePage.name,
+                          pathParameters: {
+                            HorseProfilePage.pathParams: horseProfile.id,
+                          },
+                        );
                         Navigator.of(context).pop();
-                        context.read<HomeCubit>().horseProfileSelected(
-                              id: horseProfile.id,
-                            );
                       },
                       //   homeContext
                       //       .read<HomeCubit>()
@@ -507,10 +507,16 @@ class ProfileSearchDialog extends StatelessWidget {
                   debugPrint(
                     'Open  Profile Page For: ${profile.name}',
                   );
-                  context.read<HomeCubit>().gotoProfilePage(
-                        context: context,
-                        toBeViewedEmail: profile.email,
+                  context.read<AppCubit>().getProfileToBeViewed(
+                        email: profile.email,
                       );
+                  context.goNamed(
+                    ViewingProfilePage.name,
+                    pathParameters: {
+                      ViewingProfilePage.pathParams: profile.email,
+                    },
+                  );
+                  Navigator.of(context).pop();
                 },
                 leading: profile.picUrl != null && profile.picUrl!.isNotEmpty
                     ? CircleAvatar(
@@ -544,9 +550,15 @@ class ProfileSearchDialog extends StatelessWidget {
                   debugPrint(
                     'Open Horse Profile Page For: ${horseProfile.name}',
                   );
-                  context.read<HomeCubit>().horseProfileSelected(
+                  context.read<AppCubit>().getHorseProfile(
                         id: horseProfile.id,
                       );
+                  context.goNamed(
+                    HorseProfilePage.name,
+                    pathParameters: {
+                      HorseProfilePage.pathParams: horseProfile.id,
+                    },
+                  );
                   Navigator.of(context).pop();
                 },
                 leading: horseProfile.picUrl != null &&
@@ -567,3 +579,110 @@ class ProfileSearchDialog extends StatelessWidget {
             : const Center(child: Text('No Results'));
   }
 }
+
+
+//   Widget _resultItem({
+//     required BuildContext context,
+//     required RiderProfile? profile,
+//     required HorseProfile? horseProfile,
+//     required ProfileSearchCubit cubit,
+//   }) {
+//     final isDark =
+//         HorseAndRidersTheme().getTheme().brightness == Brightness.dark;
+//     return profile != null
+//         ? Padding(
+//             padding: const EdgeInsets.only(top: 8),
+//             child: Card(
+//               elevation: 5,
+//               margin: const EdgeInsets.only(bottom: 8, top: 8),
+//               child: ListTile(
+//                 // ignore: unnecessary_null_comparison
+//                 title: profile.name != null
+//                     ? Text(
+//                         profile.name,
+//                         style: TextStyle(
+//                           color: isDark
+//                               ? Colors.white
+//                               : HorseAndRidersTheme()
+//                                   .getTheme()
+//                                   .colorScheme
+//                                   .primary,
+//                         ),
+//                       )
+//                     : const Text('No Name'),
+//                 onTap: () {
+//                   debugPrint(
+//                     'Open  Profile Page For: ${profile.name}',
+//                   );
+//                   context.read<AppCubit>().getProfileToBeViewed(
+//                         email: profile.email,
+//                       );
+//                   context.goNamed(
+//                     ViewingProfilePage.name,
+//                     pathParameters: {
+//                       ViewingProfilePage.pathParams: profile.email,
+//                     },
+//                   );
+//                   Navigator.of(context).pop();
+//                 },
+//                 leading: profile.picUrl != null && profile.picUrl!.isNotEmpty
+//                     ? CircleAvatar(
+//                         radius: 24,
+//                         backgroundImage: NetworkImage(profile.picUrl!),
+//                       )
+//                     : CircleAvatar(
+//                         radius: 24,
+//                         backgroundImage: AssetImage(
+//                           isDark
+//                               ? 'assets/horse_icon_circle_dark.png'
+//                               : 'assets/horse_icon_circle.png',
+//                         ),
+//                       ),
+//               ),
+//             ),
+//           )
+
+//         /// Horse Profile
+//         : horseProfile != null
+//             ? ListTile(
+//                 title: Text(
+//                   horseProfile.name,
+//                   style: TextStyle(
+//                     color: isDark
+//                         ? Colors.white
+//                         : HorseAndRidersTheme().getTheme().colorScheme.primary,
+//                   ),
+//                 ),
+//                 onTap: () {
+//                   debugPrint(
+//                     'Open Horse Profile Page For: ${horseProfile.name}',
+//                   );
+//                   context.read<AppCubit>().getHorseProfile(
+//                         id: horseProfile.id,
+//                       );
+//                   context.goNamed(
+//                     HorseProfilePage.name,
+//                     pathParameters: {
+//                       HorseProfilePage.pathParams: horseProfile.id,
+//                     },
+//                   );
+//                   Navigator.of(context).pop();
+//                 },
+//                 leading: horseProfile.picUrl != null &&
+//                         horseProfile.picUrl!.isNotEmpty
+//                     ? CircleAvatar(
+//                         radius: 24,
+//                         backgroundImage: NetworkImage(horseProfile.picUrl!),
+//                       )
+//                     : CircleAvatar(
+//                         radius: 24,
+//                         backgroundImage: AssetImage(
+//                           isDark
+//                               ? 'assets/horse_icon_circle_dark.png'
+//                               : 'assets/horse_icon_circle.png',
+//                         ),
+//                       ),
+//               )
+//             : const Center(child: Text('No Results'));
+//   }
+// }

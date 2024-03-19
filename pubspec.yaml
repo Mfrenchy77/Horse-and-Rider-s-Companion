@@ -34,6 +34,8 @@ dependencies:
   google_sign_in: ^6.0.2
   # html: ^0.15.4
   # http: ^1.1.2
+  html: ^0.15.4
+  http: ^1.2.0
   image_network: ^2.5.4+1
   image_picker: ^1.0.4
   intl: ^0.18.1

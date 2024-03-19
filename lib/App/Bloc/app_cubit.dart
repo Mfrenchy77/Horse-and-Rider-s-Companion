@@ -9,6 +9,8 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -51,6 +53,7 @@ class AppCubit extends Cubit<AppState> {
   late final StreamSubscription<RiderProfile?> _viewingProfileSubscription;
   StreamSubscription<QuerySnapshot<Object?>>? _skillsSubscription;
   StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _messagesStream;
   StreamSubscription<QuerySnapshot<Object?>>? _resourcesStream;
   StreamSubscription<QuerySnapshot<Object?>>? _trainingPathsStream;
 
@@ -1290,12 +1293,12 @@ class AppCubit extends Cubit<AppState> {
 
   ///   Save [resource] to the users profile saved resources list
   void saveResource({required Resource resource}) {
-    final currentUserProfile = state.usersProfile;
-    if (currentUserProfile != null) {
+    final currentUsersProfile = state.usersProfile;
+    if (currentUsersProfile != null) {
       List<String> savedResourcesList;
-      if (currentUserProfile.savedResourcesList != null) {
+      if (currentUsersProfile.savedResourcesList != null) {
         savedResourcesList =
-            currentUserProfile.savedResourcesList as List<String>;
+            currentUsersProfile.savedResourcesList as List<String>;
       } else {
         savedResourcesList = [];
       }
@@ -1305,10 +1308,10 @@ class AppCubit extends Cubit<AppState> {
       } else {
         savedResourcesList.remove(resource.id);
       }
-      currentUserProfile.savedResourcesList = savedResourcesList;
+      currentUsersProfile.savedResourcesList = savedResourcesList;
 
       _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: currentUserProfile,
+        riderProfile: currentUsersProfile,
       );
     } else {
       // Handle the case where the user profile is not available
@@ -1513,6 +1516,585 @@ class AppCubit extends Cubit<AppState> {
   /// Delete a [resource] from the database
   void deleteResource(Resource resource) {
     _resourcesRepository.deleteResource(resource: resource);
+  }
+
+/* **************************************************************************
+
+******************************* Messagees **********************************
+
+***************************************************************************** */
+
+  ///monitors the message entered into the message support dialog
+  void messageToSupportChanged(String value) {
+    emit(
+      state.copyWith(
+        errorMessage: value,
+      ),
+    );
+  }
+
+  void sendMessageToSupport() {
+    emit(
+      state.copyWith(messageToSupportStatus: MessageToSupportStatus.sending),
+    );
+    if (state.errorMessage.isEmpty) {
+      emit(state.copyWith(isError: true, errorMessage: 'Message is empty'));
+      return;
+    } else {
+      final id = StringBuffer()
+        ..write(
+          convertEmailToPath(
+            state.usersProfile?.email.toLowerCase() as String,
+          ),
+        )
+        ..write(
+          convertEmailToPath(
+            StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
+          ),
+        );
+      final recipients = <String>[
+        state.usersProfile?.email.toLowerCase() as String,
+        StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
+      ];
+
+      final memberNames = <String>[
+        state.usersProfile?.name as String,
+        StringConstants.HORSEANDRIDERCOMPANIONNAME,
+      ];
+
+      final supportMessage = Message(
+        id: id.toString(),
+        date: DateTime.now(),
+        sender: state.usersProfile?.name,
+        subject: 'Message to Support',
+        message: state.errorMessage,
+        messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        recipients: memberNames,
+        senderProfilePicUrl: state.usersProfile?.picUrl,
+      );
+
+      final group = Group(
+        id: id.toString(),
+        type: GroupType.private,
+        parties: memberNames,
+        partiesIds: recipients,
+        createdBy: state.usersProfile?.name as String,
+        createdOn: DateTime.now(),
+        lastEditBy: state.usersProfile?.name as String,
+        lastEditDate: DateTime.now(),
+        recentMessage: supportMessage,
+      );
+      try {
+        _messagesRepository
+          ..createOrUpdateGroup(group: group)
+          ..createOrUpdateMessage(
+            message: supportMessage,
+            id: supportMessage.id,
+          );
+        emit(
+          state.copyWith(
+            messageToSupportStatus: MessageToSupportStatus.success,
+            isMessage: true,
+            errorMessage: 'Sent Message to the '
+                "Horse & Rider's Companion Support Team",
+          ),
+        );
+      } on FirebaseException catch (e) {
+        emit(
+          state.copyWith(
+            messageToSupportStatus: MessageToSupportStatus.initial,
+            isError: true,
+            errorMessage: e.message,
+          ),
+        );
+
+        debugPrint("Failed with error '${e.code}': ${e.message}");
+      }
+    }
+  }
+
+  /// Loads the Groups/Conversations for the user
+  void getConversations() {
+    if (state.conversations == null) {
+      emit(state.copyWith(conversationsState: ConversationsState.loading));
+      debugPrint('getConversations');
+      if (state.usersProfile != null) {
+        _groupsStream = _messagesRepository
+            .getGroups(userEmail: state.usersProfile!.email)
+            .listen((event) {
+          final conversations =
+              event.docs.map((e) => (e.data()) as Group).toList()
+                ..sort(
+                  (a, b) => b.createdOn.compareTo(a.createdOn),
+                );
+          emit(
+            state.copyWith(
+              conversations: conversations,
+              conversationsState: ConversationsState.loaded,
+            ),
+          );
+        });
+      } else {
+        debugPrint('User Profile is null');
+      }
+    } else {
+      debugPrint('Conversations already retrieved');
+    }
+  }
+
+  /// User selected a conversation to view
+  void setConversation(Group conversation) {
+    emit(
+      state.copyWith(
+        conversationState: ConversationState.loading,
+        conversation: conversation,
+        messageId: conversation.id,
+      ),
+    );
+    if (conversation.messageState == MessageState.UNREAD) {
+      conversation.messageState = MessageState.READ;
+      _messagesRepository.createOrUpdateGroup(
+        group: conversation,
+      );
+    }
+    _messagesStream =
+        _messagesRepository.getMessages(id: conversation.id).listen((event) {
+      final messages = event.docs.map((e) => (e.data()) as Message).toList()
+        ..sort(
+          (a, b) => (a.date as DateTime).compareTo(
+            b.date as DateTime,
+          ),
+        );
+      debugPrint('Messages Retrieved: ${messages.length}');
+      emit(
+        state.copyWith(
+          messages: messages.reversed.toList(),
+          conversationState: ConversationState.loaded,
+        ),
+      );
+    });
+  }
+
+  /// AppBar title for a conversation showing the other parties name
+  String conversationTitle() {
+    final conversation = state.conversation;
+
+    final parties = conversation?.parties?..remove(state.usersProfile?.name);
+    return parties?.join(', ') ?? '';
+  }
+
+  /// Message text changed
+  void messageTextChanged(String value) {
+    final text = value;
+    emit(state.copyWith(messageText: text));
+  }
+
+  /// User Submits a message
+  void sendMessage() {
+    if (state.messageText.isNotEmpty) {
+      final message = Message(
+        date: DateTime.now(),
+        messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: state.conversation?.id,
+        sender: state.usersProfile?.name,
+        senderProfilePicUrl: state.usersProfile?.picUrl,
+        recipients: state.conversation?.parties,
+        subject: '',
+        message: state.messageText,
+      );
+
+      final updatedconversation = state.conversation;
+      updatedconversation?.lastEditDate = DateTime.now();
+      updatedconversation?.recentMessage = message;
+      updatedconversation?.messageState = MessageState.UNREAD;
+      updatedconversation?.lastEditBy = state.usersProfile?.name;
+      _messagesRepository
+        ..createOrUpdateMessage(
+          id: message.messsageId,
+          message: message,
+        )
+        ..createOrUpdateGroup(
+          group: updatedconversation!,
+        );
+    } else {
+      debugPrint('Empty Text');
+    }
+    emit(state.copyWith(messageText: ''));
+  }
+
+  /// Sort the Conversations by messageState, creadtedDate, and lastEditDate
+  void sortConversations(ConversationsSort value) {
+    final sortedConversations = state.conversations;
+
+    switch (value) {
+      case ConversationsSort.createdDate:
+        sortedConversations?.sort(
+          (a, b) => b.createdOn.compareTo(a.createdOn),
+        );
+        break;
+      case ConversationsSort.lastupdatedDate:
+        sortedConversations?.sort(
+          (a, b) => b.lastEditDate.compareTo(a.lastEditDate),
+        );
+        break;
+      case ConversationsSort.unread:
+        sortedConversations?.sort(
+          (a, b) => a.messageState.index.compareTo(b.messageState.index),
+        );
+        break;
+    }
+    emit(
+      state.copyWith(
+        conversationsSort: value,
+        conversations: sortedConversations,
+      ),
+    );
+  }
+
+  /// Returns if the [message] is from the current user
+  bool isCurrentUser(Message message) {
+    return message.sender == state.usersProfile?.name;
+  }
+
+//  method that accepts MessageType request and adds
+//  to the user's and receiver's appropriate lists
+  void acceptRequest({
+    required Message message,
+    required BuildContext context,
+  }) {
+    emit(state.copyWith(acceptStatus: AcceptStatus.loading));
+    _riderProfileRepository
+        .getProfileByName(name: message.sender as String)
+        .listen((event) {
+      final receiverProfile = event.data() as RiderProfile;
+      final receiverItem = BaseListItem(
+        id: state.usersProfile?.email,
+        name: state.usersProfile?.name,
+        imageUrl: state.usersProfile?.picUrl,
+        isCollapsed: true,
+        isSelected: true,
+      );
+      final riderItem = BaseListItem(
+        id: receiverProfile.email,
+        name: receiverProfile.name,
+        imageUrl: receiverProfile.picUrl,
+        isCollapsed: true,
+        isSelected: true,
+      );
+      switch (message.messageType) {
+        case MessageType.INSTRUCTOR_REQUEST:
+          final instructorAcceptNote = BaseListItem(
+            id: DateTime.now().toString(),
+            name: 'Added ${state.usersProfile?.name} as an Instructor',
+            date: DateTime.now(),
+            parentId: receiverProfile.email,
+            message: receiverProfile.name,
+          );
+          final studentAcceptNote = BaseListItem(
+            id: DateTime.now().toString(),
+            name: 'Added ${receiverProfile.name} as a Student',
+            date: DateTime.now(),
+            parentId: state.usersProfile?.email,
+            message: state.usersProfile?.name,
+          );
+          if (receiverProfile.instructors == null ||
+              receiverProfile.instructors!.isEmpty) {
+            receiverProfile.instructors = [riderItem];
+          } else {
+            receiverProfile.instructors?.removeWhere(
+              (element) => element.id == state.usersProfile?.email,
+            );
+            receiverProfile.instructors?.add(riderItem);
+          }
+          receiverProfile.notes?.add(instructorAcceptNote);
+
+          if (state.usersProfile?.students == null ||
+              state.usersProfile!.students!.isEmpty) {
+            state.usersProfile?.students = [receiverItem];
+          } else {
+            state.usersProfile?.students
+                ?.removeWhere((element) => element.id == receiverProfile.email);
+            state.usersProfile?.students?.add(receiverItem);
+          }
+          state.usersProfile?.notes?.add(studentAcceptNote);
+
+          try {
+            _riderProfileRepository
+              ..createOrUpdateRiderProfile(
+                riderProfile: receiverProfile,
+              )
+              ..createOrUpdateRiderProfile(
+                riderProfile: state.usersProfile!,
+              );
+            message.requestItem?.isSelected = true;
+            _messagesRepository
+                .createOrUpdateMessage(
+              message: message,
+              id: message.messsageId,
+            )
+                .then((value) {
+              emit(
+                state.copyWith(
+                  isMessage: true,
+                  errorMessage: 'Added ${receiverProfile.name} as an Student',
+                  acceptStatus: AcceptStatus.accepted,
+                ),
+              );
+            });
+          } catch (e) {
+            emit(
+              state.copyWith(
+                isError: true,
+                errorMessage: 'Error: $e',
+                acceptStatus: AcceptStatus.waiting,
+              ),
+            );
+            debugPrint(e.toString());
+          }
+          break;
+        case MessageType.STUDENT_HORSE_REQUEST:
+          debugPrint('STUDENT_HORSE_REQUEST');
+          HorseProfile studentHorse;
+          if (message.requestItem != null) {
+            _horseProfileRepository
+                .getHorseProfileById(id: message.requestItem!.id ?? '')
+                .listen((event) {
+              studentHorse = event.data() as HorseProfile;
+              debugPrint('studentHorse: $studentHorse');
+              final horseNote = BaseListItem(
+                id: DateTime.now().toString(),
+                name: 'Added ${receiverProfile.name} as a trainer',
+                date: DateTime.now(),
+                parentId: studentHorse.id,
+                message: studentHorse.name,
+              );
+
+              final senderAcceptnote = BaseListItem(
+                id: DateTime.now().toString(),
+                name: 'Added ${studentHorse.name} as a student horse',
+                date: DateTime.now(),
+                parentId: receiverProfile.email,
+                message: receiverProfile.name,
+              );
+              final receiverAcceptnote = BaseListItem(
+                id: DateTime.now().toString(),
+                name: 'Added ${receiverProfile.name} as '
+                    'a trainer for ${studentHorse.name}',
+                date: DateTime.now(),
+                parentId: studentHorse.id,
+                message: studentHorse.name,
+              );
+
+              if (studentHorse.instructors == null ||
+                  studentHorse.instructors!.isEmpty) {
+                studentHorse.instructors = [receiverItem];
+              } else {
+                studentHorse.instructors?.removeWhere(
+                  (element) => element.id == receiverItem.id,
+                );
+                studentHorse.instructors?.add(
+                  receiverItem,
+                );
+              }
+              studentHorse.notes?.add(horseNote);
+
+              if (receiverProfile.studentHorses == null ||
+                  receiverProfile.studentHorses!.isEmpty) {
+                receiverProfile.studentHorses = [
+                  message.requestItem as BaseListItem,
+                ];
+              } else {
+                receiverProfile.studentHorses?.removeWhere(
+                  (element) => element.id == message.requestItem?.id,
+                );
+                receiverProfile.studentHorses
+                    ?.add(message.requestItem as BaseListItem);
+              }
+              receiverProfile.notes?.add(senderAcceptnote);
+              state.usersProfile?.notes?.add(receiverAcceptnote);
+              try {
+                _horseProfileRepository.createOrUpdateHorseProfile(
+                  horseProfile: studentHorse,
+                );
+                _riderProfileRepository
+                  ..createOrUpdateRiderProfile(
+                    riderProfile: state.usersProfile!,
+                  )
+                  ..createOrUpdateRiderProfile(
+                    riderProfile: receiverProfile,
+                  );
+                message.messageState = MessageState.READ;
+                _messagesRepository
+                    .createOrUpdateMessage(
+                  message: message,
+                  id: message.messsageId,
+                )
+                    .then((value) {
+                  emit(
+                    state.copyWith(
+                      isMessage: true,
+                      errorMessage: 'Added ${receiverProfile.name} as '
+                          'a trainer for ${studentHorse.name}',
+                      acceptStatus: AcceptStatus.accepted,
+                    ),
+                  );
+                });
+              } on FirebaseException catch (e) {
+                emit(
+                  state.copyWith(
+                    isError: true,
+                    errorMessage: 'Failed: ${e.message!}',
+                    acceptStatus: AcceptStatus.waiting,
+                  ),
+                );
+                debugPrint(e.toString());
+              }
+            });
+          } else {
+            debugPrint('message.requestItem is null');
+            emit(state.copyWith(acceptStatus: AcceptStatus.waiting));
+          }
+
+          break;
+        case MessageType.STUDENT_REQUEST:
+          final studentAcceptNote = BaseListItem(
+            id: DateTime.now().toString(),
+            name: 'Added ${state.usersProfile?.name} as a student',
+            date: DateTime.now(),
+            parentId: receiverProfile.email,
+            message: receiverProfile.name,
+          );
+          final instructorAcceptNote = BaseListItem(
+            id: DateTime.now().toString(),
+            name: 'Added ${receiverProfile.name} as an instructor',
+            date: DateTime.now(),
+            parentId: state.usersProfile?.email,
+            message: state.usersProfile?.name,
+          );
+
+          // TODO(mfrenchy77): check the logic here
+          if (receiverProfile.students == null ||
+              receiverProfile.students!.isEmpty) {
+            receiverProfile.students = [receiverItem];
+          } else {
+            receiverProfile.students?.removeWhere(
+              (element) => element.id == receiverItem.id,
+            );
+            receiverProfile.students?.add(
+              receiverItem,
+            );
+          }
+          receiverProfile.notes?.add(studentAcceptNote);
+          if (state.usersProfile?.instructors == null ||
+              state.usersProfile!.instructors!.isEmpty) {
+            state.usersProfile?.instructors = [riderItem];
+          } else {
+            state.usersProfile?.instructors?.removeWhere(
+              (element) => element.id == riderItem.id,
+            );
+            state.usersProfile?.instructors?.add(
+              riderItem,
+            );
+          }
+          state.usersProfile?.notes?.add(instructorAcceptNote);
+          try {
+            _riderProfileRepository
+              ..createOrUpdateRiderProfile(riderProfile: state.usersProfile!)
+              ..createOrUpdateRiderProfile(riderProfile: receiverProfile);
+            message.requestItem?.isSelected = true;
+            _messagesRepository
+                .createOrUpdateMessage(
+              message: message,
+              id: message.messsageId,
+            )
+                .then((value) {
+              emit(
+                state.copyWith(
+                  isMessage: true,
+                  errorMessage: 'Added ${receiverProfile.name} as an '
+                      'instructor for ${state.usersProfile?.name}',
+                  acceptStatus: AcceptStatus.accepted,
+                ),
+              );
+            });
+          } on FirebaseException catch (e) {
+            emit(
+              state.copyWith(
+                isError: true,
+                errorMessage: 'Failed: ${e.message}',
+                acceptStatus: AcceptStatus.waiting,
+              ),
+            );
+            debugPrint(e.toString());
+          }
+          break;
+
+        case MessageType.EDIT_REQUEST:
+          // TODO(mfrenchy77): 2021-02-17 This is where whe are going to handle skill tree edit requests to the author of the skill
+          debugPrint('EDIT_REQUEST');
+          break;
+        case MessageType.CHAT:
+          debugPrint('CHAT');
+          break;
+      }
+    });
+  }
+
+  /// returns the color for the group text based on the messageState
+  Color groupTextColor({required Group conversation}) {
+    final isDark = SharedPrefs().isDarkMode;
+    return conversation.messageState == MessageState.UNREAD
+        ? isDark
+            ? Colors.white
+            : Colors.black
+        : isDark
+            ? Colors.grey.shade400
+            : Colors.grey.shade600;
+  }
+
+  /// Determines if the message request should be visible
+  /// if the sender in not the current user
+  /// and if the request is not already accepted
+  /// returns true if the request should be visible
+  bool isRequestVisible({required Message message}) {
+    final isCurrentUser = message.sender == state.usersProfile?.name;
+    final isMessageTypeValid =
+        message.messageType == MessageType.INSTRUCTOR_REQUEST ||
+            message.messageType == MessageType.STUDENT_HORSE_REQUEST ||
+            message.messageType == MessageType.STUDENT_REQUEST;
+
+    return !isCurrentUser &&
+        isMessageTypeValid &&
+        message.requestItem?.id != state.usersProfile?.email;
+  }
+
+  ///   method that checks if the request is accepted
+  bool isRequestAccepted({required Message message}) {
+    debugPrint('messageSender: ${message.sender}');
+    if (message.messageType == MessageType.INSTRUCTOR_REQUEST) {
+      debugPrint(
+        'Instructor/Student List: ${state.usersProfile?.instructors?.map((e) => e.name)}',
+      );
+      return state.usersProfile?.instructors
+              ?.any((element) => element.name == message.sender) ??
+          false;
+    } else if (message.messageType == MessageType.STUDENT_HORSE_REQUEST) {
+      _riderProfileRepository
+          .getProfileByName(name: message.sender as String)
+          .first
+          .then((value) {
+        final senderProfile = value.data() as RiderProfile;
+
+        debugPrint(
+          'StudentHorses: ${senderProfile.studentHorses?.map((e) => e.name)}',
+        );
+        debugPrint('message.requestItem?.name: ${message.requestItem?.name}');
+        return senderProfile.studentHorses
+                ?.any((element) => element.name == message.requestItem?.name) ??
+            false;
+      });
+    }
+    return false;
   }
 
   /* **************************************************************
@@ -1779,6 +2361,7 @@ class AppCubit extends Cubit<AppState> {
   @override
   Future<void> close() {
     _groupsStream?.cancel();
+    _messagesStream?.cancel();
     _resourcesStream?.cancel();
     _trainingPathsStream?.cancel();
     _skillsSubscription?.cancel();

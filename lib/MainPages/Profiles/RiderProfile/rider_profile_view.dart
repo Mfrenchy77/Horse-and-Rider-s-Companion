@@ -9,7 +9,6 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/back_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';

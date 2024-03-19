@@ -22,47 +22,42 @@ class PrimaryRiderView extends StatelessWidget {
             key: const Key('profileName'),
           ),
         ),
+        gap(),
+        RiderLocation(
+          locationName: profile.locationName,
+          key: const Key('RiderLocation'),
+        ),
         const Divider(
           indent: 50,
           endIndent: 50,
           color: Colors.black,
           thickness: 1,
         ),
-        Column(
-          children: [
-            gap(),
-            RiderLocation(
-              locationName: profile.locationName,
-              key: const Key('RiderLocation'),
+        RiderBio(
+          bio: profile.bio,
+          key: const Key('RiderBio'),
+        ),
+        gap(),
+        Center(
+          child: RiderWebsiteLink(
+            homeUrl: profile.homeUrl,
+            key: const Key(
+              'RiderWebsiteLink',
             ),
-            gap(),
-            RiderBio(
-              bio: profile.bio,
-              key: const Key('RiderBio'),
-            ),
-            gap(),
-            Center(
-              child: RiderWebsiteLink(
-                homeUrl: profile.homeUrl,
-                key: const Key(
-                  'RiderWebsiteLink',
-                ),
-              ),
-            ),
+          ),
+        ),
 
-            gap(),
-            RiderListOfProfiles(
-              profile: profile,
-              key: const Key('RiderListOfProfiles'),
-            ),
-            gap(),
-            // Log Book Button
-            LogBookButton(
-              profile: profile,
-              horseProfile: null,
-              key: const Key('LogBookButton'),
-            ),
-          ],
+        gap(),
+        RiderListOfProfiles(
+          profile: profile,
+          key: const Key('RiderListOfProfiles'),
+        ),
+        gap(),
+        // Log Book Button
+        LogBookButton(
+          profile: profile,
+          horseProfile: null,
+          key: const Key('LogBookButton'),
         ),
       ],
     );

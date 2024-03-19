@@ -18,6 +18,7 @@ class ProfileSearchButton extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return IconButton(
+          tooltip: 'Search For Horse/Rider Profiles',
           onPressed: () {
             showDialog<AlertDialog>(
               context: context,

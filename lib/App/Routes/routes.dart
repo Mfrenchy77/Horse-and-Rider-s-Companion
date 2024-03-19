@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/view/messages_page.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Navigator/navigator_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
@@ -48,7 +49,7 @@ class Routes {
                   routes: [
                     // Settings
                     GoRoute(
-                      name: 'settings',
+                      name: SettingsView.name,
                       path: SettingsView.routeName,
                       builder: (context, state) {
                         return SettingsView(
@@ -58,9 +59,20 @@ class Routes {
                     ),
                     // MessagesPage
                     GoRoute(
-                      name: 'messages',
+                      name: MessagesPage.name,
                       path: MessagesPage.path,
                       builder: (context, state) => const MessagesPage(),
+                      routes: [
+                        // MessagePage
+                        GoRoute(
+                          name: MessagePage.name,
+                          path: MessagePage.path,
+                          builder: (context, state) => MessagePage(
+                            messageId:
+                                state.pathParameters[MessagePage.pathParams]!,
+                          ),
+                        ),
+                      ],
                     ),
                     //HorserProfilePage
                     GoRoute(
@@ -89,7 +101,7 @@ class Routes {
               routes: <RouteBase>[
                 GoRoute(
                   path: SkillTreePage.path,
-                  name: 'usersSkillTree',
+                  name: SkillTreePage.name,
                   builder: (context, state) => const SkillTreePage(),
                 ),
               ],
@@ -99,7 +111,7 @@ class Routes {
               routes: <RouteBase>[
                 GoRoute(
                   path: ResourcesPage.path,
-                  name: 'usersResources',
+                  name: ResourcesPage.name,
                   builder: (context, state) => const ResourcesPage(),
                   routes: <RouteBase>[
                     // ResourceCommentPage

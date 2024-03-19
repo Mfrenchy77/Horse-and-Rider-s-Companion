@@ -8,12 +8,47 @@ enum AppStatus {
   unauthenticated,
 }
 
+/// The Status of the Message to Support
+enum MessageToSupportStatus {
+  initial,
+  sending,
+  success,
+}
+
 /// The Sort State of the Resources
 enum ResourcesSortStatus {
   saved,
   recent,
   oldest,
   mostRecommended,
+}
+
+/// The Sorting of Conversations
+enum ConversationsSort {
+  unread,
+  createdDate,
+  lastupdatedDate,
+}
+
+/// The State of the Conversation
+enum ConversationState {
+  error,
+  loaded,
+  loading,
+}
+
+/// The state of the Conversations
+enum ConversationsState {
+  error,
+  loaded,
+  loading,
+}
+
+/// The Status of the Accept Request
+enum AcceptStatus {
+  loading,
+  waiting,
+  accepted,
 }
 
 /// The Navigation within the SkillTree Section
@@ -43,13 +78,18 @@ enum AppPageStatus {
 class AppState extends Equatable {
   const AppState._({
     this.skill,
+    this.message,
+    this.messages,
     this.resource,
     this.bannerAd,
+    this.messageId,
     this.index = 0,
     this.horseId = '',
     this.usersProfile,
+    this.conversation,
     this.trainingPath,
     this.horseProfile,
+    this.conversations,
     this.ownersProfile,
     this.isGuest = true,
     this.viewingProfile,
@@ -57,6 +97,7 @@ class AppState extends Equatable {
     required this.status,
     this.isError = false,
     this.isSearch = false,
+    this.messageText = '',
     this.isMessage = false,
     this.errorMessage = '',
     this.isViewing = false,
@@ -74,9 +115,14 @@ class AppState extends Equatable {
     this.isFromTrainingPath = false,
     this.isFromTrainingPathList = false,
     this.pageStatus = AppPageStatus.loading,
+    this.acceptStatus = AcceptStatus.waiting,
     this.difficultyState = DifficultyState.all,
+    this.conversationsSort = ConversationsSort.unread,
+    this.conversationState = ConversationState.loaded,
+    this.conversationsState = ConversationsState.loading,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.skillTreeNavigation = SkillTreeNavigation.SkillList,
+    this.messageToSupportStatus = MessageToSupportStatus.initial,
   });
 
   const AppState.authenticated(User user)
@@ -117,8 +163,17 @@ class AppState extends Equatable {
   /// Whether we are viewing a rider or a horse profile.
   final bool isForRider;
 
+  /// The message being viewed
+  final Message? message;
+
   /// The current status of the app(whether the user is authenticated or not).
   final AppStatus status;
+
+  /// The Id of a conversation to open
+  final String? messageId;
+
+  /// The message the user is typing
+  final String messageText;
 
   /// The Resource being viewed.
   final Resource? resource;
@@ -126,10 +181,14 @@ class AppState extends Equatable {
   /// Whether Navigation is coming from Profile.
   final bool isFromProfile;
 
+  /// The conversation being viewed
+  final Group? conversation;
+
   /// The BannerAd to be shown in the app.
   final BannerAd? bannerAd;
 
-  /// The error message to be shown in the snackbar
+  /// A String used to display an error message a snackbar
+  /// message or a message to support
   final String errorMessage;
 
   /// Whether the BannerAd is ready to be shown.
@@ -140,6 +199,15 @@ class AppState extends Equatable {
 
   /// Whether Navigation is coming from the TrainingPath section.
   final bool isFromTrainingPath;
+
+  /// The list of messages in a conversation
+  final List<Message>? messages;
+
+  /// The status of the accept request
+  final AcceptStatus acceptStatus;
+
+  /// The list of conversations for the user
+  final List<Group>? conversations;
 
   /// The current page status of the app.
   final AppPageStatus pageStatus;
@@ -184,11 +252,23 @@ class AppState extends Equatable {
   /// The database training paths
   final List<TrainingPath?> trainingPaths;
 
+  /// The state of the conversation
+  final ConversationState conversationState;
+
+  /// The sort status for the messages list
+  final ConversationsSort conversationsSort;
+
+  /// The state of the conversations
+  final ConversationsState conversationsState;
+
   /// The sort state of the resources
   final ResourcesSortStatus resourcesSortStatus;
 
   /// The current navigation within the SkillTree section.
   final SkillTreeNavigation skillTreeNavigation;
+
+  /// The Status of the messages to support
+  final MessageToSupportStatus messageToSupportStatus;
 
   AppState copyWith({
     int? index,
@@ -200,14 +280,19 @@ class AppState extends Equatable {
     bool? isSearch,
     bool? isMessage,
     String? horseId,
+    Message? message,
     bool? isViewing,
     bool? isForRider,
+    String? messageId,
     AppStatus? status,
     Resource? resource,
     BannerAd? bannerAd,
+    String? messageText,
+    Group? conversation,
     bool? isFromProfile,
     String? errorMessage,
     bool? isBannerAdReady,
+    List<Message>? messages,
     List<Skill?>? allSkills,
     bool? isFromTrainingPath,
     List<String?>? searchList,
@@ -217,6 +302,8 @@ class AppState extends Equatable {
     List<Resource?>? resources,
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
+    AcceptStatus? acceptStatus,
+    List<Group>? conversations,
     RiderProfile? ownersProfile,
     String? viewingProfielEmail,
     bool? isFromTrainingPathList,
@@ -224,8 +311,12 @@ class AppState extends Equatable {
     List<Resource?>? savedResources,
     DifficultyState? difficultyState,
     List<TrainingPath?>? trainingPaths,
+    ConversationState? conversationState,
+    ConversationsSort? conversationsSort,
+    ConversationsState? conversationsState,
     ResourcesSortStatus? resourcesSortStatus,
     SkillTreeNavigation? skillTreeNavigation,
+    MessageToSupportStatus? messageToSupportStatus,
   }) {
     return AppState._(
       user: user ?? this.user,
@@ -236,9 +327,12 @@ class AppState extends Equatable {
       isError: isError ?? this.isError,
       horseId: horseId ?? this.horseId,
       isGuest: isGuest ?? this.isGuest,
+      message: message ?? this.message,
+      messages: messages ?? this.messages,
       resource: resource ?? this.resource,
       isSearch: isSearch ?? this.isSearch,
       bannerAd: bannerAd ?? this.bannerAd,
+      messageId: messageId ?? this.messageId,
       isMessage: isMessage ?? this.isMessage,
       isViewing: isViewing ?? this.isViewing,
       resources: resources ?? this.resources,
@@ -246,11 +340,15 @@ class AppState extends Equatable {
       pageStatus: pageStatus ?? this.pageStatus,
       isForRider: isForRider ?? this.isForRider,
       searchList: searchList ?? this.searchList,
+      messageText: messageText ?? this.messageText,
+      conversation: conversation ?? this.conversation,
+      acceptStatus: acceptStatus ?? this.acceptStatus,
       sortedSkills: sortedSkills ?? this.sortedSkills,
       trainingPath: trainingPath ?? this.trainingPath,
       errorMessage: errorMessage ?? this.errorMessage,
       horseProfile: horseProfile ?? this.horseProfile,
       usersProfile: usersProfile ?? this.usersProfile,
+      conversations: conversations ?? this.conversations,
       trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: ownersProfile ?? this.ownersProfile,
       isFromProfile: isFromProfile ?? this.isFromProfile,
@@ -258,12 +356,17 @@ class AppState extends Equatable {
       viewingProfile: viewingProfile ?? this.viewingProfile,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       difficultyState: difficultyState ?? this.difficultyState,
+      conversationState: conversationState ?? this.conversationState,
+      conversationsSort: conversationsSort ?? this.conversationsSort,
+      conversationsState: conversationsState ?? this.conversationsState,
       isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
       viewingProfielEmail: viewingProfielEmail ?? this.viewingProfielEmail,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
       isFromTrainingPathList:
           isFromTrainingPathList ?? this.isFromTrainingPathList,
+      messageToSupportStatus:
+          messageToSupportStatus ?? this.messageToSupportStatus,
     );
   }
 
@@ -275,11 +378,14 @@ class AppState extends Equatable {
         status,
         isEdit,
         isGuest,
+        message,
         horseId,
         isError,
+        messages,
         resource,
         bannerAd,
         isSearch,
+        messageId,
         isMessage,
         isViewing,
         resources,
@@ -287,11 +393,15 @@ class AppState extends Equatable {
         isForRider,
         pageStatus,
         searchList,
+        messageText,
+        conversation,
+        acceptStatus,
         sortedSkills,
         trainingPath,
         errorMessage,
         horseProfile,
         usersProfile,
+        conversations,
         ownersProfile,
         isFromProfile,
         trainingPaths,
@@ -299,10 +409,14 @@ class AppState extends Equatable {
         viewingProfile,
         isBannerAdReady,
         difficultyState,
+        conversationState,
+        conversationsSort,
+        conversationsState,
         isFromTrainingPath,
         skillTreeNavigation,
         resourcesSortStatus,
         viewingProfielEmail,
         isFromTrainingPathList,
+        messageToSupportStatus,
       ];
 }
