@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/log_book_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_name.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/contact_request_button.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/instructor_request_button.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/student_request.button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_bio.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_list_of_profiles.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_location.dart';
@@ -51,6 +54,26 @@ class PrimaryRiderView extends StatelessWidget {
         RiderListOfProfiles(
           profile: profile,
           key: const Key('RiderListOfProfiles'),
+        ),
+        gap(),
+        Wrap(
+          spacing: 5,
+          runSpacing: 5,
+          alignment: WrapAlignment.center,
+          children: [
+            ContactRequestButton(
+              profile: profile,
+              key: const Key('ContactRequestButton'),
+            ),
+            InstructorRequestButton(
+              profile: profile,
+              key: const Key('InstructorRequestButton'),
+            ),
+            StudentRequestButton(
+              profile: profile,
+              key: const Key('StudentRequestButton'),
+            ),
+          ],
         ),
         gap(),
         // Log Book Button

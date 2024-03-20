@@ -35,18 +35,28 @@ class ProfileName extends StatelessWidget {
                         color: Colors.white,
                         shape: CircleBorder(),
                       ),
-                      child:
-                          ProfilePhoto(size: 100, profilePicUrl: profilePicUrl),
+                      child: Hero(
+                        transitionOnUserGestures: true,
+                        tag: profilePicUrl!,
+                        child: ProfilePhoto(
+                          size: 100,
+                          profilePicUrl: profilePicUrl,
+                        ),
+                      ),
                     ),
                   ),
-                  Text(
-                    name ?? 'Welocme, Guest',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w200,
-                      color: Colors.white,
+                  Hero(
+                    transitionOnUserGestures: true,
+                    tag: name!,
+                    child: Text(
+                      name!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w200,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],

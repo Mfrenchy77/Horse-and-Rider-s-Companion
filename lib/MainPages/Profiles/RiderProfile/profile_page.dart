@@ -22,7 +22,7 @@ class ProfilePage extends StatelessWidget {
         }
         // show the profile
 
-        return state.isGuest
+        return state.isGuest || state.usersProfile == null
             ? const GuestProfileView(
                 key: Key('GuestProfileView'),
               )

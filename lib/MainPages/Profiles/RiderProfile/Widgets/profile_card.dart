@@ -30,28 +30,22 @@ class ProfileCard extends StatelessWidget {
               ),
               onTap: () {
                 if (baseItem.isCollapsed!) {
-                  cubit.setLoading();
-                  context.pushNamed<bool>(
+                  // cubit.setLoading();
+                  context.goNamed(
                     ViewingProfilePage.name,
                     pathParameters: {
                       ViewingProfilePage.pathParams: baseItem.id!,
                     },
-                  ).then((value) {
-                    cubit.resetFromHorseProfile();
-                    debugPrint('Returned from ViewingProfilePage: $value');
-                  });
+                  );
                 } else {
-                  cubit.setLoading();
+                  //cubit.setLoading();
                   debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
-                  context.pushNamed(
+                  context.goNamed(
                     HorseProfilePage.name,
                     pathParameters: {
                       HorseProfilePage.pathParams: baseItem.id!,
                     },
-                  ).then((value) {
-                    cubit.resetFromHorseProfile();
-                    debugPrint('Returned from HorseProfilePage: $value');
-                  });
+                  );
                 }
               },
               // : cubit.horseProfileSelected(

@@ -423,12 +423,11 @@ class ProfileSearchDialog extends StatelessWidget {
                       profilePicUrl: profile.picUrl ?? '',
                       context: context,
                       onTap: () {
+                        Navigator.of(context).pop();
                         context.goNamed(
                           ViewingProfilePage.name,
                           pathParameters: {'id': profile.email},
                         );
-
-                        Navigator.of(context).pop();
                       },
                     ),
                   )
@@ -454,13 +453,13 @@ class ProfileSearchDialog extends StatelessWidget {
                       profilePicUrl: horseProfile.picUrl ?? '',
                       context: context,
                       onTap: () {
+                        Navigator.of(context).pop();
                         context.goNamed(
                           HorseProfilePage.name,
                           pathParameters: {
                             HorseProfilePage.pathParams: horseProfile.id,
                           },
                         );
-                        Navigator.of(context).pop();
                       },
                       //   homeContext
                       //       .read<HomeCubit>()

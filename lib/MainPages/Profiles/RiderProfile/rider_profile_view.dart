@@ -43,9 +43,9 @@ class RiderProfileView extends StatelessWidget {
               ),
             ],
           ),
-          drawer: state.isGuest || state.viewingProfile != null
-              ? null
-              : const UserProfileDrawer(),
+          drawer: profile.email == state.usersProfile?.email
+              ? const UserProfileDrawer()
+              : null,
           body: AdaptiveLayout(
             internalAnimations: false,
             secondaryBody: SlotLayout(

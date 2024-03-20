@@ -7,17 +7,25 @@ class StudentHorseRequestButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<AppCubit>();
-    return Visibility(
-      visible: !cubit.isOwner(),
-      child: ElevatedButton(
-        onPressed: cubit.requestToBeStudentHorse,
-        child: Text(
-          cubit.isStudentHorse()
-              ? 'Remove Horse as Student'
-              : 'Request to be Student Horse',
-        ),
-      ),
+    return BlocBuilder<AppCubit, AppState>(
+      builder: (context, state) {
+        final cubit = context.read<AppCubit>();
+        return cubit.isOwner() || state.isGuest
+            ? const SizedBox()
+            : Tooltip(
+                message: cubit.isStudentHorse()
+                    ? 'Remove Horse as Student'
+                    : 'Request to be Student Horse',
+                child: OutlinedButton(
+                  onPressed: cubit.requestToBeStudentHorse,
+                  child: Text(
+                    cubit.isStudentHorse()
+                        ? 'Remove Horse as Student'
+                        : 'Request to be Student Horse',
+                  ),
+                ),
+              );
+      },
     );
   }
 }

@@ -1,8 +1,9 @@
+import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
@@ -24,6 +25,8 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   final RiderProfileRepository _riderProfileRepository;
   final HorseProfileRepository _horseProfileRepository;
   final KeysRepository _keysRepository;
+
+  StreamSubscription<QuerySnapshot<Object?>>? _searchSubscription;
 
   /// Monitors the default Field's [value] in the Search Dialog for
   /// Riders and Horses
@@ -90,8 +93,10 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchProfilesByName() {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     debugPrint('getProfile by Name for ${capitalizeWords(state.searchValue)}');
+    // Cancel the previous subscription if there was one
+    _searchSubscription?.cancel();
     try {
-      _riderProfileRepository
+      _searchSubscription = _riderProfileRepository
           .getProfilesByName(name: capitalizeWords(state.searchValue).trim())
           .listen((event) {
         debugPrint('Results: ${event.docs.length}');
@@ -222,7 +227,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       _horseProfileRepository
-          .getHorseByName(name: state.searchValue.toLowerCase().trim())
+          .getHorseByName(name: state.searchValue.trim())
           .listen((event) {
         final results =
             event.docs.map((e) => e.data()! as HorseProfile).toList();
@@ -259,7 +264,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       _horseProfileRepository
-          .getHorseByNickName(nickName: state.searchValue.toLowerCase().trim())
+          .getHorseByNickName(nickName: state.searchValue.trim())
           .listen((event) {
         final results =
             event.docs.map((e) => e.data()! as HorseProfile).toList();
@@ -404,5 +409,11 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void clearError() {
     debugPrint('Clear Error');
     emit(state.copyWith(isError: false, error: ''));
+  }
+
+  @override
+  Future<void> close() {
+    _searchSubscription?.cancel();
+    return super.close();
   }
 }

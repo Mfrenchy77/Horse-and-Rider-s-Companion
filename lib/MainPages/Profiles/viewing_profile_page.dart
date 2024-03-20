@@ -23,7 +23,10 @@ class ViewingProfilePage extends StatelessWidget {
         return state.viewingProfile == null
             ? const LoadingPage()
             : PopScope(
-                onPopInvoked: (didPop) => cubit.resetFromViewingProfile(),
+                onPopInvoked: (didPop) {
+                  debugPrint('Viewing Profile Page Pop Invoked: $didPop');
+                  cubit.resetFromViewingProfile();
+                },
                 child: RiderProfileView(
                   profile: state.viewingProfile!,
                   key: const Key('ViewingProfileView'),

@@ -23,53 +23,57 @@ class LogBookButton extends StatelessWidget {
   final HorseProfile? horseProfile;
   @override
   Widget build(BuildContext context) {
-    debugPrint('Is Authorized to view Log Book: '
-        '${context.read<AppCubit>().isAuthorized()}');
-
-    final cubit = context.read<AppCubit>();
-    return Visibility(
-      visible: cubit.isAuthorized(),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Tooltip(
-            message: 'Open the Log Book',
-            child: FilledButton.icon(
-              onPressed: () {
-                showDialog<AlertDialog>(
-                  context: context,
-                  builder: (context) => LogViewDialog(
-                    name: horseProfile?.name ?? profile?.name ?? '',
-                    notes: horseProfile?.notes ?? profile?.notes,
-                    isRider: horseProfile == null,
+    return BlocBuilder<AppCubit, AppState>(
+      builder: (context, state) {
+        final cubit = context.read<AppCubit>();
+        debugPrint('Is Authorized to view Log Book: '
+            '${context.read<AppCubit>().isAuthorized()}');
+        return !cubit.isAuthorized() || state.isGuest
+            ? const SizedBox.shrink()
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Tooltip(
+                    message: 'Open the Log Book',
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        showDialog<AlertDialog>(
+                          context: context,
+                          builder: (context) => LogViewDialog(
+                            name: horseProfile?.name ?? profile?.name ?? '',
+                            notes: horseProfile?.notes ?? profile?.notes,
+                            isRider: horseProfile == null,
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        HorseAndRiderIcons.riderLogIcon,
+                      ),
+                      label: Text(
+                        horseProfile == null
+                            ? "Rider's Log Book"
+                            : "Horse's Log Book",
+                      ),
+                    ),
                   ),
-                );
-              },
-              icon: const Icon(
-                HorseAndRiderIcons.riderLogIcon,
-              ),
-              label: Text(
-                horseProfile == null ? "Rider's Log Book" : "Horse's Log Book",
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Add an Entry into the Log',
-            onPressed: () {
-              showDialog<AddLogEntryDialog>(
-                context: context,
-                builder: (context) => AddLogEntryDialog(
-                  usersProfile: cubit.state.usersProfile!,
-                  horseProfile: horseProfile,
-                ),
+                  IconButton(
+                    tooltip: 'Add an Entry into the Log',
+                    onPressed: () {
+                      showDialog<AddLogEntryDialog>(
+                        context: context,
+                        builder: (context) => AddLogEntryDialog(
+                          usersProfile: cubit.state.usersProfile!,
+                          horseProfile: horseProfile,
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.add,
+                    ),
+                  ),
+                ],
               );
-            },
-            icon: const Icon(
-              Icons.add,
-            ),
-          ),
-        ],
-      ),
+      },
     );
   }
 }

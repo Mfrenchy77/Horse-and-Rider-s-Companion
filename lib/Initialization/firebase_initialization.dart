@@ -7,6 +7,7 @@ class FirebaseInitialization {
     try {
       // Initialize Firebase
       await Firebase.initializeApp(
+     //   name: 'Horse & Riders Companion',
         options: DefaultFirebaseOptions.currentPlatform,
       );
       debugPrint('Firebase Initialized Successfully');

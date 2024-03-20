@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 
 part 'add_log_entry_state.dart';
 
@@ -52,7 +53,7 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
         name: state.logEntry.value,
         parentId: riderProfile.email,
         id: DateTime.now().toString(),
-        imageUrl: state.tag.name,
+        imageUrl: state.tag.toString(),
       );
       horseProfile.notes ??= [];
       horseProfile.notes?.add(logEntry);

@@ -18,14 +18,17 @@ class HorseProfilePage extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        
+
         if (state.horseProfile == null || state.horseProfile?.id != horseId) {
           cubit.getHorseProfile(id: horseId);
         }
         return state.horseProfile == null || state.horseProfile?.id != horseId
             ? const LoadingPage()
             : PopScope(
-                onPopInvoked: (didPop) => cubit.resetFromHorseProfile(),
+                onPopInvoked: (didPop) {
+                  debugPrint('Horse Profile Page Pop Invoked: $didPop');
+                  cubit.resetFromHorseProfile();
+                },
                 child: HorseProfileView(
                   horseProfile: state.horseProfile!,
                   key: const Key('horseProfileView'),

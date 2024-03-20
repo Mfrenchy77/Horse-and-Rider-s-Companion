@@ -74,7 +74,7 @@ class HorseProfilePrimaryView extends StatelessWidget {
               gap(),
               LogBookButton(
                 profile:
-                    cubit.state.viewingProfile ?? cubit.state.usersProfile!,
+                    cubit.state.viewingProfile ?? cubit.state.usersProfile,
                 horseProfile: horseProfile,
                 key: const Key('logBookButton'),
               ),

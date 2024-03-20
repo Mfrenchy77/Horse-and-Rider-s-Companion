@@ -160,6 +160,7 @@ class AppCubit extends Cubit<AppState> {
         if (value.data() != null) {
           final viewingProfile = value.data()! as RiderProfile;
           debugPrint('Viewing Profile Retrieved: ${viewingProfile.name}');
+
           emit(
             state.copyWith(
               viewingProfile: viewingProfile,
@@ -339,26 +340,413 @@ class AppCubit extends Cubit<AppState> {
     navigateToAuth();
   }
 
+  /// sends a message to the a riderProfile with a
+  /// request to add them as your instructor
+  Future<void> createInstructorRequest({
+    required RiderProfile instructorProfile,
+  }) async {
+    final user = state.usersProfile!;
+    final messageId = DateTime.now().millisecondsSinceEpoch.toString();
+    final requestItem = BaseListItem(
+      name: user.name,
+      imageUrl: user.picUrl,
+      isCollapsed: true,
+      isSelected: false,
+      id: user.email.toLowerCase(),
+    );
+
+    final groupId = [
+      convertEmailToPath(user.email.toLowerCase()),
+      convertEmailToPath(instructorProfile.email.toLowerCase()),
+    ].join('_');
+
+    final message = Message(
+      date: DateTime.now(),
+      id: groupId,
+      sender: user.name,
+      messsageId: messageId,
+      requestItem: requestItem,
+      subject: 'Instructor Request',
+      senderProfilePicUrl: user.picUrl,
+      messageType: MessageType.INSTRUCTOR_REQUEST,
+      recipients: [user.name, instructorProfile.name],
+      message: '${user.name} has requested '
+          '${instructorProfile.name} to be their Instructor',
+    );
+
+    final group = Group(
+      id: groupId,
+      createdBy: user.name,
+      lastEditBy: user.name,
+      recentMessage: message,
+      type: GroupType.private,
+      createdOn: DateTime.now(),
+      lastEditDate: DateTime.now(),
+      parties: [user.name, instructorProfile.name],
+      partiesIds: [
+        user.email.toLowerCase(),
+        instructorProfile.email.toLowerCase(),
+      ],
+    );
+
+    try {
+      await _messagesRepository.createOrUpdateGroup(group: group);
+      await _messagesRepository.createOrUpdateMessage(
+        message: message,
+        id: message.messsageId,
+      );
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Instructor request sent to ${instructorProfile.name}',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to send instructor request: $e');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to send request',
+        ),
+      );
+    }
+  }
+
+  /// sends a message to a Viewing Profile with a
+  /// request to add them as your student
+  Future<void> createStudentRequest({
+    required RiderProfile studentProfile,
+  }) async {
+    final user = state.usersProfile!;
+    final requestItem = BaseListItem(
+      name: user.name,
+      isCollapsed: true,
+      isSelected: false,
+      imageUrl: user.picUrl,
+      id: user.email.toLowerCase(),
+    );
+
+    final groupId = [
+      convertEmailToPath(user.email.toLowerCase()),
+      convertEmailToPath(studentProfile.email.toLowerCase()),
+    ].join('_');
+
+    final message = Message(
+      id: groupId,
+      sender: user.name,
+      date: DateTime.now(),
+      requestItem: requestItem,
+      subject: 'Student Request',
+      senderProfilePicUrl: user.picUrl,
+      messageType: MessageType.STUDENT_REQUEST,
+      recipients: [user.name, studentProfile.name],
+      message: '${user.name} has requested '
+          '${studentProfile.name} to be their Student',
+      messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+    );
+
+    final group = Group(
+      id: groupId,
+      createdBy: user.name,
+      lastEditBy: user.name,
+      recentMessage: message,
+      type: GroupType.private,
+      createdOn: DateTime.now(),
+      lastEditDate: DateTime.now(),
+      parties: [user.name, studentProfile.name],
+      partiesIds: [
+        user.email.toLowerCase(),
+        studentProfile.email.toLowerCase(),
+      ],
+    );
+
+    try {
+      await _messagesRepository.createOrUpdateGroup(group: group);
+      await _messagesRepository.createOrUpdateMessage(
+        message: message,
+        id: message.messsageId,
+      );
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Student request sent to ${studentProfile.name}',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to send student request: $e');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to send request',
+        ),
+      );
+    }
+  }
+
+  ///  removes a student from the your student list
+  ///  and removes the your from the their instructor list
+  ///  and adds a note to both users
+  Future<void> removeStudent({
+    required RiderProfile studentProfile,
+  }) async {
+    final user = state.usersProfile!;
+
+    // Remove student from the user's list
+    user.students?.removeWhere(
+      (student) => student.id == studentProfile.email.toLowerCase(),
+    );
+
+    // Remove user from the student's instructor list
+    studentProfile.instructors?.removeWhere(
+      (instructor) => instructor.id == user.email.toLowerCase(),
+    );
+
+    // Add notes about the removal to both profiles
+    final userNote = BaseListItem(
+      message: user.name,
+      date: DateTime.now(),
+      id: DateTime.now().toString(),
+      imageUrl: LogTag.Edit.toString(),
+      name: 'Removed ${studentProfile.name} as Student',
+    );
+
+    final studentNote = BaseListItem(
+      message: user.name,
+      date: DateTime.now(),
+      id: DateTime.now().toString(),
+      imageUrl: LogTag.Edit.toString(),
+      name: '${user.name} removed you as Instructor',
+    );
+
+    user.notes?.add(userNote);
+    studentProfile.notes?.add(studentNote);
+
+    try {
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: user,
+      );
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: studentProfile,
+      );
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Removed ${studentProfile.name} as a Student',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to remove student: $e');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to remove student',
+        ),
+      );
+    }
+  }
+
+  ///  removes a Viewing Profile from your Instructor list
+  ///  and removes you from their student list and adds a note to both users
+  Future<void> removeInstructor({
+    required RiderProfile instructorProfile,
+  }) async {
+    final user = state.usersProfile!;
+
+    // Remove instructor from the user's list
+    user.instructors?.removeWhere(
+      (instructor) => instructor.id == instructorProfile.email.toLowerCase(),
+    );
+
+    // Remove user from the instructor's student list
+    instructorProfile.students
+        ?.removeWhere((student) => student.id == user.email.toLowerCase());
+
+    // Add notes about the removal to both profiles
+    final userNote = BaseListItem(
+      message: user.name,
+      date: DateTime.now(),
+      id: DateTime.now().toString(),
+      imageUrl: LogTag.Edit.toString(),
+      name: 'Removed ${instructorProfile.name} as Instructor',
+    );
+
+    final instructorNote = BaseListItem(
+      id: DateTime.now().toString(),
+      message: user.name,
+      date: DateTime.now(),
+      imageUrl: LogTag.Edit.toString(),
+      name: '${user.name} removed you as Student',
+    );
+
+    user.notes?.add(userNote);
+    instructorProfile.notes?.add(instructorNote);
+
+    try {
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: user,
+      );
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: instructorProfile,
+      );
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Removed ${instructorProfile.name} as an Instructor',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to remove instructor: $e');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to remove instructor',
+        ),
+      );
+    }
+  }
+
+  /// adds the Viewing Profile to the users contacts
+  /// and adds a note to both users
+  Future<void> addToContact({
+    required RiderProfile riderProfile,
+  }) async {
+    final user = state.usersProfile!;
+    final contact = BaseListItem(
+      isCollapsed: true,
+      isSelected: false,
+      name: riderProfile.name,
+      imageUrl: riderProfile.picUrl,
+      id: riderProfile.email.toLowerCase(),
+    );
+
+    // Adding the contact to each other's savedProfilesList and notes
+    user.savedProfilesList ??= [];
+    user.savedProfilesList!.add(contact);
+    user.notes?.add(
+      BaseListItem(
+        message: user.name,
+        date: DateTime.now(),
+        id: DateTime.now().toString(),
+        imageUrl: LogTag.Edit.toString(),
+        name: 'Added ${riderProfile.name} to contacts',
+      ),
+    );
+
+    riderProfile.savedProfilesList ??= [];
+    riderProfile.savedProfilesList!.add(
+      BaseListItem(
+        name: user.name,
+        isCollapsed: true,
+        isSelected: false,
+        imageUrl: user.picUrl,
+        id: user.email.toLowerCase(),
+      ),
+    );
+    riderProfile.notes?.add(
+      BaseListItem(
+        message: user.name,
+        date: DateTime.now(),
+        id: DateTime.now().toString(),
+        imageUrl: LogTag.Edit.toString(),
+        name: '${user.name} added you to their contacts',
+      ),
+    );
+
+    try {
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: riderProfile,
+      );
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: user,
+      );
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Added ${riderProfile.name} to contacts',
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to add contact: $e',
+        ),
+      );
+    }
+  }
+
+  /// removes the Viewing Profile from the user's contacts
+  Future<void> removeFromContacts({
+    required RiderProfile riderProfile,
+  }) async {
+    final user = state.usersProfile!;
+
+    user.savedProfilesList
+        ?.removeWhere((item) => item.id == riderProfile.email.toLowerCase());
+    user.notes?.add(
+      BaseListItem(
+        message: user.name,
+        date: DateTime.now(),
+        id: DateTime.now().toString(),
+        imageUrl: LogTag.Edit.toString(),
+        name: 'Removed ${riderProfile.name} from contacts',
+      ),
+    );
+
+    riderProfile.savedProfilesList
+        ?.removeWhere((item) => item.id == user.email.toLowerCase());
+    riderProfile.notes?.add(
+      BaseListItem(
+        message: user.name,
+        date: DateTime.now(),
+        id: DateTime.now().toString(),
+        imageUrl: LogTag.Edit.toString(),
+        name: '${user.name} removed you from their contacts',
+      ),
+    );
+
+    try {
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: riderProfile,
+      );
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: user,
+      );
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Removed ${riderProfile.name} from contacts',
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to remove contact: $e',
+        ),
+      );
+    }
+  }
+
+  /// Returns true if the viewingProfile is in the userProfile contacts
+  bool isContact() {
+    return state.usersProfile?.savedProfilesList
+            ?.any((element) => element.id == state.viewingProfile?.email) ??
+        false;
+  }
+
+  ///  Returns true if the userProfile is an instructor of the viewingProfile
+  bool isInstuctor() {
+    return state.viewingProfile?.instructors
+            ?.any((element) => element.id == state.usersProfile?.email) ??
+        false;
+  }
+
 /* ***************************************************************************
 
 ******************************* Horse Profile**********************************
 
 ***************************************************************************** */
-
-  /// Handles the selection of a Horse Profile
-  // void horseProfileSelected({
-  //   required String id,
-  // }) {
-  //   emit(
-  //     state.copyWith(
-  //       index: 0,
-  //       horseId: id,
-  //       isForRider: false,
-  //       pageStatus: AppPageStatus.profile,
-  //     ),
-  //   );
-  //   // _getHorseProfile(id: id);
-  // }
 
   /// Retrieves the Horse Profile from the database if needed
   Future<void> getHorseProfile({required String id}) async {
@@ -382,7 +770,17 @@ class AppCubit extends Cubit<AppState> {
           final horseProfile = event.data() as HorseProfile?;
           debugPrint('Horse Profile Retrieved: ${horseProfile?.name}');
           if (horseProfile != null) {
-            if (!isOwner()) {
+            emit(
+              state.copyWith(
+                // index: 0,
+                horseId: horseProfile.id,
+                horseProfile: horseProfile,
+               // isForRider: false,
+              ),
+            );
+            if (!isOwner() &&
+                state.ownersProfile?.email !=
+                    state.horseProfile?.currentOwnerId) {
               debugPrint('Not Owner');
               _riderProfileRepository
                   .getRiderProfile(email: horseProfile.currentOwnerId)
@@ -392,25 +790,13 @@ class AppCubit extends Cubit<AppState> {
                 debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
                 emit(
                   state.copyWith(
-                    // index: 0,
-                    isForRider: false,
-                    horseId: horseProfile.id,
-                    horseProfile: horseProfile,
                     ownersProfile: ownerProfile,
-                    // pageStatus: AppPageStatus.profile,
                   ),
                 );
               });
             } else {
               debugPrint('Owner');
-              emit(
-                state.copyWith(
-                  index: 0,
-                  isForRider: false,
-                  horseId: horseProfile.id,
-                  horseProfile: horseProfile,
-                ),
-              );
+             // emit(state.copyWith(ownersProfile: state.usersProfile));
             }
           }
         });
@@ -495,7 +881,11 @@ class AppCubit extends Cubit<AppState> {
 
   /// Returns if the current user is the owner of the horse profile
   bool isOwner() {
-    return state.usersProfile?.email == state.horseProfile?.currentOwnerId;
+    if (state.horseProfile == null || state.usersProfile == null) {
+      return false;
+    } else {
+      return state.usersProfile?.email == state.horseProfile?.currentOwnerId;
+    }
   }
 
   /// Determines if the Horse Profile is a Student Horse of the current user
@@ -592,13 +982,13 @@ class AppCubit extends Cubit<AppState> {
 
     return Group(
       id: id,
-      type: GroupType.private,
       parties: memberNames,
       partiesIds: memberIds,
-      createdBy: state.usersProfile!.name,
+      type: GroupType.private,
       createdOn: DateTime.now(),
-      lastEditBy: state.usersProfile?.name,
       lastEditDate: DateTime.now(),
+      createdBy: state.usersProfile!.name,
+      lastEditBy: state.usersProfile?.name,
       recentMessage: _createStudentHorseRequestMessage(
         requestHorse,
         id,
@@ -613,17 +1003,17 @@ class AppCubit extends Cubit<AppState> {
     return Message(
       date: DateTime.now(),
       id: groupId,
-      sender: state.usersProfile?.name,
-      senderProfilePicUrl: state.usersProfile?.picUrl,
-      messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+      requestItem: requestHorse,
       subject: 'Student Horse Request',
+      sender: state.usersProfile?.name,
+      messageType: MessageType.STUDENT_HORSE_REQUEST,
+      senderProfilePicUrl: state.usersProfile?.picUrl,
       message: '${state.usersProfile?.name} has requested to add '
           '${state.horseProfile?.name} as a student horse.',
+      messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
       recipients: [state.usersProfile?.name, state.ownersProfile?.name]
           .map((e) => e!)
           .toList(),
-      messageType: MessageType.STUDENT_HORSE_REQUEST,
-      requestItem: requestHorse,
     );
   }
 
@@ -918,6 +1308,7 @@ class AppCubit extends Cubit<AppState> {
         date: DateTime.now(),
         message: state.usersProfile?.name,
         parentId: state.usersProfile?.email,
+        imageUrl: LogTag.Edit.toString(),
         name: '${state.usersProfile?.name} changed skill'
             " '${state.skill?.skillName}' to ${levelState.name}",
       );
@@ -930,6 +1321,7 @@ class AppCubit extends Cubit<AppState> {
           date: DateTime.now(),
           message: state.usersProfile?.name,
           parentId: state.usersProfile?.email,
+          imageUrl: LogTag.Edit.toString(),
           name: "Changed ${state.horseProfile?.name}'s "
               "skill '${state.skill?.skillName}' to ${levelState.name}",
         ),
@@ -1742,6 +2134,10 @@ class AppCubit extends Cubit<AppState> {
           (a, b) => a.messageState.index.compareTo(b.messageState.index),
         );
         break;
+      case ConversationsSort.oldest:
+        sortedConversations?.sort(
+          (a, b) => a.createdOn.compareTo(b.createdOn),
+        );
     }
     emit(
       state.copyWith(
@@ -2353,7 +2749,7 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(isMessage: true, errorMessage: message));
   }
 
-  /// Clear the MessageSnackbar
+  /// Clear the isMessage
   void clearMessage() {
     emit(state.copyWith(isMessage: false, errorMessage: ''));
   }

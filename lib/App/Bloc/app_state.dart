@@ -26,6 +26,7 @@ enum ResourcesSortStatus {
 /// The Sorting of Conversations
 enum ConversationsSort {
   unread,
+  oldest,
   createdDate,
   lastupdatedDate,
 }
@@ -57,6 +58,15 @@ enum SkillTreeNavigation {
   SkillLevel,
   TrainingPath,
   TrainingPathList
+}
+
+/// Tag for the Log Entry
+enum LogTag {
+  Show,
+  Edit,
+  Other,
+  Health,
+  Training,
 }
 
 /// The Page Status of the App

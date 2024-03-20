@@ -3,9 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 
 class MessagesSortDialog extends StatelessWidget {
-  const MessagesSortDialog({
-    super.key,
-  });
+  const MessagesSortDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,37 +12,49 @@ class MessagesSortDialog extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         return AlertDialog(
           title: const Text('Sort Messages By:'),
-          content: DropdownButton<ConversationsSort>(
-            isExpanded: true,
-            value: state.conversationsSort,
-            onChanged: (ConversationsSort? newValue) {
-              if (newValue != null) {
-                cubit.sortConversations(newValue);
-                Navigator.pop(context);
-              }
-            },
-            items: ConversationsSort.values
-                .map<DropdownMenuItem<ConversationsSort>>(
-                    (ConversationsSort value) {
-              return DropdownMenuItem<ConversationsSort>(
-                value: value,
-                child: Text(_sortToReadableString(value)),
-              );
-            }).toList(),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<ConversationsSort>(
+                title: const Text('Newest'),
+                value: ConversationsSort.createdDate,
+                groupValue: state.conversationsSort,
+                onChanged: (value) {
+                  cubit.sortConversations(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ConversationsSort>(
+                title: const Text('Recently Updated'),
+                value: ConversationsSort.lastupdatedDate,
+                groupValue: state.conversationsSort,
+                onChanged: (value) {
+                  cubit.sortConversations(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ConversationsSort>(
+                title: const Text('Unread'),
+                value: ConversationsSort.unread,
+                groupValue: state.conversationsSort,
+                onChanged: (value) {
+                  cubit.sortConversations(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ConversationsSort>(
+                title: const Text('Oldest'),
+                value: ConversationsSort.oldest,
+                groupValue: state.conversationsSort,
+                onChanged: (value) {
+                  cubit.sortConversations(value!);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
           ),
         );
       },
     );
-  }
-
-  String _sortToReadableString(ConversationsSort sort) {
-    switch (sort) {
-      case ConversationsSort.createdDate:
-        return 'Newest';
-      case ConversationsSort.lastupdatedDate:
-        return 'Recently Updated';
-      case ConversationsSort.unread:
-        return 'Unread';
-    }
   }
 }

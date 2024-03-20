@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:photo_view/photo_view.dart';
 
 class ProfilePhoto extends StatelessWidget {
   const ProfilePhoto({
@@ -18,8 +19,26 @@ class ProfilePhoto extends StatelessWidget {
             onTap: () => showDialog<AlertDialog>(
               context: context,
               builder: (context) {
-                return AlertDialog(
-                  content: Image.network(profilePicUrl!),
+                return Scaffold(
+                  backgroundColor: Colors.transparent,
+                  appBar: AppBar(
+                    backgroundColor: Colors.black.withOpacity(0.5),
+                    leading: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    elevation: 0,
+                  ),
+                  body: PhotoView(
+                    heroAttributes: const PhotoViewHeroAttributes(
+                      tag: 'profilePic',
+                      transitionOnUserGestures: true,
+                    ),
+                    backgroundDecoration: const BoxDecoration(
+                      color: Colors.transparent,
+                    ),
+                    imageProvider: NetworkImage(profilePicUrl!),
+                  ),
                 );
               },
             ),

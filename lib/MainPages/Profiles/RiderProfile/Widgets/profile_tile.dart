@@ -19,41 +19,46 @@ class ProfileTile extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         return SizedBox(
           width: 200,
-          child: ListTile(
-            leading: ProfilePhoto(
-              size: 45,
-              profilePicUrl: baseItem.imageUrl,
-            ),
-            title: Text(
-              baseItem.name ?? '',
-              textAlign: TextAlign.center,
-            ),
-           onTap: () {
+          child: Tooltip(
+            message: baseItem.name,
+            child: ListTile(
+              leading: Hero(
+                transitionOnUserGestures: true,
+                tag: baseItem.imageUrl ?? '',
+                child: ProfilePhoto(
+                  size: 45,
+                  profilePicUrl: baseItem.imageUrl,
+                ),
+              ),
+              title: Hero(
+                transitionOnUserGestures: true,
+                tag: baseItem.name!,
+                child: Text(
+                  baseItem.name ?? '',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              onTap: () {
                 if (baseItem.isCollapsed!) {
-                  cubit.setLoading();
-                  context.pushNamed<bool>(
+                  // cubit.setLoading();
+                  context.goNamed(
                     ViewingProfilePage.name,
                     pathParameters: {
                       ViewingProfilePage.pathParams: baseItem.id!,
                     },
-                  ).then((value) {
-                    cubit.resetFromHorseProfile();
-                    debugPrint('Returned from ViewingProfilePage: $value');
-                  });
+                  );
                 } else {
-                  cubit.setLoading();
+                  // cubit.setLoading();
                   debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
-                  context.pushNamed(
+                  context.goNamed(
                     HorseProfilePage.name,
                     pathParameters: {
                       HorseProfilePage.pathParams: baseItem.id!,
                     },
-                  ).then((value) {
-                    cubit.resetFromHorseProfile();
-                    debugPrint('Returned from HorseProfilePage: $value');
-                  });
+                  );
                 }
               },
+            ),
           ),
         );
       },

@@ -18,7 +18,6 @@ class UserProfileDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final cubit = context.read<AppCubit>();
         return Drawer(
           child: ListView(
             children: [

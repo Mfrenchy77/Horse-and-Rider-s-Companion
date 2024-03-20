@@ -1,7 +1,6 @@
 part of 'add_log_entry_cubit.dart';
 
 // ignore: constant_identifier_names
-enum LogTag { Show, Training, Health, Other }
 
 class AddLogEntryState extends Equatable {
   const AddLogEntryState({

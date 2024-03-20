@@ -4,7 +4,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
@@ -279,6 +278,8 @@ Icon _logTagIcon({required LogTag? tag}) {
       return const Icon(HorseAndRiderIcons.horseIcon);
     case LogTag.Training:
       return const Icon(HorseAndRiderIcons.horseSkillIcon);
+    case LogTag.Edit:
+      return const Icon(Icons.edit);
     case LogTag.Health:
       return const Icon(Icons.local_hospital);
     case LogTag.Other:
@@ -293,6 +294,8 @@ String _logTagText({required LogTag? tag}) {
   switch (tag) {
     case LogTag.Show:
       return 'Show';
+    case LogTag.Edit:
+      return 'Edit';
     case LogTag.Training:
       return 'Training';
     case LogTag.Health:
@@ -309,8 +312,10 @@ Color _logTagColor({required LogTag? tag}) {
   switch (tag) {
     case LogTag.Show:
       return Colors.blue;
-    case LogTag.Training:
+    case LogTag.Edit:
       return Colors.green;
+    case LogTag.Training:
+      return Colors.yellow;
     case LogTag.Health:
       return Colors.red;
     case LogTag.Other:

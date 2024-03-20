@@ -24,8 +24,8 @@ class CurrentOwner extends StatelessWidget {
           onTap: () {
             state.usersProfile?.email == state.horseProfile?.currentOwnerId
                 ? cubit.createMessage('You are the owner of this horse.')
-                : context.pushNamed(
-                    ViewingProfilePage.path,
+                : context.goNamed(
+                    ViewingProfilePage.name,
                     pathParameters: {
                       ViewingProfilePage.pathParams:
                           state.horseProfile?.currentOwnerId ?? '',
