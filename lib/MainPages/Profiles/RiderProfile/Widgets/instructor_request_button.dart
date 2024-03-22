@@ -31,7 +31,8 @@ class InstructorRequestButton extends StatelessWidget {
           message: isAlreadyInstructor
               ? 'Remove from Instructors'
               : 'Add to Instructors',
-          child: OutlinedButton(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.person_add),
             onPressed: () {
               if (isAlreadyInstructor) {
                 cubit.removeInstructor(
@@ -42,7 +43,7 @@ class InstructorRequestButton extends StatelessWidget {
                 );
               }
             },
-            child: Text(
+            label: Text(
               isAlreadyInstructor
                   ? 'Remove Instructor'
                   : 'Request to add as Instructor',

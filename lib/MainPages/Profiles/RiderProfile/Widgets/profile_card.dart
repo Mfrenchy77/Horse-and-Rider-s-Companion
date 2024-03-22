@@ -14,46 +14,47 @@ class ProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        return SizedBox(
-          width: 200,
-          child: Card(
-            elevation: 8,
-            child: ListTile(
-              leading: ProfilePhoto(
-                size: 45,
-                profilePicUrl: baseItem.imageUrl,
-              ),
-              title: Text(
-                baseItem.name ?? '',
-                textAlign: TextAlign.center,
-              ),
-              onTap: () {
-                if (baseItem.isCollapsed!) {
-                  // cubit.setLoading();
-                  context.goNamed(
-                    ViewingProfilePage.name,
-                    pathParameters: {
-                      ViewingProfilePage.pathParams: baseItem.id!,
-                    },
-                  );
-                } else {
-                  //cubit.setLoading();
-                  debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
-                  context.goNamed(
-                    HorseProfilePage.name,
-                    pathParameters: {
-                      HorseProfilePage.pathParams: baseItem.id!,
-                    },
-                  );
-                }
-              },
-              // : cubit.horseProfileSelected(
-              //     id: baseItem.id ?? '',
-              //   ),
+        return
+            // SizedBox(
+            //   width: 200,
+            //   child: Card(
+            //     elevation: 8,
+            //     child:
+            ElevatedButton.icon(
+          icon: Padding(
+            padding: const EdgeInsets.fromLTRB(0,5,0,5),
+            child: ProfilePhoto(
+              size: 40,
+              profilePicUrl: baseItem.imageUrl,
             ),
           ),
+          label: Text(
+            baseItem.name ?? '',
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () {
+            if (baseItem.isCollapsed!) {
+              // cubit.setLoading();
+              context.goNamed(
+                ViewingProfilePage.name,
+                pathParameters: {
+                  ViewingProfilePage.pathParams: baseItem.id!,
+                },
+              );
+            } else {
+              //cubit.setLoading();
+              debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
+              context.goNamed(
+                HorseProfilePage.name,
+                pathParameters: {
+                  HorseProfilePage.pathParams: baseItem.id!,
+                },
+              );
+            }
+          },
         );
+        //   ),
+        // );
       },
     );
   }

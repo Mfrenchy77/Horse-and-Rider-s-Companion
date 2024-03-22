@@ -436,6 +436,14 @@ class AuthenticationRepository {
     yield false;
   }
 
+  /// Re send the email verification
+  Future<void> resendEmailVerification() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.sendEmailVerification();
+    }
+  }
+
   /// Signs out the current user which will emit
   /// [User.empty] from the [user] Stream.
   ///

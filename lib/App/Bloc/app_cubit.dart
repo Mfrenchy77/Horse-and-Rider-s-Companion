@@ -48,14 +48,16 @@ class AppCubit extends Cubit<AppState> {
 
   ///Streams
   late final StreamSubscription<User?> _userSubscription;
+  StreamSubscription<QuerySnapshot<Object?>>? _messagesStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _resourcesStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _skillsSubscription;
+  StreamSubscription<QuerySnapshot<Object?>>? _conversationsStream;
+  StreamSubscription<QuerySnapshot<Object?>>? _trainingPathsStream;
   StreamSubscription<DocumentSnapshot<Object?>>? _usersProfileSubscription;
   StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
   late final StreamSubscription<RiderProfile?> _viewingProfileSubscription;
-  StreamSubscription<QuerySnapshot<Object?>>? _skillsSubscription;
-  StreamSubscription<QuerySnapshot<Object?>>? _groupsStream;
-  StreamSubscription<QuerySnapshot<Object?>>? _messagesStream;
-  StreamSubscription<QuerySnapshot<Object?>>? _resourcesStream;
-  StreamSubscription<QuerySnapshot<Object?>>? _trainingPathsStream;
+
+  Timer? _emailVerificationTimer;
 
 /* **************************************************************************
 
@@ -93,12 +95,14 @@ class AppCubit extends Cubit<AppState> {
       );
     } else if (!user.emailVerified) {
       debugPrint('User Email Not Verified');
+      _checkEmailVerificationStatus();
       emit(
         state.copyWith(
           user: user,
-          isGuest: false,
-          status: AppStatus.authenticated,
-          pageStatus: AppPageStatus.awitingEmailVerification,
+          isGuest: true,
+          isEmailVerification: true,
+          pageStatus: AppPageStatus.loaded,
+          status: AppStatus.unauthenticated,
         ),
       );
     } else {
@@ -123,13 +127,73 @@ class AppCubit extends Cubit<AppState> {
           emit(
             state.copyWith(
               user: user,
+              isProfileSetup: true,
               status: AppStatus.authenticated,
-              pageStatus: AppPageStatus.profileSetup,
+              pageStatus: AppPageStatus.loaded,
             ),
           );
         }
       });
     }
+  }
+
+  /// Resend the email verification
+  Future<void> resendEmailVerification() async {
+    await _authenticationRepository.resendEmailVerification();
+    emit(
+      state.copyWith(
+        isMessage: true,
+        errorMessage: 'Email Verification Sent',
+      ),
+    );
+    await openEmail(state.user.email);
+  }
+
+  void clearProfileSetup() {
+    debugPrint('Clearing Profile Setup');
+    emit(state.copyWith(isProfileSetup: false));
+  }
+
+  Future<void> openEmail(String email) async {
+    final emailProvider = email.split('@').last;
+    final urlString = 'https://$emailProvider';
+
+    // Correct way to parse the URL
+    final url = Uri.parse(urlString);
+
+    debugPrint('Opening Email: $url');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint('Could not launch $url');
+      // Handle the case where the URL could not be launched.
+    }
+  }
+
+  /// Peroiodically checks the email verification status.
+  void _checkEmailVerificationStatus() {
+    _emailVerificationTimer?.cancel();
+    _emailVerificationTimer =
+        Timer.periodic(const Duration(seconds: 10), (_) async {
+      debugPrint('Checking Email Verification Status');
+      await _authenticationRepository.reloadCurrentUser();
+      final isVerified = _authenticationRepository.isEmailVerified();
+      emit(
+        state.copyWith(isEmailVerification: !isVerified),
+      );
+
+      if (isVerified) {
+        _emailVerificationTimer?.cancel();
+        debugPrint('Email is verified in Timer');
+        emit(
+          state.copyWith(
+            isMessage: true,
+            isEmailVerification: false,
+            errorMessage: 'Email has been verified',
+          ),
+        );
+      }
+    });
   }
 
   bool isAuthorized() {
@@ -354,15 +418,17 @@ class AppCubit extends Cubit<AppState> {
       isSelected: false,
       id: user.email.toLowerCase(),
     );
+    final sortedEmails = <String>[
+      user.email.toLowerCase(),
+      instructorProfile.email.toLowerCase(),
+    ]..sort();
 
-    final groupId = [
-      convertEmailToPath(user.email.toLowerCase()),
-      convertEmailToPath(instructorProfile.email.toLowerCase()),
-    ].join('_');
+    final idbuff = sortedEmails.join('_');
+    final conversationId = convertEmailToPath(idbuff);
 
     final message = Message(
       date: DateTime.now(),
-      id: groupId,
+      id: conversationId,
       sender: user.name,
       messsageId: messageId,
       requestItem: requestItem,
@@ -374,12 +440,11 @@ class AppCubit extends Cubit<AppState> {
           '${instructorProfile.name} to be their Instructor',
     );
 
-    final group = Group(
-      id: groupId,
+    final conversation = Conversation(
+      id: conversationId,
       createdBy: user.name,
       lastEditBy: user.name,
       recentMessage: message,
-      type: GroupType.private,
       createdOn: DateTime.now(),
       lastEditDate: DateTime.now(),
       parties: [user.name, instructorProfile.name],
@@ -390,10 +455,12 @@ class AppCubit extends Cubit<AppState> {
     );
 
     try {
-      await _messagesRepository.createOrUpdateGroup(group: group);
+      await _messagesRepository.createOrUpdateConversation(
+        conversation: conversation,
+      );
       await _messagesRepository.createOrUpdateMessage(
         message: message,
-        id: message.messsageId,
+        conversationId: conversationId,
       );
       emit(
         state.copyWith(
@@ -426,13 +493,16 @@ class AppCubit extends Cubit<AppState> {
       id: user.email.toLowerCase(),
     );
 
-    final groupId = [
-      convertEmailToPath(user.email.toLowerCase()),
-      convertEmailToPath(studentProfile.email.toLowerCase()),
-    ].join('_');
+    final emails = <String>[
+      user.email.toLowerCase(),
+      studentProfile.email.toLowerCase(),
+    ]..sort();
+
+    final idbuff = emails.join('_');
+    final conversationId = convertEmailToPath(idbuff);
 
     final message = Message(
-      id: groupId,
+      id: conversationId,
       sender: user.name,
       date: DateTime.now(),
       requestItem: requestItem,
@@ -445,12 +515,11 @@ class AppCubit extends Cubit<AppState> {
       messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
-    final group = Group(
-      id: groupId,
+    final conversation = Conversation(
+      id: conversationId,
       createdBy: user.name,
       lastEditBy: user.name,
       recentMessage: message,
-      type: GroupType.private,
       createdOn: DateTime.now(),
       lastEditDate: DateTime.now(),
       parties: [user.name, studentProfile.name],
@@ -461,10 +530,12 @@ class AppCubit extends Cubit<AppState> {
     );
 
     try {
-      await _messagesRepository.createOrUpdateGroup(group: group);
+      await _messagesRepository.createOrUpdateConversation(
+        conversation: conversation,
+      );
       await _messagesRepository.createOrUpdateMessage(
         message: message,
-        id: message.messsageId,
+        conversationId: conversationId,
       );
       emit(
         state.copyWith(
@@ -775,7 +846,7 @@ class AppCubit extends Cubit<AppState> {
                 // index: 0,
                 horseId: horseProfile.id,
                 horseProfile: horseProfile,
-               // isForRider: false,
+                // isForRider: false,
               ),
             );
             if (!isOwner() &&
@@ -796,7 +867,7 @@ class AppCubit extends Cubit<AppState> {
               });
             } else {
               debugPrint('Owner');
-             // emit(state.copyWith(ownersProfile: state.usersProfile));
+              // emit(state.copyWith(ownersProfile: state.usersProfile));
             }
           }
         });
@@ -938,12 +1009,15 @@ class AppCubit extends Cubit<AppState> {
       return;
     } else {
       final requestHorse = _createRequestHorse();
-      final group = _createStudentHorseRequestGroup(requestHorse);
-      final message = _createStudentHorseRequestMessage(requestHorse, group.id);
+      final conversation =
+          _createStudentHorseRequestConnversation(requestHorse);
+      final message =
+          _createStudentHorseRequestMessage(requestHorse, conversation.id);
 
       _messagesRepository
-        ..createOrUpdateGroup(group: group)
-        ..createOrUpdateMessage(message: message, id: message.messsageId);
+        ..createOrUpdateConversation(conversation: conversation)
+        ..createOrUpdateMessage(
+            message: message, conversationId: conversation.id);
       emit(
         state.copyWith(
           isMessage: true,
@@ -969,10 +1043,10 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-  Group _createStudentHorseRequestGroup(
+  Conversation _createStudentHorseRequestConnversation(
     BaseListItem requestHorse,
   ) {
-    final id = _createGroupId().toString();
+    final id = _createHorseConversationId();
     final memberNames = [state.usersProfile?.name, state.ownersProfile?.name]
         .map((e) => e!)
         .toList();
@@ -980,11 +1054,10 @@ class AppCubit extends Cubit<AppState> {
         .map((e) => e!.toLowerCase())
         .toList();
 
-    return Group(
+    return Conversation(
       id: id,
       parties: memberNames,
       partiesIds: memberIds,
-      type: GroupType.private,
       createdOn: DateTime.now(),
       lastEditDate: DateTime.now(),
       createdBy: state.usersProfile!.name,
@@ -1017,18 +1090,17 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-  StringBuffer _createGroupId() {
-    return StringBuffer()
-      ..write(
-        convertEmailToPath(
-          state.usersProfile!.email.toLowerCase(),
-        ),
-      )
-      ..write(
-        convertEmailToPath(
-          state.ownersProfile!.email.toLowerCase(),
-        ),
-      );
+  /// Creates a unique group id for the message
+  String _createHorseConversationId() {
+    // Create a list of the two emails, converted to paths and in lowercase
+    final emails = <String>[
+      state.usersProfile?.email.toLowerCase() as String,
+      state.ownersProfile?.email.toLowerCase() as String,
+    ]..sort();
+
+    // Join the emails with an underscore
+    final idbuff = emails.join('_');
+    return convertEmailToPath(idbuff);
   }
 
   /// Adds a note to the horse's profile and persists the changes
@@ -1038,7 +1110,7 @@ class AppCubit extends Cubit<AppState> {
     _persistHorseProfileChanges(horseProfile);
   }
 
-  void navigateToMessagesPage(BuildContext context, Group group) {
+  void navigateToMessagesPage(BuildContext context, Conversation group) {
     // Navigator.of(context, rootNavigator: true).restorablePushNamed(
     //   MessagesPage.routeName,
     //   arguments: MessageArguments(
@@ -1933,17 +2005,13 @@ class AppCubit extends Cubit<AppState> {
       emit(state.copyWith(isError: true, errorMessage: 'Message is empty'));
       return;
     } else {
-      final id = StringBuffer()
-        ..write(
-          convertEmailToPath(
-            state.usersProfile?.email.toLowerCase() as String,
-          ),
-        )
-        ..write(
-          convertEmailToPath(
-            StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
-          ),
-        );
+      final emails = <String>[
+        state.usersProfile?.email.toLowerCase() as String,
+        StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
+      ]..sort();
+
+      final idbuff = StringBuffer()..write(emails.join('_'));
+      final id = convertEmailToPath(idbuff.toString());
       final recipients = <String>[
         state.usersProfile?.email.toLowerCase() as String,
         StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
@@ -1955,7 +2023,7 @@ class AppCubit extends Cubit<AppState> {
       ];
 
       final supportMessage = Message(
-        id: id.toString(),
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: DateTime.now(),
         sender: state.usersProfile?.name,
         subject: 'Message to Support',
@@ -1965,9 +2033,8 @@ class AppCubit extends Cubit<AppState> {
         senderProfilePicUrl: state.usersProfile?.picUrl,
       );
 
-      final group = Group(
-        id: id.toString(),
-        type: GroupType.private,
+      final conversation = Conversation(
+        id: id,
         parties: memberNames,
         partiesIds: recipients,
         createdBy: state.usersProfile?.name as String,
@@ -1978,10 +2045,10 @@ class AppCubit extends Cubit<AppState> {
       );
       try {
         _messagesRepository
-          ..createOrUpdateGroup(group: group)
+          ..createOrUpdateConversation(conversation: conversation)
           ..createOrUpdateMessage(
             message: supportMessage,
-            id: supportMessage.id,
+            conversationId: conversation.id,
           );
         emit(
           state.copyWith(
@@ -2011,11 +2078,11 @@ class AppCubit extends Cubit<AppState> {
       emit(state.copyWith(conversationsState: ConversationsState.loading));
       debugPrint('getConversations');
       if (state.usersProfile != null) {
-        _groupsStream = _messagesRepository
-            .getGroups(userEmail: state.usersProfile!.email)
+        _conversationsStream = _messagesRepository
+            .getConversations(userEmail: state.usersProfile!.email)
             .listen((event) {
           final conversations =
-              event.docs.map((e) => (e.data()) as Group).toList()
+              event.docs.map((e) => (e.data()) as Conversation).toList()
                 ..sort(
                   (a, b) => b.createdOn.compareTo(a.createdOn),
                 );
@@ -2035,36 +2102,59 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// User selected a conversation to view
-  void setConversation(Group conversation) {
-    emit(
-      state.copyWith(
-        conversationState: ConversationState.loading,
-        conversation: conversation,
-        messageId: conversation.id,
-      ),
-    );
-    if (conversation.messageState == MessageState.UNREAD) {
-      conversation.messageState = MessageState.READ;
-      _messagesRepository.createOrUpdateGroup(
-        group: conversation,
-      );
-    }
-    _messagesStream =
-        _messagesRepository.getMessages(id: conversation.id).listen((event) {
-      final messages = event.docs.map((e) => (e.data()) as Message).toList()
-        ..sort(
-          (a, b) => (a.date as DateTime).compareTo(
-            b.date as DateTime,
-          ),
-        );
-      debugPrint('Messages Retrieved: ${messages.length}');
+  void setConversation(String conversationsId) {
+    debugPrint('setConversation: $conversationsId');
+    final conversation = getConversationById(conversationsId);
+    if (conversation != null) {
       emit(
         state.copyWith(
-          messages: messages.reversed.toList(),
-          conversationState: ConversationState.loaded,
+          conversationState: ConversationState.loading,
+          conversation: conversation,
+          messageId: conversationsId,
         ),
       );
-    });
+      if (conversation.messageState == MessageState.UNREAD) {
+        conversation.messageState = MessageState.READ;
+        _messagesRepository.createOrUpdateConversation(
+          conversation: conversation,
+        );
+      }
+      _messagesStream = _messagesRepository
+          .getMessages(conversationId: conversation.id)
+          .listen((event) {
+        final messages = event.docs.map((e) => (e.data()) as Message).toList()
+          ..sort(
+            (a, b) => (a.date as DateTime).compareTo(
+              b.date as DateTime,
+            ),
+          );
+        debugPrint('Messages Retrieved: ${messages.length}');
+        emit(
+          state.copyWith(
+            messages: messages.reversed.toList(),
+            conversationState: ConversationState.loaded,
+          ),
+        );
+      });
+    } else {
+      debugPrint('Conversation is null');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Error Retrieveing Conversation',
+        ),
+      );
+    }
+  }
+
+  /// Returns a conversation by its [id]
+  Conversation? getConversationById(String id) {
+    if (state.conversations == null || state.conversations!.isEmpty) {
+      return null;
+    } else {
+      final conversation = state.conversations!.firstOrNull;
+      return conversation;
+    }
   }
 
   /// AppBar title for a conversation showing the other parties name
@@ -2094,22 +2184,23 @@ class AppCubit extends Cubit<AppState> {
         subject: '',
         message: state.messageText,
       );
-
-      final updatedconversation = state.conversation;
-      updatedconversation?.lastEditDate = DateTime.now();
-      updatedconversation?.recentMessage = message;
-      updatedconversation?.messageState = MessageState.UNREAD;
-      updatedconversation?.lastEditBy = state.usersProfile?.name;
-      _messagesRepository
-        ..createOrUpdateMessage(
-          id: message.messsageId,
-          message: message,
-        )
-        ..createOrUpdateGroup(
-          group: updatedconversation!,
-        );
-    } else {
-      debugPrint('Empty Text');
+      if (state.conversation != null) {
+        final updatedconversation = state.conversation!
+          ..lastEditDate = DateTime.now()
+          ..recentMessage = message
+          ..lastEditBy = state.usersProfile?.name
+          ..messageState = MessageState.UNREAD;
+        _messagesRepository
+          ..createOrUpdateMessage(
+            conversationId: updatedconversation.id,
+            message: message,
+          )
+          ..createOrUpdateConversation(
+            conversation: updatedconversation,
+          );
+      } else {
+        debugPrint('Empty Text');
+      }
     }
     emit(state.copyWith(messageText: ''));
   }
@@ -2213,39 +2304,48 @@ class AppCubit extends Cubit<AppState> {
             state.usersProfile?.students?.add(receiverItem);
           }
           state.usersProfile?.notes?.add(studentAcceptNote);
-
-          try {
-            _riderProfileRepository
-              ..createOrUpdateRiderProfile(
-                riderProfile: receiverProfile,
+          if (state.conversation != null) {
+            try {
+              _riderProfileRepository
+                ..createOrUpdateRiderProfile(
+                  riderProfile: receiverProfile,
+                )
+                ..createOrUpdateRiderProfile(
+                  riderProfile: state.usersProfile!,
+                );
+              message.requestItem?.isSelected = true;
+              _messagesRepository
+                  .createOrUpdateMessage(
+                message: message,
+                conversationId: state.conversation!.id,
               )
-              ..createOrUpdateRiderProfile(
-                riderProfile: state.usersProfile!,
-              );
-            message.requestItem?.isSelected = true;
-            _messagesRepository
-                .createOrUpdateMessage(
-              message: message,
-              id: message.messsageId,
-            )
-                .then((value) {
+                  .then((value) {
+                emit(
+                  state.copyWith(
+                    isMessage: true,
+                    errorMessage: 'Added ${receiverProfile.name} as an Student',
+                    acceptStatus: AcceptStatus.accepted,
+                  ),
+                );
+              });
+            } catch (e) {
               emit(
                 state.copyWith(
-                  isMessage: true,
-                  errorMessage: 'Added ${receiverProfile.name} as an Student',
-                  acceptStatus: AcceptStatus.accepted,
+                  isError: true,
+                  errorMessage: 'Error: $e',
+                  acceptStatus: AcceptStatus.waiting,
                 ),
               );
-            });
-          } catch (e) {
+              debugPrint(e.toString());
+            }
+          } else {
             emit(
               state.copyWith(
                 isError: true,
-                errorMessage: 'Error: $e',
+                errorMessage: 'Error: Conversation is null',
                 acceptStatus: AcceptStatus.waiting,
               ),
             );
-            debugPrint(e.toString());
           }
           break;
         case MessageType.STUDENT_HORSE_REQUEST:
@@ -2308,42 +2408,52 @@ class AppCubit extends Cubit<AppState> {
               }
               receiverProfile.notes?.add(senderAcceptnote);
               state.usersProfile?.notes?.add(receiverAcceptnote);
-              try {
-                _horseProfileRepository.createOrUpdateHorseProfile(
-                  horseProfile: studentHorse,
-                );
-                _riderProfileRepository
-                  ..createOrUpdateRiderProfile(
-                    riderProfile: state.usersProfile!,
-                  )
-                  ..createOrUpdateRiderProfile(
-                    riderProfile: receiverProfile,
+              if (state.conversation != null) {
+                try {
+                  _horseProfileRepository.createOrUpdateHorseProfile(
+                    horseProfile: studentHorse,
                   );
-                message.messageState = MessageState.READ;
-                _messagesRepository
-                    .createOrUpdateMessage(
-                  message: message,
-                  id: message.messsageId,
-                )
-                    .then((value) {
+                  _riderProfileRepository
+                    ..createOrUpdateRiderProfile(
+                      riderProfile: state.usersProfile!,
+                    )
+                    ..createOrUpdateRiderProfile(
+                      riderProfile: receiverProfile,
+                    );
+                  message.messageState = MessageState.READ;
+                  _messagesRepository
+                      .createOrUpdateMessage(
+                    message: message,
+                    conversationId: state.conversation!.id,
+                  )
+                      .then((value) {
+                    emit(
+                      state.copyWith(
+                        isMessage: true,
+                        errorMessage: 'Added ${receiverProfile.name} as '
+                            'a trainer for ${studentHorse.name}',
+                        acceptStatus: AcceptStatus.accepted,
+                      ),
+                    );
+                  });
+                } on FirebaseException catch (e) {
                   emit(
                     state.copyWith(
-                      isMessage: true,
-                      errorMessage: 'Added ${receiverProfile.name} as '
-                          'a trainer for ${studentHorse.name}',
-                      acceptStatus: AcceptStatus.accepted,
+                      isError: true,
+                      errorMessage: 'Failed: ${e.message!}',
+                      acceptStatus: AcceptStatus.waiting,
                     ),
                   );
-                });
-              } on FirebaseException catch (e) {
+                  debugPrint(e.toString());
+                }
+              } else {
                 emit(
                   state.copyWith(
                     isError: true,
-                    errorMessage: 'Failed: ${e.message!}',
+                    errorMessage: 'Error: Conversation is null',
                     acceptStatus: AcceptStatus.waiting,
                   ),
                 );
-                debugPrint(e.toString());
               }
             });
           } else {
@@ -2393,35 +2503,46 @@ class AppCubit extends Cubit<AppState> {
             );
           }
           state.usersProfile?.notes?.add(instructorAcceptNote);
-          try {
-            _riderProfileRepository
-              ..createOrUpdateRiderProfile(riderProfile: state.usersProfile!)
-              ..createOrUpdateRiderProfile(riderProfile: receiverProfile);
-            message.requestItem?.isSelected = true;
-            _messagesRepository
-                .createOrUpdateMessage(
-              message: message,
-              id: message.messsageId,
-            )
-                .then((value) {
+
+          if (state.conversation != null) {
+            try {
+              _riderProfileRepository
+                ..createOrUpdateRiderProfile(riderProfile: state.usersProfile!)
+                ..createOrUpdateRiderProfile(riderProfile: receiverProfile);
+              message.requestItem?.isSelected = true;
+              _messagesRepository
+                  .createOrUpdateMessage(
+                message: message,
+                conversationId: state.conversation!.id,
+              )
+                  .then((value) {
+                emit(
+                  state.copyWith(
+                    isMessage: true,
+                    errorMessage: 'Added ${receiverProfile.name} as an '
+                        'instructor for ${state.usersProfile?.name}',
+                    acceptStatus: AcceptStatus.accepted,
+                  ),
+                );
+              });
+            } on FirebaseException catch (e) {
               emit(
                 state.copyWith(
-                  isMessage: true,
-                  errorMessage: 'Added ${receiverProfile.name} as an '
-                      'instructor for ${state.usersProfile?.name}',
-                  acceptStatus: AcceptStatus.accepted,
+                  isError: true,
+                  errorMessage: 'Failed: ${e.message}',
+                  acceptStatus: AcceptStatus.waiting,
                 ),
               );
-            });
-          } on FirebaseException catch (e) {
+              debugPrint(e.toString());
+            }
+          } else {
             emit(
               state.copyWith(
                 isError: true,
-                errorMessage: 'Failed: ${e.message}',
+                errorMessage: 'Error: Conversation is null',
                 acceptStatus: AcceptStatus.waiting,
               ),
             );
-            debugPrint(e.toString());
           }
           break;
 
@@ -2437,7 +2558,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// returns the color for the group text based on the messageState
-  Color groupTextColor({required Group conversation}) {
+  Color groupTextColor({required Conversation conversation}) {
     final isDark = SharedPrefs().isDarkMode;
     return conversation.messageState == MessageState.UNREAD
         ? isDark
@@ -2756,16 +2877,15 @@ class AppCubit extends Cubit<AppState> {
 
   @override
   Future<void> close() {
-    _groupsStream?.cancel();
     _messagesStream?.cancel();
+    _userSubscription.cancel();
     _resourcesStream?.cancel();
-    _trainingPathsStream?.cancel();
     _skillsSubscription?.cancel();
+    _conversationsStream?.cancel();
+    _trainingPathsStream?.cancel();
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();
     _viewingProfileSubscription.cancel();
-
-    _userSubscription.cancel();
     return super.close();
   }
 }

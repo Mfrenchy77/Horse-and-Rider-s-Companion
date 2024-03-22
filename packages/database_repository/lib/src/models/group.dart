@@ -3,9 +3,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 
-/// The Differnt type of Message Groups
-enum GroupType { private, group }
-
 /// A Group is the reference to a group of messages
 /// it holds the parties involved in the message,
 /// the parties ids, the creator of the group, the
@@ -13,10 +10,9 @@ enum GroupType { private, group }
 /// edit the group, the date the group was last edited,
 /// the recent message in the group and the state of
 /// the message.
-class Group {
-  Group({
+class Conversation {
+  Conversation({
     required this.id,
-    required this.type,
     required this.parties,
     required this.partiesIds,
     required this.createdBy,
@@ -27,26 +23,41 @@ class Group {
     this.messageState = MessageState.UNREAD,
   });
 
+  /// The id of the Conversation
   final String id;
-  final GroupType type;
-  final String createdBy;
-  final DateTime createdOn;
-  final List<String> parties;
-  final List<String> partiesIds;
+
+  /// the id of the last profile to edit the Conversation
   String? lastEditBy;
+
+  /// The date the Conversation was last edited
   DateTime lastEditDate;
+
+  /// The most recent message in the Conversation
   Message? recentMessage;
+
+  /// The name of the profile that created the Conversation
+  final String createdBy;
+
+  /// The date the Conversation was created
+  final DateTime createdOn;
+
+  /// The state of the message [UNREAD, READ]
   MessageState messageState;
 
-  factory Group.fromFirestore(
+  /// The names of the profiles in the Conversation
+  final List<String> parties;
+
+  /// The ids of the profiles in the Conversation
+  final List<String> partiesIds;
+
+  factory Conversation.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     // ignore: avoid_unused_constructor_parameters
     SnapshotOptions? options,
   ) {
     final data = snapshot.data();
-    return Group(
+    return Conversation(
       id: data!['id'] as String,
-      type: data['type'] == 'group' ? GroupType.group : GroupType.private,
       createdBy: data['createdBy'] as String,
       messageState: data['messageState'] == 'UNREAD'
           ? MessageState.UNREAD
@@ -64,7 +75,6 @@ class Group {
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
-      'type': type == GroupType.group ? 'group' : 'private',
       'parties': parties,
       'createdBy': createdBy,
       'createdOn': createdOn,

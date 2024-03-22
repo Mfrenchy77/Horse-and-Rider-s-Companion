@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/Dialogs/mesage_contact_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list_item.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_search_button.dart';
@@ -32,12 +33,24 @@ class MessagesList extends StatelessWidget {
               : ListView(
                   children: state.conversations
                           ?.map(
-                            (Group conversation) =>
+                            (Conversation conversation) =>
                                 MessagesListItem(conversation: conversation),
                           )
                           .toList() ??
                       [const Text('No Messages')],
                 ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              showDialog<MesssageContactsSearchDialog>(
+                context: context,
+                builder: (context) => MesssageContactsSearchDialog(
+                  usersProfile: context.read<AppCubit>().state.usersProfile!,
+                ),
+              );
+            },
+            tooltip: 'Send a Message',
+            child: const Icon(Icons.email),
+          ),
         );
       },
     );

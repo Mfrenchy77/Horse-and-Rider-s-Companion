@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/log_book_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_name.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/contact_request_button.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/instructor_request_button.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/student_request.button.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/contact_request_button.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/instructor_request_button.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/message_profile_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_bio.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_list_of_profiles.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_location.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_website_link.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/student_request.button.dart';
 
 class PrimaryRiderView extends StatelessWidget {
   const PrimaryRiderView({super.key, required this.profile});
@@ -72,6 +73,10 @@ class PrimaryRiderView extends StatelessWidget {
             StudentRequestButton(
               profile: profile,
               key: const Key('StudentRequestButton'),
+            ),
+            MessageProfileButton(
+              profile: profile,
+              key: const Key('MessageProfileButton'),
             ),
           ],
         ),

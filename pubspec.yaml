@@ -8,6 +8,7 @@ dependencies:
     path: packages/cache
   cached_network_image: ^3.2.3
   cloud_firestore: ^4.1.0
+  crypto: ^3.0.3
   database_repository:
     path: packages/database_repository
   equatable: ^2.0.3
@@ -65,7 +66,7 @@ dev_dependencies:
   mocktail: ^1.0.1
   very_good_analysis: ^5.0.0+1
 environment:
-  sdk: '>=2.18.2 <3.0.0'
+  sdk: '>= 3.0.0'
 flutter:
   assets:
     - assets/

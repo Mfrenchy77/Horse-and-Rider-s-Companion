@@ -117,12 +117,14 @@ class AppState extends Equatable {
     this.resources = const [],
     this.isFromProfile = false,
     this.searchList = const [],
+    this.isProfileSetup = false,
     this.sortedSkills = const [],
     this.isBannerAdReady = false,
     this.trainingPaths = const [],
     this.viewingProfielEmail = '',
     this.savedResources = const [],
     this.isFromTrainingPath = false,
+    this.isEmailVerification = false,
     this.isFromTrainingPathList = false,
     this.pageStatus = AppPageStatus.loading,
     this.acceptStatus = AcceptStatus.waiting,
@@ -192,7 +194,7 @@ class AppState extends Equatable {
   final bool isFromProfile;
 
   /// The conversation being viewed
-  final Group? conversation;
+  final Conversation? conversation;
 
   /// The BannerAd to be shown in the app.
   final BannerAd? bannerAd;
@@ -200,6 +202,9 @@ class AppState extends Equatable {
   /// A String used to display an error message a snackbar
   /// message or a message to support
   final String errorMessage;
+
+  /// Whether the user need to finish setting up their profile
+  final bool isProfileSetup;
 
   /// Whether the BannerAd is ready to be shown.
   final bool isBannerAdReady;
@@ -213,11 +218,14 @@ class AppState extends Equatable {
   /// The list of messages in a conversation
   final List<Message>? messages;
 
+  /// Whether we want to display the email verification dialog
+  final bool isEmailVerification;
+
   /// The status of the accept request
   final AcceptStatus acceptStatus;
 
   /// The list of conversations for the user
-  final List<Group>? conversations;
+  final List<Conversation>? conversations;
 
   /// The current page status of the app.
   final AppPageStatus pageStatus;
@@ -298,13 +306,15 @@ class AppState extends Equatable {
     Resource? resource,
     BannerAd? bannerAd,
     String? messageText,
-    Group? conversation,
+    Conversation? conversation,
     bool? isFromProfile,
+    bool? isProfileSetup,
     String? errorMessage,
     bool? isBannerAdReady,
     List<Message>? messages,
     List<Skill?>? allSkills,
     bool? isFromTrainingPath,
+    bool? isEmailVerification,
     List<String?>? searchList,
     AppPageStatus? pageStatus,
     List<Skill?>? sortedSkills,
@@ -313,7 +323,7 @@ class AppState extends Equatable {
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
     AcceptStatus? acceptStatus,
-    List<Group>? conversations,
+    List<Conversation>? conversations,
     RiderProfile? ownersProfile,
     String? viewingProfielEmail,
     bool? isFromTrainingPathList,
@@ -362,6 +372,7 @@ class AppState extends Equatable {
       trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: ownersProfile ?? this.ownersProfile,
       isFromProfile: isFromProfile ?? this.isFromProfile,
+      isProfileSetup: isProfileSetup ?? this.isProfileSetup,
       savedResources: savedResources ?? this.savedResources,
       viewingProfile: viewingProfile ?? this.viewingProfile,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
@@ -370,6 +381,7 @@ class AppState extends Equatable {
       conversationsSort: conversationsSort ?? this.conversationsSort,
       conversationsState: conversationsState ?? this.conversationsState,
       isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
+      isEmailVerification: isEmailVerification ?? this.isEmailVerification,
       viewingProfielEmail: viewingProfielEmail ?? this.viewingProfielEmail,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
@@ -417,6 +429,7 @@ class AppState extends Equatable {
         trainingPaths,
         savedResources,
         viewingProfile,
+        isProfileSetup,
         isBannerAdReady,
         difficultyState,
         conversationState,
@@ -426,6 +439,7 @@ class AppState extends Equatable {
         skillTreeNavigation,
         resourcesSortStatus,
         viewingProfielEmail,
+        isEmailVerification,
         isFromTrainingPathList,
         messageToSupportStatus,
       ];

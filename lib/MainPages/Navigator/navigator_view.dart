@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
+import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// This is the reusable navigator that shows
@@ -61,6 +63,44 @@ class NavigatorView extends StatelessWidget {
               ).closed.then((value) {
                 cubit.clearMessage();
               });
+          });
+        }
+        // Email verification
+        if (state.isEmailVerification) {
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            const time = Duration(milliseconds: 200);
+            if (timeStamp < time) {
+              showDialog<AlertDialog>(
+                context: context,
+                builder: (context) =>
+                    EmailVerificationDialog(email: state.user.email),
+              );
+            } else {
+              debugPrint('Email Verification Dialog already shown: $timeStamp');
+            }
+          });
+        }
+        // Profile Set up
+        if (state.isProfileSetup) {
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            debugPrint(timeStamp.toString());
+            const time = Duration(milliseconds: 200);
+            debugPrint('Time: $time');
+            // if timestamp is less than 10 milliseconds, show the dialog
+            if (timeStamp < time) {
+              debugPrint('Showing Profile Setup Dialog');
+              showDialog<AlertDialog>(
+                barrierDismissible: false,
+                context: context,
+                builder: (context) => EditRiderProfileDialog(
+                  riderProfile: null,
+                  user: state.user,
+                  key: const Key('ProfileSetup'),
+                ),
+              ).then((value) => cubit.clearProfileSetup());
+            } else {
+              debugPrint('Profile Setup already shown: $timeStamp');
+            }
           });
         }
       },

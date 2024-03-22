@@ -13,16 +13,17 @@ part 'new_group_dialog_state.dart';
 
 class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
   NewGroupDialogCubit({
-    required MessagesRepository groupsRespository,
+    required MessagesRepository messagesRepository,
     required RiderProfileRepository riderProfileRepository,
-    required this.user,
-  })  : _groupsRespository = groupsRespository,
+    required RiderProfile usersProfile,
+  })  : _messagesRepository = messagesRepository,
         _riderProfileRepository = riderProfileRepository,
-        super(const NewGroupDialogState());
+        super(const NewGroupDialogState()) {
+    emit(state.copyWith(usersProfile: usersProfile));
+  }
 
-  final MessagesRepository _groupsRespository;
+  final MessagesRepository _messagesRepository;
   final RiderProfileRepository _riderProfileRepository;
-  final RiderProfile user;
 
   void nameChanged(String value) {
     final name = Name.dirty(value);
@@ -41,18 +42,19 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
         .listen((event) {
       final results =
           event.docs.map((e) => (e.data()) as RiderProfile).toList();
-      emit(state.copyWith(searchResult: results));
+      emit(state.copyWith(searchResult: _removeUsersProfile(results)));
     });
   }
 
-  void removeFromSearchList({required RiderProfile riderProfile}) {
-    final searchResult = state.searchResult.toList()..remove(riderProfile);
-    emit(state.copyWith(searchResult: searchResult));
-  }
-
-  void removeGrouopList({required RiderProfile riderProfile}) {
-    final groupList = state.groupMembers.toList()..remove(riderProfile);
-    emit(state.copyWith(groupMembers: groupList));
+  /// This method removes the user's profile from the list of search results
+  List<RiderProfile> _removeUsersProfile(List<RiderProfile> profiles) {
+    final adjustedList = profiles.toList();
+    final index = adjustedList
+        .indexWhere((profile) => profile.email == state.usersProfile?.email);
+    if (index != -1) {
+      adjustedList.removeAt(index);
+    }
+    return adjustedList;
   }
 
   void clearResults() {
@@ -72,77 +74,79 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
 
   void getProfileByEmail() {
     debugPrint('getProfile by Email for ${state.email.value}');
-    final profileResults = <RiderProfile?>[];
+    final profileResults = <RiderProfile>[];
     _riderProfileRepository
         .getRiderProfile(email: state.email.value.toLowerCase())
         .listen((event) {
-      final profile = event.data() as RiderProfile?;
+      final profile = event.data() as RiderProfile;
       profileResults.add(profile);
-      debugPrint('Result Name: ${profile?.name}');
-      emit(state.copyWith(searchResult: profileResults));
+      debugPrint('Result Name: ${profile.name}');
+      emit(state.copyWith(searchResult: _removeUsersProfile(profileResults)));
     });
   }
 
-  void addToGroupList({
-    required RiderProfile riderProfile,
-  }) {
-//only add to the group list if it is not already in the list
-    if (state.groupMembers.contains(riderProfile)) {
-      emit(
-        state.copyWith(
-          error: '${riderProfile.name} is already in the group',
-          isError: true,
-        ),
-      );
+//   void addToGroupList({
+//     required RiderProfile riderProfile,
+//   }) {
+// //only add to the group list if it is not already in the list
+//     if (state.groupMembers.contains(riderProfile)) {
+//       emit(
+//         state.copyWith(
+//           error: '${riderProfile.name} is already in the group',
+//           isError: true,
+//         ),
+//       );
 
-      return;
-    }
+//       return;
+//     }
 
-    debugPrint('Add ${riderProfile.name} to Message Group');
-    final groupMembers = state.groupMembers.toList()..add(riderProfile);
-    debugPrint('Group Member Size: ${groupMembers.length}');
-    emit(state.copyWith(groupMembers: groupMembers));
-  }
+//     debugPrint('Add ${riderProfile.name} to Message Group');
+//     final groupMembers = state.groupMembers.toList()..add(riderProfile);
+//     debugPrint('Group Member Size: ${groupMembers.length}');
+//     emit(state.copyWith(groupMembers: groupMembers));
+//   }
 
-  void createGroup() {
+  Future<void> createConversation(RiderProfile profile) async {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    final emails = <String>[
+      state.usersProfile!.email.toLowerCase(),
+      profile.email.toLowerCase(),
+    ]..sort();
 
-    final id = StringBuffer()..write(convertEmailToPath(user.email));
-    final memberNames = <String>[user.name];
-    final memberIds = <String>[user.email.toLowerCase()];
-    List<RiderProfile> groupMembers;
-    if (state.groupMembers.isNotEmpty) {
-      groupMembers = state.groupMembers as List<RiderProfile>;
-      for (final riderProfile in groupMembers) {
-        id.write(
-          convertEmailToPath(riderProfile.email.toLowerCase()),
-        );
-        memberIds.add(riderProfile.email.toLowerCase());
-        memberNames.add(riderProfile.name);
-      }
-    }
-    debugPrint('Id: $id');
-    final group = Group(
-      id: id.toString(),
-      type: state.groupType,
+    final idbuff = StringBuffer()..write(emails.join('_'));
+    final id = convertEmailToPath(idbuff.toString());
+    final memberNames = <String>[state.usersProfile!.name, profile.name];
+    final memberIds = <String>[
+      state.usersProfile!.email.toLowerCase(),
+      profile.email.toLowerCase(),
+    ];
+
+    final convesation = Conversation(
+      id: id,
+      recentMessage: null,
       parties: memberNames,
       partiesIds: memberIds,
-      createdBy: user.name,
       createdOn: DateTime.now(),
       lastEditDate: DateTime.now(),
-      lastEditBy: user.name,
-      recentMessage: null,
+      createdBy: state.usersProfile!.name,
+      lastEditBy: state.usersProfile!.name,
     );
 
     try {
-      _groupsRespository.createOrUpdateGroup(group: group);
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      await _messagesRepository
+          .createOrUpdateConversation(
+        conversation: convesation,
+      )
+          .then((value) {
+        debugPrint('Conversation Created');
+        emit(state.copyWith(status: FormzStatus.submissionSuccess, id: id));
+      });
     } on FirebaseException catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
           isError: true,
-          error: 'Problem Creating New Message: $e',
+          status: FormzStatus.submissionFailure,
+          error: 'Problem Creating New Conversation: $e',
         ),
       );
     } catch (e) {
@@ -150,7 +154,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
         state.copyWith(
           status: FormzStatus.submissionFailure,
           isError: true,
-          error: 'Problem Creating New Message: $e',
+          error: 'Problem Creating New Conversation: $e',
         ),
       );
     }

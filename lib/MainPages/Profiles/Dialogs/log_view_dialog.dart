@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 
 /// Dialog to view the log of a rider or horse
 ///
@@ -23,44 +24,50 @@ class LogViewDialog extends StatelessWidget {
   final List<BaseListItem>? notes;
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: _logentryTitle(isRider: isRider, name: name),
-          actions: const [
-            AddLogEntry(
-              key: Key('AddLogEntry'),
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _logBookList(
-                  notes: notes,
-                  isRider: isRider,
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        centerTitle: true,
+        title: _logentryTitle(isRider: isRider, name: name),
+        actions: const [
+          AddLogEntry(
+            key: Key('AddLogEntry'),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Center(
+          child: MaxWidthBox(
+            maxWidth: 800,
+            child: Card(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Close'),
+                  Expanded(
+                    child: _logBookList(
+                      notes: notes,
+                      isRider: isRider,
                     ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Close'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -125,7 +132,7 @@ Widget _logBookList({
   required List<BaseListItem>? notes,
 }) {
   if (notes != null || notes!.isNotEmpty) {
-    notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
+    notes.sort((a, b) => b.date!.compareTo(a.date!));
     return ListView.builder(
       shrinkWrap: true,
       itemCount: notes.length,
@@ -148,7 +155,8 @@ class LogBookListRider extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppCubit>().state;
     final profile = state.viewingProfile ?? state.usersProfile;
-    final notes = profile?.notes;
+    final notes = profile!.notes
+      ?..sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
     if (notes != null || notes!.isNotEmpty) {
       notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
       return ListView.builder(
@@ -175,10 +183,10 @@ class LogBookListHorse extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final profile = state.horseProfile;
-        final notes = profile?.notes;
+        final notes = profile!.notes
+          ?..sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
 
         if (notes != null || notes!.isNotEmpty) {
-          notes.sort((a, b) => a.date?.compareTo(b.date as DateTime) ?? 0);
           return ListView.builder(
             shrinkWrap: true,
             itemCount: notes.length,
@@ -250,7 +258,9 @@ Widget _logTagChip({required String? tagString}) {
     avatar: _logTagIcon(tag: tag),
     label: Text(
       _logTagText(tag: tag),
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(
+        color: tag == LogTag.Training ? Colors.black54 : Colors.white,
+      ),
     ),
     backgroundColor: _logTagColor(tag: tag),
   );
@@ -266,6 +276,8 @@ LogTag convertStringToLogTag(String? tag) {
       return LogTag.Health;
     case 'LogTag.Other':
       return LogTag.Other;
+    case 'LogTag.Edit':
+      return LogTag.Edit;
     default:
       return LogTag.Other;
   }

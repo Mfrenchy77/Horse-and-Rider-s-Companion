@@ -25,6 +25,7 @@ class EditRiderProfileDialog extends StatelessWidget {
     required this.riderProfile,
     this.user,
   });
+
   final RiderProfile? riderProfile;
   final User? user;
   @override

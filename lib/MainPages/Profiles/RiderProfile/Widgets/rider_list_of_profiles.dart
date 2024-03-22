@@ -2,7 +2,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_tile.dart';
 
 class RiderListOfProfiles extends StatelessWidget {
   const RiderListOfProfiles({super.key, required this.profile});
@@ -92,18 +91,7 @@ class RiderListOfProfiles extends StatelessWidget {
                 alignment: WrapAlignment.center,
                 children: [
                   ...profile.ownedHorses
-                          ?.map(
-                            (e) => DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.black54,
-                                  width: .5,
-                                ),
-                              ),
-                              child: ProfileTile(baseItem: e),
-                            ),
-                          )
+                          ?.map((e) => ProfileCard(baseItem: e))
                           .toList() ??
                       [],
                 ],

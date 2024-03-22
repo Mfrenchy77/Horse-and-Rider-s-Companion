@@ -131,6 +131,27 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     }
   }
 
+  /// Remove usersProfile from the search results
+  List<RiderProfile> removeUserProfile(RiderProfile? usersProfile) {
+    if (usersProfile == null) {
+      return state.riderProfiles;
+    }
+
+    debugPrint('Removing User Profile: '
+        '${usersProfile.email} from Search Results');
+    // Create a new list to avoid modifying the state directly
+    final profiles = List<RiderProfile>.from(state.riderProfiles);
+    // Find the index of the profile to remove
+    final index =
+        profiles.indexWhere((profile) => profile.email == usersProfile.email);
+
+    // If found, remove the profile from the list
+    if (index != -1) {
+      profiles.removeAt(index);
+    }
+    return profiles;
+  }
+
   /// search Rider Profiles by Email
   void searchProfileByEmail() {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));

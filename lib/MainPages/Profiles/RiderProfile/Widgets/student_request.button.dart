@@ -28,7 +28,8 @@ class StudentRequestButton extends StatelessWidget {
           return Tooltip(
             message:
                 isAlreadyStudent ? 'Remove from Students' : 'Add to Students',
-            child: OutlinedButton(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.person_add),
               onPressed: () {
                 if (isAlreadyStudent) {
                   cubit.removeStudent(studentProfile: state.viewingProfile!);
@@ -38,7 +39,7 @@ class StudentRequestButton extends StatelessWidget {
                   );
                 }
               },
-              child: Text(
+              label: Text(
                 isAlreadyStudent
                     ? 'Remove Student'
                     : 'Request to add as Student',

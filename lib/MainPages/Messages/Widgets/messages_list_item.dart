@@ -10,7 +10,7 @@ import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
 /// This is the widget that will be used to display the list of messages
 class MessagesListItem extends StatelessWidget {
   const MessagesListItem({super.key, required this.conversation});
-  final Group conversation;
+  final Conversation conversation;
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
@@ -21,7 +21,7 @@ class MessagesListItem extends StatelessWidget {
         final textColor = cubit.groupTextColor(conversation: conversation);
         return ListTile(
           onTap: () {
-            cubit.setConversation(conversation);
+            cubit.setConversation(conversation.id);
             context.goNamed(
               MessagePage.name,
               pathParameters: {MessagePage.pathParams: conversation.id},

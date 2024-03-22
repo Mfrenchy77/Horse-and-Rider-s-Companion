@@ -416,7 +416,10 @@ class ProfileSearchDialog extends StatelessWidget {
     return state.riderProfiles.isNotEmpty
         ? SingleChildScrollView(
             child: Wrap(
-              children: state.riderProfiles
+              children: cubit
+                  .removeUserProfile(
+                    context.read<AppCubit>().state.usersProfile,
+                  )
                   .map(
                     (profile) => profileItem(
                       profileName: profile.name,

@@ -1,17 +1,17 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'dart:convert';
 import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 
 // ignore_for_file: constant_identifier_names
 class ViewUtils {
-  
   final RegExp _numeric = RegExp(r'^-?[0-9]+$');
   static const String _AB =
       '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
   static final Random _rnd = Random();
-
- 
 
   static String revertPathToEmail(String path) {
     var convertedEmail = path.replaceAll('666', '.');
@@ -69,17 +69,23 @@ class ViewUtils {
   }
 }
 
+String convertEmailToPath(String email) {
+  // Replace common email characters with less predictable ones
+  final convertedEmail = email
+      .replaceAll('.', 'dot')
+      .replaceAll('@', 'at')
+      .replaceAll('f', 'fu')
+      .replaceAll('e', 'ee')
+      .replaceAll('g', 'gi')
+      .replaceAll('m', 'mi')
+      .replaceAll('a', 'ao')
+      .replaceAll('i', 'ie')
+      .replaceAll('co', 'coo');
 
-   String convertEmailToPath(String email) {
-    var convertedEmail = email.replaceAll('.', '666');
-    convertedEmail = convertedEmail.replaceAll('@', '999');
-    convertedEmail = convertedEmail.replaceAll('f', '5');
-    convertedEmail = convertedEmail.replaceAll('e', '1');
-    convertedEmail = convertedEmail.replaceAll('g', '2');
-    convertedEmail = convertedEmail.replaceAll('m', '');
-    convertedEmail = convertedEmail.replaceAll('a', 'p');
-    convertedEmail = convertedEmail.replaceAll('i', 'a');
-    convertedEmail = convertedEmail.replaceAll('co', 'l');
+  // Use a hash function to obscure the modified email string further.
+  // This example uses SHA256, but you can choose others based on your needs.
+  final bytes = utf8.encode(convertedEmail); // data being hashed
+  final digest = sha256.convert(bytes);
 
-    return convertedEmail;
-  }
+  return digest.toString();
+}

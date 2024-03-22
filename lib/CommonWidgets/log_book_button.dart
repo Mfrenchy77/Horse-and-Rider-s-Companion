@@ -35,9 +35,10 @@ class LogBookButton extends StatelessWidget {
                 children: [
                   Tooltip(
                     message: 'Open the Log Book',
-                    child: FilledButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: () {
-                        showDialog<AlertDialog>(
+                        showDialog<Dialog>(
+                          
                           context: context,
                           builder: (context) => LogViewDialog(
                             name: horseProfile?.name ?? profile?.name ?? '',

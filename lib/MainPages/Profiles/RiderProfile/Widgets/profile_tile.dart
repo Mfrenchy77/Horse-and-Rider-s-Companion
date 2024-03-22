@@ -16,7 +16,6 @@ class ProfileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final cubit = context.read<AppCubit>();
         return SizedBox(
           width: 200,
           child: Tooltip(

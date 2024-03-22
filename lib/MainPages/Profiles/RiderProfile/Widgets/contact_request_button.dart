@@ -34,11 +34,12 @@ class ContactRequestButton extends StatelessWidget {
         return Tooltip(
           message:
               isAlreadyContact ? 'Remove from Contacts' : 'Add to Contacts',
-          child: OutlinedButton(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.person_add),
             onPressed: () => isAlreadyContact
                 ? cubit.removeFromContacts(riderProfile: profile)
                 : cubit.addToContact(riderProfile: profile),
-            child:
+            label:
                 Text(isAlreadyContact ? 'Remove Contact' : 'Add to Contacts'),
           ),
         );
