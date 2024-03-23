@@ -33,10 +33,10 @@ class ResourcesItem extends StatelessWidget {
           isSelected: false,
         );
         final isDark = SharedPrefs().isDarkMode;
-        final newList = <BaseListItem?>[newRatingUser];
+        final newList = <BaseListItem>[newRatingUser];
 
         final user = resource.usersWhoRated?.firstWhere(
-          (element) => element?.id == state.usersProfile?.email,
+          (element) => element.id == state.usersProfile?.email,
           orElse: BaseListItem.new,
         );
         if (resource.usersWhoRated != null) {

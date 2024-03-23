@@ -1017,7 +1017,9 @@ class AppCubit extends Cubit<AppState> {
       _messagesRepository
         ..createOrUpdateConversation(conversation: conversation)
         ..createOrUpdateMessage(
-            message: message, conversationId: conversation.id);
+          message: message,
+          conversationId: conversation.id,
+        );
       emit(
         state.copyWith(
           isMessage: true,
@@ -1659,7 +1661,7 @@ class AppCubit extends Cubit<AppState> {
     );
 
     final usersRating = resource.usersWhoRated?.firstWhere(
-      (element) => element?.id == state.usersProfile?.email,
+      (element) => element.id == state.usersProfile?.email,
       orElse: BaseListItem.new,
     );
     if (resource.usersWhoRated == null) {
@@ -1814,79 +1816,79 @@ class AppCubit extends Cubit<AppState> {
   Resource _setNewPositiveRating({required Resource resource}) {
     final userEmail = state.usersProfile?.email as String;
 
-    ///   List item with user and rated is true
+    //   List item with user and rated is true
     final newuser = BaseListItem(
       id: userEmail,
       isSelected: true,
       isCollapsed: false,
     );
 
-    ///   List with the user and rated value loaded in
+    //   List with the user and rated value loaded in
     final newUsersWhoRated = [newuser];
 
-    /// New Ratings
+    // New Ratings
     final newPositiveRating = resource.rating! + 1;
     final newDoublePositveRating = resource.rating! + 2;
     final newNegativeRating = resource.rating! - 1;
 
-    ///   Reference to the user
-    final user = resource.usersWhoRated
-        ?.firstWhere((element) => element?.id == userEmail);
-
-    /// All Conditions possible
-    if (resource.usersWhoRated != null) {
-      ///   'List is not NULL
+    // All Conditions possible
+    if (resource.usersWhoRated != null && resource.usersWhoRated!.isNotEmpty) {
+      //   Reference to the user
+      final user = resource.usersWhoRated?.firstWhere(
+        (element) => element.id == userEmail,
+      );
+      //   'List is not NULL
       if (user != null) {
-        ///   Found UserWhoRated
+        //   Found UserWhoRated
         if (user.isSelected == null && user.isCollapsed == null) {
-          ///   Never Rated before addding User and +1
+          //   Never Rated before addding User and +1
           resource.usersWhoRated?.add(newuser);
           resource.rating = newPositiveRating;
           return resource;
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
-          ///   Already Positive Rating, -1
+          //   Already Positive Rating, -1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isSelected = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isCollapsed = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isCollapsed = false;
           resource.rating = newNegativeRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == false) {
-          ///   User does not have a registered rateing +1
+          //   User does not have a registered rateing +1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isSelected = true;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isSelected = true;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isCollapsed = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isCollapsed = false;
           resource.rating = newPositiveRating;
           return resource;
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
-          ///   User already rated NEGATIVE, adding +2
+          //   User already rated NEGATIVE, adding +2
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isSelected = true;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isSelected = true;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isCollapsed = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isCollapsed = false;
           resource.rating = newDoublePositveRating;
           return resource;
         } else {
-          ///   Unexpeted Condition  NULL
+          //   Unexpeted Condition  NULL
           return resource;
         }
       } else {
-        ///   No UserWhoRated Found, Adding one
+        //   No UserWhoRated Found, Adding one
         resource.usersWhoRated?.add(newuser);
         resource.rating = newPositiveRating;
         return resource;
       }
     } else {
-      ///   UserWhoRated List is null adding and a +1
+      //   UserWhoRated List is null adding and a +1
       resource
         ..usersWhoRated = newUsersWhoRated
         ..rating = newPositiveRating;
@@ -1898,78 +1900,79 @@ class AppCubit extends Cubit<AppState> {
   Resource _setNewNegativeRating({required Resource resource}) {
     final userEmail = state.usersProfile!.email;
 
-    ///   List item with user and rated is true
+    //   List item with user and rated is true
     final newuser = BaseListItem(
       id: userEmail,
       isSelected: false,
       isCollapsed: true,
     );
 
-    ///   List with the user and rated value loaded in
+    //  List with the user and rated value loaded in
     final newUsersWhoRated = [newuser];
 
-    ///   New Rating Conditions
+    //   New Rating Conditions
     final newPositiveRating = resource.rating! + 1;
     final newNegativeRating = resource.rating! - 1;
     final newDoubleNegativeRating = resource.rating! - 2;
 
-    ///   Reference to the User
-    final user = resource.usersWhoRated
-        ?.firstWhere((element) => element?.id == userEmail);
+    if (resource.usersWhoRated != null && resource.usersWhoRated!.isNotEmpty) {
+      //   Reference to the User
+      final user = resource.usersWhoRated?.firstWhere(
+        (element) => element.id == userEmail,
+      );
 
-    if (resource.usersWhoRated != null) {
-      ///  List is not NULL
+      //  List is not NULL
       if (user != null) {
         ///  Found UserWhoRated
         if (user.isSelected == null && user.isCollapsed == null) {
-          ///   Never Rated before addding User and -1
+          //   Never Rated before addding User and -1
           resource.usersWhoRated?.add(newuser);
           resource.rating = newNegativeRating;
           return resource;
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
-          ///   Already Negative Rating, +1
+          //   Already Negative Rating, +1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isSelected = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isCollapsed = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isCollapsed = false;
           resource.rating = newPositiveRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == false) {
-          ///   User does not have a registered rating -1
+          //   User does not have a registered rating -1
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isSelected = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isCollapsed = true;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isCollapsed = true;
           resource.rating = newNegativeRating;
           return resource;
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
-          ///   User already rated POSITIVE, adding -2
+          //   User already rated POSITIVE, adding -2
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isSelected = false;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isSelected = false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element?.id == userEmail)
-              ?.isCollapsed = true;
+              ?.firstWhere((element) => element.id == userEmail)
+              .isCollapsed = true;
           resource.rating = newDoubleNegativeRating;
           return resource;
         } else {
-          ///   Unexpeted Condition  NULL
+          //   Unexpeted Condition  NULL
           return resource;
         }
       } else {
-        ///   No UserWhoRated Found, Adding one and -1
+        //   No UserWhoRated Found, Adding one and -1
         resource.usersWhoRated?.add(newuser);
         resource.rating = newNegativeRating;
         return resource;
       }
     } else {
-      ///   UserWhoRated List is null adding and a -1
+      //   UserWhoRated List is null adding and a -1
       resource
         ..usersWhoRated = newUsersWhoRated
         ..rating = newNegativeRating;

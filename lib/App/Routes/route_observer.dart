@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// A [RouteObserver] that provides callbacks for when routes are pushed and popped.
+/// A [RouteObserver] that provides callbacks for
+///  when routes are pushed and popped.
 class RouteObserverWithCallback extends RouteObserver<PageRoute<dynamic>> {
   RouteObserverWithCallback({
     required this.onPop,

@@ -48,7 +48,7 @@ class Resource {
   final DateTime? lastEditDate;
 
   ///List of users who rated this resource
-  List<BaseListItem?>? usersWhoRated;
+  List<BaseListItem>? usersWhoRated;
 
   factory Resource.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
@@ -89,7 +89,7 @@ class Resource {
       if (numberOfRates != null) 'numberOfRates': numberOfRates,
       if (usersWhoRated != null)
         'usersWhoRated':
-            List<dynamic>.from(usersWhoRated!.map((e) => e?.toJson())),
+            List<dynamic>.from(usersWhoRated!.map((e) => e.toJson())),
     };
   }
 
@@ -104,7 +104,7 @@ class Resource {
     String? description,
     DateTime? lastEditDate,
     List<String?>? skillTreeIds,
-    List<BaseListItem?>? usersWhoRated,
+    List<BaseListItem>? usersWhoRated,
   }) {
     return Resource(
       id: id ?? this.id,

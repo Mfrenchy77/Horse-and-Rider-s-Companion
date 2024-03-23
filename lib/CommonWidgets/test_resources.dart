@@ -21,7 +21,7 @@ class TestResource {
         List<String?>.generate(3, (_) => 'skill-${_random.nextInt(10)}');
 
     // Generate a list of users who rated
-    final usersWhoRated = List<BaseListItem?>.generate(
+    final usersWhoRated = List<BaseListItem>.generate(
       5,
       (index) => BaseListItem(id: 'user-$index'),
     );
