@@ -207,9 +207,7 @@ class LoginCubit extends Cubit<LoginState> {
           await openEmailApp(email: state.email.value);
           emit(
             state.copyWith(
-              status: FormzStatus.pure,
-              pageStatus: LoginPageStatus.awitingEmailVerification,
-              showEmailDialog: true,
+              status: FormzStatus.submissionSuccess,
             ),
           );
         }
@@ -343,15 +341,15 @@ class LoginCubit extends Cubit<LoginState> {
           );
         }
       });
-    } on LogInAsGuestFailure catch (e) {
-      debugPrint('Error: ${e.message}');
-      emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Error: ${e.message}',
-          status: FormzStatus.submissionFailure,
-        ),
-      );
+      // } on LogInAsGuestFailure catch (e) {
+      //   debugPrint('Error: ${e.message}');
+      //   emit(
+      //     state.copyWith(
+      //       isError: true,
+      //       errorMessage: 'Error: ${e.message}',
+      //       status: FormzStatus.submissionFailure,
+      //     ),
+      //   );
     } catch (_) {
       debugPrint('Submission Failure');
       emit(
@@ -364,27 +362,27 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
-  /// Peroiodically checks the email verification status.
-  void checkEmailVerificationStatus() {
-    _emailVerificationTimer?.cancel();
-    _emailVerificationTimer =
-        Timer.periodic(const Duration(seconds: 10), (_) async {
-      debugPrint('Checking Email Verification Status');
-      await _authenticationRepository.reloadCurrentUser();
-      final isVerified = _authenticationRepository.isEmailVerified();
+  // /// Peroiodically checks the email verification status.
+  // void checkEmailVerificationStatus() {
+  //   _emailVerificationTimer?.cancel();
+  //   _emailVerificationTimer =
+  //       Timer.periodic(const Duration(seconds: 10), (_) async {
+  //     debugPrint('Checking Email Verification Status');
+  //     await _authenticationRepository.reloadCurrentUser();
+  //     final isVerified = _authenticationRepository.isEmailVerified();
 
-      if (isVerified) {
-        _emailVerificationTimer?.cancel();
-        debugPrint('Email is verified in Timer');
-        emit(
-          state.copyWith(
-            status: FormzStatus.submissionSuccess,
-            showEmailDialog: false,
-          ),
-        );
-      }
-    });
-  }
+  //     if (isVerified) {
+  //       _emailVerificationTimer?.cancel();
+  //       debugPrint('Email is verified in Timer');
+  //       emit(
+  //         state.copyWith(
+  //           status: FormzStatus.submissionSuccess,
+  //           showEmailDialog: false,
+  //         ),
+  //       );
+  //     }
+  //   });
+  // }
 
   /// Sends a forgot password email.
   Future<void> sendForgotPasswordEmail() async {

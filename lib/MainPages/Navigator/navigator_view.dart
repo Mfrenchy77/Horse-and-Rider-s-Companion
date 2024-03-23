@@ -3,7 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
@@ -28,7 +28,6 @@ class NavigatorView extends StatelessWidget {
     return BlocListener<AppCubit, AppState>(
       listener: (context, state) {
         final cubit = context.read<AppCubit>();
-
         // Error handling
         if (state.isError) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -110,85 +109,121 @@ class NavigatorView extends StatelessWidget {
           return SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
-            child: Column(
-              children: [
-                Expanded(
-                  child: AdaptiveScaffold(
-                    appBar: AppBar(),
-                    internalAnimations: false,
-                    smallBreakpoint: const WidthPlatformBreakpoint(end: 800),
-                    mediumBreakpoint: const WidthPlatformBreakpoint(
-                      begin: 800,
-                      end: 1200,
-                    ),
-                    largeBreakpoint: const WidthPlatformBreakpoint(begin: 1200),
-                    leadingUnextendedNavRail: const Image(
-                      color: Colors.white,
-                      fit: BoxFit.contain,
-                      image: AssetImage('assets/horse_logo.png'),
-                      height: 40,
-                    ),
-                    //   ) state.index == 0
-                    // ?
-                    // : Visibility(
-                    //     visible: state.index != 0 || state.isViewing,
-                    //     child: IconButton(
-                    //       icon: Icon(
-                    //         Icons.arrow_back,
-                    //         color: HorseAndRidersTheme()
-                    //             .getTheme()
-                    //             .appBarTheme
-                    //             .iconTheme
-                    //             ?.color,
-                    //       ),
-                    //       onPressed: cubit.backPressed,
-                    //     ),
-                    //   ),
-                    leadingExtendedNavRail: const Image(
-                      color: Colors.white,
-                      fit: BoxFit.contain,
-                      image: AssetImage('assets/horse_logo.png'),
-                      height: 40,
-                    ),
-                    //    state.index == 0
-                    // ?
-                    // : Visibility(
-                    //     visible: state.index != 0 || state.isViewing,
-                    //     child: IconButton(
-                    //       icon: Icon(
-                    //         Icons.arrow_back,
-                    //         color: HorseAndRidersTheme()
-                    //             .getTheme()
-                    //             .appBarTheme
-                    //             .iconTheme
-                    //             ?.color,
-                    //       ),
-                    //       onPressed: cubit.backPressed,
-                    //     ),
-                    //   ),
-                    useDrawer: false,
-                    destinations:
-                        _buildDestinations(isForRider: state.isForRider),
-                    selectedIndex: child.currentIndex,
-                    onSelectedIndexChange: (p0) => _onTap(p0, cubit, child),
-                    body: (_) => AdaptiveLayout(
-                      internalAnimations: false,
-                      body: SlotLayout(
-                        config: <Breakpoint, SlotLayoutConfig>{
-                          Breakpoints.standard: SlotLayout.from(
-                            key: const Key('mainView'),
-                            builder: (_) => child,
+            child: state.pageStatus == AppPageStatus.resource
+                ? Stack(
+                    children: [
+                      child,
+// TODO: This where we will impliment the comment section bottom tool
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: SizedBox(
+                          height: 50,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              FloatingActionButton(
+                                child: const Icon(Icons.arrow_drop_up),
+                                onPressed: () {
+                                  debugPrint('Cllick1');
+                                },
+                              ),
+                              FloatingActionButton(
+                                child: const Icon(Icons.arrow_drop_down),
+                                onPressed: () {
+                                  debugPrint('Cllick3');
+                                },
+                              ),
+                            ],
                           ),
-                        },
+                        ),
                       ),
-                    ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        child: AdaptiveScaffold(
+                          appBar: AppBar(),
+                          internalAnimations: false,
+                          smallBreakpoint:
+                              const WidthPlatformBreakpoint(end: 800),
+                          mediumBreakpoint: const WidthPlatformBreakpoint(
+                            begin: 800,
+                            end: 1200,
+                          ),
+                          largeBreakpoint:
+                              const WidthPlatformBreakpoint(begin: 1200),
+                          leadingUnextendedNavRail: const Image(
+                            color: Colors.white,
+                            fit: BoxFit.contain,
+                            image: AssetImage('assets/horse_logo.png'),
+                            height: 40,
+                          ),
+                          //   ) state.index == 0
+                          // ?
+                          // : Visibility(
+                          //     visible: state.index != 0 || state.isViewing,
+                          //     child: IconButton(
+                          //       icon: Icon(
+                          //         Icons.arrow_back,
+                          //         color: HorseAndRidersTheme()
+                          //             .getTheme()
+                          //             .appBarTheme
+                          //             .iconTheme
+                          //             ?.color,
+                          //       ),
+                          //       onPressed: cubit.backPressed,
+                          //     ),
+                          //   ),
+                          leadingExtendedNavRail: const Image(
+                            color: Colors.white,
+                            fit: BoxFit.contain,
+                            image: AssetImage('assets/horse_logo.png'),
+                            height: 40,
+                          ),
+                          //    state.index == 0
+                          // ?
+                          // : Visibility(
+                          //     visible: state.index != 0 || state.isViewing,
+                          //     child: IconButton(
+                          //       icon: Icon(
+                          //         Icons.arrow_back,
+                          //         color: HorseAndRidersTheme()
+                          //             .getTheme()
+                          //             .appBarTheme
+                          //             .iconTheme
+                          //             ?.color,
+                          //       ),
+                          //       onPressed: cubit.backPressed,
+                          //     ),
+                          //   ),
+                          useDrawer: false,
+                          destinations:
+                              _buildDestinations(isForRider: state.isForRider),
+                          selectedIndex: child.currentIndex,
+                          onSelectedIndexChange: (p0) =>
+                              _onTap(p0, cubit, child),
+                          body: (_) => AdaptiveLayout(
+                            internalAnimations: false,
+                            body: SlotLayout(
+                              
+                              config: <Breakpoint, SlotLayoutConfig>{
+                                Breakpoints.standard: SlotLayout.from(
+                                  key: const Key('mainView'),
+                                  builder: (_) => child,
+                                ),
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      const BannerAdView(
+                        key: Key('BannerAdView'),
+                      ),
+                    ],
                   ),
-                ),
-                const BannerAdView(
-                  key: Key('BannerAdView'),
-                ),
-              ],
-            ),
           );
         },
       ),

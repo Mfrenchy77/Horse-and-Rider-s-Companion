@@ -12,7 +12,7 @@ class User extends Equatable {
     required this.id,
     required this.name,
     required this.email,
-    this.isGuest = false,
+    this.isGuest = true,
     this.emailVerified = false,
   });
 

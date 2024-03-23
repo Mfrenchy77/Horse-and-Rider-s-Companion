@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/App/Bloc/app_cubit.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
@@ -21,8 +22,74 @@ class Routes {
   }) {
     final routeNavigatorKey = GlobalKey<NavigatorState>();
     final sectionNavigatorKey = GlobalKey<NavigatorState>();
+
+    /// Route Observers: These are used to observe the route changes
+    /// and perform actions based on the route changes.
+    /// One is needed for each branch of the navigator.
+    /// The observer is used to reset the state of the appCubit
+    /// when the user navigates back from a specific page.
+    /// This is done to ensure that the appCubit is in the correct state
+    /// when the user navigates back to the page.
+    final routeObserver = RouteObserverWithCallback(
+      onPop: (route, previousRoute) {
+        debugPrint('Observer Pop: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+      },
+      onPush: (route, previousRoute) {
+        debugPrint('Observer Push: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+      },
+    );
+    final routeObserverProfile = RouteObserverWithCallback(
+      onPop: (route, previousRoute) {
+        debugPrint('Profile Observer Pop: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+        //if from horse profile page
+        if (route.settings.name == HorseProfilePage.name &&
+            previousRoute?.settings.name == ProfilePage.name) {
+          debugPrint('Horse Profile Page Pop');
+          appCubit.resetFromHorseProfile();
+        }
+        //if from viewing profile page
+        else if (route.settings.name == ViewingProfilePage.name &&
+            previousRoute?.settings.name == ProfilePage.name) {
+          debugPrint('Viewing Profile Page Pop');
+          appCubit.resetFromViewingProfile();
+        }
+      },
+      onPush: (route, previousRoute) {
+        debugPrint('Profile Observer Push: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+      },
+    );
+    final routeObserverSkillTree = RouteObserverWithCallback(
+      onPop: (route, previousRoute) {
+        debugPrint('SkillTree Observer Pop: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+      },
+      onPush: (route, previousRoute) {
+        debugPrint('SkillTree Observer Push: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+      },
+    );
+    final routeObserverResources = RouteObserverWithCallback(
+      onPop: (route, previousRoute) {
+        debugPrint('Resource Observer Pop: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+        if (route.settings.name == ResourceCommentPage.name &&
+            previousRoute?.settings.name == ResourcesPage.name) {
+          debugPrint('Resource Comment Page Pop');
+          appCubit.resetFromResource();
+        }
+      },
+      onPush: (route, previousRoute) {
+        debugPrint('Resource Observer Push: '
+            '${route.settings.name}, ${previousRoute?.settings.name}');
+      },
+    );
     return GoRouter(
-      debugLogDiagnostics: true,
+      observers: [routeObserver],
+      //  debugLogDiagnostics: true,
       navigatorKey: routeNavigatorKey,
       initialLocation: ProfilePage.path,
       routes: <RouteBase>[
@@ -39,6 +106,7 @@ class Routes {
           branches: [
             // RiderProfilePage index 0
             StatefulShellBranch(
+              observers: [routeObserverProfile],
               navigatorKey: sectionNavigatorKey,
               routes: <RouteBase>[
                 // RiderProfilePage
@@ -98,6 +166,7 @@ class Routes {
             ),
             // SkillTreePage index 1
             StatefulShellBranch(
+              observers: [routeObserverSkillTree],
               routes: <RouteBase>[
                 GoRoute(
                   path: SkillTreePage.path,
@@ -108,6 +177,7 @@ class Routes {
             ),
             //ResourcesPage for User index 2
             StatefulShellBranch(
+              observers: [routeObserverResources],
               routes: <RouteBase>[
                 GoRoute(
                   path: ResourcesPage.path,

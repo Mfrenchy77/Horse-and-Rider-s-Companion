@@ -2738,6 +2738,17 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
+  ///Reset from the Resource Page to the Resource List
+  void resetFromResource() {
+    debugPrint('resetFromResource');
+    emit(
+      state.copyWith(
+        index: 2,
+        pageStatus: AppPageStatus.resourceList,
+      ),
+    );
+  }
+
   /// Handles the back button press
   void backPressed() {
     if (state.index == 2) {

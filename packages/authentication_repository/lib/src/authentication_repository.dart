@@ -346,16 +346,16 @@ class AuthenticationRepository {
 
   /// Allow the user to sign in as a guest
   Future<User?> signInAsGuest() async {
-    try {
-      await _firebaseAuth.signInAnonymously();
-      // Cache the current guest user
-      await _cacheCurrentUser();
-      return _firebaseAuth.currentUser?.toAppUser();
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw LogInAsGuestFailure.fromCode(e.code);
-    } catch (_) {
-      throw const LogInAsGuestFailure();
-    }
+    const guestUser = User(
+      id: 'guest',
+      email: '',
+      name: 'Guest',
+      // ignore: avoid_redundant_argument_values
+      isGuest: true,
+      // ignore: avoid_redundant_argument_values
+      emailVerified: false,
+    );
+    return guestUser;
   }
 
   /// Starts the Sign In with Google Flow.

@@ -10,7 +10,6 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 
 class MesssageContactsSearchDialog extends StatelessWidget {
   const MesssageContactsSearchDialog({
@@ -40,7 +39,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
             if (state.status == FormzStatus.submissionSuccess) {
               context.read<AppCubit>().setConversation(state.id);
               context.goNamed(
-                 MessagePage.name,
+                MessagePage.name,
                 pathParameters: {MessagePage.pathParams: state.id},
               );
               Navigator.pop(context);

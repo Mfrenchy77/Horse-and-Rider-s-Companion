@@ -17,35 +17,38 @@ class ResourceCommentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Resource Comment Page'),
-      ),
-      body: Column(
-        children: [
-          ResourceRatingButtons(
-            resource: context.read<AppCubit>().state.resource!,
-          ),
-          Divider(
-            color: Theme.of(context).primaryColor,
-            endIndent: 5,
-            indent: 5,
-          ),
-          ResourceInfoBar(
-            resource: context.read<AppCubit>().state.resource!,
-            key: const Key('ResourceInfoBar'),
-          ),
-          smallGap(),
-          Divider(
-            color: Theme.of(context).primaryColor,
-            endIndent: 5,
-            indent: 5,
-          ),
-          smallGap(),
-          const ResourceCommentList(
-            key: Key('ResourceCommentList'),
-          ),
-        ],
+    return PopScope(
+      onPopInvoked: (didPop) => context.read<AppCubit>().resetFromResource(),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Resource Comment Page'),
+        ),
+        body: Column(
+          children: [
+            ResourceRatingButtons(
+              resource: context.read<AppCubit>().state.resource!,
+            ),
+            Divider(
+              color: Theme.of(context).primaryColor,
+              endIndent: 5,
+              indent: 5,
+            ),
+            ResourceInfoBar(
+              resource: context.read<AppCubit>().state.resource!,
+              key: const Key('ResourceInfoBar'),
+            ),
+            smallGap(),
+            Divider(
+              color: Theme.of(context).primaryColor,
+              endIndent: 5,
+              indent: 5,
+            ),
+            smallGap(),
+            const ResourceCommentList(
+              key: Key('ResourceCommentList'),
+            ),
+          ],
+        ),
       ),
     );
   }
