@@ -60,6 +60,11 @@ class Routes {
       onPush: (route, previousRoute) {
         debugPrint('Profile Observer Push: '
             '${route.settings.name}, ${previousRoute?.settings.name}');
+        // if route is horse profile page
+        if (route.settings.name == HorseProfilePage.name) {
+          debugPrint('Horse Profile Page Push');
+          appCubit.setHorseProfile();
+        }
       },
     );
     final routeObserverSkillTree = RouteObserverWithCallback(

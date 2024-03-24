@@ -1,8 +1,11 @@
+import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillNodeCard extends StatelessWidget {
   const SkillNodeCard({super.key, required this.skillNode});
@@ -26,7 +29,8 @@ class SkillNodeCard extends StatelessWidget {
               // If it is a child node, show a divider on top
               // if (isChild) const Divider(color: Colors.black, thickness: 2),
 
-              InkWell(
+              SkillItem(
+                name: skillNode.name,
                 onTap: () {
                   cubit.navigateToSkillLevel(
                     skill: state.allSkills.firstWhere(
@@ -34,13 +38,32 @@ class SkillNodeCard extends StatelessWidget {
                     ),
                   );
                 },
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Text(skillNode.name),
+                onEdit: () {
+                  cubit.navigateToSkillLevel(
+                    skill: state.allSkills.firstWhere(
+                      (element) => element?.skillName == skillNode.name,
+                    ),
+                  );
+                },
+                isGuest: state.isGuest,
+                verified: isVerified(
+                  horseProfile: state.horseProfile,
+                  skill: getSkillForSkillNode(
+                    skillNode: skillNode,
+                    allSkills: state.allSkills,
                   ),
+                  profile: state.viewingProfile ?? state.usersProfile,
                 ),
+                levelState: getLevelState(
+                  horseProfile: state.horseProfile,
+                  skill: getSkillForSkillNode(
+                    skillNode: skillNode,
+                    allSkills: state.allSkills,
+                  ),
+                  profile: state.viewingProfile ?? state.usersProfile,
+                ),
+                isEditState: false,
+                backgroundColor: HorseAndRidersTheme().getTheme().cardColor,
               ),
 
               // If it has children, show a vertical divider below
@@ -134,4 +157,14 @@ class SkillNodeCard extends StatelessWidget {
       },
     );
   }
+}
+
+///Get skill for skill node
+Skill? getSkillForSkillNode({
+  required SkillNode skillNode,
+  required List<Skill?> allSkills,
+}) {
+  return allSkills.firstWhereOrNull(
+    (element) => element?.skillName == skillNode.name,
+  );
 }

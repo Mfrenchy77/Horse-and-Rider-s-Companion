@@ -2,8 +2,10 @@
 
 import 'dart:convert';
 import 'dart:math';
+import 'package:collection/collection.dart';
 
 import 'package:crypto/crypto.dart';
+import 'package:database_repository/database_repository.dart';
 
 // ignore_for_file: constant_identifier_names
 class ViewUtils {
@@ -88,4 +90,50 @@ String convertEmailToPath(String email) {
   final digest = sha256.convert(bytes);
 
   return digest.toString();
+}
+
+/// Returns the verified status of a [skill] for a given [profile]
+bool? isVerified({
+  required Skill? skill,
+  required RiderProfile? profile,
+  required HorseProfile? horseProfile,
+}) {
+  // if horseprofile is not null, check if the skill is verified for the horse
+  //if it null then we check the rider profile
+  if (skill == null) {
+    return false;
+  } else if (horseProfile != null) {
+    final skillLevel = horseProfile.skillLevels
+        ?.firstWhereOrNull((element) => element.skillId == skill.id);
+    return skillLevel?.verified;
+  } else if (profile == null) {
+    return false; // Early return for null checks
+  } else {
+    final skillLevel = profile.skillLevels
+        ?.firstWhereOrNull((element) => element.skillId == skill.id);
+    return skillLevel?.verified;
+  }
+}
+
+/// Returns the [LevelState] of a [skill] for a given [profile]
+LevelState getLevelState({
+  required Skill? skill,
+  required RiderProfile? profile,
+  required HorseProfile? horseProfile,
+}) {
+  // if horseprofile is not null, get the level state for the horse
+  // if it null then we get the level state for the rider profile
+  if (skill == null) {
+    return LevelState.NO_PROGRESS; // Early return for null checks
+  } else if (horseProfile != null) {
+    final skillLevel = horseProfile.skillLevels
+        ?.firstWhereOrNull((element) => element.skillId == skill.id);
+    return skillLevel?.levelState ?? LevelState.NO_PROGRESS;
+  } else if (profile == null) {
+    return LevelState.NO_PROGRESS; // Early return for null checks
+  } else {
+    final skillLevel = profile.skillLevels
+        ?.firstWhereOrNull((element) => element.skillId == skill.id);
+    return skillLevel?.levelState ?? LevelState.NO_PROGRESS;
+  }
 }

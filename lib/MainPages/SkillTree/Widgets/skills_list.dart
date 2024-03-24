@@ -6,6 +6,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillsListView extends StatelessWidget {
   const SkillsListView({super.key});
@@ -71,11 +72,23 @@ class SkillsListView extends StatelessWidget {
                   Wrap(
                     children: skills
                         .map(
-                          (skill) => skillItem(
+                          (skill) => SkillItem(
+                            verified: isVerified(
+                                  horseProfile: state.horseProfile,
+                                  profile: state.viewingProfile ??
+                                      state.usersProfile,
+                                  skill: skill,
+                                ) ??
+                                false,
                             isEditState: state.isEdit,
                             isGuest: state.isGuest,
-                            difficulty: skill!.difficulty,
-                            name: skill.skillName,
+                            levelState: getLevelState(
+                              horseProfile: state.horseProfile,
+                              profile:
+                                  state.viewingProfile ?? state.usersProfile,
+                              skill: skill,
+                            ),
+                            name: skill?.skillName ?? '',
                             onTap: () {
                               cubit
                                 ..setFromSkills()
@@ -93,13 +106,13 @@ class SkillsListView extends StatelessWidget {
                                 position: skills.isNotEmpty ? skills.length : 0,
                               ),
                             ),
-                            backgroundColor:
-                                skill.difficulty == DifficultyState.introductory
-                                    ? Colors.greenAccent.shade200
-                                    : skill.difficulty ==
-                                            DifficultyState.intermediate
-                                        ? Colors.yellowAccent.shade200
-                                        : Colors.redAccent.shade200,
+                            backgroundColor: skill?.difficulty ==
+                                    DifficultyState.introductory
+                                ? Colors.greenAccent.shade200
+                                : skill?.difficulty ==
+                                        DifficultyState.intermediate
+                                    ? Colors.yellowAccent.shade200
+                                    : Colors.redAccent.shade200,
                           ),
                         )
                         .toList(),

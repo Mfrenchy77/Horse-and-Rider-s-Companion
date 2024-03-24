@@ -8,6 +8,7 @@ dependencies:
     path: packages/cache
   cached_network_image: ^3.2.3
   cloud_firestore: ^4.1.0
+  collection: ^1.18.0
   crypto: ^3.0.3
   database_repository:
     path: packages/database_repository
