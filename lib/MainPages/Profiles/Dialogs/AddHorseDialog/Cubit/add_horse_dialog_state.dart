@@ -10,6 +10,7 @@ class AddHorseDialogState extends Equatable {
   const AddHorseDialogState({
     this.id = '',
     this.stateId,
+    this.height = 0,
     this.countryIso,
     this.error = '',
     this.prediction,
@@ -32,7 +33,6 @@ class AddHorseDialogState extends Equatable {
     this.breed = const SingleWord.pure(),
     this.color = const SingleWord.pure(),
     this.gender = const SingleWord.pure(),
-    this.height = const SingleWord.pure(),
     this.locationStatus = FormzStatus.pure,
     this.horseName = const SingleWord.pure(),
     this.purchasePrice = const Numberz.pure(),
@@ -43,6 +43,7 @@ class AddHorseDialogState extends Equatable {
   });
 
   final String id;
+  final int height;
   final String error;
   final String picUrl;
   final int handsValue;
@@ -52,7 +53,6 @@ class AddHorseDialogState extends Equatable {
   final SingleWord color;
   final SingleWord breed;
   final SingleWord gender;
-  final SingleWord height;
   final FormzStatus status;
   final String? countryIso;
   final int? dateOfPurchase;
@@ -77,6 +77,7 @@ class AddHorseDialogState extends Equatable {
 
   AddHorseDialogState copyWith({
     String? id,
+    int? height,
     String? error,
     String? picUrl,
     String? stateId,
@@ -86,7 +87,6 @@ class AddHorseDialogState extends Equatable {
     SingleWord? breed,
     SingleWord? color,
     SingleWord? gender,
-    SingleWord? height,
     String? countryIso,
     int? dateOfPurchase,
     FormzStatus? status,

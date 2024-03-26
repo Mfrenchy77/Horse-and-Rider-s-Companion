@@ -4,8 +4,9 @@ import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 
 class AuthButton extends StatelessWidget {
-  const AuthButton({super.key});
-
+  const AuthButton({
+    super.key,
+  });
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LoginCubit, LoginState>(
@@ -18,11 +19,13 @@ class AuthButton extends StatelessWidget {
                 child: FilledButton(
                   onPressed: !state.status.isValidated
                       ? null
-                      : () => _handleClick(
+                      : () {
+                          _handleClick(
                             state: state,
                             cubit: cubit,
                             context: context,
-                          ),
+                          );
+                        },
                   child: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Text(

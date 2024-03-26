@@ -21,9 +21,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     required KeysRepository keysRepository,
     required HorseProfileRepository horseProfileRepository,
     required RiderProfileRepository riderProfileRepository,
-  })  : _usersProfile = usersProfile,
-        _horseProfile = horseProfile,
-        _keysRepository = keysRepository,
+  })  : _keysRepository = keysRepository,
         _horseProfileRepository = horseProfileRepository,
         _riderProfileRepository = riderProfileRepository,
         super(const AddHorseDialogState()) {
@@ -33,31 +31,30 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         .then((value) => _locationApiKey = value);
     emit(
       state.copyWith(
-        id: _horseProfile?.id ?? '',
-        horseProfile: _horseProfile,
-        usersProfile: _usersProfile,
-        picUrl: _horseProfile?.picUrl ?? '',
-        selectedCity: _horseProfile?.cityName,
-        selectedState: _horseProfile?.stateName,
-        dateOfBirth: _horseProfile?.dateOfBirth,
-        selectedCountry: _horseProfile?.countryName,
-        locationName: _horseProfile?.locationName ?? '',
-        breed: SingleWord.dirty(_horseProfile?.breed ?? ''),
-        color: SingleWord.dirty(_horseProfile?.color ?? ''),
-        zipCode: ZipCode.dirty(_horseProfile?.zipCode ?? ''),
-        gender: SingleWord.dirty(_horseProfile?.gender ?? ''),
-        height: SingleWord.dirty(_horseProfile?.height ?? ''),
-        horseName: SingleWord.dirty(_horseProfile?.name ?? ''),
-        horseNickname: SingleWord.dirty(_horseProfile?.nickname ?? ''),
-        purchasePrice: Numberz.dirty(_horseProfile?.purchasePrice ?? 0),
-        dateOfPurchase: _horseProfile?.dateOfPurchase?.millisecondsSinceEpoch,
+        id: horseProfile?.id,
+        horseProfile: horseProfile,
+        usersProfile: usersProfile,
+        height: horseProfile?.height,
+        picUrl: horseProfile?.picUrl,
+        selectedCity: horseProfile?.cityName,
+        selectedState: horseProfile?.stateName,
+        dateOfBirth: horseProfile?.dateOfBirth,
+        locationName: horseProfile?.locationName,
+        selectedCountry: horseProfile?.countryName,
+        breed: SingleWord.dirty(horseProfile?.breed ?? ''),
+        color: SingleWord.dirty(horseProfile?.color ?? ''),
+        zipCode: ZipCode.dirty(horseProfile?.zipCode ?? ''),
+        gender: SingleWord.dirty(horseProfile?.gender ?? ''),
+        horseName: SingleWord.dirty(horseProfile?.name ?? ''),
+        horseNickname: SingleWord.dirty(horseProfile?.nickname ?? ''),
+        purchasePrice: Numberz.dirty(horseProfile?.purchasePrice ?? 0),
+        dateOfPurchase: horseProfile?.dateOfPurchase?.millisecondsSinceEpoch,
       ),
     );
   }
   String _zipApi = '';
   String _locationApiKey = '';
-  final RiderProfile? _usersProfile;
-  final HorseProfile? _horseProfile;
+
   final KeysRepository _keysRepository;
   final HorseProfileRepository _horseProfileRepository;
   final RiderProfileRepository _riderProfileRepository;
@@ -343,12 +340,10 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     }
   }
 
-  void horseHeightChanged(String height) {
-    final height0 = SingleWord.dirty(height);
+  void horseHeightChanged(int height) {
     emit(
       state.copyWith(
-        height: height0,
-        status: Formz.validate([height0]),
+        height: height,
       ),
     );
   }
@@ -404,19 +399,19 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     final notes = [initialNoteEntry];
 // ignore: omit_local_variable_types
     final HorseProfile horseProfile = HorseProfile(
+      notes: notes,
+      height: state.height,
       id: ViewUtils.createId(),
-      name: state.horseName.value.trim(),
-      nickname: state.horseNickname.value.trim(),
-      breed: state.breed.value.trim(),
       picUrl: state.picUrl.trim(),
-      dateOfBirth: state.dateOfBirth != null
-          ? DateTime.fromMillisecondsSinceEpoch(state.dateOfBirth as int)
-          : null,
-      color: state.color.value.trim(),
+      lastEditDate: DateTime.now(),
+      breed: state.breed.value.trim(),
+      gender: state.gender.value.trim(),
+      name: state.horseName.value.trim(),
       zipCode: state.zipCode.value.trim(),
       locationName: state.locationName.trim(),
-      height: state.height.value.trim(),
-      gender: state.gender.value.trim(),
+      purchasePrice: state.purchasePrice.value,
+      nickname: state.horseNickname.value.trim(),
+      lastEditBy: state.usersProfile?.name.trim(),
       currentOwnerId: state.usersProfile?.email.trim() as String,
       currentOwnerName: state.usersProfile?.name.trim() as String,
       dateOfPurchase: state.dateOfPurchase != null
@@ -424,19 +419,19 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
               state.dateOfPurchase as int,
             )
           : null,
-      purchasePrice: state.purchasePrice.value,
-      lastEditDate: DateTime.now(),
-      lastEditBy: state.usersProfile?.name.trim(),
-      notes: notes,
+      dateOfBirth: state.dateOfBirth != null
+          ? DateTime.fromMillisecondsSinceEpoch(state.dateOfBirth as int)
+          : null,
+      color: state.color.value.trim(),
     );
     if (horseProfile.dateOfBirth != null) {
       /// Add a note to the horses profile that it was born
       /// and who the owner was at the time
       final dobNote = BaseListItem(
-        id: state.dateOfBirth.toString(),
         date: state.dateOfBirth,
-        parentId: state.usersProfile?.email.trim(),
+        id: state.dateOfBirth.toString(),
         message: state.usersProfile?.name.trim(),
+        parentId: state.usersProfile?.email.trim(),
         name: '${state.horseProfile?.name} was Born',
       );
       horseProfile.notes?.add(dobNote);
@@ -494,46 +489,44 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
 // ignore: omit_local_variable_types
     final HorseProfile horseProfile = HorseProfile(
-      id: state.horseProfile?.id as String,
-      name: state.horseName.value.isNotEmpty
-          ? state.horseName.value.trim()
-          : state.horseProfile?.name as String,
-      nickname: state.horseNickname.value.isNotEmpty
-          ? state.horseNickname.value.trim()
-          : state.horseProfile?.nickname,
-      breed: state.breed.value.isNotEmpty
-          ? state.breed.value.trim()
-          : state.horseProfile?.breed,
-      zipCode: state.zipCode.value.isNotEmpty
-          ? state.zipCode.value
-          : state.horseProfile?.zipCode,
-      locationName: state.locationName.isNotEmpty
-          ? state.locationName.trim()
-          : state.horseProfile?.locationName,
-      gender: state.gender.value.isNotEmpty
-          ? state.gender.value.trim()
-          : state.horseProfile?.gender,
+      lastEditDate: DateTime.now(),
+      dateOfBirth: state.dateOfBirth,
       picUrl: state.picUrl.isNotEmpty
           ? state.picUrl.trim()
           : state.horseProfile?.picUrl,
-      dateOfBirth: state.dateOfBirth,
+      notes: state.horseProfile?.notes,
+      breed: state.breed.value.isNotEmpty
+          ? state.breed.value.trim()
+          : state.horseProfile?.breed,
       color: state.color.value.isNotEmpty
           ? state.color.value.trim()
           : state.horseProfile?.color,
-      height: state.height.value.isNotEmpty
-          ? state.height.value.trim()
-          : state.horseProfile?.height,
+      id: state.horseProfile?.id as String,
+      lastEditBy: state.usersProfile?.name,
+      gender: state.gender.value.isNotEmpty
+          ? state.gender.value.trim()
+          : state.horseProfile?.gender,
+      zipCode: state.zipCode.value.isNotEmpty
+          ? state.zipCode.value
+          : state.horseProfile?.zipCode,
+      name: state.horseName.value.isNotEmpty
+          ? state.horseName.value.trim()
+          : state.horseProfile?.name as String,
+      locationName: state.locationName.isNotEmpty
+          ? state.locationName.trim()
+          : state.horseProfile?.locationName,
+      nickname: state.horseNickname.value.isNotEmpty
+          ? state.horseNickname.value.trim()
+          : state.horseProfile?.nickname,
+      purchasePrice: state.purchasePrice.value != 0
+          ? state.purchasePrice.value
+          : state.horseProfile?.purchasePrice,
+      height: state.height != 0 ? state.height : state.horseProfile?.height,
       currentOwnerId: state.horseProfile?.currentOwnerId as String,
       currentOwnerName: state.horseProfile?.currentOwnerName as String,
       dateOfPurchase: state.dateOfPurchase != null
           ? DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int)
           : state.horseProfile?.dateOfPurchase,
-      purchasePrice: state.purchasePrice.value != 0
-          ? state.purchasePrice.value
-          : state.horseProfile?.purchasePrice,
-      notes: state.horseProfile?.notes,
-      lastEditDate: DateTime.now(),
-      lastEditBy: state.usersProfile?.name,
     );
     final editNote = BaseListItem(
       id: DateTime.now().toString(),

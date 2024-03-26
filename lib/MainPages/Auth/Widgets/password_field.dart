@@ -8,7 +8,6 @@ class PasswordField extends StatelessWidget {
     super.key,
   });
   final bool isConfirmation;
-
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<LoginCubit>();
@@ -16,55 +15,63 @@ class PasswordField extends StatelessWidget {
 
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
-        return TextFormField(
-          focusNode: passwordFocusNode,
-          style: const TextStyle(
-            color: Colors.white,
-          ),
-          textInputAction: TextInputAction.done,
-          onFieldSubmitted: (value) {
-            if (passwordFocusNode.hasFocus) {
-              if (state.pageStatus == LoginPageStatus.login) {
-                cubit.logInWithCredentials();
-              } else if (isConfirmation &&
-                  state.pageStatus == LoginPageStatus.register) {
-                cubit.signUpFormSubmitted(context: context);
-              }
-              passwordFocusNode.unfocus();
-            }
-          },
-          onChanged: (value) => isConfirmation
-              ? cubit.confirmedPasswordChanged(value)
-              : cubit.passwordChanged(value),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter some text';
-            }
-
-            if (value.length < 6) {
-              return 'Password must be at least 6 characters';
-            }
-            return null;
-          },
-          obscureText: !state.isPasswordVisible,
-          decoration: InputDecoration(
-            labelText: isConfirmation ? 'Re-Enter Password' : 'Password',
-            hintText: isConfirmation
-                ? 'Confirm your password'
-                : 'Enter your password',
-            hintStyle: const TextStyle(
-              color: Colors.white54,
+        return Form(
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: TextFormField(
+            focusNode: passwordFocusNode,
+            style: const TextStyle(
+              color: Colors.white,
             ),
-            prefixIcon:
-                const Icon(Icons.lock_outline_rounded, color: Colors.white54),
-            suffixIcon: IconButton(
-              icon: Icon(
-                state.isPasswordVisible
-                    ? Icons.visibility_off
-                    : Icons.visibility,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (value) {
+              if (passwordFocusNode.hasFocus) {
+                if (state.pageStatus == LoginPageStatus.login) {
+                  cubit.logInWithCredentials();
+                } else if (isConfirmation &&
+                    state.pageStatus == LoginPageStatus.register) {
+                  cubit.signUpFormSubmitted(context: context);
+                }
+                passwordFocusNode.unfocus();
+              }
+            },
+            onChanged: (value) => isConfirmation
+                ? cubit.confirmedPasswordChanged(value)
+                : cubit.passwordChanged(value),
+            validator: (value) {
+              debugPrint('Validation: $value');
+
+              if (value == null || value.isEmpty) {
+                return 'Please enter some text';
+              } else {
+                return isConfirmation
+                    ? state.password
+                        .confirmValitator(state.password.value, value)
+                    : state.password.validator(value);
+              }
+            },
+            obscureText: !state.isPasswordVisible,
+            decoration: InputDecoration(
+              labelStyle: const TextStyle(
                 color: Colors.white54,
               ),
-              onPressed: cubit.togglePasswordVisible,
+              labelText: isConfirmation ? 'Re-Enter Password' : 'Password',
+              hintText: isConfirmation
+                  ? 'Confirm your password'
+                  : 'Enter your password',
+              hintStyle: const TextStyle(
+                color: Colors.white54,
+              ),
+              prefixIcon:
+                  const Icon(Icons.lock_outline_rounded, color: Colors.white54),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  state.isPasswordVisible
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  color: Colors.white54,
+                ),
+                onPressed: cubit.togglePasswordVisible,
+              ),
             ),
           ),
         );

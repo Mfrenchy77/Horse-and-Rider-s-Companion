@@ -16,13 +16,25 @@ Widget registerView() {
     children: [
       const NameField(),
       gap(),
-      const EmailField(),
+      const EmailField(
+        key: Key('RegisterViewEmail'),
+      ),
       gap(),
-      const PasswordField(isConfirmation: false),
+      const PasswordField(
+        isConfirmation: false,
+        key: Key('RegisterViewPasswordField'),
+      ),
       gap(),
-      const PasswordField(isConfirmation: true),
+      const PasswordField(
+        isConfirmation: true,
+        key: Key('RegisterViewConfirmPasswordField'),
+      ),
       gap(),
-      const AuthButton(),
+      const AuthButton(
+        key: Key(
+          'RegisterViewAuthButton',
+        ),
+      ),
       gap(),
       const LoginLink(),
       gap(),

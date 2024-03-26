@@ -23,7 +23,7 @@ class NameValidator extends FormzInput<String, String> {
   const NameValidator.pure() : super.pure('');
 
   /// {@macro name_validator}
-  const NameValidator.dirty([String value = '']) : super.dirty(value);
+  const NameValidator.dirty([super.value = '']) : super.dirty();
 
   @override
   String? validator(String value) {

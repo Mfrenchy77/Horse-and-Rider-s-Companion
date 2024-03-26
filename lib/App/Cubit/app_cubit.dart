@@ -2550,7 +2550,8 @@ class AppCubit extends Cubit<AppState> {
           break;
 
         case MessageType.EDIT_REQUEST:
-          // TODO(mfrenchy77): 2021-02-17 This is where whe are going to handle skill tree edit requests to the author of the skill
+          // TODO(mfrenchy77): 2021-02-17 This is where whe are going to
+          // handle skill tree edit requests to the author of the skill
           debugPrint('EDIT_REQUEST');
           break;
         case MessageType.CHAT:

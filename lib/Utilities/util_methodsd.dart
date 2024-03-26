@@ -60,3 +60,18 @@ String capitalizeWords(String input) {
   // Join the words back into a single string
   return capitalizedWords.join(' ');
 }
+
+/// Convert centimeters into hands and inches as a decimal
+int cmToHands(double cm) {
+  // Conversion formula from cm to hands
+  // where 1 hand = 4 inches and 1 inch = 2.54 cm
+  // Therefore, 1 hand = 4 * 2.54 cm
+  final hands = cm / (4 * 2.54);
+  return double.parse(hands.toStringAsFixed(1)).toInt();
+}
+
+int handsToCm(double hands) {
+  // Conversion formula from hands to cm
+  final cm = hands * (4 * 2.54);
+  return cm.roundToDouble().toInt();
+}

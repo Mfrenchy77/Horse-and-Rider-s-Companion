@@ -11,13 +11,21 @@ Widget forgotView() {
   return Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      const EmailField(),
+      const EmailField(
+        key: Key('FprgotViewEmail'),
+      ),
       gap(),
-      const AuthButton(),
+      const AuthButton(
+        key: Key('ForgotViewAuthButton'),
+      ),
       gap(),
-      const RegistationLink(),
+      const RegistationLink(
+        key: Key('ForgotViewRegistrationLink'),
+      ),
       gap(),
-      const LoginLink(),
+      const LoginLink(
+        key: Key('ForgotViewLoginLink'),
+      ),
     ],
   );
 }

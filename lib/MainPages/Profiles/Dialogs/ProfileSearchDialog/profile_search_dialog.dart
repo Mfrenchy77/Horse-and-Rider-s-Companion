@@ -63,35 +63,30 @@ class ProfileSearchDialog extends StatelessWidget {
                       TextFormField(
                         validator: (value) {
                           //Validate based on the search type
-                          switch (state.searchType) {
-                            case SearchType.name:
-                              return state.searchValue.invalid
-                                  ? 'Please enter a name'
-                                  : null;
-                            case SearchType.email:
-                              return state.email.invalid
-                                  ? 'Please enter a valid email'
-                                  : null;
-                            case SearchType.horse:
-                              return state.searchValue.invalid
-                                  ? 'Please enter a horse name'
-                                  : null;
-                            case SearchType.horseId:
-                              return state.searchValue.invalid
-                                  ? 'Please enter a horse id'
-                                  : null;
-                            case SearchType.horseNickName:
-                              return state.searchValue.invalid
-                                  ? 'Please enter a horse nick name'
-                                  : null;
-                            case SearchType.horseLocation:
-                              return state.zipCode.invalid
-                                  ? 'Please enter a valid zip code'
-                                  : null;
-                            case SearchType.riderLocation:
-                              return state.zipCode.invalid
-                                  ? 'Please enter a valid zip code'
-                                  : null;
+                          if (value == null) {
+                            return null;
+                          } else {
+                            switch (state.searchType) {
+                              case SearchType.name:
+                                return state.searchValue.validator(value);
+
+                              case SearchType.email:
+                                return state.email.validator(value);
+
+                              case SearchType.horse:
+                                return state.searchValue.validator(value);
+                              case SearchType.horseId:
+                                return state.searchValue.value.isEmpty
+                                    ? 'Please enter a horse id'
+                                    : null;
+                              case SearchType.horseNickName:
+                                return state.searchValue.validator(value);
+                              case SearchType.horseLocation:
+                                return state.zipCode.validator(value);
+
+                              case SearchType.riderLocation:
+                                return state.zipCode.validator(value);
+                            }
                           }
                         },
                         onFieldSubmitted: !_isSearchValid(state)

@@ -36,6 +36,9 @@ class HorseProfile {
   /// the horse's id
   final String id;
 
+  /// the horse's height in centimeters
+  int? height = 0;
+
   /// the horse's name
   final String name;
 
@@ -47,9 +50,6 @@ class HorseProfile {
 
   /// the horse's gender
   String? gender = '';
-
-  /// the horse's height
-  String? height = '';
 
   /// the horse's profile picture url
   String? picUrl = '';
@@ -119,11 +119,11 @@ class HorseProfile {
     return HorseProfile(
       id: data!['id'] as String,
       name: data['name'] as String,
+      height: data['height'] as int?,
       breed: data['breed'] as String?,
       color: data['color'] as String?,
       picUrl: data['picUrl'] as String?,
       gender: data['gender'] as String?,
-      height: data['height'] as String?,
       zipCode: data['zipCode'] as String?,
       cityName: data['cityName'] as String?,
       nickname: data['nickname'] as String?,
@@ -187,11 +187,11 @@ class HorseProfile {
   ///Creates a copy of the [HorseProfile] with the specified fields replaced
   HorseProfile copyWith({
     String? id,
+    int? height,
     String? name,
     String? breed,
     String? color,
     String? gender,
-    String? height,
     String? picUrl,
     String? cityName,
     String? zipCode,

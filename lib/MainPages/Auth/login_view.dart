@@ -14,19 +14,32 @@ Widget loginView() {
     mainAxisSize: MainAxisSize.min,
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const EmailField(),
+      const EmailField(
+        key: Key('LoginEmailField'),
+      ),
       gap(),
-      const PasswordField(isConfirmation: false),
+      const PasswordField(
+        isConfirmation: false,
+        key: Key('LoginViewPasswordField'),
+      ),
       gap(),
-      const AuthButton(),
+      const AuthButton(
+        key: Key('LoginViewAuthButton'),
+      ),
       gap(),
       _signInAsGuest(),
       gap(),
-      const RegistationLink(),
+      const RegistationLink(
+        key: Key('LoginViewRegistrationLink'),
+      ),
       gap(),
-      const ForgotPasswordLink(),
+      const ForgotPasswordLink(
+        key: Key('LoginViewForgotPasswordLink'),
+      ),
       gap(),
-      const GoogleLoginButton(),
+      const GoogleLoginButton(
+        key: Key('LoginViewGoogleLoginButton'),
+      ),
     ],
   );
 }
