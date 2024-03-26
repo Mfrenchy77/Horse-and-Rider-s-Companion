@@ -38,6 +38,9 @@ class Routes {
       onPush: (route, previousRoute) {
         debugPrint('Observer Push: '
             '${route.settings.name}, ${previousRoute?.settings.name}');
+        if (previousRoute?.settings.name == AuthPage.name) {
+          appCubit.setProfile();
+        }
       },
     );
     final routeObserverProfile = RouteObserverWithCallback(
@@ -75,6 +78,10 @@ class Routes {
       onPush: (route, previousRoute) {
         debugPrint('SkillTree Observer Push: '
             '${route.settings.name}, ${previousRoute?.settings.name}');
+        if (route.settings.name == SkillTreePage.name) {
+          debugPrint('SkillTree Page Push');
+          appCubit.setSkillTree();
+        }
       },
     );
     final routeObserverResources = RouteObserverWithCallback(
@@ -84,12 +91,21 @@ class Routes {
         if (route.settings.name == ResourceCommentPage.name &&
             previousRoute?.settings.name == ResourcesPage.name) {
           debugPrint('Resource Comment Page Pop');
+
           appCubit.resetFromResource();
         }
       },
       onPush: (route, previousRoute) {
         debugPrint('Resource Observer Push: '
             '${route.settings.name}, ${previousRoute?.settings.name}');
+        if (route.settings.name == ResourcesPage.name) {
+          debugPrint('Resource Page Push');
+          appCubit.setResourcesList();
+        }
+        if (route.settings.name == ResourceCommentPage.name) {
+          debugPrint('Resource Comment Page Push');
+          appCubit.setResource();
+        }
       },
     );
     return GoRouter(

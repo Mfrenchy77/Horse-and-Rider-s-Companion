@@ -1,73 +1,54 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 
 /// A card to display a skill level.
 class SkillLevelCard extends StatelessWidget {
-  const SkillLevelCard({super.key, required this.skillLevel});
+  const SkillLevelCard({
+    super.key,
+    required this.skillLevel,
+    required this.onTap,
+  });
   final SkillLevel skillLevel;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        return SizedBox(
-          width: 200,
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            elevation: 8,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: skillLevel.levelState == LevelState.PROFICIENT
-                    ? skillLevel.verified
-                        ? Colors.yellow
-                        : Colors.blue
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                gradient: skillLevel.levelState == LevelState.LEARNING
-                    ? LinearGradient(
-                        stops: const [0.5, 0.5],
-                        colors: [
-                          if (skillLevel.verified)
-                            Colors.yellow
-                          else
-                            Colors.blue,
-                          Colors.transparent,
-                        ],
-                      )
-                    : null,
-              ),
-              child: ListTile(
-                title: Text(
-                  skillLevel.skillName,
-                  textAlign: TextAlign.center,
-                ),
-                subtitle: Text(
-                  '${skillLevel.levelState.toString().split('.').last} '
-                  '${skillLevel.verified ? ' \n (Verified by: '
-                      '${skillLevel.lastEditBy})' : ''}',
-                  textAlign: TextAlign.center,
-                ),
-                onTap: state.isGuest
-                    ? null
-                    : () {
-                        context.pushNamed(SkillTreePage.name);
-                        cubit.navigateToSkillLevel(
-                          skill:
-                              cubit.getSkillFromSkillName(skillLevel.skillName),
-                        );
-                      },
+    return InkWell(
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        elevation: 8,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: skillLevel.levelState == LevelState.PROFICIENT
+                ? skillLevel.verified
+                    ? Colors.yellow
+                    : Colors.blue
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            gradient: skillLevel.levelState == LevelState.LEARNING
+                ? LinearGradient(
+                    stops: const [0.5, 0.5],
+                    colors: [
+                      if (skillLevel.verified) Colors.yellow else Colors.blue,
+                      Colors.transparent,
+                    ],
+                  )
+                : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              skillLevel.skillName,
+              style: const TextStyle(
+                color: Colors.black87,
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

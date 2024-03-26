@@ -9,7 +9,6 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/Cubit/profile_search_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// A Dialog that allows the user to search for a Rider or Horse Profile, by
@@ -62,9 +61,44 @@ class ProfileSearchDialog extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextFormField(
-                        onFieldSubmitted: (value) {
-                          initiateSearch(cubit: cubit, state: state);
+                        validator: (value) {
+                          //Validate based on the search type
+                          switch (state.searchType) {
+                            case SearchType.name:
+                              return state.searchValue.invalid
+                                  ? 'Please enter a name'
+                                  : null;
+                            case SearchType.email:
+                              return state.email.invalid
+                                  ? 'Please enter a valid email'
+                                  : null;
+                            case SearchType.horse:
+                              return state.searchValue.invalid
+                                  ? 'Please enter a horse name'
+                                  : null;
+                            case SearchType.horseId:
+                              return state.searchValue.invalid
+                                  ? 'Please enter a horse id'
+                                  : null;
+                            case SearchType.horseNickName:
+                              return state.searchValue.invalid
+                                  ? 'Please enter a horse nick name'
+                                  : null;
+                            case SearchType.horseLocation:
+                              return state.zipCode.invalid
+                                  ? 'Please enter a valid zip code'
+                                  : null;
+                            case SearchType.riderLocation:
+                              return state.zipCode.invalid
+                                  ? 'Please enter a valid zip code'
+                                  : null;
+                          }
                         },
+                        onFieldSubmitted: !_isSearchValid(state)
+                            ? null
+                            : (value) {
+                                initiateSearch(cubit: cubit, state: state);
+                              },
                         decoration: InputDecoration(
                           labelText: 'Search',
                           hintText: _getHintText(state.searchType),
@@ -157,9 +191,12 @@ class ProfileSearchDialog extends StatelessWidget {
   }) {
     return state.status.isSubmissionInProgress
         ? const CircularProgressIndicator()
-        : FilledButton(
-            onPressed: () => initiateSearch(cubit: cubit, state: state),
-            child: const Text('Search'),
+        : ElevatedButton.icon(
+            icon: const Icon(Icons.search),
+            onPressed: !_isSearchValid(state)
+                ? null
+                : () => initiateSearch(cubit: cubit, state: state),
+            label: const Text('Search'),
           );
   }
 
@@ -225,15 +262,15 @@ class ProfileSearchDialog extends StatelessWidget {
   String _getHintText(SearchType searchType) {
     switch (searchType) {
       case SearchType.name:
-        return 'Search for Rider by Name';
+        return 'Search for Rider by Name(Case Sensitive)';
       case SearchType.email:
         return 'Search for Rider by Email';
       case SearchType.horse:
-        return 'Search for Horse by Full name';
+        return 'Search for Horse by Full name(Case Sensitive)';
       case SearchType.horseId:
         return 'Search for Horse by ID';
       case SearchType.horseNickName:
-        return 'Search for Horse by Nick Name';
+        return 'Search for Horse by Nick Name(Case Sensitive)';
       case SearchType.horseLocation:
         return 'Enter the zip code you want to search for horses in';
       case SearchType.riderLocation:
@@ -300,11 +337,6 @@ class ProfileSearchDialog extends StatelessWidget {
             children: [
               //name
               ChoiceChip(
-                backgroundColor: state.searchType == SearchType.name
-                    ? HorseAndRidersTheme().getTheme().colorScheme.primary
-                    : null,
-                elevation: state.searchType == SearchType.name ? 5 : 0,
-                avatar: const Icon(Icons.person),
                 label: const Text('Name'),
                 selected: state.searchType == SearchType.name,
                 onSelected: (value) {
@@ -313,11 +345,6 @@ class ProfileSearchDialog extends StatelessWidget {
               ),
               //email
               ChoiceChip(
-                backgroundColor: state.searchType == SearchType.email
-                    ? HorseAndRidersTheme().getTheme().colorScheme.primary
-                    : null,
-                elevation: state.searchType == SearchType.email ? 5 : 0,
-                avatar: const Icon(Icons.email),
                 label: const Text('Email'),
                 selected: state.searchType == SearchType.email,
                 onSelected: (value) {
@@ -325,18 +352,13 @@ class ProfileSearchDialog extends StatelessWidget {
                 },
               ),
               //location
-              ChoiceChip(
-                backgroundColor: state.searchType == SearchType.riderLocation
-                    ? HorseAndRidersTheme().getTheme().colorScheme.primary
-                    : null,
-                elevation: state.searchType == SearchType.riderLocation ? 5 : 0,
-                avatar: const Icon(Icons.location_on),
-                label: const Text('Location'),
-                selected: state.searchType == SearchType.riderLocation,
-                onSelected: (value) {
-                  cubit.searchTypeChanged(SearchType.riderLocation);
-                },
-              ),
+              // ChoiceChip(
+              //   label: const Text('Location'),
+              //   selected: state.searchType == SearchType.riderLocation,
+              //   onSelected: (value) {
+              //     cubit.searchTypeChanged(SearchType.riderLocation);
+              //   },
+              // ),
             ],
           )
         : Wrap(
@@ -346,7 +368,6 @@ class ProfileSearchDialog extends StatelessWidget {
             children: [
               // horse name
               ChoiceChip(
-                avatar: const Icon(HorseAndRiderIcons.horseIcon),
                 label: const Text('Name'),
                 selected: state.searchType == SearchType.horse,
                 onSelected: (value) {
@@ -355,7 +376,6 @@ class ProfileSearchDialog extends StatelessWidget {
               ),
               // horse nick name
               ChoiceChip(
-                avatar: const Icon(HorseAndRiderIcons.horseIcon),
                 label: const Text('Nick Name'),
                 selected: state.searchType == SearchType.horseNickName,
                 onSelected: (value) {
@@ -364,7 +384,6 @@ class ProfileSearchDialog extends StatelessWidget {
               ),
               // horse id
               ChoiceChip(
-                avatar: const Icon(HorseAndRiderIcons.horseIcon),
                 label: const Text('ID'),
                 selected: state.searchType == SearchType.horseId,
                 onSelected: (value) {
@@ -372,14 +391,13 @@ class ProfileSearchDialog extends StatelessWidget {
                 },
               ),
               // horse location
-              ChoiceChip(
-                avatar: const Icon(HorseAndRiderIcons.horseIcon),
-                label: const Text('Location'),
-                selected: state.searchType == SearchType.horseLocation,
-                onSelected: (value) {
-                  cubit.searchTypeChanged(SearchType.horseLocation);
-                },
-              ),
+              // ChoiceChip(
+              //   label: const Text('Location'),
+              //   selected: state.searchType == SearchType.horseLocation,
+              //   onSelected: (value) {
+              //     cubit.searchTypeChanged(SearchType.horseLocation);
+              //   },
+              // ),
             ],
           );
   }
@@ -475,216 +493,24 @@ class ProfileSearchDialog extends StatelessWidget {
           )
         : const Center(child: Text('No Results'));
   }
-
-  Widget _resultItem({
-    required BuildContext context,
-    required RiderProfile? profile,
-    required HorseProfile? horseProfile,
-    required ProfileSearchCubit cubit,
-  }) {
-    final isDark =
-        HorseAndRidersTheme().getTheme().brightness == Brightness.dark;
-    return profile != null
-        ? Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Card(
-              elevation: 5,
-              margin: const EdgeInsets.only(bottom: 8, top: 8),
-              child: ListTile(
-                // ignore: unnecessary_null_comparison
-                title: profile.name != null
-                    ? Text(
-                        profile.name,
-                        style: TextStyle(
-                          color: isDark
-                              ? Colors.white
-                              : HorseAndRidersTheme()
-                                  .getTheme()
-                                  .colorScheme
-                                  .primary,
-                        ),
-                      )
-                    : const Text('No Name'),
-                onTap: () {
-                  debugPrint(
-                    'Open  Profile Page For: ${profile.name}',
-                  );
-                  context.read<AppCubit>().getProfileToBeViewed(
-                        email: profile.email,
-                      );
-                  context.goNamed(
-                    ViewingProfilePage.name,
-                    pathParameters: {
-                      ViewingProfilePage.pathParams: profile.email,
-                    },
-                  );
-                  Navigator.of(context).pop();
-                },
-                leading: profile.picUrl != null && profile.picUrl!.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 24,
-                        backgroundImage: NetworkImage(profile.picUrl!),
-                      )
-                    : CircleAvatar(
-                        radius: 24,
-                        backgroundImage: AssetImage(
-                          isDark
-                              ? 'assets/horse_icon_circle_dark.png'
-                              : 'assets/horse_icon_circle.png',
-                        ),
-                      ),
-              ),
-            ),
-          )
-
-        /// Horse Profile
-        : horseProfile != null
-            ? ListTile(
-                title: Text(
-                  horseProfile.name,
-                  style: TextStyle(
-                    color: isDark
-                        ? Colors.white
-                        : HorseAndRidersTheme().getTheme().colorScheme.primary,
-                  ),
-                ),
-                onTap: () {
-                  debugPrint(
-                    'Open Horse Profile Page For: ${horseProfile.name}',
-                  );
-                  context.read<AppCubit>().getHorseProfile(
-                        id: horseProfile.id,
-                      );
-                  context.goNamed(
-                    HorseProfilePage.name,
-                    pathParameters: {
-                      HorseProfilePage.pathParams: horseProfile.id,
-                    },
-                  );
-                  Navigator.of(context).pop();
-                },
-                leading: horseProfile.picUrl != null &&
-                        horseProfile.picUrl!.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 24,
-                        backgroundImage: NetworkImage(horseProfile.picUrl!),
-                      )
-                    : CircleAvatar(
-                        radius: 24,
-                        backgroundImage: AssetImage(
-                          isDark
-                              ? 'assets/horse_icon_circle_dark.png'
-                              : 'assets/horse_icon_circle.png',
-                        ),
-                      ),
-              )
-            : const Center(child: Text('No Results'));
-  }
 }
 
-
-//   Widget _resultItem({
-//     required BuildContext context,
-//     required RiderProfile? profile,
-//     required HorseProfile? horseProfile,
-//     required ProfileSearchCubit cubit,
-//   }) {
-//     final isDark =
-//         HorseAndRidersTheme().getTheme().brightness == Brightness.dark;
-//     return profile != null
-//         ? Padding(
-//             padding: const EdgeInsets.only(top: 8),
-//             child: Card(
-//               elevation: 5,
-//               margin: const EdgeInsets.only(bottom: 8, top: 8),
-//               child: ListTile(
-//                 // ignore: unnecessary_null_comparison
-//                 title: profile.name != null
-//                     ? Text(
-//                         profile.name,
-//                         style: TextStyle(
-//                           color: isDark
-//                               ? Colors.white
-//                               : HorseAndRidersTheme()
-//                                   .getTheme()
-//                                   .colorScheme
-//                                   .primary,
-//                         ),
-//                       )
-//                     : const Text('No Name'),
-//                 onTap: () {
-//                   debugPrint(
-//                     'Open  Profile Page For: ${profile.name}',
-//                   );
-//                   context.read<AppCubit>().getProfileToBeViewed(
-//                         email: profile.email,
-//                       );
-//                   context.goNamed(
-//                     ViewingProfilePage.name,
-//                     pathParameters: {
-//                       ViewingProfilePage.pathParams: profile.email,
-//                     },
-//                   );
-//                   Navigator.of(context).pop();
-//                 },
-//                 leading: profile.picUrl != null && profile.picUrl!.isNotEmpty
-//                     ? CircleAvatar(
-//                         radius: 24,
-//                         backgroundImage: NetworkImage(profile.picUrl!),
-//                       )
-//                     : CircleAvatar(
-//                         radius: 24,
-//                         backgroundImage: AssetImage(
-//                           isDark
-//                               ? 'assets/horse_icon_circle_dark.png'
-//                               : 'assets/horse_icon_circle.png',
-//                         ),
-//                       ),
-//               ),
-//             ),
-//           )
-
-//         /// Horse Profile
-//         : horseProfile != null
-//             ? ListTile(
-//                 title: Text(
-//                   horseProfile.name,
-//                   style: TextStyle(
-//                     color: isDark
-//                         ? Colors.white
-//                         : HorseAndRidersTheme().getTheme().colorScheme.primary,
-//                   ),
-//                 ),
-//                 onTap: () {
-//                   debugPrint(
-//                     'Open Horse Profile Page For: ${horseProfile.name}',
-//                   );
-//                   context.read<AppCubit>().getHorseProfile(
-//                         id: horseProfile.id,
-//                       );
-//                   context.goNamed(
-//                     HorseProfilePage.name,
-//                     pathParameters: {
-//                       HorseProfilePage.pathParams: horseProfile.id,
-//                     },
-//                   );
-//                   Navigator.of(context).pop();
-//                 },
-//                 leading: horseProfile.picUrl != null &&
-//                         horseProfile.picUrl!.isNotEmpty
-//                     ? CircleAvatar(
-//                         radius: 24,
-//                         backgroundImage: NetworkImage(horseProfile.picUrl!),
-//                       )
-//                     : CircleAvatar(
-//                         radius: 24,
-//                         backgroundImage: AssetImage(
-//                           isDark
-//                               ? 'assets/horse_icon_circle_dark.png'
-//                               : 'assets/horse_icon_circle.png',
-//                         ),
-//                       ),
-//               )
-//             : const Center(child: Text('No Results'));
-//   }
-// }
+/// detemine if the search field is valid and can be submitted
+bool _isSearchValid(ProfileSearchState state) {
+  switch (state.searchType) {
+    case SearchType.name:
+      return state.searchValue.valid;
+    case SearchType.email:
+      return state.email.valid;
+    case SearchType.horse:
+      return state.searchValue.valid;
+    case SearchType.horseId:
+      return state.searchValue.valid;
+    case SearchType.horseNickName:
+      return state.searchValue.valid;
+    case SearchType.horseLocation:
+      return state.zipCode.valid;
+    case SearchType.riderLocation:
+      return state.zipCode.valid;
+  }
+}

@@ -1,28 +1,41 @@
 import 'package:formz/formz.dart';
 
-/// Validation errors for the [Name] [FormzInput].
-enum NameValidationError {
-  /// Generic invalid error.
-  invalid
-}
-
 /// {@template name}
 /// Form input for an name input.
+/// Uses [NameValidator] as the validator.
 /// {@endtemplate}
-class Name extends FormzInput<String, NameValidationError> {
+class Name extends FormzInput<String, String> {
   /// {@macro name}
   const Name.pure() : super.pure('');
 
-  ///{@macro name}
+  /// {@macro name}
   const Name.dirty([super.value = '']) : super.dirty();
 
-  static final RegExp _nameRegExp =
-      RegExp(r"^\s*([A-Za-z]{1,}([\.,] |[-']| ))+[A-Za-z]+\.?\s*$");
+  @override
+  String? validator(String value) {
+    return NameValidator.dirty(value).error;
+  }
+}
+
+/// name search validator, must have at least 3 characters and first letter
+/// capitalized and no special characters
+class NameValidator extends FormzInput<String, String> {
+  const NameValidator.pure() : super.pure('');
+
+  /// {@macro name_validator}
+  const NameValidator.dirty([String value = '']) : super.dirty(value);
 
   @override
-  NameValidationError? validator(String? value) {
-    return _nameRegExp.hasMatch(value ?? '')
-        ? null
-        : NameValidationError.invalid;
+  String? validator(String value) {
+    if (value.length < 3) {
+      return 'Name must be at least 3 characters';
+    }
+    if (value.contains(RegExp(r'[!@#<>?":_`~;[\]\\|=+)(*&^%0-9-]'))) {
+      return 'Name must not contain special characters';
+    }
+    if (value[0] != value[0].toUpperCase()) {
+      return 'Name must start with a capital letter';
+    }
+    return null;
   }
 }

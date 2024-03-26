@@ -2665,7 +2665,7 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-  void navigateToProfile() {
+  void setProfile() {
     emit(
       state.copyWith(
         index: 0,
@@ -2684,20 +2684,12 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Navigate to the Horse Profile Page
-  void navigateToHorseProfile(HorseProfile horseProfile) {
-    emit(
-      state.copyWith(
-        index: 0,
-        pageStatus: AppPageStatus.profile,
-        horseProfile: horseProfile,
-      ),
-    );
-  }
-
   void setHorseProfile() {
     emit(
       state.copyWith(
+        index: 0,
         isForRider: false,
+        pageStatus: AppPageStatus.profile,
       ),
     );
   }
@@ -2723,6 +2715,8 @@ class AppCubit extends Cubit<AppState> {
     emit(
       state.copyWith(
         isViewing: true,
+        pageStatus: AppPageStatus.profile,
+        index: 0,
       ),
     );
   }
@@ -2737,6 +2731,35 @@ class AppCubit extends Cubit<AppState> {
         // ignore: avoid_redundant_argument_values
         viewingProfile: null,
         pageStatus: AppPageStatus.profile,
+      ),
+    );
+  }
+
+  /// Set the Resources List
+  void setResourcesList() {
+    emit(
+      state.copyWith(
+        index: 2,
+        pageStatus: AppPageStatus.resourceList,
+      ),
+    );
+  }
+
+  void setResource() {
+    emit(
+      state.copyWith(
+        index: 2,
+        pageStatus: AppPageStatus.resource,
+      ),
+    );
+  }
+
+  /// Set the Skill Tree Page
+  void setSkillTree() {
+    emit(
+      state.copyWith(
+        index: 1,
+        pageStatus: AppPageStatus.skillTree,
       ),
     );
   }

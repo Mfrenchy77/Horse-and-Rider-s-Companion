@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/CommonWidgets/example_skill.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 
 class GuestProfileSkills extends StatelessWidget {
   const GuestProfileSkills({super.key});
@@ -24,9 +26,13 @@ class GuestProfileSkills extends StatelessWidget {
         ),
         gap(),
         Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 5,
+          runSpacing: 5,
           children: [
             ...ExampleSkill().getSkillLevels().map(
                   (e) => SkillLevelCard(
+                    onTap: () => context.goNamed(SkillTreePage.name),
                     skillLevel: e,
                   ),
                 ),

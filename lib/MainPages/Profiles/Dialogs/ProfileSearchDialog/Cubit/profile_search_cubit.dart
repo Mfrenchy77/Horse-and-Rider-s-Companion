@@ -32,7 +32,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Riders and Horses
   void nameChanged(String value) {
     debugPrint('Name Changed to $value');
-    emit(state.copyWith(searchValue: value));
+    final name = Name.dirty(value);
+    emit(
+      state.copyWith(
+        searchValue: name,
+        status: Formz.validate([name]),
+      ),
+    );
   }
 
   /// Monitor the Email Field's [value] in the Search Dialog
@@ -40,6 +46,14 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     debugPrint('Email Changed to $value');
     final email = Email.dirty(value);
     emit(state.copyWith(email: email, status: Formz.validate([email])));
+  }
+
+  /// Monitor the Zip Code Field's [value] in the Search Dialog
+  /// for Riders and Horses
+  void zipCodeChanged(String value) {
+    debugPrint('Zip Code Changed to $value');
+    final zipCode = ZipCode.dirty(value);
+    emit(state.copyWith(zipCode: zipCode, status: Formz.validate([zipCode])));
   }
 
   /// Location Range [value] changed
@@ -72,8 +86,8 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     emit(
       state.copyWith(
         searchType: searchType,
-        searchValue: '',
         email: const Email.pure(),
+        searchValue: const Name.pure(),
       ),
     );
   }
@@ -92,12 +106,16 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Search for a Rider Profile by Name
   void searchProfilesByName() {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
-    debugPrint('getProfile by Name for ${capitalizeWords(state.searchValue)}');
+    debugPrint(
+      'getProfile by Name for ${capitalizeWords(state.searchValue.value)}',
+    );
     // Cancel the previous subscription if there was one
     _searchSubscription?.cancel();
     try {
       _searchSubscription = _riderProfileRepository
-          .getProfilesByName(name: capitalizeWords(state.searchValue).trim())
+          .getProfilesByName(
+        name: capitalizeWords(state.searchValue.value).trim(),
+      )
           .listen((event) {
         debugPrint('Results: ${event.docs.length}');
         final results =
@@ -206,7 +224,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
     try {
       _riderProfileRepository
-          .getProfilesByZipcode(zipcode: state.searchValue)
+          .getProfilesByZipcode(zipcode: state.zipCode.value.trim())
           .listen((event) {
         debugPrint('Results: ${event.docs.length}');
         final profiles =
@@ -248,7 +266,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       _horseProfileRepository
-          .getHorseByName(name: state.searchValue.trim())
+          .getHorseByName(name: state.searchValue.value.trim())
           .listen((event) {
         final results =
             event.docs.map((e) => e.data()! as HorseProfile).toList();
@@ -285,7 +303,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       _horseProfileRepository
-          .getHorseByNickName(nickName: state.searchValue.trim())
+          .getHorseByNickName(nickName: state.searchValue.value.trim())
           .listen((event) {
         final results =
             event.docs.map((e) => e.data()! as HorseProfile).toList();
@@ -321,10 +339,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchForHorseById() {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     final horseProfileResults = <HorseProfile>[];
-    if (state.searchValue.isNotEmpty) {
+    if (state.searchValue.value.isNotEmpty) {
       try {
         _horseProfileRepository
-            .getHorseProfileById(id: state.searchValue.toLowerCase().trim())
+            .getHorseProfileById(
+          id: state.searchValue.value.toLowerCase().trim(),
+        )
             .listen((event) {
           final horseProfile = event.data()! as HorseProfile;
           horseProfileResults.add(horseProfile);

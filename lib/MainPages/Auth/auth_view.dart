@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
@@ -26,7 +27,6 @@ class AuthView extends StatelessWidget {
           final cubit = context.read<LoginCubit>();
           if (state.status.isSubmissionSuccess) {
             debugPrint('Success Pop?');
-            // context.read<AppCubit>().navigateToProfile();
             context.goNamed(ProfilePage.name);
             if (state.mailAppResult != null) {
               showDialog<MailAppPickerDialog>(

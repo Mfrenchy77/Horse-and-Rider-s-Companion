@@ -70,6 +70,9 @@ class SkillsListView extends StatelessWidget {
                 gap(),
                 if (skills.isNotEmpty)
                   Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    alignment: WrapAlignment.center,
                     children: skills
                         .map(
                           (skill) => SkillItem(

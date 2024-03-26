@@ -1,6 +1,5 @@
 part of 'profile_search_cubit.dart';
 
-
 enum SearchType {
   email,
   name,
@@ -15,7 +14,6 @@ class ProfileSearchState extends Equatable {
   const ProfileSearchState({
     this.error = '',
     this.isError = false,
-    this.searchValue = '',
     this.isSearchRider = true,
     this.riderProfiles = const [],
     this.horseProfiles = const [],
@@ -23,6 +21,7 @@ class ProfileSearchState extends Equatable {
     this.email = const Email.pure(),
     this.searchType = SearchType.name,
     this.zipCode = const ZipCode.pure(),
+    this.searchValue = const Name.pure(),
     this.locationRange = const LocationRange.pure(),
   });
 
@@ -45,7 +44,7 @@ class ProfileSearchState extends Equatable {
   final bool isSearchRider;
 
   /// This is used when the user is searching for a rider or horse by name
-  final String searchValue;
+  final Name searchValue;
 
   /// This is the Type of search the user is performing
   final SearchType searchType;
@@ -67,7 +66,7 @@ class ProfileSearchState extends Equatable {
     ZipCode? zipCode,
     bool? isSearchRider,
     FormzStatus? status,
-    String? searchValue,
+    Name? searchValue,
     SearchType? searchType,
     LocationRange? locationRange,
     List<RiderProfile>? riderProfiles,

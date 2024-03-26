@@ -1,8 +1,10 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 
 /// {@template profile_skills}
 /// ProfileSkills widget displays the skills of the user or horse
@@ -17,6 +19,7 @@ class ProfileSkills extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final cubit = context.read<AppCubit>();
         return Wrap(
           spacing: 5,
           runSpacing: 5,
@@ -26,6 +29,18 @@ class ProfileSkills extends StatelessWidget {
                     ?.map(
                       (e) => SkillLevelCard(
                         skillLevel: e,
+                        onTap: state.isGuest
+                            ? null
+                            : () {
+                                debugPrint('Goto Skill: ${e.skillName}');
+                                context.goNamed(SkillTreePage.name);
+                                cubit.navigateToSkillLevel(
+                                  skill: state.allSkills.firstWhere(
+                                    (element) =>
+                                        element?.skillName == e.skillName,
+                                  ),
+                                );
+                              },
                       ),
                     )
                     .toList() ??
