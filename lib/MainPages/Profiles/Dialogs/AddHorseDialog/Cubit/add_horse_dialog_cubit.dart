@@ -9,6 +9,7 @@ import 'package:form_inputs/form_inputs.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
+import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -346,6 +347,55 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         height: height,
       ),
     );
+  }
+
+  /// Update the height from the Hands Number Picker
+  void updateHeightInHands(int hands) {
+    final previousHandHeight = cmToHandsAndInches(state.height).toInt();
+    final difference = hands - previousHandHeight;
+    final newHeight = previousHandHeight + difference;
+    emit(state.copyWith(height: handsToCm(newHeight)));
+  }
+
+  void updateHeightInInches(int inches) {
+    final previousInches = cmToHandsRemainder(state.height);
+    final difference = inches - previousInches;
+    final differenceInCm = difference * 2.54;
+    final newHeight = state.height + differenceInCm.round();
+    emit(state.copyWith(height: newHeight));
+  }
+
+  /// increment the height value by 1 centimeter
+  void incrementHeightByCentimeter() {
+    debugPrint('Incrementing Height from: ${state.height}');
+    final height = state.height + 1;
+    debugPrint('New Height: $height');
+    emit(
+      state.copyWith(
+        height: height,
+      ),
+    );
+  }
+
+  /// decrement the height value by 1 centimeter
+  void decrementHeightByCentimeter() {
+    debugPrint('Decrementing Height');
+    final height = state.height - 1;
+    emit(
+      state.copyWith(
+        height: height,
+      ),
+    );
+  }
+
+  void incrementHeightByInch() {
+    final newHeight = state.height + 2.54.round();
+    emit(state.copyWith(height: newHeight));
+  }
+
+  void decrementHeightByInch() {
+    final newHeight = state.height - 2.54.round();
+    emit(state.copyWith(height: newHeight));
   }
 
   void handsChanged(int value) {

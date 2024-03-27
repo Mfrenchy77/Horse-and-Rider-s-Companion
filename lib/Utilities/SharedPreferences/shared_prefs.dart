@@ -100,7 +100,7 @@ class SharedPrefs {
   /// Returns `true` if the user prefers to view the height in hands,
   /// `false` if the user prefers to view the height in centimeters.
   /// Defaults to `true` if the preference has not been set.
-  bool isHeightInHands() {
+  bool get isHeightInHands {
     return _sharedPrefs.getBool(PREF_HEIGHT_PREFERENCE) ?? true;
   }
 
@@ -114,7 +114,7 @@ class SharedPrefs {
   /// Returns `true` if the user prefers to view the weight in pounds,
   /// `false` if the user prefers to view the weight in kilograms.
   /// Defaults to `true` if the preference has not been set.
-  bool isWeightInPounds() {
+  bool get isWeightInPounds {
     return _sharedPrefs.getBool(PREF_WEIGHT_PREFERENCE) ?? true;
   }
 }

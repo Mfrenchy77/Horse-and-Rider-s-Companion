@@ -26,13 +26,13 @@ class SettingsService {
   /// Loads the User's preferred unit for displaying horse's height
   ///  true for hands, false for centimeters
   bool getHorseHeightUnit() {
-    return SharedPrefs().isHeightInHands();
+    return SharedPrefs().isHeightInHands;
   }
 
   /// Loads the User's preferred unit for displaying horse's weight
   /// true for pounds, false for kilograms
   bool getHorseWeightUnit() {
-    return SharedPrefs().isWeightInPounds();
+    return SharedPrefs().isWeightInPounds;
   }
 
   /// Persists the user's preferred ThemeMode to local storage.

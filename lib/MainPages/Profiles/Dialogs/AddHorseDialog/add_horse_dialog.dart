@@ -9,9 +9,10 @@ import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
+import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
@@ -81,7 +82,7 @@ class AddHorseDialog extends StatelessWidget {
                   maxWidth: 800,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
+                    children: [
                       ///   Horse photo
                       _horsePhoto(context: context, size: 85, state: state),
                       gap(),
@@ -136,9 +137,9 @@ class AddHorseDialog extends StatelessWidget {
                       gap(),
 
                       ///   Horse Height
-                      _horseHeight(
-                        state: state,
-                        context: context,
+                      HorseHeightField(
+                      
+                        controller: TextEditingController(),
                       ),
                       gap(),
                       _didPurchaseHorse(context: context, state: state),
@@ -164,7 +165,7 @@ class AddHorseDialog extends StatelessWidget {
                   ),
                 ),
                 actions: [
-                  OutlinedButton(
+                  TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
                   ),
@@ -224,7 +225,7 @@ Widget _horseSubmitButton({
   required BuildContext context,
   required AddHorseDialogState state,
 }) {
-  return FilledButton(
+  return OutlinedButton(
     onPressed: state.horseName.value.isEmpty
         ? null
         : () {
@@ -333,6 +334,8 @@ Widget _horseBreed({
 }) {
   final breedController = TextEditingController()..text = state.breed.value;
   return TypeAheadField<String>(
+    hideOnEmpty: true,
+    
     controller: breedController,
     suggestionsCallback: (pattern) {
       return HorseDetails.breeds
@@ -465,6 +468,7 @@ Widget _horseGender({
     items: HorseDetails.genders
         .map(
           (e) => DropdownMenuItem(
+
             value: e,
             child: Text(e),
           ),
@@ -808,23 +812,32 @@ Widget _horsePurchasePrice({
   );
 }
 
+//FIXME: Lets make this centemeter by default and hands by choice in the settings
 Widget _horseHeight({
-  required BuildContext context,
+  required BuildContext buildContext,
   required AddHorseDialogState state,
 }) {
-  // Preference check
-  final isHeightInHands = SharedPrefs().isHeightInHands();
+  final isDark = SharedPrefs().isDarkMode;
+  final heightText = TextEditingController(
+    text: state.horseProfile != null
+        ? state.horseProfile?.height.toString()
+        : state.height.toString(),
+  );
 
-  // Convert stored height to display format
-  final displayHeight = isHeightInHands
-      ? cmToHands(state.height.toDouble()).toString()
-      : state.height.toString();
+  var handsValue = state.horseProfile != null
+      ? int.parse(
+          state.horseProfile?.height?.toString().substring(0, 2) ?? '14',
+        )
+      : state.handsValue;
 
-  // Controller for height text field
-  final heightText = TextEditingController(text: displayHeight);
+  var inchesValue = state.horseProfile != null
+      ? int.parse(
+          state.horseProfile?.height?.toString().substring(3) ?? '0',
+        )
+      : state.inchesValue;
 
   return TextFormField(
-    keyboardType: TextInputType.number,
+    keyboardType: TextInputType.name,
     textInputAction: TextInputAction.next,
     decoration: const InputDecoration(
       labelText: "Horse's Height",
@@ -833,310 +846,123 @@ Widget _horseHeight({
     ),
     controller: heightText,
     onTap: () async {
-      // Dismiss the keyboard
-      FocusScope.of(context).requestFocus(FocusNode());
+      FocusScope.of(buildContext).requestFocus(FocusNode());
 
-      await showDialog<String>(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          final localHandsValue = state.handsValue;
-          final localInchesValue = state.inchesValue;
-          final localCentimeterValue = state.height;
-
+      String height;
+      await showDialog<int>(
+        context: buildContext,
+        builder: (context) {
           return AlertDialog(
-            title: Text(
-              "Choose Horse's Height in ${isHeightInHands ? 'Hands' : 'Centimeters'}",
-            ),
-            content: isHeightInHands
-                ? _buildHeightPickerInHands(
-                    dialogContext,
-                    localHandsValue,
-                    localInchesValue,
-                    state,
-                  )
-                : _buildHeightPickerInCentimeters(
-                    dialogContext,
-                    localCentimeterValue,
-                    state,
-                  ),
             actions: [
               ElevatedButton(
+                child: const Text('Ok'),
                 onPressed: () {
-                  Navigator.pop(dialogContext);
-                  // Convert back to cm if in hands and update the profile
-                  final newHeight = isHeightInHands
-                      ? handsToCm(localHandsValue + localInchesValue / 10)
-                      : localCentimeterValue;
-                  context
-                      .read<AddHorseDialogCubit>()
-                      .horseHeightChanged(newHeight);
-                  heightText.text = newHeight.toString();
+                  Navigator.of(buildContext).pop();
+                  heightText.text = state.height.toString();
                 },
-                child: const Text('OK'),
               ),
             ],
+            backgroundColor:
+                HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
+            title: Text(
+              "Choose Horse's Height",
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+            ),
+            content: StatefulBuilder(
+              builder: (context, setState) {
+                return IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      ///Hands
+                      Card(
+                        elevation: 8,
+                        color: HorseAndRidersTheme()
+                            .getTheme()
+                            .scaffoldBackgroundColor,
+                        child: NumberPicker(
+                          minValue: 5,
+                          maxValue: 19,
+                          value: handsValue,
+                          onChanged: (value) {
+                            setState(
+                              () {
+                                buildContext
+                                    .read<AddHorseDialogCubit>()
+                                    .handsChanged(value);
+                                handsValue = value;
+                                height = '$handsValue.$inchesValue';
+                                if (state.horseProfile != null) {
+                                  state.horseProfile?.height = value;
+                                }
+                                buildContext
+                                    .read<AddHorseDialogCubit>()
+                                    .horseHeightChanged(value);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      VerticalDivider(
+                        color: isDark ? Colors.white : Colors.black,
+                        endIndent: 20,
+                        indent: 20,
+                      ),
+
+                      ///   Inches
+                      Card(
+                        elevation: 8,
+                        color: HorseAndRidersTheme()
+                            .getTheme()
+                            .scaffoldBackgroundColor,
+                        child: NumberPicker(
+                          minValue: 0,
+                          maxValue: 3,
+                          value: inchesValue,
+                          onChanged: (value) {
+                            setState(
+                              () {
+                                buildContext
+                                    .read<AddHorseDialogCubit>()
+                                    .inchesChanged(value);
+                                inchesValue = value;
+
+                                height = '$handsValue.$inchesValue';
+                                debugPrint(height);
+                                heightText.text = height;
+                                final horseProfile = state.horseProfile;
+                                if (horseProfile != null) {
+                                  horseProfile.height = value;
+                                }
+                                buildContext
+                                    .read<AddHorseDialogCubit>()
+                                    .horseHeightChanged(value);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         },
-      );
+      ).then((value) {
+        debugPrint('Value: $value');
+        height = '$handsValue.$inchesValue';
+
+        // state.horseProfile?.copyWith(height: height);
+        if (value != null) {
+          buildContext.read<AddHorseDialogCubit>().horseHeightChanged(value);
+        } else {
+          debugPrint('Value is null');
+        }
+        heightText.text = state.height.toString();
+        // setState(() {
+        //   heightText.text = height;
+        // });
+      });
     },
   );
 }
-
-/// Build the height picker for hands and inches
-Widget _buildHeightPickerInHands(
-  BuildContext context,
-  int handsValue,
-  int inchesValue,
-  AddHorseDialogState state,
-) {
-  return IntrinsicHeight(
-    child: Row(
-      children: [
-        // Hands
-        Card(
-          elevation: 8,
-          child: NumberPicker(
-            minValue: 5,
-            maxValue: 19,
-            value: handsValue,
-            onChanged: (value) {
-              context.read<AddHorseDialogCubit>().handsChanged(value);
-              //handsValue = value;
-            },
-          ),
-        ),
-        const VerticalDivider(),
-        // Inches
-        Card(
-          elevation: 8,
-          child: NumberPicker(
-            minValue: 0,
-            maxValue: 3,
-            value: inchesValue,
-            onChanged: (value) {
-              context.read<AddHorseDialogCubit>().inchesChanged(value);
-              // inchesValue = value;
-            },
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Build the height picker for centimeters
-Widget _buildHeightPickerInCentimeters(
-  BuildContext context,
-  int centimeterValue,
-  AddHorseDialogState state,
-) {
-  return Card(
-    elevation: 8,
-    child: NumberPicker(
-      minValue: 10,
-      maxValue: 200,
-      value: centimeterValue,
-      onChanged: (value) {
-        context.read<AddHorseDialogCubit>().horseHeightChanged(value);
-        //centimeterValue = value;
-      },
-    ),
-  );
-}
-
-
-
-// //FIXME: Lets make this centemeter by default and hands by choice in the settings
-// Widget _horseHeight({
-//   required BuildContext buildContext,
-//   required AddHorseDialogState state,
-// }) {
-//   final isHeightInHands = SharedPrefs().isHeightInHands();
-//   final isDark = SharedPrefs().isDarkMode;
-//   final heightText = TextEditingController(
-//     text: state.horseProfile != null
-//         ? state.horseProfile?.height.toString()
-//         : state.height.toString(),
-//   );
-//   var handsValue = state.horseProfile != null
-//       ? int.parse(
-//           state.horseProfile?.height?.toString().substring(0, 2) ?? '14',
-//         )
-//       : state.handsValue;
-
-//   var inchesValue = state.horseProfile != null
-//       ? int.parse(
-//           state.horseProfile?.height?.toString().substring(3) ?? '0',
-//         )
-//       : state.inchesValue;
-
-//   var centemeterValue = state.horseProfile != null
-//       ? int.parse(
-//           state.horseProfile?.height?.toString().substring(0) ?? '0',
-//         )
-//       : state.height;
-//   return TextFormField(
-//     keyboardType: TextInputType.name,
-//     textInputAction: TextInputAction.next,
-//     decoration: const InputDecoration(
-//       labelText: "Horse's Height",
-//       hintText: "Enter Horse's Height",
-//       icon: Icon(HorseAndRiderIcons.ruler),
-//     ),
-//     controller: heightText,
-//     onTap: () async {
-//       FocusScope.of(buildContext).requestFocus(FocusNode());
-
-//       int height;
-//       await showDialog<String>(
-//         context: buildContext,
-//         builder: (context) {
-//           return AlertDialog(
-//             actions: [
-//               ElevatedButton(
-//                 child: const Text('Ok'),
-//                 onPressed: () {
-//                   Navigator.of(buildContext).pop();
-//                   heightText.text = state.height.toString();
-//                 },
-//               ),
-//             ],
-//             backgroundColor:
-//                 HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
-//             title: Text(
-//               "Choose Horse's Height in ${isHeightInHands ? 'Hands' : 'Centimeters'}",
-//               style: TextStyle(color: isDark ? Colors.white : Colors.black),
-//             ),
-//             content: StatefulBuilder(
-//               builder: (context, setState) {
-//                 return isHeightInHands
-//                     ? IntrinsicHeight(
-//                         child: Row(
-//                           children: [
-//                             ///Hands
-//                             Card(
-//                               elevation: 8,
-//                               color: HorseAndRidersTheme()
-//                                   .getTheme()
-//                                   .scaffoldBackgroundColor,
-//                               child: NumberPicker(
-//                                 minValue: 5,
-//                                 maxValue: 19,
-//                                 value: handsValue,
-//                                 onChanged: (value) {
-//                                   setState(
-//                                     () {
-//                                       buildContext
-//                                           .read<AddHorseDialogCubit>()
-//                                           .handsChanged(value);
-//                                       handsValue = value;
-//                                       height = '$handsValue.$inchesValue';
-//                                       if (state.horseProfile != null) {
-//                                         state.horseProfile?.height = height;
-//                                       }
-//                                       buildContext
-//                                           .read<AddHorseDialogCubit>()
-//                                           .horseHeightChanged(height);
-//                                     },
-//                                   );
-//                                 },
-//                               ),
-//                             ),
-//                             VerticalDivider(
-//                               color: isDark ? Colors.white : Colors.black,
-//                               endIndent: 20,
-//                               indent: 20,
-//                             ),
-
-//                             ///   Inches
-//                             Card(
-//                               elevation: 8,
-//                               color: HorseAndRidersTheme()
-//                                   .getTheme()
-//                                   .scaffoldBackgroundColor,
-//                               child: NumberPicker(
-//                                 minValue: 0,
-//                                 maxValue: 3,
-//                                 value: inchesValue,
-//                                 onChanged: (value) {
-//                                   setState(
-//                                     () {
-//                                       buildContext
-//                                           .read<AddHorseDialogCubit>()
-//                                           .inchesChanged(value);
-//                                       inchesValue = value;
-
-//                                       height = '$handsValue.$inchesValue';
-//                                       debugPrint(height);
-//                                       heightText.text = height;
-//                                       final horseProfile = state.horseProfile;
-//                                       if (horseProfile != null) {
-//                                         horseProfile.height = height;
-//                                       }
-//                                       buildContext
-//                                           .read<AddHorseDialogCubit>()
-//                                           .horseHeightChanged(height);
-//                                     },
-//                                   );
-//                                 },
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                       )
-//                     : IntrinsicHeight(
-//                         child: Row(
-//                           children: [
-//                             ///Centimeters
-//                             Card(
-//                               elevation: 8,
-//                               color: HorseAndRidersTheme()
-//                                   .getTheme()
-//                                   .scaffoldBackgroundColor,
-//                               child: NumberPicker(
-//                                 minValue: 10,
-//                                 maxValue: 200,
-//                                 value: handsValue,
-//                                 onChanged: (value) {
-//                                   setState(
-//                                     () {
-//                                       buildContext
-//                                           .read<AddHorseDialogCubit>()
-//                                           .handsChanged(value);
-//                                       height = value;
-//                                       if (state.horseProfile != null) {
-//                                         state.horseProfile?.height = height;
-//                                       }
-//                                       buildContext
-//                                           .read<AddHorseDialogCubit>()
-//                                           .horseHeightChanged(height);
-//                                     },
-//                                   );
-//                                 },
-//                               ),
-//                             ),
-//                             VerticalDivider(
-//                               color: isDark ? Colors.white : Colors.black,
-//                               endIndent: 20,
-//                               indent: 20,
-//                             ),
-//                           ],
-//                         ),
-//                       );
-//               },
-//             ),
-//           );
-//         },
-//       ).then((value) {
-//         debugPrint('Value: $value');
-//         height = '$handsValue.$inchesValue';
-//         state.horseProfile?.copyWith(height: height);
-//         buildContext.read<AddHorseDialogCubit>().horseHeightChanged(height);
-//         heightText.text = state.height.value;
-//         // setState(() {
-//         //   heightText.text = height;
-//         // });
-//       });
-//     },
-//   );
-// }

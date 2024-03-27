@@ -38,9 +38,9 @@ class PasswordField extends StatelessWidget {
                 ? cubit.confirmedPasswordChanged(value)
                 : cubit.passwordChanged(value),
             validator: (value) {
-              debugPrint('Validation: $value');
-
               if (value == null || value.isEmpty) {
+                return null;
+              } else if (value.length < 6 && value.length > 2) {
                 return 'Please enter some text';
               } else {
                 return isConfirmation

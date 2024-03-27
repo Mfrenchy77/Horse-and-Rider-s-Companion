@@ -62,15 +62,34 @@ String capitalizeWords(String input) {
 }
 
 /// Convert centimeters into hands and inches as a decimal
-int cmToHands(double cm) {
-  // Conversion formula from cm to hands
-  // where 1 hand = 4 inches and 1 inch = 2.54 cm
-  // Therefore, 1 hand = 4 * 2.54 cm
-  final hands = cm / (4 * 2.54);
-  return double.parse(hands.toStringAsFixed(1)).toInt();
+int cmToHands(int cm) {
+  final inches = cm / 2.54;
+  final hands = inches ~/ 4;
+  return hands;
+}
+// Convert centimeters to hands as a whole number and inches as a decimal part.
+double cmToHandsAndInches(int cm) {
+  final inchesTotal = cm / 2.54;
+  final hands = inchesTotal / 4;
+  return hands;
 }
 
-int handsToCm(double hands) {
+/// Convert centemeters into hands and return the remainder. should be 0-3
+/// as the remainder is the inches
+int cmToHandsRemainder(int cm) {
+  final inches = cm / 2.54;
+  final remainderInches = inches % 4;
+  return remainderInches.toInt();
+}
+
+
+int handsAndInchesToCm(int hands, int inches) {
+  final totalInches = hands * 4 + inches;
+  final cm = totalInches * 2.54;
+  return cm.toInt();
+}
+
+int handsToCm(int hands) {
   // Conversion formula from hands to cm
   final cm = hands * (4 * 2.54);
   return cm.roundToDouble().toInt();
