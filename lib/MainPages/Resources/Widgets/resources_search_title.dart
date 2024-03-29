@@ -44,7 +44,9 @@ class ResourcesSearchTitle extends StatelessWidget {
                     icon: const Icon(Icons.clear),
                   ),
                   hintText: 'Search Resources',
-                  border: const OutlineInputBorder(),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(40)),
+                  ),
                 ),
                 suggestions: state.searchList
                     .map(

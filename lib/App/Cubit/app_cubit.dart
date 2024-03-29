@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -1650,6 +1651,63 @@ class AppCubit extends Cubit<AppState> {
     )) {
       throw Exception('Could Not Launch: $uri');
     }
+  }
+
+  /// Gets the resources Comments
+  void getResourceComments(Resource resource) {
+    final comments = resource.comments ?? [];
+    emit(state.copyWith(resourceComments: comments));
+  }
+
+  /// Returns only the base comments
+  List<Comment>? getBaseComments(List<Comment> allComments) {
+    return allComments.where((element) => element.parentId == null).toList();
+  }
+
+  /// returns a list of child comments for a parent comment
+  List<Comment> getChildComments({
+    required Comment parentComment,
+  }) {
+    final childComments = List<Comment>.empty(growable: true);
+    final commentResource = state.resources.firstWhereOrNull(
+      (element) => element?.id == parentComment.resourceId,
+    );
+    for (final comment in commentResource?.comments ?? <Comment>[]) {
+      if (comment.parentId == parentComment.id) {
+        childComments.add(comment);
+      }
+    }
+    return childComments;
+  }
+
+  void sortComments(CommentSortState sortState) {
+    emit(state.copyWith(commentSortState: sortState));
+    final sortedList = state.resourceComments;
+    switch (sortState) {
+      case CommentSortState.newest:
+        sortedList.sort((a, b) => b.date!.compareTo(a.date!));
+        emit(state.copyWith(resourceComments: sortedList));
+        break;
+      case CommentSortState.oldest:
+        sortedList.sort((a, b) => a.date!.compareTo(b.date!));
+        emit(state.copyWith(resourceComments: sortedList));
+        break;
+      case CommentSortState.best:
+        sortedList.sort((a, b) => b.rating!.compareTo(a.rating!));
+        emit(state.copyWith(resourceComments: sortedList));
+        break;
+      case CommentSortState.controversial:
+        sortedList.sort((a, b) => a.rating!.compareTo(b.rating!));
+        emit(state.copyWith(resourceComments: sortedList));
+        break;
+    }
+  }
+
+  ///Returns a resource based on the [id]
+  Resource? getResourceById(String id) {
+    return state.resources.firstWhereOrNull(
+      (element) => element?.id == id,
+    );
   }
 
   /// Gets the user rating for the [resource] or creates a new one

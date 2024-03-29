@@ -6,6 +6,7 @@ export 'group.dart';
 export 'level.dart';
 export 'skill.dart';
 export 'mesage.dart';
+export 'comment.dart';
 export 'country.dart';
 export 'resource.dart';
 export 'catagorry.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/centimeter_picker_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/hands_picker_dialog.dart';
@@ -19,10 +18,9 @@ class HorseHeightField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.read<AddHorseDialogCubit>().state;
-    debugPrint('HorseHeightField: ${state.height}');
+    final remainder = cmToHandsRemainder(state.height);
     final isHeightinHands = SharedPrefs().isHeightInHands;
     final height = isHeightinHands ? cmToHands(state.height) : state.height;
-    final remainder = cmToHandsRemainder(state.height);
     controller.text = '$height.$remainder';
     return TextFormField(
       controller: controller,

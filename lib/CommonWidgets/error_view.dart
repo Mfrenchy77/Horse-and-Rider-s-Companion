@@ -3,20 +3,27 @@ import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 
 /// This is the ErrorPage widget
 /// for the entire app
+class ErrorView extends StatelessWidget {
+  const ErrorView({super.key});
 
-Widget errorView(BuildContext context) {
-  return Stack(
-    children: [
-      const Logo(
-        screenName: 'Error: Something went wrong',
-        forceDark: true,
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Logo(
+            screenName: 'Error: Something went wrong',
+          ),
+          Center(
+            child: FilledButton.tonal(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Go Back'),
+            ),
+          ),
+        ],
       ),
-      Center(
-        child: ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Try Again'),
-        ),
-      ),
-    ],
-  );
+    );
+  }
 }

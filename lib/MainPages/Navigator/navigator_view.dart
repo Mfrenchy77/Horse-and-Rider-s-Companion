@@ -110,37 +110,7 @@ class NavigatorView extends StatelessWidget {
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             child: state.pageStatus == AppPageStatus.resource
-                ? Stack(
-                    children: [
-                      child,
-// TODO: This where we will impliment the comment section bottom tool
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: SizedBox(
-                          height: 50,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              FloatingActionButton(
-                                child: const Icon(Icons.arrow_drop_up),
-                                onPressed: () {
-                                  debugPrint('Cllick1');
-                                },
-                              ),
-                              FloatingActionButton(
-                                child: const Icon(Icons.arrow_drop_down),
-                                onPressed: () {
-                                  debugPrint('Cllick3');
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
+                ? child
                 : Column(
                     children: [
                       Expanded(
@@ -177,6 +147,9 @@ class NavigatorView extends StatelessWidget {
                           //       onPressed: cubit.backPressed,
                           //     ),
                           //   ),
+                        // FIXME: if adaptive scaffold updates and doesn't fix spacing,
+                        // around navrail, click AdapiveScaffold and on
+                        // line 279 change the padding to 0
                           leadingExtendedNavRail: const Image(
                             color: Colors.white,
                             fit: BoxFit.contain,

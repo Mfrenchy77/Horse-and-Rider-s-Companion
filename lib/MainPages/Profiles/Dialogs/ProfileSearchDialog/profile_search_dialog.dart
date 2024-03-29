@@ -95,6 +95,9 @@ class ProfileSearchDialog extends StatelessWidget {
                                 initiateSearch(cubit: cubit, state: state);
                               },
                         decoration: InputDecoration(
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(40)),
+                          ),
                           labelText: 'Search',
                           hintText: _getHintText(state.searchType),
                           suffixIcon: IconButton(

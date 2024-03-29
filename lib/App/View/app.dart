@@ -95,20 +95,15 @@ class AppView extends StatelessWidget {
     return AnimatedBuilder(
       animation: settingsController,
       builder: (context, child) {
-        return BlocListener<AppCubit, AppState>(
-          listener: (context, state) {
-            // TODO: implement listener
-          },
-          child: MaterialApp.router(
-            routerDelegate: router.routerDelegate,
-            routeInformationParser: router.routeInformationParser,
-            routeInformationProvider: router.routeInformationProvider,
-            title: "Horse & Rider's Companion",
-            themeMode: settingsController.darkMode,
-            theme: settingsController.theme,
-            darkTheme: settingsController.darkTheme,
-            debugShowCheckedModeBanner: false,
-          ),
+        return MaterialApp.router(
+          routerDelegate: router.routerDelegate,
+          routeInformationParser: router.routeInformationParser,
+          routeInformationProvider: router.routeInformationProvider,
+          title: "Horse & Rider's Companion",
+          themeMode: settingsController.darkMode,
+          theme: settingsController.theme,
+          darkTheme: settingsController.darkTheme,
+          debugShowCheckedModeBanner: false,
         );
         // ),
       },

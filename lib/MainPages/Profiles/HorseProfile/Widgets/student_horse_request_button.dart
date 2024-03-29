@@ -13,7 +13,7 @@ class StudentHorseRequestButton extends StatelessWidget {
         final cubit = context.read<AppCubit>();
 
         final isOwnerOrGuest = cubit.isOwner() || state.isGuest;
-        final isTrainer = state.usersProfile!.isTrainer ?? false;
+        final isTrainer = state.usersProfile?.isTrainer ?? false;
         final isStudentHorse = cubit.isStudentHorse();
 
         if (!isOwnerOrGuest && isTrainer) {

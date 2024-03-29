@@ -23,6 +23,14 @@ enum ResourcesSortStatus {
   mostRecommended,
 }
 
+/// The Sort State of the Comments
+enum CommentSortState {
+  best,
+  newest,
+  oldest,
+  controversial,
+}
+
 /// The Sorting of Conversations
 enum ConversationsSort {
   unread,
@@ -124,11 +132,13 @@ class AppState extends Equatable {
     this.viewingProfielEmail = '',
     this.savedResources = const [],
     this.isFromTrainingPath = false,
+    this.resourceComments = const [],
     this.isEmailVerification = false,
     this.isFromTrainingPathList = false,
     this.pageStatus = AppPageStatus.loading,
     this.acceptStatus = AcceptStatus.waiting,
     this.difficultyState = DifficultyState.all,
+    this.commentSortState = CommentSortState.best,
     this.conversationsSort = ConversationsSort.unread,
     this.conversationState = ConversationState.loaded,
     this.conversationsState = ConversationsState.loading,
@@ -264,8 +274,14 @@ class AppState extends Equatable {
   /// List of Saved Resources
   final List<Resource?> savedResources;
 
+  /// The List of Comments for a Resource:
+  final List<Comment> resourceComments;
+
   /// The Difficulty of the skills for sorting
   final DifficultyState difficultyState;
+
+  /// The sort state of the resources comments
+  final CommentSortState commentSortState;
 
   /// The database training paths
   final List<TrainingPath?> trainingPaths;
@@ -306,7 +322,6 @@ class AppState extends Equatable {
     Resource? resource,
     BannerAd? bannerAd,
     String? messageText,
-    Conversation? conversation,
     bool? isFromProfile,
     bool? isProfileSetup,
     String? errorMessage,
@@ -323,13 +338,16 @@ class AppState extends Equatable {
     HorseProfile? horseProfile,
     RiderProfile? usersProfile,
     AcceptStatus? acceptStatus,
-    List<Conversation>? conversations,
+    Conversation? conversation,
     RiderProfile? ownersProfile,
     String? viewingProfielEmail,
     bool? isFromTrainingPathList,
     RiderProfile? viewingProfile,
+    List<Comment>? resourceComments,
     List<Resource?>? savedResources,
     DifficultyState? difficultyState,
+    List<Conversation>? conversations,
+    CommentSortState? commentSortState,
     List<TrainingPath?>? trainingPaths,
     ConversationState? conversationState,
     ConversationsSort? conversationsSort,
@@ -377,6 +395,8 @@ class AppState extends Equatable {
       viewingProfile: viewingProfile ?? this.viewingProfile,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       difficultyState: difficultyState ?? this.difficultyState,
+      resourceComments: resourceComments ?? this.resourceComments,
+      commentSortState: commentSortState ?? this.commentSortState,
       conversationState: conversationState ?? this.conversationState,
       conversationsSort: conversationsSort ?? this.conversationsSort,
       conversationsState: conversationsState ?? this.conversationsState,
@@ -432,6 +452,8 @@ class AppState extends Equatable {
         isProfileSetup,
         isBannerAdReady,
         difficultyState,
+        resourceComments,
+        commentSortState,
         conversationState,
         conversationsSort,
         conversationsState,

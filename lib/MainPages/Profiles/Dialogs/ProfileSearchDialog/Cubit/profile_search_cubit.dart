@@ -219,7 +219,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Search for a Rider Profile by Zip Code
   void searchRiderByZipCode() {
-    debugPrint('Search for Rider by Zip Code ${state.searchValue}');
+    debugPrint('Search by Zip Code ${state.searchValue}');
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
 
     try {

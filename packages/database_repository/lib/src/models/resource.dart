@@ -1,7 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:database_repository/src/models/base_list_item.dart';
+import 'package:database_repository/database_repository.dart';
 
 ///Model of a Resource
 class Resource {
@@ -10,6 +10,7 @@ class Resource {
     this.url,
     this.name,
     this.rating,
+    this.comments,
     this.thumbnail,
     this.lastEditBy,
     this.description,
@@ -33,6 +34,8 @@ class Resource {
 
   /// Number of users who rated this resource
   int? numberOfRates;
+
+  /// Thumbnail url of the resource
   final String? thumbnail;
 
   /// User who last edited the resource
@@ -46,6 +49,9 @@ class Resource {
 
   ///Date of the last edit
   final DateTime? lastEditDate;
+
+  /// List of Comments for this resource
+  List<Comment>? comments;
 
   ///List of users who rated this resource
   List<BaseListItem>? usersWhoRated;
@@ -66,6 +72,9 @@ class Resource {
       description: data['description'] as String?,
       numberOfRates: data['numberOfRates'] as int?,
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
+      comments: data['comments'] == null
+          ? null
+          : _convertComments(data['comments'] as List),
       usersWhoRated: data['usersWhoRated'] == null
           ? null
           : _convertUsersWhoRated(data['usersWhoRated'] as List),
@@ -90,6 +99,8 @@ class Resource {
       if (usersWhoRated != null)
         'usersWhoRated':
             List<dynamic>.from(usersWhoRated!.map((e) => e.toJson())),
+      if (comments != null)
+        'comments': List<dynamic>.from(comments!.map((e) => e.toJson())),
     };
   }
 
@@ -103,6 +114,7 @@ class Resource {
     String? lastEditBy,
     String? description,
     DateTime? lastEditDate,
+    List<Comment>? comments,
     List<String?>? skillTreeIds,
     List<BaseListItem>? usersWhoRated,
   }) {
@@ -111,6 +123,7 @@ class Resource {
       url: url ?? this.url,
       name: name ?? this.name,
       rating: rating ?? this.rating,
+      comments: comments ?? this.comments,
       thumbnail: thumbnail ?? this.thumbnail,
       lastEditBy: lastEditBy ?? this.lastEditBy,
       description: description ?? this.description,
@@ -131,4 +144,15 @@ List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {
   }
 
   return usersWhoRated;
+}
+
+List<Comment> _convertComments(List<dynamic>? itemMap) {
+  final comments = <Comment>[];
+  if (itemMap != null) {
+    for (final item in itemMap) {
+      comments.add(Comment.fromJson(item as Map<String, dynamic>));
+    }
+  }
+
+  return comments;
 }

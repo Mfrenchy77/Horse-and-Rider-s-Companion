@@ -65,7 +65,9 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                       state.skillTreeNavigation == SkillTreeNavigation.SkillList
                           ? 'Search Skills'
                           : 'Search Resources',
-                  border: const OutlineInputBorder(),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(40)),
+                  ),
                 ),
                 suggestions: state.searchList
                     .map(
