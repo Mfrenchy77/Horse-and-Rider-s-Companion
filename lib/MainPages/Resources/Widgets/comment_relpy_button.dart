@@ -13,7 +13,7 @@ class CommentReplyButton extends StatelessWidget {
     required this.usersProfile,
   });
   final Comment comment;
-  final Function() onTap;
+  final void Function() onTap;
   final Resource resource;
   final RiderProfile? usersProfile;
   @override
@@ -30,6 +30,7 @@ class CommentReplyButton extends StatelessWidget {
           showDialog<AlertDialog>(
             context: context,
             builder: (context) => CreateCommentDialog(
+              isEdit: false,
               comment: comment,
               resource: resource,
               usersProfile: usersProfile!,

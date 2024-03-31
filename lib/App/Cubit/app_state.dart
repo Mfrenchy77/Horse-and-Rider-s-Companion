@@ -25,10 +25,10 @@ enum ResourcesSortStatus {
 
 /// The Sort State of the Comments
 enum CommentSortState {
-  best,
-  newest,
-  oldest,
-  controversial,
+  Best,
+  Recent,
+  Oldest,
+  Worst,
 }
 
 /// The Sorting of Conversations
@@ -138,7 +138,7 @@ class AppState extends Equatable {
     this.pageStatus = AppPageStatus.loading,
     this.acceptStatus = AcceptStatus.waiting,
     this.difficultyState = DifficultyState.all,
-    this.commentSortState = CommentSortState.best,
+    this.commentSortState = CommentSortState.Best,
     this.conversationsSort = ConversationsSort.unread,
     this.conversationState = ConversationState.loaded,
     this.conversationsState = ConversationsState.loading,

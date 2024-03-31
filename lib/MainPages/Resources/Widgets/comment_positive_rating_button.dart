@@ -15,7 +15,7 @@ class CommentPositiveRatingButton extends StatelessWidget {
     required this.usersProfile,
   });
   final Comment comment;
-  final Function() onTap;
+  final void Function() onTap;
   final Resource resource;
   final RiderProfile? usersProfile;
   @override
@@ -39,26 +39,37 @@ class CommentPositiveRatingButton extends StatelessWidget {
           resource: resource,
           usersProfile: usersProfile!,
         ),
-        child: BlocBuilder<CommentCubit, CommentState>(
-          builder: (context, state) {
-            final cubit = context.read<CommentCubit>();
-            final rater = cubit.getUserRatingForComment(comment);
-            isPositiveSelected = rater?.isSelected ?? false;
-            return IconButton(
-              icon: Icon(
-                isPositiveSelected ? Icons.thumb_up : Icons.thumb_up_outlined,
-              ),
-              color: isPositiveSelected
-                  ? HorseAndRidersTheme().getTheme().colorScheme.primary
-                  : isDark
-                      ? Colors.grey.shade300
-                      : Colors.black54,
-              onPressed: () {
-                cubit.reccomendComment(comment: comment);
-                onTap();
-              },
-            );
+        child: BlocListener<CommentCubit, CommentState>(
+          listener: (context, state) {
+            if (state.positiveStatus == PositiveStatus.success) {
+              //refresh the widget
+              onTap();
+            }
           },
+          child: BlocBuilder<CommentCubit, CommentState>(
+            builder: (context, state) {
+              final cubit = context.read<CommentCubit>();
+              final rater = cubit.getUserRatingForComment(comment);
+              isPositiveSelected = rater?.isSelected ?? false;
+              return state.positiveStatus == PositiveStatus.loading
+                  ? const CircularProgressIndicator()
+                  : IconButton(
+                      icon: Icon(
+                        isPositiveSelected
+                            ? Icons.thumb_up
+                            : Icons.thumb_up_outlined,
+                      ),
+                      color: isPositiveSelected
+                          ? HorseAndRidersTheme().getTheme().colorScheme.primary
+                          : isDark
+                              ? Colors.grey.shade300
+                              : Colors.black54,
+                      onPressed: () {
+                        cubit.reccomendComment(comment: comment);
+                      },
+                    );
+            },
+          ),
         ),
       );
     }

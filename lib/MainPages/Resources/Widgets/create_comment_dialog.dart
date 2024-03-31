@@ -8,11 +8,13 @@ class CreateCommentDialog extends StatelessWidget {
   const CreateCommentDialog({
     super.key,
     this.comment,
+    required this.isEdit,
     required this.resource,
     required this.usersProfile,
   });
 
   /// The comment that the user is commenting on
+  final bool isEdit;
   final Comment? comment;
   final Resource resource;
   final RiderProfile usersProfile;
@@ -26,14 +28,14 @@ class CreateCommentDialog extends StatelessWidget {
       ),
       child: BlocBuilder<CommentCubit, CommentState>(
         builder: (context, state) {
-          final cubit = context.read<CommentCubit>();
+          final cubit = context.read<CommentCubit>()..setEdit(isEdit: isEdit);
           return AlertDialog(
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // If this is a reply to a comment, show the comment and make it selectable
 
-                if (comment != null) ...[
+                if (comment != null && !isEdit) ...[
                   SelectableText(comment!.comment ?? ''),
                   Divider(
                     thickness: 2,
@@ -42,15 +44,18 @@ class CreateCommentDialog extends StatelessWidget {
                     color: HorseAndRidersTheme().getTheme().primaryColor,
                   ),
                 ],
-                TextField(
+                TextFormField(
+                  minLines: 1,
+                  maxLines: 20,
+                  initialValue: isEdit ? comment?.comment : null,
                   textCapitalization: TextCapitalization.sentences,
                   keyboardType: TextInputType.multiline,
-                  onSubmitted: state.commentMessage.length < 5
-                      ? null
-                      : (value) => _sendComment(context: context, cubit: cubit),
                   autofocus: true,
                   onChanged: cubit.updateCommentMessage,
                   decoration: const InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
                     label: Text('Comment'),
                     hintText: 'Write a comment',
                   ),

@@ -15,7 +15,7 @@ class CommentNegativeButton extends StatelessWidget {
   });
 
   final Comment comment;
-  final Function() onTap;
+  final void Function() onTap;
   final Resource resource;
   final RiderProfile? usersProfile;
   @override
@@ -39,28 +39,34 @@ class CommentNegativeButton extends StatelessWidget {
           resource: resource,
           usersProfile: usersProfile!,
         ),
-        child: BlocBuilder<CommentCubit, CommentState>(
-          builder: (context, state) {
-            final cubit = context.read<CommentCubit>();
-            final rater = cubit.getUserRatingForComment(comment);
-            isNegativeSelected = rater?.isCollapsed ?? false;
-            return IconButton(
-              icon: Icon(
-                isNegativeSelected
-                    ? Icons.thumb_down
-                    : Icons.thumb_down_outlined,
-              ),
-              color: isNegativeSelected
-                  ? Colors.red
-                  : isDark
-                      ? Colors.grey.shade300
-                      : Colors.black54,
-              onPressed: () {
-                cubit.dontReccomendComment(comment: comment);
-                onTap();
-              },
-            );
+        child: BlocListener<CommentCubit, CommentState>(
+          listener: (context, state) {
+            onTap();
           },
+          child: BlocBuilder<CommentCubit, CommentState>(
+            builder: (context, state) {
+              final cubit = context.read<CommentCubit>();
+              final rater = cubit.getUserRatingForComment(comment);
+              isNegativeSelected = rater?.isCollapsed ?? false;
+              return state.negativeStatus == NegativeStatus.loading
+                  ? const CircularProgressIndicator()
+                  : IconButton(
+                      icon: Icon(
+                        isNegativeSelected
+                            ? Icons.thumb_down
+                            : Icons.thumb_down_outlined,
+                      ),
+                      color: isNegativeSelected
+                          ? Colors.red
+                          : isDark
+                              ? Colors.grey.shade300
+                              : Colors.black54,
+                      onPressed: () {
+                        cubit.dontReccomendComment(comment: comment);
+                      },
+                    );
+            },
+          ),
         ),
       );
     }

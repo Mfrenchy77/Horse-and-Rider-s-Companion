@@ -21,48 +21,47 @@ class SortCommentsDialog extends StatelessWidget {
             children: [
               RadioListTile<CommentSortState>(
                 toggleable: true,
-                selected: state.commentSortState == CommentSortState.newest,
+                selected: state.commentSortState == CommentSortState.Recent,
                 title: const Text('Newest'),
-                value: CommentSortState.newest,
+                value: CommentSortState.Recent,
                 groupValue: state.commentSortState,
                 onChanged: (value) {
-                  cubit.sortComments(CommentSortState.newest);
+                  cubit.sortComments(CommentSortState.Recent);
                   Navigator.of(context).pop();
                 },
               ),
               RadioListTile<CommentSortState>(
                 title: const Text('Oldest'),
-                value: CommentSortState.oldest,
+                value: CommentSortState.Oldest,
                 groupValue: state.commentSortState,
                 onChanged: (value) {
                   // sort the comments by oldest
-                  cubit.sortComments(CommentSortState.oldest);
+                  cubit.sortComments(CommentSortState.Oldest);
                   Navigator.of(context).pop();
                 },
               ),
               RadioListTile<CommentSortState>(
                 toggleable: true,
-                selected: state.commentSortState == CommentSortState.best,
+                selected: state.commentSortState == CommentSortState.Best,
                 title: const Text('Highest Rated'),
-                value: CommentSortState.best,
+                value: CommentSortState.Best,
                 groupValue: state.commentSortState,
                 onChanged: (value) {
                   // sort the comments by most positive
-                  cubit.sortComments(CommentSortState.best);
+                  cubit.sortComments(CommentSortState.Best);
                   Navigator.of(context).pop();
                 },
               ),
               RadioListTile<CommentSortState>(
                 toggleable: true,
-                selected:
-                    state.commentSortState == CommentSortState.controversial,
+                selected: state.commentSortState == CommentSortState.Worst,
                 title: const Text('Most Controversial'),
-                value: CommentSortState.controversial,
+                value: CommentSortState.Worst,
                 groupValue: state.commentSortState,
                 onChanged: (value) {
                   debugPrint('Sort value: $value');
                   // sort the comments by least positive
-                  cubit.sortComments(CommentSortState.controversial);
+                  cubit.sortComments(CommentSortState.Worst);
                   Navigator.of(context).pop();
                 },
               ),

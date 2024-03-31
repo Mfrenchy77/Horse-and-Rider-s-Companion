@@ -1684,19 +1684,19 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(commentSortState: sortState));
     final sortedList = state.resourceComments;
     switch (sortState) {
-      case CommentSortState.newest:
-        sortedList.sort((a, b) => b.date!.compareTo(a.date!));
+      case CommentSortState.Recent:
+        sortedList.sort((a, b) => b.date.compareTo(a.date));
         emit(state.copyWith(resourceComments: sortedList));
         break;
-      case CommentSortState.oldest:
-        sortedList.sort((a, b) => a.date!.compareTo(b.date!));
+      case CommentSortState.Oldest:
+        sortedList.sort((a, b) => a.date.compareTo(b.date));
         emit(state.copyWith(resourceComments: sortedList));
         break;
-      case CommentSortState.best:
+      case CommentSortState.Best:
         sortedList.sort((a, b) => b.rating!.compareTo(a.rating!));
         emit(state.copyWith(resourceComments: sortedList));
         break;
-      case CommentSortState.controversial:
+      case CommentSortState.Worst:
         sortedList.sort((a, b) => a.rating!.compareTo(b.rating!));
         emit(state.copyWith(resourceComments: sortedList));
         break;
@@ -1705,9 +1705,15 @@ class AppCubit extends Cubit<AppState> {
 
   ///Returns a resource based on the [id]
   Resource? getResourceById(String id) {
-    return state.resources.firstWhereOrNull(
+    final resource = state.resources.firstWhereOrNull(
       (element) => element?.id == id,
     );
+    if (resource != null) {
+      getResourceComments(resource);
+    } else {
+      debugPrint('Resource not found');
+    }
+    return resource;
   }
 
   /// Gets the user rating for the [resource] or creates a new one

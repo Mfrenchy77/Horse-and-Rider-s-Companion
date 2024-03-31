@@ -24,6 +24,11 @@ class CommentCubit extends Cubit<CommentState> {
   /// Resource Repository
   final ResourcesRepository _resourceRepository = ResourcesRepository();
 
+  /// Set the edit state to Editing
+  void setEdit({required bool isEdit}) {
+    emit(state.copyWith(isEdit: isEdit));
+  }
+
   /// Update the comment message
   void updateCommentMessage(String commentMessage) {
     emit(
@@ -36,15 +41,20 @@ class CommentCubit extends Cubit<CommentState> {
   /// Send the comment
   Future<void> sendComment() async {
     if (state.resource != null) {
+      emit(state.copyWith(status: CommentStatus.loading));
       final comment = Comment(
         id: ViewUtils.createId(),
-        user: _createUser(),
-        date: DateTime.now(),
-        rating: 0,
-        comment: state.commentMessage,
         parentId: state.comment?.id,
-        resourceId: state.resource!.id,
+        comment: state.commentMessage,
         usersWhoRated: <BaseListItem>[],
+        rating: state.isEdit ? state.comment?.rating : 0,
+        editedDate: state.isEdit ? DateTime.now() : null,
+        user: state.isEdit ? state.comment?.user : _createUser(),
+        date: state.isEdit
+            ? state.comment?.date ?? DateTime.now()
+            : DateTime.now(),
+        resourceId:
+            state.isEdit ? state.comment?.resourceId : state.resource!.id,
       );
 
       final updatedResource = state.resource!;
@@ -54,7 +64,9 @@ class CommentCubit extends Cubit<CommentState> {
       await _resourceRepository.createOrUpdateResource(
         resource: updatedResource,
       );
+      emit(state.copyWith(status: CommentStatus.success));
     } else {
+      emit(state.copyWith(status: CommentStatus.initial));
       debugPrint('Resource is null, cannot send comment');
     }
   }
@@ -94,9 +106,10 @@ class CommentCubit extends Cubit<CommentState> {
   }
 
   ///  User has clicked the recommend [comment] button
-  void reccomendComment({required Comment comment}) {
+  Future<void> reccomendComment({required Comment comment}) async {
     final commentsResource = state.resource;
     if (commentsResource == null) {
+      emit(state.copyWith(positiveStatus: PositiveStatus.loading));
       debugPrint('Resource is null, cannot recommend comment');
       return;
     } else {
@@ -108,14 +121,23 @@ class CommentCubit extends Cubit<CommentState> {
           return e;
         }
       }).toList();
-      _resourceRepository.createOrUpdateResource(resource: commentsResource);
+      try {
+        await _resourceRepository.createOrUpdateResource(
+          resource: commentsResource,
+        );
+        emit(state.copyWith(positiveStatus: PositiveStatus.success));
+      } catch (e) {
+        emit(state.copyWith(positiveStatus: PositiveStatus.initial));
+        debugPrint('Error Positive Comment Recommendation: $e');
+      }
     }
   }
 
   ///  User has clicked the dont recommend [comment] button
-  void dontReccomendComment({required Comment comment}) {
+  Future<void> dontReccomendComment({required Comment comment}) async {
     final commentsResource = state.resource;
     if (commentsResource == null) {
+      emit(state.copyWith(negativeStatus: NegativeStatus.loading));
       debugPrint('Resource is null, cannot recommend comment');
       return;
     } else {
@@ -127,7 +149,15 @@ class CommentCubit extends Cubit<CommentState> {
           return e;
         }
       }).toList();
-      _resourceRepository.createOrUpdateResource(resource: commentsResource);
+      try {
+        await _resourceRepository.createOrUpdateResource(
+          resource: commentsResource,
+        );
+        emit(state.copyWith(negativeStatus: NegativeStatus.success));
+      } catch (e) {
+        emit(state.copyWith(negativeStatus: NegativeStatus.initial));
+        debugPrint('Error Negative Comment Recommendation: $e');
+      }
     }
   }
 

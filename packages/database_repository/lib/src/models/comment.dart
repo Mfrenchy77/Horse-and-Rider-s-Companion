@@ -11,6 +11,7 @@ class Comment {
     required this.rating,
     required this.comment,
     required this.parentId,
+    required this.editedDate,
     required this.resourceId,
     required this.usersWhoRated,
   });
@@ -22,7 +23,10 @@ class Comment {
   int? rating;
 
   /// The date the comment was made
-  final DateTime? date;
+  final DateTime date;
+
+  /// The date if edited
+  final DateTime? editedDate;
 
   /// The comment
   final String? comment;
@@ -54,6 +58,7 @@ class Comment {
       parentId: data['parentId'] as String?,
       resourceId: data['resourceId'] as String?,
       date: (data['date'] as Timestamp).toDate(),
+      editedDate: (data['editedDate'] as Timestamp?)?.toDate(),
       usersWhoRated: data['usersWhoRated'] == null
           ? null
           : _convertUsersWhoRated(data['usersWhoRated'] as List),
@@ -73,6 +78,7 @@ class Comment {
       parentId: json['parentId'] as String?,
       resourceId: json['resourceId'] as String?,
       date: (json['date'] as Timestamp).toDate(),
+      editedDate: (json['editedDate'] as Timestamp?)?.toDate(),
       usersWhoRated: _convertUsersWhoRated(json['usersWhoRated'] as List?),
       user: json['user'] == null
           ? null
@@ -84,11 +90,12 @@ class Comment {
   Map<String, Object?> toFirestore() {
     return {
       if (id != null) 'id': id,
-      if (date != null) 'date': date,
+      'date': date,
       if (user != null) 'user': user,
       if (rating != null) 'rating': rating,
       if (comment != null) 'comment': comment,
       if (parentId != null) 'parentId': parentId,
+      if (editedDate != null) 'editedDate': editedDate,
       if (resourceId != null) 'resourceId': resourceId,
       if (usersWhoRated != null)
         'usersWhoRated':
@@ -105,6 +112,7 @@ class Comment {
       'comment': comment,
       'parentId': parentId,
       'user': user?.toJson(),
+      'editedDate': editedDate,
       'resourceId': resourceId,
       'usersWhoRated': usersWhoRated?.map((e) => e.toJson()).toList(),
     };
@@ -119,6 +127,7 @@ class Comment {
     String? parentId,
     BaseListItem? user,
     String? resourceId,
+    DateTime? editedDate,
     List<BaseListItem>? usersWhoRated,
   }) {
     return Comment(
@@ -128,6 +137,7 @@ class Comment {
       rating: rating ?? this.rating,
       comment: comment ?? this.comment,
       parentId: parentId ?? this.parentId,
+      editedDate: editedDate ?? this.editedDate,
       resourceId: resourceId ?? this.resourceId,
       usersWhoRated: usersWhoRated ?? this.usersWhoRated,
     );

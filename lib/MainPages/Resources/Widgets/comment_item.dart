@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart'; // Make sure this import is correct based on your project
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +9,9 @@ import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_negative_rating_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_positive_rating_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_relpy_button.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/create_comment_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
 
 class CommentItem extends StatefulWidget {
@@ -49,17 +52,25 @@ class _CommentItemState extends State<CommentItem> {
           final cubit = context.read<AppCubit>();
           final childComments = cubit.getChildComments(
             parentComment: widget.comment,
-          );
+          )..sort((a, b) => b.date.compareTo(a.date));
+
           final commentResource = cubit.getResourceById(
             widget.comment.resourceId!,
           );
 
+          final usersRating = widget.comment.usersWhoRated?.firstWhereOrNull(
+            (BaseListItem element) => element.id == state.usersProfile?.email,
+          );
+          final hasUserRated = usersRating != null;
+          final isPositiveSelected = usersRating?.isSelected ?? false;
+
+          final isDark = SharedPrefs().isDarkMode;
           if (commentResource == null) {
             return const SizedBox.shrink();
           } else {
             return InkWell(
               onTap: _toggleActionsVisibility,
-              // This is the box that will show if
+              // This is the box that will show a colored boarder if
               // the comment id a child of the parent comment
               child: ColoredBox(
                 color: HorseAndRidersTheme().getTheme().primaryColor,
@@ -80,25 +91,29 @@ class _CommentItemState extends State<CommentItem> {
                               padding: const EdgeInsets.only(left: 5, right: 5),
                               child: Row(
                                 children: [
-                                  Text(widget.comment.rating.toString()),
+                                  Text(
+                                    widget.comment.rating.toString(),
+                                    style: TextStyle(
+                                      color: hasUserRated
+                                          ? isPositiveSelected
+                                              ? HorseAndRidersTheme()
+                                                  .getTheme()
+                                                  .colorScheme
+                                                  .primary
+                                              : Colors.red
+                                          : isDark
+                                              ? Colors.grey.shade300
+                                              : Colors.black54,
+                                      //bold
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   smallGap(),
-                                  TextButton(
-                                    onPressed: widget.comment.user?.id == null
-                                        ? null
-                                        : () => context.pushNamed(
-                                              ViewingProfilePage.name,
-                                              pathParameters: {
-                                                ViewingProfilePage.pathParams:
-                                                    widget.comment.user!.id!,
-                                              },
-                                            ),
-                                    child: Text(
-                                      widget.comment.user?.name ?? '',
-                                      textAlign: TextAlign.left,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  Text(
+                                    widget.comment.user?.name ?? '',
+                                    textAlign: TextAlign.left,
+                                    style: const TextStyle(
+                                      fontSize: 12,
                                     ),
                                   ),
                                   const Spacer(),
@@ -111,6 +126,7 @@ class _CommentItemState extends State<CommentItem> {
                                 ],
                               ),
                             ),
+
                             // This is the text that will show the comment
                             Padding(
                               padding: const EdgeInsets.only(left: 5, right: 5),
@@ -126,47 +142,79 @@ class _CommentItemState extends State<CommentItem> {
                             // hidden by default
                             Visibility(
                               visible: _isActionsVisible,
-                              child: Column(
-                                children: [
-                                  Divider(
-                                    color: HorseAndRidersTheme()
-                                        .getTheme()
-                                        .primaryColor,
-                                    endIndent: 5,
-                                    indent: 5,
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      CommentPositiveRatingButton(
-                                        onTap: _toggleActionsVisibility,
-                                        key: const Key(
-                                          'positive_rating_button',
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 15),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    // Positive rating button
+                                    CommentPositiveRatingButton(
+                                      onTap: _toggleActionsVisibility,
+                                      key: const Key(
+                                        'positive_rating_button',
+                                      ),
+                                      comment: widget.comment,
+                                      resource: commentResource,
+                                      usersProfile: state.usersProfile,
+                                    ),
+                                    // Negative rating button
+                                    CommentNegativeButton(
+                                      onTap: _toggleActionsVisibility,
+                                      key: const Key(
+                                        'negative_rating_button',
+                                      ),
+                                      comment: widget.comment,
+                                      resource: commentResource,
+                                      usersProfile: state.usersProfile,
+                                    ),
+                                    // if not user show a button to link
+                                    // to the commenters profile
+                                    if (state.usersProfile?.email !=
+                                        widget.comment.user?.id)
+                                      IconButton(
+                                        tooltip: 'Open '
+                                            '${widget.comment.user?.name}'
+                                            "'s Profile",
+                                        onPressed: () => context.pushNamed(
+                                          ViewingProfilePage.name,
+                                          pathParameters: {
+                                            ViewingProfilePage.pathParams:
+                                                widget.comment.user!.id!,
+                                          },
                                         ),
-                                        comment: widget.comment,
-                                        resource: commentResource,
-                                        usersProfile: state.usersProfile,
+                                        icon: const Icon(Icons.person),
                                       ),
-                                      CommentNegativeButton(
-                                        onTap: _toggleActionsVisibility,
-                                        key: const Key(
-                                          'negative_rating_button',
-                                        ),
-                                        comment: widget.comment,
-                                        resource: commentResource,
-                                        usersProfile: state.usersProfile,
+                                    // Reply button
+                                    CommentReplyButton(
+                                      onTap: _toggleActionsVisibility,
+                                      key: const Key('reply_button'),
+                                      comment: widget.comment,
+                                      resource: commentResource,
+                                      usersProfile: state.usersProfile,
+                                    ),
+                                    // a edit button if the user is the
+                                    //owner of the comment
+                                    if (state.usersProfile?.email ==
+                                        widget.comment.user?.id)
+                                      IconButton(
+                                        tooltip: 'Edit Comment',
+                                        onPressed: () {
+                                          showDialog<AlertDialog>(
+                                            context: context,
+                                            builder: (context) =>
+                                                CreateCommentDialog(
+                                              isEdit: true,
+                                              resource: commentResource,
+                                              usersProfile: state.usersProfile!,
+                                              comment: widget.comment,
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.edit),
                                       ),
-                                      CommentReplyButton(
-                                        onTap: _toggleActionsVisibility,
-                                        key: const Key('reply_button'),
-                                        comment: widget.comment,
-                                        resource: commentResource,
-                                        usersProfile: state.usersProfile,
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                             // List of child comments
