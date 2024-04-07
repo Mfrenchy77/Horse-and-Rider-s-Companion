@@ -17,11 +17,8 @@ class HorseProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final cubit = context.read<AppCubit>();
+        final cubit = context.read<AppCubit>()..getHorseProfile(id: horseId);
 
-        if (state.horseProfile == null || state.horseProfile?.id != horseId) {
-          cubit.getHorseProfile(id: horseId);
-        }
         return state.horseProfile == null || state.horseProfile?.id != horseId
             ? const LoadingPage()
             : PopScope(

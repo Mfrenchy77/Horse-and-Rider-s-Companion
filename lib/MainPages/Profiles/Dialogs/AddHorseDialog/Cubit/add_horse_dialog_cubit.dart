@@ -32,7 +32,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         .then((value) => _locationApiKey = value);
     emit(
       state.copyWith(
-        id: horseProfile?.id,
+        id: horseProfile?.id ?? DateTime.now().toString(),
         horseProfile: horseProfile,
         usersProfile: usersProfile,
         height: horseProfile?.height,
@@ -137,11 +137,12 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     if (pickedFile != null) {
       picUrl = await cloudRepository.addHorsePhoto(
         file: pickedFile,
-        horseId: state.horseProfile?.id as String,
+        horseId: state.horseProfile?.id ?? state.id,
       );
       if (picUrl != null) {
         emit(
           state.copyWith(
+            horseProfile: state.horseProfile?.copyWith(id: picUrl),
             picUrl: picUrl,
             picStatus: PictureGetterStatus.nothing,
           ),
@@ -439,7 +440,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     );
 
     final initialNoteEntry = BaseListItem(
-      id: DateTime.now().toString(),
+      id: state.horseProfile?.id ?? state.id,
       name:
           "${state.usersProfile?.name} registered ${state.horseName.value} with Horse & Rider's Companion",
       message: state.usersProfile?.name,

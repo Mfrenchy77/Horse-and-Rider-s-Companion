@@ -16,11 +16,11 @@ class _MessageTextFieldState extends State<MessageTextField> {
   @override
   Widget build(BuildContext context) {
     // Listen to state changes to clear text field
-    context.read<AppCubit>().stream.listen((state) {
-      if (state.messageText.isEmpty) {
-        _controller.clear();
-      }
-    });
+    // context.read<AppCubit>().stream.listen((state) {
+    //   if (state.messageText.isEmpty) {
+    //     _controller.clear();
+    //   }
+    // });
 
     final isDark = SharedPrefs().isDarkMode;
     return Stack(
@@ -52,6 +52,7 @@ class _MessageTextFieldState extends State<MessageTextField> {
                         onPressed: () {
                           if (_controller.text.isNotEmpty) {
                             context.read<AppCubit>().sendMessage();
+                            _controller.clear();
                           }
                         },
                         icon: const Icon(

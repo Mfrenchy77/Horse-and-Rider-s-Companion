@@ -9,7 +9,8 @@ class GuestProfilePrimaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return ListView(
+      shrinkWrap: true,
       children: [
         const ProfileName(
           key: Key('ProfileName'),

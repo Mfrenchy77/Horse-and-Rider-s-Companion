@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_view.dart';
 
 class ViewingProfilePage extends StatelessWidget {
@@ -18,7 +20,12 @@ class ViewingProfilePage extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         if (state.viewingProfile == null || state.viewingProfile?.email != id) {
-          cubit.getProfileToBeViewed(email: id);
+          if (state.usersProfile != null && state.usersProfile!.email == id) {
+            debugPrint('Trying to view own profile, popping');
+            context.pushReplacementNamed(ProfilePage.name);
+          } else {
+            cubit.getProfileToBeViewed(email: id);
+          }
         }
         return state.viewingProfile == null
             ? const LoadingPage()

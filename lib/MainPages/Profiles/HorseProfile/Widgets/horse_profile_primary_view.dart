@@ -11,6 +11,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_date_of_birth.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_gender.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_height.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_instructors.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_location.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_nickname.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_name.dart';
@@ -68,13 +69,16 @@ class HorseProfilePrimaryView extends StatelessWidget {
                 key: Key('horseDateOfBirth'),
               ),
               gap(),
+              const HorseInstructors(
+                key: Key('horseInstructors'),
+              ),
+              gap(),
               const StudentHorseRequestButton(
                 key: Key('studentHorseRequestButton'),
               ),
               gap(),
               LogBookButton(
-                profile:
-                    cubit.state.viewingProfile ?? cubit.state.usersProfile,
+                profile: cubit.state.viewingProfile ?? cubit.state.usersProfile,
                 horseProfile: horseProfile,
                 key: const Key('logBookButton'),
               ),

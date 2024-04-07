@@ -16,19 +16,16 @@ class MessagesRepository {
   //         );
 
   ///  create or update [message]
-  Future<void> createOrUpdateMessage({
-    required Message message,
-    required String conversationId,
-  }) {
+  Future<void> createOrUpdateMessage({required Message message}) {
     return FirebaseFirestore.instance
         .collection(CONVERSATIONS)
-        .doc(conversationId)
+        .doc(message.id)
         .collection(MESSAGES)
         .withConverter<Message>(
           fromFirestore: Message.fromFirestore,
           toFirestore: (Message message, options) => message.toFirestore(),
         )
-        .doc(message.id ?? DateTime.now().millisecondsSinceEpoch.toString())
+        .doc(message.messsageId)
         .set(message);
   }
 

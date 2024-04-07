@@ -23,9 +23,8 @@ class EmailField extends StatelessWidget {
             onChanged: cubit.emailChanged,
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
-              debugPrint('Validation: $value');
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
+              if (value == null || value.length < 8) {
+                return null;
               } else {
                 return state.email.validator(value);
               }

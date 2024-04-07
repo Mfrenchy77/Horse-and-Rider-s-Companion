@@ -10,12 +10,12 @@ class AcceptRequestButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final cubit = context.read<AppCubit>();
         final isAccepted = message.requestItem?.isSelected ?? false;
         return FilledButton(
           onPressed: isAccepted
               ? null
-              : () => context
-                  .read<AppCubit>()
+              : () => cubit
                   .acceptRequest(message: message, context: context),
           child: state.acceptStatus == AcceptStatus.loading
               ? const CircularProgressIndicator()

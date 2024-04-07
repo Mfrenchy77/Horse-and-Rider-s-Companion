@@ -136,9 +136,9 @@ class HorseProfile {
       locationName: data['locationName'] as String?,
       currentOwnerId: data['currentOwnerId'] as String,
       currentOwnerName: data['currentOwnerName'] as String,
-      dateOfBirth: (data['dateOfBirth'] as Timestamp).toDate(),
-      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
-      dateOfPurchase: (data['dateOfPurchase'] as Timestamp).toDate(),
+      dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
+      lastEditDate: (data['lastEditDate'] as Timestamp?)?.toDate(),
+      dateOfPurchase: (data['dateOfPurchase'] as Timestamp?)?.toDate(),
       skillLevels: data['skillLevels'] == null
           ? null
           : _convertSkillLevel(data['skillLevels'] as List),

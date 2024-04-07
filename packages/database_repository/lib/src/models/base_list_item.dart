@@ -10,6 +10,7 @@ class BaseListItem {
   BaseListItem({
     this.name,
     this.date,
+    this.extra,
     this.depth,
     this.message,
     this.id = '',
@@ -33,26 +34,39 @@ class BaseListItem {
   ///  If it is a Instructor Request, this is the user making the request's
   ///  email.
   ///
+  ///  If it is a Student Horse Request, this is the Horse's Id.
+  ///
   ///  If it is a Contact, this is the contact's email.
   final String? id;
 
   /// If BaseListItem is a Log Entry, this is the Users Name who made the log
   ///  entry.
+  ///
+  /// If it is a Student Horse Request, this is the Horse Owner's Name.
+  ///
   String? message;
 
   /// If the BaseListItem is a Log Entry, this is the Tag
   ///
-  /// If the BaseListItem is an Instructor Request, this is the users Thumbnail.
+  /// If the BaseListItem is an Instructor Request, this is the users pic url.
   ///
-  /// If it is a Contact, this is the contact's thumbnail.
+  /// If it is a Student Horse Request, this is the Horse's Pic url Thumbnail.
+  ///
+  /// If it is a Contact, this is the contact's thumbnail url.
   String? imageUrl;
 
   /// If BaseListItem is a Log Entry, this is the users email.
+  ///
+  /// If it is a Student Horse Request, this is the Horse Owner's email.
+  ///
   String? parentId;
 
   /// If BaseListItem is a Rating, this is used to notate a positive rating.
   ///
   /// If it is a Instructor Request, this is used to notate if the request
+  /// has been accepted or not.
+  ///
+  /// If it is a Student Horse Request, this is used to notate if the request
   /// has been accepted or not.
   bool? isSelected;
 
@@ -61,7 +75,9 @@ class BaseListItem {
   /// If it is a Instructor Request, this is used to notate if the request
   /// is for a Horse or a Rider. True if Rider, False if Horse.
   ///
-  ///  If it is a
+  ///  If it is a Student Horse Request, this is used to notate if the request
+  /// is for a Horse or a Rider. True if Rider, False if Horse.
+  ///
   /// Contact, this is used to notate if the contact is a Horse or a Rider.
   /// True if Rider, False if Horse.
   bool? isCollapsed;
@@ -72,14 +88,22 @@ class BaseListItem {
   ///  If it is a Instructor Request, this is used to hold the name of the user
   ///  making the request.
   ///
+  /// If it is a Student Horse Request, this is used to hold the name of the
+  /// Horse.
+  ///
   ///  If it is a Contact, this is used to hold the contact's name.
   final String? name;
+
+  /// If the BaseListItem is a Student Horse Request, this is the used to hold
+  /// the requestors email.
+  final String? extra;
 
   /// Creates a BaseListItem from a json map
   factory BaseListItem.fromJson(Map<String, dynamic> json) => BaseListItem(
         id: json['id'] as String?,
         depth: json['depth'] as int?,
         name: json['name'] as String?,
+        extra: json['extra'] as String?,
         message: json['message'] as String?,
         parentId: json['parentId'] as String?,
         isSelected: json['isSelected'] as bool?,
@@ -99,6 +123,7 @@ class BaseListItem {
       id: data!['id'] as String?,
       depth: data['depth'] as int?,
       name: data['name'] as String?,
+      extra: data['extra'] as String?,
       message: data['message'] as String?,
       imageUrl: data['imageUrl'] as String?,
       parentId: data['parentId'] as String?,
@@ -115,6 +140,7 @@ class BaseListItem {
       if (name != null) 'name': name,
       if (date != null) 'date': date,
       if (depth != null) 'depth': depth,
+      if (extra != null) 'extra': extra,
       if (message != null) 'message': message,
       if (parentId != null) 'parentId': parentId,
       if (imageUrl != null) 'imageUrl': imageUrl,
@@ -130,6 +156,7 @@ class BaseListItem {
       if (name != null) 'name': name,
       if (date != null) 'date': date,
       if (depth != null) 'depth': depth,
+      if (extra != null) 'extra': extra,
       if (message != null) 'message': message,
       if (parentId != null) 'parentId': parentId,
       if (imageUrl != null) 'imageUrl': imageUrl,
