@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:responsive_framework/responsive_framework.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 
 class GuestWelcomeText extends StatelessWidget {
   const GuestWelcomeText({super.key});

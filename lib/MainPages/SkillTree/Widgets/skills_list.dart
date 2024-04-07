@@ -27,11 +27,11 @@ class SkillsListView extends StatelessWidget {
                 onPressed: () => showDialog<CreateSkillDialog>(
                   context: context,
                   builder: (context) => CreateSkillDialog(
-                    isRider: state.isForRider,
+                    isForRider: state.isForRider,
                     isEdit: false,
                     // ignore: avoid_redundant_argument_values
                     skill: null,
-                    userName: state.usersProfile?.name,
+                    usersProfile: state.usersProfile!,
                     position: skills.isNotEmpty ? skills.length : 0,
                   ),
                 ),
@@ -102,10 +102,10 @@ class SkillsListView extends StatelessWidget {
                             onEdit: () => showDialog<CreateSkillDialog>(
                               context: context,
                               builder: (context) => CreateSkillDialog(
-                                isRider: state.isForRider,
+                                isForRider: state.isForRider,
                                 isEdit: true,
                                 skill: skill,
-                                userName: state.usersProfile?.name,
+                                usersProfile: state.usersProfile!,
                                 position: skills.isNotEmpty ? skills.length : 0,
                               ),
                             ),

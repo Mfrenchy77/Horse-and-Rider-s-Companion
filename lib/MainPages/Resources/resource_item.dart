@@ -6,12 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/ratings_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_info_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_rating_buttons.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 import 'package:super_banners/super_banners.dart';
 
 class ResourcesItem extends StatelessWidget {

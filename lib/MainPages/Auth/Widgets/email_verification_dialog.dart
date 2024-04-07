@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 class EmailVerificationDialog extends StatelessWidget {
   const EmailVerificationDialog({

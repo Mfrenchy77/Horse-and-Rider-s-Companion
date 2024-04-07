@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 import 'package:searchfield/searchfield.dart';
 
 ///   This is the Dialog that is used to create a new TriainingPath

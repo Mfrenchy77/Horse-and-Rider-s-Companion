@@ -4,10 +4,10 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 /// Dialog to view the log of a rider or horse
 ///

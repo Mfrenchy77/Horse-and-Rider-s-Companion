@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 /// Displays the various settings that can be customized by the user.
 ///

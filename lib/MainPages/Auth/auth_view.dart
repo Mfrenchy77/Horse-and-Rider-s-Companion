@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
@@ -11,7 +12,6 @@ import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:open_mail_app/open_mail_app.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 class AuthView extends StatelessWidget {
   const AuthView({super.key});

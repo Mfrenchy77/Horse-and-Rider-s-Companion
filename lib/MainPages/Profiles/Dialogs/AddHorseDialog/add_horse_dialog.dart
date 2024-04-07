@@ -8,6 +8,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
@@ -16,7 +17,6 @@ import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 /// Dialog for adding a new horse profile or editing an existing one
 class AddHorseDialog extends StatelessWidget {

@@ -7,26 +7,22 @@ import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/Cubit/skill_create_dialog_cubit.dart';
 
-
 class CreateSkillDialog extends StatelessWidget {
   const CreateSkillDialog({
     super.key,
     this.skill,
     required this.isEdit,
-    required this.isRider,
+    required this.isForRider,
     required int position,
-    required String? userName,
-   // required List<SubCategory?>? allSubCategories,
-  })  : _userName = userName,
-        _position = position;
-       // _allSubCategories = allSubCategories;
+    required RiderProfile usersProfile,
+  })  : _position = position,
+        _usersProfile = usersProfile;
 
   final bool isEdit;
   final Skill? skill;
-  final bool isRider;
+  final bool isForRider;
   final int _position;
-  final String? _userName;
- // final List<SubCategory?>? _allSubCategories;
+  final RiderProfile _usersProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +31,8 @@ class CreateSkillDialog extends StatelessWidget {
       child: BlocProvider(
         create: (context) => CreateSkillDialogCubit(
           skill: skill,
-          name: _userName,
-          isForRider: isRider,
-         // allSubCategories: _allSubCategories,
+          isForRider: isForRider,
+          usersProfile: _usersProfile,
           skillsRepository: context.read<SkillTreeRepository>(),
         ),
         child: BlocListener<CreateSkillDialogCubit, CreateSkillDialogState>(
