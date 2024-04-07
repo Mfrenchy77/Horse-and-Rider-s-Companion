@@ -19,6 +19,7 @@ class SkillsListView extends StatelessWidget {
         final skills = cubit.sortedSkills();
         return Scaffold(
           floatingActionButton: Visibility(
+            // ignore: use_if_null_to_convert_nulls_to_bools
             visible: !state.isGuest || state.usersProfile?.editor == true,
             child: Tooltip(
               message:

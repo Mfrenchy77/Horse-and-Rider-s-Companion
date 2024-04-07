@@ -147,7 +147,8 @@ class NavigatorView extends StatelessWidget {
                           //       onPressed: cubit.backPressed,
                           //     ),
                           //   ),
-                        // FIXME: if adaptive scaffold updates and doesn't fix spacing,
+                        // FIXME: if adaptive scaffold updates and doesn't
+                        // fix spacing,
                         // around navrail, click AdapiveScaffold and on
                         // line 279 change the padding to 0
                           leadingExtendedNavRail: const Image(

@@ -2513,6 +2513,7 @@ class AppCubit extends Cubit<AppState> {
     studentHorse.instructors = (studentHorse.instructors ?? [])
       ..removeWhere((element) => element.id == requestor.id)
       ..add(requestor);
+    // ignore: cascade_invocations
     studentHorse.notes = (studentHorse.notes ?? [])..add(horseNote);
 
     // Update Requestor Profile with new student horse and note
@@ -2520,6 +2521,7 @@ class AppCubit extends Cubit<AppState> {
       ..removeWhere((element) => element.id == studentHorseId)
       ..add(message.requestItem as BaseListItem);
 
+    // ignore: cascade_invocations
     requestorProfile.notes = (requestorProfile.notes ?? [])
       ..add(senderAcceptNote);
 

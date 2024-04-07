@@ -11,16 +11,11 @@ class ResourceCommentBar extends StatelessWidget {
   final Resource resource;
   @override
   Widget build(BuildContext context) {
-    // row that has the number of likes, number of comments, a button to make a comment, and a button to sort the comments
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // number of likes
-
-            // a cirlce with the rating in th middle, under the cirlce says"Rating"
-
             Column(
               children: [
                 IconButton.outlined(
@@ -30,7 +25,6 @@ class ResourceCommentBar extends StatelessWidget {
                 const Text('Rating'),
               ],
             ),
-            // Cirlce with the number of comments in the middle, under the cirlce says "Comments"
             Column(
               children: [
                 IconButton.outlined(
@@ -40,8 +34,6 @@ class ResourceCommentBar extends StatelessWidget {
                 const Text('Comments'),
               ],
             ),
-
-            // button to make a comment
             Column(
               children: [
                 IconButton.outlined(
@@ -65,7 +57,6 @@ class ResourceCommentBar extends StatelessWidget {
                 const Text('Reply'),
               ],
             ),
-            // button to sort the comments
             Column(
               children: [
                 IconButton.outlined(

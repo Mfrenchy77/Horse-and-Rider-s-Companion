@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_tile.dart';
 
 class HorseInstructors extends StatelessWidget {
   const HorseInstructors({super.key});
@@ -23,9 +22,7 @@ class HorseInstructors extends StatelessWidget {
                         'Instructors',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          //underline
                           decoration: TextDecoration.underline,
-                          //bold
                           fontWeight: FontWeight.bold,
                         ),
                       ),

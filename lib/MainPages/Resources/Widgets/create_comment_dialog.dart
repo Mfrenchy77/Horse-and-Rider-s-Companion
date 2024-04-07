@@ -33,8 +33,6 @@ class CreateCommentDialog extends StatelessWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // If this is a reply to a comment, show the comment and make it selectable
-
                 if (comment != null && !isEdit) ...[
                   SelectableText(comment!.comment ?? ''),
                   Divider(

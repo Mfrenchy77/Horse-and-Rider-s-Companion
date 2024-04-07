@@ -44,8 +44,6 @@ class ResourceCommentPage extends StatelessWidget {
                     title: const Text('Resource Comment Page'),
                   ),
                   body: ListView.builder(
-                    // we want the list to be scrollable with the comment page header at the top
-                    // and the comment list below it
                     controller: scrollController,
                     shrinkWrap: true,
                     itemCount: baseComments!.length + 1,
@@ -76,8 +74,7 @@ class ResourceCommentPage extends StatelessWidget {
                         FloatingActionButton(
                           child: const Icon(Icons.arrow_drop_up),
                           onPressed: () {
-                            // this buttom should scroll to the previous index of the list
-                            // Scroll to the previous index of the list
+                            
                             final currentPosition = scrollController.offset;
                             const itemHeight =
                                 100.0; // Change with your actual item height
