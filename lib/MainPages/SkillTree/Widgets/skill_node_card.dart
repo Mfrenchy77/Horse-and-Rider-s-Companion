@@ -63,7 +63,6 @@ class SkillNodeCard extends StatelessWidget {
                   profile: state.viewingProfile ?? state.usersProfile,
                 ),
                 isEditState: false,
-                backgroundColor: HorseAndRidersTheme().getTheme().cardColor,
               ),
 
               // If it has children, show a vertical divider below

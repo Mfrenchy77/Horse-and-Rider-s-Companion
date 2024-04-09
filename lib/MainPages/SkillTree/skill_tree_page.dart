@@ -6,19 +6,10 @@ class SkillTreePage extends StatelessWidget {
   static const path = '/SkillTree';
   static const name = 'SkillTree';
 
-  static Page<void> page() => const MaterialPage<void>(child: SkillTreePage());
-  static Route<void> route() {
-    return MaterialPageRoute<void>(builder: (_) => const SkillTreePage());
-  }
-
   @override
   Widget build(BuildContext context) {
-    return
-        //  const NavigatorView(
-        //   child:
-        const SkillTreeView(
+    return const SkillTreeView(
       key: Key('skillTreeView'),
-      // ),
     );
   }
 }

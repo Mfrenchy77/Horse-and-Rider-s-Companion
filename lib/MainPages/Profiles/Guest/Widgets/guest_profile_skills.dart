@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/example_skill.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 
 class GuestProfileSkills extends StatelessWidget {
   const GuestProfileSkills({super.key});
@@ -32,7 +32,7 @@ class GuestProfileSkills extends StatelessWidget {
           children: [
             ...ExampleSkill().getSkillLevels().map(
                   (e) => SkillLevelCard(
-                    onTap: () => context.goNamed(SkillTreePage.name),
+                    onTap: () => context.read<AppCubit>().changeIndex(1),
                     skillLevel: e,
                   ),
                 ),

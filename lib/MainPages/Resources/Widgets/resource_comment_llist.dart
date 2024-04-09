@@ -14,22 +14,26 @@ class ResourceCommentList extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        final baseComments = cubit.getBaseComments(state.resourceComments);
-        cubit.sortComments(state.commentSortState);
-        return baseComments == null || baseComments.isEmpty
-            ? const Text('No Comments, Yet')
-            : ListView(
-                controller: scrollController,
-                shrinkWrap: true,
-                children: baseComments
-                    .map(
-                      (comment) => CommentItem(
-                        key: Key(comment.id!),
-                        comment: comment,
-                      ),
-                    )
-                    .toList(),
-              );
+        if (state.resource == null) {
+          return const Text('No Comments, Yet');
+        } else {
+          final baseComments = cubit.getBaseComments(state.resource!);
+          cubit.sortComments(state.commentSortState);
+          return baseComments.isEmpty
+              ? const Text('No Comments, Yet')
+              : ListView(
+                  controller: scrollController,
+                  shrinkWrap: true,
+                  children: baseComments
+                      .map(
+                        (comment) => CommentItem(
+                          key: Key(comment.id!),
+                          comment: comment,
+                        ),
+                      )
+                      .toList(),
+                );
+        }
       },
     );
   }

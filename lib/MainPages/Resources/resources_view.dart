@@ -1,6 +1,8 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_floating_action_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_list_view.dart';
@@ -17,9 +19,9 @@ class ResourcesView extends StatelessWidget {
         key: Key('resourcesFloatingActionButton'),
       ),
       appBar: AppBar(
-        // leading: const AppBarBackButton(
-        //   key: Key('appBarBackButton'),
-        // ),
+        leading:  BackButton(
+          onPressed:()=> context.read<AppCubit>().backPressed(),
+        ),
         centerTitle: true,
         title: const ResourcesSearchTitle(
           key: Key('resourcesSearchTitle'),

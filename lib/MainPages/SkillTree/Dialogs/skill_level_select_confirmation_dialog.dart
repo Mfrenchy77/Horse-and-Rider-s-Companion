@@ -16,13 +16,13 @@ class SkillLevelSelectedConfimationDialog extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         return AlertDialog(
           title: const Text('Confirm Skill Level'),
-          content:
-              Text('Are you sure you want to set ${state.skill?.skillName} '
-                  'level to ${levelState.name}${!state.isForRider ? ' for '
-                      '${state.horseProfile?.name}' : state.isViewing ? ' '
-                      'for ${state.viewingProfile?.name}' : ''} ?'),
+          content: Text(
+              'Are you sure you want to set ${state.skill?.skillName} '
+              'level to ${levelState.name}${!state.isForRider ? ' for '
+                  '${state.horseProfile?.name}' : state.isViewing ? ' '
+                  'for ${state.viewingProfile?.name}' : ' for yourself'} ?'),
           actions: [
-            OutlinedButton(
+            TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },

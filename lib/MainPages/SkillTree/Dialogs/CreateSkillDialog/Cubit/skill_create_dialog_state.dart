@@ -11,8 +11,9 @@ class CreateSkillDialogState extends Equatable {
     this.isForRider = true,
     this.status = FormzStatus.pure,
     this.name = const SingleWord.pure(),
+    this.category = SkillCategory.Mounted,
     this.description = const SingleWord.pure(),
-    this.difficulty = DifficultyState.introductory,
+    this.difficulty = DifficultyState.Introductory,
     this.learningDescription = const SingleWord.pure(),
     this.proficientDescription = const SingleWord.pure(),
     this.updateSubCategoryList = UpdateSubCategoryList.inital,
@@ -30,13 +31,16 @@ class CreateSkillDialogState extends Equatable {
   /// The status of the form
   final FormzStatus status;
 
+  /// The category of the skill
+  final SkillCategory category;
+
   /// The description of the skill
   final SingleWord description;
 
   /// The difficulty of the skill
   final DifficultyState difficulty;
 
-  /// The users Profile 
+  /// The users Profile
   final RiderProfile? usersProfile;
 
   /// The description of the skill when the user is learning it
@@ -60,6 +64,7 @@ class CreateSkillDialogState extends Equatable {
     SingleWord? name,
     FormzStatus? status,
     SingleWord? description,
+    SkillCategory? category,
     RiderProfile? usersProfile,
     DifficultyState? difficulty,
     SingleWord? learningDescription,
@@ -72,15 +77,16 @@ class CreateSkillDialogState extends Equatable {
       name: name ?? this.name,
       skill: skill ?? this.skill,
       status: status ?? this.status,
+      category: category ?? this.category,
       isForRider: isForRider ?? this.isForRider,
       difficulty: difficulty ?? this.difficulty,
       description: description ?? this.description,
       usersProfile: usersProfile ?? this.usersProfile,
       proficientDescription:
           proficientDescription ?? this.proficientDescription,
-      subCategoryList: subCategoryList ?? this.subCategoryList,
       updateSubCategoryList:
           updateSubCategoryList ?? this.updateSubCategoryList,
+      subCategoryList: subCategoryList ?? this.subCategoryList,
       allSubCategories: allSubCategories ?? this.allSubCategories,
       learningDescription: learningDescription ?? this.learningDescription,
     );
@@ -91,6 +97,7 @@ class CreateSkillDialogState extends Equatable {
         name,
         skill,
         status,
+        category,
         isForRider,
         difficulty,
         description,

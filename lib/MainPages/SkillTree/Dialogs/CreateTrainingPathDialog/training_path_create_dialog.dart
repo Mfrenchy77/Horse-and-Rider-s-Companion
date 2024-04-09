@@ -31,178 +31,216 @@ class CreateTrainingPathDialog extends StatelessWidget {
     return BlocProvider(
       create: (context) => CreateTrainingPathCubit(
         allSkills: allSkills,
-        trainingPath: trainingPath,
         isForRider: isForRider,
-        trainingPathRepository: context.read<SkillTreeRepository>(),
+        trainingPath: trainingPath,
         usersProfile: usersProfile,
+        trainingPathRepository: context.read<SkillTreeRepository>(),
       ),
       child: BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
         builder: (context, state) {
           final trainingPathcubit = context.read<CreateTrainingPathCubit>();
-          return Scaffold(
-            appBar: AppBar(
-              actions: [
-                _search(),
-                Visibility(
-                  visible: !state.isSearch,
-                  child: IconButton(
-                    onPressed: trainingPathcubit.isSearch,
-                    icon: const Icon(Icons.search),
+          return MaxWidthBox(
+            maxWidth: 900,
+            child: Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Scaffold(
+                appBar: AppBar(
+                  actions: [
+                    _search(),
+                    Visibility(
+                      visible: !state.isSearch,
+                      child: IconButton(
+                        onPressed: trainingPathcubit.isSearch,
+                        icon: const Icon(Icons.search),
+                      ),
+                    ),
+                  ],
+                  leading: IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  title: Text(
+                    isEdit
+                        ? 'Edit ${state.trainingPath?.name} '
+                        : 'Create New Training Path '
+                            'for ${state.isForRider ? 'Horse' : 'Rider'}',
                   ),
                 ),
-              ],
-              leading: IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.arrow_back),
-              ),
-              title: Text(
-                isEdit
-                    ? 'Edit ${state.trainingPath?.name} '
-                    : 'Create New Training Path '
-                        'for ${state.isForHorse ? 'Horse' : 'Rider'}',
-              ),
-            ),
-            body: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Form(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: <Widget>[
-                          MaxWidthBox(
-                            maxWidth: 900,
-                            child: Column(
-                              children: [
-                                ///   Name
-                                TextFormField(
-                                  textCapitalization: TextCapitalization.words,
-                                  initialValue:
-                                      isEdit ? state.trainingPath?.name : '',
-                                  decoration: const InputDecoration(
-                                    labelText: 'Name',
-                                    border: UnderlineInputBorder(),
-                                  ),
-                                  onChanged: (value) => trainingPathcubit
-                                      .trainingPathNameChanged(name: value),
-                                ),
-
-                                ///   Description
-                                gap(),
-                                TextFormField(
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  initialValue: isEdit
-                                      ? state.trainingPath?.description
-                                      : '',
-                                  decoration: const InputDecoration(
-                                    labelText: 'Description',
-                                    border: UnderlineInputBorder(),
-                                  ),
-                                  onChanged: (value) => trainingPathcubit
-                                      .trainingPathDescriptionChanged(
-                                    description: value,
-                                  ),
-                                ),
-                                gap(),
-                                _isForHorseOrRider(
-                                  state: state,
-                                  trainingPathcubit: trainingPathcubit,
-                                ),
-                                //checkbox for isForHorse
-                                // CheckboxListTile(
-                                //   title: Text(
-                                //     state.isForHorse
-                                //         ? 'Remove this check to mak
-                                //e this Training '
-                                //             'Path for a Rider'
-                                //         : 'Check this to make this
-                                // Training Path for '
-                                //             'a Horse',
-                                //   ),
-                                //   value: state.isForHorse,
-                                //   onChanged: (value) =>
-                                //       trainingPathcubit.isForHorse(),
-                                // ),
-                              ],
-                            ),
-                          ),
-                          gap(),
-                          const Divider(),
-                          gap(),
-                          Text(
-                            state.selectedSkills.isEmpty
-                                ? 'Search and add Skill for your training path'
-                                : 'Drag and Drop Skills to the desired level',
-                          ),
-                          gap(),
-                          _selectedSkills(),
-                          gap(),
-                          _trainingPath(),
-                          gap(),
-                          MaxWidthBox(
-                            maxWidth: 900,
-                            child: Row(
-                              children: [
-                                //Delete Button
-                                Expanded(
-                                  flex: 5,
-                                  child: Visibility(
-                                    visible: state.trainingPath?.createdBy ==
-                                        usersProfile.name,
-                                    child: IconButton(
-                                      onPressed: () {
-                                        trainingPathcubit.deleteTrainingPath();
-                                        Navigator.pop(context);
-                                      },
-                                      icon: const Icon(Icons.delete),
+                body: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Form(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: <Widget>[
+                              MaxWidthBox(
+                                maxWidth: 900,
+                                child: Column(
+                                  children: [
+                                    ///   Name
+                                    TextFormField(
+                                      textCapitalization:
+                                          TextCapitalization.words,
+                                      initialValue:
+                                          isEdit ? state.trainingPath?.name : '',
+                                      decoration: const InputDecoration(
+                                        labelText: 'Name',
+                                        border: UnderlineInputBorder(),
+                                      ),
+                                      onChanged: (value) => trainingPathcubit
+                                          .trainingPathNameChanged(name: value),
                                     ),
-                                  ),
-                                ),
-
-                                //Cancel Button
-                                Expanded(
-                                  flex: 5,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                ),
-                                gap(),
-
-                                //Submit Button
-                                if (state.status.isSubmissionInProgress)
-                                  const Expanded(
-                                    flex: 7,
-                                    child: CircularProgressIndicator(),
-                                  )
-                                else
-                                  Expanded(
-                                    flex: 7,
-                                    child: FilledButton(
-                                      onPressed: state.skillNodes.isEmpty
-                                          ? null
-                                          : () {
-                                              trainingPathcubit
-                                                  .createOrEditTrainingPath();
-                                              Navigator.pop(context);
-                                            },
-                                      child: Text(
-                                        isEdit
-                                            ? 'Submit Edited Training Path'
-                                            : 'Submit',
+            
+                                    ///   Description
+                                    gap(),
+                                    TextFormField(
+                                      minLines: 1,
+                                      maxLines: 10,
+                                      textCapitalization:
+                                          TextCapitalization.sentences,
+                                      initialValue: isEdit
+                                          ? state.trainingPath?.description
+                                          : '',
+                                      decoration: const InputDecoration(
+                                        labelText: 'Description',
+                                        border: UnderlineInputBorder(),
+                                      ),
+                                      onChanged: (value) => trainingPathcubit
+                                          .trainingPathDescriptionChanged(
+                                        description: value,
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
+                                    gap(),
+                                    SegmentedButton<bool>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: false,
+                                          icon:
+                                              Icon(HorseAndRiderIcons.horseIcon),
+                                          label: Text('Horse'),
+                                          tooltip: 'Training Path is for a Horse',
+                                        ),
+                                        ButtonSegment(
+                                          value: true,
+                                          icon: Icon(Icons.person),
+                                          label: Text('Rider'),
+                                          tooltip: 'Training Path is for a Rider',
+                                        ),
+                                      ],
+                                      selected: <bool>{state.isForRider},
+                                      onSelectionChanged: (p0) =>
+                                          trainingPathcubit.isForHorse(),
+                                    ),
+                                    //checkbox for isForHorse
+                                    // CheckboxListTile(
+                                    //   title: Text(
+                                    //     state.isForHorse
+                                    //         ? 'Remove this check to mak
+                                    //e this Training '
+                                    //             'Path for a Rider'
+                                    //         : 'Check this to make this
+                                    // Training Path for '
+                                    //             'a Horse',
+                                    //   ),
+                                    //   value: state.isForHorse,
+                                    //   onChanged: (value) =>
+                                    //       trainingPathcubit.isForHorse(),
+                                    // ),
+                                  ],
+                                ),
+                              ),
+                              gap(),
+                              const Divider(),
+                              gap(),
+                              Text(
+                                state.selectedSkills.isEmpty
+                                    ? 'Search and add Skill for your training path'
+                                    : 'Drag and Drop Skills to the desired level.\n'
+                                        'Drop on top of another skill to make it'
+                                        ' a child of that skill.\n'
+                                        'Drop on the root to make it a root'
+                                        ' skill.',
+                              ),
+                              gap(),
+                              _selectedSkills(),
+                              gap(),
+                              _trainingPath(),
+                              gap(),
+                              MaxWidthBox(
+                                maxWidth: 900,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    const Expanded(
+                                      flex: 5,
+                                      child: Spacer(),
+                                    ),
+                                    //Delete Button
+                                    Expanded(
+                                      flex: 5,
+                                      child: Visibility(
+                                        visible: state.trainingPath?.createdBy ==
+                                            usersProfile.name,
+                                        child: IconButton(
+                                          onPressed: () {
+                                            trainingPathcubit
+                                                .deleteTrainingPath();
+                                            Navigator.pop(context);
+                                          },
+                                          icon: const Icon(Icons.delete),
+                                        ),
+                                      ),
+                                    ),
+            
+                                    //Cancel Button
+                                    Expanded(
+                                      flex: 5,
+                                      child: TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Cancel'),
+                                      ),
+                                    ),
+                                    gap(),
+            
+                                    //Submit Button
+                                    if (state.status.isSubmissionInProgress)
+                                      const Expanded(
+                                        flex: 7,
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    else
+                                      Expanded(
+                                        flex: 7,
+                                        child: FilledButton(
+                                          onPressed: state.skillNodes.isEmpty
+                                              ? null
+                                              : () {
+                                                  trainingPathcubit
+                                                      .createOrEditTrainingPath();
+                                                  Navigator.pop(context);
+                                                },
+                                          child: Text(
+                                            isEdit
+                                                ? 'Edit'
+                                                : 'Submit',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -225,20 +263,20 @@ Widget _isForHorseOrRider({
     segments: [
       ButtonSegment(
         value: true,
-        enabled: state.isForHorse,
+        enabled: state.isForRider,
         icon: const Icon(HorseAndRiderIcons.horseIcon),
         label: const Text('Horse'),
         tooltip: 'Training Path is for a Horse',
       ),
       ButtonSegment(
         value: false,
-        enabled: !state.isForHorse,
+        enabled: !state.isForRider,
         icon: const Icon(Icons.person),
         label: const Text('Rider'),
         tooltip: 'Training Path is for a Rider',
       ),
     ],
-    selected: <bool>{state.isForHorse},
+    selected: <bool>{state.isForRider},
     onSelectionChanged: (p0) => trainingPathcubit.isForHorse(),
   );
 }
@@ -254,6 +292,7 @@ Widget _search() {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: SearchField<String>(
+              autofocus: true,
               focusNode: focus,
               onSuggestionTap: (value) {
                 debugPrint('Value: $value');

@@ -4,6 +4,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/Cubit/skill_create_dialog_cubit.dart';
 
@@ -61,240 +62,283 @@ class CreateSkillDialog extends StatelessWidget {
           },
           child: BlocBuilder<CreateSkillDialogCubit, CreateSkillDialogState>(
             builder: (context, state) {
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    isEdit ? 'Edit ${skill?.skillName}' : 'Create New Skill',
-                  ),
+              final cubit = context.read<CreateSkillDialogCubit>();
+              return AlertDialog(
+                scrollable: true,
+                title: Text(
+                  isEdit ? 'Edit ${skill?.skillName}' : 'Create New Skill',
+                  style: const TextStyle(fontSize: 15),
                 ),
-                body: AlertDialog(
-                  scrollable: true,
-                  title: Text(
-                    isEdit ? 'Edit ${skill?.skillName}' : 'Create New Skill',
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                  content: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Form(
-                      child: Column(
-                        children: <Widget>[
-                          ///   Name
-                          TextFormField(
-                            initialValue: isEdit ? skill?.skillName : '',
-                            textCapitalization: TextCapitalization.words,
-                            onChanged: (categoryName) => context
-                                .read<CreateSkillDialogCubit>()
-                                .skillNameChanged(categoryName),
-                            keyboardType: TextInputType.text,
-                            decoration: InputDecoration(
-                              border: const UnderlineInputBorder(),
-                              labelText:
-                                  isEdit ? 'Skill Name' : 'New Skill Name',
-                              hintText: 'Enter a name for the new Skill',
-                              icon: const Icon(Icons.arrow_circle_up),
-                            ),
-                          ),
-
-                          ///   Description
-                          TextFormField(
-                            initialValue: isEdit ? skill?.description : '',
-                            textCapitalization: TextCapitalization.sentences,
-                            maxLines: 8,
-                            minLines: 3,
-                            onChanged: (skillDescription) => context
-                                .read<CreateSkillDialogCubit>()
-                                .skillDescriptionChanged(skillDescription),
-                            keyboardType: TextInputType.multiline,
-                            decoration: InputDecoration(
-                              border: const UnderlineInputBorder(),
-                              labelText: isEdit
-                                  ? 'Skill Description'
-                                  : 'New Skill Description',
-                              hintText:
-                                  'Enter a detailed description for the new Skill',
-                              icon: const Icon(Icons.arrow_circle_up),
-                            ),
-                          ),
-                          smallGap(),
-
-                          ///   Learning Description
-                          TextFormField(
-                            initialValue:
-                                isEdit ? skill?.learningDescription : '',
-                            textCapitalization: TextCapitalization.sentences,
-                            maxLines: 8,
-                            minLines: 3,
-                            onChanged: (learningDescription) => context
-                                .read<CreateSkillDialogCubit>()
-                                .skillLearningDescriptionChanged(
-                                  learningDescription,
-                                ),
-                            keyboardType: TextInputType.multiline,
-                            decoration: InputDecoration(
-                              border: const UnderlineInputBorder(),
-                              labelText: isEdit
-                                  ? 'Learning Description'
-                                  : 'New Learning Description',
-                              hintText:
-                                  'Describe what should be it means to be learning ${state.name.value}',
-                              icon: const Icon(Icons.arrow_circle_up),
-                            ),
-                          ),
-                          smallGap(),
-
-                          ///   Proficient Description
-                          TextFormField(
-                            initialValue:
-                                isEdit ? skill?.proficientDescription : '',
-                            textCapitalization: TextCapitalization.sentences,
-                            maxLines: 8,
-                            minLines: 3,
-                            onChanged: (proficientDescription) => context
-                                .read<CreateSkillDialogCubit>()
-                                .skillProficientDescriptionChanged(
-                                  proficientDescription,
-                                ),
-                            keyboardType: TextInputType.multiline,
-                            decoration: InputDecoration(
-                              border: const UnderlineInputBorder(),
-                              labelText: isEdit
-                                  ? 'Proficient Description'
-                                  : 'New Proficient Description',
-                              hintText:
-                                  'Describe what it means to be proficient at ${state.name.value}',
-                              icon: const Icon(Icons.arrow_circle_up),
-                            ),
-                          ),
-
-                          ///   Difficulty radio buttons
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    const Text('Introductory'),
-                                    smallGap(),
-                                    Radio(
-                                      value: DifficultyState.introductory,
-                                      groupValue: state.difficulty,
-                                      onChanged: (value) => context
-                                          .read<CreateSkillDialogCubit>()
-                                          .skillDifficultyChanged(value!),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    const Text('Intermediate'),
-                                    smallGap(),
-                                    Radio(
-                                      value: DifficultyState.intermediate,
-                                      groupValue: state.difficulty,
-                                      onChanged: (difficulty) => context
-                                          .read<CreateSkillDialogCubit>()
-                                          .skillDifficultyChanged(difficulty!),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    const Text('Advanced'),
-                                    smallGap(),
-                                    Radio(
-                                      value: DifficultyState.advanced,
-                                      groupValue: state.difficulty,
-                                      onChanged: (difficulty) => context
-                                          .read<CreateSkillDialogCubit>()
-                                          .skillDifficultyChanged(difficulty!),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Visibility(
-                                visible: state.updateSubCategoryList ==
-                                    UpdateSubCategoryList.inProgress,
-                                child: const CircularProgressIndicator(),
-                              ),
-                            ],
-                          ),
-                          smallGap(),
-
-                          /// Filter chips of all the SubCategories,
-                          ///  set selected if the skill is in that subcategory
-                          /// and the user can select or deselect the subcategory
-                          if (state.allSubCategories != null)
-                            Wrap(
-                              spacing: 5,
-                              children: [
-                                for (final subCategory
-                                    in state.allSubCategories!)
-                                  FilterChip(
-                                    selected: state.subCategoryList
-                                            ?.contains(subCategory) ??
-                                        false,
-                                    label: Text(subCategory?.name ?? ''),
-                                    onSelected: (selected) {
-                                      context
-                                          .read<CreateSkillDialogCubit>()
-                                          .updateSubCategoryList(
-                                            subCategory: subCategory!,
-                                          );
-                                    },
-                                  ),
-                              ],
-                            )
-                          else
-                            const Text('No Subcategories'),
-                        ],
-                      ),
-                    ),
-                  ),
-                  actions: [
-                    Row(
-                      children: [
-                        ///Delete
-                        Expanded(
-                          flex: 6,
-                          child: Visibility(
-                            visible: isEdit,
-                            child: IconButton(
-                              onPressed: () {
-                                context
-                                    .read<CreateSkillDialogCubit>()
-                                    .deleteSkill(skill: skill as Skill);
-                              },
-                              icon: const Icon(Icons.delete),
-                            ),
+                content: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Form(
+                    child: Column(
+                      children: <Widget>[
+                        ///   Name
+                        TextFormField(
+                          initialValue: isEdit ? skill?.skillName : '',
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: cubit.skillNameChanged,
+                          keyboardType: TextInputType.text,
+                          decoration: InputDecoration(
+                            border: const UnderlineInputBorder(),
+                            labelText: isEdit ? 'Skill Name' : 'New Skill Name',
+                            hintText: 'Enter a name for the new Skill',
+                            icon: const Icon(Icons.arrow_circle_up),
                           ),
                         ),
 
-                        if (state.status.isSubmissionInProgress)
-                          const CircularProgressIndicator()
-                        else
-                          FilledButton(
-                            onPressed: state.name.value.isEmpty
-                                ? null
-                                : () {
-                                    isEdit
-                                        ? context
-                                            .read<CreateSkillDialogCubit>()
-                                            .editSkill(editedSkill: skill)
-                                        : context
-                                            .read<CreateSkillDialogCubit>()
-                                            .createSkill(_position);
-                                  },
-                            child:
-                                Text(isEdit ? 'Submit Edited Skill' : 'Submit'),
+                        ///   Description
+                        TextFormField(
+                          initialValue: isEdit ? skill?.description : '',
+                          textCapitalization: TextCapitalization.sentences,
+                          maxLines: 8,
+                          minLines: 3,
+                          onChanged: cubit.skillDescriptionChanged,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                            border: const UnderlineInputBorder(),
+                            labelText: isEdit
+                                ? 'Skill Description'
+                                : 'New Skill Description',
+                            hintText:
+                                'Enter a detailed description for the new Skill',
+                            icon: const Icon(Icons.arrow_circle_up),
                           ),
+                        ),
+                        smallGap(),
+
+                        ///   Learning Description
+                        TextFormField(
+                          initialValue:
+                              isEdit ? skill?.learningDescription : '',
+                          textCapitalization: TextCapitalization.sentences,
+                          maxLines: 8,
+                          minLines: 3,
+                          onChanged: cubit.skillLearningDescriptionChanged,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                            border: const UnderlineInputBorder(),
+                            labelText: isEdit
+                                ? 'Learning Description'
+                                : 'New Learning Description',
+                            hintText:
+                                'Describe what should be it means to be learning ${state.name.value}',
+                            icon: const Icon(Icons.arrow_circle_up),
+                          ),
+                        ),
+                        smallGap(),
+
+                        ///   Proficient Description
+                        TextFormField(
+                          initialValue:
+                              isEdit ? skill?.proficientDescription : '',
+                          textCapitalization: TextCapitalization.sentences,
+                          maxLines: 8,
+                          minLines: 3,
+                          onChanged: cubit.skillProficientDescriptionChanged,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                            border: const UnderlineInputBorder(),
+                            labelText: isEdit
+                                ? 'Proficient Description'
+                                : 'New Proficient Description',
+                            hintText:
+                                'Describe what it means to be proficient at ${state.name.value}',
+                            icon: const Icon(Icons.arrow_circle_up),
+                          ),
+                        ),
+                        smallGap(),
+                        // Is for Horse/Rider
+                        const Center(
+                          child: Text('Rider or Horse'),
+                        ),
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment(
+                              value: true,
+                              label: Text(
+                                'Rider',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment(
+                              value: false,
+                              label: Text(
+                                'Horse',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                          selected: <bool>{
+                            state.isForRider,
+                          },
+                          onSelectionChanged: (value) {
+                            debugPrint('Rider or Horse: $value');
+                            cubit.isForRiderChanged(isForRider: value.first);
+                          },
+                        ),
+                        // Difficulty
+                        const Center(
+                          child: Text('Difficulty'),
+                        ),
+                        SegmentedButton<DifficultyState>(
+                          segments: const [
+                            ButtonSegment(
+                              value: DifficultyState.Introductory,
+                              label: Text(
+                                'Introductory',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment(
+                              value: DifficultyState.Intermediate,
+                              label: Text(
+                                'Intermediate',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment(
+                              value: DifficultyState.Advanced,
+                              label: Text(
+                                'Advanced',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                          selected: <DifficultyState>{
+                            state.difficulty,
+                          },
+                          onSelectionChanged: (value) {
+                            debugPrint('Difficulty: $value');
+                            cubit.skillDifficultyChanged(value.first);
+                          },
+                        ),
+
+                        smallGap(),
+
+                        // Category
+                        const Center(
+                          child: Text('Category'),
+                        ),
+                        SegmentedButton<SkillCategory>(
+                          segments: const [
+                            ButtonSegment(
+                              value: SkillCategory.Mounted,
+                              label: Text(
+                                'Mounted',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment(
+                              value: SkillCategory.In_Hand,
+                              label: Text(
+                                'In Hand',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment(
+                              value: SkillCategory.Husbandry,
+                              label: Text(
+                                'Husbandry',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment(
+                              value: SkillCategory.Other,
+                              label: Text(
+                                'Other',
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                          selected: <SkillCategory>{
+                            state.category,
+                          },
+                          onSelectionChanged: (value) {
+                            debugPrint('Category: $value');
+                            cubit.skillCategoryChanged(value.first);
+                          },
+                        ),
+
+                        /// Filter chips of all the SubCategories,
+                        ///  set selected if the skill is in that subcategory
+                        /// and the user can select or deselect the subcategory
                       ],
                     ),
-                  ],
+                  ),
                 ),
+                actions: [
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => context.pop(),
+                        child: const Text('Cancel'),
+                      ),
+
+                      ///Delete
+                      Visibility(
+                        visible: isEdit,
+                        child: IconButton(
+                          onPressed: () {
+                            context
+                                .read<CreateSkillDialogCubit>()
+                                .deleteSkill(skill: skill as Skill);
+                          },
+                          icon: const Icon(Icons.delete),
+                        ),
+                      ),
+
+                      if (state.status.isSubmissionInProgress)
+                        const CircularProgressIndicator()
+                      else
+                        FilledButton(
+                          onPressed: state.name.value.isEmpty
+                              ? null
+                              : () {
+                                  isEdit
+                                      ? context
+                                          .read<CreateSkillDialogCubit>()
+                                          .editSkill(editedSkill: skill)
+                                      : context
+                                          .read<CreateSkillDialogCubit>()
+                                          .createSkill(_position);
+                                },
+                          child:
+                              Text(isEdit ? 'Submit Edited Skill' : 'Submit'),
+                        ),
+                    ],
+                  ),
+                ],
               );
             },
           ),

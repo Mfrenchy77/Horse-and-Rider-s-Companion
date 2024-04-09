@@ -1,4 +1,3 @@
-import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
@@ -6,6 +5,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillsListView extends StatelessWidget {
@@ -16,15 +16,17 @@ class SkillsListView extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        final skills = cubit.sortedSkills();
+        final skills = state.sortedSkills;
+        debugPrint('SkillsListView: ${skills.length}');
         return Scaffold(
           floatingActionButton: Visibility(
             // ignore: use_if_null_to_convert_nulls_to_bools
-            visible: !state.isGuest || state.usersProfile?.editor == true,
+            visible: !state.isGuest && state.isEdit,
             child: Tooltip(
               message:
                   'Add a new ${state.isForRider ? 'Rider' : 'Horse'} skill',
               child: FloatingActionButton(
+                key: const Key('addSkillButton'),
                 onPressed: () => showDialog<CreateSkillDialog>(
                   context: context,
                   builder: (context) => CreateSkillDialog(
@@ -57,7 +59,7 @@ class SkillsListView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.all(3),
                         child: Text(
-                          'Skills - ${_skillsTitle(state.difficultyState)}',
+                          'Skills - ${state.skillTreeSortState.name}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 24,
@@ -69,12 +71,12 @@ class SkillsListView extends StatelessWidget {
                   ),
                 ),
                 gap(),
-                if (skills.isNotEmpty)
+                if (state.sortedSkills.isNotEmpty)
                   Wrap(
                     spacing: 5,
                     runSpacing: 5,
                     alignment: WrapAlignment.center,
-                    children: skills
+                    children: state.sortedSkills
                         .map(
                           (skill) => SkillItem(
                             verified: isVerified(
@@ -100,23 +102,29 @@ class SkillsListView extends StatelessWidget {
                                   skill: skill,
                                 );
                             },
-                            onEdit: () => showDialog<CreateSkillDialog>(
-                              context: context,
-                              builder: (context) => CreateSkillDialog(
-                                isForRider: state.isForRider,
-                                isEdit: true,
-                                skill: skill,
-                                usersProfile: state.usersProfile!,
-                                position: skills.isNotEmpty ? skills.length : 0,
-                              ),
-                            ),
-                            backgroundColor: skill?.difficulty ==
-                                    DifficultyState.introductory
-                                ? Colors.greenAccent.shade200
-                                : skill?.difficulty ==
-                                        DifficultyState.intermediate
-                                    ? Colors.yellowAccent.shade200
-                                    : Colors.redAccent.shade200,
+                            onEdit: () {
+                              if (skill?.lastEditBy ==
+                                      state.usersProfile?.email ||
+                                  AuthorizedEmails.emails
+                                      .contains(state.usersProfile?.email)) {
+                                showDialog<CreateSkillDialog>(
+                                  context: context,
+                                  builder: (context) => CreateSkillDialog(
+                                    isForRider: state.isForRider,
+                                    isEdit: true,
+                                    skill: skill,
+                                    usersProfile: state.usersProfile!,
+                                    position:
+                                        skills.isNotEmpty ? skills.length : 0,
+                                  ),
+                                );
+                              } else {
+                                // TODO: Show contact admin or creator dialog
+                                cubit.createError(
+                                  'Only the creator can edit this skill.',
+                                );
+                              }
+                            },
                           ),
                         )
                         .toList(),
@@ -134,17 +142,17 @@ class SkillsListView extends StatelessWidget {
   }
 }
 
-String _skillsTitle(
-  DifficultyState difficultyState,
-) {
-  switch (difficultyState) {
-    case DifficultyState.advanced:
-      return 'Advanced';
-    case DifficultyState.intermediate:
-      return 'Intermediate';
-    case DifficultyState.introductory:
-      return 'Introductory';
-    case DifficultyState.all:
-      return 'All';
-  }
-}
+// String _skillsTitle(
+//   DifficultyState difficultyState,
+// ) {
+//   switch (difficultyState) {
+//     case DifficultyState.advanced:
+//       return 'Advanced';
+//     case DifficultyState.intermediate:
+//       return 'Intermediate';
+//     case DifficultyState.introductory:
+//       return 'Introductory';
+//     case DifficultyState.all:
+//       return 'All';
+//   }
+// }

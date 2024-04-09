@@ -15,7 +15,7 @@ class SkillResouresList extends StatelessWidget {
           final filteredResources = state.resources
               .where(
                 (element) =>
-                    element?.skillTreeIds?.contains(state.skill?.id) ?? false,
+                    element.skillTreeIds?.contains(state.skill?.id) ?? false,
               )
               .toList();
 
@@ -27,7 +27,7 @@ class SkillResouresList extends StatelessWidget {
               children: filteredResources
                   .map(
                     (e) => ResourcesItem(
-                      resource: e!,
+                      resource: e,
                       isResourceList: false,
                     ),
                   )

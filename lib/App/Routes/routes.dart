@@ -51,7 +51,9 @@ class Routes {
         if (route.settings.name == HorseProfilePage.name &&
             previousRoute?.settings.name == ProfilePage.name) {
           debugPrint('Horse Profile Page Pop');
-          appCubit.resetFromHorseProfile();
+          appCubit
+            ..resetFromHorseProfile()
+            ..sortForHorse();
         }
         //if from viewing profile page
         else if (route.settings.name == ViewingProfilePage.name &&
@@ -66,7 +68,16 @@ class Routes {
         // if route is horse profile page
         if (route.settings.name == HorseProfilePage.name) {
           debugPrint('Horse Profile Page Push');
-          appCubit.setHorseProfile();
+          appCubit
+            ..setHorseProfile()
+            ..sortForHorse();
+        }
+        // if route is viewing profile page
+        else if (route.settings.name == ViewingProfilePage.name) {
+          debugPrint(
+            'Viewing Profile Page Push for: ${route.settings.arguments}',
+          );
+          appCubit.setViewingProfile();
         }
       },
     );

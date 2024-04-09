@@ -3,10 +3,11 @@ part of 'create_training_path_cubit.dart';
 class CreateTrainingPathState extends Equatable {
   const CreateTrainingPathState({
     this.trainingPath,
+    this.usersProfile,
     this.isSearch = false,
     this.searchQuery = '',
     this.skills = const [],
-    this.isForHorse = false,
+    this.isForRider = false,
     this.allSkills = const [],
     this.skillNodes = const [],
     this.searchList = const [],
@@ -18,7 +19,7 @@ class CreateTrainingPathState extends Equatable {
   });
 
   final bool isSearch;
-  final bool isForHorse;
+  final bool isForRider;
   final SingleWord name;
   final String searchQuery;
   final FormzStatus status;
@@ -26,6 +27,7 @@ class CreateTrainingPathState extends Equatable {
   final List<Skill?> allSkills;
   final SingleWord description;
   final List<String?>? searchList;
+  final RiderProfile? usersProfile;
   final List<Skill?> removedSkills;
   final TrainingPath? trainingPath;
   final List<Skill?> selectedSkills;
@@ -34,13 +36,14 @@ class CreateTrainingPathState extends Equatable {
   CreateTrainingPathState copyWith({
     bool? isSearch,
     SingleWord? name,
-    bool? isForHorse,
+    bool? isForRider,
     String? searchQuery,
     FormzStatus? status,
     List<String>? skills,
     List<Skill?>? allSkills,
     SingleWord? description,
     List<String?>? searchList,
+    RiderProfile? usersProfile,
     TrainingPath? trainingPath,
     List<Skill?>? removedSkills,
     List<Skill?>? selectedSkills,
@@ -52,11 +55,12 @@ class CreateTrainingPathState extends Equatable {
       status: status ?? this.status,
       isSearch: isSearch ?? this.isSearch,
       allSkills: allSkills ?? this.allSkills,
-      isForHorse: isForHorse ?? this.isForHorse,
+      isForRider: isForRider ?? this.isForRider,
       searchList: searchList ?? this.searchList,
       skillNodes: skillNodes ?? this.skillNodes,
       searchQuery: searchQuery ?? this.searchQuery,
       description: description ?? this.description,
+      usersProfile: usersProfile ?? this.usersProfile,
       trainingPath: trainingPath ?? this.trainingPath,
       removedSkills: removedSkills ?? this.removedSkills,
       selectedSkills: selectedSkills ?? this.selectedSkills,
@@ -72,9 +76,10 @@ class CreateTrainingPathState extends Equatable {
         allSkills,
         searchList,
         skillNodes,
-        isForHorse,
+        isForRider,
         searchQuery,
         description,
+        usersProfile,
         trainingPath,
         removedSkills,
         selectedSkills,

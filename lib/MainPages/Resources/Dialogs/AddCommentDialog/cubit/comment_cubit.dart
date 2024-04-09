@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +46,7 @@ class CommentCubit extends Cubit<CommentState> {
       final comment = Comment(
         id: ViewUtils.createId(),
         parentId: state.comment?.id,
-        comment: state.commentMessage,
+        comment: state.commentMessage.trim(),
         usersWhoRated: <BaseListItem>[],
         rating: state.isEdit ? state.comment?.rating : 0,
         editedDate: state.isEdit ? DateTime.now() : null,
@@ -185,7 +186,7 @@ class CommentCubit extends Cubit<CommentState> {
     // All Conditions possible
     if (comment.usersWhoRated != null && comment.usersWhoRated!.isNotEmpty) {
       //   Reference to the user
-      final user = comment.usersWhoRated?.firstWhere(
+      final user = comment.usersWhoRated?.firstWhereOrNull(
         (element) => element.id == userEmail,
       );
       //   'List is not NULL
@@ -268,7 +269,7 @@ class CommentCubit extends Cubit<CommentState> {
 
     if (comment.usersWhoRated != null && comment.usersWhoRated!.isNotEmpty) {
       //   Reference to the User
-      final user = comment.usersWhoRated?.firstWhere(
+      final user = comment.usersWhoRated?.firstWhereOrNull(
         (element) => element.id == userEmail,
       );
 

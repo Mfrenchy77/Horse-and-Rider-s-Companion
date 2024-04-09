@@ -35,11 +35,11 @@ class Message {
   final DateTime? date;
   final String? sender;
   final String? subject;
-  final String? message;
+  String? message;
   final String? messsageId;
   MessageState messageState;
   final List<String?>? parties;
-  final MessageType messageType;
+  MessageType messageType;
   final BaseListItem? requestItem;
   final List<String?>? recipients;
   final String? senderProfilePicUrl;

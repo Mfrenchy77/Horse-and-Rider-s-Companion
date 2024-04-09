@@ -35,7 +35,7 @@ class LogBookButton extends StatelessWidget {
                 children: [
                   Tooltip(
                     message: 'Open the Log Book',
-                    child: ElevatedButton.icon(
+                    child: FilledButton.tonalIcon(
                       onPressed: () {
                         showDialog<Dialog>(
                           

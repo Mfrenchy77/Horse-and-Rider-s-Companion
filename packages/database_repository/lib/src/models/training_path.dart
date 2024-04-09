@@ -16,6 +16,7 @@ class TrainingPath {
     required this.isForHorse,
     required this.skillNodes,
     required this.lastEditBy,
+    required this.createdById,
     required this.description,
     required this.lastEditDate,
   });
@@ -29,11 +30,15 @@ class TrainingPath {
   /// Description of the training path.
   final String description;
 
-  /// User who created the training path.
+  /// User's name who created the training path.
   final String createdBy;
+
 
   /// Whether the training path is for horses or not.
   final bool isForHorse;
+
+  /// User's email who created the training path.
+  final String createdById;
 
   /// Creation date of the training path.
   final DateTime createdAt;
@@ -65,6 +70,7 @@ class TrainingPath {
       isForHorse: data['isForHorse'] as bool,
       createdBy: data['createdBy'] as String,
       lastEditBy: data['lastEditBy'] as String,
+      createdById: data['createdById'] as String,
       description: data['description'] as String,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
@@ -86,6 +92,7 @@ class TrainingPath {
       'createdAt': createdAt,
       'isForHorse': isForHorse,
       'lastEditBy': lastEditBy,
+      'createdById': createdById,
       'description': description,
       'lastEditDate': lastEditDate,
       'skillNodes': skillNodes.map((e) => e?.toMap()).toList(),
@@ -99,6 +106,7 @@ class TrainingPath {
     String? name,
     String? createdBy,
     String? lastEditBy,
+    String? createdById,
     DateTime? createdAt,
     String? description,
     List<String>? skills,
@@ -114,6 +122,7 @@ class TrainingPath {
       createdAt: createdAt ?? this.createdAt,
       skillNodes: skillNodes ?? this.skillNodes,
       lastEditBy: lastEditBy ?? this.lastEditBy,
+      createdById: createdById ?? this.createdById,
       description: description ?? this.description,
       lastEditDate: lastEditDate ?? this.lastEditDate,
     );

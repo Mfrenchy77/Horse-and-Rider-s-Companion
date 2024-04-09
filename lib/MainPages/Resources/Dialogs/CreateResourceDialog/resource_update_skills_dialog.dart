@@ -4,9 +4,11 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
@@ -56,7 +58,10 @@ class UpdateResourceSkills extends StatelessWidget {
           child:
               BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
             builder: (context, state) {
-              final cubit = context.read<AppCubit>();
+              final appCubit = context.read<AppCubit>();
+              final cubit = context.read<CreateResourceDialogCubit>();
+              final canViewSkillEditor = !appCubit.state.isGuest &&
+                  (state.usersProfile?.editor ?? false);
               return AlertDialog(
                 title: const Text('Associated Skills for:'),
                 content: SingleChildScrollView(
@@ -68,11 +73,16 @@ class UpdateResourceSkills extends StatelessWidget {
                       Wrap(
                         alignment: WrapAlignment.center,
                         runSpacing: 4,
-                        children: state.resourceSkills
+                        children: cubit
+                                .getSkillsForResource(
+                                  ids: resource?.skillTreeIds,
+                                )
                                 ?.map(
                                   (e) => TextButton(
                                     onPressed: () {
-                                      cubit.navigateToSkillLevel(skill: e);
+                                      appCubit.navigateToSkillLevel(skill: e);
+                                      context.goNamed(SkillTreePage.name);
+
                                       debugPrint('Skill: ${e?.skillName}');
                                       Navigator.pop(context);
                                     },
@@ -84,7 +94,7 @@ class UpdateResourceSkills extends StatelessWidget {
                       ),
                       gap(),
                       Visibility(
-                        visible: !cubit.state.isGuest,
+                        visible: canViewSkillEditor,
                         child: Column(
                           children: [
                             const Divider(),
@@ -96,7 +106,7 @@ class UpdateResourceSkills extends StatelessWidget {
                             SingleChildScrollView(
                               child: Wrap(
                                 spacing: 8,
-                                children: cubit.state.allSkills
+                                children: appCubit.state.allSkills
                                     .map(
                                       (e) => FilterChip(
                                         label: Text(e?.skillName ?? ''),
@@ -129,7 +139,7 @@ class UpdateResourceSkills extends StatelessWidget {
                     child: const Text('Close'),
                   ),
                   Visibility(
-                    visible: !cubit.state.isGuest,
+                    visible: !appCubit.state.isGuest,
                     child: TextButton(
                       onPressed: () {
                         context

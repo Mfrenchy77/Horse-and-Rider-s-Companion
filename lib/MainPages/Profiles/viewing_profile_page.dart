@@ -14,6 +14,7 @@ class ViewingProfilePage extends StatelessWidget {
   static const name = 'ViewingProfilePage';
 
   final String id;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
@@ -21,12 +22,14 @@ class ViewingProfilePage extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         if (state.viewingProfile == null || state.viewingProfile?.email != id) {
           if (state.usersProfile != null && state.usersProfile!.email == id) {
-            debugPrint('Trying to view own profile, popping');
-            context.pushReplacementNamed(ProfilePage.name);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.pushReplacementNamed(ProfilePage.name);
+            });
           } else {
             cubit.getProfileToBeViewed(email: id);
           }
         }
+
         return state.viewingProfile == null
             ? const LoadingPage()
             : PopScope(

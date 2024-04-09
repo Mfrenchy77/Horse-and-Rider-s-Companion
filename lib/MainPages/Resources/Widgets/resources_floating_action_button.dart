@@ -13,6 +13,7 @@ class ResourcesFloatingActionButton extends StatelessWidget {
         return Visibility(
           visible: !state.isGuest,
           child: FloatingActionButton(
+            key: const Key('resourcesFloatingActionButton'),
             tooltip: 'Add a new resource',
             onPressed: () => showDialog<CreateResourcDialog>(
               context: context,

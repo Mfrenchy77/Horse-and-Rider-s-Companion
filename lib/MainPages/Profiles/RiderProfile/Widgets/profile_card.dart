@@ -20,7 +20,7 @@ class ProfileCard extends StatelessWidget {
             //   child: Card(
             //     elevation: 8,
             //     child:
-            ElevatedButton.icon(
+            FilledButton.tonalIcon(
           icon: Padding(
             padding: const EdgeInsets.fromLTRB(0,5,0,5),
             child: ProfilePhoto(

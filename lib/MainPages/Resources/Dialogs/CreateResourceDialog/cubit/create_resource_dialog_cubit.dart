@@ -11,26 +11,23 @@ part 'create_resource_dialog_state.dart';
 
 class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   CreateResourceDialogCubit({
-    required this.usersProfile,
     required bool isEdit,
     required Resource? resource,
-    required KeysRepository keysRepository,
     required List<Skill?>? skills,
+    required RiderProfile? usersProfile,
+    required KeysRepository keysRepository,
     required ResourcesRepository resourcesRepository,
-  })  : _skills = skills,
-        _isEdit = isEdit,
-        _resource = resource,
-        _keysRepository = keysRepository,
+  })  : _keysRepository = keysRepository,
         _resourcesRepository = resourcesRepository,
         super(const CreateResourceDialogState()) {
     _keysRepository.getJsonLinkApiKey().then((value) => _jsonKey = value);
     if (resource != null) {
       emit(
         state.copyWith(
-          title: SingleWord.dirty(resource.name ?? ''),
-          description: SingleWord.dirty(resource.description ?? ''),
           imageUrl: resource.thumbnail,
           url: Url.dirty(resource.url ?? ''),
+          title: SingleWord.dirty(resource.name ?? ''),
+          description: SingleWord.dirty(resource.description ?? ''),
           status: Formz.validate([
             SingleWord.dirty(resource.name ?? ''),
             SingleWord.dirty(resource.description ?? ''),
@@ -41,17 +38,13 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     }
     emit(
       state.copyWith(
-        skills: _skills,
-        resource: _resource,
-        isEdit: _isEdit,
-        resourceSkills: getSkillsForResource(ids: _resource?.skillTreeIds),
+        skills: skills,
+        isEdit: isEdit,
+        resource: resource,
+        usersProfile: usersProfile,
       ),
     );
   }
-  final bool _isEdit;
-  final Resource? _resource;
-  final List<Skill?>? _skills;
-  final RiderProfile? usersProfile;
   String? _jsonKey;
   final KeysRepository _keysRepository;
   final ResourcesRepository _resourcesRepository;
@@ -148,19 +141,23 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   }
 
   /// the skills that in the resourceSkills list
-  List<Skill?>? getSkillsForResource({required List<String?>? ids}) {
+  List<Skill?>? getSkillsForResource({
+    required List<String?>? ids,
+  }) {
     final skills = <Skill?>[];
     if (ids != null) {
-      if (_skills != null) {
-        for (final skill in _skills!) {
+      if (state.skills == null || state.skills!.isEmpty) {
+        debugPrint('No skills found');
+        return null;
+      } else {
+        for (final skill in state.skills!) {
           if (ids.contains(skill?.id)) {
             skills.add(skill);
           }
         }
-      } else {
-        debugPrint('skills is null');
       }
     } else {
+      debugPrint('No skills found');
       return null;
     }
     return skills;
@@ -235,37 +232,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       ),
     );
   }
-  //   });
-  //   try {
-
-  //     final title = SingleWord.dirty(data.title ?? '');
-  //     final description = SingleWord.dirty(data.description ?? '');
-  //     final imageUrl = _checkAndModifyUrl(data.imageUrl ?? '');
-  //     debugPrint('imageUrl: $imageUrl');
-  //     debugPrint('title: $title');
-  //     debugPrint('description: $description');
-  //     emit(
-  //       state.copyWith(
-  //         urlFetchedStatus: UrlFetchedStatus.fetched,
-  //         url: Url.dirty(url),
-  //         title: title,
-  //         description: description,
-  //         imageUrl: imageUrl,
-  //         status: Formz.validate([state.url, title, description]),
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     debugPrint('Error Fetching Url: $e');
-  //     // emit(
-  //     //   state.copyWith(
-  //     //     isError: true,
-  //     //     error: e.toString(),
-  //     //     urlFetchedStatus: UrlFetchedStatus.error,
-  //     //     status: FormzStatus.invalid,
-  //     //   ),
-  //     // );
-  //   }
-  // }
 
   ///   Called when the url is inputted and validated
   Future<void> createResource() async {
@@ -275,24 +241,24 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     final url = state.url.value;
     if (state.status.isValidated) {
       final user = BaseListItem(
-        id: usersProfile?.email ?? '',
-        isCollapsed: false,
         isSelected: false,
+        isCollapsed: false,
+        id: state.usersProfile?.email ?? '',
       );
       final raters = <BaseListItem>[user];
       final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
       final resource = Resource(
-        id: ViewUtils.createId(),
-        name: state.title.value,
-        thumbnail: state.imageUrl,
-        description: state.description.value,
         url: url,
-        numberOfRates: 0,
         rating: 0,
-        skillTreeIds: skillIds,
+        numberOfRates: 0,
         usersWhoRated: raters,
-        lastEditBy: usersProfile?.name ?? '',
+        skillTreeIds: skillIds,
+        name: state.title.value,
+        id: ViewUtils.createId(),
+        thumbnail: state.imageUrl,
         lastEditDate: DateTime.now(),
+        description: state.description.value,
+        lastEditBy: state.usersProfile?.name ?? '',
       );
 
       try {
@@ -302,9 +268,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         debugPrint('Error: ${e.message}');
         emit(
           state.copyWith(
-            status: FormzStatus.submissionFailure,
-            error: e.message ?? 'Error',
             isError: true,
+            error: e.message ?? 'Error',
+            status: FormzStatus.submissionFailure,
           ),
         );
       }
@@ -321,29 +287,29 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
     if (state.status.isValidated) {
       final editedResource = Resource(
-        id: state.resource?.id ?? ViewUtils.createId(),
+        lastEditDate: DateTime.now(),
         name: state.title.value.isEmpty
             ? state.resource?.name
             : state.title.value,
-        thumbnail:
-            state.imageUrl.isEmpty ? state.resource?.thumbnail : state.imageUrl,
+        rating: state.resource?.rating ?? 1,
+        lastEditBy: state.usersProfile?.name,
         description: state.description.value.isEmpty
             ? state.resource?.description
             : state.description.value,
-        url: state.url.value.isEmpty ? state.resource?.url : state.url.value,
-        numberOfRates: state.resource?.numberOfRates ?? 0,
-        rating: state.resource?.rating ?? 1,
-        skillTreeIds: state.resourceSkills?.map((e) => e?.id).toList() ?? [],
         usersWhoRated: state.resource?.usersWhoRated ??
             [
               BaseListItem(
-                id: usersProfile?.email,
                 isSelected: true,
                 isCollapsed: false,
+                id: state.usersProfile?.email,
               ),
             ],
-        lastEditBy: usersProfile?.name,
-        lastEditDate: DateTime.now(),
+        id: state.resource?.id ?? ViewUtils.createId(),
+        numberOfRates: state.resource?.numberOfRates ?? 0,
+        url: state.url.value.isEmpty ? state.resource?.url : state.url.value,
+        skillTreeIds: state.resourceSkills?.map((e) => e?.id).toList() ?? [],
+        thumbnail:
+            state.imageUrl.isEmpty ? state.resource?.thumbnail : state.imageUrl,
       );
 
       try {
@@ -357,9 +323,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
             (e is FirebaseException) ? e.message ?? 'Firebase Error' : 'Error';
         emit(
           state.copyWith(
-            status: FormzStatus.submissionFailure,
-            error: errorMessage,
             isError: true,
+            error: errorMessage,
+            status: FormzStatus.submissionFailure,
           ),
         );
       }

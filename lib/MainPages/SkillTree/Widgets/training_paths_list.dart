@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/training_path_create_dialog.dart';
 
 class TrainingPathListView extends StatelessWidget {
@@ -18,10 +20,11 @@ class TrainingPathListView extends StatelessWidget {
             .toList();
         return Scaffold(
           floatingActionButton: Visibility(
-            visible: !state.isGuest,
+            visible: !state.isGuest && state.isEdit,
             child: Tooltip(
               message: 'Create Training Path',
               child: FloatingActionButton(
+                key: const Key('createTrainingPathButton'),
                 onPressed: () => showDialog<CreateTrainingPathDialog>(
                   context: context,
                   builder: (context) => CreateTrainingPathDialog(
@@ -60,8 +63,42 @@ class TrainingPathListView extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(trainingPath?.createdBy ?? ''),
+                          TextButton(
+                            onPressed: state.usersProfile?.email ==
+                                    trainingPath?.createdById
+                                ? null
+                                : () => context.goNamed(
+                                      ViewingProfilePage.name,
+                                      pathParameters: {
+                                        ViewingProfilePage.pathParams:
+                                            trainingPath!.createdById,
+                                      },
+                                    ),
+                            child: Text(trainingPath?.createdBy ?? ''),
+                          ),
                           ListTile(
+                            trailing: !state.isEdit
+                                ? null
+                                : PopupMenuButton<String>(
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        child: const Text('Edit'),
+                                        onTap: () {
+                                          showDialog<CreateTrainingPathDialog>(
+                                            context: context,
+                                            builder: (context) =>
+                                                CreateTrainingPathDialog(
+                                              usersProfile: state.usersProfile!,
+                                              trainingPath: trainingPath,
+                                              isEdit: true,
+                                              allSkills: state.allSkills,
+                                              isForRider: true,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
                             onTap: () {
                               debugPrint('Clicked on ${trainingPath?.name}');
                               cubit.navigateToTrainingPath(

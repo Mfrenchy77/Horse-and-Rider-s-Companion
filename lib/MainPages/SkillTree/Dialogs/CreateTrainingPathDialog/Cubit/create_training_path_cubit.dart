@@ -10,29 +10,27 @@ part 'create_training_path_state.dart';
 
 class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
   CreateTrainingPathCubit({
-    required this.trainingPath,
-    required this.isForRider,
-    required this.allSkills,
-    required SkillTreeRepository trainingPathRepository,
+    required bool isForRider,
+    required List<Skill?> allSkills,
     required RiderProfile usersProfile,
+    required TrainingPath? trainingPath,
+    required SkillTreeRepository trainingPathRepository,
   })  : _trainingPathRepository = trainingPathRepository,
-        _usersProfile = usersProfile,
         super(const CreateTrainingPathState()) {
     emit(
       state.copyWith(
-        trainingPath: trainingPath,
+        skillNodes: trainingPath?.skillNodes,
         allSkills: allSkills,
+        isForRider: isForRider,
+        usersProfile: usersProfile,
+        trainingPath: trainingPath,
       ),
     );
   }
 
   ///   The TrainingPath that is being edited
 
-  final TrainingPath? trainingPath;
-  final bool isForRider;
   final SkillTreeRepository _trainingPathRepository;
-  final RiderProfile _usersProfile;
-  final List<Skill?> allSkills;
 
   void trainingPathNameChanged({required String name}) {
     final trainingPathName = SingleWord.dirty(name);
@@ -58,7 +56,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
 
   ///   Toggles whether the training path is for a horse or a rider
   void isForHorse() {
-    emit(state.copyWith(isForHorse: !state.isForHorse));
+    emit(state.copyWith(isForRider: !state.isForRider));
   }
 
   void isSearch() {
@@ -237,13 +235,11 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
 
     for (final node in state.skillNodes) {
       if (node?.parentId == skillNode?.id) {
-        debugPrint('Position: ${node?.position}');
         children.add(node);
       }
     }
 
     children.sort((a, b) => a!.position.compareTo(b!.position));
-    debugPrint('Length: ${children.length}');
     return children;
   }
 
@@ -268,13 +264,15 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
           name: state.name.value,
           lastEditDate: DateTime.now(),
           skillNodes: state.skillNodes,
-          isForHorse: state.isForHorse,
-          lastEditBy: _usersProfile.name,
+          isForHorse: state.isForRider,
+          lastEditBy: state.usersProfile!.name,
           description: state.description.value,
-          skills: state.skillNodes.map((e) => e?.id).toList(),
           id: state.trainingPath?.id ?? ViewUtils.createId(),
+          skills: state.skillNodes.map((e) => e?.id).toList(),
           createdAt: state.trainingPath?.createdAt ?? DateTime.now(),
-          createdBy: state.trainingPath?.createdBy ?? _usersProfile.name,
+          createdById:
+              state.trainingPath?.createdById ?? state.usersProfile!.email,
+          createdBy: state.trainingPath?.createdBy ?? state.usersProfile!.name,
         );
 
         await _trainingPathRepository.createOrEditTrainingPath(
@@ -353,7 +351,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
   /// Delete the training path only if userProfile name matched the createdBy
   /// field of the training path.
   void deleteTrainingPath() {
-    if (state.trainingPath?.createdBy == _usersProfile.name) {
+    if (state.trainingPath?.createdBy == state.usersProfile?.name) {
       _trainingPathRepository.deleteTrainingPath(
         trainingPath: state.trainingPath,
       );

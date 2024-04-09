@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
@@ -99,11 +100,10 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                               context: context,
                               builder: (context) => searchConfirmationDialog(
                                 title: (state.resources
-                                            .firstWhere(
+                                            .firstWhereOrNull(
                                               (resource) =>
-                                                  resource?.name ==
+                                                  resource.name ==
                                                   value.searchKey,
-                                              orElse: () => null,
                                             )
                                             ?.skillTreeIds
                                             ?.contains(state.skill?.id) ??
@@ -111,11 +111,10 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                                     ? 'Remove'
                                     : 'Add',
                                 text: (state.resources
-                                            .firstWhere(
+                                            .firstWhereOrNull(
                                               (resource) =>
-                                                  resource?.name ==
+                                                  resource.name ==
                                                   value.searchKey,
-                                              orElse: () => null,
                                             )
                                             ?.skillTreeIds
                                             ?.contains(state.skill?.id) ??
@@ -130,7 +129,7 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                                       skill: state.skill,
                                       resource: state.resources.firstWhere(
                                         (resource) =>
-                                            resource?.name == value.searchKey,
+                                            resource.name == value.searchKey,
                                       ),
                                     )
                                     ..toggleSearch();

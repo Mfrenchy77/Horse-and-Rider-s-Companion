@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skills_list.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_path_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_paths_list.dart';
@@ -13,6 +13,10 @@ class SkillTreePrimaryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        debugPrint('SkillTreNavigationState: ${state.skillTreeNavigation}\n '
+            'From profile: ${state.isFromProfile}\n '
+            'From Training Path List: ${state.isFromTrainingPathList}\n '
+            'From Training Path: ${state.isFromTrainingPath}');
         final isSplitScreen = MediaQuery.of(context).size.width > 840;
         switch (state.skillTreeNavigation) {
           case SkillTreeNavigation.TrainingPath:

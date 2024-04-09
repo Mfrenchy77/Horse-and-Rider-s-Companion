@@ -1,8 +1,6 @@
-import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 
 class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
   const SkillTreeAppBarOverFlowMenu({super.key});
@@ -20,8 +18,8 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
                 // adding a filter option to select a category or a subcategory
 
                 const PopupMenuItem(
-                  value: 'Difficulty',
-                  child: Text('Difficulty'),
+                  value: 'Sort',
+                  child: Text('Sort'),
                 ),
                 const PopupMenuItem(
                   value: 'Training Paths',
@@ -55,9 +53,9 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
               case 'Edit':
                 cubit.toggleIsEditState();
                 break;
-              case 'Difficulty':
+              case 'Sort':
                 // open the sort dialog
-                _showDifficultySelectDialog(
+                _showSklillTreeSortDialog(
                   cubit: cubit,
                   state: state,
                   context: context,
@@ -74,7 +72,7 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
   }
 }
 
-void _showDifficultySelectDialog({
+void _showSklillTreeSortDialog({
   required AppCubit cubit,
   required AppState state,
   required BuildContext context,
@@ -83,38 +81,90 @@ void _showDifficultySelectDialog({
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('Sort Skills by Difficulty'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+        ],
+        title: const Text('Sort Skills'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Select the difficulty you would like to view'),
-            gap(),
-            DropdownButton<DifficultyState>(
-              value: state.difficultyState,
-              items: const [
-                DropdownMenuItem(
-                  value: DifficultyState.all,
-                  child: Text('All'),
-                ),
-                DropdownMenuItem(
-                  value: DifficultyState.introductory,
-                  child: Text('Introductory'),
-                ),
-                DropdownMenuItem(
-                  value: DifficultyState.intermediate,
-                  child: Text('Intermediate'),
-                ),
-                DropdownMenuItem(
-                  value: DifficultyState.advanced,
-                  child: Text('Advanced'),
-                ),
-              ],
+            // Radio Buttons to select the skillTreeSortState
+            RadioListTile<SkillTreeSortState>(
+              title: const Text('All'),
+              value: SkillTreeSortState.All,
+              groupValue: state.skillTreeSortState,
               onChanged: (value) {
-                cubit.difficultyFilterChanged(
-                  difficultyState: value ?? DifficultyState.all,
-                );
+                cubit.skillTreeSortChanged(value!);
                 Navigator.of(context).pop();
               },
+            ),
+            RadioListTile<SkillTreeSortState>(
+              title: const Text('Introductory'),
+              value: SkillTreeSortState.Introductory,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+            ),
+            RadioListTile<SkillTreeSortState>(
+              title: const Text('Intermediate'),
+              value: SkillTreeSortState.Intermediate,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+            ),
+            RadioListTile<SkillTreeSortState>(
+              title: const Text('Advanced'),
+              value: SkillTreeSortState.Advanced,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+            ),
+            RadioListTile(
+              value: SkillTreeSortState.Husbandry,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+              title: const Text('Husbandry'),
+            ),
+            RadioListTile(
+              value: SkillTreeSortState.In_Hand,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+              title: const Text('In Hand'),
+            ),
+            RadioListTile(
+              value: SkillTreeSortState.Mounted,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+              title: const Text('Mounted'),
+            ),
+            RadioListTile(
+              value: SkillTreeSortState.Other,
+              groupValue: state.skillTreeSortState,
+              onChanged: (value) {
+                cubit.skillTreeSortChanged(value!);
+                Navigator.of(context).pop();
+              },
+              title: const Text('Other'),
             ),
           ],
         ),

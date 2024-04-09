@@ -11,6 +11,7 @@ class ResourcesListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final cubit = context.read<AppCubit>();
         return Center(
           child: ListView(
             children: [
@@ -32,10 +33,10 @@ class ResourcesListView extends StatelessWidget {
                     ? Wrap(
                         alignment: WrapAlignment.center,
                         runSpacing: 4,
-                        children: state.savedResources
+                        children: cubit.sortResources(state.savedResources)
                             .map(
                               (e) => ResourcesItem(
-                                resource: e!,
+                                resource: e,
                                 isResourceList: true,
                               ),
                             )
@@ -43,14 +44,15 @@ class ResourcesListView extends StatelessWidget {
                       )
                     : const Text('No Resources Found')
               else
+              
                 state.resources.isNotEmpty
                     ? Wrap(
                         alignment: WrapAlignment.center,
                         runSpacing: 4,
-                        children: state.resources
+                        children: cubit.sortResources(state.resources)
                             .map(
                               (e) => ResourcesItem(
-                                resource: e!,
+                                resource: e,
                                 isResourceList: true,
                               ),
                             )

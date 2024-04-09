@@ -29,7 +29,7 @@ class ResourceCommentBar extends StatelessWidget {
               children: [
                 IconButton.outlined(
                   onPressed: () {},
-                  icon: Text('${resource.comments?.length}'),
+                  icon: Text('${resource.comments?.length ?? 0}'),
                 ),
                 const Text('Comments'),
               ],
@@ -54,7 +54,7 @@ class ResourceCommentBar extends StatelessWidget {
                         },
                   icon: const Icon(Icons.send),
                 ),
-                const Text('Reply'),
+                const Text('Comment'),
               ],
             ),
             Column(

@@ -29,11 +29,11 @@ class TestSkills {
   /// Generates a list of skills for testing purposes
   static List<Skill> generateTestSkills() {
     final introductorySkills =
-        _generateSkillsForDifficulty(DifficultyState.introductory, 15);
+        _generateSkillsForDifficulty(DifficultyState.Introductory, 15);
     final intermediateSkills =
-        _generateSkillsForDifficulty(DifficultyState.intermediate, 15);
+        _generateSkillsForDifficulty(DifficultyState.Intermediate, 15);
     final advancedSkills =
-        _generateSkillsForDifficulty(DifficultyState.advanced, 15);
+        _generateSkillsForDifficulty(DifficultyState.Advanced, 15);
 
     // Combine all the generated skills into one list
     return [...introductorySkills, ...intermediateSkills, ...advancedSkills];

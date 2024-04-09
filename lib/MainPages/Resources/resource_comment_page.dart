@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/error_view.dart';
+import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
 
@@ -26,14 +26,14 @@ class ResourceCommentPage extends StatelessWidget {
 
         if (resource == null) {
           return PopScope(
-            child: const ErrorView(
-              key: Key('ErrorViewforResourceCommentPage'),
+            child: const LoadingPage(
+              key: Key('LoadingPage'),
             ),
             onPopInvoked: (didPop) =>
                 context.read<AppCubit>().resetFromResource(),
           );
         } else {
-          final baseComments = cubit.getBaseComments(state.resourceComments);
+          final baseComments = cubit.getBaseComments(resource);
           return PopScope(
             onPopInvoked: (didPop) =>
                 context.read<AppCubit>().resetFromResource(),
@@ -46,13 +46,15 @@ class ResourceCommentPage extends StatelessWidget {
                   body: ListView.builder(
                     controller: scrollController,
                     shrinkWrap: true,
-                    itemCount: baseComments!.length + 1,
+                    itemCount: baseComments.length + 2,
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return CommentPageHeader(
                           resource: resource,
                           key: const Key('CommentPageHeader'),
                         );
+                      } else if (index == baseComments.length + 1) {
+                        return const SizedBox(height: 500);
                       } else {
                         return CommentItem(
                           key: Key(baseComments[index - 1].id!),
@@ -72,9 +74,9 @@ class ResourceCommentPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         FloatingActionButton(
+                          key: const Key('ScrollUpButton'),
                           child: const Icon(Icons.arrow_drop_up),
                           onPressed: () {
-                            
                             final currentPosition = scrollController.offset;
                             const itemHeight =
                                 100.0; // Change with your actual item height
@@ -90,6 +92,7 @@ class ResourceCommentPage extends StatelessWidget {
                           },
                         ),
                         FloatingActionButton(
+                          key: const Key('ScrollDownButton'),
                           child: const Icon(Icons.arrow_drop_down),
                           onPressed: () {
                             // Scroll to the next index of the list

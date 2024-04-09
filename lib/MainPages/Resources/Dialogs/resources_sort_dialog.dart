@@ -13,21 +13,41 @@ class ResourcesSortDialog extends StatelessWidget {
 
         return AlertDialog(
           title: const Text('Sort Resources'),
-          content: DropdownButton<ResourcesSortStatus>(
-            value: state.resourcesSortStatus,
-            onChanged: (ResourcesSortStatus? newValue) {
-              if (newValue != null) {
-                cubit.updateResourceSortStatus(newValue);
-                Navigator.of(context).pop();
-              }
-            },
-            items: ResourcesSortStatus.values.map((ResourcesSortStatus status) {
-              return DropdownMenuItem<ResourcesSortStatus>(
+          content:
+              // Radio Buttons
+              Column(
+            mainAxisSize: MainAxisSize.min,
+            children:
+                ResourcesSortStatus.values.map((ResourcesSortStatus status) {
+              return RadioListTile<ResourcesSortStatus>(
+                title: Text(_getSortOptionLabel(status)),
                 value: status,
-                child: Text(_getSortOptionLabel(status)),
+                groupValue: state.resourcesSortStatus,
+                onChanged: (ResourcesSortStatus? newValue) {
+                  if (newValue != null) {
+                    cubit.updateResourceSortStatus(newValue);
+                    Navigator.of(context).pop();
+                  }
+                },
               );
             }).toList(),
           ),
+
+          // DropdownButton<ResourcesSortStatus>(
+          //   value: state.resourcesSortStatus,
+          //   onChanged: (ResourcesSortStatus? newValue) {
+          //     if (newValue != null) {
+          //       cubit.updateResourceSortStatus(newValue);
+          //       Navigator.of(context).pop();
+          //     }
+          //   },
+          //   items: ResourcesSortStatus.values.map((ResourcesSortStatus status) {
+          //     return DropdownMenuItem<ResourcesSortStatus>(
+          //       value: status,
+          //       child: Text(_getSortOptionLabel(status)),
+          //     );
+          //   }).toList(),
+          // ),
         );
       },
     );
@@ -35,10 +55,12 @@ class ResourcesSortDialog extends StatelessWidget {
 
   String _getSortOptionLabel(ResourcesSortStatus sortStatus) {
     switch (sortStatus) {
+      case ResourcesSortStatus.leastRecommended:
+        return 'Least Recommended';
       case ResourcesSortStatus.mostRecommended:
         return 'Most Recommended';
       case ResourcesSortStatus.recent:
-        return 'Most Recent';
+        return 'Recent';
       case ResourcesSortStatus.saved:
         return 'Saved';
       case ResourcesSortStatus.oldest:

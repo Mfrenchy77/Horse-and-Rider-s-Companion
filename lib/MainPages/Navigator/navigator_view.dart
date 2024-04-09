@@ -27,10 +27,28 @@ class NavigatorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AppCubit, AppState>(
       listener: (context, state) {
+        if (!context.mounted) return;
         final cubit = context.read<AppCubit>();
+// main Navigation through index uses  child.goBranch(index)
+        // Navigation
+        switch (state.index) {
+          case 0:
+            child.goBranch(0);
+            break;
+          case 1:
+            child.goBranch(1);
+            break;
+          case 2:
+            child.goBranch(2);
+            break;
+          default:
+            child.goBranch(0);
+        }
+
         // Error handling
         if (state.isError) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -42,6 +60,7 @@ class NavigatorView extends StatelessWidget {
                   backgroundColor: Colors.red,
                 ),
               ).closed.then((value) {
+                if (!context.mounted) return;
                 cubit.clearErrorMessage();
               });
           });
@@ -49,6 +68,7 @@ class NavigatorView extends StatelessWidget {
         // Message handling
         if (state.isMessage) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -60,6 +80,7 @@ class NavigatorView extends StatelessWidget {
                   backgroundColor: Colors.green,
                 ),
               ).closed.then((value) {
+                if (!context.mounted) return;
                 cubit.clearMessage();
               });
           });
@@ -67,6 +88,7 @@ class NavigatorView extends StatelessWidget {
         // Email verification
         if (state.isEmailVerification) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            if (!context.mounted) return;
             const time = Duration(milliseconds: 200);
             if (timeStamp < time) {
               showDialog<AlertDialog>(
@@ -82,6 +104,7 @@ class NavigatorView extends StatelessWidget {
         // Profile Set up
         if (state.isProfileSetup) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            if (!context.mounted) return;
             debugPrint(timeStamp.toString());
             const time = Duration(milliseconds: 1000);
             debugPrint('Time: $time');
@@ -147,10 +170,10 @@ class NavigatorView extends StatelessWidget {
                           //       onPressed: cubit.backPressed,
                           //     ),
                           //   ),
-                        // FIXME: if adaptive scaffold updates and doesn't
-                        // fix spacing,
-                        // around navrail, click AdapiveScaffold and on
-                        // line 279 change the padding to 0
+                          // FIXME: if adaptive scaffold updates and doesn't
+                          // fix spacing,
+                          // around navrail, click AdapiveScaffold and on
+                          // line 279 change the padding to 0
                           leadingExtendedNavRail: const Image(
                             color: Colors.white,
                             fit: BoxFit.contain,
@@ -182,7 +205,6 @@ class NavigatorView extends StatelessWidget {
                           body: (_) => AdaptiveLayout(
                             internalAnimations: false,
                             body: SlotLayout(
-                              
                               config: <Breakpoint, SlotLayoutConfig>{
                                 Breakpoints.standard: SlotLayout.from(
                                   key: const Key('mainView'),
@@ -205,10 +227,10 @@ class NavigatorView extends StatelessWidget {
   }
 
   void _onTap(int index, AppCubit cubit, StatefulNavigationShell body) {
-    body.goBranch(
-      index,
-      initialLocation: index == body.currentIndex,
-    );
+    // body.goBranch(
+    //   index,
+    //   initialLocation: index == body.currentIndex,
+    // );
     cubit.changeIndex(index);
   }
 }

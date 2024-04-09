@@ -17,9 +17,9 @@ class SkillLevelCard extends StatelessWidget {
       onTap: onTap,
       child: Card(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(20),
         ),
-        elevation: 8,
+        elevation: 1,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: skillLevel.levelState == LevelState.PROFICIENT
@@ -27,7 +27,7 @@ class SkillLevelCard extends StatelessWidget {
                     ? Colors.yellow
                     : Colors.blue
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(20),
             gradient: skillLevel.levelState == LevelState.LEARNING
                 ? LinearGradient(
                     stops: const [0.5, 0.5],
@@ -39,7 +39,8 @@ class SkillLevelCard extends StatelessWidget {
                 : null,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding:
+                const EdgeInsets.only(top: 8, bottom: 8, left: 16, right: 16),
             child: Text(
               skillLevel.skillName,
               style: const TextStyle(

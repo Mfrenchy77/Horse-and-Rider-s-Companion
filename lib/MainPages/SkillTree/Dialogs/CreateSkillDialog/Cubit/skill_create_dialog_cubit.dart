@@ -23,7 +23,14 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       state.copyWith(
         skill: skill,
         isForRider: isForRider,
+        category: skill?.category,
         usersProfile: usersProfile,
+        difficulty: skill?.difficulty,
+        name: SingleWord.dirty(skill?.skillName ?? ''),
+        description: SingleWord.dirty(skill?.description ?? ''),
+        learningDescription: SingleWord.dirty(skill?.learningDescription ?? ''),
+        proficientDescription:
+            SingleWord.dirty(skill?.proficientDescription ?? ''),
       ),
     );
   }
@@ -69,11 +76,25 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     );
   }
 
+  /// Called when the Skill is for a Rider or a Horse changes
+  void isForRiderChanged({required bool isForRider}) {
+    emit(state.copyWith(isForRider: isForRider));
+  }
+
   /// Called when the new Skill Difficulty changes
   void skillDifficultyChanged(DifficultyState value) {
     emit(
       state.copyWith(
         difficulty: value,
+      ),
+    );
+  }
+
+  /// Called when the new Skill Category changes
+  void skillCategoryChanged(SkillCategory value) {
+    emit(
+      state.copyWith(
+        category: value,
       ),
     );
   }
@@ -123,6 +144,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       id: ViewUtils.createId(),
       position: position,
       rider: state.isForRider,
+      category: state.category,
       difficulty: state.difficulty,
       skillName: state.name.value,
       lastEditDate: DateTime.now(),
@@ -154,7 +176,8 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       lastEditDate: DateTime.now(),
       difficulty: state.difficulty,
       id: editedSkill?.id as String,
-      rider: editedSkill?.rider ?? true,
+      category: state.category,
+      rider: state.isForRider,
       lastEditBy: state.usersProfile?.email,
       position: editedSkill?.position as int,
       skillName: state.name.value.isNotEmpty
@@ -162,13 +185,13 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
           : editedSkill?.skillName as String,
       description: state.description.value.isNotEmpty
           ? state.description.value
-          : editedSkill?.description as String,
+          : editedSkill?.description,
       learningDescription: state.learningDescription.value.isNotEmpty
           ? state.learningDescription.value
-          : editedSkill?.learningDescription as String,
+          : editedSkill?.learningDescription,
       proficientDescription: state.proficientDescription.value.isNotEmpty
           ? state.proficientDescription.value
-          : editedSkill?.proficientDescription as String,
+          : editedSkill?.proficientDescription,
     );
 
     try {

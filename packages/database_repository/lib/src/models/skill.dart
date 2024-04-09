@@ -2,7 +2,19 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum DifficultyState { introductory, intermediate, advanced, all }
+enum DifficultyState {
+  Introductory,
+  Intermediate,
+  Advanced,
+  All,
+}
+
+enum SkillCategory {
+  Other,
+  In_Hand,
+  Mounted,
+  Husbandry,
+}
 
 /// Model of a Skill
 class Skill implements Comparable<Skill> {
@@ -16,18 +28,42 @@ class Skill implements Comparable<Skill> {
     required this.lastEditDate,
     required this.learningDescription,
     required this.proficientDescription,
-    this.difficulty = DifficultyState.introductory,
+    this.category = SkillCategory.Mounted,
+    this.difficulty = DifficultyState.Introductory,
   });
 
+  /// The unique identifier of the skill
   final String id;
+
+  /// The position of the skill in the list
   int position = -1;
+
+  /// Whether the skill is for a rider or a horse
   final bool rider;
+
+  /// The name of the skill
   final String skillName;
+
+  /// The user who last edited the skill
   final String? lastEditBy;
+
+  /// The description of the skill
   final String? description;
+
+  /// The date the skill was last edited
   final DateTime? lastEditDate;
+
+  /// The difficulty of the skill
   final DifficultyState difficulty;
+
+  /// The category of the skill
+  final SkillCategory category;
+
+  /// The description of the skill when learning
+
   final String? learningDescription;
+
+  /// The description of the skill when proficient
   final String? proficientDescription;
 
   factory Skill.fromFirestore(
@@ -46,13 +82,20 @@ class Skill implements Comparable<Skill> {
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
       learningDescription: data['learningDescription'] as String?,
       proficientDescription: data['proficientDescription'] as String?,
-      difficulty: (data['difficulty'] as String) == 'introductory'
-          ? DifficultyState.introductory
-          : (data['difficulty'] as String) == 'intermediate'
-              ? DifficultyState.intermediate
-              : (data['difficulty'] as String) == 'advanced'
-                  ? DifficultyState.advanced
-                  : DifficultyState.intermediate,
+      category: (data['category'] as String?) == 'Husbandry'
+          ? SkillCategory.Husbandry
+          : (data['category'] as String?) == 'In_Hand'
+              ? SkillCategory.In_Hand
+              : (data['category'] as String?) == 'Mounted'
+                  ? SkillCategory.Mounted
+                  : SkillCategory.Other,
+      difficulty: (data['difficulty'] as String?) == 'Introductory'
+          ? DifficultyState.Introductory
+          : (data['difficulty'] as String?) == 'Intermediate'
+              ? DifficultyState.Intermediate
+              : (data['difficulty'] as String?) == 'Advanced'
+                  ? DifficultyState.Advanced
+                  : DifficultyState.Introductory,
     );
   }
 
@@ -67,13 +110,20 @@ class Skill implements Comparable<Skill> {
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (description != null) 'description': description,
       if (lastEditDate != null) 'lastEditDate': lastEditDate,
-      'difficulty': difficulty == DifficultyState.introductory
+      'category': category == SkillCategory.Husbandry
+          ? 'Husbandry'
+          : category == SkillCategory.In_Hand
+              ? 'In_Hand'
+              : category == SkillCategory.Mounted
+                  ? 'Mounted'
+                  : 'Other',
+      'difficulty': difficulty == DifficultyState.Introductory
           ? 'introductory'
-          : difficulty == DifficultyState.intermediate
-              ? 'intermediate'
-              : difficulty == DifficultyState.advanced
-                  ? 'advanced'
-                  : 'introductory',
+          : difficulty == DifficultyState.Intermediate
+              ? 'Intermediate'
+              : difficulty == DifficultyState.Advanced
+                  ? 'Advanced'
+                  : 'Introductory',
       if (learningDescription != null)
         'learningDescription': learningDescription,
       if (proficientDescription != null)

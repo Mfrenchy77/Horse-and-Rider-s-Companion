@@ -33,7 +33,29 @@ class CreateCommentDialog extends StatelessWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (comment == null && !isEdit) ...[
+                  Text(
+                    'Commenting on, ${resource.name}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
                 if (comment != null && !isEdit) ...[
+                  Text(
+                    'Replying to, ${comment!.user?.name ?? 'User'}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Divider(
+                    thickness: 2,
+                    indent: 20,
+                    endIndent: 20,
+                    color: HorseAndRidersTheme().getTheme().primaryColor,
+                  ),
                   SelectableText(comment!.comment ?? ''),
                   Divider(
                     thickness: 2,
@@ -50,12 +72,18 @@ class CreateCommentDialog extends StatelessWidget {
                   keyboardType: TextInputType.multiline,
                   autofocus: true,
                   onChanged: cubit.updateCommentMessage,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(10)),
                     ),
-                    label: Text('Comment'),
-                    hintText: 'Write a comment',
+                    label:
+                        // if making a comment on the resource, text saying
+                        // "Comment"if replying to a comment,
+                        // text saying "Reply"
+                        Text(comment == null ? 'Comment' : 'Reply'),
+                    hintText: comment == null
+                        ? 'Enter your comment here'
+                        : 'Enter your reply here',
                   ),
                 ),
               ],
