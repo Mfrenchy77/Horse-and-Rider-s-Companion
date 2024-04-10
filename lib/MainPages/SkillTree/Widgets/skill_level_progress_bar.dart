@@ -14,11 +14,9 @@ class SkillLevelProgressBar extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        debugPrint('Skill for rider: ${state.skill?.rider}');
-        debugPrint('Horse Profile: ${state.horseProfile}');
         final isConflict =
             state.horseProfile == null && state.skill?.rider == false;
-        debugPrint('Is Conflict: $isConflict');
+        debugPrint('Is Conflict between horse and skill: $isConflict');
         return MaxWidthBox(
           maxWidth: 1000,
           child: Row(

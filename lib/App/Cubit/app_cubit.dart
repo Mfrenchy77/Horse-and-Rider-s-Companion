@@ -2964,8 +2964,8 @@ class AppCubit extends Cubit<AppState> {
     emit(
       state.copyWith(
         index: 0,
-        isForRider: false,
         isViewing: false,
+        isForRider: false,
         // ignore: avoid_redundant_argument_values
         viewingProfile: null,
         pageStatus: AppPageStatus.profile,
@@ -2995,10 +2995,10 @@ class AppCubit extends Cubit<AppState> {
   void setViewingProfile() {
     emit(
       state.copyWith(
+        index: 0,
         isForRider: true,
         isViewing: true,
         pageStatus: AppPageStatus.profile,
-        index: 0,
       ),
     );
   }
@@ -3031,7 +3031,7 @@ class AppCubit extends Cubit<AppState> {
   void setResource() {
     emit(
       state.copyWith(
-        // index: 2,
+        index: 2,
         pageStatus: AppPageStatus.resource,
       ),
     );
@@ -3041,7 +3041,7 @@ class AppCubit extends Cubit<AppState> {
   void setSkillTree() {
     emit(
       state.copyWith(
-        //index: 1,
+        index: 1,
         pageStatus: AppPageStatus.skillTree,
       ),
     );
@@ -3052,7 +3052,7 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('resetFromResource');
     emit(
       state.copyWith(
-        // index: 2,
+        index: 2,
         pageStatus: AppPageStatus.resourceList,
         // ignore: avoid_redundant_argument_values
         resourceComments: null,

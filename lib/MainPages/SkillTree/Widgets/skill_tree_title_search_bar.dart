@@ -21,7 +21,7 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                 textInputAction: TextInputAction.search,
                 textCapitalization: TextCapitalization.words,
                 onSubmit: (p0) {
-                  debugPrint('Submit Value: $p0');
+                  debugPrint('Search: $p0');
                 },
                 suggestionState:
                     state.isSearch ? Suggestion.expand : Suggestion.hidden,

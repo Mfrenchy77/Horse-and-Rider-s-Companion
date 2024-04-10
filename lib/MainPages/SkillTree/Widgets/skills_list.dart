@@ -140,18 +140,3 @@ class SkillsListView extends StatelessWidget {
     );
   }
 }
-
-// String _skillsTitle(
-//   DifficultyState difficultyState,
-// ) {
-//   switch (difficultyState) {
-//     case DifficultyState.advanced:
-//       return 'Advanced';
-//     case DifficultyState.intermediate:
-//       return 'Intermediate';
-//     case DifficultyState.introductory:
-//       return 'Introductory';
-//     case DifficultyState.all:
-//       return 'All';
-//   }
-// }

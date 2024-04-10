@@ -37,6 +37,7 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('App Build');
     final appCubit = AppCubit(
       messagesRepository: _messagesRepository,
       skillTreeRepository: _skillTreeRepository,
@@ -92,6 +93,7 @@ class AppView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('AppView Build');
     return AnimatedBuilder(
       animation: settingsController,
       builder: (context, child) {

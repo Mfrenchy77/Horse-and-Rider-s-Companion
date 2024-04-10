@@ -72,36 +72,6 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
                     ),
                 ];
             }
-
-            // if (state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
-            //   return [
-            //     const PopupMenuItem(
-            //       value: 'Sort',
-            //       child: Text('Sort'),
-            //     ),
-            //     const PopupMenuItem(
-            //       value: 'Training Paths',
-            //       child: Text('Training Paths'),
-            //     ),
-            //     if (!state.isGuest && isEditor)
-            //       const PopupMenuItem(
-            //         value: 'Edit',
-            //         child: Text('Toggle Edit Controls'),
-            //       ),
-            //   ];
-            // } else {
-            //   return [
-            //     const PopupMenuItem(
-            //       value: 'Skills',
-            //       child: Text('Skills'),
-            //     ),
-            //     if (!state.isGuest && isEditor)
-            //       const PopupMenuItem(
-            //         value: 'Edit',
-            //         child: Text('Toggle Edit Controls'),
-            //       ),
-            //   ];
-            // }
           },
           onSelected: (value) {
             switch (value) {

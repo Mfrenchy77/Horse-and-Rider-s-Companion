@@ -12,11 +12,10 @@ class SkillTreePrimaryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.skillTreeNavigation != current.skillTreeNavigation,
       builder: (context, state) {
-        debugPrint('SkillTreNavigationState: ${state.skillTreeNavigation}\n '
-            'From profile: ${state.isFromProfile}\n '
-            'From Training Path List: ${state.isFromTrainingPathList}\n '
-            'From Training Path: ${state.isFromTrainingPath}');
+        debugPrint('SkillTrePrimaryView Build');
         final isSplitScreen = MediaQuery.of(context).size.width > 840;
         switch (state.skillTreeNavigation) {
           case SkillTreeNavigation.TrainingPath:

@@ -117,9 +117,8 @@ class NavigatorView extends StatelessWidget {
         if (state.isProfileSetup) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
             if (!context.mounted) return;
-            debugPrint(timeStamp.toString());
             const time = Duration(milliseconds: 1000);
-            debugPrint('Time: $time');
+            debugPrint('Profile Set Up Called Time: $time');
             // if timestamp is less than 10 milliseconds, show the dialog
             if (timeStamp < time) {
               debugPrint('Showing Profile Setup Dialog');
@@ -166,54 +165,17 @@ class NavigatorView extends StatelessWidget {
                             image: AssetImage('assets/horse_logo.png'),
                             height: 40,
                           ),
-                          //   ) state.index == 0
-                          // ?
-                          // : Visibility(
-                          //     visible: state.index != 0 || state.isViewing,
-                          //     child: IconButton(
-                          //       icon: Icon(
-                          //         Icons.arrow_back,
-                          //         color: HorseAndRidersTheme()
-                          //             .getTheme()
-                          //             .appBarTheme
-                          //             .iconTheme
-                          //             ?.color,
-                          //       ),
-                          //       onPressed: cubit.backPressed,
-                          //     ),
-                          //   ),
-                          // FIXME: if adaptive scaffold updates and doesn't
-                          // fix spacing,
-                          // around navrail, click AdapiveScaffold and on
-                          // line 279 change the padding to 0
                           leadingExtendedNavRail: const Image(
                             color: Colors.white,
                             fit: BoxFit.contain,
                             image: AssetImage('assets/horse_logo.png'),
                             height: 40,
                           ),
-                          //    state.index == 0
-                          // ?
-                          // : Visibility(
-                          //     visible: state.index != 0 || state.isViewing,
-                          //     child: IconButton(
-                          //       icon: Icon(
-                          //         Icons.arrow_back,
-                          //         color: HorseAndRidersTheme()
-                          //             .getTheme()
-                          //             .appBarTheme
-                          //             .iconTheme
-                          //             ?.color,
-                          //       ),
-                          //       onPressed: cubit.backPressed,
-                          //     ),
-                          //   ),
                           useDrawer: false,
                           destinations:
                               _buildDestinations(isForRider: state.isForRider),
                           selectedIndex: child.currentIndex,
-                          onSelectedIndexChange: (p0) =>
-                              _onTap(p0, cubit, child),
+                          onSelectedIndexChange: cubit.changeIndex,
                           body: (_) => AdaptiveLayout(
                             internalAnimations: false,
                             body: SlotLayout(
@@ -236,14 +198,6 @@ class NavigatorView extends StatelessWidget {
         },
       ),
     );
-  }
-
-  void _onTap(int index, AppCubit cubit, StatefulNavigationShell body) {
-    // body.goBranch(
-    //   index,
-    //   initialLocation: index == body.currentIndex,
-    // );
-    cubit.changeIndex(index);
   }
 }
 
