@@ -54,9 +54,7 @@ class _CommentItemState extends State<CommentItem> {
             parentComment: widget.comment,
           )..sort((a, b) => b.date.compareTo(a.date));
 
-          final commentResource = cubit.getResourceById(
-            widget.comment.resourceId!,
-          );
+          final commentResource = state.resource;
 
           final usersRating = widget.comment.usersWhoRated?.firstWhereOrNull(
             (BaseListItem element) => element.id == state.usersProfile?.email,

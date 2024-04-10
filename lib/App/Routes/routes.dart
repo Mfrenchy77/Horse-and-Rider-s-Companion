@@ -114,7 +114,9 @@ class Routes {
           appCubit.setResourcesList();
         }
         if (route.settings.name == ResourceCommentPage.name) {
-          debugPrint('Resource Comment Page Push');
+          debugPrint(
+            'Resource Comment Page Push for: ${route.settings.arguments}',
+          );
           appCubit.setResource();
         }
       },

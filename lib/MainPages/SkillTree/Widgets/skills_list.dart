@@ -17,7 +17,6 @@ class SkillsListView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final skills = state.sortedSkills;
-        debugPrint('SkillsListView: ${skills.length}');
         return Scaffold(
           floatingActionButton: Visibility(
             // ignore: use_if_null_to_convert_nulls_to_bools

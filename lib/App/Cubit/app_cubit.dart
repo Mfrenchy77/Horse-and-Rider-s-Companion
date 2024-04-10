@@ -1786,12 +1786,17 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  ///Returns a resource based on the [id]
+  /// Returns a resource based on the [id]
   Resource? getResourceById(String id) {
     debugPrint('getResourceById for $id');
-    final resource = state.resources.firstWhereOrNull(
-      (element) => element.id == id,
-    );
+
+    if (state.resource?.id == id) {
+      debugPrint('Resource is already set: ${state.resource?.name}');
+      return state.resource; // Return the already set resource
+    }
+
+    final resource =
+        state.resources.firstWhereOrNull((element) => element.id == id);
 
     if (resource != null) {
       debugPrint('Resource found: ${resource.name}');
@@ -1799,12 +1804,12 @@ class AppCubit extends Cubit<AppState> {
       emit(
         state.copyWith(
           resource: resource,
-          resourceComments: resource.comments,
         ),
       );
     } else {
       debugPrint('Resource not found');
     }
+
     return resource;
   }
 
@@ -3026,7 +3031,7 @@ class AppCubit extends Cubit<AppState> {
   void setResource() {
     emit(
       state.copyWith(
-        index: 2,
+        // index: 2,
         pageStatus: AppPageStatus.resource,
       ),
     );
@@ -3036,7 +3041,7 @@ class AppCubit extends Cubit<AppState> {
   void setSkillTree() {
     emit(
       state.copyWith(
-        index: 1,
+        //index: 1,
         pageStatus: AppPageStatus.skillTree,
       ),
     );
@@ -3047,7 +3052,7 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('resetFromResource');
     emit(
       state.copyWith(
-        index: 2,
+        // index: 2,
         pageStatus: AppPageStatus.resourceList,
         // ignore: avoid_redundant_argument_values
         resourceComments: null,
@@ -3073,7 +3078,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToSkillsList');
     emit(
       state.copyWith(
-        index: 1,
         pageStatus: AppPageStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillList,
         isFromTrainingPath: false,
@@ -3091,7 +3095,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToSkillLevel for ${skill?.skillName}');
     emit(
       state.copyWith(
-        index: 1,
         skill: skill,
         isSearch: false,
         isFromProfile: state.index == 0,
@@ -3106,11 +3109,9 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToTrainingPathList');
     emit(
       state.copyWith(
-        index: 1,
         pageStatus: AppPageStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.TrainingPathList,
         isFromProfile: state.index == 0,
-
       ),
     );
   }
@@ -3122,7 +3123,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToTrainingPath for ${trainingPath?.name}');
     emit(
       state.copyWith(
-        index: 1,
         isFromTrainingPathList: true,
         pageStatus: AppPageStatus.skillTree,
         trainingPath: trainingPath,
@@ -3137,7 +3137,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToSettings');
     emit(
       state.copyWith(
-        index: 0,
         pageStatus: AppPageStatus.settings,
       ),
     );
@@ -3148,7 +3147,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToMessages');
     emit(
       state.copyWith(
-        index: 0,
         pageStatus: AppPageStatus.messages,
       ),
     );
@@ -3159,7 +3157,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('navigateToResources');
     emit(
       state.copyWith(
-        index: 2,
         resource: resource,
         pageStatus: AppPageStatus.resourceList,
       ),

@@ -26,22 +26,34 @@ class NavigatorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<AppCubit, AppState>(
+      listenWhen: (previous, current) =>
+          previous.index != current.index ||
+          previous.isError != current.isError ||
+          previous.errorMessage != current.errorMessage ||
+          previous.isMessage != current.isMessage ||
+          previous.isEmailVerification != current.isEmailVerification ||
+          previous.isProfileSetup != current.isProfileSetup,
       listener: (context, state) {
+        debugPrint('NavigatorView Listener Called');
         if (!context.mounted) return;
         final cubit = context.read<AppCubit>();
 // main Navigation through index uses  child.goBranch(index)
         // Navigation
         switch (state.index) {
           case 0:
+            debugPrint('Index 0');
             child.goBranch(0);
             break;
           case 1:
+            debugPrint('Index 1');
             child.goBranch(1);
             break;
           case 2:
+            debugPrint('Index 2');
             child.goBranch(2);
             break;
           default:
+            debugPrint('Default');
             child.goBranch(0);
         }
 

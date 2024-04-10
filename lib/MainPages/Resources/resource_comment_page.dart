@@ -19,6 +19,7 @@ class ResourceCommentPage extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
+        // this needs to be protected from being called multiple times
         final resource = cubit.getResourceById(id);
 
         //cubit.sortComments(state.commentSortState);

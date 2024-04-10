@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 
 class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
   const SkillTreeAppBarOverFlowMenu({super.key});
@@ -13,37 +14,94 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
         final isEditor = state.usersProfile?.editor ?? false;
         return PopupMenuButton<String>(
           itemBuilder: (context) {
-            if (state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
-              return [
-                // adding a filter option to select a category or a subcategory
-
-                const PopupMenuItem(
-                  value: 'Sort',
-                  child: Text('Sort'),
-                ),
-                const PopupMenuItem(
-                  value: 'Training Paths',
-                  child: Text('Training Paths'),
-                ),
-                if (!state.isGuest && isEditor)
+            switch (state.skillTreeNavigation) {
+              case SkillTreeNavigation.SkillList:
+                return [
                   const PopupMenuItem(
-                    value: 'Edit',
-                    child: Text('Toggle Edit Controls'),
+                    value: 'Sort',
+                    child: Text('Sort'),
                   ),
-              ];
-            } else {
-              return [
-                const PopupMenuItem(
-                  value: 'Skills',
-                  child: Text('Skills'),
-                ),
-                if (!state.isGuest && isEditor)
                   const PopupMenuItem(
-                    value: 'Edit',
-                    child: Text('Toggle Edit Controls'),
+                    value: 'Training Paths',
+                    child: Text('Training Paths'),
                   ),
-              ];
+                  if (!state.isGuest && isEditor)
+                    const PopupMenuItem(
+                      value: 'Edit',
+                      child: Text('Toggle Edit Controls'),
+                    ),
+                ];
+              case SkillTreeNavigation.TrainingPathList:
+                return [
+                  const PopupMenuItem(
+                    value: 'Skills',
+                    child: Text('Skills'),
+                  ),
+                  if (!state.isGuest && isEditor)
+                    const PopupMenuItem(
+                      value: 'Edit',
+                      child: Text('Toggle Edit Controls'),
+                    ),
+                ];
+              case SkillTreeNavigation.TrainingPath:
+                return [
+                  const PopupMenuItem(
+                    value: 'Skills',
+                    child: Text('Skills'),
+                  ),
+                  if (!state.isGuest && isEditor)
+                    const PopupMenuItem(
+                      value: 'Edit',
+                      child: Text('Toggle Edit Controls'),
+                    ),
+                ];
+              case SkillTreeNavigation.SkillLevel:
+                return [
+                  const PopupMenuItem(
+                    value: 'Skills',
+                    child: Text('Skills'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'Training Paths',
+                    child: Text('Training Paths'),
+                  ),
+                  if (!state.isGuest && isEditor)
+                    const PopupMenuItem(
+                      value: 'Edit',
+                      child: Text('Toggle Edit Controls'),
+                    ),
+                ];
             }
+
+            // if (state.skillTreeNavigation == SkillTreeNavigation.SkillList) {
+            //   return [
+            //     const PopupMenuItem(
+            //       value: 'Sort',
+            //       child: Text('Sort'),
+            //     ),
+            //     const PopupMenuItem(
+            //       value: 'Training Paths',
+            //       child: Text('Training Paths'),
+            //     ),
+            //     if (!state.isGuest && isEditor)
+            //       const PopupMenuItem(
+            //         value: 'Edit',
+            //         child: Text('Toggle Edit Controls'),
+            //       ),
+            //   ];
+            // } else {
+            //   return [
+            //     const PopupMenuItem(
+            //       value: 'Skills',
+            //       child: Text('Skills'),
+            //     ),
+            //     if (!state.isGuest && isEditor)
+            //       const PopupMenuItem(
+            //         value: 'Edit',
+            //         child: Text('Toggle Edit Controls'),
+            //       ),
+            //   ];
+            // }
           },
           onSelected: (value) {
             switch (value) {
@@ -55,10 +113,9 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
                 break;
               case 'Sort':
                 // open the sort dialog
-                _showSklillTreeSortDialog(
-                  cubit: cubit,
-                  state: state,
+                showDialog<AlertDialog>(
                   context: context,
+                  builder: (_) => const SkillSortDialog(),
                 );
                 break;
               case 'Training Paths':
@@ -70,105 +127,4 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
       },
     );
   }
-}
-
-void _showSklillTreeSortDialog({
-  required AppCubit cubit,
-  required AppState state,
-  required BuildContext context,
-}) {
-  showDialog<AlertDialog>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-        ],
-        title: const Text('Sort Skills'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Radio Buttons to select the skillTreeSortState
-            RadioListTile<SkillTreeSortState>(
-              title: const Text('All'),
-              value: SkillTreeSortState.All,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<SkillTreeSortState>(
-              title: const Text('Introductory'),
-              value: SkillTreeSortState.Introductory,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<SkillTreeSortState>(
-              title: const Text('Intermediate'),
-              value: SkillTreeSortState.Intermediate,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<SkillTreeSortState>(
-              title: const Text('Advanced'),
-              value: SkillTreeSortState.Advanced,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile(
-              value: SkillTreeSortState.Husbandry,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-              title: const Text('Husbandry'),
-            ),
-            RadioListTile(
-              value: SkillTreeSortState.In_Hand,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-              title: const Text('In Hand'),
-            ),
-            RadioListTile(
-              value: SkillTreeSortState.Mounted,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-              title: const Text('Mounted'),
-            ),
-            RadioListTile(
-              value: SkillTreeSortState.Other,
-              groupValue: state.skillTreeSortState,
-              onChanged: (value) {
-                cubit.skillTreeSortChanged(value!);
-                Navigator.of(context).pop();
-              },
-              title: const Text('Other'),
-            ),
-          ],
-        ),
-      );
-    },
-  );
 }

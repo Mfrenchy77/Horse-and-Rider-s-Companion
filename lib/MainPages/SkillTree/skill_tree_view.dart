@@ -19,55 +19,12 @@ class SkillTreeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final isSplitScreen = MediaQuery.of(context).size.width > 840;
         final cubit = context.read<AppCubit>();
         return Scaffold(
           appBar: AppBar(
             leading: BackButton(
               onPressed: () {
-                debugPrint('Skill Tree Back Pressed\n'
-                    'SkillTreeNavigationState: ${state.skillTreeNavigation}\n '
-                    'From profile: ${state.isFromProfile}\n '
-                    'From Training Path List: ${state.isFromTrainingPathList}\n '
-                    'From Training Path: ${state.isFromTrainingPath}');
-                if (isSplitScreen) {
-                  switch (context.read<AppCubit>().state.skillTreeNavigation) {
-                    case SkillTreeNavigation.TrainingPath:
-                      cubit.navigateToTrainingPathList();
-                      break;
-                    case SkillTreeNavigation.TrainingPathList:
-                      cubit.navigateToSkillsList();
-                      break;
-                    case SkillTreeNavigation.SkillList:
-                      cubit.changeIndex(0);
-                      break;
-                    case SkillTreeNavigation.SkillLevel:
-                      if (context
-                          .read<AppCubit>()
-                          .state
-                          .isFromTrainingPathList) {
-                        cubit.navigateToTrainingPathList();
-                      } else {
-                        cubit.changeIndex(0);
-                      }
-                      break;
-                  }
-                } else {
-                  switch (context.read<AppCubit>().state.skillTreeNavigation) {
-                    case SkillTreeNavigation.TrainingPath:
-                      cubit.navigateToTrainingPathList();
-                      break;
-                    case SkillTreeNavigation.TrainingPathList:
-                      cubit.navigateToSkillsList();
-                      break;
-                    case SkillTreeNavigation.SkillList:
-                      cubit.changeIndex(0);
-                      break;
-                    case SkillTreeNavigation.SkillLevel:
-                      cubit.navigateToSkillsList();
-                      break;
-                  }
-                }
+                _handleBackButton(context, state, cubit);
               },
             ),
             centerTitle: true,
@@ -119,5 +76,49 @@ class SkillTreeView extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+void _handleBackButton(BuildContext context, AppState state, AppCubit cubit) {
+  final isSplitScreen = MediaQuery.of(context).size.width > 840;
+  debugPrint('Skill Tree Back Pressed\n'
+      'SkillTreeNavigationState: ${state.skillTreeNavigation}\n '
+      'From profile: ${state.isFromProfile}\n '
+      'From Training Path List: ${state.isFromTrainingPathList}\n '
+      'From Training Path: ${state.isFromTrainingPath}');
+  if (isSplitScreen) {
+    switch (context.read<AppCubit>().state.skillTreeNavigation) {
+      case SkillTreeNavigation.TrainingPath:
+        cubit.navigateToTrainingPathList();
+        break;
+      case SkillTreeNavigation.TrainingPathList:
+        cubit.navigateToSkillsList();
+        break;
+      case SkillTreeNavigation.SkillList:
+        cubit.changeIndex(0);
+        break;
+      case SkillTreeNavigation.SkillLevel:
+        if (context.read<AppCubit>().state.isFromTrainingPathList) {
+          cubit.navigateToTrainingPathList();
+        } else {
+          cubit.changeIndex(0);
+        }
+        break;
+    }
+  } else {
+    switch (context.read<AppCubit>().state.skillTreeNavigation) {
+      case SkillTreeNavigation.TrainingPath:
+        cubit.navigateToTrainingPathList();
+        break;
+      case SkillTreeNavigation.TrainingPathList:
+        cubit.navigateToSkillsList();
+        break;
+      case SkillTreeNavigation.SkillList:
+        cubit.changeIndex(0);
+        break;
+      case SkillTreeNavigation.SkillLevel:
+        cubit.navigateToSkillsList();
+        break;
+    }
   }
 }

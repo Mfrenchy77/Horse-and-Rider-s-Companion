@@ -55,13 +55,13 @@ class ResourcesItem extends StatelessWidget {
               InkWell(
                 onTap: () {
                   debugPrint('Goto Resource: ${resource.name}');
-                  context.goNamed(
+                  context.pushNamed(
                     ResourceCommentPage.name,
                     pathParameters: {
                       ResourceCommentPage.pathParams: resource.id!,
                     },
                   );
-                  cubit.navigateToResourceComments(resource);
+                  //cubit.navigateToResourceComments(resource);
                 },
                 child: Card(
                   elevation: 8,
