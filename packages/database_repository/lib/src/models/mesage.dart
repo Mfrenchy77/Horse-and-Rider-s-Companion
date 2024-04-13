@@ -8,6 +8,7 @@ enum MessageState { UNREAD, READ }
 /// Possible message types
 enum MessageType {
   CHAT,
+  SUPPORT,
   EDIT_REQUEST,
   STUDENT_REQUEST,
   INSTRUCTOR_REQUEST,
@@ -67,7 +68,9 @@ class Message {
                     ? MessageType.INSTRUCTOR_REQUEST
                     : data?['messageType'] == 'STUDENT_REQUEST'
                         ? MessageType.STUDENT_REQUEST
-                        : MessageType.CHAT,
+                        : data?['messageType'] == 'SUPPORT'
+                            ? MessageType.SUPPORT
+                            : MessageType.CHAT,
         senderProfilePicUrl: data?['senderProfilePicUrl'] as String?,
         recipients:
             (data?['recipient'] as List?)?.map((e) => e as String?).toList(),
@@ -103,7 +106,9 @@ class Message {
                   ? MessageType.INSTRUCTOR_REQUEST
                   : data['messageType'] == 'STUDENT_REQUEST'
                       ? MessageType.STUDENT_REQUEST
-                      : MessageType.CHAT,
+                      : data['messageType'] == 'SUPPORT'
+                          ? MessageType.SUPPORT
+                          : MessageType.CHAT,
       senderProfilePicUrl: data['senderProfilePicUrl'] as String?,
       parties: (data['parties'] as List?)?.map((e) => e as String).toList(),
       recipients:
@@ -132,7 +137,9 @@ class Message {
                   ? 'EDIT_REQUEST'
                   : messageType == MessageType.STUDENT_REQUEST
                       ? 'STUDENT_REQUEST'
-                      : 'CHAT',
+                      : messageType == MessageType.SUPPORT
+                          ? 'SUPPORT'
+                          : 'CHAT',
       'messageState': messageState == MessageState.UNREAD ? 'UNREAD' : 'READ',
     };
   }
@@ -158,7 +165,9 @@ class Message {
                   ? 'EDIT_REQUEST'
                   : messageType == MessageType.STUDENT_REQUEST
                       ? 'STUDENT_REQUEST'
-                      : 'CHAT',
+                      : messageType == MessageType.SUPPORT
+                          ? 'SUPPORT'
+                          : 'CHAT',
       'messageState': messageState == MessageState.UNREAD ? 'UNREAD' : 'READ',
     };
   }

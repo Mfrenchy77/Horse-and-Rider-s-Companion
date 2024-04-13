@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/create_comment_dialog.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 class CommentReplyButton extends StatelessWidget {
   const CommentReplyButton({
@@ -18,8 +19,10 @@ class CommentReplyButton extends StatelessWidget {
   final RiderProfile? usersProfile;
   @override
   Widget build(BuildContext context) {
+    final isDark  = SharedPrefs().isDarkMode;
     return IconButton(
       icon: const Icon(Icons.reply),
+      color: isDark? Colors.grey.shade300 : Colors.black54,
       onPressed: () {
         if (usersProfile == null) {
           context.read<AppCubit>().createError('You must be logged in'

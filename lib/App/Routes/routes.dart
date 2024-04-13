@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
+import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Navigator/navigator_view.dart';
+import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
@@ -193,6 +195,18 @@ class Routes {
                         id: state
                             .pathParameters[ViewingProfilePage.pathParams]!,
                       ),
+                    ),
+                    // Privacy Policy
+                    GoRoute(
+                      name: PrivacyPolicyPage.name,
+                      path: PrivacyPolicyPage.path,
+                      builder: (context, state) => const PrivacyPolicyPage(),
+                    ),
+                    //About
+                    GoRoute(
+                      name: AboutPage.name,
+                      path: AboutPage.routeName,
+                      builder: (context, state) => const AboutPage(),
                     ),
                   ],
                 ),

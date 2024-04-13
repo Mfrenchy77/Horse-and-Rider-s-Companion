@@ -91,6 +91,7 @@ class ResourceInfoBar extends StatelessWidget {
 
                       ///   Description
                       child: ConstrainedBox(
+                        
                         constraints: BoxConstraints.loose(
                           const Size.fromHeight(300),
                         ),
@@ -107,6 +108,7 @@ class ResourceInfoBar extends StatelessWidget {
 
                   ///   Image
                   InkWell(
+                    key: const Key('ResourceImage'),
                     onTap: () => cubit.openResource(url: resource.url),
                     child: Tooltip(
                       message: 'Go to: ${resource.url}',

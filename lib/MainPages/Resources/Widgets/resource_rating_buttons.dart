@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/save_resource_button.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -16,16 +17,10 @@ class ResourceRatingButtons extends StatelessWidget {
   final Resource resource;
   @override
   Widget build(BuildContext context) {
-    var isPositiveSelected = false;
-    var isNegativeSelected = false;
-
     final isDark = SharedPrefs().isDarkMode;
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        final rater = cubit.getUserRatingForResource(resource);
-        isNegativeSelected = rater?.isCollapsed ?? false;
-        isPositiveSelected = rater?.isSelected ?? false;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -40,9 +35,11 @@ class ResourceRatingButtons extends StatelessWidget {
                         cubit.reccomendResource(resource: resource);
                       },
                 icon: Icon(
-                  isPositiveSelected ? Icons.thumb_up : Icons.thumb_up_outlined,
+                  cubit.isRatingPositive(resource)
+                      ? Icons.thumb_up
+                      : Icons.thumb_up_outlined,
                 ),
-                color: isPositiveSelected
+                color: cubit.isRatingPositive(resource)
                     ? HorseAndRidersTheme().getTheme().colorScheme.primary
                     : isDark
                         ? Colors.grey.shade300
@@ -68,11 +65,11 @@ class ResourceRatingButtons extends StatelessWidget {
                         cubit.dontReccomendResource(resource: resource);
                       },
                 icon: Icon(
-                  isNegativeSelected
+                  cubit.isRatingNegative(resource)
                       ? Icons.thumb_down
                       : Icons.thumb_down_outlined,
                 ),
-                color: isNegativeSelected
+                color: cubit.isRatingNegative(resource)
                     ? HorseAndRidersTheme().getTheme().colorScheme.primary
                     : isDark
                         ? Colors.grey.shade300
@@ -100,6 +97,32 @@ class ResourceRatingButtons extends StatelessWidget {
                     : const Icon(HorseAndRiderIcons.horseSkillIcon),
                 color: isDark ? Colors.grey.shade300 : Colors.black54,
               ),
+            ),
+            // pop up overflow menu with the option to report the resource
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert,
+                color: isDark ? Colors.grey.shade300 : Colors.black54,
+              ),
+              onSelected: (value) {
+                switch (value) {
+                  case 'Report':
+                    debugPrint('Report: ${resource.name}');
+                    showDialog<AlertDialog>(
+                      context: context,
+                      builder: (context) => const SupportMessageDialog(),
+                    );
+                    break;
+                }
+              },
+              itemBuilder: (context) {
+                return <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'Report',
+                    child: Text('Report'),
+                  ),
+                ];
+              },
             ),
           ],
         );

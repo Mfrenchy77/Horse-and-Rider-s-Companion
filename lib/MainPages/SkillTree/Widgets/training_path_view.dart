@@ -33,6 +33,7 @@ class TrainingPathView extends StatelessWidget {
                   Visibility(
                     visible: state.isEdit,
                     child: IconButton(
+                      tooltip: 'Edit Training Path',
                       icon: const Icon(Icons.edit, size: 20),
                       onPressed: () => showDialog<CreateTrainingPathDialog>(
                         context: context,

@@ -25,68 +25,61 @@ class SkillItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+            ),
+          ],
+          color: levelState == LevelState.PROFICIENT
+              ? verified ?? false
+                  ? Colors.yellow
+                  : Colors.blue
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
+          gradient: levelState == LevelState.LEARNING
+              ? LinearGradient(
+                  stops: const [0.5, 0.5],
+                  colors: [
+                    if (verified ?? false) Colors.yellow else Colors.blue,
+                    Colors.transparent,
+                  ],
+                )
+              : null,
         ),
-        elevation: 1,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: levelState == LevelState.PROFICIENT
-                ? verified ?? false
-                    ? Colors.yellow
-                    : Colors.blue
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            gradient: levelState == LevelState.LEARNING
-                ? LinearGradient(
-                    stops: const [0.5, 0.5],
-                    colors: [
-                      if (verified ?? false) Colors.yellow else Colors.blue,
-                      Colors.transparent,
-                    ],
-                  )
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 8,
-                  top: 8,
-                  left: 16,
-                  right: 16,
-                ),
-                child: Text(
-                  name ?? '',
-                ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 8,
+                top: 8,
+                left: 16,
+                right: 16,
               ),
-              Visibility(
-                visible: isEditState && !isGuest,
-                child: PopupMenuButton<String>(
-                  iconSize: 18,
-                  itemBuilder: (context) {
-                    return [
-                      PopupMenuItem(
-                        onTap: onEdit,
-                        child: const Text('Edit'),
-                      ),
-                    ];
-                  },
-                ),
+              child: Text(
+                name ?? '',
               ),
-            ],
-          ),
+            ),
+            Visibility(
+              visible: isEditState && !isGuest,
+              child: PopupMenuButton<String>(
+                iconSize: 18,
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem(
+                      onTap: onEdit,
+                      child: const Text('Edit'),
+                    ),
+                  ];
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
-
-/// The color of the text in the skill item depending on the level state
-/// and if the skill is verified black for everyting except, proficient
-Color _skillItemTextColor(LevelState levelState) {
-  return levelState == LevelState.PROFICIENT ? Colors.white70 : Colors.black;
 }

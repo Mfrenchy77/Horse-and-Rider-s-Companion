@@ -16,6 +16,8 @@ class SharedPrefs {
   /// Constants to use as keys for storing preferences.
   static const String PREF_DARK_MODE = 'ThemeMode';
   static const String PREF_SEASONAL_MODE = 'SeasonalMode';
+  static const String PREF_IS_FIRST_LAUNCH = 'IsFirstLaunch';
+  static const String PREF_SHOW_ONBOARDING = 'ShowOnboarding';
   static const String PREF_HEIGHT_PREFERENCE = 'HeightPreference';
   static const String PREF_WEIGHT_PREFERENCE = 'WeightPreference';
 
@@ -40,6 +42,35 @@ class SharedPrefs {
   /// Sets the user's preference for seasonal mode.
   void setSeasonalMode({required bool isSeasonal}) {
     _sharedPrefs.setBool(PREF_SEASONAL_MODE, isSeasonal);
+  }
+
+  /// Retrieves the user's preference for showing the onboarding screen.
+  /// Returns `true` if the onboarding screen should be shown, `false` otherwise.
+  /// Defaults to `true` if the preference has not been set.
+  bool showOnboarding() {
+    return _sharedPrefs.getBool(PREF_SHOW_ONBOARDING) ?? true;
+  }
+
+  /// Sets the user's preference for showing the onboarding screen.
+  void setShowOnboarding({required bool show}) {
+    _sharedPrefs.setBool(PREF_SHOW_ONBOARDING, show);
+  }
+
+  /// Retrieves the user's preference for the first launch of the app.
+  /// Returns `true` if the app is being launched for the first time, `false`
+  ///  otherwise defaults to `true` if the preference has not been set.
+  /// This preference is set to `false` after the first launch.
+  bool isFirstLaunch() {
+    return _sharedPrefs.getBool(PREF_IS_FIRST_LAUNCH) ?? true;
+  }
+
+  /// Sets the user's preference for the first launch of the app.
+  /// This preference is set to `false` after the first launch.
+  /// Defaults to `true` if the preference has not been set.
+  /// Returns `true` if the app is being launched for the first time,
+  ///  `false` otherwise defaults to `true` if the preference has not been set.
+  void setFirstLaunch({required bool isFirst}) {
+    _sharedPrefs.setBool(PREF_IS_FIRST_LAUNCH, isFirst);
   }
 
   /// Determines if the dark mode is enabled based on the user's preference.

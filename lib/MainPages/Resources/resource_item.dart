@@ -100,7 +100,7 @@ class ResourcesItem extends StatelessWidget {
                         Visibility(
                           visible: isResourceList,
                           child: ResourceRatingButtons(
-                            key: const Key('rating_buttons'),
+                            key: const Key('ResourceRatingButtons'),
                             resource: resource,
                           ),
                         ),

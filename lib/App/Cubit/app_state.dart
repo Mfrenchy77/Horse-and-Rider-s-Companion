@@ -138,8 +138,10 @@ class AppState extends Equatable {
     this.resources = const [],
     this.isFromProfile = false,
     this.searchList = const [],
+    this.showOnboarding = false,
     this.isProfileSetup = false,
     this.sortedSkills = const [],
+    this.showFirstLaunch = false,
     this.isBannerAdReady = false,
     this.trainingPaths = const [],
     this.viewingProfielEmail = '',
@@ -225,6 +227,12 @@ class AppState extends Equatable {
 
   /// Whether the user need to finish setting up their profile
   final bool isProfileSetup;
+
+  /// Wheter or not we need to show the onboarding screens
+  final bool showOnboarding;
+
+  /// Whether the app is in the first launch state
+  final bool showFirstLaunch;
 
   /// Whether the BannerAd is ready to be shown.
   final bool isBannerAdReady;
@@ -337,7 +345,9 @@ class AppState extends Equatable {
     String? messageText,
     bool? isFromProfile,
     bool? isProfileSetup,
+    bool? showOnboarding,
     String? errorMessage,
+    bool? showFirstLaunch,
     bool? isBannerAdReady,
     List<Message>? messages,
     List<Skill?>? allSkills,
@@ -404,9 +414,11 @@ class AppState extends Equatable {
       trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: ownersProfile ?? this.ownersProfile,
       isFromProfile: isFromProfile ?? this.isFromProfile,
+      showOnboarding: showOnboarding ?? this.showOnboarding,
       isProfileSetup: isProfileSetup ?? this.isProfileSetup,
       savedResources: savedResources ?? this.savedResources,
       viewingProfile: viewingProfile ?? this.viewingProfile,
+      showFirstLaunch: showFirstLaunch ?? this.showFirstLaunch,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       resourceComments: resourceComments ?? this.resourceComments,
       commentSortState: commentSortState ?? this.commentSortState,
@@ -462,8 +474,10 @@ class AppState extends Equatable {
         isFromProfile,
         trainingPaths,
         savedResources,
+        showOnboarding,
         viewingProfile,
         isProfileSetup,
+        showFirstLaunch,
         isBannerAdReady,
         resourceComments,
         commentSortState,

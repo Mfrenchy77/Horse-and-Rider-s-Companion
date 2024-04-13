@@ -32,22 +32,6 @@ class ResourcesSortDialog extends StatelessWidget {
               );
             }).toList(),
           ),
-
-          // DropdownButton<ResourcesSortStatus>(
-          //   value: state.resourcesSortStatus,
-          //   onChanged: (ResourcesSortStatus? newValue) {
-          //     if (newValue != null) {
-          //       cubit.updateResourceSortStatus(newValue);
-          //       Navigator.of(context).pop();
-          //     }
-          //   },
-          //   items: ResourcesSortStatus.values.map((ResourcesSortStatus status) {
-          //     return DropdownMenuItem<ResourcesSortStatus>(
-          //       value: status,
-          //       child: Text(_getSortOptionLabel(status)),
-          //     );
-          //   }).toList(),
-          // ),
         );
       },
     );

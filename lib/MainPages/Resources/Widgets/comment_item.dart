@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_negative_rating_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_positive_rating_button.dart';
@@ -89,6 +90,7 @@ class _CommentItemState extends State<CommentItem> {
                               padding: const EdgeInsets.only(left: 5, right: 5),
                               child: Row(
                                 children: [
+                                  // Rating
                                   Text(
                                     widget.comment.rating.toString(),
                                     style: TextStyle(
@@ -107,6 +109,7 @@ class _CommentItemState extends State<CommentItem> {
                                     ),
                                   ),
                                   smallGap(),
+                                  // User name
                                   Text(
                                     widget.comment.user?.name ?? '',
                                     textAlign: TextAlign.left,
@@ -116,6 +119,7 @@ class _CommentItemState extends State<CommentItem> {
                                   ),
                                   const Spacer(),
                                   smallGap(),
+                                  // Time since comment was made
                                   Text(
                                     calculateTimeDifferenceBetween(
                                       referenceDate: widget.comment.date,
@@ -125,7 +129,7 @@ class _CommentItemState extends State<CommentItem> {
                               ),
                             ),
 
-                            // This is the text that will show the comment
+                            // Comment
                             Padding(
                               padding: const EdgeInsets.only(left: 5, right: 5),
                               child: Text(
@@ -147,70 +151,120 @@ class _CommentItemState extends State<CommentItem> {
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
                                     // Positive rating button
-                                    CommentPositiveRatingButton(
-                                      onTap: _toggleActionsVisibility,
-                                      key: const Key(
-                                        'positive_rating_button',
+                                    Expanded(
+                                      child: CommentPositiveRatingButton(
+                                        onTap: _toggleActionsVisibility,
+                                        key: const Key(
+                                          'positive_rating_button',
+                                        ),
+                                        comment: widget.comment,
+                                        resource: commentResource,
+                                        usersProfile: state.usersProfile,
                                       ),
-                                      comment: widget.comment,
-                                      resource: commentResource,
-                                      usersProfile: state.usersProfile,
                                     ),
                                     // Negative rating button
-                                    CommentNegativeButton(
-                                      onTap: _toggleActionsVisibility,
-                                      key: const Key(
-                                        'negative_rating_button',
+                                    Expanded(
+                                      child: CommentNegativeButton(
+                                        onTap: _toggleActionsVisibility,
+                                        key: const Key(
+                                          'negative_rating_button',
+                                        ),
+                                        comment: widget.comment,
+                                        resource: commentResource,
+                                        usersProfile: state.usersProfile,
                                       ),
-                                      comment: widget.comment,
-                                      resource: commentResource,
-                                      usersProfile: state.usersProfile,
                                     ),
                                     // if not user show a button to link
                                     // to the commenters profile
                                     if (state.usersProfile?.email !=
                                         widget.comment.user?.id)
-                                      IconButton(
-                                        tooltip: 'Open '
-                                            '${widget.comment.user?.name}'
-                                            "'s Profile",
-                                        onPressed: () => context.pushNamed(
-                                          ViewingProfilePage.name,
-                                          pathParameters: {
-                                            ViewingProfilePage.pathParams:
-                                                widget.comment.user!.id!,
-                                          },
+                                      Expanded(
+                                        child: IconButton(
+                                          color: isDark
+                                              ? Colors.grey.shade300
+                                              : Colors.black54,
+                                          tooltip: 'Open '
+                                              '${widget.comment.user?.name}'
+                                              "'s Profile",
+                                          onPressed: () => context.pushNamed(
+                                            ViewingProfilePage.name,
+                                            pathParameters: {
+                                              ViewingProfilePage.pathParams:
+                                                  widget.comment.user!.id!,
+                                            },
+                                          ),
+                                          icon: const Icon(Icons.person),
                                         ),
-                                        icon: const Icon(Icons.person),
                                       ),
                                     // Reply button
-                                    CommentReplyButton(
-                                      onTap: _toggleActionsVisibility,
-                                      key: const Key('reply_button'),
-                                      comment: widget.comment,
-                                      resource: commentResource,
-                                      usersProfile: state.usersProfile,
+                                    Expanded(
+                                      child: CommentReplyButton(
+                                        onTap: _toggleActionsVisibility,
+                                        key: const Key('reply_button'),
+                                        comment: widget.comment,
+                                        resource: commentResource,
+                                        usersProfile: state.usersProfile,
+                                      ),
                                     ),
                                     // a edit button if the user is the
                                     //owner of the comment
                                     if (state.usersProfile?.email ==
                                         widget.comment.user?.id)
-                                      IconButton(
-                                        tooltip: 'Edit Comment',
-                                        onPressed: () {
-                                          showDialog<AlertDialog>(
-                                            context: context,
-                                            builder: (context) =>
-                                                CreateCommentDialog(
-                                              isEdit: true,
-                                              resource: commentResource,
-                                              usersProfile: state.usersProfile!,
-                                              comment: widget.comment,
-                                            ),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.edit),
+                                      Expanded(
+                                        child: IconButton(
+                                          color: isDark
+                                              ? Colors.grey.shade300
+                                              : Colors.black54,
+                                          tooltip: 'Edit Comment',
+                                          onPressed: () {
+                                            showDialog<AlertDialog>(
+                                              context: context,
+                                              builder: (context) =>
+                                                  CreateCommentDialog(
+                                                isEdit: true,
+                                                resource: commentResource,
+                                                usersProfile:
+                                                    state.usersProfile!,
+                                                comment: widget.comment,
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(Icons.edit),
+                                        ),
                                       ),
+                                    // overflow menu with report the comment
+                                    PopupMenuButton(
+                                      icon: Icon(
+                                        Icons.more_vert,
+                                        color: isDark
+                                            ? Colors.grey.shade300
+                                            : Colors.black54,
+                                      ),
+                                      onSelected: (String value) {
+                                        switch (value) {
+                                          case 'Report':
+                                            _toggleActionsVisibility();
+                                            debugPrint('Report Comment: '
+                                                '${widget.comment.id}');
+                                            showDialog<AlertDialog>(
+                                              context: context,
+                                              builder: (context) =>
+                                                  const SupportMessageDialog(),
+                                            );
+                                            break;
+                                          default:
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (BuildContext context) {
+                                        return [
+                                          const PopupMenuItem<String>(
+                                            value: 'Report',
+                                            child: Text('Report'),
+                                          ),
+                                        ];
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),

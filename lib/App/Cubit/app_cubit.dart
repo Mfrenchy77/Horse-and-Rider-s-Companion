@@ -72,6 +72,7 @@ class AppCubit extends Cubit<AppState> {
           '\nUserEmail: ${user?.email} '
           '\nUserGuest: ${user?.isGuest} '
           '\nUserId: ${user?.id}');
+      _checkFirstLaunch();
       if (user != null && user.id.isNotEmpty) {
         emit(state.copyWith(pageStatus: AppPageStatus.loading));
         debugPrint('User is authenticated');
@@ -81,6 +82,39 @@ class AppCubit extends Cubit<AppState> {
         emit(state.copyWith(isGuest: true, pageStatus: AppPageStatus.loaded));
       }
     });
+  }
+
+  /// Checks if the user is a first time user and launces the About Page
+  void _checkFirstLaunch() {
+    debugPrint('Checking First Launch');
+    final firstTime = SharedPrefs().isFirstLaunch();
+    if (firstTime) {
+      debugPrint('First Launch: $firstTime');
+      emit(state.copyWith(showFirstLaunch: true));
+    } else {
+      debugPrint('Not First Launch');
+    }
+  }
+
+  /// Sets the First Launch to false
+  Future<void> setFirstLaunch() async {
+    debugPrint('Setting First Launch to false');
+    SharedPrefs().setFirstLaunch(isFirst: false);
+    emit(state.copyWith(showFirstLaunch: false));
+  }
+
+  /// Checks if the users has viewed the Onboarding
+  void _checkOnboarding() {
+    debugPrint('Checking Onboarding');
+
+    emit(state.copyWith(showOnboarding: SharedPrefs().showOnboarding()));
+  }
+
+  /// Sets the Onboarding to false
+  void setOnboarding() {
+    debugPrint('Setting Onboarding to false');
+    SharedPrefs().setShowOnboarding(show: false);
+    emit(state.copyWith(showOnboarding: false));
   }
 
   void _getUsersProfile({required User user}) {
@@ -114,6 +148,7 @@ class AppCubit extends Cubit<AppState> {
         final profile = event.data() as RiderProfile?;
         if (profile != null) {
           debugPrint('User Profile exists: ${profile.email}');
+          _checkOnboarding();
           emit(
             state.copyWith(
               user: user,
@@ -279,19 +314,6 @@ class AppCubit extends Cubit<AppState> {
         ),
       );
     }
-
-    // emit(
-    //   state.copyWith(
-    //     // ignore: avoid_redundant_argument_values
-    //     viewingProfile: null,
-    //     // ignore: avoid_redundant_argument_values
-    //     horseProfile: null,
-    //     viewingProfielEmail: '',
-    //     isForRider: true,
-    //     isViewing: false,
-    //   ),
-    // );
-    // navigateToProfile();
   }
 
   /// Updates the skill level for the rider
@@ -1592,52 +1614,6 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  // /// Sorts the skills based on the difficulty
-  // List<Skill?> sortedSkills(List<Skill?> skills) {
-  //   debugPrint('Sorting Skills by ${state.difficultyState}');
-  //   const difficultyOrder = {
-  //     DifficultyState.Introductory: 1,
-  //     DifficultyState.Intermediate: 2,
-  //     DifficultyState.Advanced: 3,
-  //   };
-  //   switch (state.difficultyState) {
-  //     case DifficultyState.Introductory:
-  //       return skills
-  //           .where(
-  //             (element) => element?.difficulty == DifficultyState.Introductory,
-  //           )
-  //           .toList()
-  //         ..sort(
-  //           (a, b) => difficultyOrder[a?.difficulty]!
-  //               .compareTo(difficultyOrder[b?.difficulty]!),
-  //         );
-  //     case DifficultyState.Intermediate:
-  //       return skills
-  //           .where(
-  //             (element) => element?.difficulty == DifficultyState.Intermediate,
-  //           )
-  //           .toList()
-  //         ..sort(
-  //           (a, b) => difficultyOrder[a?.difficulty]!
-  //               .compareTo(difficultyOrder[b?.difficulty]!),
-  //         );
-  //     case DifficultyState.Advanced:
-  //       return skills
-  //           .where((element) => element?.difficulty == DifficultyState.Advanced)
-  //           .toList()
-  //         ..sort(
-  //           (a, b) => difficultyOrder[a?.difficulty]!
-  //               .compareTo(difficultyOrder[b?.difficulty]!),
-  //         );
-  //     case DifficultyState.All:
-  //       return skills
-  //         ..sort(
-  //           (a, b) => difficultyOrder[a?.difficulty]!
-  //               .compareTo(difficultyOrder[b?.difficulty]!),
-  //         );
-  //   }
-  // }
-
   /// Returns the Search List for the SkillTree state
   List<String?> _getSearchList() {
     switch (state.skillTreeNavigation) {
@@ -1971,7 +1947,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   ///   Save [resource] to the users profile saved resources list
-  void saveResource({required Resource resource}) {
+  Future<void> saveResource({required Resource resource}) async {
     final currentUsersProfile = state.usersProfile;
     if (currentUsersProfile != null) {
       List<String> savedResourcesList;
@@ -1989,8 +1965,18 @@ class AppCubit extends Cubit<AppState> {
       }
       currentUsersProfile.savedResourcesList = savedResourcesList;
 
-      _riderProfileRepository.createOrUpdateRiderProfile(
+      await _riderProfileRepository.createOrUpdateRiderProfile(
         riderProfile: currentUsersProfile,
+      );
+      // create message notifiying if added or removed
+      final message = savedResourcesList.contains(resource.id)
+          ? 'Added "${resource.name}" to saved resources'
+          : 'Removed "${resource.name}" from saved resources';
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: message,
+        ),
       );
     } else {
       // Handle the case where the user profile is not available
@@ -2011,18 +1997,42 @@ class AppCubit extends Cubit<AppState> {
     return rating?.isSelected ?? false;
   }
 
+  /// Determines if user has rated the [resource] negatively or not
+  bool isRatingNegative(Resource resource) {
+    final rating = getUserRatingForResource(resource);
+    return rating?.isCollapsed ?? false;
+  }
+
   ///  User has clicked the recommend [resource] button
-  void reccomendResource({required Resource resource}) {
+  Future<void> reccomendResource({required Resource resource}) async {
     final editedresource = resource;
     _setNewPositiveRating(resource: editedresource);
-    _resourcesRepository.createOrUpdateResource(resource: editedresource);
+    await _resourcesRepository.createOrUpdateResource(resource: editedresource);
+    final message = isRatingPositive(resource)
+        ? 'Added a positive Rating to "${resource.name}"'
+        : 'Removed positive Rating from "${resource.name}"';
+    emit(
+      state.copyWith(
+        isMessage: true,
+        errorMessage: message,
+      ),
+    );
   }
 
   ///  User has clicked the dont recommend [resource] button
-  void dontReccomendResource({required Resource resource}) {
+  Future<void> dontReccomendResource({required Resource resource}) async {
     final editedresource = resource;
     _setNewNegativeRating(resource: editedresource);
-    _resourcesRepository.createOrUpdateResource(resource: editedresource);
+    await _resourcesRepository.createOrUpdateResource(resource: editedresource);
+    final message = isRatingNegative(resource)
+        ? 'Negatively Rated "${resource.name}"'
+        : 'Removed negative Rating from "${resource.name}"';
+    emit(
+      state.copyWith(
+        isMessage: true,
+        errorMessage: message,
+      ),
+    );
   }
 
   ///   Sets the new Rating on the [resource] based on whether or not they rated
@@ -2244,6 +2254,7 @@ class AppCubit extends Cubit<AppState> {
         recipients: memberNames,
         subject: 'Support Message',
         message: state.errorMessage,
+        messageType: MessageType.SUPPORT,
         sender: state.usersProfile!.name,
         senderProfilePicUrl: state.usersProfile?.picUrl,
         messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -2531,6 +2542,9 @@ class AppCubit extends Cubit<AppState> {
             break;
           case MessageType.CHAT:
             debugPrint('CHAT');
+            break;
+          case MessageType.SUPPORT:
+            debugPrint('SUPPORT');
             break;
         }
       }

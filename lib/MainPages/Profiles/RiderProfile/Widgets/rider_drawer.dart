@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
+import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
@@ -176,6 +179,7 @@ class UserProfileDrawer extends StatelessWidget {
                 thickness: 1,
               ),
 
+// Settings
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('Settings'),
@@ -187,6 +191,20 @@ class UserProfileDrawer extends StatelessWidget {
                 },
               ),
 
+              // About
+              ListTile(
+                leading: const Icon(Icons.info),
+                title: const Text('About'),
+                onTap: () {
+                  //closes the drawer
+                  Navigator.pop(context);
+                  //opens the about page
+                  context.goNamed(AboutPage.name);
+                },
+              ),
+              smallGap(),
+
+              // Email Support
               ListTile(
                 leading: const Icon(
                   Icons.help,
@@ -206,6 +224,17 @@ class UserProfileDrawer extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              smallGap(),
+              // Privacy Policy
+              TextButton(
+                onPressed: () {
+                  //closes the drawer
+                  Navigator.pop(context);
+                  //opens the privacy policy page
+                  context.goNamed(PrivacyPolicyPage.name);
+                },
+                child: const Text('Privacy Policy'),
               ),
             ],
           ),

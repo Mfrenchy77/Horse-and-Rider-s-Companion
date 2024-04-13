@@ -5,8 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
+import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// This is the reusable navigator that shows
@@ -32,12 +34,34 @@ class NavigatorView extends StatelessWidget {
           previous.errorMessage != current.errorMessage ||
           previous.isMessage != current.isMessage ||
           previous.isEmailVerification != current.isEmailVerification ||
-          previous.isProfileSetup != current.isProfileSetup,
+          previous.isProfileSetup != current.isProfileSetup ||
+          previous.showFirstLaunch != current.showFirstLaunch,
       listener: (context, state) {
         debugPrint('NavigatorView Listener Called');
         if (!context.mounted) return;
         final cubit = context.read<AppCubit>();
-// main Navigation through index uses  child.goBranch(index)
+
+        // First Launch
+        if (state.showFirstLaunch) {
+          debugPrint('First Launch Called');
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            if (!context.mounted) return;
+            const time = Duration(milliseconds: 200);
+            if (timeStamp < time) {
+              GoRouter.of(context)
+                  .pushNamed(AboutPage.name)
+                  .then((value) => cubit.setFirstLaunch());
+            } else {
+              debugPrint('First Launch already shown: $timeStamp');
+            }
+          });
+        }
+
+        // Onboarding
+        if (state.showOnboarding) {
+          debugPrint('Onboarding Called');
+        }
+
         // Navigation
         switch (state.index) {
           case 0:
@@ -89,7 +113,8 @@ class NavigatorView extends StatelessWidget {
                     state.errorMessage,
                     style: const TextStyle(color: Colors.white),
                   ),
-                  backgroundColor: Colors.green,
+                  backgroundColor:
+                      HorseAndRidersTheme().getTheme().primaryColor,
                 ),
               ).closed.then((value) {
                 if (!context.mounted) return;
