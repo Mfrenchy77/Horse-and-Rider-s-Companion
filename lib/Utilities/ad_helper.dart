@@ -1,4 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart';
 
 class AdHelper {
   static String get bannerAdUnitId {
@@ -11,5 +15,32 @@ class AdHelper {
       // TODO(mfrenchy77): implement Web ad here
       throw UnsupportedError('Unsupported platform');
     }
+  }
+}
+
+class WebAdBanner extends StatelessWidget {
+  WebAdBanner({super.key}) {
+    // Register the HTML factory
+    ui.platformViewRegistry.registerViewFactory(
+      viewType,
+      (int viewId) => IFrameElement()
+        ..width = '100%'
+        ..height = '100%'
+        ..src = 'adsense.html'
+        ..style.border = 'none',
+    );
+  }
+  final String viewType = 'adsense-html-container';
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: 75,
+        maxWidth: MediaQuery.of(context).size.width,
+      ),
+      child: HtmlElementView(
+        viewType: viewType,
+      ),
+    );
   }
 }

@@ -5,7 +5,6 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillsListView extends StatelessWidget {
@@ -102,10 +101,7 @@ class SkillsListView extends StatelessWidget {
                                 );
                             },
                             onEdit: () {
-                              if (skill?.lastEditBy ==
-                                      state.usersProfile?.email ||
-                                  AuthorizedEmails.emails
-                                      .contains(state.usersProfile?.email)) {
+                              if (cubit.canEditSkill(skill!)) {
                                 showDialog<CreateSkillDialog>(
                                   context: context,
                                   builder: (context) => CreateSkillDialog(
@@ -120,7 +116,8 @@ class SkillsListView extends StatelessWidget {
                               } else {
                                 // TODO: Show contact admin or creator dialog
                                 cubit.createError(
-                                  'Only the creator can edit this skill.',
+                                  'You do not have permission'
+                                  ' to edit this skill',
                                 );
                               }
                             },

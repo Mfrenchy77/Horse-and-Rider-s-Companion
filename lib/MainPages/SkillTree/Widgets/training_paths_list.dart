@@ -84,17 +84,28 @@ class TrainingPathListView extends StatelessWidget {
                                       PopupMenuItem(
                                         child: const Text('Edit'),
                                         onTap: () {
-                                          showDialog<CreateTrainingPathDialog>(
-                                            context: context,
-                                            builder: (context) =>
-                                                CreateTrainingPathDialog(
-                                              usersProfile: state.usersProfile!,
-                                              trainingPath: trainingPath,
-                                              isEdit: true,
-                                              allSkills: state.allSkills,
-                                              isForRider: true,
-                                            ),
-                                          );
+                                          if (cubit.canEditTrainingPath(
+                                            trainingPath!,
+                                          )) {
+                                            showDialog<
+                                                CreateTrainingPathDialog>(
+                                              context: context,
+                                              builder: (context) =>
+                                                  CreateTrainingPathDialog(
+                                                usersProfile:
+                                                    state.usersProfile!,
+                                                trainingPath: trainingPath,
+                                                isEdit: true,
+                                                allSkills: state.allSkills,
+                                                isForRider: true,
+                                              ),
+                                            );
+                                          } else {
+                                            cubit.createError(
+                                              'You do not have permission to'
+                                              ' edit this training path',
+                                            );
+                                          }
                                         },
                                       ),
                                     ],

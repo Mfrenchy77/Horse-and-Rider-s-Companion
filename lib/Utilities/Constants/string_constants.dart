@@ -12,6 +12,7 @@ class StringConstants {
 class AuthorizedEmails {
   static const List<String> emails = [
     'horseandriderscompanion@gmail.com',
+    'frenchfriedtechnology@gmail.com',
     'mfrenchy77@gmail.com',
   ];
 }

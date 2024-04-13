@@ -38,13 +38,7 @@ class SkillNodeCard extends StatelessWidget {
                     ),
                   );
                 },
-                onEdit: () {
-                  cubit.navigateToSkillLevel(
-                    skill: state.allSkills.firstWhere(
-                      (element) => element?.skillName == skillNode.name,
-                    ),
-                  );
-                },
+                onEdit: (){},
                 isGuest: state.isGuest,
                 verified: isVerified(
                   horseProfile: state.horseProfile,

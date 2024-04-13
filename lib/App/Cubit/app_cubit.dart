@@ -1186,7 +1186,7 @@ class AppCubit extends Cubit<AppState> {
 
 /* **************************************************************************
 
-******************************* Skills Tree **********************************
+******************************* Skill Tree **********************************
 
 ***************************************************************************** */
 
@@ -1237,6 +1237,14 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Whether or not a user can edit a training path or not.
+  ///  Based on whether they have created it or their email
+  ///  is in the admin list
+  bool canEditTrainingPath(TrainingPath trainingPath) {
+    return state.usersProfile?.email == trainingPath.lastEditBy ||
+        AuthorizedEmails.emails.contains(state.usersProfile?.email);
+  }
+
   void _getResources() {
     debugPrint('Get Resources Called');
     if (state.resources.isEmpty) {
@@ -1250,6 +1258,13 @@ class AppCubit extends Cubit<AppState> {
     } else {
       debugPrint('Resources already retrieved');
     }
+  }
+
+  /// Whether or not a user can edit a skill or not. Based on whether they
+  /// have created it or their email is in the admin list
+  bool canEditSkill(Skill skill) {
+    return state.usersProfile?.email == skill.lastEditBy ||
+        AuthorizedEmails.emails.contains(state.usersProfile?.email);
   }
 
   Skill getSkillFromSkillName(String skillName) {
