@@ -5,7 +5,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
@@ -13,6 +12,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialo
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
@@ -60,7 +60,7 @@ class AddHorseDialog extends StatelessWidget {
         ),
         child: BlocBuilder<AddHorseDialogCubit, AddHorseDialogState>(
           builder: (context, state) {
-            if (state.status == FormzStatus.submissionSuccess) {
+            if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
 
@@ -138,7 +138,6 @@ class AddHorseDialog extends StatelessWidget {
 
                       ///   Horse Height
                       HorseHeightField(
-                      
                         controller: TextEditingController(),
                       ),
                       gap(),
@@ -185,7 +184,7 @@ class AddHorseDialog extends StatelessWidget {
 }
 
 Widget errorText({required AddHorseDialogState state}) {
-  if (state.status == FormzStatus.submissionFailure) {
+  if (state.status == FormStatus.failure) {
     return Text(
       state.error,
       style: const TextStyle(
@@ -233,7 +232,7 @@ Widget _horseSubmitButton({
                 ? context.read<AddHorseDialogCubit>().editHorseProfile()
                 : context.read<AddHorseDialogCubit>().createHorseProfile();
           },
-    child: state.status == FormzStatus.submissionInProgress
+    child: state.status == FormStatus.submitting
         ? const CircularProgressIndicator()
         : Text(
             isEdit
@@ -335,7 +334,6 @@ Widget _horseBreed({
   final breedController = TextEditingController()..text = state.breed.value;
   return TypeAheadField<String>(
     hideOnEmpty: true,
-    
     controller: breedController,
     suggestionsCallback: (pattern) {
       return HorseDetails.breeds
@@ -468,7 +466,6 @@ Widget _horseGender({
     items: HorseDetails.genders
         .map(
           (e) => DropdownMenuItem(
-
             value: e,
             child: Text(e),
           ),
@@ -812,7 +809,6 @@ Widget _horsePurchasePrice({
   );
 }
 
-//FIXME: Lets make this centemeter by default and hands by choice in the settings
 Widget _horseHeight({
   required BuildContext buildContext,
   required AddHorseDialogState state,

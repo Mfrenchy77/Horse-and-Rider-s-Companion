@@ -3,13 +3,13 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 class MesssageContactsSearchDialog extends StatelessWidget {
   const MesssageContactsSearchDialog({
@@ -36,7 +36,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
         ),
         child: BlocListener<NewGroupDialogCubit, NewGroupDialogState>(
           listener: (context, state) {
-            if (state.status == FormzStatus.submissionSuccess) {
+            if (state.status == FormStatus.success) {
               context.read<AppCubit>().setConversation(state.id);
               context.goNamed(
                 MessagePage.name,
@@ -77,7 +77,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
                   ],
                   insetPadding: const EdgeInsets.all(10),
                   scrollable: true,
-                  content: state.status == FormzStatus.submissionInProgress
+                  content: state.status == FormStatus.submitting
                       ? const CircularProgressIndicator()
                       : Column(
                           children: [

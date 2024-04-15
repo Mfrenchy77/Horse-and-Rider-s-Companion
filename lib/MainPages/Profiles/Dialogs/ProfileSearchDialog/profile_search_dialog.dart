@@ -1,7 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
@@ -9,6 +8,7 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/Cubit/profile_search_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// A Dialog that allows the user to search for a Rider or Horse Profile, by
@@ -61,6 +61,8 @@ class ProfileSearchDialog extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextFormField(
+                        textCapitalization: TextCapitalization.words,
+                        keyboardType: TextInputType.name,
                         validator: (value) {
                           //Validate based on the search type
                           if (value == null) {
@@ -187,7 +189,7 @@ class ProfileSearchDialog extends StatelessWidget {
     required ProfileSearchCubit cubit,
     required ProfileSearchState state,
   }) {
-    return state.status.isSubmissionInProgress
+    return state.status == FormStatus.submitting
         ? const CircularProgressIndicator()
         : ElevatedButton.icon(
             icon: const Icon(Icons.search),
@@ -497,18 +499,18 @@ class ProfileSearchDialog extends StatelessWidget {
 bool _isSearchValid(ProfileSearchState state) {
   switch (state.searchType) {
     case SearchType.name:
-      return state.searchValue.valid;
+      return state.searchValue.isValid;
     case SearchType.email:
-      return state.email.valid;
+      return state.email.isValid;
     case SearchType.horse:
-      return state.searchValue.valid;
+      return state.searchValue.isValid;
     case SearchType.horseId:
-      return state.searchValue.valid;
+      return state.searchValue.isValid;
     case SearchType.horseNickName:
-      return state.searchValue.valid;
+      return state.searchValue.isValid;
     case SearchType.horseLocation:
-      return state.zipCode.valid;
+      return state.zipCode.isValid;
     case SearchType.riderLocation:
-      return state.zipCode.valid;
+      return state.zipCode.isValid;
   }
 }

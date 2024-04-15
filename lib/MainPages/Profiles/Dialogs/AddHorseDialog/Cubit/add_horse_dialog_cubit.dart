@@ -6,9 +6,9 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:image_picker/image_picker.dart';
@@ -63,20 +63,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   void horseNameChanged(String value) {
     final horseName = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        horseName: horseName,
-        status: Formz.validate([horseName]),
-      ),
+      state.copyWith(horseName: horseName),
     );
   }
 
   void horseNicknameChanged(String value) {
     final horseNickname = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        horseNickname: horseNickname,
-        status: Formz.validate([horseNickname]),
-      ),
+      state.copyWith(horseNickname: horseNickname),
     );
   }
 
@@ -85,7 +79,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     emit(
       state.copyWith(
         breed: breed,
-        status: Formz.validate([breed]),
       ),
     );
   }
@@ -115,10 +108,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   void horseGenderChanged(String value) {
     final gender = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        gender: gender,
-        status: Formz.validate([gender]),
-      ),
+      state.copyWith(gender: gender),
     );
   }
 
@@ -151,7 +141,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         emit(
           state.copyWith(
             picStatus: PictureGetterStatus.nothing,
-            status: FormzStatus.invalid,
+            status: FormStatus.failure,
             error: 'Error uploading image',
           ),
         );
@@ -172,10 +162,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   void horseColorChanged(String value) {
     final color = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        color: color,
-        status: Formz.validate([color]),
-      ),
+      state.copyWith(color: color),
     );
   }
 
@@ -190,7 +177,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       state.copyWith(
         locationName: '',
         zipCode: zipCode,
-        locationStatus: Formz.validate([zipCode]),
       ),
     );
   }
@@ -241,10 +227,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   void zipCodeChanged(String value) {
     final zipCode = ZipCode.dirty(value);
     emit(
-      state.copyWith(
-        zipCode: zipCode,
-        locationStatus: Formz.validate([zipCode]),
-      ),
+      state.copyWith(zipCode: zipCode),
     );
   }
 
@@ -279,7 +262,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
             emit(
               state.copyWith(
                 zipCode: zipCode,
-                locationStatus: Formz.validate([zipCode]),
                 autoCompleteStatus: AutoCompleteStatus.success,
                 prediction: zipResponse.results,
               ),
@@ -322,12 +304,11 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     debugPrint('Location Name: $locationName');
     debugPrint('Zip Code: $selectedZipCode');
     final zipCode = ZipCode.dirty(selectedZipCode);
-    if (zipCode.valid) {
+    if (zipCode.isValid) {
       emit(
         state.copyWith(
           locationName: locationName,
           zipCode: zipCode,
-          locationStatus: Formz.validate([zipCode]),
         ),
       );
     } else {
@@ -336,7 +317,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         state.copyWith(
           locationName: locationName,
           zipCode: zipCode,
-          locationStatus: Formz.validate([zipCode]),
         ),
       );
     }
@@ -421,7 +401,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     emit(
       state.copyWith(
         purchasePrice: purchasePrice,
-        status: Formz.validate([purchasePrice]),
       ),
     );
   }
@@ -436,7 +415,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   Future<void> createHorseProfile() async {
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
 
     final initialNoteEntry = BaseListItem(
@@ -519,14 +498,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       emit(
         state.copyWith(
           usersProfile: updatedUserProfile,
-          status: FormzStatus.submissionSuccess,
+          status: FormStatus.success,
         ),
       );
     } catch (e) {
       debugPrint('Something went Wrong: $e');
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.toString(),
         ),
       );
@@ -535,7 +514,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   Future<void> editHorseProfile() async {
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
 
 // ignore: omit_local_variable_types
@@ -617,14 +596,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       emit(
         state.copyWith(
           usersProfile: updatedUserProfile,
-          status: FormzStatus.submissionSuccess,
+          status: FormStatus.success,
         ),
       );
     } on FirebaseException catch (e) {
       debugPrint('Something went Wrong: $e');
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.toString(),
         ),
       );
@@ -635,7 +614,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     required HorseProfile? horseProfile,
   }) async {
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
     final deleteNote = BaseListItem(
       id: DateTime.now().toString(),
@@ -673,14 +652,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       emit(
         state.copyWith(
           usersProfile: updatedUserProfile,
-          status: FormzStatus.submissionSuccess,
+          status: FormStatus.success,
         ),
       );
     } on FirebaseException catch (e) {
       debugPrint('Something went Wrong: $e');
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.toString(),
         ),
       );

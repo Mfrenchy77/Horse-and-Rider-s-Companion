@@ -6,7 +6,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
 
 part 'profile_search_state.dart';
@@ -34,10 +34,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     debugPrint('Name Changed to $value');
     final name = Name.dirty(value);
     emit(
-      state.copyWith(
-        searchValue: name,
-        status: Formz.validate([name]),
-      ),
+      state.copyWith(searchValue: name),
     );
   }
 
@@ -45,7 +42,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void emailChanged(String value) {
     debugPrint('Email Changed to $value');
     final email = Email.dirty(value);
-    emit(state.copyWith(email: email, status: Formz.validate([email])));
+    emit(state.copyWith(email: email));
   }
 
   /// Monitor the Zip Code Field's [value] in the Search Dialog
@@ -53,7 +50,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void zipCodeChanged(String value) {
     debugPrint('Zip Code Changed to $value');
     final zipCode = ZipCode.dirty(value);
-    emit(state.copyWith(zipCode: zipCode, status: Formz.validate([zipCode])));
+    emit(state.copyWith(zipCode: zipCode));
   }
 
   /// Location Range [value] changed
@@ -62,16 +59,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     if (value != null) {
       final locationRange = LocationRange.dirty(value);
       emit(
-        state.copyWith(
-          locationRange: locationRange,
-          status: Formz.validate([locationRange]),
-        ),
+        state.copyWith(locationRange: locationRange),
       );
     } else {
       emit(
         state.copyWith(
           locationRange: const LocationRange.pure(),
-          status: FormzStatus.pure,
+          status: FormStatus.initial,
         ),
       );
     }
@@ -105,7 +99,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Search for a Rider Profile by Name
   void searchProfilesByName() {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     debugPrint(
       'getProfile by Name for ${capitalizeWords(state.searchValue.value)}',
     );
@@ -124,13 +118,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           emit(
             state.copyWith(
               riderProfiles: results,
-              status: FormzStatus.submissionSuccess,
+              status: FormStatus.success,
             ),
           );
         } else {
           emit(
             state.copyWith(
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
               error: 'No Results',
               isError: true,
             ),
@@ -140,7 +134,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     } catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.toString(),
           isError: true,
         ),
@@ -172,7 +166,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// search Rider Profiles by Email
   void searchProfileByEmail() {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     final profileResults = <RiderProfile>[];
     try {
       _riderProfileRepository
@@ -185,13 +179,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
             emit(
               state.copyWith(
                 riderProfiles: profileResults,
-                status: FormzStatus.submissionSuccess,
+                status: FormStatus.success,
               ),
             );
           } else {
             emit(
               state.copyWith(
-                status: FormzStatus.submissionFailure,
+                status: FormStatus.failure,
                 error: 'No Results',
               ),
             );
@@ -199,7 +193,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
         } else {
           emit(
             state.copyWith(
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
               error: 'No Results',
             ),
           );
@@ -208,7 +202,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     } on FirebaseException catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.message,
         ),
       );
@@ -220,7 +214,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Search for a Rider Profile by Zip Code
   void searchRiderByZipCode() {
     debugPrint('Search by Zip Code ${state.searchValue}');
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
 
     try {
       _riderProfileRepository
@@ -234,14 +228,14 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           emit(
             state.copyWith(
               riderProfiles: profiles,
-              status: FormzStatus.submissionSuccess,
+              status: FormStatus.success,
             ),
           );
         } else {
           debugPrint('No Results');
           emit(
             state.copyWith(
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
               error: 'No Results',
             ),
           );
@@ -250,7 +244,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     } catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.toString(),
         ),
       );
@@ -263,7 +257,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Search for a Horse by Name
   void searchForHorseByName() {
     debugPrint('Search for horse ${state.searchValue}');
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       _horseProfileRepository
           .getHorseByName(name: state.searchValue.value.trim())
@@ -274,13 +268,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           emit(
             state.copyWith(
               horseProfiles: results,
-              status: FormzStatus.submissionSuccess,
+              status: FormStatus.success,
             ),
           );
         } else {
           emit(
             state.copyWith(
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
               error: 'No Results',
             ),
           );
@@ -289,7 +283,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     } on FirebaseException catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.message,
         ),
       );
@@ -300,7 +294,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   ///  Search results for a horseProfile by Nick Name
   void searchForHorseByNickName() {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       _horseProfileRepository
           .getHorseByNickName(nickName: state.searchValue.value.trim())
@@ -311,13 +305,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           emit(
             state.copyWith(
               horseProfiles: results,
-              status: FormzStatus.submissionSuccess,
+              status: FormStatus.success,
             ),
           );
         } else {
           emit(
             state.copyWith(
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
               error: 'No Results',
             ),
           );
@@ -326,7 +320,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     } on FirebaseException catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: e.message,
         ),
       );
@@ -337,7 +331,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Search for Horse by Id
   void searchForHorseById() {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     final horseProfileResults = <HorseProfile>[];
     if (state.searchValue.value.isNotEmpty) {
       try {
@@ -352,13 +346,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
             emit(
               state.copyWith(
                 horseProfiles: horseProfileResults,
-                status: FormzStatus.submissionSuccess,
+                status: FormStatus.success,
               ),
             );
           } else {
             emit(
               state.copyWith(
-                status: FormzStatus.submissionFailure,
+                status: FormStatus.failure,
                 error: 'No Results',
               ),
             );
@@ -367,7 +361,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       } on FirebaseException catch (e) {
         emit(
           state.copyWith(
-            status: FormzStatus.submissionFailure,
+            status: FormStatus.failure,
             error: e.message,
           ),
         );
@@ -378,7 +372,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       emit(
         state.copyWith(
           isError: true,
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: 'Please enter a valid Horse Id',
         ),
       );
@@ -387,7 +381,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Search for Horse by Location.
   void searchForHorseByLocation() {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     _keysRepository.getLocationApiKey().then((value) {
       final zipcodeRepository = ZipcodeRepository(apiKey: value);
       zipcodeRepository
@@ -415,13 +409,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
                 emit(
                   state.copyWith(
                     horseProfiles: horseProfileResults,
-                    status: FormzStatus.submissionSuccess,
+                    status: FormStatus.success,
                   ),
                 );
               } else {
                 emit(
                   state.copyWith(
-                    status: FormzStatus.submissionFailure,
+                    status: FormStatus.failure,
                     error: 'No Results',
                   ),
                 );
@@ -431,7 +425,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
         } else {
           emit(
             state.copyWith(
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
               error: 'No Results',
             ),
           );

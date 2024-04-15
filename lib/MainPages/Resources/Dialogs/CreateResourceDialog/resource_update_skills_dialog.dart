@@ -3,12 +3,12 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
@@ -39,7 +39,7 @@ class UpdateResourceSkills extends StatelessWidget {
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listener: (context, state) {
-            if (state.status.isSubmissionSuccess) {
+            if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
             if (state.isError) {

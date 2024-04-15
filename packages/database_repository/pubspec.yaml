@@ -17,19 +17,11 @@ dependencies:
   firebase_core_platform_interface: ^5.0.0
   firebase_remote_config: ^4.4.0
   firebase_storage: ^11.0.6
-
-
-
   flutter:
-    sdk: flutter
- 
+    sdk: flutter 
   html: ^0.15.0
-  http: ^1.1.2
-  
+  http: ^1.1.2  
   image_picker: ^1.0.4
-
-  meta: ^1.7.0
-
 dev_dependencies:
   flutter_lints: ^3.0.2
   flutter_test:

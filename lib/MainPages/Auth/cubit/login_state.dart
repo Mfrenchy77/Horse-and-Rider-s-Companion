@@ -23,7 +23,7 @@ class LoginState extends Equatable {
     this.showEmailDialog = false,
     this.name = const Name.pure(),
     this.isPasswordVisible = false,
-    this.status = FormzStatus.pure,
+    this.status = FormStatus.initial,
     this.email = const Email.pure(),
     this.password = const Password.pure(),
     this.pageStatus = LoginPageStatus.login,
@@ -46,7 +46,7 @@ class LoginState extends Equatable {
   final Password password;
 
   /// The current form validation status.
-  final FormzStatus status;
+  final FormStatus status;
 
   /// Error message to display to the user.
   final String errorMessage;
@@ -77,7 +77,7 @@ class LoginState extends Equatable {
     bool? isError,
     bool? isGuest,
     Password? password,
-    FormzStatus? status,
+    FormStatus? status,
     String? errorMessage,
     bool? forgotEmailSent,
     bool? showEmailDialog,

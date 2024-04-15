@@ -3,7 +3,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'create_training_path_state.dart';
@@ -36,10 +36,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
     final trainingPathName = SingleWord.dirty(name);
 
     emit(
-      state.copyWith(
-        name: trainingPathName,
-        status: Formz.validate([trainingPathName]),
-      ),
+      state.copyWith(name: trainingPathName),
     );
   }
 
@@ -47,10 +44,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
     final trainingPathDescription = SingleWord.dirty(description);
 
     emit(
-      state.copyWith(
-        description: trainingPathDescription,
-        status: Formz.validate([trainingPathDescription]),
-      ),
+      state.copyWith(description: trainingPathDescription),
     );
   }
 
@@ -256,8 +250,8 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
   }
 
   Future<void> createOrEditTrainingPath() async {
-    if (state.status.isValidated) {
-      emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    if (state.name.isValid && state.description.isValid) {
+      emit(state.copyWith(status: FormStatus.submitting));
 
       try {
         final trainingPath = TrainingPath(
@@ -279,11 +273,13 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
           trainingPath: trainingPath,
         );
 
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        emit(state.copyWith(status: FormStatus.success));
       } on Exception catch (e) {
-        emit(state.copyWith(status: FormzStatus.submissionFailure));
+        emit(state.copyWith(status: FormStatus.failure));
         debugPrint('Exception: $e');
       }
+    } else {
+      debugPrint('Name or Description is not valid');
     }
   }
 

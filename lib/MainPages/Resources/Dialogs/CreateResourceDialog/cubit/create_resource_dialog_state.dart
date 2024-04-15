@@ -13,7 +13,7 @@ class CreateResourceDialogState extends Equatable {
     this.isEdit = false,
     this.isError = false,
     this.url = const Url.pure(),
-    this.status = FormzStatus.pure,
+    this.status = FormStatus.initial,
     this.title = const SingleWord.pure(),
     this.description = const SingleWord.pure(),
     this.urlFetchedStatus = UrlFetchedStatus.initial,
@@ -41,7 +41,7 @@ class CreateResourceDialogState extends Equatable {
   final Resource? resource;
 
   /// The status of the form
-  final FormzStatus status;
+  final FormStatus status;
 
   /// The skills that are associated with the resource
   final List<Skill?>? skills;
@@ -66,7 +66,7 @@ class CreateResourceDialogState extends Equatable {
     String? imageUrl,
     SingleWord? title,
     Resource? resource,
-    FormzStatus? status,
+    FormStatus? status,
     List<Skill?>? skills,
     SingleWord? description,
     RiderProfile? usersProfile,

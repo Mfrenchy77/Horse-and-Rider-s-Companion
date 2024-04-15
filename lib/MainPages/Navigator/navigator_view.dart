@@ -31,11 +31,11 @@ class NavigatorView extends StatelessWidget {
       listenWhen: (previous, current) =>
           previous.index != current.index ||
           previous.isError != current.isError ||
-          previous.errorMessage != current.errorMessage ||
           previous.isMessage != current.isMessage ||
-          previous.isEmailVerification != current.isEmailVerification ||
+          previous.errorMessage != current.errorMessage ||
+          previous.showOnboarding != current.showOnboarding ||
           previous.isProfileSetup != current.isProfileSetup ||
-          previous.showFirstLaunch != current.showFirstLaunch,
+          previous.isEmailVerification != current.isEmailVerification,
       listener: (context, state) {
         debugPrint('NavigatorView Listener Called');
         if (!context.mounted) return;

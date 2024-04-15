@@ -4,7 +4,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'create_resource_dialog_state.dart';
@@ -28,11 +28,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           url: Url.dirty(resource.url ?? ''),
           title: SingleWord.dirty(resource.name ?? ''),
           description: SingleWord.dirty(resource.description ?? ''),
-          status: Formz.validate([
-            SingleWord.dirty(resource.name ?? ''),
-            SingleWord.dirty(resource.description ?? ''),
-            Url.dirty(resource.url ?? ''),
-          ]),
         ),
       );
     }
@@ -57,10 +52,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       state.copyWith(
         urlFetchedStatus: UrlFetchedStatus.initial,
         url: url,
-        status: Formz.validate([url]),
       ),
     );
-    if (!state.url.invalid) {
+    if (state.url.isValid) {
       fetchUrl();
     } else {
       debugPrint('$value is not validated');
@@ -74,7 +68,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     emit(
       state.copyWith(
         title: title,
-        status: Formz.validate([title]),
         urlFetchedStatus: state.url.value.isNotEmpty
             ? UrlFetchedStatus.fetched
             : UrlFetchedStatus.initial,
@@ -98,10 +91,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   void descriptionChanged(String value) {
     final description = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        description: description,
-        status: Formz.validate([description]),
-      ),
+      state.copyWith(description: description),
     );
   }
 
@@ -206,7 +196,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           isError: true,
           error: e.toString(),
           urlFetchedStatus: UrlFetchedStatus.error,
-          status: FormzStatus.invalid,
+          status: FormStatus.initial,
         ),
       );
     }
@@ -228,7 +218,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         title: title,
         description: description,
         imageUrl: imageUrl,
-        status: Formz.validate([state.url, title, description]),
       ),
     );
   }
@@ -236,10 +225,10 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   ///   Called when the url is inputted and validated
   Future<void> createResource() async {
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
     final url = state.url.value;
-    if (state.status.isValidated) {
+    if (state.url.isValid) {
       final user = BaseListItem(
         isSelected: false,
         isCollapsed: false,
@@ -263,29 +252,29 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
       try {
         await _resourcesRepository.createOrUpdateResource(resource: resource);
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        emit(state.copyWith(status: FormStatus.success));
       } on FirebaseException catch (e) {
         debugPrint('Error: ${e.message}');
         emit(
           state.copyWith(
             isError: true,
             error: e.message ?? 'Error',
-            status: FormzStatus.submissionFailure,
+            status: FormStatus.failure,
           ),
         );
       }
     } else {
-      debugPrint('Form is not valid');
+      debugPrint('Url is not valid');
     }
   }
 
   Future<void> editResource() async {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     debugPrint(
       'Editting Resource ${state.resource?.name ?? state.title.value}',
     );
 
-    if (state.status.isValidated) {
+    if (state.url.isValid) {
       final editedResource = Resource(
         lastEditDate: DateTime.now(),
         name: state.title.value.isEmpty
@@ -316,7 +305,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         await _resourcesRepository.createOrUpdateResource(
           resource: editedResource,
         );
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        emit(state.copyWith(status: FormStatus.success));
       } catch (e) {
         debugPrint('Error: $e');
         final errorMessage =
@@ -325,10 +314,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           state.copyWith(
             isError: true,
             error: errorMessage,
-            status: FormzStatus.submissionFailure,
+            status: FormStatus.failure,
           ),
         );
       }
+    } else {
+      debugPrint('Url is not valid');
     }
   }
 

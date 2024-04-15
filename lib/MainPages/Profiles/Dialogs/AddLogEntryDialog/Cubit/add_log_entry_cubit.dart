@@ -3,8 +3,8 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 part 'add_log_entry_state.dart';
 
@@ -25,7 +25,7 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   void logEntryChanged({required String value}) {
     final logEntry = SingleWord.dirty(value);
     emit(
-      state.copyWith(logEntry: logEntry, status: Formz.validate([logEntry])),
+      state.copyWith(logEntry: logEntry),
     );
   }
 
@@ -44,7 +44,7 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
     required HorseProfile? horseProfile,
   }) {
     final riderProfile = usersProfile;
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     if (horseProfile != null) {
       // add the log entry for the horse
       debugPrint('Adding log entry for horse');
@@ -62,9 +62,9 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
         _horseProfileRepository.createOrUpdateHorseProfile(
           horseProfile: horseProfile,
         );
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        emit(state.copyWith(status: FormStatus.success));
       } catch (e) {
-        emit(state.copyWith(status: FormzStatus.submissionFailure));
+        emit(state.copyWith(status: FormStatus.failure));
       }
     } else {
       // add the log entry for the rider
@@ -82,9 +82,9 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
         _riderProfileRepository.createOrUpdateRiderProfile(
           riderProfile: riderProfile,
         );
-        emit(state.copyWith(status: FormzStatus.submissionSuccess));
+        emit(state.copyWith(status: FormStatus.success));
       } catch (e) {
-        emit(state.copyWith(status: FormzStatus.submissionFailure));
+        emit(state.copyWith(status: FormStatus.failure));
       }
     }
   }

@@ -1,24 +1,23 @@
 part of 'add_log_entry_cubit.dart';
 
 // ignore: constant_identifier_names
-
 class AddLogEntryState extends Equatable {
   const AddLogEntryState({
     this.tag = LogTag.Other,
     required this.date,
-    this.status = FormzStatus.pure,
+    this.status = FormStatus.initial,
     this.logEntry = const SingleWord.pure(),
   });
 
   final LogTag tag;
   final DateTime date;
-  final FormzStatus status;
+  final FormStatus status;
   final SingleWord logEntry;
 
   AddLogEntryState copyWith({
     LogTag? tag,
     DateTime? date,
-    FormzStatus? status,
+    FormStatus? status,
     SingleWord? logEntry,
   }) {
     return AddLogEntryState(

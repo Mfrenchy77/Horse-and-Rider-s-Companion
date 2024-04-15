@@ -5,7 +5,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:open_mail_app/open_mail_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,30 +21,8 @@ part 'login_state.dart';
 class LoginCubit extends Cubit<LoginState> {
   /// {@macro login_cubit}
   LoginCubit(this._authenticationRepository) : super(const LoginState());
-  //   _userSubscription = _authenticationRepository.user.listen((user) {
-  //     if (user != null) {
-  //       if (user.emailVerified) {
-  //         emit(
-  //           state.copyWith(
-  //             status: FormzStatus.submissionSuccess,
-  //           ),
-  //         );
-  //       } else if (user.email.isNotEmpty && !user.emailVerified) {
-  //         emit(
-  //           state.copyWith(
-  //             status: FormzStatus.pure,
-  //             pageStatus: LoginPageStatus.awitingEmailVerification,
-  //           ),
-  //         );
-  //       }
-  //     }
-  //   });
-  // }
 
   final AuthenticationRepository _authenticationRepository;
-
-  // late final StreamSubscription<User?> _userSubscription;
-  Timer? _emailVerificationTimer;
 
   /// Toggles the visibility of the password field.
   void togglePasswordVisible() {
@@ -62,7 +40,7 @@ class LoginCubit extends Cubit<LoginState> {
     emit(
       state.copyWith(
         pageStatus: LoginPageStatus.register,
-        status: FormzStatus.pure,
+        status: FormStatus.initial,
       ),
     );
   }
@@ -93,7 +71,6 @@ class LoginCubit extends Cubit<LoginState> {
       );
       return;
     }
-
     try {
       await launchUrl(emailUri);
     } catch (e) {
@@ -122,12 +99,7 @@ class LoginCubit extends Cubit<LoginState> {
   void nameChanged(String value) {
     final name = Name.dirty(value);
     emit(
-      state.copyWith(
-        name: name,
-        status: Formz.validate(
-          [name, state.email, state.password, state.confirmedPassword],
-        ),
-      ),
+      state.copyWith(name: name),
     );
   }
 
@@ -135,21 +107,20 @@ class LoginCubit extends Cubit<LoginState> {
   void emailChanged(String value) {
     final email = Email.dirty(value);
     emit(
-      state.copyWith(
-        email: email,
-        status: Formz.validate([email, state.password]),
-      ),
+      state.copyWith(email: email),
     );
+  }
+
+  /// Return true if email and password are valid
+  bool isEmailAndPasswordValid() {
+    return state.email.isValid && state.password.isValid;
   }
 
   /// Updates the state with the new password value.
   void passwordChanged(String value) {
     final password = Password.dirty(value);
     emit(
-      state.copyWith(
-        password: password,
-        status: Formz.validate([state.email, password]),
-      ),
+      state.copyWith(password: password),
     );
   }
 
@@ -158,19 +129,13 @@ class LoginCubit extends Cubit<LoginState> {
     final confirmedPassword =
         ConfirmedPassword.dirty(password: state.password.value, value: value);
     emit(
-      state.copyWith(
-        confirmedPassword: confirmedPassword,
-        status: Formz.validate(
-          [state.email, state.password, state.name, confirmedPassword],
-        ),
-      ),
+      state.copyWith(confirmedPassword: confirmedPassword),
     );
   }
 
   /// Submits the sign-up form.
   Future<void> signUpFormSubmitted({required BuildContext context}) async {
-    if (!state.status.isValidated) return;
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       await _authenticationRepository
           .signUp(
@@ -185,29 +150,17 @@ class LoginCubit extends Cubit<LoginState> {
             state.copyWith(
               isError: true,
               errorMessage: 'Error: User not created',
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
             ),
           );
-          // } else if (!value.emailVerified) {
-          //   debugPrint('Email not verified');
-          //   await openEmailApp(email: state.email.value);
-          //   emit(
-          //     state.copyWith(
-          //       status: FormzStatus.pure,
-          //       pageStatus: LoginPageStatus.awitingEmailVerification,
-          //       showEmailDialog: true,
-          //     ),
-          //   );
         } else if (value.emailVerified) {
-          //debugPrint('Success Login, go to HomePage');
-
-          emit(state.copyWith(status: FormzStatus.submissionSuccess));
+          emit(state.copyWith(status: FormStatus.success));
         } else {
           debugPrint('Email not verified');
           await openEmailApp(email: state.email.value);
           emit(
             state.copyWith(
-              status: FormzStatus.submissionSuccess,
+              status: FormStatus.success,
             ),
           );
         }
@@ -218,7 +171,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Error: ${e.message}',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     } catch (_) {
@@ -227,7 +180,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Submission Failure',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     }
@@ -235,8 +188,7 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Logs in with the provided email and password.
   Future<void> logInWithCredentials() async {
-    if (!state.status.isValidated) return;
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       await _authenticationRepository
           .logInWithEmailAndPassword(
@@ -250,21 +202,11 @@ class LoginCubit extends Cubit<LoginState> {
             state.copyWith(
               isError: true,
               errorMessage: 'Error: User not created',
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
             ),
           );
-          // } else if (!value.emailVerified) {
-          //   debugPrint('Email not verified');
-          //   emit(
-          //     state.copyWith(
-          //       status: FormzStatus.pure,
-          //       pageStatus: LoginPageStatus.awitingEmailVerification,
-          //       showEmailDialog: true,
-          //     ),
-          //   );
         } else {
-          // debugPrint('Success Login, go to HomePage');
-          emit(state.copyWith(status: FormzStatus.submissionSuccess));
+          emit(state.copyWith(status: FormStatus.success));
         }
       });
     } on LogInWithEmailAndPasswordFailure catch (e) {
@@ -273,7 +215,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Error: ${e.message}',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     } catch (_) {
@@ -282,7 +224,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Submission Failure',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     }
@@ -291,17 +233,17 @@ class LoginCubit extends Cubit<LoginState> {
   /// Logs in with Google authentication.
   Future<void> logInWithGoogle() async {
     debugPrint('Log in with Google');
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       await _authenticationRepository.logInWithGoogle();
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      emit(state.copyWith(status: FormStatus.success));
     } on LogInWithGoogleFailure catch (e) {
       debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
           errorMessage: 'Error: ${e.message}',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     } catch (_) {
@@ -310,7 +252,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Submission Failure',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     }
@@ -319,7 +261,7 @@ class LoginCubit extends Cubit<LoginState> {
   /// Logs in as a guest.
   Future<void> logInAsGuest() async {
     debugPrint('Log in as Guest');
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       await _authenticationRepository.signInAsGuest().then((value) {
         if (value == null) {
@@ -328,7 +270,7 @@ class LoginCubit extends Cubit<LoginState> {
             state.copyWith(
               isError: true,
               errorMessage: 'Error: User not created',
-              status: FormzStatus.submissionFailure,
+              status: FormStatus.failure,
             ),
           );
         } else {
@@ -336,64 +278,32 @@ class LoginCubit extends Cubit<LoginState> {
           emit(
             state.copyWith(
               isGuest: true,
-              status: FormzStatus.submissionSuccess,
+              status: FormStatus.success,
             ),
           );
         }
       });
-      // } on LogInAsGuestFailure catch (e) {
-      //   debugPrint('Error: ${e.message}');
-      //   emit(
-      //     state.copyWith(
-      //       isError: true,
-      //       errorMessage: 'Error: ${e.message}',
-      //       status: FormzStatus.submissionFailure,
-      //     ),
-      //   );
     } catch (_) {
       debugPrint('Submission Failure');
       emit(
         state.copyWith(
           isError: true,
           errorMessage: 'Submission Failure',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     }
   }
 
-  // /// Peroiodically checks the email verification status.
-  // void checkEmailVerificationStatus() {
-  //   _emailVerificationTimer?.cancel();
-  //   _emailVerificationTimer =
-  //       Timer.periodic(const Duration(seconds: 10), (_) async {
-  //     debugPrint('Checking Email Verification Status');
-  //     await _authenticationRepository.reloadCurrentUser();
-  //     final isVerified = _authenticationRepository.isEmailVerified();
-
-  //     if (isVerified) {
-  //       _emailVerificationTimer?.cancel();
-  //       debugPrint('Email is verified in Timer');
-  //       emit(
-  //         state.copyWith(
-  //           status: FormzStatus.submissionSuccess,
-  //           showEmailDialog: false,
-  //         ),
-  //       );
-  //     }
-  //   });
-  // }
-
   /// Sends a forgot password email.
   Future<void> sendForgotPasswordEmail() async {
     debugPrint('Send Forgot Password Email');
-    if (!state.email.valid) return;
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     try {
       await _authenticationRepository.forgotPassword(email: state.email.value);
       emit(
         state.copyWith(
-          status: FormzStatus.pure,
+          status: FormStatus.initial,
           pageStatus: LoginPageStatus.awitingEmailVerification,
           forgotEmailSent: true,
         ),
@@ -404,7 +314,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Error: ${e.message}',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     } catch (_) {
@@ -413,7 +323,7 @@ class LoginCubit extends Cubit<LoginState> {
         state.copyWith(
           isError: true,
           errorMessage: 'Submission Failure',
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     }
@@ -422,12 +332,5 @@ class LoginCubit extends Cubit<LoginState> {
   /// Clears the flag indicating a forgot email has been sent.
   void clearForgotEmailSent() {
     emit(state.copyWith(forgotEmailSent: false, email: const Email.pure()));
-  }
-
-  @override
-  Future<void> close() {
-    // _userSubscription.cancel();
-    _emailVerificationTimer?.cancel();
-    return super.close();
   }
 }

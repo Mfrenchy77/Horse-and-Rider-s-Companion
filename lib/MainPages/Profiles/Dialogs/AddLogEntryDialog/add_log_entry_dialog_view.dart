@@ -1,10 +1,10 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 
@@ -35,7 +35,7 @@ class AddLogEntryDialog extends StatelessWidget {
         ),
         child: BlocBuilder<AddLogEntryCubit, AddLogEntryState>(
           builder: (context, state) {
-            if (state.status == FormzStatus.submissionSuccess) {
+            if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
             return AlertDialog(
@@ -67,7 +67,7 @@ class AddLogEntryDialog extends StatelessWidget {
                   ),
                   gap(),
                   Visibility(
-                    visible: state.status.isSubmissionFailure,
+                    visible: state.status == FormStatus.failure,
                     child: const ColoredBox(
                       color: Colors.red,
                       child: Padding(
@@ -239,14 +239,14 @@ Widget _submitButton({
   required HorseProfile? horseProfile,
 }) {
   return FilledButton(
-    onPressed: state.logEntry.invalid
+    onPressed: state.logEntry.value.length < 2
         ? null
         : () {
             context.read<AddLogEntryCubit>().addLogEntry(
                   horseProfile: horseProfile,
                 );
           },
-    child: state.status == FormzStatus.submissionInProgress
+    child: state.status == FormStatus.submitting
         ? const CircularProgressIndicator()
         : const Text(
             'Submit Log Entry',

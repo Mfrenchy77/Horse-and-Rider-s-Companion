@@ -27,13 +27,13 @@ class AddHorseDialogState extends Equatable {
     this.locationName = '',
     this.picFlilePath = '',
     this.isLocationSearch = false,
-    this.status = FormzStatus.pure,
+    this.status = FormStatus.initial,
     this.dateStatus = DateStatus.nodate,
     this.zipCode = const ZipCode.pure(),
     this.breed = const SingleWord.pure(),
     this.color = const SingleWord.pure(),
     this.gender = const SingleWord.pure(),
-    this.locationStatus = FormzStatus.pure,
+    this.locationStatus = FormStatus.initial,
     this.horseName = const SingleWord.pure(),
     this.purchasePrice = const Numberz.pure(),
     this.picStatus = PictureGetterStatus.nothing,
@@ -53,7 +53,7 @@ class AddHorseDialogState extends Equatable {
   final SingleWord color;
   final SingleWord breed;
   final SingleWord gender;
-  final FormzStatus status;
+  final FormStatus status;
   final String? countryIso;
   final int? dateOfPurchase;
   final String picFlilePath;
@@ -69,7 +69,7 @@ class AddHorseDialogState extends Equatable {
   final SingleWord horseNickname;
   final RiderProfile? usersProfile;
   final HorseProfile? horseProfile;
-  final FormzStatus? locationStatus;
+  final FormStatus? locationStatus;
   final PostalCodeResults? prediction;
   final PictureGetterStatus picStatus;
   final IsPurchacedStatus isPurchacedStatus;
@@ -89,7 +89,7 @@ class AddHorseDialogState extends Equatable {
     SingleWord? gender,
     String? countryIso,
     int? dateOfPurchase,
-    FormzStatus? status,
+    FormStatus? status,
     String? locationName,
     String? picFlilePath,
     String? selectedCity,
@@ -103,7 +103,7 @@ class AddHorseDialogState extends Equatable {
     SingleWord? horseNickname,
     RiderProfile? usersProfile,
     HorseProfile? horseProfile,
-    FormzStatus? locationStatus,
+    FormStatus? locationStatus,
     PostalCodeResults? prediction,
     PictureGetterStatus? picStatus,
     IsPurchacedStatus? isPurchacedStatus,

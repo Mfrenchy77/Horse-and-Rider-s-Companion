@@ -7,7 +7,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:image_picker/image_picker.dart';
 
 part 'edit_rider_profile_state.dart';
@@ -69,7 +69,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       state.copyWith(
         locationName: '',
         zipCode: zipCode,
-        locationStatus: Formz.validate([zipCode]),
       ),
     );
   }
@@ -121,7 +120,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     emit(
       state.copyWith(
         zipCode: zipCode,
-        locationStatus: Formz.validate([zipCode]),
       ),
     );
   }
@@ -176,12 +174,11 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     debugPrint('Location Name: $locationName');
     debugPrint('Zip Code: $selectedZipCode');
     final zipCode = ZipCode.dirty(selectedZipCode);
-    if (zipCode.valid) {
+    if (zipCode.isValid) {
       emit(
         state.copyWith(
           locationName: locationName,
           zipCode: zipCode,
-          locationStatus: Formz.validate([zipCode]),
         ),
       );
     } else {
@@ -190,7 +187,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         state.copyWith(
           locationName: locationName,
           zipCode: zipCode,
-          locationStatus: Formz.validate([zipCode]),
         ),
       );
     }
@@ -216,8 +212,8 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
             debugPrint('More than one result');
             emit(
               state.copyWith(
-                autoCompleteStatus: AutoCompleteStatus.success,
                 prediction: zipResponse.results,
+                autoCompleteStatus: AutoCompleteStatus.success,
               ),
             );
           } else {
@@ -227,9 +223,8 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
             emit(
               state.copyWith(
                 zipCode: zipCode,
-                locationStatus: Formz.validate([zipCode]),
-                autoCompleteStatus: AutoCompleteStatus.success,
                 prediction: zipResponse.results,
+                autoCompleteStatus: AutoCompleteStatus.success,
               ),
             );
           }

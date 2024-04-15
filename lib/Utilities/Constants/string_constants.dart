@@ -16,3 +16,18 @@ class AuthorizedEmails {
     'mfrenchy77@gmail.com',
   ];
 }
+
+/// enum for Form status
+enum FormStatus {
+  /// Form is in the initial state
+  initial,
+
+  /// Form is submitting
+  submitting,
+
+  /// Form has been submitted successfully
+  success,
+
+  /// Form submission failed
+  failure,
+}

@@ -6,7 +6,7 @@ import 'package:equatable/equatable.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'new_group_dialog_state.dart';
@@ -27,12 +27,12 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
 
   void nameChanged(String value) {
     final name = Name.dirty(value);
-    emit(state.copyWith(name: name, status: Formz.validate([name])));
+    emit(state.copyWith(name: name));
   }
 
   void emailChanged(String value) {
     final email = Email.dirty(value);
-    emit(state.copyWith(email: email, status: Formz.validate([email])));
+    emit(state.copyWith(email: email));
   }
 
   void searchProfilesByName() {
@@ -107,7 +107,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
 //   }
 
   Future<void> createConversation(RiderProfile profile) async {
-    emit(state.copyWith(status: FormzStatus.submissionInProgress));
+    emit(state.copyWith(status: FormStatus.submitting));
     final emails = <String>[
       state.usersProfile!.email.toLowerCase(),
       profile.email.toLowerCase(),
@@ -139,20 +139,20 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
       )
           .then((value) {
         debugPrint('Conversation Created');
-        emit(state.copyWith(status: FormzStatus.submissionSuccess, id: id));
+        emit(state.copyWith(status: FormStatus.success, id: id));
       });
     } on FirebaseException catch (e) {
       emit(
         state.copyWith(
           isError: true,
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           error: 'Problem Creating New Conversation: $e',
         ),
       );
     } catch (e) {
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
           isError: true,
           error: 'Problem Creating New Conversation: $e',
         ),

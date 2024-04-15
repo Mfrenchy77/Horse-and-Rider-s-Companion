@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 class AuthButton extends StatelessWidget {
   const AuthButton({
@@ -12,12 +12,12 @@ class AuthButton extends StatelessWidget {
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
         final cubit = context.read<LoginCubit>();
-        return state.status.isSubmissionInProgress
+        return state.status == FormStatus.submitting
             ? const CircularProgressIndicator()
             : SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: !state.status.isValidated
+                  onPressed: !cubit.isEmailAndPasswordValid()
                       ? null
                       : () {
                           _handleClick(

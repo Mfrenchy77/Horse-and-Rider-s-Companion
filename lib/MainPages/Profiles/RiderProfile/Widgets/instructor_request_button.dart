@@ -36,7 +36,8 @@ class InstructorRequestButton extends StatelessWidget {
             onPressed: () {
               if (isAlreadyInstructor) {
                 cubit.removeInstructor(
-                    instructorProfile: state.viewingProfile!);
+                  instructorProfile: state.viewingProfile!,
+                );
               } else {
                 cubit.createInstructorRequest(
                   instructorProfile: state.viewingProfile!,

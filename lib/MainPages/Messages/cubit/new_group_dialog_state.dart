@@ -2,6 +2,7 @@ part of 'new_group_dialog_cubit.dart';
 
 enum SearchState { email, name }
 
+
 class NewGroupDialogState extends Equatable {
   const NewGroupDialogState({
     this.id = '',
@@ -9,8 +10,8 @@ class NewGroupDialogState extends Equatable {
     this.usersProfile,
     this.isError = false,
     this.name = const Name.pure(),
-    this.status = FormzStatus.pure,
     this.email = const Email.pure(),
+    this.status = FormStatus.initial,
     this.searchState = SearchState.name,
     this.searchResult = const <RiderProfile?>[],
   });
@@ -31,7 +32,7 @@ class NewGroupDialogState extends Equatable {
   final String error;
 
   /// The status of the form
-  final FormzStatus status;
+  final FormStatus status;
 
   /// The type of group to be created
   final SearchState searchState;
@@ -48,7 +49,7 @@ class NewGroupDialogState extends Equatable {
     Email? email,
     bool? isError,
     String? error,
-    FormzStatus? status,
+    FormStatus? status,
     SearchState? searchState,
     RiderProfile? usersProfile,
     List<RiderProfile?>? searchResult,

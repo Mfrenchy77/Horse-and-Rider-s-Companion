@@ -1,11 +1,11 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:searchfield/searchfield.dart';
 
@@ -158,10 +158,11 @@ class CreateTrainingPathDialog extends StatelessWidget {
                             gap(),
                             Text(
                               state.selectedSkills.isEmpty
-                                  ? 'Search and add Skill for your training path'
-                                  : 'Drag and Drop Skills to the desired level.\n'
-                                      'Drop on top of another skill to make it'
-                                      ' a child of that skill.\n'
+                                  ? 'Search and add Skill for '
+                                      'your training path'
+                                  : 'Drag and Drop Skills to the desired '
+                                      'level.\nDrop on top of another skill'
+                                      ' to make it a child of that skill.\n'
                                       'Drop on the root to make it a root'
                                       ' skill.',
                             ),
@@ -209,7 +210,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                   gap(),
 
                                   //Submit Button
-                                  if (state.status.isSubmissionInProgress)
+                                  if (state.status == FormStatus.submitting)
                                     const Expanded(
                                       flex: 7,
                                       child: CircularProgressIndicator(),

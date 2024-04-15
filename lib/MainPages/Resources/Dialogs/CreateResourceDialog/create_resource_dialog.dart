@@ -1,9 +1,9 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:image_network/image_network.dart';
 
 class CreateResourcDialog extends StatelessWidget {
@@ -73,7 +73,7 @@ class CreateResourcDialog extends StatelessWidget {
                 ),
               );
             }
-            if (state.status.isSubmissionSuccess) {
+            if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
             if (state.isError) {
@@ -203,7 +203,7 @@ class CreateResourcDialog extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                       child: const Text('Close'),
                     ),
-                    if (state.status.isSubmissionInProgress)
+                    if (state.status == FormStatus.submitting)
                       const CircularProgressIndicator()
                     else
                       ElevatedButton(

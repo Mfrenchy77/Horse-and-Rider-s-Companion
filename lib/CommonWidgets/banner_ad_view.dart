@@ -5,8 +5,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart' as google_mobile_ads;
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
-import 'package:horseandriderscompanion/Utilities/ad_helper.dart';
-
 class BannerAdView extends StatelessWidget {
   const BannerAdView({super.key});
 
@@ -14,7 +12,9 @@ class BannerAdView extends StatelessWidget {
   Widget build(BuildContext context) {
     // Check if the platform is web
     if (kIsWeb) {
-      return WebAdBanner();
+      return const SizedBox.shrink();
+      // TODO(mfrencny77): Implement Web Ad here when we get them working
+      // return WebAdBanner();
     } else {
       return BlocBuilder<AppCubit, AppState>(
         buildWhen: (previous, current) =>

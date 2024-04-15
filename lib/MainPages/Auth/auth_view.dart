@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
@@ -11,6 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:open_mail_app/open_mail_app.dart';
 
 class AuthView extends StatelessWidget {
@@ -24,7 +24,7 @@ class AuthView extends StatelessWidget {
       body: BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
           final cubit = context.read<LoginCubit>();
-          if (state.status.isSubmissionSuccess) {
+          if (state.status == FormStatus.success) {
             debugPrint('Success Pop?');
             context.goNamed(ProfilePage.name);
             if (state.mailAppResult != null) {

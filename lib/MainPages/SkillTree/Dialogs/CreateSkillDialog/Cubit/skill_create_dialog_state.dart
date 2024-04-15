@@ -9,7 +9,7 @@ class CreateSkillDialogState extends Equatable {
     this.subCategoryList,
     this.allSubCategories,
     this.isForRider = true,
-    this.status = FormzStatus.pure,
+    this.status = FormStatus.initial,
     this.name = const SingleWord.pure(),
     this.category = SkillCategory.Mounted,
     this.description = const SingleWord.pure(),
@@ -29,7 +29,7 @@ class CreateSkillDialogState extends Equatable {
   final SingleWord name;
 
   /// The status of the form
-  final FormzStatus status;
+  final FormStatus status;
 
   /// The category of the skill
   final SkillCategory category;
@@ -62,7 +62,7 @@ class CreateSkillDialogState extends Equatable {
     Skill? skill,
     bool? isForRider,
     SingleWord? name,
-    FormzStatus? status,
+    FormStatus? status,
     SingleWord? description,
     SkillCategory? category,
     RiderProfile? usersProfile,

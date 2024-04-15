@@ -5,7 +5,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:form_inputs/form_inputs.dart';
-import 'package:formz/formz.dart';
+
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'skill_create_dialog_state.dart';
@@ -40,17 +41,14 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   /// Called when the new Skill Name changes
   void skillNameChanged(String value) {
     final name = SingleWord.dirty(value);
-    emit(state.copyWith(name: name, status: Formz.validate([name])));
+    emit(state.copyWith(name: name));
   }
 
   /// Called when the new Skill Description changes
   void skillDescriptionChanged(String value) {
     final description = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        description: description,
-        status: Formz.validate([description]),
-      ),
+      state.copyWith(description: description),
     );
   }
 
@@ -58,10 +56,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   void skillLearningDescriptionChanged(String value) {
     final learningDescription = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        learningDescription: learningDescription,
-        status: Formz.validate([learningDescription]),
-      ),
+      state.copyWith(learningDescription: learningDescription),
     );
   }
 
@@ -69,10 +64,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   void skillProficientDescriptionChanged(String value) {
     final proficientDescription = SingleWord.dirty(value);
     emit(
-      state.copyWith(
-        proficientDescription: proficientDescription,
-        status: Formz.validate([proficientDescription]),
-      ),
+      state.copyWith(proficientDescription: proficientDescription),
     );
   }
 
@@ -137,7 +129,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   Future<void> createSkill(int position) async {
     // final subCategories = state.subCategoryList ?? [];
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
 
     final skill = Skill(
@@ -158,18 +150,18 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       await _skillsRepository.createOrEditSkill(
         skill: skill,
       );
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      emit(state.copyWith(status: FormStatus.success));
     } catch (e) {
       debugPrint(e.toString());
       emit(
-        state.copyWith(status: FormzStatus.submissionFailure),
+        state.copyWith(status: FormStatus.failure),
       );
     }
   }
 
   Future<void> editSkill({Skill? editedSkill}) async {
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
 
     final skill = Skill(
@@ -198,12 +190,12 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       await _skillsRepository.createOrEditSkill(
         skill: skill,
       );
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      emit(state.copyWith(status: FormStatus.success));
     } catch (e) {
       debugPrint(e.toString());
       emit(
         state.copyWith(
-          status: FormzStatus.submissionFailure,
+          status: FormStatus.failure,
         ),
       );
     }
@@ -211,18 +203,18 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
 
   void deleteSkill({required Skill skill}) {
     emit(
-      state.copyWith(status: FormzStatus.submissionInProgress),
+      state.copyWith(status: FormStatus.submitting),
     );
 
     try {
       _skillsRepository.deleteSkill(
         skill: skill,
       );
-      emit(state.copyWith(status: FormzStatus.submissionSuccess));
+      emit(state.copyWith(status: FormStatus.success));
     } catch (e) {
       debugPrint(e.toString());
       emit(
-        state.copyWith(status: FormzStatus.submissionFailure),
+        state.copyWith(status: FormStatus.failure),
       );
     }
   }

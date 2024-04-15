@@ -27,7 +27,7 @@ class EditRiderProfileState extends Equatable {
     this.isLocationSearch = false,
     this.zipCode = const ZipCode.pure(),
     this.status = SubmissionStatus.initial,
-    this.locationStatus = FormzStatus.pure,
+    this.locationStatus = FormStatus.initial,
     this.autoCompleteStatus = AutoCompleteStatus.initial,
   });
 
@@ -93,7 +93,7 @@ class EditRiderProfileState extends Equatable {
   final RiderProfile? riderProfile;
 
   /// The status of the location
-  final FormzStatus locationStatus;
+  final FormStatus locationStatus;
 
   /// The prediction of the postal code
   final PostalCodeResults? prediction;
@@ -124,7 +124,7 @@ class EditRiderProfileState extends Equatable {
     String? selectedCountry,
     SubmissionStatus? status,
     RiderProfile? riderProfile,
-    FormzStatus? locationStatus,
+    FormStatus? locationStatus,
     PostalCodeResults? prediction,
     AutoCompleteStatus? autoCompleteStatus,
   }) {

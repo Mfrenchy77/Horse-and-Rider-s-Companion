@@ -13,7 +13,7 @@ class CreateTrainingPathState extends Equatable {
     this.searchList = const [],
     this.removedSkills = const [],
     this.selectedSkills = const [],
-    this.status = FormzStatus.pure,
+    this.status = FormStatus.initial,
     this.name = const SingleWord.pure(),
     this.description = const SingleWord.pure(),
   });
@@ -22,7 +22,7 @@ class CreateTrainingPathState extends Equatable {
   final bool isForRider;
   final SingleWord name;
   final String searchQuery;
-  final FormzStatus status;
+  final FormStatus status;
   final List<String> skills;
   final List<Skill?> allSkills;
   final SingleWord description;
@@ -38,7 +38,7 @@ class CreateTrainingPathState extends Equatable {
     SingleWord? name,
     bool? isForRider,
     String? searchQuery,
-    FormzStatus? status,
+    FormStatus? status,
     List<String>? skills,
     List<Skill?>? allSkills,
     SingleWord? description,

@@ -1,5 +1,8 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 
@@ -106,6 +109,19 @@ class AboutPage extends StatelessWidget {
             const Text(
               'For any inquiries or feedback, please don’t hesitate to reach'
               ' out to us at HorseandRidersCompanion@gmail.com.',
+            ),
+            smallGap(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                FilledButton.tonalIcon(
+                  icon: const Icon(
+                    Icons.close,
+                  ),
+                  onPressed: () => context.pop(),
+                  label: const Text('Close'),
+                ),
+              ],
             ),
           ],
         ),

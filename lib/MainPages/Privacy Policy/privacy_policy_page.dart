@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 
@@ -163,6 +164,17 @@ class PrivacyPolicyPage extends StatelessWidget {
               ' contact the Service Provider via email at'
               ' HorseandRidersCompanion@gmail.com.',
               style: TextStyle(fontSize: 16),
+            ),
+            smallGap(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                FilledButton.tonalIcon(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => context.pop(),
+                  label: const Text('Close'),
+                ),
+              ],
             ),
           ],
         ),

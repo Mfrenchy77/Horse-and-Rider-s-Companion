@@ -17,8 +17,8 @@ class ProfileSearchState extends Equatable {
     this.isSearchRider = true,
     this.riderProfiles = const [],
     this.horseProfiles = const [],
-    this.status = FormzStatus.pure,
     this.email = const Email.pure(),
+    this.status = FormStatus.initial,
     this.searchType = SearchType.name,
     this.zipCode = const ZipCode.pure(),
     this.searchValue = const Name.pure(),
@@ -38,7 +38,7 @@ class ProfileSearchState extends Equatable {
   final ZipCode zipCode;
 
   /// This is the status of the search
-  final FormzStatus status;
+  final FormStatus status;
 
   /// This determines if the Search is for a rider or a horse
   final bool isSearchRider;
@@ -65,7 +65,7 @@ class ProfileSearchState extends Equatable {
     bool? isError,
     ZipCode? zipCode,
     bool? isSearchRider,
-    FormzStatus? status,
+    FormStatus? status,
     Name? searchValue,
     SearchType? searchType,
     LocationRange? locationRange,
