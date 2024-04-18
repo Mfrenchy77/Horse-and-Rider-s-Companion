@@ -1,5 +1,10 @@
----
+name: horseandriderscompanion
+publish_to: none
+version: 0.0.1
+description: "Horse & Rider's Companion is a robust equestrian platform designed by Matt French, a seasoned horse trainer from San Diego. This app empowers the equestrian community by providing tools for tracking training progress, accessing curated educational resources, and sharing knowledge among riders and enthusiasts. Features include detailed skill tracking for both riders and horses, a library of community-rated educational content, and opportunities for community contributions and feedback. Whether you're a seasoned equestrian or a newcomer, join our community to enhance your training and connect with fellow horse lovers."
+
 dependencies:
+
   authentication_repository:
     path: packages/authentication_repository
   auto_size_text: ^3.0.0
@@ -51,7 +56,6 @@ dependencies:
   timeago: ^3.3.0
   universal_html: ^2.2.4
   url_launcher: ^6.1.7
-description: "Horse & Rider's Companion is a robust equestrian platform designed by Matt French, a seasoned horse trainer from San Diego. This app empowers the equestrian community by providing tools for tracking training progress, accessing curated educational resources, and sharing knowledge among riders and enthusiasts. Features include detailed skill tracking for both riders and horses, a library of community-rated educational content, and opportunities for community contributions and feedback. Whether you're a seasoned equestrian or a newcomer, join our community to enhance your training and connect with fellow horse lovers."
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -91,6 +95,7 @@ flutter_intl:
   localizely:
     project_id: ad6c1ed5-485f-4d15-b7e6-371baeda80f3
 flutter_native_splash:
+
   #branding_dark: assets/dart_dark.png
   # Android 12 handles the splash screen differently than previous versions.  Please visit
   # https://developer.android.com/guide/topics/ui/splash-screen
@@ -162,7 +167,8 @@ flutter_native_splash:
   # The android, ios and web parameters can be used to disable generating a splash screen on a given
   # platform.
   #android: true
-  #ios: true
+  ios: true
+  remove_alpha_ios: true
   #web: true
   # Platform specific images can be specified with the following parameters, which will override
   # the respective parameter.  You may specify all, selected, or none of these parameters:
@@ -191,7 +197,4 @@ flutter_native_splash:
   # The position of the splash image can be set with android_gravity, ios_content_mode, and
   # web_image_mode parameters.  All default to center.
   # web_image_mode can be one of the following modes: center, contain, stretch, and cover.
-  web_image_mode: center
-name: horseandriderscompanion
-publish_to: none
-version: 0.0.1
+  web_image_mode: contain

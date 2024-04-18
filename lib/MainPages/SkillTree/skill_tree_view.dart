@@ -81,11 +81,11 @@ class SkillTreeView extends StatelessWidget {
 
 void _handleBackButton(BuildContext context, AppState state, AppCubit cubit) {
   final isSplitScreen = MediaQuery.of(context).size.width > 840;
-  // debugPrint('Skill Tree Back Pressed\n'
-  //     'SkillTreeNavigationState: ${state.skillTreeNavigation}\n '
-  //     'From profile: ${state.isFromProfile}\n '
-  //     'From Training Path List: ${state.isFromTrainingPathList}\n '
-  //     'From Training Path: ${state.isFromTrainingPath}');
+  debugPrint('Skill Tree Back Pressed\n'
+      'SkillTreeNavigationState: ${state.skillTreeNavigation}\n '
+      'From profile: ${state.isFromProfile}\n '
+      'From Training Path List: ${state.isFromTrainingPathList}\n '
+      'From Training Path: ${state.isFromTrainingPath}');
   if (isSplitScreen) {
     switch (context.read<AppCubit>().state.skillTreeNavigation) {
       case SkillTreeNavigation.TrainingPath:

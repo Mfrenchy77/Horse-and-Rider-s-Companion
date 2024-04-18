@@ -80,7 +80,8 @@ class UpdateResourceSkills extends StatelessWidget {
                                 ?.map(
                                   (e) => TextButton(
                                     onPressed: () {
-                                      appCubit.navigateToSkillLevel(skill: e);
+                                      appCubit..changeIndex(1)
+                                      ..navigateToSkillLevel(skill: e);
                                       context.goNamed(SkillTreePage.name);
 
                                       debugPrint('Skill: ${e?.skillName}');

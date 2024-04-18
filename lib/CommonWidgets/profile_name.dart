@@ -37,7 +37,7 @@ class ProfileName extends StatelessWidget {
                       ),
                       child: Hero(
                         transitionOnUserGestures: true,
-                        tag: profilePicUrl!,
+                        tag: profilePicUrl ?? '',
                         child: ProfilePhoto(
                           size: 100,
                           profilePicUrl: profilePicUrl,

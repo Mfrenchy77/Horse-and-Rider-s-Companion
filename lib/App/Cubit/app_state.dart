@@ -148,8 +148,9 @@ class AppState extends Equatable {
     this.savedResources = const [],
     this.isFromTrainingPath = false,
     this.resourceComments = const [],
-    this.isEmailVerification = false,
+    this.showEmailVerification = false,
     this.isFromTrainingPathList = false,
+    this.deleteEmail = const Email.pure(),
     this.pageStatus = AppPageStatus.loading,
     this.acceptStatus = AcceptStatus.waiting,
     this.commentSortState = CommentSortState.Best,
@@ -209,6 +210,9 @@ class AppState extends Equatable {
   /// The Id of a conversation to open
   final String? messageId;
 
+  /// The email to delete the account
+  final Email deleteEmail;
+
   /// The message the user is typing
   final String messageText;
 
@@ -246,9 +250,6 @@ class AppState extends Equatable {
   /// The list of messages in a conversation
   final List<Message>? messages;
 
-  /// Whether we want to display the email verification dialog
-  final bool isEmailVerification;
-
   /// The status of the accept request
   final AcceptStatus acceptStatus;
 
@@ -260,6 +261,9 @@ class AppState extends Equatable {
 
   /// The database resources
   final List<Resource> resources;
+
+  /// Whether we want to display the email verification dialog
+  final bool showEmailVerification;
 
   /// The conversation being viewed
   final Conversation? conversation;
@@ -341,6 +345,7 @@ class AppState extends Equatable {
     String? messageId,
     AppStatus? status,
     Resource? resource,
+    Email? deleteEmail,
     BannerAd? bannerAd,
     String? messageText,
     bool? isFromProfile,
@@ -352,7 +357,6 @@ class AppState extends Equatable {
     List<Message>? messages,
     List<Skill?>? allSkills,
     bool? isFromTrainingPath,
-    bool? isEmailVerification,
     List<String?>? searchList,
     AppPageStatus? pageStatus,
     List<Skill?>? sortedSkills,
@@ -362,6 +366,7 @@ class AppState extends Equatable {
     RiderProfile? usersProfile,
     AcceptStatus? acceptStatus,
     Conversation? conversation,
+    bool? showEmailVerification,
     RiderProfile? ownersProfile,
     String? viewingProfielEmail,
     bool? isFromTrainingPathList,
@@ -402,6 +407,7 @@ class AppState extends Equatable {
       pageStatus: pageStatus ?? this.pageStatus,
       isForRider: isForRider ?? this.isForRider,
       searchList: searchList ?? this.searchList,
+      deleteEmail: deleteEmail ?? this.deleteEmail,
       messageText: messageText ?? this.messageText,
       conversation: conversation ?? this.conversation,
       acceptStatus: acceptStatus ?? this.acceptStatus,
@@ -427,10 +433,11 @@ class AppState extends Equatable {
       skillTreeSortState: skillTreeSortState ?? this.skillTreeSortState,
       conversationsState: conversationsState ?? this.conversationsState,
       isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
-      isEmailVerification: isEmailVerification ?? this.isEmailVerification,
       viewingProfielEmail: viewingProfielEmail ?? this.viewingProfielEmail,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
+      showEmailVerification:
+          showEmailVerification ?? this.showEmailVerification,
       isFromTrainingPathList:
           isFromTrainingPathList ?? this.isFromTrainingPathList,
       messageToSupportStatus:
@@ -461,6 +468,7 @@ class AppState extends Equatable {
         isForRider,
         pageStatus,
         searchList,
+        deleteEmail,
         messageText,
         conversation,
         acceptStatus,
@@ -489,7 +497,7 @@ class AppState extends Equatable {
         skillTreeNavigation,
         resourcesSortStatus,
         viewingProfielEmail,
-        isEmailVerification,
+        showEmailVerification,
         isFromTrainingPathList,
         messageToSupportStatus,
       ];

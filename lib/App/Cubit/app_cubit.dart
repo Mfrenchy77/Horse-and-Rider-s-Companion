@@ -9,6 +9,7 @@ import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:form_inputs/form_inputs.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
@@ -135,7 +136,7 @@ class AppCubit extends Cubit<AppState> {
         state.copyWith(
           user: user,
           isGuest: true,
-          isEmailVerification: true,
+          showEmailVerification: true,
           pageStatus: AppPageStatus.loaded,
           status: AppStatus.unauthenticated,
         ),
@@ -227,8 +228,9 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Checking Email Verification Status');
       await _authenticationRepository.reloadCurrentUser();
       final isVerified = _authenticationRepository.isEmailVerified();
+      debugPrint('Email is verified: $isVerified');
       emit(
-        state.copyWith(isEmailVerification: !isVerified),
+        state.copyWith(showEmailVerification: !isVerified),
       );
 
       if (isVerified) {
@@ -236,8 +238,9 @@ class AppCubit extends Cubit<AppState> {
         debugPrint('Email is verified in Timer');
         emit(
           state.copyWith(
+            isProfileSetup: true,
             isMessage: true,
-            isEmailVerification: false,
+            showEmailVerification: false,
             errorMessage: 'Email has been verified',
           ),
         );
@@ -245,24 +248,88 @@ class AppCubit extends Cubit<AppState> {
     });
   }
 
+  /// Determines if the user is authorized to edit a viewing profile
+  /// or a horse profile
   bool isAuthorized() {
-    final viewingProfile = state.viewingProfile;
     final usersProfile = state.usersProfile;
-    if (viewingProfile == null) {
-      return true;
-    }
-    if (usersProfile == null) {
+    final horseProfile = state.horseProfile;
+    final viewingProfile = state.viewingProfile;
+
+    // Early exit for guest users to avoid unnecessary checks
+    if (state.isGuest) {
+      debugPrint('Guest User');
       return false;
     }
-    return viewingProfile.instructors
-            ?.any((element) => element.id == usersProfile.id) ??
-        false;
+
+    // Check ownership of the profile being viewed
+    if (state.isViewing && viewingProfile != null) {
+      if (usersProfile != null) {
+        // Profile owner check
+        if (viewingProfile.email == usersProfile.email) {
+          debugPrint('Profile Owner');
+          return true;
+        }
+        // Instructor check for the viewing profile
+        if (viewingProfile.instructors
+                ?.any((instructor) => instructor.id == usersProfile.email) ??
+            false) {
+          debugPrint('Viewing Profile Instructor');
+          return true;
+        }
+        // Student check for the viewing profile
+        if (viewingProfile.students
+                ?.any((student) => student.id == usersProfile.email) ??
+            false) {
+          debugPrint('Viewing Profile Student');
+          return true;
+        }
+      }
+      // If no conditions met for viewingProfile, not authorized
+      debugPrint('Not Authorized for Viewing Profile');
+      return false;
+    }
+
+    // If the state is focused on a horse and the horseProfile exists
+    if (!state.isForRider && horseProfile != null && usersProfile != null) {
+      // Owner check for horse
+      if (usersProfile.ownedHorses
+              ?.any((ownedHorse) => ownedHorse.id == horseProfile.id) ??
+          false) {
+        debugPrint('Horse Owner');
+        return true;
+      }
+      // Instructor check for horse
+      if (horseProfile.instructors
+              ?.any((instructor) => instructor.id == usersProfile.email) ??
+          false) {
+        debugPrint('Horse Instructor');
+        return true;
+      }
+    }
+
+    // Default authorization based on user profile availability
+    if (usersProfile != null) {
+      debugPrint('User Profile Loaded, Default Authorization');
+      return true;
+    }
+
+    debugPrint('Default Not Authorized');
+    return false;
   }
 
   /// Opens a Rider Profile Page for  [email]
   void getProfileToBeViewed({
     required String email,
   }) {
+    emit(
+      state.copyWith(
+        horseId: '',
+        isViewing: true,
+        isForRider: true,
+        // ignore: avoid_redundant_argument_values
+        horseProfile: null,
+      ),
+    );
     if (state.usersProfile?.email != email) {
       _fetchRiderProfile(email).then((value) {
         if (value != null) {
@@ -271,6 +338,11 @@ class AppCubit extends Cubit<AppState> {
 
           emit(
             state.copyWith(
+              horseId: '',
+              isViewing: true,
+              isForRider: true,
+              // ignore: avoid_redundant_argument_values
+              horseProfile: null,
               viewingProfile: viewingProfile,
               pageStatus: AppPageStatus.loaded,
             ),
@@ -826,6 +898,51 @@ class AppCubit extends Cubit<AppState> {
     return state.viewingProfile?.instructors
             ?.any((element) => element.id == state.usersProfile?.email) ??
         false;
+  }
+
+  /// Email changed in the delete account dialog
+  void emailChanged(String email) {
+    emit(state.copyWith(deleteEmail: Email.dirty(email)));
+  }
+
+  /// Deletes the user's account
+  Future<void> deleteAccount() async {
+    final user = state.usersProfile;
+    final email = state.deleteEmail;
+    if (user != null && email.isValid && email.value == user.email) {
+      try {
+        await _riderProfileRepository.deleteRiderProfile(email: user.email);
+        emit(
+          state.copyWith(
+            status: AppStatus.unauthenticated,
+            user: User.empty,
+            // ignore: avoid_redundant_argument_values
+            usersProfile: null,
+            // ignore: avoid_redundant_argument_values
+            horseProfile: null,
+            // ignore: avoid_redundant_argument_values
+            viewingProfile: null,
+            isGuest: true,
+            isMessage: true,
+            errorMessage: 'Account Deleted',
+          ),
+        );
+      } catch (e) {
+        emit(
+          state.copyWith(
+            isError: true,
+            errorMessage: 'Failed to delete account: $e',
+          ),
+        );
+      }
+    } else {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to delete account',
+        ),
+      );
+    }
   }
 
 /* ***************************************************************************
@@ -2358,6 +2475,7 @@ class AppCubit extends Cubit<AppState> {
           conversation: conversation,
         );
       }
+      debugPrint('Conversation: ${conversation.parties}');
       _messagesStream = _messagesRepository
           .getMessages(conversationId: conversation.id)
           .listen((event) {
@@ -2388,10 +2506,15 @@ class AppCubit extends Cubit<AppState> {
 
   /// Returns a conversation by its [id]
   Conversation? getConversationById(String id) {
+    debugPrint('Getting Conversation by Id: $id');
     if (state.conversations == null || state.conversations!.isEmpty) {
+      debugPrint('Conversations is null');
       return null;
     } else {
-      final conversation = state.conversations!.firstOrNull;
+      final conversation = state.conversations!.firstWhereOrNull(
+        (element) => element.id == id,
+      );
+      debugPrint('Got Conversation: ${conversation?.parties}');
       return conversation;
     }
   }
@@ -2933,6 +3056,7 @@ class AppCubit extends Cubit<AppState> {
   /// 1: SkillTreePage
   /// 2: ResourcesPage
   void changeIndex(int index) {
+    debugPrint('Changing index from ${state.index} to $index');
     switch (index) {
       case 0:
         emit(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
+import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
@@ -224,6 +225,12 @@ class UserProfileDrawer extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              smallGap(),
+              // Delte Account
+              TextButton(
+                onPressed: () => context.goNamed(DeletePage.name),
+                child: const Text('Delete Account'),
               ),
               smallGap(),
               // Privacy Policy

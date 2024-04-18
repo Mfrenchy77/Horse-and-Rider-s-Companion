@@ -32,7 +32,8 @@ class SkillNodeCard extends StatelessWidget {
               SkillItem(
                 name: skillNode.name,
                 onTap: () {
-                  cubit.navigateToSkillLevel(
+                  cubit..changeIndex(1)
+                  ..navigateToSkillLevel(
                     skill: state.allSkills.firstWhere(
                       (element) => element?.skillName == skillNode.name,
                     ),

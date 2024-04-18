@@ -36,7 +36,7 @@ class SharedPrefs {
   /// Returns `true` if seasonal mode is enabled, `false` otherwise.
   /// Defaults to `true` if the preference has not been set.
   bool isSeasonalMode() {
-    return _sharedPrefs.getBool(PREF_SEASONAL_MODE) ?? true;
+    return _sharedPrefs.getBool(PREF_SEASONAL_MODE) ?? false;
   }
 
   /// Sets the user's preference for seasonal mode.

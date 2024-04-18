@@ -34,7 +34,8 @@ class ProfileSkills extends StatelessWidget {
                             : () {
                                 debugPrint('Goto Skill: ${e.skillName}');
                                 context.goNamed(SkillTreePage.name);
-                                cubit.navigateToSkillLevel(
+                                cubit..changeIndex(1)
+                                ..navigateToSkillLevel(
                                   skill: state.allSkills.firstWhere(
                                     (element) =>
                                         element?.skillName == e.skillName,

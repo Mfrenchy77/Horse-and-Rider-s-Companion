@@ -14,9 +14,6 @@ class SkillLevelProgressBar extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        final isConflict =
-            state.horseProfile == null && state.skill?.rider == false;
-        debugPrint('Is Conflict between horse and skill: $isConflict');
         return MaxWidthBox(
           maxWidth: 1000,
           child: Row(
@@ -24,7 +21,7 @@ class SkillLevelProgressBar extends StatelessWidget {
               // Learning
               Expanded(
                 child: InkWell(
-                  onTap: state.isGuest || isConflict
+                  onTap: state.isGuest || !cubit.isAuthorized()
                       ? null
                       : () {
                           showDialog<AlertDialog>(
@@ -85,7 +82,7 @@ class SkillLevelProgressBar extends StatelessWidget {
               // Proficient
               Expanded(
                 child: InkWell(
-                  onTap: state.isGuest || isConflict
+                  onTap: state.isGuest || !cubit.isAuthorized()
                       ? null
                       : () {
                           showDialog<AlertDialog>(

@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
+import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
+import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Navigator/navigator_view.dart';
@@ -207,6 +209,21 @@ class Routes {
                       name: AboutPage.name,
                       path: AboutPage.routeName,
                       builder: (context, state) => const AboutPage(),
+                    ),
+                    // Email Veriication Dialog
+                    GoRoute(
+                      name: EmailVerificationDialog.name,
+                      path: EmailVerificationDialog.path,
+                      builder: (context, state) => EmailVerificationDialog(
+                        email: state
+                            .pathParameters[EmailVerificationDialog.pathParms]!,
+                      ),
+                    ),
+                    // Delte Account
+                    GoRoute(
+                      name: DeletePage.name,
+                      path: DeletePage.path,
+                      builder: (context, state) => const DeletePage(),
                     ),
                   ],
                 ),

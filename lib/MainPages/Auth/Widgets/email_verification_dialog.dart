@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
 class EmailVerificationDialog extends StatelessWidget {
@@ -11,13 +14,16 @@ class EmailVerificationDialog extends StatelessWidget {
     required this.email,
     super.key,
   });
+  static const name = 'EmailVerificationDialog';
+  static const path = 'EmailVerificationDialog/:email';
+  static const pathParms = 'email';
   final String email;
   @override
   Widget build(BuildContext context) {
     return BlocListener<AppCubit, AppState>(
       listener: (context, state) {
-        if (!state.isEmailVerification) {
-          Navigator.pop(context);
+        if (!state.showEmailVerification) {
+          if (context.mounted) context.pushReplacementNamed(ProfilePage.name);
         }
       },
       child: AlertDialog(
@@ -35,8 +41,11 @@ class EmailVerificationDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'An email has been sent to $email. '
-              'Please verify your email to continue.',
+              email.isEmpty
+                  ? 'An email has been sent to your email. '
+                      'Please verify your email to continue.'
+                  : 'An email has been sent to $email. '
+                      'Please verify your email to continue.',
               style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
             gap(),
@@ -57,9 +66,12 @@ class EmailVerificationDialog extends StatelessWidget {
             onPressed: () => context.read<AppCubit>().resendEmailVerification(),
             child: const Text('Resend Email'),
           ),
-          ElevatedButton(
-            onPressed: () => context.read<AppCubit>().openEmail(email),
-            child: const Text('Open Email'),
+          Visibility(
+            visible: email.isNotEmpty,
+            child: ElevatedButton(
+              onPressed: () => context.read<AppCubit>().openEmail(email),
+              child: const Text('Open Email'),
+            ),
           ),
         ],
       ),

@@ -35,7 +35,7 @@ class NavigatorView extends StatelessWidget {
           previous.errorMessage != current.errorMessage ||
           previous.showOnboarding != current.showOnboarding ||
           previous.isProfileSetup != current.isProfileSetup ||
-          previous.isEmailVerification != current.isEmailVerification,
+          previous.showEmailVerification != current.showEmailVerification,
       listener: (context, state) {
         debugPrint('NavigatorView Listener Called');
         if (!context.mounted) return;
@@ -123,16 +123,27 @@ class NavigatorView extends StatelessWidget {
           });
         }
         // Email verification
-        if (state.isEmailVerification) {
+        if (state.showEmailVerification) {
+          debugPrint('Email Verification Called');
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            if (!context.mounted) return;
+            debugPrint('Email Verification Dialog Called');
+            //if (!context.mounted) return;
             const time = Duration(milliseconds: 200);
             if (timeStamp < time) {
-              showDialog<AlertDialog>(
-                context: context,
-                builder: (context) =>
-                    EmailVerificationDialog(email: state.user.email),
+              context.pushNamed(
+                EmailVerificationDialog.name,
+                pathParameters: {
+                  EmailVerificationDialog.pathParms: state.user.email??'',
+                },
               );
+              // showDialog<AlertDialog>(
+              //   barrierDismissible: false,
+              //   context: context,
+              //   builder: (context) => EmailVerificationDialog(
+              //     email: state.user.email,
+              //     key: const Key('EmailVerificationDialog'),
+              //   ),
+              // ).then((value) => cubit.clearEmailVerification()
             } else {
               debugPrint('Email Verification Dialog already shown: $timeStamp');
             }
@@ -199,7 +210,7 @@ class NavigatorView extends StatelessWidget {
                           useDrawer: false,
                           destinations:
                               _buildDestinations(isForRider: state.isForRider),
-                          selectedIndex: child.currentIndex,
+                          selectedIndex: state.index,
                           onSelectedIndexChange: cubit.changeIndex,
                           body: (_) => AdaptiveLayout(
                             internalAnimations: false,

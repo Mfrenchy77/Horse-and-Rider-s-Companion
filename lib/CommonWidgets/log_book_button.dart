@@ -26,8 +26,7 @@ class LogBookButton extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        debugPrint('Is Authorized to view Log Book: '
-            '${context.read<AppCubit>().isAuthorized()}');
+       
         return !cubit.isAuthorized() || state.isGuest
             ? const SizedBox.shrink()
             : Row(

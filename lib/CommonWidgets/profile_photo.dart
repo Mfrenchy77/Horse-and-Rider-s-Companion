@@ -30,6 +30,7 @@ class ProfilePhoto extends StatelessWidget {
                     elevation: 0,
                   ),
                   body: PhotoView(
+                    minScale: PhotoViewComputedScale.contained * 0.8,
                     heroAttributes: const PhotoViewHeroAttributes(
                       tag: 'profilePic',
                       transitionOnUserGestures: true,
