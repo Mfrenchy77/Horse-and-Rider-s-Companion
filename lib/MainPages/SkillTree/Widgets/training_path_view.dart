@@ -19,6 +19,7 @@ class TrainingPathView extends StatelessWidget {
           alignment: Alignment.topCenter,
           child: Column(
             children: [
+              // Training Path Name
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -49,14 +50,16 @@ class TrainingPathView extends StatelessWidget {
                   ),
                 ],
               ),
-              smallGap(),
-              Text(state.trainingPath?.description ?? ''),
-              smallGap(),
+              // Description
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(state.trainingPath?.description ?? ''),
+              ),
               SizedBox(
                 width: MediaQuery.of(context).size.width * .9,
                 child: Divider(
                   color: HorseAndRidersTheme().getTheme().primaryColor,
-                  thickness: 2,
+                  thickness: 1,
                 ),
               ),
               Scrollbar(
