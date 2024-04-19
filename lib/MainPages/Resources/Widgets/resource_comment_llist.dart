@@ -5,8 +5,11 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 
 class ResourceCommentList extends StatelessWidget {
-  const ResourceCommentList(
-      {super.key, required this.resource, required this.scrollController});
+  const ResourceCommentList({
+    super.key,
+    required this.resource,
+    required this.scrollController,
+  });
   final Resource resource;
   final ScrollController scrollController;
   @override

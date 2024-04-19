@@ -16,7 +16,7 @@ class TrainingPathListView extends StatelessWidget {
         final cubit = context.read<AppCubit>();
 
         final trainingPaths = state.trainingPaths
-            .where((element) => element?.isForHorse == !state.isForRider)
+            .where((element) => element?.isForRider == state.isForRider)
             .toList();
         return Scaffold(
           floatingActionButton: Visibility(

@@ -53,9 +53,16 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
     emit(state.copyWith(isForRider: !state.isForRider));
   }
 
+  /// Returns only the skills for horse or rider
+  List<Skill?> skillsForHorseOrRider() {
+    return state.allSkills
+        .where((element) => element?.rider == state.isForRider)
+        .toList();
+  }
+
   void isSearch() {
     debugPrint('All Skills: ${state.allSkills.length}');
-    final searchList = state.allSkills
+    final searchList = skillsForHorseOrRider()
         .map((e) => e?.skillName)
         .toList()
         .where(
@@ -258,7 +265,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
           name: state.name.value,
           lastEditDate: DateTime.now(),
           skillNodes: state.skillNodes,
-          isForHorse: state.isForRider,
+          isForRider: state.isForRider,
           lastEditBy: state.usersProfile!.name,
           description: state.description.value,
           id: state.trainingPath?.id ?? ViewUtils.createId(),

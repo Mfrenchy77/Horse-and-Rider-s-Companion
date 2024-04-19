@@ -228,7 +228,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                               },
                                         child: Text(
                                           isEdit
-                                              ? 'Submit Edited Training Path'
+                                              ? 'Edit'
                                               : 'Submit',
                                           textAlign: TextAlign.center,
                                         ),

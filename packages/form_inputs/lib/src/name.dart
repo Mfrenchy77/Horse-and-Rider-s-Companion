@@ -20,6 +20,7 @@ class Name extends FormzInput<String, String> {
 /// name search validator, must have at least 3 characters and first letter
 /// capitalized and no special characters
 class NameValidator extends FormzInput<String, String> {
+  /// {@macro name_validator}
   const NameValidator.pure() : super.pure('');
 
   /// {@macro name_validator}

@@ -45,8 +45,8 @@ class SharedPrefs {
   }
 
   /// Retrieves the user's preference for showing the onboarding screen.
-  /// Returns `true` if the onboarding screen should be shown, `false` otherwise.
-  /// Defaults to `true` if the preference has not been set.
+  /// Returns `true` if the onboarding screen should be shown, `false`
+  ///  otherwise defaults to `true` if the preference has not been set.
   bool showOnboarding() {
     return _sharedPrefs.getBool(PREF_SHOW_ONBOARDING) ?? true;
   }

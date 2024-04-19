@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 
 class ResourceInfoBar extends StatelessWidget {
   const ResourceInfoBar({super.key, required this.resource});
-//FIXME: Something here is causing craziness
   final Resource resource;
   @override
   Widget build(BuildContext context) {
@@ -112,24 +112,27 @@ class ResourceInfoBar extends StatelessWidget {
                     onTap: () => cubit.openResource(url: resource.url),
                     child: Tooltip(
                       message: 'Go to: ${resource.url}',
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: FadeInImage.assetNetwork(
-                          placeholder: 'assets/horse_logo_and_text_dark.png',
-                          image: resource.thumbnail ?? '',
-                          fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 500),
-                          imageErrorBuilder: (context, error, stackTrace) {
-                            debugPrint(
-                              'Error loading NetworkImage: $error',
-                            );
-                            return Image.asset(
-                              'assets/horse_logo_and_text_dark.png',
-                            );
-                          },
+                      child: MaxWidthBox(
+                        maxWidth: 200,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: FadeInImage.assetNetwork(
+                            placeholder: 'assets/horse_logo_and_text_dark.png',
+                            image: resource.thumbnail ?? '',
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 500),
+                            imageErrorBuilder: (context, error, stackTrace) {
+                              debugPrint(
+                                'Error loading NetworkImage: $error',
+                              );
+                              return Image.asset(
+                                'assets/horse_logo_and_text_dark.png',
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),

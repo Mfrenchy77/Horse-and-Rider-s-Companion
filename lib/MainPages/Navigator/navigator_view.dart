@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
-import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -44,17 +43,17 @@ class NavigatorView extends StatelessWidget {
         // First Launch
         if (state.showFirstLaunch) {
           debugPrint('First Launch Called');
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            if (!context.mounted) return;
-            const time = Duration(milliseconds: 200);
-            if (timeStamp < time) {
-              GoRouter.of(context)
-                  .pushNamed(AboutPage.name)
-                  .then((value) => cubit.setFirstLaunch());
-            } else {
-              debugPrint('First Launch already shown: $timeStamp');
-            }
-          });
+          // SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          //   if (!context.mounted) return;
+          //   const time = Duration(milliseconds: 200);
+          //   if (timeStamp < time) {
+          //     GoRouter.of(context)
+          //         .pushNamed(AboutPage.name)
+          //         .then((value) => cubit.setFirstLaunch());
+          //   } else {
+          //     debugPrint('First Launch already shown: $timeStamp');
+          //   }
+          // });
         }
 
         // Onboarding
@@ -83,8 +82,9 @@ class NavigatorView extends StatelessWidget {
 
         // Error handling
         if (state.isError) {
+          debugPrint('Error Called');
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            if (!context.mounted) return;
+            //if (!context.mounted) return;
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -103,8 +103,9 @@ class NavigatorView extends StatelessWidget {
         }
         // Message handling
         if (state.isMessage) {
+          debugPrint('Message Called');
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            if (!context.mounted) return;
+            //  if (!context.mounted) return;
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -133,7 +134,7 @@ class NavigatorView extends StatelessWidget {
               context.pushNamed(
                 EmailVerificationDialog.name,
                 pathParameters: {
-                  EmailVerificationDialog.pathParms: state.user.email??'',
+                  EmailVerificationDialog.pathParms: state.user.email,
                 },
               );
               // showDialog<AlertDialog>(

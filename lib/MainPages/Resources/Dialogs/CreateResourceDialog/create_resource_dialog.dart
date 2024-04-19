@@ -23,6 +23,8 @@ class CreateResourcDialog extends StatelessWidget {
     final titleController = TextEditingController(text: resource?.name ?? '');
     final descriptionController =
         TextEditingController(text: resource?.description ?? '');
+    final imageUrlController =
+        TextEditingController(text: resource?.thumbnail ?? '');
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider(
@@ -43,11 +45,16 @@ class CreateResourcDialog extends StatelessWidget {
         ),
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
+          listenWhen: (previous, current) =>
+              previous.title != current.title ||
+              previous.description != current.description ||
+              previous.imageUrl != current.imageUrl,
           listener: (context, state) {
             final cubit = context.read<CreateResourceDialogCubit>();
             if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
               titleController.text = state.title.value;
               descriptionController.text = state.description.value;
+              imageUrlController.text = state.imageUrl;
             }
             // show a dialog instructing user to enter the title and description
             //in manually
@@ -93,11 +100,7 @@ class CreateResourcDialog extends StatelessWidget {
           child:
               BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
             builder: (context, state) {
-              return
-
-                  //resource != null                  ?
-
-                  Scaffold(
+              return Scaffold(
                 backgroundColor: Colors.transparent,
                 appBar: AppBar(
                   title: Text(
@@ -116,9 +119,10 @@ class CreateResourcDialog extends StatelessWidget {
                     child: Form(
                       child: Column(
                         children: [
-                          ///   Resource Url
+                          //   Resource Url
                           _urlField(context: context, resource: resource),
                           smallGap(),
+                          //   Button to fetch the website information
                           Visibility(
                             visible: state.urlFetchedStatus ==
                                 UrlFetchedStatus.initial,
@@ -129,31 +133,25 @@ class CreateResourcDialog extends StatelessWidget {
                               child: const Text('Retrieve Website Information'),
                             ),
                           ),
+                          //  Show a loading indicator while fetching the website information
                           Visibility(
                             visible: state.urlFetchedStatus ==
                                 UrlFetchedStatus.fetching,
                             child:
                                 const Text('Fetching Website Information...'),
                           ),
-                          Column(
-                            children: [
-                              _image(
-                                context: context,
-                                resource: resource,
-                                state: state,
-                              ),
-                            ],
-                          ),
+                          const ResourceImage(),
                           _imageField(
+                            state: state,
                             context: context,
                             resource: resource,
-                            state: state,
+                            imageUrlController: imageUrlController,
                           ),
                           _titleField(
-                            titleController: titleController,
                             state: state,
                             context: context,
                             resource: resource,
+                            titleController: titleController,
                           ),
                           gap(),
                           _descriptionField(
@@ -231,11 +229,10 @@ Widget _imageField({
   required BuildContext context,
   required Resource? resource,
   required CreateResourceDialogState state,
+  required TextEditingController imageUrlController,
 }) {
   return TextFormField(
-    initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
-        ? state.imageUrl
-        : resource?.thumbnail ?? '',
+    controller: imageUrlController,
     onChanged: (url) =>
         context.read<CreateResourceDialogCubit>().imageUrlChanged(url),
     keyboardType: TextInputType.url,
@@ -245,6 +242,37 @@ Widget _imageField({
       icon: Icon(Icons.arrow_circle_down),
     ),
   );
+}
+
+class ResourceImage extends StatelessWidget {
+  const ResourceImage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
+      builder: (context, state) {
+        return SizedBox(
+          height: 200,
+          width: 200,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.grey,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ImageNetwork(
+              onError: const Image(
+                image: AssetImage('assets/horse_icon_circle.png'),
+              ),
+              debugPrint: true,
+              image: state.imageUrl,
+              height: 200,
+              width: 200,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 Widget _image({
@@ -261,7 +289,7 @@ Widget _image({
         borderRadius: BorderRadius.circular(10),
       ),
       child: ImageNetwork(
-        onError: const Image(image: AssetImage('assets/horse_icon.png')),
+        onError: const Image(image: AssetImage('assets/horse_icon_circle.png')),
         debugPrint: true,
         image: resource?.thumbnail ?? state.imageUrl,
         height: 200,
@@ -293,7 +321,7 @@ Widget _titleField({
 }) {
   return TextFormField(
     controller: titleController,
-    minLines: 2,
+    minLines: 1,
     maxLines: 10,
     // initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
     //     ? state.title.value
@@ -318,7 +346,7 @@ Widget _descriptionField({
 }) {
   return TextFormField(
     controller: descriptionController,
-    minLines: 3,
+    minLines: 1,
     maxLines: 10,
     // initialValue: state.urlFetchedStatus == UrlFetchedStatus.fetched
     //     ? state.description.value

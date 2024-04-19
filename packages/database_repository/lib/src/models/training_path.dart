@@ -13,7 +13,7 @@ class TrainingPath {
     required this.skills,
     required this.createdBy,
     required this.createdAt,
-    required this.isForHorse,
+    required this.isForRider,
     required this.skillNodes,
     required this.lastEditBy,
     required this.createdById,
@@ -33,9 +33,8 @@ class TrainingPath {
   /// User's name who created the training path.
   final String createdBy;
 
-
-  /// Whether the training path is for horses or not.
-  final bool isForHorse;
+  /// Whether the training path is for a rider or horse.
+  final bool isForRider;
 
   /// User's email who created the training path.
   final String createdById;
@@ -67,8 +66,8 @@ class TrainingPath {
     return TrainingPath(
       id: data!['id'] as String,
       name: data['name'] as String,
-      isForHorse: data['isForHorse'] as bool,
       createdBy: data['createdBy'] as String,
+      isForRider: data['isForRider'] as bool,
       lastEditBy: data['lastEditBy'] as String,
       createdById: data['createdById'] as String,
       description: data['description'] as String,
@@ -90,7 +89,7 @@ class TrainingPath {
       'skills': skills,
       'createdBy': createdBy,
       'createdAt': createdAt,
-      'isForHorse': isForHorse,
+      'isForRider': isForRider,
       'lastEditBy': lastEditBy,
       'createdById': createdById,
       'description': description,
@@ -104,6 +103,7 @@ class TrainingPath {
   TrainingPath copyWith({
     String? id,
     String? name,
+    bool? isForRider,
     String? createdBy,
     String? lastEditBy,
     String? createdById,
@@ -115,11 +115,11 @@ class TrainingPath {
   }) {
     return TrainingPath(
       id: id ?? this.id,
-      isForHorse: isForHorse,
       name: name ?? this.name,
       skills: skills ?? this.skills,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
+      isForRider: isForRider ?? this.isForRider,
       skillNodes: skillNodes ?? this.skillNodes,
       lastEditBy: lastEditBy ?? this.lastEditBy,
       createdById: createdById ?? this.createdById,

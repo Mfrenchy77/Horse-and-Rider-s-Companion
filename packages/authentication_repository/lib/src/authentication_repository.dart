@@ -361,7 +361,7 @@ class AuthenticationRepository {
   /// Starts the Sign In with Google Flow.
   ///
   /// Throws a [LogInWithGoogleFailure] if an exception occurs.
-  Future<void> logInWithGoogle() async {
+  Future<User?> logInWithGoogle() async {
     try {
       late final firebase_auth.AuthCredential credential;
       if (isWeb) {
@@ -382,6 +382,7 @@ class AuthenticationRepository {
       await _firebaseAuth.signInWithCredential(credential);
       // Cache the current user after successful Google sign-in
       await _cacheCurrentUser();
+      return _firebaseAuth.currentUser?.toAppUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInWithGoogleFailure.fromCode(e.code);
     } catch (_) {

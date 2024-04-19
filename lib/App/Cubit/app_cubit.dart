@@ -276,13 +276,6 @@ class AppCubit extends Cubit<AppState> {
           debugPrint('Viewing Profile Instructor');
           return true;
         }
-        // Student check for the viewing profile
-        if (viewingProfile.students
-                ?.any((student) => student.id == usersProfile.email) ??
-            false) {
-          debugPrint('Viewing Profile Student');
-          return true;
-        }
       }
       // If no conditions met for viewingProfile, not authorized
       debugPrint('Not Authorized for Viewing Profile');
@@ -3328,6 +3321,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Create Error
   void createError(String message) {
+    debugPrint('Creating Error Message: $message');
     emit(state.copyWith(isError: true, errorMessage: message));
   }
 
@@ -3338,6 +3332,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Create a Snackbar Message
   void createMessage(String message) {
+    debugPrint('Creating Message: $message');
     emit(state.copyWith(isMessage: true, errorMessage: message));
   }
 

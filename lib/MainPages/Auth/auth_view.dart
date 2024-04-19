@@ -9,9 +9,9 @@ import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
+import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:open_mail_app/open_mail_app.dart';
 
 class AuthView extends StatelessWidget {
   const AuthView({super.key});
@@ -23,20 +23,33 @@ class AuthView extends StatelessWidget {
       backgroundColor: ColorConst.backgroundDark,
       body: BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
-          final cubit = context.read<LoginCubit>();
           if (state.status == FormStatus.success) {
             debugPrint('Success Pop?');
             context.goNamed(ProfilePage.name);
-            if (state.mailAppResult != null) {
-              showDialog<MailAppPickerDialog>(
-                context: context,
-                builder: (_) {
-                  return MailAppPickerDialog(
-                    mailApps: state.mailAppResult!.options,
-                  );
-                },
-              ).then((value) => cubit.clearEmailDialog());
-            }
+            // if (state.mailAppResult != null) {
+            //   showDialog<MailAppPickerDialog>(
+            //     context: context,
+            //     builder: (_) {
+            //       return MailAppPickerDialog(
+            //         mailApps: state.mailAppResult!.options,
+            //       );
+            //     },
+            //   ).then((value) => cubit.clearEmailDialog());
+            // }
+          }
+          if (state.isMessage) {
+            debugPrint('Message: ${state.errorMessage}');
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    backgroundColor:
+                        HorseAndRidersTheme().getTheme().primaryColor,
+                    content: Text(state.errorMessage),
+                  ),
+                );
+            });
           }
 
           if (state.isError) {
@@ -49,7 +62,7 @@ class AuthView extends StatelessWidget {
                     backgroundColor: Colors.red,
                     content: Text(state.errorMessage),
                   ),
-                ).closed.then((_) => cubit.clearError());
+                );
             });
           }
         },
@@ -155,8 +168,6 @@ String getScreenName(LoginPageStatus pageStatus) {
       return 'Register';
     case LoginPageStatus.forgot:
       return 'Forgot Password';
-    case LoginPageStatus.awitingEmailVerification:
-      return 'Email Verification';
   }
 }
 
@@ -171,7 +182,5 @@ Widget getView({
       return registerView();
     case LoginPageStatus.forgot:
       return forgotView();
-    case LoginPageStatus.awitingEmailVerification:
-      return loginView();
   }
 }

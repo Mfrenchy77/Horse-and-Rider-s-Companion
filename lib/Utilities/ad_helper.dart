@@ -1,3 +1,5 @@
+// ignore_for_file: omit_local_variable_types, prefer_final_locals
+
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -20,8 +22,6 @@ class AdHelper {
 }
 
 class WebAdBanner extends StatelessWidget {
-  final String viewType = 'adsense-html-container';
-
   WebAdBanner({super.key}) {
     // Register the HTML factory
     ui.platformViewRegistry.registerViewFactory(
@@ -33,6 +33,7 @@ class WebAdBanner extends StatelessWidget {
         ..style.border = 'none',
     );
   }
+  final String viewType = 'adsense-html-container';
 
   @override
   Widget build(BuildContext context) {

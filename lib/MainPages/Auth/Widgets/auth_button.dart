@@ -17,7 +17,7 @@ class AuthButton extends StatelessWidget {
             : SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: !cubit.isEmailAndPasswordValid()
+                  onPressed: _canClick(state, cubit)
                       ? null
                       : () {
                           _handleClick(
@@ -33,12 +33,6 @@ class AuthButton extends StatelessWidget {
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                  // onPressed: () {
-                  //   if (state.status.isValidated) {
-                  //    ;
-                  //   }
-                  //   else return null:
-                  // },
                 ),
               );
       },
@@ -53,8 +47,6 @@ void _handleClick({
   required BuildContext context,
 }) {
   switch (state.pageStatus) {
-    case LoginPageStatus.awitingEmailVerification:
-      break;
     case LoginPageStatus.login:
       cubit.logInWithCredentials();
       break;
@@ -70,8 +62,6 @@ void _handleClick({
 /// Text for the button
 String _getButtonText(LoginPageStatus pageStatus) {
   switch (pageStatus) {
-    case LoginPageStatus.awitingEmailVerification:
-      return 'Awaiting Email Verification';
     case LoginPageStatus.login:
       return 'Login';
     case LoginPageStatus.register:
@@ -79,4 +69,10 @@ String _getButtonText(LoginPageStatus pageStatus) {
     case LoginPageStatus.forgot:
       return 'Send Email';
   }
+}
+
+bool _canClick(LoginState state, LoginCubit cubit) {
+  return state.pageStatus == LoginPageStatus.forgot
+      ? state.email.isNotValid
+      : !cubit.isEmailAndPasswordValid();
 }

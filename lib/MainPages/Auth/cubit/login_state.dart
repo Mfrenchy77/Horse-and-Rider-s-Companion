@@ -5,7 +5,6 @@ enum LoginPageStatus {
   login,
   forgot,
   register,
-  awitingEmailVerification,
 }
 
 /// {@template login_state}
@@ -18,6 +17,7 @@ class LoginState extends Equatable {
     this.mailAppResult,
     this.isError = false,
     this.isGuest = false,
+    this.isMessage = false,
     this.errorMessage = '',
     this.forgotEmailSent = false,
     this.showEmailDialog = false,
@@ -38,6 +38,9 @@ class LoginState extends Equatable {
 
   /// Indicates if an error has occurred.
   final bool isError;
+
+  /// Indicates if there should be a message shown
+  final bool isMessage;
 
   /// Indicates if the user is a signing in as a guest.
   final bool isGuest;
@@ -76,6 +79,7 @@ class LoginState extends Equatable {
     Email? email,
     bool? isError,
     bool? isGuest,
+    bool? isMessage,
     Password? password,
     FormStatus? status,
     String? errorMessage,
@@ -93,6 +97,7 @@ class LoginState extends Equatable {
       isError: isError ?? this.isError,
       isGuest: isGuest ?? this.isGuest,
       password: password ?? this.password,
+      isMessage: isMessage ?? this.isMessage,
       pageStatus: pageStatus ?? this.pageStatus,
       errorMessage: errorMessage ?? this.errorMessage,
       mailAppResult: mailAppResult ?? this.mailAppResult,
@@ -111,6 +116,7 @@ class LoginState extends Equatable {
         isGuest,
         isError,
         password,
+        isMessage,
         pageStatus,
         errorMessage,
         mailAppResult,

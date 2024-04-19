@@ -28,6 +28,7 @@ class ZipCode extends FormzInput<String, String> {
 /// Validator for a Zip code input.
 /// must be 5 digits or 5 digits followed by a hyphen and 4 digits.
 class ZipCodeValidator extends FormzInput<String, String> {
+  /// Constructor for a pure [ZipCodeValidator].
   const ZipCodeValidator.pure() : super.pure('');
 
   /// Constructor for a dirty [ZipCodeValidator].

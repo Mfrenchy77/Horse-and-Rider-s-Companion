@@ -40,6 +40,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         selectedState: _riderProfile?.stateName,
         locationName: _riderProfile?.locationName,
         selectedCountry: _riderProfile?.countryName,
+        isTrainer: _riderProfile?.isTrainer ?? false,
         riderName: _user?.name ?? _riderProfile?.name,
         id: _user != null ? user?.id : _riderProfile?.id,
         zipCode: ZipCode.dirty(_riderProfile?.zipCode ?? ''),
@@ -106,6 +107,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
             status: SubmissionStatus.failure,
           ),
         );
+        clearError();
       }
     }
   }
@@ -292,7 +294,14 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         emit(state.copyWith(status: SubmissionStatus.success));
       } catch (e) {
         debugPrint('Something went wrong: $e');
-        emit(state.copyWith(status: SubmissionStatus.failure));
+        emit(
+          state.copyWith(
+            status: SubmissionStatus.failure,
+            error: e.toString(),
+            isError: true,
+          ),
+        );
+        clearError();
       }
     } else {
       debugPrint('Rider Profile is null');
@@ -350,10 +359,12 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       } on FirebaseException catch (e) {
         debugPrint('Error: ${e.message}');
         emit(state.copyWith(error: e.toString(), isError: true));
+        clearError();
       }
     } else {
       debugPrint('User is null');
       emit(state.copyWith(error: 'User is null', isError: true));
+      clearError();
     }
   }
 

@@ -12,7 +12,6 @@ class SkillLevelView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final cubit = context.read<AppCubit>();
         return state.skill == null
             ? const Center(
                 child: Text('No Skill Selected'),
@@ -38,32 +37,47 @@ class SkillLevelView extends StatelessWidget {
                         ),
                         Text(
                           state.skill?.skillName ?? '',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: const TextStyle(
+                            fontSize: 24,
+                          ),
                         ),
-                        gap(),
-                        Text(
-                          cubit.getLevelProgressDescription(),
-                          textAlign: TextAlign.center,
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 20, right: 20),
-                          child: Divider(),
-                        ),
-                        smallGap(),
-                        Text(state.skill?.description ?? ''),
-                        smallGap(),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 20, right: 20),
-                          child: Divider(),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(state.skill?.description ?? ''),
                         ),
                         const Text(
+                          'Learning Description: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 8,
+                            left: 8,
+                            right: 8,
+                          ),
+                          child: Text(state.skill?.learningDescription ?? ''),
+                        ),
+                        const Text(
+                          'Proficient Description: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 8,
+                            left: 8,
+                            right: 8,
+                          ),
+                          child: Text(state.skill?.proficientDescription ?? ''),
+                        ),
+                        const Divider(indent: 20, endIndent: 20),
+                        const Text(
                           'Resources',
-                          style: TextStyle(fontSize: 20),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w100,
+                          ),
                         ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 20, right: 20),
-                          child: Divider(),
-                        ),
+                        const Divider(indent: 20, endIndent: 20),
                         smallGap(),
                         const SkillResouresList(
                           key: Key('skillResourcesList'),

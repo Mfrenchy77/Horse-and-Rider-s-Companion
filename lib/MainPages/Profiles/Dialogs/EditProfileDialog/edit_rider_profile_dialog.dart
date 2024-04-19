@@ -10,7 +10,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDi
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/cancel_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/name.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/profile_photo.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/rider_location.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/rider_website.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/submit_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/trainer_question.dart';
@@ -64,9 +63,7 @@ class EditRiderProfileDialog extends StatelessWidget {
                     backgroundColor: Colors.red,
                     content: Text(state.error),
                   ),
-                ).closed.then((_) {
-                  context.read<EditRiderProfileCubit>().clearError();
-                });
+                );
             }
           },
           child: Scaffold(
@@ -102,10 +99,10 @@ class EditRiderProfileDialog extends StatelessWidget {
                         key: Key('riderWebsite'),
                       ),
                       gap(),
-                      const RiderLocation(
-                        key: Key('riderLocation'),
-                      ),
-                      gap(),
+                      // const RiderLocation(
+                      //   key: Key('riderLocation'),
+                      // ),
+                      // gap(),
                       const TrainerQuestion(
                         key: Key('trainerQuestion'),
                       ),

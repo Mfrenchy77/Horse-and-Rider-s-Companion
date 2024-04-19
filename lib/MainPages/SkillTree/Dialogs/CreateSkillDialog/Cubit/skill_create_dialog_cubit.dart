@@ -11,7 +11,6 @@ import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'skill_create_dialog_state.dart';
 
-// TODO():This needs to be reworked
 class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   CreateSkillDialogCubit({
     required Skill? skill,

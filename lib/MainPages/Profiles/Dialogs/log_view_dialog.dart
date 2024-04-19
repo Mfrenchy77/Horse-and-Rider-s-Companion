@@ -131,7 +131,11 @@ Widget _logBookList({
   required bool isRider,
   required List<BaseListItem>? notes,
 }) {
-  if (notes != null || notes!.isNotEmpty) {
+  if (notes == null || notes.isEmpty) {
+    return const Center(
+      child: Text('No Entries in the Log'),
+    );
+  } else {
     notes.sort((a, b) => b.date!.compareTo(a.date!));
     return ListView.builder(
       shrinkWrap: true,
@@ -143,8 +147,6 @@ Widget _logBookList({
         );
       },
     );
-  } else {
-    return const Text('No Entries in the Log');
   }
 }
 
