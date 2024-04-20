@@ -7,8 +7,13 @@ class ResourcesPage extends StatelessWidget {
   static const name = 'Resources';
   @override
   Widget build(BuildContext context) {
-    return const ResourcesView(
-      key: Key('resourcesView'),
+    return PopScope(
+      onPopInvoked: (didPop) {
+        debugPrint('ResourcesPage: Pop Invoked');
+      },
+      child: const ResourcesView(
+        key: Key('resourcesView'),
+      ),
     );
   }
 }

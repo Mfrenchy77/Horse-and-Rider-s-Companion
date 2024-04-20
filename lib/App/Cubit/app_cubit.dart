@@ -381,48 +381,47 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// Updates the skill level for the rider
   void _updateRiderSkillLevel(
     RiderProfile? riderProfile,
     LevelState levelState,
     BaseListItem note,
   ) {
-    if (riderProfile != null) {
-      // if riderProfile.email != state.usersProfile?.email
-      // verify the skillLevel
-
-      if (state.skill != null) {
-        final timestamp = DateTime.now();
-        final skillLevel = riderProfile.skillLevels?.firstWhereOrNull(
-              (element) => element.skillId == state.skill?.id,
-            ) ??
-            SkillLevel(
-              lastEditDate: timestamp,
-              skillId: state.skill!.id,
-              skillName: state.skill!.skillName,
-              lastEditBy: state.usersProfile?.name,
-              verified: riderProfile.email != state.usersProfile?.email,
-            );
-
-        riderProfile.skillLevels?.remove(skillLevel);
-        riderProfile.skillLevels?.add(
-          SkillLevel(
-            levelState: levelState,
-            lastEditDate: timestamp,
-            skillId: state.skill!.id,
-            skillName: state.skill!.skillName,
-            lastEditBy: state.usersProfile?.name,
-            verified: riderProfile.email != state.usersProfile?.email,
-          ),
-        );
-
-        _addNoteToProfile(riderProfile, note);
-      } else {
-        debugPrint('Skill is null');
-      }
-    } else {
-      debugPrint('riderProfile is null');
+    if (riderProfile == null) {
+      debugPrint('Rider profile is null');
+      return;
     }
+    if (state.skill == null) {
+      debugPrint('Skill is null');
+      return;
+    }
+
+    riderProfile.skillLevels ??= [];
+    var skillLevel = riderProfile.skillLevels!.firstWhereOrNull(
+      (element) => element.skillId == state.skill!.id,
+    );
+
+    if (skillLevel != null) {
+      skillLevel
+        ..levelState = levelState
+        ..lastEditDate = DateTime.now()
+        ..lastEditBy = state.usersProfile?.name
+        ..verified = riderProfile.email != state.usersProfile?.email;
+      debugPrint('Updated existing skill level');
+    } else {
+      skillLevel = SkillLevel(
+        levelState: levelState,
+        lastEditDate: DateTime.now(),
+        skillId: state.skill!.id,
+        skillName: state.skill!.skillName,
+        lastEditBy: state.usersProfile?.name,
+        verified: riderProfile.email != state.usersProfile?.email,
+      );
+      riderProfile.skillLevels!.add(skillLevel);
+      debugPrint('Added new skill level');
+    }
+
+    _addNoteToProfile(riderProfile, note);
+    _persistRiderProfileChanges(riderProfile);
   }
 
   /// Adds a note to the rider's profile
@@ -440,6 +439,7 @@ class AppCubit extends Cubit<AppState> {
       await _riderProfileRepository.createOrUpdateRiderProfile(
         riderProfile: riderProfile,
       );
+      debugPrint('Rider profile changes persisted');
     } catch (error) {
       emit(
         state.copyWith(
@@ -1471,7 +1471,7 @@ class AppCubit extends Cubit<AppState> {
   ///    Rider or Horse's profile
   void levelSelected({required LevelState levelState}) {
     if (state.isForRider) {
-      if (state.viewingProfile != null) {
+      if (state.viewingProfile != null && state.isViewing) {
         // process the level change for the viewing profile
         // and add a note to the user's
         debugPrint('Changing and Verifing ${state.viewingProfile?.name}'

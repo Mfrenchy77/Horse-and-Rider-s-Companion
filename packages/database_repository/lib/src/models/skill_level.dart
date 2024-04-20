@@ -21,12 +21,12 @@ class SkillLevel {
     this.levelState = LevelState.NO_PROGRESS,
   });
 
-  final bool verified;
-  final String skillId;
-  final String skillName;
-  final String? lastEditBy;
-  final DateTime? lastEditDate;
-  final LevelState levelState;
+  bool verified;
+  String skillId;
+  String skillName;
+  String? lastEditBy;
+  DateTime? lastEditDate;
+  LevelState levelState;
 
   SkillLevel.fromJson(Map<String, Object?> json)
       : this(
