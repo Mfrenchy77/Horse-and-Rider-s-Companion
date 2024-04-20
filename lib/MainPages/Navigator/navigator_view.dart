@@ -154,7 +154,7 @@ class NavigatorView extends StatelessWidget {
         if (state.isProfileSetup) {
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
             if (!context.mounted) return;
-            const time = Duration(milliseconds: 1000);
+            const time = Duration(milliseconds: 4000);
             debugPrint('Profile Set Up Called Time: $time');
             // if timestamp is less than 10 milliseconds, show the dialog
             if (timeStamp < time) {
