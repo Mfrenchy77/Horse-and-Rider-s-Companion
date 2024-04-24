@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:horseandriderscompanion/App/View/app.dart';
 import 'package:horseandriderscompanion/App/bloc_observer.dart';
 import 'package:horseandriderscompanion/Initialization/ads_initialization.dart';
@@ -21,6 +22,7 @@ late final FirebaseAuth auth;
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   await FirebaseInitialization.initializeFirebase();
+  usePathUrlStrategy();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await SharedPrefs().init();
   await AdsInitialization.initializeAds();

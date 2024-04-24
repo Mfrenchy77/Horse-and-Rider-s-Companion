@@ -55,7 +55,7 @@ class ResourcesItem extends StatelessWidget {
               InkWell(
                 onTap: () {
                   debugPrint('Goto Resource: ${resource.name}');
-                  context.pushNamed(
+                  context.goNamed(
                     ResourceCommentPage.name,
                     pathParameters: {
                       ResourceCommentPage.pathParams: resource.id!,

@@ -25,6 +25,22 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="horseandriderscompanion.com" />
+                <data android:path="/signin/" />
+                <data android:path="/signin" />
+                <data android:path="/viewing/.*" />
+                <data android:path="/skilltree/" />
+                <data android:path="/skilltree" />
+                <data android:path="/resources" />
+                <data android:path="/resources/" />
+                <data android:path="/resources/comments/.*" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

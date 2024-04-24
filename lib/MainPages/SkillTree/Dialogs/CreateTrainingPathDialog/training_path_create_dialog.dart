@@ -176,64 +176,45 @@ class CreateTrainingPathDialog extends StatelessWidget {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  const Expanded(
-                                    flex: 5,
-                                    child: Spacer(),
-                                  ),
                                   //Delete Button
-                                  Expanded(
-                                    flex: 5,
-                                    child: Visibility(
-                                      visible: state.trainingPath?.createdBy ==
-                                          usersProfile.name,
-                                      child: IconButton(
-                                        onPressed: () {
-                                          trainingPathcubit
-                                              .deleteTrainingPath();
-                                          Navigator.pop(context);
-                                        },
-                                        icon: const Icon(Icons.delete),
-                                      ),
+                                  Visibility(
+                                    visible: state.trainingPath?.createdBy ==
+                                        usersProfile.name,
+                                    child: IconButton(
+                                      onPressed: () {
+                                        trainingPathcubit.deleteTrainingPath();
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.delete),
                                     ),
                                   ),
 
                                   //Cancel Button
-                                  Expanded(
-                                    flex: 5,
-                                    child: TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text('Cancel'),
-                                    ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Cancel'),
                                   ),
                                   gap(),
 
                                   //Submit Button
-                                  if (state.status == FormStatus.submitting)
-                                    const Expanded(
-                                      flex: 7,
-                                      child: CircularProgressIndicator(),
-                                    )
-                                  else
-                                    Expanded(
-                                      flex: 7,
-                                      child: FilledButton(
-                                        onPressed: state.skillNodes.isEmpty
-                                            ? null
-                                            : () {
-                                                trainingPathcubit
-                                                    .createOrEditTrainingPath();
-                                                Navigator.pop(context);
-                                              },
-                                        child: Text(
-                                          isEdit
-                                              ? 'Edit'
-                                              : 'Submit',
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ),
+
+                                  FilledButton(
+                                    onPressed: state.skillNodes.isEmpty
+                                        ? null
+                                        : () {
+                                            trainingPathcubit
+                                                .createOrEditTrainingPath();
+                                            Navigator.pop(context);
+                                          },
+                                    child: state.status == FormStatus.submitting
+                                        ? const CircularProgressIndicator()
+                                        : Text(
+                                            isEdit ? 'Edit' : 'Submit',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                  ),
                                 ],
                               ),
                             ),
