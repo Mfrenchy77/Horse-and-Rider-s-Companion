@@ -34,7 +34,7 @@ class ResourceInfoBar extends StatelessWidget {
                   ),
                 ),
                 Visibility(
-                  visible: state.isEdit,
+                  visible: cubit.canEditResource(resource),
                   child: PopupMenuButton<String>(
                     itemBuilder: (BuildContext menuContext) =>
                         <PopupMenuEntry<String>>[

@@ -1372,17 +1372,37 @@ class AppCubit extends Cubit<AppState> {
 
   /// Whether or not a user can edit a skill or not. Based on whether they
   /// have created it or their email is in the admin list
-  bool canEditSkill(Skill skill) {
-    return state.usersProfile?.email == skill.lastEditBy ||
+  bool canEditSkill(Skill? skill) {
+    return state.usersProfile?.email == skill?.lastEditBy ||
         AuthorizedEmails.emails.contains(state.usersProfile?.email);
   }
 
-  Skill getSkillFromSkillName(String skillName) {
+  /// Wheter or not a user can edit a resource or not. Based on whether they
+  /// have created it or their email is in the admin list
+  bool canEditResource(Resource resource) {
+    return state.usersProfile?.email == resource.lastEditBy ||
+        AuthorizedEmails.emails.contains(state.usersProfile?.email);
+  }
+
+  Skill getSkillFromId(String id) {
     final skill = state.allSkills.firstWhere(
-      (element) => element?.skillName == skillName,
-      orElse: () => null,
+      (element) => element?.id == id,
     );
     return skill!;
+  }
+
+  Skill? getSkillFromSkillName(String skillName) {
+    debugPrint('Getting Skill: $skillName');
+    final skill = state.allSkills.firstWhereOrNull(
+      (element) => element?.skillName == skillName,
+    );
+    if (skill == null) {
+      debugPrint(
+          'Skill not found, Skill list length: ${state.allSkills.length}');
+    } else {
+      debugPrint('Skill Found: ${skill.skillName}');
+    }
+    return skill;
   }
   // /// Returns a list of skills that are either for a
   // /// horse or rider

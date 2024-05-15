@@ -9,12 +9,16 @@ class SkillNode {
   SkillNode({
     required this.id,
     required this.name,
+    required this.skillId,
     required this.position,
     required this.parentId,
   });
 
   /// Unique identifier of the skillNode.
   final String id;
+
+  /// The id of the Skill that the node is referencing.
+  final String skillId;
 
   /// Name of the skill.
   final String name;
@@ -31,6 +35,7 @@ class SkillNode {
     return SkillNode(
       id: map['id'] as String,
       name: map['name'] as String,
+      skillId: map['skillId'] as String,
       position: map['position'] as int,
       parentId: map['parentId'] as String,
     );
@@ -49,6 +54,7 @@ class SkillNode {
       id: data!['id'] as String,
       name: data['name'] as String,
       position: data['position'] as int,
+      skillId: data['skillId'] as String,
       parentId: data['parentId'] as String,
     );
   }
@@ -60,6 +66,7 @@ class SkillNode {
     return <String, dynamic>{
       'id': id,
       'name': name,
+      'skillId': skillId,
       'parentId': parentId,
       'position': position,
     };
@@ -72,6 +79,7 @@ class SkillNode {
     return <String, dynamic>{
       'id': id,
       'name': name,
+      'skillId': skillId,
       'parentId': parentId,
       'position': position,
     };
@@ -83,11 +91,13 @@ class SkillNode {
     String? id,
     String? name,
     int? position,
+    String? skillId,
     String? parentId,
   }) {
     return SkillNode(
       id: id ?? this.id,
       name: name ?? this.name,
+      skillId: skillId ?? this.skillId,
       parentId: parentId ?? this.parentId,
       position: position ?? this.position,
     );

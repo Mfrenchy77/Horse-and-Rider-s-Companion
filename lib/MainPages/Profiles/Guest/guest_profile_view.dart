@@ -36,36 +36,41 @@ class GuestProfileView extends StatelessWidget {
             ),
             Breakpoints.small: SlotLayout.from(
               key: const Key('smallProfileBody'),
-              builder: (context) => ListView(
-                children: [
-                  const GuestProfilePrimaryView(
-                    key: Key('GuestProfilePrimaryView'),
-                  ),
-                  const SkillsTextButton(
-                    key: Key('SkillsTextButton'),
-                  ),
-                  gap(),
-                  const GuestProfileSkills(
-                    key: Key('GuestProfileSkills'),
-                  ),
-                ],
+              builder: (context) => SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const GuestProfilePrimaryView(
+                      key: Key('GuestProfilePrimaryView'),
+                    ),
+                    const SkillsTextButton(
+                      key: Key('SkillsTextButton'),
+                    ),
+                    gap(),
+                    const GuestProfileSkills(
+                      key: Key('GuestProfileSkills'),
+                    ),
+                  ],
+                ),
               ),
             ),
             Breakpoints.medium: SlotLayout.from(
               key: const Key('mediumProfileBody'),
-              builder: (context) => ListView(
-                children: [
-                  const GuestProfilePrimaryView(
-                    key: Key('GuestProfilePrimaryView'),
-                  ),
-                  const SkillsTextButton(
-                    key: Key('SkillsTextButton'),
-                  ),
-                  gap(),
-                  const GuestProfileSkills(
-                    key: Key('GuestProfileSkills'),
-                  ),
-                ],
+              builder: (context) => SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const GuestProfilePrimaryView(
+                      key: Key('GuestProfilePrimaryView'),
+                    ),
+                    const SkillsTextButton(
+                      key: Key('SkillsTextButton'),
+                    ),
+                    gap(),
+                    const GuestProfileSkills(
+                      key: Key('GuestProfileSkills'),
+                    ),
+                  ],
+                ),
               ),
             ),
           },

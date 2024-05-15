@@ -233,33 +233,6 @@ class CreateTrainingPathDialog extends StatelessWidget {
   }
 }
 
-/// A Segmented Button that shows if the training path is for a Horse or a Rider
-Widget _isForHorseOrRider({
-  required CreateTrainingPathState state,
-  required CreateTrainingPathCubit trainingPathcubit,
-}) {
-  return SegmentedButton<bool>(
-    segments: [
-      ButtonSegment(
-        value: true,
-        enabled: state.isForRider,
-        icon: const Icon(HorseAndRiderIcons.horseIcon),
-        label: const Text('Horse'),
-        tooltip: 'Training Path is for a Horse',
-      ),
-      ButtonSegment(
-        value: false,
-        enabled: !state.isForRider,
-        icon: const Icon(Icons.person),
-        label: const Text('Rider'),
-        tooltip: 'Training Path is for a Rider',
-      ),
-    ],
-    selected: <bool>{state.isForRider},
-    onSelectionChanged: (p0) => trainingPathcubit.isForHorse(),
-  );
-}
-
 Widget _search() {
   return BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
     builder: (context, state) {

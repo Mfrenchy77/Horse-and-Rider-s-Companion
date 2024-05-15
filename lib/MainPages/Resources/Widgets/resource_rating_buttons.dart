@@ -99,30 +99,33 @@ class ResourceRatingButtons extends StatelessWidget {
               ),
             ),
             // pop up overflow menu with the option to report the resource
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert,
-                color: isDark ? Colors.grey.shade300 : Colors.black54,
+            Visibility(
+              visible: !state.isGuest,
+              child: PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: isDark ? Colors.grey.shade300 : Colors.black54,
+                ),
+                onSelected: (value) {
+                  switch (value) {
+                    case 'Report':
+                      debugPrint('Report: ${resource.name}');
+                      showDialog<AlertDialog>(
+                        context: context,
+                        builder: (context) => const SupportMessageDialog(),
+                      );
+                      break;
+                  }
+                },
+                itemBuilder: (context) {
+                  return <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'Report',
+                      child: Text('Report'),
+                    ),
+                  ];
+                },
               ),
-              onSelected: (value) {
-                switch (value) {
-                  case 'Report':
-                    debugPrint('Report: ${resource.name}');
-                    showDialog<AlertDialog>(
-                      context: context,
-                      builder: (context) => const SupportMessageDialog(),
-                    );
-                    break;
-                }
-              },
-              itemBuilder: (context) {
-                return <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'Report',
-                    child: Text('Report'),
-                  ),
-                ];
-              },
             ),
           ],
         );

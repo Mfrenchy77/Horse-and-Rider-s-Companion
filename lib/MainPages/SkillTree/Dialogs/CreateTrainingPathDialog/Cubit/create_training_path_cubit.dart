@@ -194,10 +194,12 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
     final selectedSkills = List<Skill>.from(state.selectedSkills);
 
     final newSkillNode = SkillNode(
-      id: ViewUtils.createId(),
-      name: skillName,
       position: 0,
       parentId: '',
+      name: skillName,
+      id: ViewUtils.createId(),
+      skillId:
+          allSkills.firstWhere((element) => element.skillName == skillName).id,
     );
     // Create a modifiable copy of the list
 
@@ -325,6 +327,9 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
         newSkillNodes.add(
           SkillNode(
             id: ViewUtils.createId(),
+            skillId: newAllSkills
+                .firstWhere((element) => element.skillName == skillName)
+                .id,
             name: skillName,
             position: newSkillNodes
                 .where((element) => element.parentId == parentNode.id)

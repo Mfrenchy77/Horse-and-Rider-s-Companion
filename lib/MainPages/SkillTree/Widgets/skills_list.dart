@@ -42,8 +42,9 @@ class SkillsListView extends StatelessWidget {
               ),
             ),
           ),
-          body: Center(
+          body: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 ColoredBox(
                   color: HorseAndRidersTheme()
@@ -77,6 +78,7 @@ class SkillsListView extends StatelessWidget {
                     children: state.sortedSkills
                         .map(
                           (skill) => SkillItem(
+                            skill: skill,
                             verified: isVerified(
                                   horseProfile: state.horseProfile,
                                   profile: state.viewingProfile ??
@@ -92,7 +94,7 @@ class SkillsListView extends StatelessWidget {
                                   state.viewingProfile ?? state.usersProfile,
                               skill: skill,
                             ),
-                            name: skill?.skillName ?? '',
+                            name: skill?.skillName,
                             onTap: () {
                               cubit
                                 ..setFromSkills()
@@ -101,7 +103,7 @@ class SkillsListView extends StatelessWidget {
                                 );
                             },
                             onEdit: () {
-                              if (cubit.canEditSkill(skill!)) {
+                              if (cubit.canEditSkill(skill)) {
                                 showDialog<CreateSkillDialog>(
                                   context: context,
                                   builder: (context) => CreateSkillDialog(

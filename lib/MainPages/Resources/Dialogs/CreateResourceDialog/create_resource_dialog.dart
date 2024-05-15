@@ -133,7 +133,6 @@ class CreateResourcDialog extends StatelessWidget {
                               child: const Text('Retrieve Website Information'),
                             ),
                           ),
-                          //  Show a loading indicator while fetching the website information
                           Visibility(
                             visible: state.urlFetchedStatus ==
                                 UrlFetchedStatus.fetching,
@@ -273,30 +272,6 @@ class ResourceImage extends StatelessWidget {
       },
     );
   }
-}
-
-Widget _image({
-  required BuildContext context,
-  Resource? resource,
-  required CreateResourceDialogState state,
-}) {
-  return SizedBox(
-    height: 200,
-    width: 200,
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.grey,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: ImageNetwork(
-        onError: const Image(image: AssetImage('assets/horse_icon_circle.png')),
-        debugPrint: true,
-        image: resource?.thumbnail ?? state.imageUrl,
-        height: 200,
-        width: 200,
-      ),
-    ),
-  );
 }
 
 Widget _urlField({required BuildContext context, required Resource? resource}) {

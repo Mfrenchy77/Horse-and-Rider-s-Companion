@@ -198,3 +198,4 @@ flutter_native_splash:
   # web_image_mode parameters.  All default to center.
   # web_image_mode can be one of the following modes: center, contain, stretch, and cover.
   web_image_mode: contain
+uses-material-design: true

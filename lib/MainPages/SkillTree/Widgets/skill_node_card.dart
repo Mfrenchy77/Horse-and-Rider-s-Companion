@@ -30,16 +30,18 @@ class SkillNodeCard extends StatelessWidget {
               // if (isChild) const Divider(color: Colors.black, thickness: 2),
 
               SkillItem(
-                name: skillNode.name,
+                skill: cubit.getSkillFromId(skillNode.skillId),
+                name: cubit.getSkillFromId(skillNode.skillId).skillName,
                 onTap: () {
-                  cubit..changeIndex(1)
-                  ..navigateToSkillLevel(
-                    skill: state.allSkills.firstWhere(
-                      (element) => element?.skillName == skillNode.name,
-                    ),
-                  );
+                  cubit
+                    ..changeIndex(1)
+                    ..navigateToSkillLevel(
+                      skill: state.allSkills.firstWhere(
+                        (element) => element?.skillName == skillNode.name,
+                      ),
+                    );
                 },
-                onEdit: (){},
+                onEdit: () {},
                 isGuest: state.isGuest,
                 verified: isVerified(
                   horseProfile: state.horseProfile,
