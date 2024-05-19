@@ -71,61 +71,63 @@ class SkillsListView extends StatelessWidget {
                 ),
                 gap(),
                 if (state.sortedSkills.isNotEmpty)
-                  Wrap(
-                    spacing: 5,
-                    runSpacing: 5,
-                    alignment: WrapAlignment.center,
-                    children: state.sortedSkills
-                        .map(
-                          (skill) => SkillItem(
-                            skill: skill,
-                            verified: isVerified(
-                                  horseProfile: state.horseProfile,
-                                  profile: state.viewingProfile ??
-                                      state.usersProfile,
-                                  skill: skill,
-                                ) ??
-                                false,
-                            isEditState: state.isEdit,
-                            isGuest: state.isGuest,
-                            levelState: getLevelState(
-                              horseProfile: state.horseProfile,
-                              profile:
-                                  state.viewingProfile ?? state.usersProfile,
+                  SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      alignment: WrapAlignment.center,
+                      children: state.sortedSkills
+                          .map(
+                            (skill) => SkillItem(
                               skill: skill,
-                            ),
-                            name: skill?.skillName,
-                            onTap: () {
-                              cubit
-                                ..setFromSkills()
-                                ..navigateToSkillLevel(
-                                  skill: skill,
-                                );
-                            },
-                            onEdit: () {
-                              if (cubit.canEditSkill(skill)) {
-                                showDialog<CreateSkillDialog>(
-                                  context: context,
-                                  builder: (context) => CreateSkillDialog(
-                                    isForRider: state.isForRider,
-                                    isEdit: true,
+                              verified: isVerified(
+                                    horseProfile: state.horseProfile,
+                                    profile: state.viewingProfile ??
+                                        state.usersProfile,
                                     skill: skill,
-                                    usersProfile: state.usersProfile!,
-                                    position:
-                                        skills.isNotEmpty ? skills.length : 0,
-                                  ),
-                                );
-                              } else {
-                                // TODO: Show contact admin or creator dialog
-                                cubit.createError(
-                                  'You do not have permission'
-                                  ' to edit this skill',
-                                );
-                              }
-                            },
-                          ),
-                        )
-                        .toList(),
+                                  ) ??
+                                  false,
+                              isEditState: state.isEdit,
+                              isGuest: state.isGuest,
+                              levelState: getLevelState(
+                                horseProfile: state.horseProfile,
+                                profile:
+                                    state.viewingProfile ?? state.usersProfile,
+                                skill: skill,
+                              ),
+                              name: skill?.skillName,
+                              onTap: () {
+                                cubit
+                                  ..setFromSkills()
+                                  ..navigateToSkillLevel(
+                                    skill: skill,
+                                  );
+                              },
+                              onEdit: () {
+                                if (cubit.canEditSkill(skill)) {
+                                  showDialog<CreateSkillDialog>(
+                                    context: context,
+                                    builder: (context) => CreateSkillDialog(
+                                      isForRider: state.isForRider,
+                                      isEdit: true,
+                                      skill: skill,
+                                      usersProfile: state.usersProfile!,
+                                      position:
+                                          skills.isNotEmpty ? skills.length : 0,
+                                    ),
+                                  );
+                                } else {
+                                  // TODO: Show contact admin or creator dialog
+                                  cubit.createError(
+                                    'You do not have permission'
+                                    ' to edit this skill',
+                                  );
+                                }
+                              },
+                            ),
+                          )
+                          .toList(),
+                    ),
                   )
                 else
                   const Center(

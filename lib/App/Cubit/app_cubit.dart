@@ -1398,7 +1398,8 @@ class AppCubit extends Cubit<AppState> {
     );
     if (skill == null) {
       debugPrint(
-          'Skill not found, Skill list length: ${state.allSkills.length}');
+        'Skill not found, Skill list length: ${state.allSkills.length}',
+      );
     } else {
       debugPrint('Skill Found: ${skill.skillName}');
     }

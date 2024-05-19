@@ -29,9 +29,9 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Our Story',
-              style: Theme.of(context).textTheme.headline6,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
               'My name is Matt French, a horse trainer based in the beautiful'
@@ -43,9 +43,9 @@ class AboutPage extends StatelessWidget {
               " I created Horse & Rider's Companion.",
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Our Mission',
-              style: Theme.of(context).textTheme.headline6,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
               "The mission of Horse & Rider's Companion, is to empower"
@@ -56,9 +56,9 @@ class AboutPage extends StatelessWidget {
               ' the value of sharing experiences and insights.',
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Community-Driven Approach',
-              style: Theme.of(context).textTheme.headline6,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
               "The core of Horse & Rider's Companion is its community-driven"
@@ -69,9 +69,9 @@ class AboutPage extends StatelessWidget {
               ' real needs and experiences of horse enthusiasts worldwide.',
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Features',
-              style: Theme.of(context).textTheme.headline6,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
               '- Skill Tracking: Keep a detailed log of training sessions'
@@ -88,9 +88,9 @@ class AboutPage extends StatelessWidget {
               'standards of reliability and relevance.',
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Join Our Community',
-              style: Theme.of(context).textTheme.headline6,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
               'Whether you’re a seasoned equestrian or just starting out,'
@@ -102,9 +102,9 @@ class AboutPage extends StatelessWidget {
               'connected equestrian journey, together.',
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Contact Us',
-              style: Theme.of(context).textTheme.headline6,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
               'For any inquiries or feedback, please don’t hesitate to reach'

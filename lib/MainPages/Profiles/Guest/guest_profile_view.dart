@@ -58,6 +58,7 @@ class GuestProfileView extends StatelessWidget {
               key: const Key('mediumProfileBody'),
               builder: (context) => SingleChildScrollView(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const GuestProfilePrimaryView(
                       key: Key('GuestProfilePrimaryView'),

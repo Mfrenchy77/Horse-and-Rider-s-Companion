@@ -121,10 +121,10 @@ final mainThemeLight = ThemeData(
   colorSchemeSeed: Colors.blueGrey,
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: ColorConst.mainPrimaryLight,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
@@ -151,10 +151,10 @@ final mainThemeLight = ThemeData(
 
 final mainThemeDark = ThemeData(
   navigationBarTheme: NavigationBarThemeData(
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
@@ -190,10 +190,10 @@ final springTheme = ThemeData(
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.springAccentLight,
     backgroundColor: ColorConst.springPrimaryLight,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
@@ -224,10 +224,10 @@ final springThemeDark = ThemeData(
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.springAccentDark,
     backgroundColor: ColorConst.springPrimaryDark,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
@@ -260,10 +260,10 @@ final summerTheme = ThemeData(
   colorSchemeSeed: ColorConst.summerPrimaryLight,
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: ColorConst.summerPrimaryLight,
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
     indicatorColor: ColorConst.summerAccentLight,
@@ -295,7 +295,7 @@ final summerThemeDark = ThemeData(
   colorSchemeSeed: ColorConst.summerPrimaryDark,
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: ColorConst.summerPrimaryDark,
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
@@ -319,10 +319,10 @@ final autumnTheme = ThemeData(
   colorSchemeSeed: ColorConst.fallPrimaryLight,
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: ColorConst.fallPrimaryLight,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     indicatorColor: ColorConst.fallAccentLight,
@@ -385,10 +385,10 @@ final winterTheme = ThemeData(
   ),
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.cardDark,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.winterPrimaryLight,
@@ -404,7 +404,7 @@ final winterThemeDark = ThemeData(
   brightness: Brightness.dark,
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: ColorConst.winterPrimaryDark,
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
@@ -430,10 +430,10 @@ final halloweenTheme = ThemeData(
   colorSchemeSeed: ColorConst.halloweenPrimaryLight,
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.halloweenAccentLight,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.halloweenPrimaryLight,
@@ -463,10 +463,10 @@ final halloweenTheme = ThemeData(
 final halloweenThemeDark = ThemeData(
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.halloweenAccentDark,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.halloweenPrimaryDark,
@@ -505,10 +505,10 @@ final christmasTheme = ThemeData(
   ),
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.christmasAccentLight,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.christmasPrimaryLight,
@@ -538,10 +538,10 @@ final christmasTheme = ThemeData(
 final christmasThemeDark = ThemeData(
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.christmasAccentDark,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.christmasPrimaryDark,
@@ -568,10 +568,10 @@ final easterTheme = ThemeData(
   colorSchemeSeed: Colors.blue,
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.easterAccentLight,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.easterPrimaryLight,
@@ -602,10 +602,10 @@ final easterThemeDark = ThemeData(
   colorSchemeSeed: Colors.yellow,
   navigationBarTheme: NavigationBarThemeData(
     indicatorColor: ColorConst.easterAccentDark,
-    iconTheme: MaterialStateProperty.all(
+    iconTheme: WidgetStateProperty.all(
       const IconThemeData(color: Colors.white),
     ),
-    labelTextStyle: MaterialStateProperty.all(
+    labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
     backgroundColor: ColorConst.easterPrimaryDark,
