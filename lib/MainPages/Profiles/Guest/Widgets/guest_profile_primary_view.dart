@@ -9,21 +9,23 @@ class GuestProfilePrimaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const ProfileName(
-          key: Key('ProfileName'),
-        ),
-        smallGap(),
-        const GuestLoginButton(
-          key: Key('GuestLoginButton'),
-        ),
-        smallGap(),
-        const GuestWelcomeText(
-          key: Key('GuestWelcomeText'),
-        ),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ProfileName(
+            key: Key('ProfileName'),
+          ),
+          smallGap(),
+          const GuestLoginButton(
+            key: Key('GuestLoginButton'),
+          ),
+          smallGap(),
+          const GuestWelcomeText(
+            key: Key('GuestWelcomeText'),
+          ),
+        ],
+      ),
     );
   }
 }

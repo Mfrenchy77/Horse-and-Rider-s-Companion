@@ -25,9 +25,11 @@ class GuestLoginButton extends StatelessWidget {
             child: FilledButton(
               onPressed: () {
                 context.goNamed(AuthPage.name);
-                // cubit.logOutRequested();
               },
-              child: const Text('Create Account/Login'),
+              child: const Text(
+                'Create Account/Login',
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
