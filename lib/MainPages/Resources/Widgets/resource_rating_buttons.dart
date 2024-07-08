@@ -76,7 +76,7 @@ class ResourceRatingButtons extends StatelessWidget {
                         : Colors.black54,
               ),
             ),
-
+            // Assosiated Skills Button
             Expanded(
               flex: 5,
               child: IconButton(

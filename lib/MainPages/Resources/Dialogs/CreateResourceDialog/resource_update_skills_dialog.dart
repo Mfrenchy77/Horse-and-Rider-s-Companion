@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
@@ -78,16 +79,18 @@ class UpdateResourceSkills extends StatelessWidget {
                                   ids: resource?.skillTreeIds,
                                 )
                                 ?.map(
-                                  (e) => TextButton(
+                                  (e) => TextButton.icon(
+                                    icon: _icon(e?.category, e!.difficulty),
                                     onPressed: () {
-                                      appCubit..changeIndex(1)
-                                      ..navigateToSkillLevel(skill: e);
+                                      appCubit
+                                        ..changeIndex(1)
+                                        ..navigateToSkillLevel(skill: e);
                                       context.goNamed(SkillTreePage.name);
 
-                                      debugPrint('Skill: ${e?.skillName}');
+                                      debugPrint('Skill: ${e.skillName}');
                                       Navigator.pop(context);
                                     },
-                                    child: Text(e?.skillName ?? ''),
+                                    label: Text(e.skillName),
                                   ),
                                 )
                                 .toList() ??
@@ -109,16 +112,18 @@ class UpdateResourceSkills extends StatelessWidget {
                                 spacing: 8,
                                 children: appCubit.state.allSkills
                                     .map(
-                                      (e) => FilterChip(
-                                        label: Text(e?.skillName ?? ''),
+                                      (e) => InputChip(
+                                        avatar:
+                                            _icon(e?.category, e!.difficulty),
+                                        label: Text(e.skillName),
                                         selected: state.resource?.skillTreeIds
-                                                ?.contains(e?.id) ??
+                                                ?.contains(e.id) ??
                                             false,
-                                        onSelected: (value) {
+                                        onPressed: () {
                                           context
                                               .read<CreateResourceDialogCubit>()
                                               .resourceSkillsChanged(
-                                                e?.id ?? '',
+                                                e.id,
                                               );
                                         },
                                       ),
@@ -157,5 +162,57 @@ class UpdateResourceSkills extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Icon? _icon(SkillCategory? category, DifficultyState difficulty) {
+  if (category == SkillCategory.In_Hand) {
+    return Icon(
+      HorseAndRiderIcons.inhand,
+      color: _color(difficulty),
+      shadows: [
+        Shadow(
+          color: Colors.black.withOpacity(0.5),
+          offset: const Offset(1, 1),
+        ),
+      ],
+    );
+  } else if (category == SkillCategory.Husbandry) {
+    return Icon(
+      HorseAndRiderIcons.husbandry,
+      color: _color(difficulty),
+      shadows: [
+        Shadow(
+          color: Colors.black.withOpacity(0.5),
+          offset: const Offset(1, 1),
+        ),
+      ],
+    );
+  } else if (category == SkillCategory.Mounted) {
+    return Icon(
+      HorseAndRiderIcons.riding,
+      color: _color(difficulty),
+      shadows: [
+        Shadow(
+          color: Colors.black.withOpacity(0.5),
+          offset: const Offset(1, 1),
+        ),
+      ],
+    );
+  } else {
+    return null;
+  }
+}
+
+Color _color(DifficultyState difficulty) {
+  switch (difficulty) {
+    case DifficultyState.Introductory:
+      return Colors.lightGreen;
+    case DifficultyState.Intermediate:
+      return Colors.orange;
+    case DifficultyState.Advanced:
+      return Colors.red;
+    case DifficultyState.All:
+      return Colors.transparent;
   }
 }
