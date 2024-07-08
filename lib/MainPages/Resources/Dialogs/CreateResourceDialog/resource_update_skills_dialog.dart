@@ -113,6 +113,7 @@ class UpdateResourceSkills extends StatelessWidget {
                                 children: appCubit.state.allSkills
                                     .map(
                                       (e) => InputChip(
+                                        showCheckmark: false,
                                         avatar:
                                             _icon(e?.category, e!.difficulty),
                                         label: Text(e.skillName),
