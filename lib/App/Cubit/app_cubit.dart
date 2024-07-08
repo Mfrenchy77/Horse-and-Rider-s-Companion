@@ -1585,6 +1585,18 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  ///Returns the difficuty of a skill from it's name
+  DifficultyState getDifficulty(String id) {
+    final skill = getSkillFromId(id);
+    return skill.difficulty;
+  }
+
+  /// returns the category of a skill from it's name
+  SkillCategory getSkillCategory(String id) {
+    final skill = getSkillFromId(id);
+    return skill.category;
+  }
+
   /// Returns the color for the level of the skill based on the [levelState]
   Color levelColor({
     required LevelState levelState,
