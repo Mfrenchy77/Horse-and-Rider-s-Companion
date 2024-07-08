@@ -30,6 +30,7 @@ class SkillItem extends StatefulWidget {
 
 class _SkillItemState extends State<SkillItem> {
   bool _isExpanded = false;
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -41,11 +42,6 @@ class _SkillItemState extends State<SkillItem> {
               color: Colors.black.withOpacity(0.2),
             ),
           ],
-          color: widget.levelState == LevelState.PROFICIENT
-              ? widget.verified ?? false
-                  ? Colors.yellow
-                  : Colors.blue
-              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           gradient: widget.levelState == LevelState.LEARNING
               ? LinearGradient(
@@ -59,6 +55,11 @@ class _SkillItemState extends State<SkillItem> {
                   ],
                 )
               : null,
+          color: widget.levelState == LevelState.PROFICIENT
+              ? (widget.verified ?? false ? Colors.yellow : Colors.blue)
+              : (widget.levelState == LevelState.LEARNING
+                  ? Colors.transparent
+                  : Colors.transparent),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
