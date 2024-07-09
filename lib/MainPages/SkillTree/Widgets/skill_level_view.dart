@@ -39,8 +39,11 @@ class SkillLevelView extends StatelessWidget {
                           state.skill?.skillName ?? '',
                           style: const TextStyle(
                             fontSize: 24,
+                            fontWeight: FontWeight.w100,
                           ),
                         ),
+                        const Divider(indent: 20, endIndent: 20),
+                        
                         Padding(
                           padding: const EdgeInsets.all(8),
                           child: Text(state.skill?.description ?? ''),
