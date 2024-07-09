@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
@@ -44,26 +45,38 @@ class ResourceCommentPage extends StatelessWidget {
                   appBar: AppBar(
                     title: const Text('Resource Comment Page'),
                   ),
-                  body: ListView.builder(
-                    controller: scrollController,
-                    shrinkWrap: true,
-                    itemCount: baseComments.length + 2,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return CommentPageHeader(
-                          resource: resource,
-                          key: const Key('CommentPageHeader'),
-                        );
-                      } else if (index == baseComments.length + 1) {
-                        return const SizedBox(height: 500);
-                      } else {
-                        return CommentItem(
-                          key: Key(baseComments[index - 1].id!),
-                          comment: baseComments[index - 1],
-                        );
-                      }
-                    },
-                  ),
+                  body: baseComments.isEmpty
+                      ? Column(
+                          children: [
+                            CommentPageHeader(resource: resource),
+                            gap(),
+                            const Center(
+                              child: Text(
+                                'No Comments Yet, Start the Conversation',
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          shrinkWrap: true,
+                          itemCount: baseComments.length + 2,
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              return CommentPageHeader(
+                                resource: resource,
+                                key: const Key('CommentPageHeader'),
+                              );
+                            } else if (index == baseComments.length + 1) {
+                              return const SizedBox(height: 500);
+                            } else {
+                              return CommentItem(
+                                key: Key(baseComments[index - 1].id!),
+                                comment: baseComments[index - 1],
+                              );
+                            }
+                          },
+                        ),
                 ),
                 Positioned(
                   bottom: 0,
