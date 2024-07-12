@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
@@ -57,12 +58,24 @@ class SkillsListView extends StatelessWidget {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(3),
-                        child: Text(
-                          'Skills - ${state.skillTreeSortState.name}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
+                        //change this to be Horse Skill or Rider Skill and both category sort state and difficuley sort state
+
+                        child: InkWell(
+                          onTap: () {
+                            showDialog<AlertDialog>(
+                              context: context,
+                              builder: (_) => const SkillSortDialog(),
+                            );
+                          },
+                          child: Text(
+                            '${state.isForRider ? 'Rider' : 'Horse'}'
+                            ' Skills - ${state.categorySortState.name}'
+                            ' - ${state.difficultySortState.name}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),

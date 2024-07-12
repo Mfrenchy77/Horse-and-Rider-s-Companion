@@ -1384,11 +1384,11 @@ class AppCubit extends Cubit<AppState> {
         AuthorizedEmails.emails.contains(state.usersProfile?.email);
   }
 
-  Skill getSkillFromId(String id) {
-    final skill = state.allSkills.firstWhere(
+  Skill? getSkillFromId(String id) {
+    final skill = state.allSkills.firstWhereOrNull(
       (element) => element?.id == id,
     );
-    return skill!;
+    return skill;
   }
 
   Skill? getSkillFromSkillName(String skillName) {
@@ -1471,10 +1471,16 @@ class AppCubit extends Cubit<AppState> {
   //   emit(state.copyWith(difficultyState: difficultyState));
   // }
 
-  /// Skill Tree Sort Changed
-  void skillTreeSortChanged(SkillTreeSortState sort) {
-    emit(state.copyWith(skillTreeSortState: sort));
-    _sortSkills(sort);
+  /// Category Filter Changed
+  void categorySortChanged(CategorySortState categorySortState) {
+    emit(state.copyWith(categorySortState: categorySortState));
+    _sortSkills(categorySortState, state.difficultySortState);
+  }
+
+  /// Difficulty Filter Changed
+  void difficultySortChanged(DifficultySortState difficultySortState) {
+    emit(state.copyWith(difficultySortState: difficultySortState));
+    _sortSkills(state.categorySortState, difficultySortState);
   }
 
   /// Set the from Skills state
@@ -1588,13 +1594,13 @@ class AppCubit extends Cubit<AppState> {
   ///Returns the difficuty of a skill from it's name
   DifficultyState getDifficulty(String id) {
     final skill = getSkillFromId(id);
-    return skill.difficulty;
+    return skill?.difficulty ?? DifficultyState.All;
   }
 
   /// returns the category of a skill from it's name
   SkillCategory getSkillCategory(String id) {
     final skill = getSkillFromId(id);
-    return skill.category;
+    return skill?.category ?? SkillCategory.Other;
   }
 
   /// Returns the color for the level of the skill based on the [levelState]
@@ -1696,79 +1702,91 @@ class AppCubit extends Cubit<AppState> {
   }
 
   ///Sorts the Skills based on the SkillTreeSortState
-  void _sortSkills(SkillTreeSortState sort) {
+  void _sortSkills(
+    CategorySortState categorySort,
+    DifficultySortState difficultySort,
+  ) {
     final allSkills = state.allSkills;
     var sortedSkills = <Skill?>[];
-    switch (sort) {
-      case SkillTreeSortState.All:
-        sortedSkills = _sortSkillsByType(allSkills);
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.Husbandry:
-        sortedSkills = allSkills
+
+    // First, sort by category
+    sortedSkills = _sortSkillsByCategory(categorySort, allSkills);
+
+    // Then, sort by difficulty within the filtered category
+    sortedSkills = _sortSkillsByDifficulty(difficultySort, sortedSkills);
+
+    // Emit the sorted skills
+    emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
+  }
+
+  List<Skill?> _sortSkillsByCategory(
+    CategorySortState categorySort,
+    List<Skill?> skills,
+  ) {
+    switch (categorySort) {
+      case CategorySortState.All:
+        return skills;
+      case CategorySortState.Husbandry:
+        return skills
             .where(
               (element) =>
-                  element?.category.name == SkillTreeSortState.Husbandry.name,
+                  element?.category.name == CategorySortState.Husbandry.name,
             )
             .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.Mounted:
-        sortedSkills = allSkills
+      case CategorySortState.Mounted:
+        return skills
             .where(
               (element) =>
-                  element?.category.name == SkillTreeSortState.Mounted.name,
+                  element?.category.name == CategorySortState.Mounted.name,
             )
             .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.In_Hand:
-        sortedSkills = allSkills
+      case CategorySortState.In_Hand:
+        return skills
             .where(
               (element) =>
-                  element?.category.name == SkillTreeSortState.In_Hand.name,
+                  element?.category.name == CategorySortState.In_Hand.name,
             )
             .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.Other:
-        sortedSkills = allSkills
+      case CategorySortState.Other:
+        return skills
             .where(
               (element) =>
-                  element?.category.name == SkillTreeSortState.Other.name,
+                  element?.category.name == CategorySortState.Other.name,
             )
             .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.Advanced:
-        sortedSkills = allSkills
-            .where(
-              (element) =>
-                  element?.difficulty.name == SkillTreeSortState.Advanced.name,
-            )
-            .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.Intermediate:
-        sortedSkills = allSkills
-            .where(
-              (element) =>
-                  element?.difficulty.name ==
-                  SkillTreeSortState.Intermediate.name,
-            )
-            .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
-      case SkillTreeSortState.Introductory:
-        sortedSkills = allSkills
+    }
+  }
+
+  List<Skill?> _sortSkillsByDifficulty(
+    DifficultySortState difficultySort,
+    List<Skill?> skills,
+  ) {
+    switch (difficultySort) {
+      case DifficultySortState.All:
+        return skills;
+      case DifficultySortState.Introductory:
+        return skills
             .where(
               (element) =>
                   element?.difficulty.name ==
-                  SkillTreeSortState.Introductory.name,
+                  DifficultySortState.Introductory.name,
             )
             .toList();
-        emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
-        break;
+      case DifficultySortState.Intermediate:
+        return skills
+            .where(
+              (element) =>
+                  element?.difficulty.name ==
+                  DifficultySortState.Intermediate.name,
+            )
+            .toList();
+      case DifficultySortState.Advanced:
+        return skills
+            .where(
+              (element) =>
+                  element?.difficulty.name == DifficultySortState.Advanced.name,
+            )
+            .toList();
     }
   }
 
@@ -1837,7 +1855,13 @@ class AppCubit extends Cubit<AppState> {
   List<SkillNode> childrenNodes({required SkillNode skillNode}) {
     final children = <SkillNode>[];
     for (final child in state.trainingPath!.skillNodes) {
-      if (child != null && child.parentId == skillNode.id) children.add(child);
+      if (child != null && child.parentId == skillNode.id) {
+        // Check if the child node has a corresponding skill
+        final skill = getSkillFromId(child.skillId);
+        if (skill != null) {
+          children.add(child);
+        }
+      }
     }
     children.sort((a, b) => a.position.compareTo(b.position));
     return children;

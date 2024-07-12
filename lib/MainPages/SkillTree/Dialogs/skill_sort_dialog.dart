@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 
 ///  This dialog is used to sort the skills in the Skill Tree List
 class SkillSortDialog extends StatelessWidget {
@@ -11,91 +12,102 @@ class SkillSortDialog extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
+
         return AlertDialog(
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Cancel'),
+              child: const Text('Close'),
             ),
           ],
           title: const Text('Sort Skills'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Radio Buttons to select the skillTreeSortState
-              RadioListTile<SkillTreeSortState>(
+              const Text(
+                'Select Category:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              RadioListTile<CategorySortState>(
                 title: const Text('All'),
-                value: SkillTreeSortState.All,
-                groupValue: state.skillTreeSortState,
+                value: CategorySortState.All,
+                groupValue: state.categorySortState,
                 onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
+                  cubit.categorySortChanged(value!);
                 },
               ),
-              RadioListTile<SkillTreeSortState>(
-                title: const Text('Introductory'),
-                value: SkillTreeSortState.Introductory,
-                groupValue: state.skillTreeSortState,
-                onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile<SkillTreeSortState>(
-                title: const Text('Intermediate'),
-                value: SkillTreeSortState.Intermediate,
-                groupValue: state.skillTreeSortState,
-                onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile<SkillTreeSortState>(
-                title: const Text('Advanced'),
-                value: SkillTreeSortState.Advanced,
-                groupValue: state.skillTreeSortState,
-                onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile(
-                value: SkillTreeSortState.Husbandry,
-                groupValue: state.skillTreeSortState,
-                onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
-                },
+              RadioListTile<CategorySortState>(
                 title: const Text('Husbandry'),
-              ),
-              RadioListTile(
-                value: SkillTreeSortState.In_Hand,
-                groupValue: state.skillTreeSortState,
+                value: CategorySortState.Husbandry,
+                groupValue: state.categorySortState,
                 onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
+                  cubit.categorySortChanged(value!);
                 },
+              ),
+              RadioListTile<CategorySortState>(
                 title: const Text('In Hand'),
-              ),
-              RadioListTile(
-                value: SkillTreeSortState.Mounted,
-                groupValue: state.skillTreeSortState,
+                value: CategorySortState.In_Hand,
+                groupValue: state.categorySortState,
                 onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
+                  cubit.categorySortChanged(value!);
                 },
+              ),
+              RadioListTile<CategorySortState>(
                 title: const Text('Mounted'),
-              ),
-              RadioListTile(
-                value: SkillTreeSortState.Other,
-                groupValue: state.skillTreeSortState,
+                value: CategorySortState.Mounted,
+                groupValue: state.categorySortState,
                 onChanged: (value) {
-                  cubit.skillTreeSortChanged(value!);
-                  Navigator.of(context).pop();
+                  cubit.categorySortChanged(value!);
                 },
+              ),
+              RadioListTile<CategorySortState>(
                 title: const Text('Other'),
+                value: CategorySortState.Other,
+                groupValue: state.categorySortState,
+                onChanged: (value) {
+                  cubit.categorySortChanged(value!);
+                },
+              ),
+              gap(), //bold text
+              const Text(
+                'Select Difficulty:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              RadioListTile<DifficultySortState>(
+                title: const Text('All'),
+                value: DifficultySortState.All,
+                groupValue: state.difficultySortState,
+                onChanged: (value) {
+                  cubit.difficultySortChanged(value!);
+                },
+              ),
+              RadioListTile<DifficultySortState>(
+                title: const Text('Introductory'),
+                value: DifficultySortState.Introductory,
+                groupValue: state.difficultySortState,
+                onChanged: (value) {
+                  cubit.difficultySortChanged(value!);
+                },
+              ),
+              RadioListTile<DifficultySortState>(
+                title: const Text('Intermediate'),
+                value: DifficultySortState.Intermediate,
+                groupValue: state.difficultySortState,
+                onChanged: (value) {
+                  cubit.difficultySortChanged(value!);
+                },
+              ),
+              RadioListTile<DifficultySortState>(
+                title: const Text('Advanced'),
+                value: DifficultySortState.Advanced,
+                groupValue: state.difficultySortState,
+                onChanged: (value) {
+                  cubit.difficultySortChanged(value!);
+                },
               ),
             ],
           ),

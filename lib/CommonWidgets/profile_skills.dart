@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +19,7 @@ class ProfileSkills extends StatelessWidget {
     required this.skillLevels,
   });
   final List<SkillLevel>? skillLevels;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
@@ -28,29 +30,29 @@ class ProfileSkills extends StatelessWidget {
           runSpacing: 5,
           alignment: WrapAlignment.center,
           children: [
-            ...skillLevels
-                    ?.map(
-                      (e) => SkillLevelCard(
-                        category: cubit.getSkillCategory(e.skillId),
-                        difficulty: cubit.getDifficulty(e.skillId),
-                        skillLevel: e,
-                        onTap: state.isGuest
-                            ? null
-                            : () {
-                                debugPrint('Goto Skill: ${e.skillName}');
-                                context.goNamed(SkillTreePage.name);
-                                cubit
-                                  ..changeIndex(1)
-                                  ..navigateToSkillLevel(
-                                    skill: state.allSkills.firstWhere(
-                                      (element) =>
-                                          element?.skillName == e.skillName,
-                                    ),
-                                  );
-                              },
-                      ),
-                    )
-                    .toList() ??
+            ...skillLevels?.map(
+                  (e) => SkillLevelCard(
+                    category: cubit.getSkillCategory(e.skillId),
+                    difficulty: cubit.getDifficulty(e.skillId),
+                    skillLevel: e,
+                    onTap: state.isGuest
+                        ? null
+                        : () {
+                            debugPrint('Goto Skill: ${e.skillName}');
+                            context.goNamed(SkillTreePage.name);
+                            final skill = state.allSkills.firstWhereOrNull(
+                              (element) => element?.skillName == e.skillName,
+                            );
+                            if (skill != null) {
+                              cubit
+                                ..changeIndex(1)
+                                ..navigateToSkillLevel(skill: skill);
+                            } else {
+                              debugPrint('Skill not found: ${e.skillName}');
+                            }
+                          },
+                  ),
+                ) ??
                 [const Text('No Skills')],
           ],
         );

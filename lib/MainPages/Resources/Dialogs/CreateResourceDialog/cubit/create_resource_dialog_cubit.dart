@@ -24,6 +24,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
     emit(
       state.copyWith(
+        
         imageUrl: resource?.thumbnail ?? '',
         url: Url.dirty(resource?.url ?? ''),
         title: SingleWord.dirty(resource?.name ?? ''),
@@ -271,6 +272,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
     if (state.url.isValid) {
       final editedResource = Resource(
+        comments: state.resource?.comments ?? [],
         lastEditDate: DateTime.now(),
         name: state.title.value.isEmpty
             ? state.resource?.name

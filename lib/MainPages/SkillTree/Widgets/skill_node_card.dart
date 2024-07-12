@@ -10,28 +10,39 @@ import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 class SkillNodeCard extends StatelessWidget {
   const SkillNodeCard({super.key, required this.skillNode});
   final SkillNode? skillNode;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final skillNode = this.skillNode;
+
         if (skillNode != null) {
-          // Check if the current node has children
-          final hasChildren = state.trainingPath?.skillNodes
-                  .any((element) => element?.parentId == skillNode.id) ??
-              false;
-          // Check if the current node is a child
+          // Ensure the current skill node has a corresponding skill
+          final skill = cubit.getSkillFromId(skillNode.skillId);
+          debugPrint('SkillNodeCard: ${skillNode.name} - ${skillNode.skillId}');
+
+          if (skill == null) {
+            return const SizedBox.shrink();
+          }
+          debugPrint('Corresonding skill: ${skill.skillName} - ${skill.id}');
+          // Check if the current node has children with corresponding skills
+          final childrenNodes = cubit
+              .childrenNodes(skillNode: skillNode)
+              .where(
+                (childNode) => cubit.getSkillFromId(childNode.skillId) != null,
+              )
+              .toList();
+
+          final hasChildren = childrenNodes.isNotEmpty;
 
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // If it is a child node, show a divider on top
-              // if (isChild) const Divider(color: Colors.black, thickness: 2),
-
               SkillItem(
-                skill: cubit.getSkillFromId(skillNode.skillId),
-                name: cubit.getSkillFromId(skillNode.skillId).skillName,
+                skill: skill,
+                name: skill.skillName,
                 onTap: () {
                   cubit
                     ..changeIndex(1)
@@ -40,6 +51,8 @@ class SkillNodeCard extends StatelessWidget {
                         (element) => element?.skillName == skillNode.name,
                       ),
                     );
+                  debugPrint('Skill Clicked- ${skillNode.skillId}\n Exixst?'
+                      ' - ${state.allSkills.firstWhere((element) => element?.id == skillNode.skillId) != null}');
                 },
                 onEdit: () {},
                 isGuest: state.isGuest,
@@ -61,8 +74,6 @@ class SkillNodeCard extends StatelessWidget {
                 ),
                 isEditState: false,
               ),
-
-              // If it has children, show a vertical divider below
               if (hasChildren)
                 Container(
                   height: 10,
@@ -72,19 +83,13 @@ class SkillNodeCard extends StatelessWidget {
                       ? Colors.black
                       : Colors.white,
                 ),
-
               Wrap(
-                children: cubit
-                    .childrenNodes(skillNode: skillNode)
-                    .asMap()
-                    .entries
-                    .map(
+                children: childrenNodes.asMap().entries.map(
                   (entry) {
                     final e = entry.value;
 
                     return Column(
                       children: [
-                        // _buildHorizontalDividerLine(index, totalChildren),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -112,13 +117,7 @@ class SkillNodeCard extends StatelessWidget {
                             Container(
                               width: 99,
                               height: 2,
-                              color: e.position ==
-                                      cubit
-                                              .childrenNodes(
-                                                skillNode: skillNode,
-                                              )
-                                              .length -
-                                          1
+                              color: e.position == childrenNodes.length - 1
                                   ? Colors.transparent
                                   : HorseAndRidersTheme()
                                               .getTheme()
@@ -148,14 +147,14 @@ class SkillNodeCard extends StatelessWidget {
             ],
           );
         } else {
-          return const Text('');
+          return const SizedBox.shrink();
         }
       },
     );
   }
 }
 
-///Get skill for skill node
+/// Get skill for skill node
 Skill? getSkillForSkillNode({
   required SkillNode skillNode,
   required List<Skill?> allSkills,

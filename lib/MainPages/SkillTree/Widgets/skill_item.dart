@@ -1,5 +1,7 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class SkillItem extends StatefulWidget {
@@ -73,15 +75,21 @@ class _SkillItemState extends State<SkillItem> {
                   child:
                       _icon(widget.skill!.category, widget.skill!.difficulty),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 8,
-                    top: 8,
-                    left: 16,
-                    right: 16,
-                  ),
-                  child: Text(
-                    widget.name ?? '',
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: 8,
+                      top: 8,
+                      left: 16,
+                      right: 16,
+                    ),
+                    child: Text(
+                      widget.name ?? '',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
                 IconButton(

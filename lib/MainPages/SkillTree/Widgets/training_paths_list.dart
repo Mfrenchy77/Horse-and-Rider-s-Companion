@@ -77,7 +77,7 @@ class TrainingPathListView extends StatelessWidget {
                             child: Text(trainingPath?.createdBy ?? ''),
                           ),
                           ListTile(
-                            trailing: !state.isEdit
+                            trailing: !state.isEdit || state.isGuest
                                 ? null
                                 : PopupMenuButton<String>(
                                     itemBuilder: (context) => [

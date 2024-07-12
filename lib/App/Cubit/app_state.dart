@@ -70,15 +70,20 @@ enum SkillTreeNavigation {
 }
 
 /// The Sort State of the Skills
-enum SkillTreeSortState {
-  Introductory,
-  Intermediate,
-  Advanced,
+enum CategorySortState {
   Husbandry,
   Mounted,
   In_Hand,
   Other,
-  All
+  All,
+}
+
+///  The Difficulty Sort State of the SKills
+enum DifficultySortState {
+  Introductory,
+  Intermediate,
+  Advanced,
+  All,
 }
 
 /// Tag for the Log Entry
@@ -154,9 +159,10 @@ class AppState extends Equatable {
     this.pageStatus = AppPageStatus.loading,
     this.acceptStatus = AcceptStatus.waiting,
     this.commentSortState = CommentSortState.Best,
-    this.skillTreeSortState = SkillTreeSortState.All,
+    this.categorySortState = CategorySortState.All,
     this.conversationsSort = ConversationsSort.unread,
     this.conversationState = ConversationState.loaded,
+    this.difficultySortState = DifficultySortState.All,
     this.conversationsState = ConversationsState.loading,
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.skillTreeNavigation = SkillTreeNavigation.SkillList,
@@ -315,10 +321,13 @@ class AppState extends Equatable {
   final ConversationsSort conversationsSort;
 
   /// The sort state for the Skills
-  final SkillTreeSortState skillTreeSortState;
+  final CategorySortState categorySortState;
 
   /// The state of the conversations
   final ConversationsState conversationsState;
+
+  /// The Difficulty Sort State of the Skills
+  final DifficultySortState difficultySortState;
 
   /// The sort state of the resources
   final ResourcesSortStatus resourcesSortStatus;
@@ -373,16 +382,16 @@ class AppState extends Equatable {
     RiderProfile? viewingProfile,
     List<Comment>? resourceComments,
     List<Resource?>? savedResources,
-    DifficultyState? difficultyState,
     List<Conversation>? conversations,
     CommentSortState? commentSortState,
     List<TrainingPath?>? trainingPaths,
     ConversationState? conversationState,
     ConversationsSort? conversationsSort,
-    SkillTreeSortState? skillTreeSortState,
+    CategorySortState? categorySortState,
     ConversationsState? conversationsState,
     ResourcesSortStatus? resourcesSortStatus,
     SkillTreeNavigation? skillTreeNavigation,
+    DifficultySortState? difficultySortState,
     MessageToSupportStatus? messageToSupportStatus,
   }) {
     return AppState._(
@@ -430,9 +439,10 @@ class AppState extends Equatable {
       commentSortState: commentSortState ?? this.commentSortState,
       conversationState: conversationState ?? this.conversationState,
       conversationsSort: conversationsSort ?? this.conversationsSort,
-      skillTreeSortState: skillTreeSortState ?? this.skillTreeSortState,
+      categorySortState: categorySortState ?? this.categorySortState,
       conversationsState: conversationsState ?? this.conversationsState,
       isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
+      difficultySortState: difficultySortState ?? this.difficultySortState,
       viewingProfielEmail: viewingProfielEmail ?? this.viewingProfielEmail,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
@@ -493,10 +503,11 @@ class AppState extends Equatable {
         conversationsSort,
         conversationsState,
         isFromTrainingPath,
-        skillTreeSortState,
+        categorySortState,
         skillTreeNavigation,
         resourcesSortStatus,
         viewingProfielEmail,
+        difficultySortState,
         showEmailVerification,
         isFromTrainingPathList,
         messageToSupportStatus,

@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
@@ -14,6 +15,9 @@ class TrainingPathView extends StatelessWidget {
       builder: (context, state) {
         final scrollController = ScrollController();
         debugPrint('Training Path View: ${state.trainingPath?.name}');
+
+        final cubit = context.read<AppCubit>();
+
         return Align(
           alignment: Alignment.topCenter,
           child: SingleChildScrollView(
@@ -23,16 +27,19 @@ class TrainingPathView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      state.trainingPath?.name ?? 'Select a Training Path',
-                      //bold and bigger font
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w100,
+                    Expanded(
+                      child: AutoSizeText(
+                        state.trainingPath?.name ?? 'Select a Training Path',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w100,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Visibility(
-                      visible: state.isEdit,
+                      visible: state.isEdit && state.isGuest == false,
                       child: IconButton(
                         tooltip: 'Edit Training Path',
                         icon: const Icon(Icons.edit, size: 20),
@@ -77,6 +84,12 @@ class TrainingPathView extends StatelessWidget {
                                 .where(
                                   (element) =>
                                       element!.parentId?.isEmpty ?? false,
+                                )
+                                .where(
+                                  (skillNode) =>
+                                      cubit
+                                          .getSkillFromId(skillNode!.skillId) !=
+                                      null,
                                 )
                                 .map(
                                   (e) => SkillNodeCard(
