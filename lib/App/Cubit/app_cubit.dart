@@ -3384,7 +3384,8 @@ class AppCubit extends Cubit<AppState> {
 
   /// Clears the Error Message and Snackbar
   void clearErrorMessage() {
-    emit(state.copyWith(isMessage: false, errorMessage: ''));
+    debugPrint('Clearing Error Message');
+    emit(state.copyWith(isMessage: false, errorMessage: '', isError: false));
   }
 
   /// Create a Snackbar Message

@@ -1,7 +1,5 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class SkillItem extends StatefulWidget {

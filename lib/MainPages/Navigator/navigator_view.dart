@@ -119,7 +119,7 @@ class NavigatorView extends StatelessWidget {
                 ),
               ).closed.then((value) {
                 if (!context.mounted) return;
-                cubit.clearMessage();
+                cubit.clearErrorMessage();
               });
           });
         }
@@ -185,6 +185,7 @@ class NavigatorView extends StatelessWidget {
                 : Column(
                     children: [
                       Expanded(
+                        //FIXME: If the adaptive scaffold updated, you need to click on the adaptive scaffold and edit line 276 and change padding to EdgeInsets.all(0)
                         child: AdaptiveScaffold(
                           appBar: AppBar(),
                           internalAnimations: false,
