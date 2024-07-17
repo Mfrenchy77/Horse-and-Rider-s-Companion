@@ -2,20 +2,29 @@ part of 'create_resource_dialog_cubit.dart';
 
 enum UrlFetchedStatus { initial, fetching, fetched, error }
 
+// ignore: constant_identifier_names
+enum DifficultyFilter { All, Introductory, Intermediate, Advanced }
+
+// ignore: constant_identifier_names
+enum CategoryFilter { All, In_Hand, Husbandry, Mounted,Other }
+
 class CreateResourceDialogState extends Equatable {
   const CreateResourceDialogState({
-    this.skills,
     this.resource,
+    this.title = '',
     this.error = '',
     this.usersProfile,
     this.imageUrl = '',
     this.resourceSkills,
     this.isEdit = false,
+    this.filteredSkills,
     this.isError = false,
+    this.description = '',
+    this.skills = const [],
     this.url = const Url.pure(),
     this.status = FormStatus.initial,
-    this.title = const SingleWord.pure(),
-    this.description = const SingleWord.pure(),
+    this.categoryFilter = CategoryFilter.All,
+    this.difficultyFilter = DifficultyFilter.All,
     this.urlFetchedStatus = UrlFetchedStatus.initial,
   });
 
@@ -31,11 +40,11 @@ class CreateResourceDialogState extends Equatable {
   /// Whether there is an error in the form
   final bool isError;
 
+  /// The title of the resource
+  final String title;
+
   /// The image url of the resource
   final String imageUrl;
-
-  /// The title of the resource
-  final SingleWord title;
 
   /// The resource that is being created/edited
   final Resource? resource;
@@ -43,14 +52,20 @@ class CreateResourceDialogState extends Equatable {
   /// The status of the form
   final FormStatus status;
 
-  /// The skills that are associated with the resource
-  final List<Skill?>? skills;
-
   /// The description of the resource
-  final SingleWord description;
+  final String description;
+
+  /// The skills that are associated with the resource
+  final List<Skill?> skills;
 
   /// The profile of the user who is creating the resource
   final RiderProfile? usersProfile;
+
+  /// All the skills that are filtered
+  final List<Skill?>? filteredSkills;
+
+  /// The category filter
+  final CategoryFilter categoryFilter;
 
   /// The skills that are associated with the resource
   final List<Skill?>? resourceSkills;
@@ -58,19 +73,25 @@ class CreateResourceDialogState extends Equatable {
   /// The status of the url fetching
   final UrlFetchedStatus urlFetchedStatus;
 
+  /// The difficulty filter
+  final DifficultyFilter difficultyFilter;
+
   CreateResourceDialogState copyWith({
     Url? url,
     bool? isEdit,
+    String? title,
     String? error,
     bool? isError,
     String? imageUrl,
-    SingleWord? title,
     Resource? resource,
     FormStatus? status,
+    String? description,
     List<Skill?>? skills,
-    SingleWord? description,
     RiderProfile? usersProfile,
+    List<Skill?>? filteredSkills,
     List<Skill?>? resourceSkills,
+    CategoryFilter? categoryFilter,
+    DifficultyFilter? difficultyFilter,
     UrlFetchedStatus? urlFetchedStatus,
   }) {
     return CreateResourceDialogState(
@@ -85,7 +106,10 @@ class CreateResourceDialogState extends Equatable {
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
       usersProfile: usersProfile ?? this.usersProfile,
+      filteredSkills: filteredSkills ?? this.filteredSkills,
       resourceSkills: resourceSkills ?? this.resourceSkills,
+      categoryFilter: categoryFilter ?? this.categoryFilter,
+      difficultyFilter: difficultyFilter ?? this.difficultyFilter,
       urlFetchedStatus: urlFetchedStatus ?? this.urlFetchedStatus,
     );
   }
@@ -103,7 +127,10 @@ class CreateResourceDialogState extends Equatable {
         imageUrl,
         description,
         usersProfile,
+        categoryFilter,
+        filteredSkills,
         resourceSkills,
+        difficultyFilter,
         urlFetchedStatus,
       ];
 }

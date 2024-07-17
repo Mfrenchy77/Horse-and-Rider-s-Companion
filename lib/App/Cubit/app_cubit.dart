@@ -1318,11 +1318,10 @@ class AppCubit extends Cubit<AppState> {
         final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList()
           ..sort((a, b) => a!.position.compareTo(b!.position));
         debugPrint('Skills Retrieved: ${skills.length}');
-
+        _sortSkills(state.categorySortState, state.difficultySortState);
         emit(
           state.copyWith(
             allSkills: skills,
-            sortedSkills: _sortSkillsByType(skills),
           ),
         );
       });
@@ -1700,6 +1699,9 @@ class AppCubit extends Cubit<AppState> {
   void sortForHorse() {
     emit(state.copyWith(sortedSkills: _sortSkillsByType(state.allSkills)));
   }
+
+  /// Changed the Difficulty sort
+  
 
   ///Sorts the Skills based on the SkillTreeSortState
   void _sortSkills(

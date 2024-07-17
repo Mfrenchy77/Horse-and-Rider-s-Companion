@@ -21,6 +21,9 @@ class ResourcesItem extends StatelessWidget {
     required this.isResourceList,
   });
   final Resource resource;
+
+  /// Determies if the Rating bar should be shown or not
+  /// if it is true then no rating bar will be shown
   final bool isResourceList;
   @override
   Widget build(BuildContext context) {

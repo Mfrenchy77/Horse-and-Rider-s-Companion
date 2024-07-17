@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -34,7 +36,6 @@ class UpdateResourceSkills extends StatelessWidget {
           resource: resource,
           isEdit: resource != null,
           usersProfile: context.read<AppCubit>().state.usersProfile,
-          keysRepository: context.read<KeysRepository>(),
           resourcesRepository: context.read<ResourcesRepository>(),
         ),
         child:
@@ -80,7 +81,10 @@ class UpdateResourceSkills extends StatelessWidget {
                                 )
                                 ?.map(
                                   (e) => TextButton.icon(
-                                    icon: _icon(e?.category, e!.difficulty),
+                                    icon: resourceIcon(
+                                      e?.category,
+                                      e!.difficulty,
+                                    ),
                                     onPressed: () {
                                       appCubit
                                         ..changeIndex(1)
@@ -107,20 +111,71 @@ class UpdateResourceSkills extends StatelessWidget {
                               'Add or Remove Skills from this Resource',
                             ),
                             smallGap(),
+                            SearchBar(
+                              hintText: 'Search Skills',
+                              onChanged: cubit.searchSkills,
+                            ),
+                            smallGap(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                DropdownButton<CategoryFilter>(
+                                  value: state.categoryFilter,
+                                  onChanged: cubit.categoryFilterChanged,
+                                  items: CategoryFilter.values
+                                      .map(
+                                        (category) => DropdownMenuItem(
+                                          value: category,
+                                          child: Text(
+                                            category.toString().split('.').last,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                                smallGap(),
+                                DropdownButton<DifficultyFilter>(
+                                  value: state.difficultyFilter,
+                                  onChanged: cubit.difficultyFilterChanged,
+                                  items: DifficultyFilter.values
+                                      .map(
+                                        (difficulty) => DropdownMenuItem(
+                                          value: difficulty,
+                                          child: Text(
+                                            difficulty
+                                                .toString()
+                                                .split('.')
+                                                .last,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+                            smallGap(),
                             SingleChildScrollView(
                               child: Wrap(
                                 spacing: 8,
-                                children: appCubit.state.allSkills
+                                children: state.filteredSkills!
                                     .map(
-                                      (e) => InputChip(
-                                        showCheckmark: false,
-                                        avatar:
-                                            _icon(e?.category, e!.difficulty),
-                                        label: Text(e.skillName),
-                                        selected: state.resource?.skillTreeIds
+                                      (e) => SkillSelectChip(
+                                        skill: e,
+                                        padding: 4,
+                                        trailingIcon: e!.rider
+                                            ? const Icon(Icons.person)
+                                            : const Icon(
+                                                HorseAndRiderIcons.horseIcon,
+                                              ),
+                                        leadingIcon: resourceIcon(
+                                          e.category,
+                                          e.difficulty,
+                                        ),
+                                        textLabel: e.skillName,
+                                        isSelected: state.resource?.skillTreeIds
                                                 ?.contains(e.id) ??
                                             false,
-                                        onPressed: () {
+                                        onTap: (value) {
                                           context
                                               .read<CreateResourceDialogCubit>()
                                               .resourceSkillsChanged(
@@ -163,57 +218,5 @@ class UpdateResourceSkills extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-Icon? _icon(SkillCategory? category, DifficultyState difficulty) {
-  if (category == SkillCategory.In_Hand) {
-    return Icon(
-      HorseAndRiderIcons.inhand,
-      color: _color(difficulty),
-      shadows: [
-        Shadow(
-          color: Colors.black.withOpacity(0.5),
-          offset: const Offset(1, 1),
-        ),
-      ],
-    );
-  } else if (category == SkillCategory.Husbandry) {
-    return Icon(
-      HorseAndRiderIcons.husbandry,
-      color: _color(difficulty),
-      shadows: [
-        Shadow(
-          color: Colors.black.withOpacity(0.5),
-          offset: const Offset(1, 1),
-        ),
-      ],
-    );
-  } else if (category == SkillCategory.Mounted) {
-    return Icon(
-      HorseAndRiderIcons.riding,
-      color: _color(difficulty),
-      shadows: [
-        Shadow(
-          color: Colors.black.withOpacity(0.5),
-          offset: const Offset(1, 1),
-        ),
-      ],
-    );
-  } else {
-    return null;
-  }
-}
-
-Color _color(DifficultyState difficulty) {
-  switch (difficulty) {
-    case DifficultyState.Introductory:
-      return Colors.lightGreen;
-    case DifficultyState.Intermediate:
-      return Colors.orange;
-    case DifficultyState.Advanced:
-      return Colors.red;
-    case DifficultyState.All:
-      return Colors.transparent;
   }
 }

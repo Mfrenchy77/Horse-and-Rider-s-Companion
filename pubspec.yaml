@@ -5,6 +5,7 @@ description: "Horse & Rider's Companion is a robust equestrian platform designed
 
 dependencies:
 
+  any_link_preview: ^3.0.2
   authentication_repository:
     path: packages/authentication_repository
   auto_size_text: ^3.0.0

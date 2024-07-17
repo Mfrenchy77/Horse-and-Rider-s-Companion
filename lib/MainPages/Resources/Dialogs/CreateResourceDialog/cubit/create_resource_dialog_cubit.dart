@@ -1,3 +1,4 @@
+import 'package:any_link_preview/any_link_preview.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
@@ -15,29 +16,24 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required Resource? resource,
     required List<Skill?>? skills,
     required RiderProfile? usersProfile,
-    required KeysRepository keysRepository,
     required ResourcesRepository resourcesRepository,
-  })  : _keysRepository = keysRepository,
-        _resourcesRepository = resourcesRepository,
+  })  : _resourcesRepository = resourcesRepository,
         super(const CreateResourceDialogState()) {
-    _keysRepository.getJsonLinkApiKey().then((value) => _jsonKey = value);
-
     emit(
       state.copyWith(
-        
-        imageUrl: resource?.thumbnail ?? '',
-        url: Url.dirty(resource?.url ?? ''),
-        title: SingleWord.dirty(resource?.name ?? ''),
-        description: SingleWord.dirty(resource?.description ?? ''),
         skills: skills,
         isEdit: isEdit,
         resource: resource,
+        filteredSkills: skills,
         usersProfile: usersProfile,
+        title: resource?.name ?? '',
+        imageUrl: resource?.thumbnail ?? '',
+        url: Url.dirty(resource?.url ?? ''),
+        description: resource?.description ?? '',
       ),
     );
   }
-  String? _jsonKey;
-  final KeysRepository _keysRepository;
+
   final ResourcesRepository _resourcesRepository;
 
   ///   Called when user is inputting the Url to be parsed
@@ -50,23 +46,14 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         url: url,
       ),
     );
-    if (state.url.isValid) {
-      fetchUrl();
-    } else {
-      debugPrint('$value is not validated');
-    }
   }
 
   ///   Called when Editing a Resource and the
   ///   Title is changed
   void titleChanged(String value) {
-    final title = SingleWord.dirty(value);
     emit(
       state.copyWith(
-        title: title,
-        urlFetchedStatus: state.url.value.isNotEmpty
-            ? UrlFetchedStatus.fetched
-            : UrlFetchedStatus.initial,
+        title: value,
       ),
     );
   }
@@ -74,10 +61,10 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   ///   Called when Editing a Resource and the
   ///  ImageUrl is changed
   void imageUrlChanged(String value) {
-    final imageUrl = value;
+    //final imageUrl = value;
     emit(
       state.copyWith(
-        imageUrl: imageUrl,
+        imageUrl: value,
       ),
     );
   }
@@ -85,9 +72,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   ///   Called when Editing a Resource and the
   ///   Description is changed
   void descriptionChanged(String value) {
-    final description = SingleWord.dirty(value);
+    //final description = SingleWord.dirty(value);
     emit(
-      state.copyWith(description: description),
+      state.copyWith(description: value),
     );
   }
 
@@ -110,7 +97,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       debugPrint('adding skill');
       updatedSkills.add(skillId);
     }
-
     // Fetch the skills for the updated list of IDs
     final updatedResourceSkills = getSkillsForResource(ids: updatedSkills);
 
@@ -120,10 +106,190 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     // Emit the new state with updated values
     emit(
       state.copyWith(
-        resourceSkills: updatedResourceSkills,
         resource: updatedResource,
+        resourceSkills: updatedResourceSkills,
       ),
     );
+  }
+
+  /// User entered in the search bar to filter the skills
+  void searchSkills(String value) {
+    final filteredSkills = <Skill?>[];
+    if (value.isNotEmpty) {
+      final skills = state.skills;
+      for (final skill in skills) {
+        if (skill?.skillName.toLowerCase().contains(value.toLowerCase()) ??
+            false) {
+          filteredSkills.add(skill);
+        }
+      }
+    } else {
+      filteredSkills.addAll(state.skills);
+    }
+    emit(
+      state.copyWith(
+        filteredSkills: filteredSkills,
+      ),
+    );
+  }
+
+  void difficultyFilterChanged(DifficultyFilter? difficultyFilter) {
+    emit(
+      state.copyWith(
+        difficultyFilter: difficultyFilter,
+      ),
+    );
+    _sortSkills(
+      state.categoryFilter,
+      difficultyFilter,
+    );
+  }
+
+  void categoryFilterChanged(CategoryFilter? categoryFilter) {
+    emit(
+      state.copyWith(
+        categoryFilter: categoryFilter,
+      ),
+    );
+    _sortSkills(
+      categoryFilter,
+      state.difficultyFilter,
+    );
+  }
+
+  ///Sorts the Skills based on the SkillTreeSortState
+  void _sortSkills(
+    CategoryFilter? categorySort,
+    DifficultyFilter? difficultySort,
+  ) {
+    final allSkills = state.skills;
+    var sortedSkills = <Skill?>[];
+
+    // First, sort by category
+    sortedSkills = _sortSkillsByCategory(categorySort, allSkills);
+
+    // Then, sort by difficulty within the filtered category
+    sortedSkills = _sortSkillsByDifficulty(difficultySort, sortedSkills);
+
+    // Emit the sorted skills
+    emit(state.copyWith(filteredSkills: sortedSkills));
+  }
+
+  List<Skill?> _sortSkillsByCategory(
+    CategoryFilter? categorySort,
+    List<Skill?> skills,
+  ) {
+    switch (categorySort) {
+      case CategoryFilter.All:
+        return skills;
+      case CategoryFilter.Husbandry:
+        return skills
+            .where(
+              (element) =>
+                  element?.category.name == CategoryFilter.Husbandry.name,
+            )
+            .toList();
+      case CategoryFilter.Mounted:
+        return skills
+            .where(
+              (element) =>
+                  element?.category.name == CategoryFilter.Mounted.name,
+            )
+            .toList();
+      case CategoryFilter.In_Hand:
+        return skills
+            .where(
+              (element) =>
+                  element?.category.name == CategoryFilter.In_Hand.name,
+            )
+            .toList();
+      case CategoryFilter.Other:
+        return skills
+            .where(
+              (element) => element?.category.name == CategoryFilter.Other.name,
+            )
+            .toList();
+      case null:
+        return skills;
+    }
+  }
+
+  List<Skill?> _sortSkillsByDifficulty(
+    DifficultyFilter? difficultySort,
+    List<Skill?> skills,
+  ) {
+    switch (difficultySort) {
+      case DifficultyFilter.All:
+        return skills;
+      case DifficultyFilter.Introductory:
+        return skills
+            .where(
+              (element) =>
+                  element?.difficulty.name ==
+                  DifficultyFilter.Introductory.name,
+            )
+            .toList();
+      case DifficultyFilter.Intermediate:
+        return skills
+            .where(
+              (element) =>
+                  element?.difficulty.name ==
+                  DifficultyFilter.Intermediate.name,
+            )
+            .toList();
+      case DifficultyFilter.Advanced:
+        return skills
+            .where(
+              (element) =>
+                  element?.difficulty.name == DifficultyFilter.Advanced.name,
+            )
+            .toList();
+      case null:
+        return skills;
+    }
+  }
+
+  /// Checks if the url is valid
+  bool _checkUrlValid(String url) {
+    final isUrlValid = AnyLinkPreview.isValidLink(
+      url,
+      protocols: ['http', 'https'],
+      hostWhitelist: ['https://youtube.com/'],
+      // hostBlacklist: ['https://facebook.com/'],
+    );
+    return isUrlValid;
+  }
+
+  Future<void> getMetadata(String url) async {
+    emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
+    final isValid = _checkUrlValid(url);
+    if (isValid) {
+      final metadata = await AnyLinkPreview.getMetadata(
+        link: url,
+        cache: const Duration(days: 7),
+        proxyUrl: 'https://corsproxy.io/?',
+      );
+      emit(
+        state.copyWith(
+          url: Url.dirty(url),
+          title: metadata?.title,
+          imageUrl: metadata?.image,
+          description: metadata?.desc,
+          urlFetchedStatus: UrlFetchedStatus.fetched,
+        ),
+      );
+      debugPrint('URL6 => ${metadata?.title}');
+      debugPrint('$metadata');
+    } else {
+      emit(
+        state.copyWith(
+          urlFetchedStatus: UrlFetchedStatus.error,
+          isError: true,
+          error: 'URL is not valid',
+        ),
+      );
+      debugPrint('URL is not valid');
+    }
   }
 
   /// the skills that in the resourceSkills list
@@ -132,11 +298,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   }) {
     final skills = <Skill?>[];
     if (ids != null) {
-      if (state.skills == null || state.skills!.isEmpty) {
+      if (state.skills.isEmpty) {
         debugPrint('No skills found');
         return null;
       } else {
-        for (final skill in state.skills!) {
+        for (final skill in state.skills) {
           if (ids.contains(skill?.id)) {
             skills.add(skill);
           }
@@ -147,75 +313,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       return null;
     }
     return skills;
-  }
-
-  // if the url does not have a scheme, add https
-  String _checkAndModifyUrl(String value) {
-    var uri = Uri.parse(value);
-
-    // Check if the scheme is missing
-    if (uri.scheme.isEmpty) {
-      // Add 'https://' as default scheme
-      uri = Uri.parse('https://$value');
-    }
-
-    return uri.toString();
-  }
-
-  // read the url String and extract the metadata
-  // update the state with the metadata
-
-  Future<void> fetchUrl() async {
-    final url = _checkAndModifyUrl(state.url.value.trim());
-    debugPrint('fetchUrl: $url');
-    emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
-    final metadataRepository = UrlMetadataRepository(apiKey: _jsonKey ?? '');
-
-    try {
-      debugPrint('Fetching the metadata');
-      // First attempt: Using the API
-      final metadata = await metadataRepository.extractUrlMetadata(url: url);
-      if (metadata.title.isNotEmpty && metadata.description.isNotEmpty) {
-        updateUrlMetadata(data: metadata);
-      } else {
-        debugPrint('Scraping the webpage');
-        // If title or description is empty, attempt to scrape the webpage
-        final scrapedMetadata =
-            await metadataRepository.extractMetadataFromUrl(url);
-        updateUrlMetadata(data: scrapedMetadata);
-      }
-    } catch (e) {
-      // Handle errors from both attempts
-      debugPrint('Error Fetching Url: $e');
-      emit(
-        state.copyWith(
-          isError: true,
-          error: e.toString(),
-          urlFetchedStatus: UrlFetchedStatus.error,
-          status: FormStatus.initial,
-        ),
-      );
-    }
-  }
-
-  ///   Called when the url is inputted and validated
-  ///  and the metadata is fetched
-  void updateUrlMetadata({required UrlMetadata data}) {
-    final title = SingleWord.dirty(data.title);
-    final description = SingleWord.dirty(data.description);
-    final imageUrl = data.imageUrls.first ?? '';
-    debugPrint('imageUrl: $imageUrl');
-    debugPrint('title: $title');
-    debugPrint('description: $description');
-    emit(
-      state.copyWith(
-        urlFetchedStatus: UrlFetchedStatus.fetched,
-        url: Url.dirty(state.url.value),
-        title: title,
-        description: description,
-        imageUrl: imageUrl,
-      ),
-    );
   }
 
   ///   Called when the url is inputted and validated
@@ -236,13 +333,13 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         url: url,
         rating: 0,
         numberOfRates: 0,
+        name: state.title,
         usersWhoRated: raters,
         skillTreeIds: skillIds,
-        name: state.title.value,
         id: ViewUtils.createId(),
         thumbnail: state.imageUrl,
         lastEditDate: DateTime.now(),
-        description: state.description.value,
+        description: state.description,
         lastEditBy: state.usersProfile?.name ?? '',
       );
 
@@ -267,21 +364,19 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   Future<void> editResource() async {
     emit(state.copyWith(status: FormStatus.submitting));
     debugPrint(
-      'Editting Resource ${state.resource?.name ?? state.title.value}',
+      'Editting Resource ${state.resource?.name ?? state.title}',
     );
 
     if (state.url.isValid) {
       final editedResource = Resource(
         comments: state.resource?.comments ?? [],
         lastEditDate: DateTime.now(),
-        name: state.title.value.isEmpty
-            ? state.resource?.name
-            : state.title.value,
+        name: state.title.isEmpty ? state.resource?.name : state.title,
         rating: state.resource?.rating ?? 1,
         lastEditBy: state.usersProfile?.name,
-        description: state.description.value.isEmpty
+        description: state.description.isEmpty
             ? state.resource?.description
-            : state.description.value,
+            : state.description,
         usersWhoRated: state.resource?.usersWhoRated ??
             [
               BaseListItem(
@@ -330,6 +425,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   //  Clears the error message
   void clearError() {
-    emit(state.copyWith(isError: false, error: ''));
+    emit(
+      state.copyWith(
+        error: '',
+        isError: false,
+        urlFetchedStatus: UrlFetchedStatus.initial,
+      ),
+    );
   }
 }

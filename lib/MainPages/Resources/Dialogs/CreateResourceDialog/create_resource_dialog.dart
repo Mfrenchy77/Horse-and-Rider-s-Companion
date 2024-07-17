@@ -2,8 +2,12 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resource_item.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:image_network/image_network.dart';
 
 class CreateResourcDialog extends StatelessWidget {
@@ -40,20 +44,21 @@ class CreateResourcDialog extends StatelessWidget {
           resource: resource,
           isEdit: resource != null,
           usersProfile: userProfile,
-          keysRepository: context.read<KeysRepository>(),
+          // keysRepository: context.read<KeysRepository>(),
           resourcesRepository: context.read<ResourcesRepository>(),
         ),
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listenWhen: (previous, current) =>
+              previous.urlFetchedStatus != current.urlFetchedStatus ||
               previous.title != current.title ||
               previous.description != current.description ||
               previous.imageUrl != current.imageUrl,
           listener: (context, state) {
             final cubit = context.read<CreateResourceDialogCubit>();
             if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
-              titleController.text = state.title.value;
-              descriptionController.text = state.description.value;
+              titleController.text = state.title;
+              descriptionController.text = state.description;
               imageUrlController.text = state.imageUrl;
             }
             // show a dialog instructing user to enter the title and description
@@ -79,6 +84,7 @@ class CreateResourcDialog extends StatelessWidget {
                   ],
                 ),
               );
+              cubit.clearError();
             }
             if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
@@ -100,6 +106,7 @@ class CreateResourcDialog extends StatelessWidget {
           child:
               BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
             builder: (context, state) {
+              final cubit = context.read<CreateResourceDialogCubit>();
               return Scaffold(
                 backgroundColor: Colors.transparent,
                 appBar: AppBar(
@@ -116,82 +123,162 @@ class CreateResourcDialog extends StatelessWidget {
                   ),
                   content: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Form(
-                      child: Column(
-                        children: [
-                          //   Resource Url
-                          _urlField(context: context, resource: resource),
-                          smallGap(),
-                          //   Button to fetch the website information
-                          Visibility(
-                            visible: state.urlFetchedStatus ==
-                                UrlFetchedStatus.initial,
-                            child: ElevatedButton(
-                              onPressed: () => context
-                                  .read<CreateResourceDialogCubit>()
-                                  .fetchUrl(),
-                              child: const Text('Retrieve Website Information'),
+                    child: SingleChildScrollView(
+                      child: Form(
+                        child: Column(
+                          children: [
+                            //   Resource Url
+                            _urlField(
+                              context: context,
+                              resource: resource,
+                              state: state,
                             ),
-                          ),
-                          Visibility(
-                            visible: state.urlFetchedStatus ==
-                                UrlFetchedStatus.fetching,
-                            child:
-                                const Text('Fetching Website Information...'),
-                          ),
-                          const ResourceImage(),
-                          _imageField(
-                            state: state,
-                            context: context,
-                            resource: resource,
-                            imageUrlController: imageUrlController,
-                          ),
-                          _titleField(
-                            state: state,
-                            context: context,
-                            resource: resource,
-                            titleController: titleController,
-                          ),
-                          gap(),
-                          _descriptionField(
-                            state: state,
-                            context: context,
-                            resource: resource,
-                            descriptionController: descriptionController,
-                          ),
+                            smallGap(),
 
-                          ///   Skills picked from filter chips
-                          if (state.skills != null)
-                            Column(
-                              children: [
-                                const Text(
-                                  'Choose the skills for this Resource',
-                                ),
-                                Wrap(
-                                  spacing: 8,
-                                  children: state.skills!.map(
-                                    (Skill? skill) {
-                                      return FilterChip(
-                                        label: Text(skill!.skillName),
-                                        selected: state.resourceSkills?.any(
-                                              (skillObject) =>
-                                                  skillObject?.id == skill.id,
-                                            ) ??
-                                            false,
-                                        onSelected: (value) => context
-                                            .read<CreateResourceDialogCubit>()
-                                            .resourceSkillsChanged(
-                                              skill.id,
-                                            ),
-                                      );
-                                    },
-                                  ).toList(),
-                                ),
-                              ],
-                            )
-                          else
-                            const Text('No Skills Found'),
-                        ],
+                            Visibility(
+                              visible: state.urlFetchedStatus ==
+                                  UrlFetchedStatus.fetching,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  Text('Fetching Website Information...'),
+                                ],
+                              ),
+                            ),
+                            Visibility(
+                              visible: state.urlFetchedStatus ==
+                                  UrlFetchedStatus.fetched,
+                              child: Column(
+                                children: [
+                                  ResourcesItem(
+                                    isResourceList: false,
+                                    resource: Resource(
+                                      name: state.title,
+                                      description: state.description,
+                                      thumbnail: state.imageUrl,
+                                      lastEditDate: DateTime.now(),
+                                    ),
+                                  ),
+                                  gap(),
+                                  _titleField(
+                                    state: state,
+                                    context: context,
+                                    resource: resource,
+                                    titleController: titleController,
+                                  ),
+                                  gap(),
+                                  _descriptionField(
+                                    state: state,
+                                    context: context,
+                                    resource: resource,
+                                    descriptionController:
+                                        descriptionController,
+                                  ),
+                                  gap(),
+                                  _imageField(
+                                    state: state,
+                                    context: context,
+                                    resource: resource,
+                                    imageUrlController: imageUrlController,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            ///   Skills picked from Input chips
+                            Visibility(
+                              visible: state.urlFetchedStatus ==
+                                  UrlFetchedStatus.fetched,
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'Choose the skills for this Resource',
+                                  ),
+                                  smallGap(),
+                                  SearchBar(
+                                    hintText: 'Search Skills',
+                                    onChanged: cubit.searchSkills,
+                                  ),
+                                  smallGap(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      DropdownButton<CategoryFilter>(
+                                        value: state.categoryFilter,
+                                        onChanged: cubit.categoryFilterChanged,
+                                        items: CategoryFilter.values
+                                            .map(
+                                              (category) => DropdownMenuItem(
+                                                value: category,
+                                                child: Text(
+                                                  category
+                                                      .toString()
+                                                      .split('.')
+                                                      .last,
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                      ),
+                                      smallGap(),
+                                      DropdownButton<DifficultyFilter>(
+                                        value: state.difficultyFilter,
+                                        onChanged:
+                                            cubit.difficultyFilterChanged,
+                                        items: DifficultyFilter.values
+                                            .map(
+                                              (difficulty) => DropdownMenuItem(
+                                                value: difficulty,
+                                                child: Text(
+                                                  difficulty
+                                                      .toString()
+                                                      .split('.')
+                                                      .last,
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                      ),
+                                    ],
+                                  ),
+                                  gap(),
+                                  Wrap(
+                                    spacing: 8,
+                                    children: state.filteredSkills!.map(
+                                      (Skill? skill) {
+                                        return SkillSelectChip(
+                                          trailingIcon: skill!.rider
+                                              ? const Icon(Icons.person)
+                                              : const Icon(
+                                                  HorseAndRiderIcons.horseIcon,
+                                                ),
+                                          skill: skill,
+                                          leadingIcon: resourceIcon(
+                                            skill.category,
+                                            skill.difficulty,
+                                          ),
+                                          textLabel: skill.skillName,
+                                          isSelected: state.resourceSkills?.any(
+                                                (skillObject) =>
+                                                    skillObject?.id == skill.id,
+                                              ) ??
+                                              false,
+                                          onTap: (value) => context
+                                              .read<CreateResourceDialogCubit>()
+                                              .resourceSkillsChanged(
+                                                skill.id,
+                                              ),
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -232,8 +319,10 @@ Widget _imageField({
 }) {
   return TextFormField(
     controller: imageUrlController,
-    onChanged: (url) =>
-        context.read<CreateResourceDialogCubit>().imageUrlChanged(url),
+    onFieldSubmitted: (url) =>
+        context.read<CreateResourceDialogCubit>().getMetadata(url),
+    // onChanged: (url) =>
+    //     context.read<CreateResourceDialogCubit>().getMetadata(url),
     keyboardType: TextInputType.url,
     decoration: const InputDecoration(
       labelText: 'Image',
@@ -274,16 +363,31 @@ class ResourceImage extends StatelessWidget {
   }
 }
 
-Widget _urlField({required BuildContext context, required Resource? resource}) {
+Widget _urlField({
+  required BuildContext context,
+  required Resource? resource,
+  required CreateResourceDialogState state,
+}) {
   return TextFormField(
     initialValue: resource?.url ?? '',
+    onFieldSubmitted: (value) =>
+        context.read<CreateResourceDialogCubit>().getMetadata(value),
     onChanged: (url) =>
         context.read<CreateResourceDialogCubit>().urlChanged(url),
     keyboardType: TextInputType.url,
-    decoration: const InputDecoration(
-      labelText: 'Url',
+    decoration: InputDecoration(
+      suffixIcon: IconButton(
+        tooltip: 'Fetch Website Information',
+        onPressed: state.url.value.isEmpty
+            ? null
+            : () => context
+                .read<CreateResourceDialogCubit>()
+                .getMetadata(state.url.value),
+        icon: const Icon(Icons.send),
+      ),
+      labelText: 'Enter a Web Address',
       hintText: 'Enter a Web Address',
-      icon: Icon(Icons.arrow_circle_down),
+      icon: const Icon(Icons.arrow_circle_down),
     ),
   );
 }
