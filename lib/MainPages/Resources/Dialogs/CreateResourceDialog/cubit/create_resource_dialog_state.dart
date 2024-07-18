@@ -1,12 +1,12 @@
 part of 'create_resource_dialog_cubit.dart';
 
-enum UrlFetchedStatus { initial, fetching, fetched, error }
+enum UrlFetchedStatus { initial, fetching, manual, fetched, error }
 
 // ignore: constant_identifier_names
 enum DifficultyFilter { All, Introductory, Intermediate, Advanced }
 
 // ignore: constant_identifier_names
-enum CategoryFilter { All, In_Hand, Husbandry, Mounted,Other }
+enum CategoryFilter { All, In_Hand, Husbandry, Mounted, Other }
 
 class CreateResourceDialogState extends Equatable {
   const CreateResourceDialogState({

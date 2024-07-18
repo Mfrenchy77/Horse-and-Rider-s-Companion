@@ -40,12 +40,21 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   ///   and turned into a Resource
   void urlChanged(String value) {
     final url = Url.dirty(value);
-    emit(
-      state.copyWith(
-        urlFetchedStatus: UrlFetchedStatus.initial,
-        url: url,
-      ),
-    );
+    if (url.value.isEmpty) {
+      emit(
+        state.copyWith(
+          url: url,
+          urlFetchedStatus: UrlFetchedStatus.initial,
+        ),
+      );
+      return;
+    } else {
+      emit(
+        state.copyWith(
+          url: url,
+        ),
+      );
+    }
   }
 
   ///   Called when Editing a Resource and the
@@ -56,6 +65,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         title: value,
       ),
     );
+
+    _checkMetadataCompleteness();
   }
 
   ///   Called when Editing a Resource and the
@@ -67,6 +78,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         imageUrl: value,
       ),
     );
+
+    _checkMetadataCompleteness();
   }
 
   ///   Called when Editing a Resource and the
@@ -75,6 +88,20 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     //final description = SingleWord.dirty(value);
     emit(
       state.copyWith(description: value),
+    );
+    _checkMetadataCompleteness();
+  }
+
+  /// Checks if the title, description and url are not empty
+  void _checkMetadataCompleteness() {
+    final isComplete = state.title.isNotEmpty &&
+        state.description.isNotEmpty &&
+        state.url.value.isNotEmpty;
+    emit(
+      state.copyWith(
+        urlFetchedStatus:
+            isComplete ? UrlFetchedStatus.fetched : UrlFetchedStatus.manual,
+      ),
     );
   }
 
@@ -269,16 +296,28 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         cache: const Duration(days: 7),
         proxyUrl: 'https://corsproxy.io/?',
       );
-      emit(
-        state.copyWith(
-          url: Url.dirty(url),
-          title: metadata?.title,
-          imageUrl: metadata?.image,
-          description: metadata?.desc,
-          urlFetchedStatus: UrlFetchedStatus.fetched,
-        ),
-      );
-      debugPrint('URL6 => ${metadata?.title}');
+      if (metadata == null) {
+        emit(
+          state.copyWith(
+            urlFetchedStatus: UrlFetchedStatus.error,
+            isError: true,
+            error: 'Error fetching metadata',
+          ),
+        );
+        debugPrint('Error fetching metadata');
+        return;
+      } else {
+        emit(
+          state.copyWith(
+            url: Url.dirty(url),
+            title: metadata.title,
+            imageUrl: metadata.image,
+            description: metadata.desc,
+            urlFetchedStatus: UrlFetchedStatus.fetched,
+          ),
+        );
+      }
+      debugPrint('URL6 => ${metadata.title}');
       debugPrint('$metadata');
     } else {
       emit(
@@ -418,7 +457,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   void clearMetaDataError() {
     emit(
       state.copyWith(
-        urlFetchedStatus: UrlFetchedStatus.initial,
+        urlFetchedStatus: UrlFetchedStatus.manual,
       ),
     );
   }
@@ -429,7 +468,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       state.copyWith(
         error: '',
         isError: false,
-        urlFetchedStatus: UrlFetchedStatus.initial,
+        //urlFetchedStatus: UrlFetchedStatus.initial,
       ),
     );
   }

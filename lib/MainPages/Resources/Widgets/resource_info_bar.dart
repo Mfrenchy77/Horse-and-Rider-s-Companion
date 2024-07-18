@@ -1,3 +1,4 @@
+import 'package:any_link_preview/any_link_preview.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +15,10 @@ class ResourceInfoBar extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        return Column(
+
+        return
+            // urlPreview(resource.url ?? '');
+            Column(
           children: [
             ///   Info
             Row(
@@ -91,7 +95,6 @@ class ResourceInfoBar extends StatelessWidget {
 
                       ///   Description
                       child: ConstrainedBox(
-                        
                         constraints: BoxConstraints.loose(
                           const Size.fromHeight(300),
                         ),
@@ -145,4 +148,12 @@ class ResourceInfoBar extends StatelessWidget {
       },
     );
   }
+}
+
+Widget urlPreview(String url) {
+  final proxiedUrl = 'https://corsproxy.io/?$url';
+  return AnyLinkPreview(
+    link: proxiedUrl,
+    displayDirection: UIDirection.uiDirectionHorizontal,
+  );
 }

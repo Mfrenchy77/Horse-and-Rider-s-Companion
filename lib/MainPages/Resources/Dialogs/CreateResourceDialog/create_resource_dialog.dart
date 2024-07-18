@@ -4,10 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_item.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:image_network/image_network.dart';
 
 class CreateResourcDialog extends StatelessWidget {
@@ -69,9 +69,12 @@ class CreateResourcDialog extends StatelessWidget {
                 builder: (context) => AlertDialog(
                   title: const Text('Error Fetching Website Information'),
                   content: const Text(
-                    'Please enter the title and description manually\n\nTo get '
-                    'an image, you can right click on the image and select '
-                    '"Copy Image Address" and paste it in the image field.',
+                    'Some websites do not allow their information to be easily'
+                    ' transferred. You can still add this resource manually by'
+                    ' entering the Title, Description, and Image URL yourself.'
+                    ' To get the Image URL, right-click (or long press on'
+                    " mobile) the image, select 'Copy Image Link', and paste it"
+                    ' into the Image URL field.',
                   ),
                   actions: [
                     TextButton(
@@ -138,18 +141,21 @@ class CreateResourcDialog extends StatelessWidget {
                             Visibility(
                               visible: state.urlFetchedStatus ==
                                   UrlFetchedStatus.fetching,
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  CircularProgressIndicator(),
-                                  Text('Fetching Website Information...'),
+                                  const CircularProgressIndicator(),
+                                  gap(),
+                                  const Text('Fetching Website Information...'),
                                 ],
                               ),
                             ),
                             Visibility(
                               visible: state.urlFetchedStatus ==
-                                  UrlFetchedStatus.fetched,
+                                      UrlFetchedStatus.fetched ||
+                                  state.urlFetchedStatus ==
+                                      UrlFetchedStatus.manual,
                               child: Column(
                                 children: [
                                   ResourcesItem(
@@ -249,26 +255,26 @@ class CreateResourcDialog extends StatelessWidget {
                                     children: state.filteredSkills!.map(
                                       (Skill? skill) {
                                         return SkillSelectChip(
-                                          trailingIcon: skill!.rider
-                                              ? const Icon(Icons.person)
-                                              : const Icon(
-                                                  HorseAndRiderIcons.horseIcon,
-                                                ),
-                                          skill: skill,
-                                          leadingIcon: resourceIcon(
-                                            skill.category,
-                                            skill.difficulty,
+                                          trailingIcon: SkillTypeIcon(
+                                            difficulty: skill?.difficulty,
+                                            isRider: skill?.rider ?? true,
                                           ),
-                                          textLabel: skill.skillName,
+                                          skill: skill,
+                                          leadingIcon: ResourceIcon(
+                                            category: skill?.category,
+                                            difficulty: skill?.difficulty,
+                                          ),
+                                          textLabel: skill?.skillName ?? '',
                                           isSelected: state.resourceSkills?.any(
                                                 (skillObject) =>
-                                                    skillObject?.id == skill.id,
+                                                    skillObject?.id ==
+                                                    skill?.id,
                                               ) ??
                                               false,
                                           onTap: (value) => context
                                               .read<CreateResourceDialogCubit>()
                                               .resourceSkillsChanged(
-                                                skill.id,
+                                                skill?.id ?? '',
                                               ),
                                         );
                                       },
@@ -291,12 +297,15 @@ class CreateResourcDialog extends StatelessWidget {
                       const CircularProgressIndicator()
                     else
                       ElevatedButton(
-                        onPressed: () {
-                          context
-                              .read<CreateResourceDialogCubit>()
-                              .editResource();
-                          Navigator.pop(context);
-                        },
+                        onPressed:
+                            state.urlFetchedStatus != UrlFetchedStatus.fetched
+                                ? null
+                                : () {
+                                    context
+                                        .read<CreateResourceDialogCubit>()
+                                        .editResource();
+                                    Navigator.pop(context);
+                                  },
                         child: const Text('Submit'),
                       ),
                   ],

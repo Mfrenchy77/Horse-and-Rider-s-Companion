@@ -14,9 +14,21 @@ class SkillsListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.sortedSkills != current.sortedSkills ||
+          previous.isEdit != current.isEdit ||
+          previous.isGuest != current.isGuest ||
+          previous.isForRider != current.isForRider ||
+          previous.categorySortState != current.categorySortState ||
+          previous.difficultySortState != current.difficultySortState ||
+          previous.horseProfile != current.horseProfile ||
+          previous.usersProfile != current.usersProfile ||
+          previous.viewingProfile != current.viewingProfile,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final skills = state.sortedSkills;
+        debugPrint('SkillsListView: ${skills.length}');
+        
         return Scaffold(
           floatingActionButton: Visibility(
             // ignore: use_if_null_to_convert_nulls_to_bools
@@ -58,8 +70,6 @@ class SkillsListView extends StatelessWidget {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(3),
-                        //change this to be Horse Skill or Rider Skill and both category sort state and difficuley sort state
-
                         child: InkWell(
                           onTap: () {
                             showDialog<AlertDialog>(

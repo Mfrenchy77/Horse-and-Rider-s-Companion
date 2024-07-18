@@ -13,8 +13,8 @@ class SkillSelectChip extends StatefulWidget {
     this.padding,
   });
   final Skill? skill;
-  final Icon? leadingIcon;
-  final Icon? trailingIcon;
+  final Widget leadingIcon;
+  final Widget trailingIcon;
   final String textLabel;
   final void Function(void) onTap;
   final bool isSelected;

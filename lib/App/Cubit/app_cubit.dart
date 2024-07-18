@@ -1318,12 +1318,12 @@ class AppCubit extends Cubit<AppState> {
         final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList()
           ..sort((a, b) => a!.position.compareTo(b!.position));
         debugPrint('Skills Retrieved: ${skills.length}');
-        _sortSkills(state.categorySortState, state.difficultySortState);
         emit(
           state.copyWith(
             allSkills: skills,
           ),
         );
+        _sortSkills(state.categorySortState, state.difficultySortState);
       });
     } else {
       debugPrint('Skills already retrieved');
@@ -1404,20 +1404,8 @@ class AppCubit extends Cubit<AppState> {
     }
     return skill;
   }
-  // /// Returns a list of skills that are either for a
-  // /// horse or rider
-  // List<Skill?> getHorseOrRiderSkills() {
-  //   final sortedSkills = state.allSkills
-  //       .where(
-  //         (element) => element?.rider == state.isForRider,
-  //       )
-  //       .toList();
-  //   debugPrint('Skills Retrieved: ${sortedSkills.length}');
-  //   return sortedSkills;
-  // }
 
   /// Adds a Resource to the selected Skill
-
   void addResourceToSkill({
     required Resource? resource,
     required Skill? skill,
@@ -1472,12 +1460,14 @@ class AppCubit extends Cubit<AppState> {
 
   /// Category Filter Changed
   void categorySortChanged(CategorySortState categorySortState) {
+    debugPrint('Category Filter Changedto : $categorySortState.name');
     emit(state.copyWith(categorySortState: categorySortState));
     _sortSkills(categorySortState, state.difficultySortState);
   }
 
   /// Difficulty Filter Changed
   void difficultySortChanged(DifficultySortState difficultySortState) {
+    debugPrint('Difficulty Filter Changed to: $difficultySortState.name');
     emit(state.copyWith(difficultySortState: difficultySortState));
     _sortSkills(state.categorySortState, difficultySortState);
   }
@@ -1687,12 +1677,16 @@ class AppCubit extends Cubit<AppState> {
 
   ///Sort skills by state.isForRider and return the sorted list
   List<Skill?> _sortSkillsByType(List<Skill?> skills) {
-    debugPrint('Sorting Skills by ${state.isForRider ? 'Rider' : 'Horse'}');
+    debugPrint(
+      'Sorting ${skills.length} Skills by'
+      ' ${state.isForRider ? 'Rider' : 'Horse'}',
+    );
     final sortedSkills = skills
         .where(
           (element) => element?.rider == state.isForRider,
         )
         .toList();
+    debugPrint('Returning ${sortedSkills.length} skills');
     return sortedSkills;
   }
 
@@ -1701,23 +1695,23 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Changed the Difficulty sort
-  
 
   ///Sorts the Skills based on the SkillTreeSortState
   void _sortSkills(
     CategorySortState categorySort,
     DifficultySortState difficultySort,
   ) {
-    final allSkills = state.allSkills;
-    var sortedSkills = <Skill?>[];
+    var sortedSkills = state.allSkills
+      ..sort((a, b) => a!.skillName.compareTo(b!.skillName));
 
     // First, sort by category
-    sortedSkills = _sortSkillsByCategory(categorySort, allSkills);
+    sortedSkills = _sortSkillsByCategory(categorySort, sortedSkills);
 
     // Then, sort by difficulty within the filtered category
     sortedSkills = _sortSkillsByDifficulty(difficultySort, sortedSkills);
 
     // Emit the sorted skills
+    debugPrint('Emitting ${sortedSkills.length} Sorted Skills');
     emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
   }
 

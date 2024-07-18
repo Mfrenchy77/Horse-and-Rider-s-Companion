@@ -7,11 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
+import 'package:horseandriderscompanion/CommonWidgets/resource_text_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
@@ -80,21 +81,30 @@ class UpdateResourceSkills extends StatelessWidget {
                                   ids: resource?.skillTreeIds,
                                 )
                                 ?.map(
-                                  (e) => TextButton.icon(
-                                    icon: resourceIcon(
-                                      e?.category,
-                                      e!.difficulty,
+                                  (e) => ResourceTextButton(
+                                    tooltip: 'Category: ${e?.category}\n'
+                                        'Difficulty: ${e?.difficulty}\n'
+                                        'Type: ${e?.rider ?? false ? 'Rider' : 'Horse'}',
+                                    trailingIcon: SkillTypeIcon(
+                                      difficulty: e?.difficulty,
+                                      isRider: e?.rider ?? false,
                                     ),
-                                    onPressed: () {
+                                    leadingIcon: ResourceIcon(
+                                      category: e?.category,
+                                      difficulty: e?.difficulty,
+                                    ),
+                                    onClick: () {
                                       appCubit
                                         ..changeIndex(1)
                                         ..navigateToSkillLevel(skill: e);
                                       context.goNamed(SkillTreePage.name);
 
-                                      debugPrint('Skill: ${e.skillName}');
+                                      debugPrint(
+                                        'Skill: ${e?.skillName ?? ''}',
+                                      );
                                       Navigator.pop(context);
                                     },
-                                    label: Text(e.skillName),
+                                    text: e?.skillName ?? '',
                                   ),
                                 )
                                 .toList() ??
@@ -162,24 +172,23 @@ class UpdateResourceSkills extends StatelessWidget {
                                       (e) => SkillSelectChip(
                                         skill: e,
                                         padding: 4,
-                                        trailingIcon: e!.rider
-                                            ? const Icon(Icons.person)
-                                            : const Icon(
-                                                HorseAndRiderIcons.horseIcon,
-                                              ),
-                                        leadingIcon: resourceIcon(
-                                          e.category,
-                                          e.difficulty,
+                                        trailingIcon: SkillTypeIcon(
+                                          difficulty: e?.difficulty,
+                                          isRider: e?.rider ?? true,
                                         ),
-                                        textLabel: e.skillName,
+                                        leadingIcon: ResourceIcon(
+                                          category: e?.category,
+                                          difficulty: e?.difficulty,
+                                        ),
+                                        textLabel: e?.skillName ?? '',
                                         isSelected: state.resource?.skillTreeIds
-                                                ?.contains(e.id) ??
+                                                ?.contains(e?.id) ??
                                             false,
                                         onTap: (value) {
                                           context
                                               .read<CreateResourceDialogCubit>()
                                               .resourceSkillsChanged(
-                                                e.id,
+                                                e?.id ?? '',
                                               );
                                         },
                                       ),
