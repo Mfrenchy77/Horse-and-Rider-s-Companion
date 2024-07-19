@@ -6,7 +6,7 @@ import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/resource_item.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:image_network/image_network.dart';
 

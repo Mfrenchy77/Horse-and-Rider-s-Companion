@@ -1813,7 +1813,7 @@ class AppCubit extends Cubit<AppState> {
       return;
     }
     // Filter sortedSkills based on the search query
-    var filteredSkills = sortedSkills
+    final filteredSkills = sortedSkills
         .where(
           (element) =>
               element?.skillName

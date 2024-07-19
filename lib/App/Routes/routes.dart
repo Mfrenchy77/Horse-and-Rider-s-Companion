@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_pr
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
@@ -109,6 +110,12 @@ class Routes {
 
           appCubit.resetFromResource();
         }
+        if (route.settings.name == ResourceWebPage.name &&
+            previousRoute?.settings.name == ResourcesPage.name) {
+          debugPrint('Resource Web Page Pop');
+
+          appCubit.resetFromResource();
+        }
       },
       onPush: (route, previousRoute) {
         debugPrint('Resource Observer Push: '
@@ -120,6 +127,12 @@ class Routes {
         if (route.settings.name == ResourceCommentPage.name) {
           debugPrint(
             'Resource Comment Page Push for: ${route.settings.arguments}',
+          );
+          appCubit.setResource();
+        }
+        if (route.settings.name == ResourceWebPage.name) {
+          debugPrint(
+            'Resource Web Page Push for: ${route.settings.arguments}',
           );
           appCubit.setResource();
         }
@@ -256,6 +269,17 @@ class Routes {
                       builder: (context, state) => ResourceCommentPage(
                         id: state
                             .pathParameters[ResourceCommentPage.pathParams]!,
+                      ),
+                    ),
+                    // ResourceWebPage
+                    GoRoute(
+                      name: ResourceWebPage.name,
+                      path: ResourceWebPage.path,
+                      builder: (context, state) => ResourceWebPage(
+                        url: state
+                            .pathParameters[ResourceWebPage.urlPathParams]!,
+                        title: state
+                            .pathParameters[ResourceWebPage.titlePathParams]!,
                       ),
                     ),
                   ],

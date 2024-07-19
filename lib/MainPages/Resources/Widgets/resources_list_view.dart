@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/resource_item.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 
 class ResourcesListView extends StatelessWidget {
   const ResourcesListView({super.key});

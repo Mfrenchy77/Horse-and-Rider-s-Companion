@@ -1,11 +1,14 @@
 import 'package:any_link_preview/any_link_preview.dart';
 import 'package:database_repository/database_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 
 class ResourceInfoBar extends StatelessWidget {
   const ResourceInfoBar({super.key, required this.resource});
@@ -112,7 +115,23 @@ class ResourceInfoBar extends StatelessWidget {
                   ///   Image
                   InkWell(
                     key: const Key('ResourceImage'),
-                    onTap: () => cubit.openResource(url: resource.url),
+                    onTap: () {
+                      if (resource.url == null) {
+                        return;
+                      } else if (defaultTargetPlatform ==
+                          TargetPlatform.linux) {
+                        cubit.openResource(url: resource.url);
+                      }else
+                      // ignore: curly_braces_in_flow_control_structures
+                      context.goNamed(
+                        ResourceWebPage.name,
+                        pathParameters: {
+                          ResourceWebPage.urlPathParams: resource.url!,
+                          ResourceWebPage.titlePathParams: resource.name!,
+                        },
+                      );
+                    },
+                    // => cubit.openResource(url: resource.url),
                     child: Tooltip(
                       message: 'Go to: ${resource.url}',
                       child: MaxWidthBox(
