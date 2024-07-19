@@ -72,7 +72,7 @@ class CreateSkillDialog extends StatelessWidget {
                   ),
                 ),
                 body: AlertDialog(
-                  insetPadding: const EdgeInsets.all(10),
+                  insetPadding: const EdgeInsets.all(8),
                   scrollable: true,
                   title: Text(
                     isEdit ? 'Edit ${skill?.skillName}' : 'Create New Skill',
@@ -91,13 +91,12 @@ class CreateSkillDialog extends StatelessWidget {
                           keyboardType: TextInputType.text,
                           decoration: InputDecoration(
                             border: const UnderlineInputBorder(),
-                            labelText:
-                                isEdit ? 'Skill Name' : 'New Skill Name',
+                            labelText: isEdit ? 'Skill Name' : 'New Skill Name',
                             hintText: 'Enter a name for the new Skill',
                             icon: const Icon(Icons.arrow_circle_up),
                           ),
                         ),
-                    
+
                         ///   Description
                         TextFormField(
                           initialValue: isEdit ? skill?.description : '',
@@ -117,7 +116,7 @@ class CreateSkillDialog extends StatelessWidget {
                           ),
                         ),
                         smallGap(),
-                    
+
                         ///   Learning Description
                         TextFormField(
                           initialValue:
@@ -138,7 +137,7 @@ class CreateSkillDialog extends StatelessWidget {
                           ),
                         ),
                         smallGap(),
-                    
+
                         ///   Proficient Description
                         TextFormField(
                           initialValue:
@@ -239,9 +238,9 @@ class CreateSkillDialog extends StatelessWidget {
                             cubit.skillDifficultyChanged(value.first);
                           },
                         ),
-                    
+
                         smallGap(),
-                    
+
                         // Category
                         const Center(
                           child: Text('Category'),
@@ -297,7 +296,7 @@ class CreateSkillDialog extends StatelessWidget {
                             cubit.skillCategoryChanged(value.first);
                           },
                         ),
-                    
+
                         /// Filter chips of all the SubCategories,
                         ///  set selected if the skill is in that subcategory
                         /// and the user can select or deselect the subcategory

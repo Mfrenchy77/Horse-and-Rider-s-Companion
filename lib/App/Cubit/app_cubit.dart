@@ -1800,9 +1800,32 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// Search for Skills query
   void skillSearchQueryChanged({required String searchQuery}) {
-    final searchList = _sortSkillsByType(state.allSkills)
+    final sortedSkills =
+        _sortSkillsByType(state.allSkills).map((e) => e).toList();
+    if (searchQuery.isEmpty) {
+      emit(
+        state.copyWith(
+          searchList: state.allSkills.map((e) => e?.skillName).toList(),
+          sortedSkills: _sortSkillsByType(state.allSkills),
+        ),
+      );
+      return;
+    }
+    // Filter sortedSkills based on the search query
+    var filteredSkills = sortedSkills
+        .where(
+          (element) =>
+              element?.skillName
+                  .toLowerCase()
+                  .contains(searchQuery.toLowerCase()) ??
+              false,
+        )
+        .toList();
+    debugPrint('filteredSkills: ${filteredSkills.length}');
+
+    // Sort the filtered skills by type and then filter by search query again
+    final searchList = _sortSkillsByType(filteredSkills)
         .map((e) => e?.skillName)
         .toList()
         .where(
@@ -1811,7 +1834,15 @@ class AppCubit extends Cubit<AppState> {
               false,
         )
         .toList();
-    emit(state.copyWith(searchList: searchList));
+    debugPrint('searchList: ${searchList.length}');
+
+    // Emit the new state with the filtered and sorted skills
+    emit(
+      state.copyWith(
+        searchList: searchList,
+        sortedSkills: filteredSkills,
+      ),
+    );
   }
 
   /// Search for Resources query
