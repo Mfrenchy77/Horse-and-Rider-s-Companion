@@ -1,4 +1,3 @@
-import 'package:feature_discovery_fork/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
@@ -9,7 +8,6 @@ import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// This is the reusable navigator that shows
@@ -213,18 +211,18 @@ class NavigatorView extends StatelessWidget {
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
           final cubit = context.read<AppCubit>();
-          if (SharedPrefs().showOnboarding()) {
-            if (state.allSkills.isNotEmpty) {
-              debugPrint('Show Feature Discovery');
-              FeatureDiscovery.discoverFeatures(
-                context,
-                const <String>{
-                  'GuestLoginButton',
+          // if (SharedPrefs().showOnboarding()) {
+          //   if (state.allSkills.isNotEmpty) {
+          //     debugPrint('Show Feature Discovery');
+          //     FeatureDiscovery.discoverFeatures(
+          //       context,
+          //       const <String>{
+          //         'GuestLoginButton',
                 
-                },
-              );
-            }
-          }
+          //       },
+          //     );
+          //   }
+          // }
 
           return SizedBox(
             height: MediaQuery.of(context).size.height,
@@ -296,19 +294,19 @@ List<NavigationDestination> _buildDestinations({required bool isForRider}) {
           ? const Icon(Icons.person)
           : const Icon(HorseAndRiderIcons.horseIconCircle),
       icon: isForRider
-          ? DescribedFeatureOverlay(
-              onOpen: () async {
-                debugPrint('Profile Icon Opened');
-                return true;
-              },
-              featureId: 'ProfileIcon',
-              title: const Text('Profile'),
-              description: const Text(
-                'View and edit your profile',
-              ),
-              tapTarget: const Icon(Icons.person_outline),
-              child: const Icon(Icons.person_outline),
-            )
+          ? 
+          // DescribedFeatureOverlay(
+          //     onOpen: () async {
+          //       debugPrint('Profile Icon Opened');
+          //       return true;
+          //     },
+          //     featureId: 'ProfileIcon',
+          //     title: const Text('Profile'),
+          //     description: const Text(
+          //       'View and edit your profile',
+          //     ),
+          //     tapTarget: 
+            const Icon(Icons.person_outline)
           : const Icon(HorseAndRiderIcons.horseIcon),
       label: isForRider ? 'Profile' : 'Horse Profile',
     ),

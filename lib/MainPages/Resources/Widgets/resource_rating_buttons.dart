@@ -1,10 +1,13 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/save_resource_button.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -74,6 +77,44 @@ class ResourceRatingButtons extends StatelessWidget {
                     : isDark
                         ? Colors.grey.shade300
                         : Colors.black54,
+              ),
+            ),
+            // Number of Comments Button
+            Expanded(
+              flex: 5,
+              child: IconButton(
+                tooltip: resource.comments?.isEmpty ?? true
+                    ? 'No Comments Yet'
+                    : resource.comments?.length == 1
+                        ? '1 Comment'
+                        : '${resource.comments!.length} Comments',
+                onPressed: () {
+                  // Show the comments associated with this resource
+                  context.goNamed(
+                    ResourceCommentPage.name,
+                    pathParameters: {
+                      ResourceCommentPage.pathParams: resource.id ?? '',
+                    },
+                  );
+                },
+                // icon with the number of comments underneath it inside a circle, if there are any the circle is red
+                // otherwise it is grey
+                icon: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.comment),
+                    smallGap(),
+                    Text(
+                      resource.comments == null
+                          ? '0'
+                          : resource.comments!.length.toString(),
+                      style: TextStyle(
+                          color:
+                              isDark ? Colors.grey.shade300 : Colors.black54),
+                    ),
+                  ],
+                ),
+                color: isDark ? Colors.grey.shade300 : Colors.black54,
               ),
             ),
             // Assosiated Skills Button

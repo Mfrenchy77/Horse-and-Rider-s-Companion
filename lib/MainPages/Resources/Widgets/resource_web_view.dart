@@ -18,7 +18,7 @@ class ResourceWebView extends StatefulWidget {
 
 class _ResourceWebViewState extends State<ResourceWebView> {
   final GlobalKey webViewKey = GlobalKey();
-  InAppWebViewController? _controller;
+  // InAppWebViewController? _controller;
   InAppWebViewSettings settings = InAppWebViewSettings(
     isInspectable: true,
     allowsInlineMediaPlayback: true,
@@ -43,7 +43,7 @@ class _ResourceWebViewState extends State<ResourceWebView> {
             initialUrlRequest: URLRequest(url: WebUri(widget.url)),
             initialSettings: settings,
             onWebViewCreated: (controller) {
-              _controller = controller;
+              // _controller = controller;
             },
             onLoadStart: (controller, url) {
               debugPrint('Loading $url');
