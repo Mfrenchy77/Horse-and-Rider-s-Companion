@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
@@ -93,7 +91,7 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
-              'Whether you’re a seasoned equestrian or just starting out,'
+              "Whether you're a seasoned equestrian or just starting out,"
               " Horse & Rider's Companion is your go-to place for tracking, "
               'learning, and connecting with like-minded individuals. We are '
               'more than just an app, we are a community that grows together.\n'
@@ -107,7 +105,7 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const Text(
-              'For any inquiries or feedback, please don’t hesitate to reach'
+              "For any inquiries or feedback, please don't hesitate to reach"
               ' out to us at HorseandRidersCompanion@gmail.com.',
             ),
             smallGap(),

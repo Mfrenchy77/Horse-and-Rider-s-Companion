@@ -140,7 +140,8 @@ class SkillsListView extends StatelessWidget {
                                     ),
                                   );
                                 } else {
-                                  // TODO: Show contact admin or creator dialog
+                                  // ignore: lines_longer_than_80_chars
+                                  // TODO(mfrenchy77): Show contact admin or creator dialog
                                   cubit.createError(
                                     'You do not have permission'
                                     ' to edit this skill',

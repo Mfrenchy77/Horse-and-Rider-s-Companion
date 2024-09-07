@@ -1,6 +1,5 @@
 import 'package:any_link_preview/any_link_preview.dart';
 import 'package:database_repository/database_repository.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -117,21 +116,18 @@ class ResourceInfoBar extends StatelessWidget {
                     key: const Key('ResourceImage'),
                     onTap: () {
                       if (resource.url == null) {
-                        return;
-                      } else if (defaultTargetPlatform ==
-                          TargetPlatform.linux) {
-                        cubit.openResource(url: resource.url);
-                      }else
-                      // ignore: curly_braces_in_flow_control_structures
-                      context.goNamed(
-                        ResourceWebPage.name,
-                        pathParameters: {
-                          ResourceWebPage.urlPathParams: resource.url!,
-                          ResourceWebPage.titlePathParams: resource.name!,
-                        },
-                      );
+                        // cubit.openResource(url: resource.url);
+                        context.goNamed(
+                          ResourceWebPage.name,
+                          pathParameters: {
+                            ResourceWebPage.urlPathParams: resource.url!,
+                            ResourceWebPage.titlePathParams: resource.name!,
+                          },
+                        );
+                      } else {
+                        cubit.createError('No URL Provided');
+                      }
                     },
-                    // => cubit.openResource(url: resource.url),
                     child: Tooltip(
                       message: 'Go to: ${resource.url}',
                       child: MaxWidthBox(

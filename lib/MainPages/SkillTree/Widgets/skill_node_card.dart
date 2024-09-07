@@ -52,6 +52,7 @@ class SkillNodeCard extends StatelessWidget {
                       ),
                     );
                   debugPrint('Skill Clicked- ${skillNode.skillId}\n Exixst?'
+                      // ignore: lines_longer_than_80_chars
                       ' - ${state.allSkills.firstWhere((element) => element?.id == skillNode.skillId) != null}');
                 },
                 onEdit: () {},

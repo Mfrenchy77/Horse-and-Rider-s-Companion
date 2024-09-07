@@ -143,7 +143,7 @@ class AppState extends Equatable {
     this.resources = const [],
     this.isFromProfile = false,
     this.searchList = const [],
-    this.showOnboarding = false,
+    this.showOnboarding = true,
     this.isProfileSetup = false,
     this.sortedSkills = const [],
     this.showFirstLaunch = false,

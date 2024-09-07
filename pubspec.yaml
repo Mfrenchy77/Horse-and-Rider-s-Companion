@@ -19,6 +19,7 @@ dependencies:
   database_repository:
     path: packages/database_repository
   equatable: ^2.0.3
+  feature_discovery_fork: ^0.14.2
   firebase_app_check: ^0.3.0+3
   firebase_auth: ^5.1.2
   firebase_core: ^3.2.0
@@ -29,7 +30,7 @@ dependencies:
     sdk: flutter
   flutter_adaptive_scaffold: ^0.1.7+1
   flutter_bloc: ^8.1.1
-  flutter_inappwebview: ^5.8.0
+  flutter_inappwebview: ^6.0.0
   flutter_launcher_icons: ^0.13.1
   flutter_localizations:
     sdk: flutter
@@ -50,6 +51,7 @@ dependencies:
   intl: ^0.19.0
   mockito: ^5.4.4
   numberpicker: ^2.1.1
+  onboarding_overlay: ^3.2.2
   open_mail_app: ^0.4.5
   photo_view: ^0.15.0
   searchfield: ^1.0.1
