@@ -30,6 +30,18 @@ class MessagesView extends StatelessWidget {
                     key: Key('MessageView'),
                   ),
           ),
+//Medium Large Screen Layout
+          Breakpoints.mediumLarge: SlotLayout.from(
+            key: const Key('primary'),
+            builder: (context) => isConversations
+                ? const MessagesList(
+                    key: Key('MessagesList'),
+                  )
+                : const MessageView(
+                    key: Key('MessageView'),
+                  ),
+          ),
+
           // Small screen layout
           Breakpoints.small: SlotLayout.from(
             key: const Key('primary'),

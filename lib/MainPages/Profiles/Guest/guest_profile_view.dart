@@ -74,6 +74,26 @@ class GuestProfileView extends StatelessWidget {
                 ),
               ),
             ),
+            Breakpoints.mediumLarge: SlotLayout.from(
+              key: const Key('mediumLargeProfileBody'),
+              builder: (context) => SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const GuestProfilePrimaryView(
+                      key: Key('GuestProfilePrimaryView'),
+                    ),
+                    const SkillsTextButton(
+                      key: Key('SkillsTextButton'),
+                    ),
+                    gap(),
+                    const GuestProfileSkills(
+                      key: Key('GuestProfileSkills'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           },
         ),
         secondaryBody: SlotLayout(

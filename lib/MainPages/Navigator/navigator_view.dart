@@ -218,7 +218,7 @@ class NavigatorView extends StatelessWidget {
           //       context,
           //       const <String>{
           //         'GuestLoginButton',
-                
+
           //       },
           //     );
           //   }
@@ -233,18 +233,16 @@ class NavigatorView extends StatelessWidget {
                     children: [
                       Expanded(
                         // ignore: lines_longer_than_80_chars
-                        //FIXME: If the adaptive scaffold updated, you need to click on the adaptive scaffold and edit line 276 and change padding to EdgeInsets.all(0)
+                        //FIXME: If the adaptive scaffold updated, you need to click on the adaptive scaffold and edit the standard navigatin rail padding,maybe line 346 and change padding to EdgeInsets.all(0)
                         child: AdaptiveScaffold(
                           appBar: AppBar(),
                           internalAnimations: false,
-                          smallBreakpoint:
-                              const WidthPlatformBreakpoint(end: 800),
-                          mediumBreakpoint: const WidthPlatformBreakpoint(
-                            begin: 800,
-                            end: 1200,
+                          smallBreakpoint: const Breakpoint(endWidth: 800),
+                          mediumBreakpoint: const Breakpoint(
+                            beginWidth: 800,
+                            endWidth: 1200,
                           ),
-                          largeBreakpoint:
-                              const WidthPlatformBreakpoint(begin: 1200),
+                          largeBreakpoint: const Breakpoint(beginWidth: 1200),
                           leadingUnextendedNavRail: const Image(
                             color: Colors.white,
                             fit: BoxFit.contain,
@@ -294,7 +292,7 @@ List<NavigationDestination> _buildDestinations({required bool isForRider}) {
           ? const Icon(Icons.person)
           : const Icon(HorseAndRiderIcons.horseIconCircle),
       icon: isForRider
-          ? 
+          ?
           // DescribedFeatureOverlay(
           //     onOpen: () async {
           //       debugPrint('Profile Icon Opened');
@@ -305,8 +303,8 @@ List<NavigationDestination> _buildDestinations({required bool isForRider}) {
           //     description: const Text(
           //       'View and edit your profile',
           //     ),
-          //     tapTarget: 
-            const Icon(Icons.person_outline)
+          //     tapTarget:
+          const Icon(Icons.person_outline)
           : const Icon(HorseAndRiderIcons.horseIcon),
       label: isForRider ? 'Profile' : 'Horse Profile',
     ),

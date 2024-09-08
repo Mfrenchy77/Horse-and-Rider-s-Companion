@@ -52,6 +52,12 @@ class SkillTreeView extends StatelessWidget {
                     return const SkillTreePrimaryView();
                   },
                 ),
+                Breakpoints.mediumLarge: SlotLayout.from(
+                  key: const Key('primaryView'),
+                  builder: (_) {
+                    return const SkillTreeSecondaryView();
+                  },
+                ),
                 Breakpoints.large: SlotLayout.from(
                   key: const Key('primaryView'),
                   builder: (_) {

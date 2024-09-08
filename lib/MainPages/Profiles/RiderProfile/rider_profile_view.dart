@@ -111,6 +111,27 @@ class RiderProfileView extends StatelessWidget {
                     ],
                   ),
                 ),
+                Breakpoints.mediumLarge: SlotLayout.from(
+                  key: const Key('mediumLargeProfilePrimaryBody'),
+                  builder: (context) => ListView(
+                    shrinkWrap: true,
+                    children: [
+                      PrimaryRiderView(
+                        profile: profile,
+                        key: const Key('ProfileView'),
+                      ),
+                      const SkillsTextButton(
+                        key: Key('SkillsTextButton'),
+                      ),
+                      gap(),
+                      ProfileSkills(
+                        skillLevels: profile.skillLevels,
+                        key: const Key('ProfileSkills'),
+                      ),
+                    ],
+                  ),
+                ),
+
                 Breakpoints.large: SlotLayout.from(
                   key: const Key('largeProfilePrimaryBody'),
                   builder: (context) => SingleChildScrollView(
