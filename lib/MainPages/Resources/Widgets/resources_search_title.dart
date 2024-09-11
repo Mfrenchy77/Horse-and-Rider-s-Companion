@@ -17,7 +17,8 @@ class ResourcesSearchTitle extends StatelessWidget {
             ? SearchField<String>(
                 autofocus: true,
                 textInputAction: TextInputAction.search,
-                textCapitalization: TextCapitalization.sentences,
+
+                // textCapitalization: TextCapitalization.sentences,
                 inputType: TextInputType.text,
                 hint: 'Search Resources',
                 onSearchTextChanged: (query) {
@@ -34,11 +35,14 @@ class ResourcesSearchTitle extends StatelessWidget {
                       )
                       .toList();
                 },
-                searchInputDecoration: InputDecoration(
+                searchInputDecoration: SearchInputDecoration(
                   filled: true,
                   iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
                   fillColor:
                       HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
+                  textCapitalization: TextCapitalization.sentences,
+                  // ignore: lines_longer_than_80_chars
+                  //Fixme: If an error occurs check SearchInputDecoration line 73ish and add super.suffixIcon
                   suffixIcon: IconButton(
                     onPressed: cubit.toggleSearch,
                     icon: const Icon(Icons.clear),

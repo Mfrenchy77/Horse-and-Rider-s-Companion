@@ -22,8 +22,10 @@ class HorseProfilePage extends StatelessWidget {
         return state.horseProfile == null || state.horseProfile?.id != horseId
             ? const LoadingPage()
             : PopScope(
-                onPopInvoked: (didPop) {
-                  debugPrint('Horse Profile Page Pop Invoked: $didPop');
+                onPopInvokedWithResult: (didPop, result) {
+                  debugPrint(
+                    'Horse Profile Page Pop Invoked: $didPop result: $result',
+                  );
                   cubit.resetFromHorseProfile();
                 },
                 child: HorseProfileView(

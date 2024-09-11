@@ -42,6 +42,7 @@ class UpdateResourceSkills extends StatelessWidget {
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listener: (context, state) {
+            final cubit = context.read<CreateResourceDialogCubit>();
             if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
@@ -53,9 +54,7 @@ class UpdateResourceSkills extends StatelessWidget {
                     backgroundColor: Colors.red,
                     content: Text(state.error),
                   ),
-                ).closed.then((_) {
-                  context.read<CreateResourceDialogCubit>().clearError();
-                });
+                ).closed.then((_) => cubit.clearError());
             }
           },
           child:

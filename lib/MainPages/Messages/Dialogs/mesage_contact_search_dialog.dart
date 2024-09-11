@@ -36,6 +36,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
         ),
         child: BlocListener<NewGroupDialogCubit, NewGroupDialogState>(
           listener: (context, state) {
+            final cubit = context.read<NewGroupDialogCubit>();
             if (state.status == FormStatus.success) {
               context.read<AppCubit>().setConversation(state.id);
               context.goNamed(
@@ -56,8 +57,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
                     backgroundColor: Colors.red,
                   ),
                 ).closed.then(
-                      (value) =>
-                          context.read<NewGroupDialogCubit>().clearError(),
+                      (value) => cubit.clearError(),
                     );
             }
           },

@@ -97,8 +97,6 @@ class ResourceRatingButtons extends StatelessWidget {
                     },
                   );
                 },
-                // icon with the number of comments underneath it inside a circle, if there are any the circle is red
-                // otherwise it is grey
                 icon: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -109,8 +107,8 @@ class ResourceRatingButtons extends StatelessWidget {
                           ? '0'
                           : resource.comments!.length.toString(),
                       style: TextStyle(
-                          color:
-                              isDark ? Colors.grey.shade300 : Colors.black54),
+                        color: isDark ? Colors.grey.shade300 : Colors.black54,
+                      ),
                     ),
                   ],
                 ),

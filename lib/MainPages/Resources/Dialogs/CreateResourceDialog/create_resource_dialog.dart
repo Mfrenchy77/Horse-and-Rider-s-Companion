@@ -101,9 +101,7 @@ class CreateResourcDialog extends StatelessWidget {
                     backgroundColor: Colors.red,
                     content: Text(state.error),
                   ),
-                ).closed.then((_) {
-                  context.read<CreateResourceDialogCubit>().clearError();
-                });
+                ).closed.then((_) => cubit.clearError());
             }
           },
           child:

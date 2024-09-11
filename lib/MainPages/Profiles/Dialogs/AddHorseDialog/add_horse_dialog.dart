@@ -58,6 +58,7 @@ class AddHorseDialog extends StatelessWidget {
         ),
         child: BlocBuilder<AddHorseDialogCubit, AddHorseDialogState>(
           builder: (context, state) {
+            final cubit = context.read<AddHorseDialogCubit>();
             if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
@@ -123,6 +124,7 @@ class AddHorseDialog extends StatelessWidget {
 
                       _horseDateOfBirth(
                         state: state,
+                        cubit: cubit,
                         context: context,
                       ),
                       gap(),
@@ -145,8 +147,9 @@ class AddHorseDialog extends StatelessWidget {
 
                       ///   Horse Purchase Date
                       _horsePurchaseDate(
-                        context: context,
+                        cubit: cubit,
                         state: state,
+                        context: context,
                       ),
 
                       gap(),
@@ -369,6 +372,7 @@ Widget _horseBreed({
 
 Widget _horseDateOfBirth({
   required BuildContext context,
+  required AddHorseDialogCubit cubit,
   required AddHorseDialogState state,
 }) {
   final initialDate = state.dateOfBirth ?? DateTime.now();
@@ -398,7 +402,7 @@ Widget _horseDateOfBirth({
           if (state.horseProfile != null) {
             state.horseProfile?.dateOfBirth = value;
           }
-          context.read<AddHorseDialogCubit>().horseDateOfBirthChanged(value);
+          cubit.horseDateOfBirthChanged(value);
         }
       });
     },
@@ -479,6 +483,7 @@ Widget _horseGender({
 
 Widget _horsePurchaseDate({
   required BuildContext context,
+  required AddHorseDialogCubit cubit,
   required AddHorseDialogState state,
 }) {
   final initialDate = state.dateOfPurchase != null
@@ -520,9 +525,7 @@ Widget _horsePurchaseDate({
             if (state.horseProfile != null) {
               state.horseProfile?.dateOfPurchase = value;
             }
-            context
-                .read<AddHorseDialogCubit>()
-                .horseDateOfPurchaseChanged(value);
+            cubit.horseDateOfPurchaseChanged(value);
           }
         });
       },

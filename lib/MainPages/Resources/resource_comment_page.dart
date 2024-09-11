@@ -31,14 +31,22 @@ class ResourceCommentPage extends StatelessWidget {
             child: const LoadingPage(
               key: Key('LoadingPage'),
             ),
-            onPopInvoked: (didPop) =>
-                context.read<AppCubit>().resetFromResource(),
+            onPopInvokedWithResult: (didPop, result) {
+              debugPrint(
+                'Resource Comment Page Pop Invoked: $didPop, result: $result',
+              );
+              cubit.resetFromResource();
+            },
           );
         } else {
           final baseComments = cubit.getBaseComments(resource);
           return PopScope(
-            onPopInvoked: (didPop) =>
-                context.read<AppCubit>().resetFromResource(),
+            onPopInvokedWithResult: (didPop, result) {
+              debugPrint(
+                'Resource Comment Page Pop Invoked: $didPop, result: $result',
+              );
+              cubit.resetFromResource();
+            },
             child: Stack(
               children: [
                 Scaffold(

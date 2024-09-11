@@ -37,6 +37,8 @@ class ProfileSearchDialog extends StatelessWidget {
         ),
         child: BlocListener<ProfileSearchCubit, ProfileSearchState>(
           listener: (context, state) {
+            final cubit = context.read<ProfileSearchCubit>();
+
             /// Show a snackbar if there is an error
             if (state.isError) {
               ScaffoldMessenger.of(context)
@@ -47,7 +49,7 @@ class ProfileSearchDialog extends StatelessWidget {
                     content: Text(state.error),
                   ),
                 ).closed.then((_) {
-                  context.read<ProfileSearchCubit>().clearError();
+                  cubit.clearError();
                 });
             }
           },

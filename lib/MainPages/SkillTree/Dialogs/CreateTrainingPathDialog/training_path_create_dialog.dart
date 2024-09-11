@@ -253,7 +253,7 @@ Widget _search() {
                   skillName: value.searchKey,
                 );
               },
-              searchInputDecoration: InputDecoration(
+              searchInputDecoration: SearchInputDecoration(
                 filled: true,
                 iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
                 fillColor:

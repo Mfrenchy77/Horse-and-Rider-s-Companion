@@ -19,8 +19,10 @@ class ResourceWebPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      onPopInvoked: (didPop) {
-        debugPrint('ResourceWebPage: Pop Invoked');
+      onPopInvokedWithResult: (didPop, result) {
+        debugPrint(
+          'Resource Web Page Pop Invoked: $didPop, result: $result',
+        );
       },
       child: ResourceWebView(
         key: const Key('resourceWebView'),

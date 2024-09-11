@@ -26,7 +26,9 @@ class Routes {
     required AppCubit appCubit,
   }) {
     final routeNavigatorKey = GlobalKey<NavigatorState>();
-    final sectionNavigatorKey = GlobalKey<NavigatorState>();
+    final profileNavigatorKey = GlobalKey<NavigatorState>();
+    final skillTreeNavigatorKey = GlobalKey<NavigatorState>();
+    final resourcesNavigatorKey = GlobalKey<NavigatorState>();
 
     /// Route Observers: These are used to observe the route changes
     /// and perform actions based on the route changes.
@@ -158,7 +160,7 @@ class Routes {
             // RiderProfilePage index 0
             StatefulShellBranch(
               observers: [routeObserverProfile],
-              navigatorKey: sectionNavigatorKey,
+              navigatorKey: profileNavigatorKey,
               routes: <RouteBase>[
                 // RiderProfilePage
                 GoRoute(
@@ -245,6 +247,7 @@ class Routes {
             // SkillTreePage index 1
             StatefulShellBranch(
               observers: [routeObserverSkillTree],
+              navigatorKey: skillTreeNavigatorKey,
               routes: <RouteBase>[
                 GoRoute(
                   path: SkillTreePage.path,
@@ -256,6 +259,7 @@ class Routes {
             //ResourcesPage for User index 2
             StatefulShellBranch(
               observers: [routeObserverResources],
+              navigatorKey: resourcesNavigatorKey,
               routes: <RouteBase>[
                 GoRoute(
                   path: ResourcesPage.path,

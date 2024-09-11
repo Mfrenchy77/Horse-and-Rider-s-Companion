@@ -19,7 +19,7 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
             ? SearchField<String>(
                 autofocus: true,
                 textInputAction: TextInputAction.search,
-                textCapitalization: TextCapitalization.words,
+                // textCapitalization: TextCapitalization.words,
                 onSubmit: (p0) {
                   debugPrint('Search: $p0');
                 },
@@ -53,8 +53,9 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                       )
                       .toList();
                 },
-                searchInputDecoration: InputDecoration(
+                searchInputDecoration: SearchInputDecoration(
                   filled: true,
+                  textCapitalization: TextCapitalization.words,
                   iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
                   fillColor:
                       HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
