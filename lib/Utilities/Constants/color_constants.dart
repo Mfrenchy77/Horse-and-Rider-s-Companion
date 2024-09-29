@@ -41,7 +41,7 @@ class ColorConst {
   static const summerBackgroundDark = Color(0xFF121212);
 
   // Fall colors
-  static const fallPrimaryLight = Color(0xFFFF5722);
+  static const fallPrimaryLight = Color.fromARGB(255, 201, 73, 35);
   static const fallAccentLight = Color(0xFFcddc39);
   static const fallBackgroundLight = Color(0xFFF5F5F5);
   static const fallPrimaryDark = Color(0xFFF44336);

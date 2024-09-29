@@ -2,6 +2,8 @@ part of 'create_resource_dialog_cubit.dart';
 
 enum UrlFetchedStatus { initial, fetching, manual, fetched, error }
 
+enum ResourceSubmitStatus { initial, submitting, success, error }
+
 // ignore: constant_identifier_names
 enum DifficultyFilter { All, Introductory, Intermediate, Advanced }
 
@@ -26,6 +28,7 @@ class CreateResourceDialogState extends Equatable {
     this.categoryFilter = CategoryFilter.All,
     this.difficultyFilter = DifficultyFilter.All,
     this.urlFetchedStatus = UrlFetchedStatus.initial,
+    this.submitStatus = ResourceSubmitStatus.initial,
   });
 
   /// The url of the resource
@@ -70,6 +73,9 @@ class CreateResourceDialogState extends Equatable {
   /// The skills that are associated with the resource
   final List<Skill?>? resourceSkills;
 
+  /// The status of the resource submission
+  final ResourceSubmitStatus submitStatus;
+
   /// The status of the url fetching
   final UrlFetchedStatus urlFetchedStatus;
 
@@ -93,6 +99,7 @@ class CreateResourceDialogState extends Equatable {
     CategoryFilter? categoryFilter,
     DifficultyFilter? difficultyFilter,
     UrlFetchedStatus? urlFetchedStatus,
+    ResourceSubmitStatus? submitStatus,
   }) {
     return CreateResourceDialogState(
       url: url ?? this.url,
@@ -106,6 +113,7 @@ class CreateResourceDialogState extends Equatable {
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
       usersProfile: usersProfile ?? this.usersProfile,
+      submitStatus: submitStatus ?? this.submitStatus,
       filteredSkills: filteredSkills ?? this.filteredSkills,
       resourceSkills: resourceSkills ?? this.resourceSkills,
       categoryFilter: categoryFilter ?? this.categoryFilter,
@@ -127,6 +135,7 @@ class CreateResourceDialogState extends Equatable {
         imageUrl,
         description,
         usersProfile,
+        submitStatus,
         categoryFilter,
         filteredSkills,
         resourceSkills,

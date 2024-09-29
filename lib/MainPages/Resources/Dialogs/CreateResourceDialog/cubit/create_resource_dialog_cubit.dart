@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:any_link_preview/any_link_preview.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,7 +19,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required List<Skill?>? skills,
     required RiderProfile? usersProfile,
     required ResourcesRepository resourcesRepository,
-  })  : _resourcesRepository = resourcesRepository,
+  })  : _debounce = null,
+        _resourcesRepository = resourcesRepository,
         super(const CreateResourceDialogState()) {
     emit(
       state.copyWith(
@@ -33,28 +36,40 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       ),
     );
   }
-
+  Timer? _debounce;
   final ResourcesRepository _resourcesRepository;
 
   ///   Called when user is inputting the Url to be parsed
   ///   and turned into a Resource
   void urlChanged(String value) {
     final url = Url.dirty(value);
-    if (url.value.isEmpty) {
-      emit(
-        state.copyWith(
-          url: url,
-          urlFetchedStatus: UrlFetchedStatus.initial,
-        ),
-      );
-      return;
-    } else {
-      emit(
-        state.copyWith(
-          url: url,
-        ),
-      );
-    }
+
+    // Emit the new URL state
+    emit(
+      state.copyWith(
+        url: url,
+        // Resetting status and other related state properties
+        urlFetchedStatus: UrlFetchedStatus.initial,
+        title: '',
+        description: '',
+        imageUrl: '',
+        isError: false,
+        error: '',
+      ),
+    );
+
+    // Cancel any existing debounce timer
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    // Start a new debounce timer
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (url.isValid) {
+        getMetadata(url.value);
+      } else {
+        debugPrint('Invalid URL');
+        // Optionally handle invalid URL case
+      }
+    });
   }
 
   ///   Called when Editing a Resource and the
@@ -287,8 +302,10 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     return isUrlValid;
   }
 
+  /// Fetches the metadata of the URL
   Future<void> getMetadata(String url) async {
     emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
+
     final isValid = _checkUrlValid(url);
     if (isValid) {
       final metadata = await AnyLinkPreview.getMetadata(
@@ -296,38 +313,40 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         cache: const Duration(days: 7),
         proxyUrl: 'https://corsproxy.io/?',
       );
-      if (metadata == null) {
+
+      if (metadata == null || (metadata.title?.isEmpty ?? true)) {
+        // No metadata fetched, switch to manual entry
+        debugPrint('No metadata fetched: $metadata');
         emit(
           state.copyWith(
-            urlFetchedStatus: UrlFetchedStatus.error,
-            isError: true,
-            error: 'Error fetching metadata',
+            urlFetchedStatus: UrlFetchedStatus.manual,
+            isError: false,
+            error: '',
           ),
         );
-        debugPrint('Error fetching metadata');
-        return;
       } else {
+        // Metadata fetched successfully
+        debugPrint('Metadata fetched: $metadata');
         emit(
           state.copyWith(
             url: Url.dirty(url),
-            title: metadata.title,
-            imageUrl: metadata.image,
-            description: metadata.desc,
+            title: metadata.title ?? '',
+            imageUrl: metadata.image ?? '',
+            description: metadata.desc ?? '',
             urlFetchedStatus: UrlFetchedStatus.fetched,
           ),
         );
       }
-      debugPrint('URL6 => ${metadata.title}');
-      debugPrint('$metadata');
     } else {
+      // Invalid URL
+      debugPrint('Invalid URL');
       emit(
         state.copyWith(
           urlFetchedStatus: UrlFetchedStatus.error,
           isError: true,
-          error: 'URL is not valid',
+          error: 'Invalid URL',
         ),
       );
-      debugPrint('URL is not valid');
     }
   }
 
@@ -354,54 +373,54 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     return skills;
   }
 
-  ///   Called when the url is inputted and validated
-  Future<void> createResource() async {
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
-    final url = state.url.value;
-    if (state.url.isValid) {
-      final user = BaseListItem(
-        isSelected: false,
-        isCollapsed: false,
-        id: state.usersProfile?.email ?? '',
-      );
-      final raters = <BaseListItem>[user];
-      final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
-      final resource = Resource(
-        url: url,
-        rating: 0,
-        numberOfRates: 0,
-        name: state.title,
-        usersWhoRated: raters,
-        skillTreeIds: skillIds,
-        id: ViewUtils.createId(),
-        thumbnail: state.imageUrl,
-        lastEditDate: DateTime.now(),
-        description: state.description,
-        lastEditBy: state.usersProfile?.name ?? '',
-      );
+  // ///   Called when the url is inputted and validated
+  // Future<void> createResource() async {
+  //   emit(
+  //     state.copyWith(status: FormStatus.submitting),
+  //   );
+  //   final url = state.url.value;
+  //   if (state.url.isValid) {
+  //     final user = BaseListItem(
+  //       isSelected: false,
+  //       isCollapsed: false,
+  //       id: state.usersProfile?.email ?? '',
+  //     );
+  //     final raters = <BaseListItem>[user];
+  //     final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
+  //     final resource = Resource(
+  //       url: url,
+  //       rating: 0,
+  //       numberOfRates: 0,
+  //       name: state.title,
+  //       usersWhoRated: raters,
+  //       skillTreeIds: skillIds,
+  //       id: ViewUtils.createId(),
+  //       thumbnail: state.imageUrl,
+  //       lastEditDate: DateTime.now(),
+  //       description: state.description,
+  //       lastEditBy: state.usersProfile?.name ?? '',
+  //     );
 
-      try {
-        await _resourcesRepository.createOrUpdateResource(resource: resource);
-        emit(state.copyWith(status: FormStatus.success));
-      } on FirebaseException catch (e) {
-        debugPrint('Error: ${e.message}');
-        emit(
-          state.copyWith(
-            isError: true,
-            error: e.message ?? 'Error',
-            status: FormStatus.failure,
-          ),
-        );
-      }
-    } else {
-      debugPrint('Url is not valid');
-    }
-  }
+  //     try {
+  //       await _resourcesRepository.createOrUpdateResource(resource: resource);
+  //       emit(state.copyWith(status: FormStatus.success));
+  //     } on FirebaseException catch (e) {
+  //       debugPrint('Error: ${e.message}');
+  //       emit(
+  //         state.copyWith(
+  //           isError: true,
+  //           error: e.message ?? 'Error',
+  //           status: FormStatus.failure,
+  //         ),
+  //       );
+  //     }
+  //   } else {
+  //     debugPrint('Url is not valid');
+  //   }
+  // }
 
   Future<void> editResource() async {
-    emit(state.copyWith(status: FormStatus.submitting));
+    emit(state.copyWith(submitStatus: ResourceSubmitStatus.submitting));
     debugPrint(
       'Editting Resource ${state.resource?.name ?? state.title}',
     );
@@ -436,7 +455,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         await _resourcesRepository.createOrUpdateResource(
           resource: editedResource,
         );
-        emit(state.copyWith(status: FormStatus.success));
+        debugPrint('Resource Edited');
+        emit(state.copyWith(submitStatus: ResourceSubmitStatus.success));
       } catch (e) {
         debugPrint('Error: $e');
         final errorMessage =
@@ -445,13 +465,21 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           state.copyWith(
             isError: true,
             error: errorMessage,
-            status: FormStatus.failure,
+            submitStatus: ResourceSubmitStatus.error,
           ),
         );
       }
     } else {
       debugPrint('Url is not valid');
     }
+  }
+
+  ///  Called when the user has finished creating the resource
+  /// if all the fields are filled
+  bool isFormValid() {
+    return state.title.isNotEmpty &&
+        state.description.isNotEmpty &&
+        state.url.value.isNotEmpty;
   }
 
   void clearMetaDataError() {
@@ -468,8 +496,15 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       state.copyWith(
         error: '',
         isError: false,
+        submitStatus: ResourceSubmitStatus.initial,
         //urlFetchedStatus: UrlFetchedStatus.initial,
       ),
     );
+  }
+
+  @override
+  Future<void> close() {
+    _debounce?.cancel();
+    return super.close();
   }
 }

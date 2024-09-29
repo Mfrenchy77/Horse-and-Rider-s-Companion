@@ -151,7 +151,7 @@ class Routes {
           name: AuthPage.name,
           builder: (context, state) => const AuthPage(),
         ),
-
+       
         //Rider Profile navigation
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) =>

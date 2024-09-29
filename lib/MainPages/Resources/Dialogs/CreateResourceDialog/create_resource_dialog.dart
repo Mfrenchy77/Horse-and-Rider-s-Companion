@@ -7,7 +7,6 @@ import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:image_network/image_network.dart';
 
 class CreateResourcDialog extends StatelessWidget {
@@ -50,10 +49,11 @@ class CreateResourcDialog extends StatelessWidget {
         child:
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listenWhen: (previous, current) =>
-              previous.urlFetchedStatus != current.urlFetchedStatus ||
               previous.title != current.title ||
+              previous.imageUrl != current.imageUrl||
               previous.description != current.description ||
-              previous.imageUrl != current.imageUrl,
+              previous.submitStatus != current.submitStatus ||
+              previous.urlFetchedStatus != current.urlFetchedStatus ,
           listener: (context, state) {
             final cubit = context.read<CreateResourceDialogCubit>();
             if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
@@ -63,36 +63,37 @@ class CreateResourcDialog extends StatelessWidget {
             }
             // show a dialog instructing user to enter the title and description
             //in manually
-            if (state.urlFetchedStatus == UrlFetchedStatus.error) {
-              showDialog<AlertDialog>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Error Fetching Website Information'),
-                  content: const Text(
-                    'Some websites do not allow their information to be easily'
-                    ' transferred. You can still add this resource manually by'
-                    ' entering the Title, Description, and Image URL yourself.'
-                    ' To get the Image URL, right-click (or long press on'
-                    " mobile) the image, select 'Copy Image Link', and paste it"
-                    ' into the Image URL field.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        cubit.clearMetaDataError();
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              );
-              cubit.clearError();
-            }
-            if (state.status == FormStatus.success) {
+            // if (state.urlFetchedStatus == UrlFetchedStatus.error) {
+            //   showDialog<AlertDialog>(
+            //     context: context,
+            //     builder: (context) => AlertDialog(
+            //       title: const Text('Error Fetching Website Information'),
+            //       content: const Text(
+            //         'Some websites do not allow their information to be easily'
+            //         ' transferred. You can still add this resource manually by'
+            //         ' entering the Title, Description, and Image URL yourself.'
+            //         ' To get the Image URL, right-click (or long press on'
+            //         " mobile) the image, select 'Copy Image Link', and paste it"
+            //         ' into the Image URL field.',
+            //       ),
+            //       actions: [
+            //         TextButton(
+            //           onPressed: () {
+            //             cubit.clearMetaDataError();
+            //             Navigator.pop(context);
+            //           },
+            //           child: const Text('Close'),
+            //         ),
+            //       ],
+            //     ),
+            //   );
+            //   cubit.clearError();
+            // }
+            if (state.submitStatus == ResourceSubmitStatus.success) {
               Navigator.of(context).pop();
             }
-            if (state.isError) {
+            if (state.isError ||
+                state.submitStatus == ResourceSubmitStatus.error) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
@@ -130,31 +131,39 @@ class CreateResourcDialog extends StatelessWidget {
                           children: [
                             //   Resource Url
                             _urlField(
-                              context: context,
-                              resource: resource,
+                              cubit: cubit,
                               state: state,
+                              resource: resource,
                             ),
                             smallGap(),
 
-                            Visibility(
-                              visible: state.urlFetchedStatus ==
-                                  UrlFetchedStatus.fetching,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  gap(),
-                                  const Text('Fetching Website Information...'),
-                                ],
+                            if (state.urlFetchedStatus ==
+                                UrlFetchedStatus.fetching)
+                              const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Row(
+                                  children: [
+                                    CircularProgressIndicator(),
+                                    SizedBox(width: 16),
+                                    Text('Fetching website information...'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Visibility(
-                              visible: state.urlFetchedStatus ==
-                                      UrlFetchedStatus.fetched ||
-                                  state.urlFetchedStatus ==
-                                      UrlFetchedStatus.manual,
-                              child: Column(
+                            if (state.urlFetchedStatus ==
+                                UrlFetchedStatus.error)
+                              const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Text(
+                                  'Failed to fetch website information.'
+                                  ' Please enter details manually.',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            if (state.urlFetchedStatus ==
+                                    UrlFetchedStatus.fetched ||
+                                state.urlFetchedStatus ==
+                                    UrlFetchedStatus.manual)
+                              Column(
                                 children: [
                                   ResourcesItem(
                                     isResourceList: false,
@@ -189,7 +198,6 @@ class CreateResourcDialog extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                            ),
 
                             ///   Skills picked from Input chips
                             Visibility(
@@ -291,19 +299,12 @@ class CreateResourcDialog extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                       child: const Text('Close'),
                     ),
-                    if (state.status == FormStatus.submitting)
+                    if (state.submitStatus == ResourceSubmitStatus.submitting)
                       const CircularProgressIndicator()
                     else
                       ElevatedButton(
                         onPressed:
-                            state.urlFetchedStatus != UrlFetchedStatus.fetched
-                                ? null
-                                : () {
-                                    context
-                                        .read<CreateResourceDialogCubit>()
-                                        .editResource();
-                                    Navigator.pop(context);
-                                  },
+                            !cubit.isFormValid() ? null : cubit.editResource,
                         child: const Text('Submit'),
                       ),
                   ],
@@ -371,30 +372,33 @@ class ResourceImage extends StatelessWidget {
 }
 
 Widget _urlField({
-  required BuildContext context,
+  required CreateResourceDialogCubit cubit,
   required Resource? resource,
   required CreateResourceDialogState state,
 }) {
   return TextFormField(
+    validator: (value) {
+      if (state.url.isNotValid) {
+        return 'Please enter a valid URL';
+      } else {
+        return null;
+      }
+    },
     initialValue: resource?.url ?? '',
-    onFieldSubmitted: (value) =>
-        context.read<CreateResourceDialogCubit>().getMetadata(value),
-    onChanged: (url) =>
-        context.read<CreateResourceDialogCubit>().urlChanged(url),
+    onFieldSubmitted: cubit.getMetadata,
+    onChanged: cubit.urlChanged,
     keyboardType: TextInputType.url,
-    decoration: InputDecoration(
-      suffixIcon: IconButton(
-        tooltip: 'Fetch Website Information',
-        onPressed: state.url.value.isEmpty
-            ? null
-            : () => context
-                .read<CreateResourceDialogCubit>()
-                .getMetadata(state.url.value),
-        icon: const Icon(Icons.send),
-      ),
-      labelText: 'Enter a Web Address',
-      hintText: 'Enter a Web Address',
-      icon: const Icon(Icons.arrow_circle_down),
+    decoration: const InputDecoration(
+      // suffixIcon: IconButton(
+      //   tooltip: 'Fetch Website Information',
+      //   onPressed: state.url.value.isEmpty
+      //       ? null
+      //       : () => cubit.getMetadata(state.url.value),
+      //   icon: const Icon(Icons.send),
+      // ),
+      labelText: 'Resource URL',
+      hintText: 'Enter the resource URL',
+      icon: Icon(Icons.arrow_circle_down),
     ),
   );
 }

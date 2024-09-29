@@ -59,6 +59,14 @@ class RiderProfileRepository {
     });
   }
 
+  Future<DocumentSnapshot<RiderProfile>> getRiderProfileByEmail({
+    required String email,
+  }) {
+    return _riderProfileDatabaseReference
+        .doc(_convertEmailToPath(email: email))
+        .get();
+  }
+
   ///Retrive a single profile by [name]
   Stream<DocumentSnapshot> getProfileByName({required String name}) {
     return _riderProfileDatabaseReference

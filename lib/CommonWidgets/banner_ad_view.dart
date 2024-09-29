@@ -12,7 +12,26 @@ class BannerAdView extends StatelessWidget {
   Widget build(BuildContext context) {
     // Check if the platform is web
     if (kIsWeb) {
-      return const SizedBox.shrink();
+      // show a box as a placeholder for the web ad
+      return Container(
+        // this needs to change when the theme is updated
+        color: Theme.of(context).appBarTheme.backgroundColor,
+        width: double.infinity,
+        height: 50,
+        child: const Center(
+          child: Text(
+            'Web Ad Placeholder',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white54,
+              fontFamily: 'Roboto',
+              fontSize: 15,
+              decoration: TextDecoration.none,
+              
+            ),
+          ),
+        ),
+      );
       // TODO(mfrencny77): Implement Web Ad here when we get them working
       // return WebAdBanner();
     } else {

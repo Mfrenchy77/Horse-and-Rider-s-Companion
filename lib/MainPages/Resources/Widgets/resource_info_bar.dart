@@ -40,7 +40,7 @@ class ResourceInfoBar extends StatelessWidget {
                   ),
                 ),
                 Visibility(
-                  visible: cubit.canEditResource(resource),
+                  visible: cubit.canEditResource(resource) && state.isEdit,
                   child: PopupMenuButton<String>(
                     itemBuilder: (BuildContext menuContext) =>
                         <PopupMenuEntry<String>>[
@@ -115,12 +115,18 @@ class ResourceInfoBar extends StatelessWidget {
                   InkWell(
                     key: const Key('ResourceImage'),
                     onTap: () {
-                      if (resource.url == null) {
+                      if (resource.url != null) {
+                        if (resource.url!.contains('youtube')) {
+                          debugPrint('Opening Youtube Link: ${resource.url}');
+                          cubit.openResource(url: resource.url);
+                          return;
+                        }
+
                         // cubit.openResource(url: resource.url);
                         context.goNamed(
                           ResourceWebPage.name,
                           pathParameters: {
-                            ResourceWebPage.urlPathParams: resource.url!,
+                            ResourceWebPage.urlPathParams: resource.url ?? '',
                             ResourceWebPage.titlePathParams: resource.name!,
                           },
                         );
@@ -163,12 +169,4 @@ class ResourceInfoBar extends StatelessWidget {
       },
     );
   }
-}
-
-Widget urlPreview(String url) {
-  final proxiedUrl = 'https://corsproxy.io/?$url';
-  return AnyLinkPreview(
-    link: proxiedUrl,
-    displayDirection: UIDirection.uiDirectionHorizontal,
-  );
 }

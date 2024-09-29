@@ -51,6 +51,7 @@ class SettingsView extends StatelessWidget {
                     gap(),
                     Row(
                       children: [
+                        // Theme
                         const Padding(
                           padding: EdgeInsets.all(8),
                           child: Text('Choose a Theme'),
@@ -76,6 +77,8 @@ class SettingsView extends StatelessWidget {
                       ],
                     ),
                     gap(),
+
+                    // Disable/Enable Seasonal Theme
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -93,6 +96,7 @@ class SettingsView extends StatelessWidget {
                       ],
                     ),
                     gap(),
+                    // Units
                     Text(
                       'Units',
                       style: Theme.of(context).textTheme.titleMedium,
@@ -104,6 +108,7 @@ class SettingsView extends StatelessWidget {
                       endIndent: 8,
                     ),
                     gap(),
+                    // Horse Height Units
                     Row(
                       children: [
                         const Padding(
@@ -128,6 +133,7 @@ class SettingsView extends StatelessWidget {
                       ],
                     ),
                     gap(),
+                    // Horse Weight Units
                     Row(
                       children: [
                         const Padding(
@@ -146,6 +152,29 @@ class SettingsView extends StatelessWidget {
                             DropdownMenuItem(
                               value: true,
                               child: Text('Pounds'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    gap(),
+                    Divider(
+                      color: Theme.of(context).colorScheme.secondary,
+                      indent: 8,
+                      endIndent: 8,
+                    ),
+                    gap(),
+                    // Show onboarding
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Reset opening tutorial'),
+                            FilledButton(
+                              onPressed: controller.updateOnboardingStatus,
+                              child: const Text('Reset Tutorial'),
                             ),
                           ],
                         ),

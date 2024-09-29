@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -28,6 +28,8 @@ class NavigatorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AppCubit, AppState>(
       listenWhen: (previous, current) =>
+          previous.isGuest != current.isGuest ||
+          previous.usersProfile != current.usersProfile ||
           previous.index != current.index ||
           previous.isError != current.isError ||
           previous.isMessage != current.isMessage ||
@@ -39,61 +41,6 @@ class NavigatorView extends StatelessWidget {
         debugPrint('NavigatorView Listener Called');
         if (!context.mounted) return;
         final cubit = context.read<AppCubit>();
-
-        // First Launch
-        if (state.showFirstLaunch) {
-          debugPrint('First Launch Called');
-          // if (state.isGuest) {
-          //   // guest onboarding
-          //   FeatureDiscovery.discoverFeatures(
-          //     context,
-          //     const <String>{
-          //       'SkillTreeIcon',
-          //     },
-          //   );
-          // } else if (state.usersProfile != null) {
-          //   // user onboarding
-          //   FeatureDiscovery.discoverFeatures(
-          //     context,
-          //     const <String>{
-          //       'onboarding',
-          //     },
-          //   );
-          // }
-          // SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          //   if (!context.mounted) return;
-          //   const time = Duration(milliseconds: 200);
-          //   if (timeStamp < time) {
-          //     GoRouter.of(context)
-          //         .pushNamed(AboutPage.name)
-          //         .then((value) => cubit.setFirstLaunch());
-          //   } else {
-          //     debugPrint('First Launch already shown: $timeStamp');
-          //   }
-          // });
-        }
-
-        // Onboarding
-        if (state.showOnboarding) {
-          // debugPrint('Onboarding Called');
-          // if (state.isGuest) {
-          //   // guest onboarding
-          //   FeatureDiscovery.discoverFeatures(
-          //     context,
-          //     const <String>{
-          //       'GuestLoginButton',
-          //     },
-          //   );
-          // } else if (state.usersProfile != null) {
-          //   // user onboarding
-          //   FeatureDiscovery.discoverFeatures(
-          //     context,
-          //     const <String>{
-          //       'onboarding',
-          //     },
-          //   );
-          // }
-        }
 
         // Navigation
         switch (state.index) {
@@ -186,50 +133,43 @@ class NavigatorView extends StatelessWidget {
         }
         // Profile Set up
         if (state.isProfileSetup) {
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            if (!context.mounted) return;
-            const time = Duration(milliseconds: 4000);
-            debugPrint('Profile Set Up Called Time: $time');
-            // if timestamp is less than 10 milliseconds, show the dialog
-            if (timeStamp < time) {
-              debugPrint('Showing Profile Setup Dialog');
-              showDialog<AlertDialog>(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) => EditRiderProfileDialog(
-                  riderProfile: null,
-                  user: state.user,
-                  key: const Key('ProfileSetup'),
-                ),
-              ).then((value) => cubit.clearProfileSetup());
-            } else {
-              debugPrint('Profile Setup already shown: $timeStamp');
-            }
-          });
+          // SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          //   if (!context.mounted) return;
+          //   const time = Duration(milliseconds: 4000);
+          //   debugPrint('Profile Set Up Called Time: $time');
+          //   // if timestamp is less than 10 milliseconds, show the dialog
+          //   if (timeStamp < time) {
+          //     debugPrint('Showing Profile Setup Dialog');
+          //     showDialog<AlertDialog>(
+          //       barrierDismissible: false,
+          //       context: context,
+          //       builder: (context) => EditRiderProfileDialog(
+          //         onProfileUpdated: () {},
+          //         riderProfile: null,
+          //         user: state.user,
+          //         key: const Key('ProfileSetup'),
+          //       ),
+          //     ).then((value) => cubit.clearProfileSetup());
+          //   } else {
+          //     debugPrint('Profile Setup already shown: $timeStamp');
+          //   }
+          // });
         }
       },
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
           final cubit = context.read<AppCubit>();
-          // if (SharedPrefs().showOnboarding()) {
-          //   if (state.allSkills.isNotEmpty) {
-          //     debugPrint('Show Feature Discovery');
-          //     FeatureDiscovery.discoverFeatures(
-          //       context,
-          //       const <String>{
-          //         'GuestLoginButton',
-
-          //       },
-          //     );
-          //   }
-          // }
 
           return SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
-            child: state.pageStatus == AppPageStatus.resource
-                ? child
-                : Column(
+            child: Stack(
+              children: [
+                // this is to prevent showing the ad view on certain pages
+                // if (state.pageStatus == AppPageStatus.resource)
+                //   child
+                // else
+                  Column(
                     children: [
                       Expanded(
                         // ignore: lines_longer_than_80_chars
@@ -278,6 +218,16 @@ class NavigatorView extends StatelessWidget {
                       ),
                     ],
                   ),
+                Visibility(
+                  visible: state.showOnboarding,
+                  child: OnboardingView(
+                    key: const Key('OnboardingView'),
+                    state: state,
+                    cubit: cubit,
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -292,19 +242,7 @@ List<NavigationDestination> _buildDestinations({required bool isForRider}) {
           ? const Icon(Icons.person)
           : const Icon(HorseAndRiderIcons.horseIconCircle),
       icon: isForRider
-          ?
-          // DescribedFeatureOverlay(
-          //     onOpen: () async {
-          //       debugPrint('Profile Icon Opened');
-          //       return true;
-          //     },
-          //     featureId: 'ProfileIcon',
-          //     title: const Text('Profile'),
-          //     description: const Text(
-          //       'View and edit your profile',
-          //     ),
-          //     tapTarget:
-          const Icon(Icons.person_outline)
+          ? const Icon(Icons.person_outline)
           : const Icon(HorseAndRiderIcons.horseIcon),
       label: isForRider ? 'Profile' : 'Horse Profile',
     ),

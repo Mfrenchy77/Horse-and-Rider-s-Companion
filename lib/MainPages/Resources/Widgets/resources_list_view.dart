@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/resource_item_placeholder.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 
 class ResourcesListView extends StatelessWidget {
@@ -33,7 +34,8 @@ class ResourcesListView extends StatelessWidget {
                     ? Wrap(
                         alignment: WrapAlignment.center,
                         runSpacing: 4,
-                        children: cubit.sortResources(state.savedResources)
+                        children: cubit
+                            .sortResources(state.savedResources)
                             .map(
                               (e) => ResourcesItem(
                                 resource: e,
@@ -42,14 +44,21 @@ class ResourcesListView extends StatelessWidget {
                             )
                             .toList(),
                       )
-                    : const Text('No Resources Found')
+                    : Wrap(
+                        alignment: WrapAlignment.center,
+                        runSpacing: 4,
+                        children: List.generate(
+                          4,
+                          (index) => const ResourceItemPlaceholder(),
+                        ),
+                      )
               else
-              
                 state.resources.isNotEmpty
                     ? Wrap(
                         alignment: WrapAlignment.center,
                         runSpacing: 4,
-                        children: cubit.sortResources(state.resources)
+                        children: cubit
+                            .sortResources(state.resources)
                             .map(
                               (e) => ResourcesItem(
                                 resource: e,
@@ -58,7 +67,14 @@ class ResourcesListView extends StatelessWidget {
                             )
                             .toList(),
                       )
-                    : const Text('No Resources Found'),
+                    : Wrap(
+                        alignment: WrapAlignment.center,
+                        runSpacing: 4,
+                        children: List.generate(
+                          4,
+                          (index) => const ResourceItemPlaceholder(),
+                        ),
+                      ),
             ],
           ),
         );

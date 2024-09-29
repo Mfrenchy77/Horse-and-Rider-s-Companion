@@ -67,6 +67,26 @@ class HorseProfileView extends StatelessWidget {
                 ],
               ),
             ),
+            Breakpoints.mediumLarge: SlotLayout.from(
+              key: const Key('primary'),
+              builder: (context) => ListView(
+                children: [
+                  HorseProfilePrimaryView(
+                    horseProfile: horseProfile,
+                    key: const Key('HorseProfilePrimaryView'),
+                  ),
+                  gap(),
+                  const SkillsTextButton(
+                    key: Key('SkillsTextButton'),
+                  ),
+                  gap(),
+                  ProfileSkills(
+                    skillLevels: horseProfile.skillLevels,
+                    key: const Key('ProfileSkills'),
+                  ),
+                ],
+              ),
+            ),
             Breakpoints.small: SlotLayout.from(
               key: const Key('primary'),
               builder: (context) => ListView(

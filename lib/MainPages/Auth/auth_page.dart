@@ -10,10 +10,10 @@ class AuthPage extends StatelessWidget {
   static const path = '/SignIn';
   static const name = 'AuthPage';
 
-  static Page<void> page() => const MaterialPage<void>(child: AuthPage());
-  static Route<void> route() {
-    return MaterialPageRoute<void>(builder: (context) => const AuthPage());
-  }
+  // static Page<void> page() => const MaterialPage<void>(child: AuthPage());
+  // static Route<void> route() {
+  //   return MaterialPageRoute<void>(builder: (context) => const AuthPage());
+  // }
 
   @override
   Widget build(BuildContext context) {

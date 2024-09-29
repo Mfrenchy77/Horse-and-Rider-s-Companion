@@ -323,14 +323,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.1"
-  feature_discovery_fork:
-    dependency: "direct main"
-    description:
-      name: feature_discovery_fork
-      sha256: "01eaf9d5be20f4b438a1c9bca8b24595fed449a7ed36ab5e3cb9fd23797643ce"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.14.2"
   ffi:
     dependency: transitive
     description:
@@ -1094,14 +1086,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  onboarding_overlay:
-    dependency: "direct main"
-    description:
-      name: onboarding_overlay
-      sha256: "94626772a69494533f370ffe614882a7bf58d3bf964bfe39dcb480efa4c10444"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   open_mail_app:
     dependency: "direct main"
     description:
@@ -1278,6 +1262,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  scrollable_positioned_list:
+    dependency: "direct main"
+    description:
+      name: scrollable_positioned_list
+      sha256: "1b54d5f1329a1e263269abc9e2543d90806131aa14fe7c6062a8054d57249287"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.8"
   searchfield:
     dependency: "direct main"
     description:
@@ -1374,6 +1366,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  shimmer:
+    dependency: "direct main"
+    description:
+      name: shimmer
+      sha256: "5f88c883a22e9f9f299e5ba0e4f7e6054857224976a5d9f839d4ebdc94a14ac9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
+  showcaseview:
+    dependency: "direct main"
+    description:
+      name: showcaseview
+      sha256: f236c1f44b286e1ba888f8701adca067af92c33e29ea937d0fe9b4a29d4cd41e
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   sky_engine:
     dependency: transitive
     description: flutter

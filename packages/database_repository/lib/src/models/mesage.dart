@@ -13,6 +13,7 @@ enum MessageType {
   STUDENT_REQUEST,
   INSTRUCTOR_REQUEST,
   STUDENT_HORSE_REQUEST,
+  TRANSFER_HORSE_REQUEST,
 }
 
 ///Model representing a Message
@@ -25,7 +26,7 @@ class Message {
     required this.sender,
     required this.subject,
     required this.message,
-    required this.messsageId,
+    required this.messageId,
     required this.recipients,
     required this.senderProfilePicUrl,
     this.messageType = MessageType.CHAT,
@@ -37,7 +38,7 @@ class Message {
   final String? sender;
   final String? subject;
   String? message;
-  final String? messsageId;
+  final String? messageId;
   MessageState messageState;
   final List<String?>? parties;
   MessageType messageType;
@@ -50,7 +51,7 @@ class Message {
         sender: data?['sender'] as String?,
         subject: data?['subject'] as String?,
         message: data?['message'] as String?,
-        messsageId: data?['messsageId'] as String?,
+        messageId: data?['messageId'] as String?,
         date: (data?['date'] as Timestamp?)?.toDate(),
         requestItem: data?['requestItem'] != null
             ? BaseListItem.fromJson(
@@ -70,7 +71,9 @@ class Message {
                         ? MessageType.STUDENT_REQUEST
                         : data?['messageType'] == 'SUPPORT'
                             ? MessageType.SUPPORT
-                            : MessageType.CHAT,
+                            : data?['messageType'] == 'TRANSFER_HORSE_REQUEST'
+                                ? MessageType.TRANSFER_HORSE_REQUEST
+                                : MessageType.CHAT,
         senderProfilePicUrl: data?['senderProfilePicUrl'] as String?,
         recipients:
             (data?['recipient'] as List?)?.map((e) => e as String?).toList(),
@@ -88,7 +91,7 @@ class Message {
       sender: data['sender'] as String?,
       subject: data['subject'] as String?,
       message: data['message'] as String?,
-      messsageId: data['messsageId'] as String?,
+      messageId: data['messageId'] as String?,
       date: (data['date'] as Timestamp?)?.toDate(),
       requestItem: data['requestItem'] != null
           ? BaseListItem.fromJson(
@@ -108,7 +111,9 @@ class Message {
                       ? MessageType.STUDENT_REQUEST
                       : data['messageType'] == 'SUPPORT'
                           ? MessageType.SUPPORT
-                          : MessageType.CHAT,
+                          : data['messageType'] == 'TRANSFER_HORSE_REQUEST'
+                              ? MessageType.TRANSFER_HORSE_REQUEST
+                              : MessageType.CHAT,
       senderProfilePicUrl: data['senderProfilePicUrl'] as String?,
       parties: (data['parties'] as List?)?.map((e) => e as String).toList(),
       recipients:
@@ -125,7 +130,7 @@ class Message {
       if (message != null) 'message': message,
       if (parties != null) 'parties': parties,
       if (recipients != null) 'recipients': recipients,
-      if (messsageId != null) 'messsageId': messsageId,
+      if (messageId != null) 'messageId': messageId,
       if (requestItem != null) 'requestItem': requestItem!.toJson(),
       if (senderProfilePicUrl != null)
         'senderProfilePicUrl': senderProfilePicUrl,
@@ -139,7 +144,9 @@ class Message {
                       ? 'STUDENT_REQUEST'
                       : messageType == MessageType.SUPPORT
                           ? 'SUPPORT'
-                          : 'CHAT',
+                          : messageType == MessageType.TRANSFER_HORSE_REQUEST
+                              ? 'TRANSFER_HORSE_REQUEST'
+                              : 'CHAT',
       'messageState': messageState == MessageState.UNREAD ? 'UNREAD' : 'READ',
     };
   }
@@ -153,7 +160,7 @@ class Message {
       if (message != null) 'message': message,
       if (parties != null) 'parties': parties,
       if (recipients != null) 'recipients': recipients,
-      if (messsageId != null) 'messsageId': messsageId,
+      if (messageId != null) 'messageId': messageId,
       if (requestItem != null) 'requestItem': requestItem!.toJson(),
       if (senderProfilePicUrl != null)
         'senderProfilePicUrl': senderProfilePicUrl,
@@ -167,6 +174,8 @@ class Message {
                       ? 'STUDENT_REQUEST'
                       : messageType == MessageType.SUPPORT
                           ? 'SUPPORT'
+                          : messageType == MessageType.TRANSFER_HORSE_REQUEST
+                              ? 'TRANSFER_HORSE_REQUEST'
                           : 'CHAT',
       'messageState': messageState == MessageState.UNREAD ? 'UNREAD' : 'READ',
     };

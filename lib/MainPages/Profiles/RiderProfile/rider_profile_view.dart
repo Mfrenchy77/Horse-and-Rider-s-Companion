@@ -12,6 +12,8 @@ import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
+import 'package:horseandriderscompanion/Utilities/keys.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class RiderProfileView extends StatelessWidget {
   const RiderProfileView({
@@ -24,13 +26,41 @@ class RiderProfileView extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Scaffold(
+          key: Keys.riderProfileScaffoldKey,
           appBar: AppBar(
-            // // back if viewing profile
-            // leading: state.viewingProfile != null
-            //     ? const ProfileBackButton(
-            //         key: Key('ProfileBackButton'),
-            //       )
-            //     : null,
+            leading: profile.email == state.usersProfile?.email
+                ? //hambuger icon
+                Showcase(
+                    tooltipBackgroundColor: Colors.blue,
+                    descTextStyle: const TextStyle(
+                      color: Colors.white,
+                    ),
+                    onTargetClick: () {
+                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
+                      ShowCaseWidget.of(context).next();
+                    },
+                    onToolTipClick: () {
+                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
+                      ShowCaseWidget.of(context).next();
+                    },
+                    onBarrierClick: () {
+                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
+                      
+                      ShowCaseWidget.of(context).next();
+                    },
+                    disposeOnTap: false,
+                    description: 'Click here to open the menu to access many'
+                        ' features of the app',
+                    key: Keys.hamburgerKey,
+                    child: IconButton(
+                      icon: const Icon(Icons.menu),
+                      key: const Key('HamburgerIcon'),
+                      onPressed: () {
+                        Keys.riderProfileScaffoldKey.currentState?.openDrawer();
+                      },
+                    ),
+                  )
+                : null,
             title: const AppTitle(
               key: Key('appTitle'),
             ),
@@ -131,7 +161,6 @@ class RiderProfileView extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 Breakpoints.large: SlotLayout.from(
                   key: const Key('largeProfilePrimaryBody'),
                   builder: (context) => SingleChildScrollView(

@@ -5,6 +5,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class ResourceCommentPage extends StatelessWidget {
   const ResourceCommentPage({super.key, required this.id});
@@ -24,7 +25,11 @@ class ResourceCommentPage extends StatelessWidget {
         final resource = cubit.getResourceById(id);
 
         //cubit.sortComments(state.commentSortState);
-        final scrollController = ScrollController();
+
+        final itemScrollController = ItemScrollController();
+        final itemPositionsListener = ItemPositionsListener.create();
+        final scrollOffsetController = ScrollOffsetController();
+        final scrollOffsetListener = ScrollOffsetListener.create();
 
         if (resource == null) {
           return PopScope(
@@ -65,8 +70,11 @@ class ResourceCommentPage extends StatelessWidget {
                             ),
                           ],
                         )
-                      : ListView.builder(
-                          controller: scrollController,
+                      : ScrollablePositionedList.builder(
+                          itemScrollController: itemScrollController,
+                          itemPositionsListener: itemPositionsListener,
+                          scrollOffsetController: scrollOffsetController,
+                          scrollOffsetListener: scrollOffsetListener,
                           shrinkWrap: true,
                           itemCount: baseComments.length + 2,
                           itemBuilder: (context, index) {
@@ -99,18 +107,8 @@ class ResourceCommentPage extends StatelessWidget {
                           key: const Key('ScrollUpButton'),
                           child: const Icon(Icons.arrow_drop_up),
                           onPressed: () {
-                            final currentPosition = scrollController.offset;
-                            const itemHeight =
-                                100.0; // Change with your actual item height
-                            var newPosition = currentPosition - itemHeight;
-                            if (newPosition < 0) {
-                              newPosition = 0;
-                            }
-                            scrollController.animateTo(
-                              newPosition,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeInOut,
-                            );
+                            // Scroll to the previous index of the list
+                            
                           },
                         ),
                         FloatingActionButton(
@@ -118,15 +116,6 @@ class ResourceCommentPage extends StatelessWidget {
                           child: const Icon(Icons.arrow_drop_down),
                           onPressed: () {
                             // Scroll to the next index of the list
-                            final currentPosition = scrollController.offset;
-                            const itemHeight =
-                                100.0; // Change with your actual item height
-                            final newPosition = currentPosition + itemHeight;
-                            scrollController.animateTo(
-                              newPosition,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeInOut,
-                            );
                           },
                         ),
                       ],

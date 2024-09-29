@@ -115,6 +115,14 @@ class HorseAndRidersTheme {
   }
 }
 
+/// pulic facing method to get the current theme season
+ThemeSeasons getThemeSeason() {
+  final now = DateTime.now();
+  final month = now.month;
+  final day = now.day;
+  return HorseAndRidersTheme._getSeason(month, day);
+}
+
 ///   Main Theme
 
 final mainThemeLight = ThemeData(

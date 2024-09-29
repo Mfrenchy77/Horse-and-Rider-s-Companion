@@ -21,12 +21,14 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDi
 class EditRiderProfileDialog extends StatelessWidget {
   const EditRiderProfileDialog({
     super.key,
+    required this.onProfileUpdated,
     required this.riderProfile,
     this.user,
   });
 
   final RiderProfile? riderProfile;
   final User? user;
+  final void Function() onProfileUpdated;
   @override
   Widget build(BuildContext context) {
     debugPrint('EditRiderProfileDialog');
@@ -53,7 +55,8 @@ class EditRiderProfileDialog extends StatelessWidget {
         child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
           listener: (context, state) {
             if (state.status == SubmissionStatus.success) {
-              Navigator.pop(context);
+              onProfileUpdated();
+              Navigator.of(context).pop();
             }
             if (state.isError) {
               ScaffoldMessenger.of(context)

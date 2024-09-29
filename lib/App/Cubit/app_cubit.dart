@@ -112,7 +112,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Sets the Onboarding to false
-  void setOnboarding() {
+  void completeOnboarding() {
     debugPrint('Setting Onboarding to false');
     SharedPrefs().setShowOnboarding(show: false);
     emit(state.copyWith(showOnboarding: false));
@@ -155,6 +155,7 @@ class AppCubit extends Cubit<AppState> {
               user: user,
               isGuest: false,
               usersProfile: profile,
+              isProfileSetup: true,
               status: AppStatus.authenticated,
               pageStatus: AppPageStatus.loaded,
             ),
@@ -164,7 +165,7 @@ class AppCubit extends Cubit<AppState> {
           emit(
             state.copyWith(
               user: user,
-              isProfileSetup: true,
+              isProfileSetup: false,
               status: AppStatus.authenticated,
               pageStatus: AppPageStatus.loaded,
             ),
@@ -516,7 +517,7 @@ class AppCubit extends Cubit<AppState> {
       date: DateTime.now(),
       id: conversationId,
       sender: user.name,
-      messsageId: messageId,
+      messageId: messageId,
       requestItem: requestItem,
       subject: 'Instructor Request',
       senderProfilePicUrl: user.picUrl,
@@ -595,7 +596,7 @@ class AppCubit extends Cubit<AppState> {
       recipients: [user.name, studentProfile.name],
       message: '${user.name} has requested '
           '${studentProfile.name} to be their Student',
-      messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
     final conversation = Conversation(
@@ -1209,7 +1210,7 @@ class AppCubit extends Cubit<AppState> {
       senderProfilePicUrl: state.usersProfile?.picUrl,
       message: '${state.usersProfile?.name} has requested to add '
           '${state.horseProfile?.name} as a student horse.',
-      messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       recipients: [state.usersProfile?.name, state.ownersProfile?.name]
           .map((e) => e!)
           .toList(),
@@ -1234,27 +1235,6 @@ class AppCubit extends Cubit<AppState> {
     horseProfile.notes ??= []; // Ensure the notes list is initialized
     horseProfile.notes!.add(note);
     _persistHorseProfileChanges(horseProfile);
-  }
-
-  void navigateToMessagesPage(BuildContext context, Conversation group) {
-    // Navigator.of(context, rootNavigator: true).restorablePushNamed(
-    //   MessagesPage.routeName,
-    //   arguments: MessageArguments(
-    //     group: group,
-    //     riderProfile: state.usersProfile,
-    //   ),
-    // );
-  }
-
-  void transferHorseProfile() {
-    emit(
-      state.copyWith(
-        isMessage: true,
-        errorMessage: 'Transfer Horse Profile Currently Not Available',
-      ),
-    );
-    // TODO(mfrenchy77): Implement Transfer Horse Profile
-    debugPrint('Transfer this dum horse!!');
   }
 
   Future<void> deleteHorseProfileFromUser() async {
@@ -2466,7 +2446,7 @@ class AppCubit extends Cubit<AppState> {
         messageType: MessageType.SUPPORT,
         sender: state.usersProfile!.name,
         senderProfilePicUrl: state.usersProfile?.picUrl,
-        messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       );
 
       final conversation = Conversation(
@@ -2621,7 +2601,7 @@ class AppCubit extends Cubit<AppState> {
         sender: state.usersProfile!.name,
         recipients: state.conversation!.parties,
         senderProfilePicUrl: state.usersProfile?.picUrl,
-        messsageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       );
       if (state.conversation != null) {
         final updatedconversation = state.conversation!
@@ -2761,12 +2741,21 @@ class AppCubit extends Cubit<AppState> {
           case MessageType.SUPPORT:
             debugPrint('SUPPORT');
             break;
+          case MessageType.TRANSFER_HORSE_REQUEST:
+            debugPrint('TRANSFER_HORSE_REQUEST');
+            _handleTransferHorseRequest();
         }
       }
     } else {
       emit(state.copyWith(acceptStatus: AcceptStatus.waiting));
       debugPrint('message.requestItem.id is null');
     }
+  }
+
+  /// Handle transfer horse request
+  void _handleTransferHorseRequest() {
+    //placeholder for now
+    debugPrint('Transfer Horse Request being handled');
   }
 
   /// handles the Instructor Request

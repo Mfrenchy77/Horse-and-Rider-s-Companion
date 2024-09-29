@@ -64,7 +64,6 @@ class ResourcesItem extends StatelessWidget {
                       ResourceCommentPage.pathParams: resource.id!,
                     },
                   );
-                  //cubit.navigateToResourceComments(resource);
                 },
                 child: Card(
                   elevation: 8,

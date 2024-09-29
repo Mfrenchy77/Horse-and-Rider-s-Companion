@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/TransferHorseDialog/transfer_horse_dialog.dart';
 
 class HorseProfileOverFlowMenu extends StatelessWidget {
   const HorseProfileOverFlowMenu({super.key});
@@ -32,7 +33,17 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
                   );
                   break;
                 case 'Transfer':
-                  cubit.transferHorseProfile();
+                  if (state.horseProfile != null) {
+                    showDialog<AlertDialog>(
+                      context: context,
+                      builder: (context) => TransferHorseDialog(
+                        horseProfile: state.horseProfile!,
+                        userProfile: state.usersProfile!,
+                      ),
+                    );
+                  } else {
+                    cubit.createError('Horse profile not found');
+                  }
                   break;
                 case 'Delete':
                   cubit.deleteHorseProfileFromUser();

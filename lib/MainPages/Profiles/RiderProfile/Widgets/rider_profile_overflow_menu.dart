@@ -45,6 +45,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   showDialog<EditRiderProfileDialog>(
                     context: context,
                     builder: (context) => EditRiderProfileDialog(
+                      onProfileUpdated: () {},
                       riderProfile: state.usersProfile,
                     ),
                   );

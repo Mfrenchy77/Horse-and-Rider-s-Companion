@@ -35,6 +35,12 @@ class SettingsService {
     return SharedPrefs().isWeightInPounds;
   }
 
+  /// Loads the User's onboarding status
+  /// true for show, false for hide
+  bool getOnboardingStatus() {
+    return SharedPrefs().showOnboarding();
+  }
+
   /// Persists the user's preferred ThemeMode to local storage.
   Future<void> updateDarkMode(ThemeMode theme) async {
     // Use the shared_preferences package to persist settings locally or the
@@ -73,5 +79,10 @@ class SettingsService {
   /// Persists the user's preferred unit for displaying horse's weight
   Future<void> updateHorseWeightUnit({required bool isPounds}) async {
     SharedPrefs().setWeightPreference(isPounds: isPounds);
+  }
+
+  /// Persists the user's onboarding status
+  Future<void> updateOnboardingStatus() async {
+    SharedPrefs().setShowOnboarding(show: true);
   }
 }

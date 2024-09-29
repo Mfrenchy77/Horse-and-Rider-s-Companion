@@ -25,7 +25,7 @@ class MessagesRepository {
           fromFirestore: Message.fromFirestore,
           toFirestore: (Message message, options) => message.toFirestore(),
         )
-        .doc(message.messsageId)
+        .doc(message.messageId)
         .set(message);
   }
 

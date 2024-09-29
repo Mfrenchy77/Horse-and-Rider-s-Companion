@@ -112,19 +112,21 @@ class UpdateResourceSkills extends StatelessWidget {
                       gap(),
                       Visibility(
                         visible: canViewSkillEditor,
-                        child: Column(
+                        child: ExpansionTile(
+                          title: const Text(
+                            'Add or Remove Skills from this Resource',
+                            style: TextStyle(fontSize: 14),
+                          ),
                           children: [
                             const Divider(),
                             gap(),
-                            const Text(
-                              'Add or Remove Skills from this Resource',
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: SearchBar(
+                                hintText: 'Search Skills',
+                                onChanged: cubit.searchSkills,
+                              ),
                             ),
-                            smallGap(),
-                            SearchBar(
-                              hintText: 'Search Skills',
-                              onChanged: cubit.searchSkills,
-                            ),
-                            smallGap(),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

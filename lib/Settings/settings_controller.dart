@@ -28,6 +28,7 @@ class SettingsController with ChangeNotifier {
   ThemeData get darkTheme => HorseAndRidersTheme().getDarkTheme();
   bool get isHands => _isHands;
   bool get isPounds => _isPounds;
+  bool get onBoardingStatus => _settingsService.getOnboardingStatus();
 
   /// Load the user's settings from the SettingsService. It may load from a
   /// local database or the internet. The controller only knows it can load the
@@ -84,4 +85,12 @@ class SettingsController with ChangeNotifier {
     await _settingsService.updateHorseWeightUnit(isPounds: _isPounds);
     notifyListeners();
   }
+
+  /// Update and persist the onboarding status
+  Future<void> updateOnboardingStatus() async {
+    await _settingsService.updateOnboardingStatus();
+    notifyListeners();
+  }
+
+
 }
