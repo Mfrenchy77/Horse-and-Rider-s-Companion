@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.frenchfriedtechnlogy" "\0"
-            VALUE "FileDescription", "horseandriderscompanion" "\0"
+            VALUE "CompanyName", "com.example" "\0"
+            VALUE "FileDescription", "horse_and_riders_companion" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Horse and Rider's Compaion "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2022 com.frenchfriedtechnlogy. All rights reserved." "\0"
-            VALUE "OriginalFilename", "horseandriderscompanion.exe" "\0"
-            VALUE "ProductName", "Horse and Rider's Companion" "\0"
+            VALUE "InternalName", "horse_and_riders_companion" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
+            VALUE "OriginalFilename", "horse_and_riders_companion.exe" "\0"
+            VALUE "ProductName", "horse_and_riders_companion" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
