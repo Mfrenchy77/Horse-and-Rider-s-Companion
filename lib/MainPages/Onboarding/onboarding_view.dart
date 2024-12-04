@@ -58,7 +58,8 @@ class OnboardingViewState extends State<OnboardingView> {
             ],
           ),
           description:
-              'We will guide you through some of the features of the app. Tap "Next" to continue or "Skip" to proceed to the app.',
+              'We will guide you through some of the features of the app.'
+              ' Tap "Next" to continue or "Skip" to proceed to the app.',
           onNext: () {
             Navigator.of(context).pop(); // Dismiss the dialog
             _startShowcase();
@@ -69,28 +70,69 @@ class OnboardingViewState extends State<OnboardingView> {
     );
   }
 
-  void _profilePageShowcase() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ShowCaseWidget.of(context).startShowCase([
-        Keys.hamburgerKey,
-        Keys.profileSearchDialogKey,
-        Keys.messagesKey,
-        Keys.settingsKey,
-      ]);
-    });
+  // void _showDrawerDialog() {
+  //   showDialog<Dialog>(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) {
+  //       return onboardingDialog(
+  //         title: const Text(
+  //           'Drawer',
+  //           style: TextStyle(
+  //             fontSize: 30,
+  //             color: Colors.white,
+  //             fontWeight: FontWeight.w100,
+  //           ),
+  //         ),
+  //         description:
+  //             'This is the drawer. You can access the log book,'
+  //' search for profiles, view messages, and access settings from here.',
+  //         onNext: () {
+  //           Navigator.of(context).pop(); // Dismiss the dialog
+  //           _profileDrawerShowcaseOne();
+  //         },
+  //         skipOnboarding: _skipOnboarding,
+  //       );
+  //     },
+  //   );
+  // }
+
+  // void _profileDrawerShowcaseOne() {
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     ShowCaseWidget.of(context).startShowCase([
+  //       Keys.logoutKey,
+  //       Keys.logBookKey,
+  //     ]);
+  //   });
+  // }
+
+  void logbookOnboardingDialog() {
+    
   }
+
+  // void _startSearchDialogShowcase() {
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     ShowCaseWidget.of(context).startShowCase([
+  //       // add the search dialog keys
+  //     ]);
+  //   });
+  // }
 
   void _startShowcase() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ShowCaseWidget.of(context).startShowCase([
         Keys.hamburgerKey,
+        Keys.logoutKey,
         Keys.logBookKey,
-        Keys.profileSearchKey,
-        Keys.profileSearchDialogKey,
-        Keys.messagesKey,
-        Keys.settingsKey,
-        // Add other keys for your showcase steps
+        Keys.addLogEntryKey,
+        Keys.logSortKey,
       ]);
+    });
+  }
+
+  void _logbookShowcase() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ShowCaseWidget.of(context).startShowCase([]);
     });
   }
 
@@ -101,10 +143,10 @@ class OnboardingViewState extends State<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
-    // No need to render anything here since the showcase and dialogs handle the UI
     return const SizedBox.shrink();
   }
 }
+
 //   Widget _onboardingDialog({
 //     required Widget title,
 //     required String description,

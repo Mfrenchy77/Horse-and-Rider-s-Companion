@@ -37,7 +37,11 @@ class RiderProfileView extends StatelessWidget {
                     ),
                     onTargetClick: () {
                       Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-                      ShowCaseWidget.of(context).next();
+                      //wait for 2 seconds before showing the next showcase
+                      Future.delayed(const Duration(seconds: 2), () {
+                        ShowCaseWidget.of(context).next();
+                      });
+
                     },
                     onToolTipClick: () {
                       Keys.riderProfileScaffoldKey.currentState?.openDrawer();
@@ -45,7 +49,7 @@ class RiderProfileView extends StatelessWidget {
                     },
                     onBarrierClick: () {
                       Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-                      
+
                       ShowCaseWidget.of(context).next();
                     },
                     disposeOnTap: false,

@@ -173,7 +173,10 @@ class SettingsView extends StatelessWidget {
                           children: [
                             const Text('Reset opening tutorial'),
                             FilledButton(
-                              onPressed: controller.updateOnboardingStatus,
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                controller.updateOnboardingStatus();
+                              },
                               child: const Text('Reset Tutorial'),
                             ),
                           ],

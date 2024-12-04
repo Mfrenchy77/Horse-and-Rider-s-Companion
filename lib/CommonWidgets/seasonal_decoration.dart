@@ -9,7 +9,7 @@ class SeasonalDecorationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final seasonalImage = _getSeasonalImage();
     if (seasonalImage == null || seasonalImage.isEmpty) {
-      return SizedBox
+      return const SizedBox
           .shrink(); // Returns an empty space if no image is available.
     } else {
       return Container(

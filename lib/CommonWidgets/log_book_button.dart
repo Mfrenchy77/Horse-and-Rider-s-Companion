@@ -39,7 +39,9 @@ class LogBookButton extends StatelessWidget {
                         showDialog<Dialog>(
                           
                           context: context,
-                          builder: (context) => LogViewDialog(
+                          builder: (dialogContext) => LogViewDialog(
+                            appContext: context,
+                            onBoarding: state.showOnboarding,
                             name: horseProfile?.name ?? profile?.name ?? '',
                             notes: horseProfile?.notes ?? profile?.notes,
                             isRider: horseProfile == null,

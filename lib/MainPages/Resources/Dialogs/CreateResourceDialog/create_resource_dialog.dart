@@ -50,10 +50,10 @@ class CreateResourcDialog extends StatelessWidget {
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listenWhen: (previous, current) =>
               previous.title != current.title ||
-              previous.imageUrl != current.imageUrl||
+              previous.imageUrl != current.imageUrl ||
               previous.description != current.description ||
               previous.submitStatus != current.submitStatus ||
-              previous.urlFetchedStatus != current.urlFetchedStatus ,
+              previous.urlFetchedStatus != current.urlFetchedStatus,
           listener: (context, state) {
             final cubit = context.read<CreateResourceDialogCubit>();
             if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
@@ -61,34 +61,7 @@ class CreateResourcDialog extends StatelessWidget {
               descriptionController.text = state.description;
               imageUrlController.text = state.imageUrl;
             }
-            // show a dialog instructing user to enter the title and description
-            //in manually
-            // if (state.urlFetchedStatus == UrlFetchedStatus.error) {
-            //   showDialog<AlertDialog>(
-            //     context: context,
-            //     builder: (context) => AlertDialog(
-            //       title: const Text('Error Fetching Website Information'),
-            //       content: const Text(
-            //         'Some websites do not allow their information to be easily'
-            //         ' transferred. You can still add this resource manually by'
-            //         ' entering the Title, Description, and Image URL yourself.'
-            //         ' To get the Image URL, right-click (or long press on'
-            //         " mobile) the image, select 'Copy Image Link', and paste it"
-            //         ' into the Image URL field.',
-            //       ),
-            //       actions: [
-            //         TextButton(
-            //           onPressed: () {
-            //             cubit.clearMetaDataError();
-            //             Navigator.pop(context);
-            //           },
-            //           child: const Text('Close'),
-            //         ),
-            //       ],
-            //     ),
-            //   );
-            //   cubit.clearError();
-            // }
+
             if (state.submitStatus == ResourceSubmitStatus.success) {
               Navigator.of(context).pop();
             }

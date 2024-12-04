@@ -72,13 +72,24 @@ class UserProfileDrawer extends StatelessWidget {
                 ),
               ),
               Column(
-                key: Keys.drawerContentKey,
                 children: [
                   ///   Sign Out
-                  ListTile(
-                    leading: const Icon(Icons.close),
-                    title: const Text('Sign out'),
-                    onTap: cubit.logOutRequested,
+                  Showcase(
+                    tooltipBackgroundColor: Colors.blue,
+                    descTextStyle: const TextStyle(
+                      color: Colors.white,
+                    ),
+                    key: Keys.logoutKey,
+                    description: 'Click here to sign out of your account',
+                    onTargetClick: () => ShowCaseWidget.of(context).next(),
+                    onToolTipClick: () => ShowCaseWidget.of(context).next(),
+                    onBarrierClick: () => ShowCaseWidget.of(context).next(),
+                    disposeOnTap: false,
+                    child: ListTile(
+                      leading: const Icon(Icons.close),
+                      title: const Text('Sign out'),
+                      onTap: cubit.logOutRequested,
+                    ),
                   ),
                   //Log Book List Tile
                   Showcase(
@@ -89,17 +100,29 @@ class UserProfileDrawer extends StatelessWidget {
                     key: Keys.logBookKey,
                     description: 'Here is your log book, which you can use to'
                         ' see changes you have made and also use it to track '
-                        'shows, training and more',
-                    onTargetClick: () => ShowCaseWidget.of(context).next(),
-                    onToolTipClick: () => ShowCaseWidget.of(context).next(),
-                    onBarrierClick: () => ShowCaseWidget.of(context).next(),
-                    disposeOnTap: false,
+                        "shows, training and more\n\n Let's get opening it up"
+                        " and explore what's inside",
+                    onTargetClick: () => _showlogBookOnboarding(
+                      context: context,
+                      state: state,
+                    ),
+                    onToolTipClick: () => _showlogBookOnboarding(
+                      context: context,
+                      state: state,
+                    ),
+                    onBarrierClick: () => _showlogBookOnboarding(
+                      context: context,
+                      state: state,
+                    ),
+                    disposeOnTap: true,
                     child: ListTile(
                       leading: const Icon(HorseAndRiderIcons.riderLogIcon),
                       title: const Text('Log Book'),
                       onTap: () => showDialog<AlertDialog>(
                         context: context,
-                        builder: (context) => LogViewDialog(
+                        builder: (dialogContext) => LogViewDialog(
+                          appContext: context,
+                          onBoarding: state.showOnboarding,
                           name: state.viewingProfile?.name ??
                               state.usersProfile!.name,
                           notes: state.viewingProfile?.notes ??
@@ -185,10 +208,10 @@ class UserProfileDrawer extends StatelessWidget {
                   Showcase(
                     tooltipBackgroundColor: Colors.blue,
                     descTextStyle: const TextStyle(
-                      color: Colors.white,
+                      color: Color.fromRGBO(255, 255, 255, 1),
                     ),
-                    key: Keys.profileSearchKey,
                     disposeOnTap: false,
+                    key: Keys.profileSearchKey,
                     description:
                         "Click here to search for a horse or rider's profile",
                     onTargetClick: () {
@@ -348,4 +371,22 @@ class UserProfileDrawer extends StatelessWidget {
       },
     );
   }
+}
+
+void _showlogBookOnboarding({
+  required BuildContext context,
+  required AppState state,
+}) {
+  showDialog<AlertDialog>(
+    context: context,
+    builder: (context) => ShowCaseWidget(
+      builder: (dialogContext) => LogViewDialog(
+        appContext: context,
+        onBoarding: state.showOnboarding,
+        name: state.viewingProfile?.name ?? state.usersProfile!.name,
+        notes: state.viewingProfile?.notes ?? state.usersProfile!.notes,
+        isRider: true,
+      ),
+    ),
+  );
 }

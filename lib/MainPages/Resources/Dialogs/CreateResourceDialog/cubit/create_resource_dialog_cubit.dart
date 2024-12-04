@@ -373,52 +373,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     return skills;
   }
 
-  // ///   Called when the url is inputted and validated
-  // Future<void> createResource() async {
-  //   emit(
-  //     state.copyWith(status: FormStatus.submitting),
-  //   );
-  //   final url = state.url.value;
-  //   if (state.url.isValid) {
-  //     final user = BaseListItem(
-  //       isSelected: false,
-  //       isCollapsed: false,
-  //       id: state.usersProfile?.email ?? '',
-  //     );
-  //     final raters = <BaseListItem>[user];
-  //     final skillIds = state.resourceSkills?.map((e) => e?.id).toList();
-  //     final resource = Resource(
-  //       url: url,
-  //       rating: 0,
-  //       numberOfRates: 0,
-  //       name: state.title,
-  //       usersWhoRated: raters,
-  //       skillTreeIds: skillIds,
-  //       id: ViewUtils.createId(),
-  //       thumbnail: state.imageUrl,
-  //       lastEditDate: DateTime.now(),
-  //       description: state.description,
-  //       lastEditBy: state.usersProfile?.name ?? '',
-  //     );
-
-  //     try {
-  //       await _resourcesRepository.createOrUpdateResource(resource: resource);
-  //       emit(state.copyWith(status: FormStatus.success));
-  //     } on FirebaseException catch (e) {
-  //       debugPrint('Error: ${e.message}');
-  //       emit(
-  //         state.copyWith(
-  //           isError: true,
-  //           error: e.message ?? 'Error',
-  //           status: FormStatus.failure,
-  //         ),
-  //       );
-  //     }
-  //   } else {
-  //     debugPrint('Url is not valid');
-  //   }
-  // }
-
   Future<void> editResource() async {
     emit(state.copyWith(submitStatus: ResourceSubmitStatus.submitting));
     debugPrint(
