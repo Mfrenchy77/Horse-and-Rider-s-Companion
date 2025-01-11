@@ -13,7 +13,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/Utilities/keys.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 class RiderProfileView extends StatelessWidget {
   const RiderProfileView({
@@ -30,40 +29,13 @@ class RiderProfileView extends StatelessWidget {
           appBar: AppBar(
             leading: profile.email == state.usersProfile?.email
                 ? //hambuger icon
-                Showcase(
-                    tooltipBackgroundColor: Colors.blue,
-                    descTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    onTargetClick: () {
-                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-                      //wait for 2 seconds before showing the next showcase
-                      Future.delayed(const Duration(seconds: 2), () {
-                        ShowCaseWidget.of(context).next();
-                      });
-
-                    },
-                    onToolTipClick: () {
-                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-                      ShowCaseWidget.of(context).next();
-                    },
-                    onBarrierClick: () {
-                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-
-                      ShowCaseWidget.of(context).next();
-                    },
-                    disposeOnTap: false,
-                    description: 'Click here to open the menu to access many'
-                        ' features of the app',
-                    key: Keys.hamburgerKey,
-                    child: IconButton(
-                      icon: const Icon(Icons.menu),
-                      key: const Key('HamburgerIcon'),
-                      onPressed: () {
-                        Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-                      },
-                    ),
-                  )
+                IconButton(
+                  icon: const Icon(Icons.menu),
+                  key: const Key('HamburgerIcon'),
+                  onPressed: () {
+                    Keys.riderProfileScaffoldKey.currentState?.openDrawer();
+                  },
+                )
                 : null,
             title: const AppTitle(
               key: Key('appTitle'),

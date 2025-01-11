@@ -6,12 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// This is the reusable navigator that shows
-///  the bottom app bar on small screens
+/// the bottom app bar on small screens
 /// and nav rail on larger screens across all pages.
 class NavigatorView extends StatelessWidget {
   /// {@macro navigator_view}
@@ -22,6 +21,7 @@ class NavigatorView extends StatelessWidget {
     super.key,
     required this.child,
   });
+
   final StatefulNavigationShell child;
 
   @override
@@ -42,7 +42,7 @@ class NavigatorView extends StatelessWidget {
         if (!context.mounted) return;
         final cubit = context.read<AppCubit>();
 
-        // Navigation
+        // Navigation Handling
         switch (state.index) {
           case 0:
             debugPrint('Index 0');
@@ -61,11 +61,10 @@ class NavigatorView extends StatelessWidget {
             child.goBranch(0);
         }
 
-        // Error handling
+        // Error Handling
         if (state.isError) {
           debugPrint('Error Called');
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            //if (!context.mounted) return;
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -82,11 +81,11 @@ class NavigatorView extends StatelessWidget {
               });
           });
         }
-        // Message handling
+
+        // Message Handling
         if (state.isMessage) {
           debugPrint('Message Called');
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            //  if (!context.mounted) return;
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -104,12 +103,12 @@ class NavigatorView extends StatelessWidget {
               });
           });
         }
-        // Email verification
+
+        // Email Verification Handling
         if (state.showEmailVerification) {
           debugPrint('Email Verification Called');
           SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
             debugPrint('Email Verification Dialog Called');
-            //if (!context.mounted) return;
             const time = Duration(milliseconds: 200);
             if (timeStamp < time) {
               context.pushNamed(
@@ -118,43 +117,12 @@ class NavigatorView extends StatelessWidget {
                   EmailVerificationDialog.pathParms: state.user.email,
                 },
               );
-              // showDialog<AlertDialog>(
-              //   barrierDismissible: false,
-              //   context: context,
-              //   builder: (context) => EmailVerificationDialog(
-              //     email: state.user.email,
-              //     key: const Key('EmailVerificationDialog'),
-              //   ),
-              // ).then((value) => cubit.clearEmailVerification()
             } else {
               debugPrint('Email Verification Dialog already shown: $timeStamp');
             }
           });
         }
-        // Profile Set up
-        if (state.isProfileSetup) {
-          // SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          //   if (!context.mounted) return;
-          //   const time = Duration(milliseconds: 4000);
-          //   debugPrint('Profile Set Up Called Time: $time');
-          //   // if timestamp is less than 10 milliseconds, show the dialog
-          //   if (timeStamp < time) {
-          //     debugPrint('Showing Profile Setup Dialog');
-          //     showDialog<AlertDialog>(
-          //       barrierDismissible: false,
-          //       context: context,
-          //       builder: (context) => EditRiderProfileDialog(
-          //         onProfileUpdated: () {},
-          //         riderProfile: null,
-          //         user: state.user,
-          //         key: const Key('ProfileSetup'),
-          //       ),
-          //     ).then((value) => cubit.clearProfileSetup());
-          //   } else {
-          //     debugPrint('Profile Setup already shown: $timeStamp');
-          //   }
-          // });
-        }
+        // Additional state handling can be added here
       },
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
@@ -165,66 +133,118 @@ class NavigatorView extends StatelessWidget {
             width: MediaQuery.of(context).size.width,
             child: Stack(
               children: [
-                // this is to prevent showing the ad view on certain pages
-                // if (state.pageStatus == AppPageStatus.resource)
-                //   child
-                // else
-                  Column(
-                    children: [
-                      Expanded(
-                        // ignore: lines_longer_than_80_chars
-                        //FIXME: If the adaptive scaffold updated, you need to click on the adaptive scaffold and edit the standard navigatin rail padding,maybe line 346 and change padding to EdgeInsets.all(0)
-                        child: AdaptiveScaffold(
-                          appBar: AppBar(),
-                          internalAnimations: false,
-                          smallBreakpoint: const Breakpoint(endWidth: 800),
-                          mediumBreakpoint: const Breakpoint(
-                            beginWidth: 800,
-                            endWidth: 1200,
-                          ),
-                          largeBreakpoint: const Breakpoint(beginWidth: 1200),
-                          leadingUnextendedNavRail: const Image(
-                            color: Colors.white,
-                            fit: BoxFit.contain,
-                            image: AssetImage('assets/horse_logo.png'),
-                            height: 40,
-                          ),
-                          leadingExtendedNavRail: const Image(
-                            color: Colors.white,
-                            fit: BoxFit.contain,
-                            image: AssetImage('assets/horse_logo.png'),
-                            height: 40,
-                          ),
-                          useDrawer: false,
-                          destinations:
-                              _buildDestinations(isForRider: state.isForRider),
-                          selectedIndex: state.index,
-                          onSelectedIndexChange: cubit.changeIndex,
-                          body: (_) => AdaptiveLayout(
-                            internalAnimations: false,
-                            body: SlotLayout(
-                              config: <Breakpoint, SlotLayoutConfig>{
-                                Breakpoints.standard: SlotLayout.from(
-                                  key: const Key('mainView'),
-                                  builder: (_) => child,
-                                ),
+                Column(
+                  children: [
+                    Expanded(
+                      child: AdaptiveLayout(
+                        internalAnimations: false,
+                        primaryNavigation: SlotLayout(
+                          config: <Breakpoint, SlotLayoutConfig?>{
+                            // Medium screens
+                            Breakpoints.mediumAndUp: SlotLayout.from(
+                              key: const Key('primaryNavigationMedium'),
+                              builder: (_) {
+                                return AdaptiveScaffold.standardNavigationRail(
+                                  padding: EdgeInsets.zero,
+                                  selectedIndex: state.index,
+                                  onDestinationSelected: cubit.changeIndex,
+                                  leading: const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Image(
+                                      color: Colors.white,
+                                      fit: BoxFit.contain,
+                                      image:
+                                          AssetImage('assets/horse_logo.png'),
+                                      height: 40,
+                                    ),
+                                  ),
+                                  backgroundColor: Theme.of(context)
+                                      .appBarTheme
+                                      .backgroundColor,
+                                  destinations:
+                                      _buildNavigationRailDestinations(
+                                    isForRider: state.isForRider,
+                                  ),
+                                 
+                                );
                               },
                             ),
-                          ),
+                            // Large screens
+                            Breakpoints.mediumLargeAndUp: SlotLayout.from(
+                              key: const Key('primaryNavigationLarge'),
+                              builder: (_) {
+                                return AdaptiveScaffold.standardNavigationRail(
+                                  padding: EdgeInsets.zero,
+                                  selectedIndex: state.index,
+                                  onDestinationSelected: cubit.changeIndex,
+                                  leading: const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Image(
+                                      color: Colors.white,
+                                      fit: BoxFit.contain,
+                                      image:
+                                          AssetImage('assets/horse_logo.png'),
+                                      height: 40,
+                                    ),
+                                  ),
+                                  extended:
+                                      true, // Extended rail for larger screens
+                                  backgroundColor: Theme.of(context)
+                                      .appBarTheme
+                                      .backgroundColor,
+                                  destinations:
+                                      _buildNavigationRailDestinations(
+                                    isForRider: state.isForRider,
+                                  ),
+                                  
+                                );
+                              },
+                            ),
+                            // Add more breakpoints if necessary
+                          },
+                        ),
+                        // Define the body slot
+                        body: SlotLayout(
+                          config: <Breakpoint, SlotLayoutConfig>{
+                            Breakpoints.standard: SlotLayout.from(
+                              key: const Key('mainView'),
+                              builder: (_) => child,
+                            ),
+                          },
+                        ),
+                        // Define the bottom navigation slot for small screens
+                        bottomNavigation: SlotLayout(
+                          config: <Breakpoint, SlotLayoutConfig?>{
+                            Breakpoints.small: SlotLayout.from(
+                              key: const Key('bottomNavigation'),
+                              builder: (_) {
+                                return BottomNavigationBar(
+                                  backgroundColor: Theme.of(context)
+                                      .appBarTheme
+                                      .backgroundColor,
+                                  currentIndex: state.index,
+                                  onTap: cubit.changeIndex,
+                                  items: _buildBottomNavigationBarItems(
+                                    isForRider: state.isForRider,
+                                  ),
+                                  selectedItemColor: HorseAndRidersTheme()
+                                      .getTheme()
+                                      .primaryColor,
+                                  unselectedItemColor: Colors.grey,
+                                  type: BottomNavigationBarType
+                                      .fixed, // Adjust as needed
+                                  // Optionally, customize other properties
+                                );
+                              },
+                            ),
+                          },
                         ),
                       ),
-                      const BannerAdView(
-                        key: Key('BannerAdView'),
-                      ),
-                    ],
-                  ),
-                Visibility(
-                  visible: state.showOnboarding,
-                  child: OnboardingView(
-                    key: const Key('OnboardingView'),
-                    state: state,
-                    cubit: cubit,
-                  ),
+                    ),
+                    const BannerAdView(
+                      key: Key('BannerAdView'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -235,28 +255,55 @@ class NavigatorView extends StatelessWidget {
   }
 }
 
-List<NavigationDestination> _buildDestinations({required bool isForRider}) {
+/// Builds the list of NavigationRailDestination for the NavigationRail.
+List<NavigationRailDestination> _buildNavigationRailDestinations({
+  required bool isForRider,
+}) {
   return [
-    NavigationDestination(
+    NavigationRailDestination(
+      icon: isForRider
+          ? const Icon(Icons.person_outline)
+          : const Icon(HorseAndRiderIcons.horseIcon),
       selectedIcon: isForRider
           ? const Icon(Icons.person)
           : const Icon(HorseAndRiderIcons.horseIconCircle),
+      label: Text(isForRider ? 'Profile' : 'Horse Profile'),
+    ),
+    NavigationRailDestination(
+      icon: isForRider
+          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+      selectedIcon: isForRider
+          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+      label: const Text('Skill Tree'),
+    ),
+    const NavigationRailDestination(
+      icon: Icon(HorseAndRiderIcons.resourcesIcon),
+      selectedIcon: Icon(HorseAndRiderIcons.resourcesIcon),
+      label: Text('Resources'),
+    ),
+  ];
+}
+
+/// Builds the list of BottomNavigationBarItem for the BottomNavigationBar.
+List<BottomNavigationBarItem> _buildBottomNavigationBarItems({
+  required bool isForRider,
+}) {
+  return [
+    BottomNavigationBarItem(
       icon: isForRider
           ? const Icon(Icons.person_outline)
           : const Icon(HorseAndRiderIcons.horseIcon),
       label: isForRider ? 'Profile' : 'Horse Profile',
     ),
-    NavigationDestination(
-      selectedIcon: isForRider
-          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    BottomNavigationBarItem(
       icon: isForRider
           ? const Icon(HorseAndRiderIcons.riderSkillIcon)
           : const Icon(HorseAndRiderIcons.horseSkillIcon),
       label: 'Skill Tree',
     ),
-    const NavigationDestination(
-      selectedIcon: Icon(HorseAndRiderIcons.resourcesIcon),
+    const BottomNavigationBarItem(
       icon: Icon(HorseAndRiderIcons.resourcesIcon),
       label: 'Resources',
     ),

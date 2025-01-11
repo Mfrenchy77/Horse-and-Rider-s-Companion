@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 /// The `App` class is responsible for building the main
 ///  application widget tree.
@@ -98,17 +97,15 @@ class AppView extends StatelessWidget {
     return AnimatedBuilder(
       animation: settingsController,
       builder: (context, child) {
-        return ShowCaseWidget(
-          builder: (context) => MaterialApp.router(
-            routerDelegate: router.routerDelegate,
-            routeInformationParser: router.routeInformationParser,
-            routeInformationProvider: router.routeInformationProvider,
-            title: "Horse & Rider's Companion",
-            themeMode: settingsController.darkMode,
-            theme: settingsController.theme,
-            darkTheme: settingsController.darkTheme,
-            debugShowCheckedModeBanner: false,
-          ),
+        return MaterialApp.router(
+          routerDelegate: router.routerDelegate,
+          routeInformationParser: router.routeInformationParser,
+          routeInformationProvider: router.routeInformationProvider,
+          title: "Horse & Rider's Companion",
+          themeMode: settingsController.darkMode,
+          theme: settingsController.theme,
+          darkTheme: settingsController.darkTheme,
+          debugShowCheckedModeBanner: false,
         );
       },
     );

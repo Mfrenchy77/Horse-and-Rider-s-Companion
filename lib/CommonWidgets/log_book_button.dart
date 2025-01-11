@@ -26,7 +26,7 @@ class LogBookButton extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-       
+
         return !cubit.isAuthorized() || state.isGuest
             ? const SizedBox.shrink()
             : Row(
@@ -37,11 +37,9 @@ class LogBookButton extends StatelessWidget {
                     child: FilledButton.tonalIcon(
                       onPressed: () {
                         showDialog<Dialog>(
-                          
                           context: context,
                           builder: (dialogContext) => LogViewDialog(
                             appContext: context,
-                            onBoarding: state.showOnboarding,
                             name: horseProfile?.name ?? profile?.name ?? '',
                             notes: horseProfile?.notes ?? profile?.notes,
                             isRider: horseProfile == null,

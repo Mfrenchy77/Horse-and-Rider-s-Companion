@@ -9,9 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearch
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:horseandriderscompanion/Utilities/keys.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 /// A Dialog that allows the user to search for a Rider or Horse Profile, by
 /// name email or horse name or horse id or location for either a Rider or Horse
@@ -61,138 +59,122 @@ class ProfileSearchDialog extends StatelessWidget {
               return AlertDialog(
                 title: Text(_getSearchType(state.searchType)),
                 content: SingleChildScrollView(
-                  child: Showcase(
-                    key: Keys.profileSearchDialogKey,
-                    title: 'Search for a Rider or Horse',
-                    description: 'Search for a rider or horse by name, email,'
-                        ' horse name, horse id, horse nick name or location',
-                    tooltipBackgroundColor: Colors.blue,
-                    textColor: Colors.white,
-                    descTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    disposeOnTap: false,
-                    onBarrierClick: () => Navigator.of(context).pop(),
-                    onTargetClick: () => Navigator.of(context).pop(),
-                    onToolTipClick: () => Navigator.of(context).pop(),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          textCapitalization: TextCapitalization.words,
-                          keyboardType: TextInputType.name,
-                          validator: (value) {
-                            //Validate based on the search type
-                            if (value == null) {
-                              return null;
-                            } else {
-                              switch (state.searchType) {
-                                case SearchType.name:
-                                  return state.searchValue.validator(value);
-
-                                case SearchType.email:
-                                  return state.email.validator(value);
-
-                                case SearchType.horse:
-                                  return state.searchValue.validator(value);
-                                case SearchType.horseId:
-                                  return state.searchValue.value.isEmpty
-                                      ? 'Please enter a horse id'
-                                      : null;
-                                case SearchType.horseNickName:
-                                  return state.searchValue.validator(value);
-                                case SearchType.horseLocation:
-                                  return state.zipCode.validator(value);
-
-                                case SearchType.riderLocation:
-                                  return state.zipCode.validator(value);
-                              }
-                            }
-                          },
-                          onFieldSubmitted: !_isSearchValid(state)
-                              ? null
-                              : (value) {
-                                  initiateSearch(cubit: cubit, state: state);
-                                },
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(40)),
-                            ),
-                            labelText: 'Search',
-                            hintText: _getHintText(state.searchType),
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              icon: const Icon(Icons.clear),
-                            ),
-                          ),
-                          onChanged: (value) {
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        textCapitalization: TextCapitalization.words,
+                        keyboardType: TextInputType.name,
+                        validator: (value) {
+                          //Validate based on the search type
+                          if (value == null) {
+                            return null;
+                          } else {
                             switch (state.searchType) {
                               case SearchType.name:
-                                cubit.nameChanged(value);
-                                break;
+                                return state.searchValue.validator(value);
+
                               case SearchType.email:
-                                cubit.emailChanged(value);
-                                break;
+                                return state.email.validator(value);
+
                               case SearchType.horse:
-                                cubit.nameChanged(value);
-                                break;
+                                return state.searchValue.validator(value);
                               case SearchType.horseId:
-                                cubit.nameChanged(value);
-                                break;
+                                return state.searchValue.value.isEmpty
+                                    ? 'Please enter a horse id'
+                                    : null;
                               case SearchType.horseNickName:
-                                cubit.nameChanged(value);
-                                break;
+                                return state.searchValue.validator(value);
                               case SearchType.horseLocation:
-                                cubit.nameChanged(value);
-                                break;
+                                return state.zipCode.validator(value);
+
                               case SearchType.riderLocation:
-                                cubit.nameChanged(value);
-                                break;
+                                return state.zipCode.validator(value);
                             }
-                          },
+                          }
+                        },
+                        onFieldSubmitted: !_isSearchValid(state)
+                            ? null
+                            : (value) {
+                                initiateSearch(cubit: cubit, state: state);
+                              },
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(40)),
+                          ),
+                          labelText: 'Search',
+                          hintText: _getHintText(state.searchType),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
                         ),
-                        smallGap(),
-                        // Search Button
-                        _searchButton(cubit: cubit, state: state),
-                        gap(),
-                        const Divider(
-                          height: 2,
-                          indent: 20,
-                          endIndent: 20,
-                        ),
-                        gap(),
-                        _horseOrRiderSelctor(state: state, cubit: cubit),
-                        gap(),
-                        _searchSelectorChips(
-                          state: state,
-                          cubit: cubit,
-                        ),
-                        gap(),
-                        // // Drop down for location search area,
-                        // // visible only when search type is location
-                        // _locationDropDown(
-                        //   cubit: cubit,
-                        //   state: state,
-                        //   context: context,
-                        // ),
-                        gap(),
-                        const Divider(
-                          height: 2,
-                          indent: 20,
-                          endIndent: 20,
-                        ),
-                        gap(),
-                        _resultList(
-                          cubit: cubit,
-                          state: state,
-                          context: context,
-                          homeContext: homeContext,
-                        ),
-                      ],
-                    ),
+                        onChanged: (value) {
+                          switch (state.searchType) {
+                            case SearchType.name:
+                              cubit.nameChanged(value);
+                              break;
+                            case SearchType.email:
+                              cubit.emailChanged(value);
+                              break;
+                            case SearchType.horse:
+                              cubit.nameChanged(value);
+                              break;
+                            case SearchType.horseId:
+                              cubit.nameChanged(value);
+                              break;
+                            case SearchType.horseNickName:
+                              cubit.nameChanged(value);
+                              break;
+                            case SearchType.horseLocation:
+                              cubit.nameChanged(value);
+                              break;
+                            case SearchType.riderLocation:
+                              cubit.nameChanged(value);
+                              break;
+                          }
+                        },
+                      ),
+                      smallGap(),
+                      // Search Button
+                      _searchButton(cubit: cubit, state: state),
+                      gap(),
+                      const Divider(
+                        height: 2,
+                        indent: 20,
+                        endIndent: 20,
+                      ),
+                      gap(),
+                      _horseOrRiderSelctor(state: state, cubit: cubit),
+                      gap(),
+                      _searchSelectorChips(
+                        state: state,
+                        cubit: cubit,
+                      ),
+                      gap(),
+                      // // Drop down for location search area,
+                      // // visible only when search type is location
+                      // _locationDropDown(
+                      //   cubit: cubit,
+                      //   state: state,
+                      //   context: context,
+                      // ),
+                      gap(),
+                      const Divider(
+                        height: 2,
+                        indent: 20,
+                        endIndent: 20,
+                      ),
+                      gap(),
+                      _resultList(
+                        cubit: cubit,
+                        state: state,
+                        context: context,
+                        homeContext: homeContext,
+                      ),
+                    ],
                   ),
                 ),
               );

@@ -5,13 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/CommonWidgets/onboarding_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/Utilities/keys.dart';
-import 'package:http/http.dart';
 import 'package:intl/intl.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 /// Enum representing the different sorting options
 enum LogSort {
@@ -31,13 +27,11 @@ class LogViewDialog extends StatefulWidget {
     required this.name,
     required this.notes,
     required this.isRider,
-    required this.onBoarding,
     required this.appContext,
   });
 
   final String name;
   final bool isRider;
-  final bool onBoarding;
   final BuildContext appContext;
   final List<BaseListItem>? notes;
 
@@ -52,38 +46,7 @@ class LogViewDialogState extends State<LogViewDialog> {
   @override
   Widget build(BuildContext context) {
     final notes = widget.notes ?? [];
-    if (widget.onBoarding) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog<Dialog>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) {
-            return onboardingDialog(
-              title: const Text(
-                'Log Book',
-                style: TextStyle(
-                  fontSize: 30,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w100,
-                ),
-              ),
-              description:
-                  'This is the log book. You can view your progress and add new'
-                  ' entries here for shows, training, health updates, or'
-                  ' anything else you want to track.\n\n There is a log book'
-                  ' if you have a horse that can be accessed from thier'
-                  ' profile.',
-              onNext: () {
-                Navigator.of(context).pop(); 
-               _logbookShowcase(context: context);
-              },
-              skipOnboarding: () =>
-                  context.read<AppCubit>().completeOnboarding(),
-            );
-          },
-        );
-      });
-    }
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -157,16 +120,8 @@ class LogViewDialogState extends State<LogViewDialog> {
             ],
           ),
           const SizedBox(height: 8),
-          Showcase(
-            key: Keys.addLogEntryKey,
-            description: 'Add a new log entry for this profile',
-            disposeOnTap: false,
-            onTargetClick: () => ShowCaseWidget.of(context).next(),
-            onBarrierClick: () => ShowCaseWidget.of(context).next(),
-            onToolTipClick: () => ShowCaseWidget.of(context).next(),
-            child: const AddLogEntry(
-              key: Key('AddLogEntry'),
-            ),
+          const AddLogEntry(
+            key: Key('AddLogEntry'),
           ),
         ],
       );
@@ -210,28 +165,19 @@ class LogViewDialogState extends State<LogViewDialog> {
       children: [
         const Text('Sort by:'),
         gap(),
-        Showcase(
-          key: Keys.logSortKey,
-          title: 'Sort Log Entries',
-          description: 'Sort the log entries by date or tag',
-          disposeOnTap: false,
-          onTargetClick: () => ShowCaseWidget.of(context).next(),
-          onBarrierClick: () => ShowCaseWidget.of(context).next(),
-          onToolTipClick: () => ShowCaseWidget.of(context).next(),
-          child: DropdownButton<LogSort>(
-            value: _selectedSortOption,
-            onChanged: (LogSort? newValue) {
-              setState(() {
-                _selectedSortOption = newValue!;
-              });
-            },
-            items: LogSort.values.map((LogSort option) {
-              return DropdownMenuItem<LogSort>(
-                value: option,
-                child: Text(_logSortToString(option)),
-              );
-            }).toList(),
-          ),
+        DropdownButton<LogSort>(
+          value: _selectedSortOption,
+          onChanged: (LogSort? newValue) {
+            setState(() {
+              _selectedSortOption = newValue!;
+            });
+          },
+          items: LogSort.values.map((LogSort option) {
+            return DropdownMenuItem<LogSort>(
+              value: option,
+              child: Text(_logSortToString(option)),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -341,27 +287,18 @@ class AddLogEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        return Showcase(
-          disposeOnTap: false,
-          key: Keys.addLogEntryKey,
-          title: 'Add Log Entry',
-          description: 'Add a new log entry for this profile',
-          onTargetClick: () => ShowCaseWidget.of(context).next(),
-          onBarrierClick: () => ShowCaseWidget.of(context).next(),
-          onToolTipClick: () => ShowCaseWidget.of(context).next(),
-          child: FilledButton.icon(
-            label: const Text('Add Log Entry'),
-            onPressed: () {
-              showDialog<AddLogEntryDialog>(
-                context: context,
-                builder: (context) => AddLogEntryDialog(
-                  usersProfile: state.usersProfile!,
-                  horseProfile: state.isForRider ? null : state.horseProfile,
-                ),
-              );
-            },
-            icon: const Icon(Icons.add),
-          ),
+        return FilledButton.icon(
+          label: const Text('Add Log Entry'),
+          onPressed: () {
+            showDialog<AddLogEntryDialog>(
+              context: context,
+              builder: (context) => AddLogEntryDialog(
+                usersProfile: state.usersProfile!,
+                horseProfile: state.isForRider ? null : state.horseProfile,
+              ),
+            );
+          },
+          icon: const Icon(Icons.add),
         );
       },
     );
@@ -471,13 +408,4 @@ Color _logTagColor({required LogTag? tag}) {
     case null:
       return Colors.grey;
   }
-}
-
-void _logbookShowcase({required BuildContext context}) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    ShowCaseWidget.of(context).startShowCase([
-      Keys.addLogEntryKey,
-      Keys.logSortKey,
-    ]);
-  });
 }

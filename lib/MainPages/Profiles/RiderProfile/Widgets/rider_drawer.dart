@@ -14,9 +14,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_messa
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_list.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/Utilities/keys.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 class UserProfileDrawer extends StatelessWidget {
   const UserProfileDrawer({super.key});
@@ -74,61 +72,24 @@ class UserProfileDrawer extends StatelessWidget {
               Column(
                 children: [
                   ///   Sign Out
-                  Showcase(
-                    tooltipBackgroundColor: Colors.blue,
-                    descTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    key: Keys.logoutKey,
-                    description: 'Click here to sign out of your account',
-                    onTargetClick: () => ShowCaseWidget.of(context).next(),
-                    onToolTipClick: () => ShowCaseWidget.of(context).next(),
-                    onBarrierClick: () => ShowCaseWidget.of(context).next(),
-                    disposeOnTap: false,
-                    child: ListTile(
-                      leading: const Icon(Icons.close),
-                      title: const Text('Sign out'),
-                      onTap: cubit.logOutRequested,
-                    ),
+                  ListTile(
+                    leading: const Icon(Icons.close),
+                    title: const Text('Sign out'),
+                    onTap: cubit.logOutRequested,
                   ),
                   //Log Book List Tile
-                  Showcase(
-                    tooltipBackgroundColor: Colors.blue,
-                    descTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    key: Keys.logBookKey,
-                    description: 'Here is your log book, which you can use to'
-                        ' see changes you have made and also use it to track '
-                        "shows, training and more\n\n Let's get opening it up"
-                        " and explore what's inside",
-                    onTargetClick: () => _showlogBookOnboarding(
+                  ListTile(
+                    leading: const Icon(HorseAndRiderIcons.riderLogIcon),
+                    title: const Text('Log Book'),
+                    onTap: () => showDialog<AlertDialog>(
                       context: context,
-                      state: state,
-                    ),
-                    onToolTipClick: () => _showlogBookOnboarding(
-                      context: context,
-                      state: state,
-                    ),
-                    onBarrierClick: () => _showlogBookOnboarding(
-                      context: context,
-                      state: state,
-                    ),
-                    disposeOnTap: true,
-                    child: ListTile(
-                      leading: const Icon(HorseAndRiderIcons.riderLogIcon),
-                      title: const Text('Log Book'),
-                      onTap: () => showDialog<AlertDialog>(
-                        context: context,
-                        builder: (dialogContext) => LogViewDialog(
-                          appContext: context,
-                          onBoarding: state.showOnboarding,
-                          name: state.viewingProfile?.name ??
-                              state.usersProfile!.name,
-                          notes: state.viewingProfile?.notes ??
-                              state.usersProfile!.notes,
-                          isRider: true,
-                        ),
+                      builder: (dialogContext) => LogViewDialog(
+                        appContext: context,
+                        name: state.viewingProfile?.name ??
+                            state.usersProfile!.name,
+                        notes: state.viewingProfile?.notes ??
+                            state.usersProfile!.notes,
+                        isRider: true,
                       ),
                     ),
                   ),
@@ -205,16 +166,10 @@ class UserProfileDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  Showcase(
-                    tooltipBackgroundColor: Colors.blue,
-                    descTextStyle: const TextStyle(
-                      color: Color.fromRGBO(255, 255, 255, 1),
-                    ),
-                    disposeOnTap: false,
-                    key: Keys.profileSearchKey,
-                    description:
-                        "Click here to search for a horse or rider's profile",
-                    onTargetClick: () {
+                  ListTile(
+                    leading: const Icon(Icons.person_search),
+                    title: const Text('Search Horse/Rider'),
+                    onTap: () {
                       showDialog<AlertDialog>(
                         context: context,
                         builder: (dialogContext) => ProfileSearchDialog(
@@ -222,75 +177,19 @@ class UserProfileDrawer extends StatelessWidget {
                           key: const Key('ProfileSearchDialog'),
                         ),
                       );
-                      // ShowCaseWidget.of(context).next();
-                    },
-                    onToolTipClick: () {
-                      showDialog<AlertDialog>(
-                        context: context,
-                        builder: (dialogContext) => ProfileSearchDialog(
-                          homeContext: context,
-                          key: const Key('ProfileSearchDialog'),
-                        ),
-                      );
-                      // ShowCaseWidget.of(context).next();
-                    },
-                    onBarrierClick: () {
-                      showDialog<AlertDialog>(
-                        context: context,
-                        builder: (dialogContext) => ProfileSearchDialog(
-                          homeContext: context,
-                          key: const Key('ProfileSearchDialog'),
-                        ),
-                      );
-                      // ShowCaseWidget.of(context).next();
-                    },
-                    child: ListTile(
-                      leading: const Icon(Icons.person_search),
-                      title: const Text('Search Horse/Rider'),
-                      onTap: () {
-                        showDialog<AlertDialog>(
-                          context: context,
-                          builder: (dialogContext) => ProfileSearchDialog(
-                            homeContext: context,
-                            key: const Key('ProfileSearchDialog'),
-                          ),
-                        );
 
-                        debugPrint('Search Clicked');
-                      },
-                    ),
+                      debugPrint('Search Clicked');
+                    },
                   ),
-                  Showcase(
-                    tooltipBackgroundColor: Colors.blue,
-                    descTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    description: 'Here is where you will find message that you '
-                        'have sent or received from other users',
-                    key: Keys.messagesKey,
-                    onTargetClick: () {
+                  ListTile(
+                    leading: const Icon(Icons.mail),
+                    title: const Text('Messages'),
+                    onTap: () {
+                      //closes the drawer
+                      Navigator.pop(context);
+                      //opens the messages page
                       context.goNamed(MessagesPage.name);
-                      ShowCaseWidget.of(context).next();
                     },
-                    onToolTipClick: () {
-                      context.goNamed(MessagesPage.name);
-                      ShowCaseWidget.of(context).next();
-                    },
-                    onBarrierClick: () {
-                      context.goNamed(MessagesPage.name);
-                      ShowCaseWidget.of(context).next();
-                    },
-                    disposeOnTap: false,
-                    child: ListTile(
-                      leading: const Icon(Icons.mail),
-                      title: const Text('Messages'),
-                      onTap: () {
-                        //closes the drawer
-                        Navigator.pop(context);
-                        //opens the messages page
-                        context.goNamed(MessagesPage.name);
-                      },
-                    ),
                   ),
 
                   Divider(
@@ -371,22 +270,4 @@ class UserProfileDrawer extends StatelessWidget {
       },
     );
   }
-}
-
-void _showlogBookOnboarding({
-  required BuildContext context,
-  required AppState state,
-}) {
-  showDialog<AlertDialog>(
-    context: context,
-    builder: (context) => ShowCaseWidget(
-      builder: (dialogContext) => LogViewDialog(
-        appContext: context,
-        onBoarding: state.showOnboarding,
-        name: state.viewingProfile?.name ?? state.usersProfile!.name,
-        notes: state.viewingProfile?.notes ?? state.usersProfile!.notes,
-        isRider: true,
-      ),
-    ),
-  );
 }
