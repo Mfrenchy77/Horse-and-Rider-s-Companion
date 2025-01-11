@@ -72,7 +72,8 @@ class _CommentItemState extends State<CommentItem> {
               // This is the box that will show a colored boarder if
               // the comment id a child of the parent comment
               child: ColoredBox(
-                color: HorseAndRidersTheme().getTheme().primaryColor,
+                color: Theme.of(context).appBarTheme.backgroundColor ??
+                    Colors.white,
                 child: Padding(
                   padding: EdgeInsets.only(left: isParent ? 5 : 0),
                   child: Column(
