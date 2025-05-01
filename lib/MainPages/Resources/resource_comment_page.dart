@@ -269,7 +269,7 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                                     index;
                                 return ColoredBox(
                                   color: isCurrent
-                                      ? Colors.blue.withOpacity(0.1)
+                                      ? Colors.blue.withValues(alpha: .1)
                                       : Colors.transparent,
                                   child: CommentItem(
                                     key: Key(item.comment!.id!),

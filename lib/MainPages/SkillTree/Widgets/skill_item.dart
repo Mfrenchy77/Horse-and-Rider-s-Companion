@@ -39,7 +39,7 @@ class _SkillItemState extends State<SkillItem> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: .2),
             ),
           ],
           borderRadius: BorderRadius.circular(20),
@@ -145,7 +145,7 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         color: _color(difficulty),
         shadows: [
           Shadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: .5),
             offset: const Offset(1, 1),
           ),
         ],
@@ -156,7 +156,7 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         color: _color(difficulty),
         shadows: [
           Shadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: .5),
             offset: const Offset(1, 1),
           ),
         ],
@@ -167,7 +167,7 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         color: _color(difficulty),
         shadows: [
           Shadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: .5),
             offset: const Offset(1, 1),
           ),
         ],

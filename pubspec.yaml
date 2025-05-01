@@ -9,7 +9,7 @@ dependencies:
   authentication_repository:
     path: packages/authentication_repository
   auto_size_text: ^3.0.0
-  bloc: ^8.1.0
+  bloc: ^9.0.0
   cache:
     path: packages/cache
   cached_network_image: ^3.2.3
@@ -28,7 +28,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_adaptive_scaffold: ^0.3.1
-  flutter_bloc: ^8.1.1
+  flutter_bloc: ^9.0.0
   flutter_inappwebview: ^6.0.0
   flutter_launcher_icons: ^0.14.1
   flutter_localizations:
@@ -60,7 +60,7 @@ dependencies:
   timeago: ^3.3.0
   universal_html: ^2.2.4
   url_launcher: ^6.1.7
-  vibration: ^2.0.1
+  vibration: ^3.1.1
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -68,11 +68,11 @@ dependencies:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dev_dependencies:
-  bloc_test: ^9.0.0
+  bloc_test: ^10.0.0
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.1
-  very_good_analysis: ^6.0.0
+  very_good_analysis: ^7.0.0
 environment:
   sdk: '>= 3.0.0'
 flutter:

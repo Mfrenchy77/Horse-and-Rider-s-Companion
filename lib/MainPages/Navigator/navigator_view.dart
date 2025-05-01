@@ -227,9 +227,7 @@ class NavigatorView extends StatelessWidget {
                                   items: _buildBottomNavigationBarItems(
                                     isForRider: state.isForRider,
                                   ),
-                                  selectedItemColor: HorseAndRidersTheme()
-                                      .getTheme()
-                                      .primaryColor,
+                                  selectedItemColor: Colors.white,
                                   unselectedItemColor: Colors.grey,
                                   type: BottomNavigationBarType
                                       .fixed, // Adjust as needed

@@ -22,7 +22,7 @@ class ProfilePhoto extends StatelessWidget {
                 return Scaffold(
                   backgroundColor: Colors.transparent,
                   appBar: AppBar(
-                    backgroundColor: Colors.black.withOpacity(0.5),
+                    backgroundColor: Colors.black.withValues(alpha: .5),
                     leading: IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.pop(context),

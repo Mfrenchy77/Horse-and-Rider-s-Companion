@@ -47,7 +47,7 @@ class SkillTypeIcon extends StatelessWidget {
       color: iconColor,
       shadows: [
         Shadow(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: .5),
           offset: const Offset(1, 1),
         ),
       ],

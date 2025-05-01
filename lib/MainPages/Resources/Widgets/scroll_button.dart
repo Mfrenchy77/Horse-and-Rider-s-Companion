@@ -1,5 +1,7 @@
 // lib/MainPages/Resources/Widgets/scroll_buttons.dart
 
+// ignore_for_file: prefer_int_literals
+
 import 'package:flutter/material.dart';
 import 'package:vibration/vibration.dart';
 
@@ -17,6 +19,7 @@ class ScrollButton extends StatefulWidget {
   final VoidCallback onScrollDown;
 
   @override
+  // ignore: library_private_types_in_public_api
   _ScrollButtonState createState() => _ScrollButtonState();
 }
 
@@ -107,8 +110,9 @@ class _ScrollButtonState extends State<ScrollButton>
               key: const Key('ScrollUpButton'),
               onPressed: _onScrollUpPressed,
               heroTag: 'scrollUp',
-              backgroundColor:
-                  widget.isAtFirstParent ? Colors.grey.withOpacity(0.6) : null,
+              backgroundColor: widget.isAtFirstParent
+                  ? Colors.grey.withValues(alpha: .6)
+                  : null,
               tooltip: 'Scroll to previous parent comment',
               child: const Icon(Icons.arrow_drop_up),
             ),
@@ -127,8 +131,9 @@ class _ScrollButtonState extends State<ScrollButton>
               key: const Key('ScrollDownButton'),
               onPressed: _onScrollDownPressed,
               heroTag: 'scrollDown',
-              backgroundColor:
-                  widget.isAtLastParent ? Colors.grey.withOpacity(0.6) : null,
+              backgroundColor: widget.isAtLastParent
+                  ? Colors.grey.withValues(alpha: .6)
+                  : null,
               tooltip: 'Scroll to next parent comment',
               child: const Icon(Icons.arrow_drop_down),
             ),

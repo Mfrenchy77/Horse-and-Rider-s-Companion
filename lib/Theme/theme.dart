@@ -136,6 +136,11 @@ final mainThemeLight = ThemeData(
       const TextStyle(color: Colors.white),
     ),
   ),
+  bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    backgroundColor: ColorConst.mainPrimaryLight,
+    selectedItemColor: Colors.white,
+    unselectedItemColor: Colors.grey,
+  ),
   navigationRailTheme: NavigationRailThemeData(
     backgroundColor: ColorConst.mainPrimaryLight,
     unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
