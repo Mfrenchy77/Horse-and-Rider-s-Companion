@@ -212,7 +212,7 @@ class RiderLocation extends StatelessWidget {
                                   '';
                           final locations =
                               state.prediction?.results[postalCode];
-                          final controller = ExpansionTileController();
+                          final controller = ExpansibleController();
                           return ExpansionTile(
                             controller: controller,
                             initiallyExpanded: true,

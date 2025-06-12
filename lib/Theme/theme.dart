@@ -156,7 +156,9 @@ final mainThemeLight = ThemeData(
     color: ColorConst.mainPrimaryLight,
   ),
   cardColor: ColorConst.mainBackgroundLight,
-  dialogBackgroundColor: ColorConst.mainBackgroundLight,
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.mainBackgroundLight,
+  ),
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.mainBackgroundLight,
   ),
@@ -187,13 +189,14 @@ final mainThemeDark = ThemeData(
     color: ColorConst.cardDark,
   ),
   cardColor: ColorConst.cardDark,
-  cardTheme: const CardTheme(
+  cardTheme: const CardThemeData(
     color: ColorConst.cardDark,
   ),
-  dialogBackgroundColor: ColorConst.mainBackgroundDark,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.mainBackgroundDark,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.mainBackgroundDark),
 );
 
 ///     Spring Theme
@@ -226,10 +229,11 @@ final springTheme = ThemeData(
     color: ColorConst.springPrimaryLight,
   ),
   cardColor: ColorConst.springBackgroundLight,
-  dialogBackgroundColor: ColorConst.springBackgroundLight,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.springBackgroundLight,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.springBackgroundLight),
 );
 
 final springThemeDark = ThemeData(
@@ -261,10 +265,11 @@ final springThemeDark = ThemeData(
     color: ColorConst.springPrimaryDark,
   ),
   cardColor: ColorConst.springBackgroundDark,
-  dialogBackgroundColor: ColorConst.springBackgroundDark,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.springBackgroundDark,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.springBackgroundDark),
 );
 
 ///   Summer Theme
@@ -297,10 +302,11 @@ final summerTheme = ThemeData(
     color: ColorConst.summerPrimaryLight,
   ),
   cardColor: ColorConst.summerBackgroundLight,
-  dialogBackgroundColor: ColorConst.summerBackgroundLight,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.summerBackgroundLight,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.summerBackgroundLight),
 );
 
 final summerThemeDark = ThemeData(
@@ -321,10 +327,11 @@ final summerThemeDark = ThemeData(
     color: ColorConst.summerPrimaryDark,
   ),
   cardColor: ColorConst.summerBackgroundDark,
-  dialogBackgroundColor: ColorConst.summerBackgroundDark,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.summerBackgroundDark,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.summerBackgroundDark),
 );
 
 ///   Autumn Theme
@@ -356,10 +363,11 @@ final autumnTheme = ThemeData(
     color: ColorConst.fallPrimaryLight,
   ),
   cardColor: ColorConst.fallBackgroundLight,
-  dialogBackgroundColor: ColorConst.fallBackgroundLight,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.fallBackgroundLight,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.fallBackgroundLight),
 );
 
 final autumnThemeDark = ThemeData(
@@ -373,10 +381,11 @@ final autumnThemeDark = ThemeData(
     color: ColorConst.fallPrimaryLight,
   ),
   cardColor: ColorConst.fallPrimaryDark,
-  dialogBackgroundColor: ColorConst.fallPrimaryDark,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.fallPrimaryDark,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.fallPrimaryDark),
 );
 
 ///   Winter Theme
@@ -407,10 +416,11 @@ final winterTheme = ThemeData(
     backgroundColor: ColorConst.winterPrimaryLight,
   ),
   cardColor: ColorConst.winterPrimaryLight,
-  dialogBackgroundColor: ColorConst.winterBackgroundLight,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.winterBackgroundLight,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.winterBackgroundLight),
 );
 
 final winterThemeDark = ThemeData(
@@ -431,7 +441,9 @@ final winterThemeDark = ThemeData(
     color: ColorConst.winterPrimaryDark,
   ),
   cardColor: ColorConst.winterBackgroundDark,
-  dialogBackgroundColor: ColorConst.winterBackgroundDark,
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.winterBackgroundDark,
+  ),
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.winterBackgroundDark,
   ),
@@ -467,8 +479,10 @@ final halloweenTheme = ThemeData(
     color: ColorConst.halloweenPrimaryLight,
   ),
   cardColor: ColorConst.halloweenBackgroundLight,
-  dialogBackgroundColor: ColorConst.halloweenBackgroundLight,
   drawerTheme: const DrawerThemeData(
+    backgroundColor: ColorConst.halloweenBackgroundLight,
+  ),
+  dialogTheme: const DialogThemeData(
     backgroundColor: ColorConst.halloweenBackgroundLight,
   ),
 );
@@ -502,8 +516,10 @@ final halloweenThemeDark = ThemeData(
     color: ColorConst.halloweenPrimaryDark,
   ),
   cardColor: ColorConst.halloweenBackgroundDark,
-  dialogBackgroundColor: ColorConst.halloweenBackgroundDark,
   drawerTheme: const DrawerThemeData(
+    backgroundColor: ColorConst.halloweenBackgroundDark,
+  ),
+  dialogTheme: const DialogThemeData(
     backgroundColor: ColorConst.halloweenBackgroundDark,
   ),
 );
@@ -542,8 +558,10 @@ final christmasTheme = ThemeData(
   ),
   cardColor: ColorConst.christmasBackgroundLight,
   secondaryHeaderColor: ColorConst.christmasPrimaryLight,
-  dialogBackgroundColor: ColorConst.christmasBackgroundLight,
   drawerTheme: const DrawerThemeData(
+    backgroundColor: ColorConst.christmasBackgroundLight,
+  ),
+  dialogTheme: const DialogThemeData(
     backgroundColor: ColorConst.christmasBackgroundLight,
   ),
 );
@@ -569,8 +587,10 @@ final christmasThemeDark = ThemeData(
     color: ColorConst.christmasPrimaryDark,
   ),
   cardColor: ColorConst.christmasBackgroundDark,
-  dialogBackgroundColor: ColorConst.christmasBackgroundDark,
   drawerTheme: const DrawerThemeData(
+    backgroundColor: ColorConst.christmasBackgroundDark,
+  ),
+  dialogTheme: const DialogThemeData(
     backgroundColor: ColorConst.christmasBackgroundDark,
   ),
 );
@@ -605,10 +625,11 @@ final easterTheme = ThemeData(
     color: ColorConst.easterPrimaryLight,
   ),
   cardColor: ColorConst.easterBackgroundLight,
-  dialogBackgroundColor: ColorConst.easterBackgroundLight,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.easterBackgroundLight,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.easterBackgroundLight),
 );
 
 final easterThemeDark = ThemeData(
@@ -640,8 +661,9 @@ final easterThemeDark = ThemeData(
     color: ColorConst.easterPrimaryDark,
   ),
   cardColor: ColorConst.easterBackgroundDark,
-  dialogBackgroundColor: ColorConst.easterBackgroundDark,
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.easterBackgroundDark,
   ),
+  dialogTheme:
+      const DialogThemeData(backgroundColor: ColorConst.easterBackgroundDark),
 );

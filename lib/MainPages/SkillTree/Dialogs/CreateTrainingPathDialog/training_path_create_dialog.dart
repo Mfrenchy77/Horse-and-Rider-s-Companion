@@ -270,7 +270,6 @@ Widget _search() {
               suggestionState:
                   state.isSearch ? Suggestion.expand : Suggestion.hidden,
               inputType: TextInputType.text,
-              hint: 'Add Skills to Training Path',
               onSearchTextChanged: (query) {
                 trainingPathcubit.searchQueryChanged(query: query);
                 return state.searchList

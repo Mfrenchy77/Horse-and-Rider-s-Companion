@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_pat
 
 class SkillTreePrimaryView extends StatelessWidget {
   const SkillTreePrimaryView({super.key});
+// TODO(mfrenchy): Fix the routing logic here. the primary view should show the right screen and the  back button should return  to the skill tree if we are not in a split screen
 
   @override
   Widget build(BuildContext context) {

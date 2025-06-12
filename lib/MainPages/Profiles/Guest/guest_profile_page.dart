@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Guest/guest_profile_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Guest/guest_profile.dart';
 
 class GuestProfilePage extends StatelessWidget {
   const GuestProfilePage({super.key});
@@ -10,6 +10,6 @@ class GuestProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return
         //const NavigatorView(child:
-        const GuestProfileView();
+        const GuestProfile();
   }
 }

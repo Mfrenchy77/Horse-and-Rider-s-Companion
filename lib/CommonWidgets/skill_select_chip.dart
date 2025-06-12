@@ -21,6 +21,7 @@ class SkillSelectChip extends StatefulWidget {
   final double? padding;
 
   @override
+  // ignore: library_private_types_in_public_api
   _SkillSelectChipState createState() => _SkillSelectChipState();
 }
 

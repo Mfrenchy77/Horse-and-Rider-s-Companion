@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile.dart';
 
 class HorseProfilePage extends StatelessWidget {
   const HorseProfilePage({super.key, required this.horseId});

@@ -734,7 +734,7 @@ Widget _horseLocation({
                     final postalCode =
                         state.prediction?.results.keys.elementAt(index) ?? '';
                     final locations = state.prediction?.results[postalCode];
-                    final controller = ExpansionTileController();
+                    final controller = ExpansibleController();
                     return ExpansionTile(
                       controller: controller,
                       initiallyExpanded: true,

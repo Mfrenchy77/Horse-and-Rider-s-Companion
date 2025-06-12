@@ -8,7 +8,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
-import 'package:horseandriderscompanion/MainPages/Navigator/navigator_view.dart';
+import 'package:horseandriderscompanion/MainPages/Navigator/navigation_view.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
@@ -151,11 +151,11 @@ class Routes {
           name: AuthPage.name,
           builder: (context, state) => const AuthPage(),
         ),
-       
+
         //Rider Profile navigation
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) =>
-              NavigatorView(child: navigationShell),
+              NavigationView(child: navigationShell),
           branches: [
             // RiderProfilePage index 0
             StatefulShellBranch(

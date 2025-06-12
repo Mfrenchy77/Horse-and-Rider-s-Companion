@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Guest/guest_profile_view.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Guest/guest_profile.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -23,7 +23,7 @@ class ProfilePage extends StatelessWidget {
         // show the profile
 
         return state.isGuest || state.usersProfile == null
-            ? const GuestProfileView(
+            ? const GuestProfile(
                 key: Key('GuestProfileView'),
               )
             : RiderProfileView(

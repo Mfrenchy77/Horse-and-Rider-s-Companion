@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_view.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resources_view.dart';
 
 class ResourcesPage extends StatelessWidget {
   const ResourcesPage({super.key});

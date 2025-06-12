@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree.dart';
 
 class SkillTreePage extends StatelessWidget {
   const SkillTreePage({super.key});

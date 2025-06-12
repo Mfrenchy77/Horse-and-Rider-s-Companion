@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile.dart';
 
 class ViewingProfilePage extends StatelessWidget {
   const ViewingProfilePage({super.key, required this.id});

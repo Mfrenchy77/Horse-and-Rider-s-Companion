@@ -26,12 +26,7 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                 suggestionState:
                     state.isSearch ? Suggestion.expand : Suggestion.hidden,
                 inputType: TextInputType.name,
-                hint: state.skillTreeNavigation == SkillTreeNavigation.SkillList
-                    ? 'Search Skills'
-                    : state.skillTreeNavigation ==
-                            SkillTreeNavigation.SkillLevel
-                        ? 'Search Resources'
-                        : 'Search Training Paths',
+
                 onSearchTextChanged: (query) {
                   state.skillTreeNavigation == SkillTreeNavigation.SkillList
                       ? cubit.skillSearchQueryChanged(searchQuery: query)

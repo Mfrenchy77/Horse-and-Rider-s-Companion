@@ -21,6 +21,7 @@ class ResourceCommentPage extends StatefulWidget {
   final String id;
 
   @override
+  // ignore: library_private_types_in_public_api
   _ResourceCommentPageState createState() => _ResourceCommentPageState();
 }
 

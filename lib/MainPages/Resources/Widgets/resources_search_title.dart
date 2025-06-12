@@ -16,11 +16,11 @@ class ResourcesSearchTitle extends StatelessWidget {
         return state.isSearch
             ? SearchField<String>(
                 autofocus: true,
+
                 textInputAction: TextInputAction.search,
 
                 // textCapitalization: TextCapitalization.sentences,
                 inputType: TextInputType.text,
-                hint: 'Search Resources',
                 onSearchTextChanged: (query) {
                   cubit.resourceSearchQueryChanged(searchQuery: query);
                   return state.searchList
