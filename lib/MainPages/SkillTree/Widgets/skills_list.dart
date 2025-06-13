@@ -9,7 +9,9 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillsListView extends StatelessWidget {
-  const SkillsListView({super.key});
+  const SkillsListView({this.onSkillSelected, super.key});
+
+  final VoidCallback? onSkillSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class SkillsListView extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         final skills = state.sortedSkills;
         debugPrint('SkillsListView: ${skills.length}');
-        
+
         return Scaffold(
           floatingActionButton: Visibility(
             // ignore: use_if_null_to_convert_nulls_to_bools
@@ -122,9 +124,11 @@ class SkillsListView extends StatelessWidget {
                               onTap: () {
                                 cubit
                                   ..setFromSkills()
-                                  ..navigateToSkillLevel(
-                                    skill: skill,
-                                  );
+                                  ..navigateToSkillLevel(skill: skill);
+                                if (onSkillSelected != null &&
+                                    MediaQuery.of(context).size.width < 1024) {
+                                  onSkillSelected!();
+                                }
                               },
                               onEdit: () {
                                 if (cubit.canEditSkill(skill)) {

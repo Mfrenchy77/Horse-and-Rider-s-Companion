@@ -7,8 +7,8 @@ import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/training_path_create_dialog.dart';
 
 class TrainingPathListView extends StatelessWidget {
-  const TrainingPathListView({super.key});
-
+  const TrainingPathListView({this.onTrainingPathSelected, super.key});
+  final VoidCallback? onTrainingPathSelected;
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
@@ -112,6 +112,11 @@ class TrainingPathListView extends StatelessWidget {
                                   ),
                             onTap: () {
                               debugPrint('Clicked on ${trainingPath?.name}');
+                              if (onTrainingPathSelected != null &&
+                                  MediaQuery.of(context).size.width < 1024) {
+                                onTrainingPathSelected!();
+                              }
+
                               cubit.navigateToTrainingPath(
                                 trainingPath: trainingPath,
                               );

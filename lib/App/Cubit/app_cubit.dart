@@ -3151,6 +3151,11 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Skill Tree Tab Navigation
+  void setSkillTreeTabIndex(int index) {
+    emit(state.copyWith(skillTreeTabIndex: index));
+  }
+
   /// Set the page status to Loading
   void setLoading() {
     emit(

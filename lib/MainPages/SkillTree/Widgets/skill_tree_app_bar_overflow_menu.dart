@@ -12,84 +12,43 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final isEditor = state.usersProfile?.editor ?? false;
+
+        final menuItems = <PopupMenuEntry<String>>[];
+
+        // Add sort option only for skill list tab
+        if (state.skillTreeTabIndex == 0) {
+          menuItems.add(
+            const PopupMenuItem(
+              value: 'Sort',
+              child: Text('Sort'),
+            ),
+          );
+        }
+
+        // Add edit toggle if user is editor
+        if (!state.isGuest && isEditor) {
+          menuItems.add(
+            const PopupMenuItem(
+              value: 'Edit',
+              child: Text('Toggle Edit Controls'),
+            ),
+          );
+        }
+
+        if (menuItems.isEmpty) return const SizedBox.shrink();
+
         return PopupMenuButton<String>(
-          itemBuilder: (context) {
-            switch (state.skillTreeNavigation) {
-              case SkillTreeNavigation.SkillList:
-                return [
-                  const PopupMenuItem(
-                    value: 'Sort',
-                    child: Text('Sort'),
-                  ),
-                  const PopupMenuItem(
-                    value: 'Training Paths',
-                    child: Text('Training Paths'),
-                  ),
-                  if (!state.isGuest && isEditor)
-                    const PopupMenuItem(
-                      value: 'Edit',
-                      child: Text('Toggle Edit Controls'),
-                    ),
-                ];
-              case SkillTreeNavigation.TrainingPathList:
-                return [
-                  const PopupMenuItem(
-                    value: 'Skills',
-                    child: Text('Skills'),
-                  ),
-                  if (!state.isGuest && isEditor)
-                    const PopupMenuItem(
-                      value: 'Edit',
-                      child: Text('Toggle Edit Controls'),
-                    ),
-                ];
-              case SkillTreeNavigation.TrainingPath:
-                return [
-                  const PopupMenuItem(
-                    value: 'Skills',
-                    child: Text('Skills'),
-                  ),
-                  if (!state.isGuest && isEditor)
-                    const PopupMenuItem(
-                      value: 'Edit',
-                      child: Text('Toggle Edit Controls'),
-                    ),
-                ];
-              case SkillTreeNavigation.SkillLevel:
-                return [
-                  const PopupMenuItem(
-                    value: 'Skills',
-                    child: Text('Skills'),
-                  ),
-                  const PopupMenuItem(
-                    value: 'Training Paths',
-                    child: Text('Training Paths'),
-                  ),
-                  if (!state.isGuest && isEditor)
-                    const PopupMenuItem(
-                      value: 'Edit',
-                      child: Text('Toggle Edit Controls'),
-                    ),
-                ];
-            }
-          },
+          itemBuilder: (context) => menuItems,
           onSelected: (value) {
             switch (value) {
-              case 'Skills':
-                cubit.navigateToSkillsList();
-                break;
               case 'Edit':
                 cubit.toggleIsEditState();
                 break;
               case 'Sort':
-                // open the sort dialog
                 showDialog<AlertDialog>(
                   context: context,
                   builder: (_) => const SkillSortDialog(),
                 );
-                break;
-              case 'Training Paths':
-                cubit.navigateToTrainingPathList();
                 break;
             }
           },

@@ -141,6 +141,7 @@ class AppState extends Equatable {
     this.user = User.empty,
     this.allSkills = const [],
     this.resources = const [],
+    this.skillTreeTabIndex = 0,
     this.isFromProfile = false,
     this.searchList = const [],
     this.showOnboarding = false,
@@ -246,6 +247,9 @@ class AppState extends Equatable {
 
   /// Whether the BannerAd is ready to be shown.
   final bool isBannerAdReady;
+
+  /// Index of the Skill Tree Tabs
+  final int skillTreeTabIndex;
 
   /// The Unsorted list of Skills from the database
   final List<Skill?> allSkills;
@@ -363,6 +367,7 @@ class AppState extends Equatable {
     String? errorMessage,
     bool? showFirstLaunch,
     bool? isBannerAdReady,
+    int? skillTreeTabIndex,
     List<Message>? messages,
     List<Skill?>? allSkills,
     bool? isFromTrainingPath,
@@ -437,6 +442,7 @@ class AppState extends Equatable {
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       resourceComments: resourceComments ?? this.resourceComments,
       commentSortState: commentSortState ?? this.commentSortState,
+      skillTreeTabIndex: skillTreeTabIndex ?? this.skillTreeTabIndex,
       conversationState: conversationState ?? this.conversationState,
       conversationsSort: conversationsSort ?? this.conversationsSort,
       categorySortState: categorySortState ?? this.categorySortState,
@@ -499,6 +505,7 @@ class AppState extends Equatable {
         isBannerAdReady,
         resourceComments,
         commentSortState,
+        skillTreeTabIndex,
         conversationState,
         conversationsSort,
         conversationsState,
