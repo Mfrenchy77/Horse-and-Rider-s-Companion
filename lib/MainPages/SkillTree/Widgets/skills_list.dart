@@ -30,6 +30,7 @@ class SkillsListView extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         final skills = state.sortedSkills;
         debugPrint('SkillsListView: ${skills.length}');
+        debugPrint('All Skills: ${state.allSkills.length}');
 
         return Scaffold(
           floatingActionButton: Visibility(
@@ -43,10 +44,11 @@ class SkillsListView extends StatelessWidget {
                 onPressed: () => showDialog<CreateSkillDialog>(
                   context: context,
                   builder: (context) => CreateSkillDialog(
-                    isForRider: state.isForRider,
-                    isEdit: false,
                     // ignore: avoid_redundant_argument_values
                     skill: null,
+                    isEdit: false,
+                    allSkills: state.allSkills,
+                    isForRider: state.isForRider,
                     usersProfile: state.usersProfile!,
                     position: skills.isNotEmpty ? skills.length : 0,
                   ),
@@ -135,9 +137,10 @@ class SkillsListView extends StatelessWidget {
                                   showDialog<CreateSkillDialog>(
                                     context: context,
                                     builder: (context) => CreateSkillDialog(
-                                      isForRider: state.isForRider,
                                       isEdit: true,
                                       skill: skill,
+                                      allSkills: state.allSkills,
+                                      isForRider: state.isForRider,
                                       usersProfile: state.usersProfile!,
                                       position:
                                           skills.isNotEmpty ? skills.length : 0,

@@ -37,7 +37,7 @@ class SkillNode {
       name: map['name'] as String,
       skillId: map['skillId'] as String,
       position: map['position'] as int,
-      parentId: map['parentId'] as String,
+      parentId: map['parentId'] as String?,
     );
   }
 
@@ -55,7 +55,7 @@ class SkillNode {
       name: data['name'] as String,
       position: data['position'] as int,
       skillId: data['skillId'] as String,
-      parentId: data['parentId'] as String,
+      parentId: data['parentId'] as String?,
     );
   }
 

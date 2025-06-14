@@ -59,24 +59,36 @@ class TrainingPath {
   // ignore: sort_constructors_first
   factory TrainingPath.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
   ) {
     final data = snapshot.data();
+    if (data == null) {
+      throw StateError('Missing data for TrainingPath ${snapshot.id}');
+    }
+
+    // safely pull out the raw lists (or empty lists if missing)
+    final rawSkills = data['skills'] as List<dynamic>? ?? [];
+    final rawNodes = data['skillNodes'] as List<dynamic>? ?? [];
+
+    // filter + cast
+    final skills = rawSkills.whereType<String>().toList();
+
+    final skillNodes = rawNodes
+        .whereType<Map<String, dynamic>>()
+        .map(SkillNode.fromMap)
+        .toList();
+
     return TrainingPath(
-      id: data!['id'] as String,
+      id: data['id'] as String,
       name: data['name'] as String,
+      description: data['description'] as String,
       createdBy: data['createdBy'] as String,
       isForRider: data['isForRider'] as bool,
-      lastEditBy: data['lastEditBy'] as String,
       createdById: data['createdById'] as String,
-      description: data['description'] as String,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
+      lastEditBy: data['lastEditBy'] as String,
       lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
-      skills: (data['skills'] as List).map((e) => e as String).toList(),
-      skillNodes: (data['skillNodes'] as List<dynamic>)
-          .map((e) => SkillNode.fromMap(e as Map<String, dynamic>))
-          .toList(),
+      skills: skills,
+      skillNodes: skillNodes,
     );
   }
 

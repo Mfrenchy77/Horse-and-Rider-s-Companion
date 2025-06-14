@@ -2,86 +2,105 @@ part of 'create_training_path_cubit.dart';
 
 class CreateTrainingPathState extends Equatable {
   const CreateTrainingPathState({
+    this.error,
     this.trainingPath,
     this.usersProfile,
     this.isSearch = false,
     this.searchQuery = '',
-    this.skills = const [],
     this.isForRider = false,
-    this.allSkills = const [],
-    this.skillNodes = const [],
-    this.searchList = const [],
-    this.removedSkills = const [],
-    this.selectedSkills = const [],
+    this.rootNodes = const [],
+    this.childNodes = const {},
+    this.availableSkills = const [],
+    this.initialAllSkills = const [],
     this.status = FormStatus.initial,
     this.name = const SingleWord.pure(),
     this.description = const SingleWord.pure(),
   });
 
+  /// Error message
+  final String? error;
+
+  /// Are we showing the search input?
   final bool isSearch;
+
+  /// Is this path for a rider (vs horse)?
   final bool isForRider;
+
+  /// Name & description validation
   final SingleWord name;
-  final String searchQuery;
+
+  /// Form submission status
   final FormStatus status;
-  final List<String> skills;
-  final List<Skill?> allSkills;
+
+  /// Current search text (for filtering availableSkills)
+  final String searchQuery;
+
   final SingleWord description;
-  final List<String?>? searchList;
-  final RiderProfile? usersProfile;
-  final List<Skill?> removedSkills;
+
+  /// For edit mode: the original TrainingPath
   final TrainingPath? trainingPath;
-  final List<Skill?> selectedSkills;
-  final List<SkillNode?> skillNodes;
+
+  /// Who’s creating/editing
+  final RiderProfile? usersProfile;
+
+  /// Skills not yet placed into the path
+  final List<Skill> availableSkills;
+
+  /// Top‐level nodes in the training path
+  final List<SkillNode> rootNodes;
+
+  /// The master list of all skills (never mutated)
+  final List<Skill> initialAllSkills;
+
+  /// Children keyed by parentNode.id
+  final Map<String, List<SkillNode>> childNodes;
 
   CreateTrainingPathState copyWith({
+    String? error,
     bool? isSearch,
-    SingleWord? name,
     bool? isForRider,
-    String? searchQuery,
+    SingleWord? name,
     FormStatus? status,
-    List<String>? skills,
-    List<Skill?>? allSkills,
+    String? searchQuery,
     SingleWord? description,
-    List<String?>? searchList,
-    RiderProfile? usersProfile,
+    List<SkillNode>? rootNodes,
     TrainingPath? trainingPath,
-    List<Skill?>? removedSkills,
-    List<Skill?>? selectedSkills,
-    List<SkillNode?>? skillNodes,
+    RiderProfile? usersProfile,
+    List<Skill>? availableSkills,
+    List<Skill>? initialAllSkills,
+    Map<String, List<SkillNode>>? childNodes,
   }) {
     return CreateTrainingPathState(
       name: name ?? this.name,
-      skills: skills ?? this.skills,
+      error: error ?? this.error,
       status: status ?? this.status,
       isSearch: isSearch ?? this.isSearch,
-      allSkills: allSkills ?? this.allSkills,
+      rootNodes: rootNodes ?? this.rootNodes,
+      childNodes: childNodes ?? this.childNodes,
       isForRider: isForRider ?? this.isForRider,
-      searchList: searchList ?? this.searchList,
-      skillNodes: skillNodes ?? this.skillNodes,
       searchQuery: searchQuery ?? this.searchQuery,
       description: description ?? this.description,
-      usersProfile: usersProfile ?? this.usersProfile,
       trainingPath: trainingPath ?? this.trainingPath,
-      removedSkills: removedSkills ?? this.removedSkills,
-      selectedSkills: selectedSkills ?? this.selectedSkills,
+      usersProfile: usersProfile ?? this.usersProfile,
+      availableSkills: availableSkills ?? this.availableSkills,
+      initialAllSkills: initialAllSkills ?? this.initialAllSkills,
     );
   }
 
   @override
   List<Object?> get props => [
         name,
+        error,
         status,
-        skills,
         isSearch,
-        allSkills,
-        searchList,
-        skillNodes,
+        rootNodes,
+        childNodes,
         isForRider,
-        searchQuery,
         description,
-        usersProfile,
+        searchQuery,
         trainingPath,
-        removedSkills,
-        selectedSkills,
+        usersProfile,
+        availableSkills,
+        initialAllSkills,
       ];
 }

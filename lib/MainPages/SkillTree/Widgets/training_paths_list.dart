@@ -1,8 +1,10 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/training_path_create_dialog.dart';
 
@@ -12,12 +14,14 @@ class TrainingPathListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.trainingPaths != current.trainingPaths,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 
-        final trainingPaths = state.trainingPaths
-            .where((element) => element?.isForRider == state.isForRider)
-            .toList();
+        // final trainingPaths = state.trainingPaths
+        //     .where((element) => element?.isForRider == state.isForRider)
+        //     .toList();
         return Scaffold(
           floatingActionButton: Visibility(
             visible: !state.isGuest && state.isEdit,
@@ -31,7 +35,10 @@ class TrainingPathListView extends StatelessWidget {
                     usersProfile: state.usersProfile!,
                     trainingPath: null,
                     isEdit: false,
-                    allSkills: state.allSkills,
+                    allSkills: state.sortedSkills
+                        .where((s) => s != null)
+                        .cast<Skill>()
+                        .toList(),
                     isForRider: true,
                   ),
                 ),
@@ -53,78 +60,98 @@ class TrainingPathListView extends StatelessWidget {
                 ),
               ),
               gap(),
-              if (trainingPaths.isNotEmpty)
+              if (state.trainingPaths.isNotEmpty)
                 ListView.builder(
                   shrinkWrap: true,
-                  itemCount: trainingPaths.length,
+                  itemCount: state.trainingPaths.length,
                   itemBuilder: (context, index) {
-                    final trainingPath = trainingPaths[index];
-                    return Card(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton(
-                            onPressed: state.usersProfile?.email ==
-                                    trainingPath?.createdById
-                                ? null
-                                : () => context.goNamed(
-                                      ViewingProfilePage.name,
-                                      pathParameters: {
-                                        ViewingProfilePage.pathParams:
-                                            trainingPath!.createdById,
-                                      },
-                                    ),
-                            child: Text(trainingPath?.createdBy ?? ''),
-                          ),
-                          ListTile(
-                            trailing: !state.isEdit || state.isGuest
-                                ? null
-                                : PopupMenuButton<String>(
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        child: const Text('Edit'),
-                                        onTap: () {
-                                          if (cubit.canEditTrainingPath(
-                                            trainingPath!,
-                                          )) {
-                                            showDialog<
-                                                CreateTrainingPathDialog>(
-                                              context: context,
-                                              builder: (context) =>
-                                                  CreateTrainingPathDialog(
-                                                usersProfile:
-                                                    state.usersProfile!,
-                                                trainingPath: trainingPath,
-                                                isEdit: true,
-                                                allSkills: state.allSkills,
-                                                isForRider: true,
-                                              ),
-                                            );
-                                          } else {
-                                            cubit.createError(
-                                              'You do not have permission to'
-                                              ' edit this training path',
-                                            );
-                                          }
-                                        },
+                    final trainingPath = state.trainingPaths[index];
+                    debugPrint(
+                      'Training Path: ${trainingPath?.name}, '
+                      'Nubmer of Skills: ${trainingPath?.skillNodes.length}',
+                    );
+                    return MaxWidthBox(
+                      maxWidth: 600,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Card(
+                          elevation: 8,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton(
+                                onPressed: state.usersProfile?.email ==
+                                        trainingPath?.createdById
+                                    ? null
+                                    : () => context.goNamed(
+                                          ViewingProfilePage.name,
+                                          pathParameters: {
+                                            ViewingProfilePage.pathParams:
+                                                trainingPath!.createdById,
+                                          },
+                                        ),
+                                child: Text(trainingPath?.createdBy ?? ''),
+                              ),
+                              ListTile(
+                                trailing: !state.isEdit || state.isGuest
+                                    ? null
+                                    : PopupMenuButton<String>(
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem(
+                                            child: const Text('Edit'),
+                                            onTap: () {
+                                              if (cubit.canEditTrainingPath(
+                                                trainingPath!,
+                                              )) {
+                                                showDialog<
+                                                    CreateTrainingPathDialog>(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      CreateTrainingPathDialog(
+                                                    usersProfile:
+                                                        state.usersProfile!,
+                                                    trainingPath: trainingPath,
+                                                    isEdit: true,
+                                                    allSkills: state
+                                                        .sortedSkills
+                                                        .where((s) => s != null)
+                                                        .cast<Skill>()
+                                                        .toList(),
+                                                    isForRider: true,
+                                                  ),
+                                                );
+                                              } else {
+                                                cubit.createError(
+                                                  'You do not have permission'
+                                                  ' to edit this training path',
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                            onTap: () {
-                              debugPrint('Clicked on ${trainingPath?.name}');
-                              if (onTrainingPathSelected != null &&
-                                  MediaQuery.of(context).size.width < 1024) {
-                                onTrainingPathSelected!();
-                              }
+                                onTap: () {
+                                  debugPrint(
+                                    'Clicked on ${trainingPath?.name}',
+                                  );
+                                  if (onTrainingPathSelected != null &&
+                                      MediaQuery.of(context).size.width <
+                                          1024) {
+                                    onTrainingPathSelected!();
+                                  }
 
-                              cubit.navigateToTrainingPath(
-                                trainingPath: trainingPath,
-                              );
-                            },
-                            title: Text(trainingPath?.name ?? ''),
-                            subtitle: Text(trainingPath?.description ?? ''),
+                                  cubit.navigateToTrainingPath(
+                                    trainingPath: trainingPath,
+                                  );
+                                },
+                                title: Text(trainingPath?.name ?? ''),
+                                subtitle: Text('${trainingPath?.description}'
+                                    ' Number of skills '
+                                    '${trainingPath?.skillNodes.length}'),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     );
                   },

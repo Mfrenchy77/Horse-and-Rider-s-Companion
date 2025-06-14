@@ -14,8 +14,9 @@ class CreateSkillDialog extends StatelessWidget {
     super.key,
     this.skill,
     required this.isEdit,
-    required this.isForRider,
     required int position,
+    required this.allSkills,
+    required this.isForRider,
     required RiderProfile usersProfile,
   })  : _position = position,
         _usersProfile = usersProfile;
@@ -24,6 +25,7 @@ class CreateSkillDialog extends StatelessWidget {
   final Skill? skill;
   final bool isForRider;
   final int _position;
+  final List<Skill?> allSkills;
   final RiderProfile _usersProfile;
 
   @override
@@ -33,6 +35,7 @@ class CreateSkillDialog extends StatelessWidget {
       child: BlocProvider(
         create: (context) => CreateSkillDialogCubit(
           skill: skill,
+          allSkills: allSkills,
           isForRider: isForRider,
           usersProfile: _usersProfile,
           skillsRepository: context.read<SkillTreeRepository>(),
@@ -64,6 +67,11 @@ class CreateSkillDialog extends StatelessWidget {
           child: BlocBuilder<CreateSkillDialogCubit, CreateSkillDialogState>(
             builder: (context, state) {
               final cubit = context.read<CreateSkillDialogCubit>();
+
+              final skills = cubit.sortSkillsByRider()
+                ..sort((a, b) => a!.skillName.compareTo(b!.skillName));
+              debugPrint('sorted skills: ${skills.length}');
+
               return Scaffold(
                 backgroundColor: Colors.transparent,
                 appBar: AppBar(
@@ -296,10 +304,43 @@ class CreateSkillDialog extends StatelessWidget {
                             cubit.skillCategoryChanged(value.first);
                           },
                         ),
+                        smallGap(),
 
-                        /// Filter chips of all the SubCategories,
-                        ///  set selected if the skill is in that subcategory
-                        /// and the user can select or deselect the subcategory
+                        /// Prerequisites
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Select Prerequisite Skills if any\n If '
+                              'there are no prerequisites, leave this blank'
+                              ' and the Skill will be considered'
+                              ' a "Base Skill"',
+                              textAlign: TextAlign.center,
+                            ),
+                            smallGap(),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 6,
+                              children: skills.map((s) {
+                                final selected =
+                                    state.prerequisites.contains(s?.id);
+                                return FilterChip(
+                                  label: Text(s!.skillName),
+                                  selected: selected,
+                                  onSelected: (bool value) {
+                                    debugPrint(
+                                      'Prerequisite Skill Selected: ${s.skillName}',
+                                    );
+
+                                    context
+                                        .read<CreateSkillDialogCubit>()
+                                        .prerequisitesChanged(s.id);
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

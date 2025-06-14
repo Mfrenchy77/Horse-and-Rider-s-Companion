@@ -62,20 +62,21 @@ class _SkillTreeViewState extends State<SkillTreeView>
   }
 
   void _handleBackPressed() {
-    if (_tabController.index > 0) {
-      final newIndex = _tabController.index - 1;
+    final index = _tabController.index;
+
+    if (index == 1 && _cubit.state.isFromTrainingPath) {
+      // Return to Training Path Detail
+      _tabController.animateTo(3);
+      _cubit
+        ..setSkillTreeTabIndex(3)
+        ..setIsFromTrainingPath(isFromTrainingPath: false);
+    } else if (index > 0) {
+      final newIndex = index - 1;
       _tabController.animateTo(newIndex);
       _cubit.setSkillTreeTabIndex(newIndex);
     } else {
-      _cubit.changeIndex(0);
+      _cubit.changeIndex(0); // Go back to profile
     }
-  }
-
-  /// Changes the current tab to the specified index and updates
-  ///  the cubit's state.
-  void _changeTab(int index) {
-    _tabController.animateTo(index);
-    _cubit.setSkillTreeTabIndex(index);
   }
 
   @override
@@ -83,51 +84,59 @@ class _SkillTreeViewState extends State<SkillTreeView>
     final isLargeScreen = MediaQuery.of(context).size.width >=
         SkillTreeView.splitScreenBreakpoint;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: _handleBackPressed,
+    return BlocListener<AppCubit, AppState>(
+      listenWhen: (previous, current) =>
+          previous.skillTreeTabIndex != current.skillTreeTabIndex,
+      listener: (context, state) {
+        if (_tabController.index != state.skillTreeTabIndex) {
+          _tabController.animateTo(state.skillTreeTabIndex);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(onPressed: _handleBackPressed),
+          centerTitle: true,
+          title: const SkillTreeSearchTitleBar(
+            key: Key('skillTreeSearchTitleBar'),
+          ),
+          actions: const [
+            AppBarSearchButton(),
+            SkillTreeAppBarOverFlowMenu(),
+          ],
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: isLargeScreen
+                ? const [
+                    Tab(text: 'Skills'),
+                    Tab(text: 'Training Paths'),
+                  ]
+                : const [
+                    Tab(text: 'Skills'),
+                    Tab(text: 'Skill Detail'),
+                    Tab(text: 'Training Paths'),
+                    Tab(text: 'Path Detail'),
+                  ],
+          ),
         ),
-        centerTitle: true,
-        title: const SkillTreeSearchTitleBar(
-          key: Key('skillTreeSearchTitleBar'),
-        ),
-        actions: const [
-          AppBarSearchButton(),
-          SkillTreeAppBarOverFlowMenu(),
-        ],
-        bottom: TabBar(
+        body: TabBarView(
           controller: _tabController,
-          tabs: isLargeScreen
+          children: isLargeScreen
               ? const [
-                  Tab(text: 'Skills'),
-                  Tab(text: 'Training Paths'),
+                  _SplitSkillsView(),
+                  _SplitTrainingPathsView(),
                 ]
-              : const [
-                  Tab(text: 'Skills'),
-                  Tab(text: 'Skill Detail'),
-                  Tab(text: 'Training Paths'),
-                  Tab(text: 'Path Detail'),
+              : [
+                  SkillsListView(
+                    onSkillSelected: () => _cubit.setSkillTreeTabIndex(1),
+                  ),
+                  const SkillLevelView(),
+                  TrainingPathListView(
+                    onTrainingPathSelected: () =>
+                        _cubit.setSkillTreeTabIndex(3),
+                  ),
+                  const TrainingPathView(),
                 ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: isLargeScreen
-            ? const [
-                _SplitSkillsView(),
-                _SplitTrainingPathsView(),
-              ]
-            : [
-                SkillsListView(
-                  onSkillSelected: () => _changeTab(1),
-                ),
-                const SkillLevelView(),
-                TrainingPathListView(
-                  onTrainingPathSelected: () => _changeTab(3),
-                ),
-                const TrainingPathView(),
-              ],
       ),
     );
   }

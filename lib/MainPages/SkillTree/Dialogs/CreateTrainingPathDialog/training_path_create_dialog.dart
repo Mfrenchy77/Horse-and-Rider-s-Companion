@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
@@ -9,8 +10,6 @@ import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dar
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:searchfield/searchfield.dart';
 
-///   This is the Dialog that is used to create a new TriainingPath
-/// or edit an existing TrainingPath
 class CreateTrainingPathDialog extends StatelessWidget {
   const CreateTrainingPathDialog({
     super.key,
@@ -23,526 +22,386 @@ class CreateTrainingPathDialog extends StatelessWidget {
 
   final TrainingPath? trainingPath;
   final bool isEdit;
-  final List<Skill?> allSkills;
+  final List<Skill> allSkills;
   final bool isForRider;
   final RiderProfile usersProfile;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => CreateTrainingPathCubit(
-        allSkills: allSkills,
-        isForRider: isForRider,
-        trainingPath: trainingPath,
-        usersProfile: usersProfile,
+      create: (_) => CreateTrainingPathCubit(
         trainingPathRepository: context.read<SkillTreeRepository>(),
+        allSkills: allSkills,
+        editing: trainingPath,
+        isForRider: isForRider,
+        user: usersProfile,
       ),
-      child: BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
-        builder: (context, state) {
-          final trainingPathcubit = context.read<CreateTrainingPathCubit>();
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Scaffold(
-              appBar: AppBar(
-                actions: [
-                  _search(),
-                  Visibility(
-                    visible: !state.isSearch,
-                    child: IconButton(
-                      onPressed: trainingPathcubit.isSearch,
-                      icon: const Icon(Icons.search),
+      child: BlocListener<CreateTrainingPathCubit, CreateTrainingPathState>(
+        listener: (context, state) {
+          final cubit = context.read<CreateTrainingPathCubit>();
+          if (state.status == FormStatus.success) {
+            Navigator.pop(context);
+          }
+          if (state.status == FormStatus.failure) {
+            // show error snackbar and then call reset error
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '$state.error',
+                      style: const TextStyle(color: Colors.white),
                     ),
+                    backgroundColor: Colors.red,
                   ),
-                ],
-                leading: IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                ),
-                title: Text(
-                  isEdit
-                      ? 'Edit ${state.trainingPath?.name} '
-                      : 'Create New Training Path '
-                          'for ${state.isForRider ? 'Horse' : 'Rider'}',
-                ),
+                ).closed.then((_) => cubit.resetError());
+            });
+          }
+        },
+        child: BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
+          builder: (context, state) {
+            final cubit = context.read<CreateTrainingPathCubit>();
+
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Form(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: <Widget>[
-                            MaxWidthBox(
-                              maxWidth: 900,
-                              child: Column(
-                                children: [
-                                  ///   Name
-                                  TextFormField(
-                                    textCapitalization:
-                                        TextCapitalization.words,
-                                    initialValue:
-                                        isEdit ? state.trainingPath?.name : '',
-                                    decoration: const InputDecoration(
-                                      labelText: 'Name',
-                                      border: UnderlineInputBorder(),
-                                    ),
-                                    onChanged: (value) => trainingPathcubit
-                                        .trainingPathNameChanged(name: value),
-                                  ),
-
-                                  ///   Description
-                                  gap(),
-                                  TextFormField(
-                                    minLines: 1,
-                                    maxLines: 10,
-                                    textCapitalization:
-                                        TextCapitalization.sentences,
-                                    initialValue: isEdit
-                                        ? state.trainingPath?.description
-                                        : '',
-                                    decoration: const InputDecoration(
-                                      labelText: 'Description',
-                                      border: UnderlineInputBorder(),
-                                    ),
-                                    onChanged: (value) => trainingPathcubit
-                                        .trainingPathDescriptionChanged(
-                                      description: value,
-                                    ),
-                                  ),
-                                  gap(),
-                                  SegmentedButton<bool>(
-                                    segments: const [
-                                      ButtonSegment(
-                                        value: false,
-                                        icon:
-                                            Icon(HorseAndRiderIcons.horseIcon),
-                                        label: Text('Horse'),
-                                        tooltip: 'Training Path is for a Horse',
+              child: Scaffold(
+                appBar: AppBar(
+                  actions: [
+                    if (state.isSearch) _buildSearch(context),
+                    if (!state.isSearch)
+                      IconButton(
+                        onPressed: cubit.isSearch,
+                        icon: const Icon(Icons.search),
+                      ),
+                  ],
+                  leading: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  title: Text(
+                    isEdit
+                        ? 'Edit ${state.trainingPath?.name}'
+                        : 'Create New Training Path for '
+                            '${state.isForRider ? 'Rider' : 'Horse'}',
+                  ),
+                ),
+                body: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Form(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: <Widget>[
+                              // ───────── Name / Description / Type ─────────
+                              MaxWidthBox(
+                                maxWidth: 900,
+                                child: Column(
+                                  children: [
+                                    TextFormField(
+                                      textCapitalization:
+                                          TextCapitalization.words,
+                                      initialValue: isEdit
+                                          ? state.trainingPath?.name
+                                          : '',
+                                      decoration: const InputDecoration(
+                                        labelText: 'Name',
+                                        border: UnderlineInputBorder(),
                                       ),
-                                      ButtonSegment(
-                                        value: true,
-                                        icon: Icon(Icons.person),
-                                        label: Text('Rider'),
-                                        tooltip: 'Training Path is for a Rider',
-                                      ),
-                                    ],
-                                    selected: <bool>{state.isForRider},
-                                    onSelectionChanged: (p0) =>
-                                        trainingPathcubit.isForHorse(),
-                                  ),
-                                  //checkbox for isForHorse
-                                  // CheckboxListTile(
-                                  //   title: Text(
-                                  //     state.isForHorse
-                                  //         ? 'Remove this check to mak
-                                  //e this Training '
-                                  //             'Path for a Rider'
-                                  //         : 'Check this to make this
-                                  // Training Path for '
-                                  //             'a Horse',
-                                  //   ),
-                                  //   value: state.isForHorse,
-                                  //   onChanged: (value) =>
-                                  //       trainingPathcubit.isForHorse(),
-                                  // ),
-                                ],
-                              ),
-                            ),
-                            gap(),
-                            const Divider(),
-                            gap(),
-                            Text(
-                              state.selectedSkills.isEmpty
-                                  ? 'Search and add Skill for '
-                                      'your training path'
-                                  : 'Drag and Drop Skills to the desired '
-                                      'level.\nDrop on top of another skill'
-                                      ' to make it a child of that skill.\n'
-                                      'Drop on the root to make it a root'
-                                      ' skill.',
-                            ),
-                            gap(),
-                            _selectedSkills(),
-                            gap(),
-                            _trainingPath(),
-                            gap(),
-                            MaxWidthBox(
-                              maxWidth: 900,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  //Delete Button
-                                  Visibility(
-                                    visible: state.trainingPath?.createdBy ==
-                                        usersProfile.name,
-                                    child: IconButton(
-                                      onPressed: () {
-                                        trainingPathcubit.deleteTrainingPath();
-                                        Navigator.pop(context);
-                                      },
-                                      icon: const Icon(Icons.delete),
+                                      onChanged: (v) => cubit
+                                          .trainingPathNameChanged(name: v),
                                     ),
-                                  ),
-
-                                  //Cancel Button
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                  gap(),
-
-                                  //Submit Button
-
-                                  FilledButton(
-                                    onPressed: state.skillNodes.isEmpty
-                                        ? null
-                                        : () {
-                                            trainingPathcubit
-                                                .createOrEditTrainingPath();
-                                            Navigator.pop(context);
-                                          },
-                                    child: state.status == FormStatus.submitting
-                                        ? const CircularProgressIndicator()
-                                        : Text(
-                                            isEdit ? 'Edit' : 'Submit',
-                                            textAlign: TextAlign.center,
+                                    gap(),
+                                    TextFormField(
+                                      minLines: 1,
+                                      maxLines: 10,
+                                      textCapitalization:
+                                          TextCapitalization.sentences,
+                                      initialValue: isEdit
+                                          ? state.trainingPath?.description
+                                          : '',
+                                      decoration: const InputDecoration(
+                                        labelText: 'Description',
+                                        border: UnderlineInputBorder(),
+                                      ),
+                                      onChanged: (v) =>
+                                          cubit.trainingPathDescriptionChanged(
+                                        description: v,
+                                      ),
+                                    ),
+                                    gap(),
+                                    SegmentedButton<bool>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: false,
+                                          icon: Icon(
+                                            HorseAndRiderIcons.horseIcon,
                                           ),
+                                          label: Text('Horse'),
+                                          tooltip:
+                                              'Training Path is for a Horse',
+                                        ),
+                                        ButtonSegment(
+                                          value: true,
+                                          icon: Icon(Icons.person),
+                                          label: Text('Rider'),
+                                          tooltip:
+                                              'Training Path is for a Rider',
+                                        ),
+                                      ],
+                                      selected: <bool>{state.isForRider},
+                                      onSelectionChanged: (_) =>
+                                          cubit.isForHorse(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              gap(),
+                              const Divider(),
+                              gap(),
+
+                              // ───────── Pool of Available Skills ─────────
+                              Text(
+                                state.availableSkills.isEmpty
+                                    ? 'All skills added to your path'
+                                    : 'Drag & Drop a skill '
+                                        'into the path below:',
+                              ),
+                              gap(),
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 4,
+                                children: state.availableSkills.map((skill) {
+                                  return Draggable<Skill>(
+                                    data: skill,
+                                    feedback: Material(
+                                      child: Chip(label: Text(skill.skillName)),
+                                    ),
+                                    childWhenDragging: Opacity(
+                                      opacity: 0.5,
+                                      child: Chip(label: Text(skill.skillName)),
+                                    ),
+                                    child: Chip(label: Text(skill.skillName)),
+                                  );
+                                }).toList(),
+                              ),
+
+                              gap(),
+
+                              // ───────── Training Path Hierarchy ─────────
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Drop skills to organize your path:',
+                                  ),
+                                  gap(),
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: [
+                                        // root nodes
+                                        Wrap(
+                                          spacing: 8,
+                                          children: state.rootNodes
+                                              .map(
+                                                (node) => _skillNodeCard(
+                                                  node,
+                                                  cubit,
+                                                  state,
+                                                ),
+                                              )
+                                              .toList(),
+                                        ),
+                                        gap(),
+                                        // drop-to-root target
+                                        if (state.availableSkills.isNotEmpty)
+                                          DragTarget<Skill>(
+                                            onWillAcceptWithDetails: (_) =>
+                                                true,
+                                            onAcceptWithDetails: (skill) =>
+                                                cubit.skillNodeSelected(
+                                              skillName: skill.data.skillName,
+                                            ),
+                                            builder: (ctx, __, ___) => Card(
+                                              color: Colors.grey.shade200,
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(8),
+                                                child: Text(
+                                                  'Drop Here to Add Root Skill',
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+
+                              gap(),
+
+                              // ───────── Buttons ─────────
+                              MaxWidthBox(
+                                maxWidth: 900,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    if (state.trainingPath?.createdBy ==
+                                        usersProfile.name)
+                                      IconButton(
+                                        onPressed: () {
+                                          cubit.deleteTrainingPath();
+                                          Navigator.pop(context);
+                                        },
+                                        icon: const Icon(Icons.delete),
+                                      ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    gap(),
+                                    FilledButton(
+                                      onPressed: state.rootNodes.isEmpty
+                                          ? null
+                                          : cubit.createOrEditTrainingPath,
+                                      child: state.status ==
+                                              FormStatus.submitting
+                                          ? const CircularProgressIndicator()
+                                          : Text(isEdit ? 'Edit' : 'Submit'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
-}
 
-Widget _search() {
-  return BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
-    builder: (context, state) {
-      final trainingPathcubit = context.read<CreateTrainingPathCubit>();
-      final focus = FocusNode();
-      return Visibility(
-        visible: state.isSearch,
-        child: Expanded(
+  /// SearchField overlay
+  Widget _buildSearch(BuildContext context) {
+    final cubit = context.read<CreateTrainingPathCubit>();
+    return BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
+      builder: (context, state) {
+        final focus = FocusNode();
+        return Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             child: SearchField<String>(
               autofocus: true,
               focusNode: focus,
-              onSuggestionTap: (value) {
-                debugPrint('Value: $value');
-                focus.unfocus();
-                trainingPathcubit.skillSelected(
-                  skillName: value.searchKey,
-                );
-              },
+              suggestions: state.availableSkills
+                  .where(
+                    (s) => s.skillName
+                        .toLowerCase()
+                        .contains(state.searchQuery.toLowerCase()),
+                  )
+                  .map(
+                    (s) => SearchFieldListItem<String>(
+                      s.skillName,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Text(s.skillName),
+                      ),
+                    ),
+                  )
+                  .toList(),
+              suggestionState:
+                  state.isSearch ? Suggestion.expand : Suggestion.hidden,
               searchInputDecoration: SearchInputDecoration(
                 filled: true,
                 iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
                 fillColor:
                     HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
                 suffixIcon: IconButton(
-                  onPressed: trainingPathcubit.isSearch,
+                  onPressed: cubit.isSearch,
                   icon: const Icon(Icons.clear),
                 ),
-                hintText: 'Add Skills to Training Path',
+                hintText: 'Type to filter available skills',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(40),
                 ),
               ),
-              suggestionState:
-                  state.isSearch ? Suggestion.expand : Suggestion.hidden,
-              inputType: TextInputType.text,
-              onSearchTextChanged: (query) {
-                trainingPathcubit.searchQueryChanged(query: query);
-                return state.searchList
-                    ?.map(
-                      (e) => SearchFieldListItem<String>(
-                        e ?? '',
-                        child: Text(e ?? ''),
+              onSearchTextChanged: (q) {
+                cubit.searchQueryChanged(query: q);
+                return state.availableSkills
+                    .where(
+                      (s) =>
+                          s.skillName.toLowerCase().contains(q.toLowerCase()),
+                    )
+                    .map(
+                      (s) => SearchFieldListItem<String>(
+                        s.skillName,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Text(s.skillName),
+                        ),
                       ),
                     )
                     .toList();
               },
-              suggestions: state.searchList
-                      ?.map(
-                        (e) => SearchFieldListItem<String>(
-                          e!,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4),
-                            child: Text(e),
-                          ),
-                        ),
-                      )
-                      .toList() ??
-                  [],
+              onSuggestionTap: (item) {
+                focus.unfocus();
+                cubit.skillNodeSelected(skillName: item.searchKey);
+              },
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-///   This is the Widget that displays the selected skills
-/// in a Chip format
-Widget _selectedSkills() {
-  return BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
-    builder: (context, state) {
-      final trainingPathcubit = context.read<CreateTrainingPathCubit>();
-      return Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: state.selectedSkills
-            .map(
-              (e) => Draggable<Skill>(
-                data: e,
-                feedback: Material(
-                  child: _skillChip(
-                    trainingPathcubit: trainingPathcubit,
-                    skill: e,
-                    isDragging: true,
-                  ),
-                ),
-                childWhenDragging: _skillChip(
-                  skill: e,
-                  isGhost: true,
-                  trainingPathcubit: trainingPathcubit,
-                ),
-                child: _skillChip(
-                  skill: e,
-                  trainingPathcubit: trainingPathcubit,
-                ),
-              ),
-            )
-            .toList(),
-      );
-    },
-  );
-}
+  /// Renders a SkillNode chip (root or child), with nesting
+  Widget _skillNodeCard(
+    SkillNode node,
+    CreateTrainingPathCubit cubit,
+    CreateTrainingPathState state,
+  ) {
+    final children = state.childNodes[node.id] ?? [];
+    final hasChildren = children.isNotEmpty;
 
-Widget _trainingPath() {
-  return BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
-    builder: (context, state) {
-      return Column(
-        children: [
-          const Text('Drag Skills to organize the Training Path'),
-          _buildSkillHierarchyView(
-            state: state,
-            nodes: state.skillNodes,
-            trainingPathCubit: context.read<CreateTrainingPathCubit>(),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-Widget _buildSkillHierarchyView({
-  required List<SkillNode?> nodes,
-  required CreateTrainingPathCubit trainingPathCubit,
-  required CreateTrainingPathState state,
-}) {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      children: [
-        Wrap(
-          children: nodes
-              .where((element) => element!.parentId?.isEmpty ?? false)
-              .map(
-                (e) => _skillNodeCard(
-                  state: state,
-                  trainingPathcubit: trainingPathCubit,
-                  skillNode: e,
-                ),
-              )
-              .toList(),
-        ),
-        gap(),
-        Visibility(
-          visible: state.selectedSkills.isNotEmpty,
-          child: DragTarget<Skill>(
-            onMove: (details) {
-              debugPrint('Move: ${details.data.skillName}');
-            },
-            onWillAcceptWithDetails: (details) {
-              debugPrint('Will Accept: ${details.data.skillName}');
-              // change the color or the border of the card
-              //and vibrate
-              return true;
-            },
-            builder: (context, candidateData, rejectedData) {
-              return const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Text(
-                    'Drop Root Skills Here',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            },
-            onAcceptWithDetails: (data) {
-              trainingPathCubit.skillNodeSelected(
-                skillName: data.data.skillName,
-              );
-            },
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _skillNodeCard({
-  required SkillNode? skillNode,
-  required CreateTrainingPathCubit trainingPathcubit,
-  required CreateTrainingPathState state,
-}) {
-  // Check if the current node has children
-  final hasChildren =
-      state.skillNodes.any((element) => element?.parentId == skillNode?.id);
-  // Check if the current node is a child
-  // final isChild = skillNode?.parentId != null;
-
-  return Center(
-    child: Column(
+    return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // If it is a child node, show a divider on top
-        // if (isChild) const Divider(color: Colors.black, thickness: 2),
-
         DragTarget<Skill>(
-          onAcceptWithDetails: (data) =>
-              trainingPathcubit.createOrDeleteChildSkillNode(
-            parentNode: skillNode,
-            skillName: data.data.skillName,
+          onWillAcceptWithDetails: (_) => true,
+          onAcceptWithDetails: (skill) => cubit.createOrDeleteChildSkillNode(
+            parentNode: node,
+            skillName: skill.data.skillName,
           ),
-          builder: (context, candidateData, rejectedData) {
-            return Chip(
-              label: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 4),
-                child: Text(skillNode?.name ?? ''),
-              ),
-              onDeleted: () => trainingPathcubit.skillNodeSelected(
-                skillName: skillNode!.name,
-              ),
-            );
-          },
+          builder: (ctx, __, ___) => Chip(
+            label: Text(node.name),
+            onDeleted: () => cubit.removeNode(node),
+          ),
         ),
-
-        // If it has children, show a vertical divider below
         if (hasChildren)
           Container(
             height: 10,
             width: 2,
-            color:
-                HorseAndRidersTheme().getTheme().brightness == Brightness.light
-                    ? Colors.black
-                    : Colors.white,
+            color: HorseAndRidersTheme()
+                .getTheme()
+                .dividerColor
+                .withValues(alpha: 0.5),
           ),
-
-        Wrap(
-          children: trainingPathcubit
-              .childrenOfSkillNode(skillNode: skillNode)
-              .map(
-                (e) => Column(
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          height: 2,
-                          width: 99,
-                          color: e?.position == 0
-                              ? Colors.transparent
-                              : HorseAndRidersTheme().getTheme().brightness ==
-                                      Brightness.light
-                                  ? Colors.black
-                                  : Colors.white,
-                        ),
-                        Container(
-                          height: 2,
-                          width: 2,
-                          color: HorseAndRidersTheme().getTheme().brightness ==
-                                  Brightness.light
-                              ? Colors.black
-                              : Colors.white,
-                        ),
-                        Container(
-                          width: 99,
-                          height: 2,
-                          color: e?.position ==
-                                  trainingPathcubit
-                                          .childrenOfSkillNode(
-                                            skillNode: skillNode,
-                                          )
-                                          .length -
-                                      1
-                              ? Colors.transparent
-                              : HorseAndRidersTheme().getTheme().brightness ==
-                                      Brightness.light
-                                  ? Colors.black
-                                  : Colors.white,
-                        ),
-                      ],
-                    ),
-                    Container(
-                      height: 10,
-                      color: HorseAndRidersTheme().getTheme().brightness ==
-                              Brightness.light
-                          ? Colors.black
-                          : Colors.white,
-                      width: 2,
-                    ),
-                    _skillNodeCard(
-                      state: state,
-                      trainingPathcubit: trainingPathcubit,
-                      skillNode: e,
-                    ),
-                  ],
-                ),
-              )
-              .toList(),
-        ),
+        if (hasChildren)
+          ...children.map((child) => _skillNodeCard(child, cubit, state)),
       ],
-    ),
-  );
-}
-
-Widget _skillChip({
-  required Skill? skill,
-  bool isDragging = false,
-  bool isGhost = false,
-  required CreateTrainingPathCubit trainingPathcubit,
-}) {
-  return Opacity(
-    opacity: isGhost ? 0.5 : 1,
-    child: Chip(
-      avatar: isDragging ? const Icon(Icons.touch_app) : null,
-      label: Text(skill?.skillName ?? ''),
-      backgroundColor: isDragging ? Colors.blue : Colors.grey[300],
-      onDeleted: () {
-        trainingPathcubit.skillSelected(skillName: skill!.skillName);
-      },
-    ),
-  );
+    );
+  }
 }

@@ -1,5 +1,8 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class SkillItem extends StatefulWidget {
@@ -33,104 +36,79 @@ class _SkillItemState extends State<SkillItem> {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: widget.onTap,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .2),
+    final cubit = context.read<AppCubit>();
+
+    final gradient = cubit.levelGradient(skill: widget.skill!);
+    final bgColor = cubit.levelColor(
+      skill: widget.skill!,
+      levelState: LevelState.PROFICIENT,
+    );
+
+    return IntrinsicWidth(
+      child: Card(
+        color: HorseAndRidersTheme().getTheme().cardColor,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        clipBehavior: Clip.hardEdge,
+        child: InkWell(
+          onTap: widget.onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: gradient,
+              color: gradient == null ? bgColor : null,
             ),
-          ],
-          borderRadius: BorderRadius.circular(20),
-          gradient: widget.levelState == LevelState.LEARNING
-              ? LinearGradient(
-                  stops: const [0.5, 0.5],
-                  colors: [
-                    if (widget.verified ?? false)
-                      Colors.yellow
-                    else
-                      Colors.blue,
-                    Colors.transparent,
-                  ],
-                )
-              : null,
-          color: widget.levelState == LevelState.PROFICIENT
-              ? (widget.verified ?? false ? Colors.yellow : Colors.blue)
-              : (widget.levelState == LevelState.LEARNING
-                  ? Colors.transparent
-                  : Colors.transparent),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child:
-                      _icon(widget.skill!.category, widget.skill!.difficulty),
-                ),
-                Flexible(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 8,
-                      top: 8,
-                      left: 16,
-                      right: 16,
-                    ),
-                    child: Text(
-                      widget.name ?? '',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _icon(widget.skill!.category, widget.skill!.difficulty),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        widget.name ?? '',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14),
                       ),
                     ),
-                  ),
+                    IconButton(
+                      onPressed: () =>
+                          setState(() => _isExpanded = !_isExpanded),
+                      icon: Icon(
+                        _isExpanded
+                            ? Icons.arrow_drop_up
+                            : Icons.arrow_drop_down,
+                      ),
+                    ),
+                    if (widget.isEditState && !widget.isGuest)
+                      PopupMenuButton<String>(
+                        iconSize: 18,
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            onTap: widget.onEdit,
+                            child: const Text('Edit'),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isExpanded = !_isExpanded;
-                    });
-                  },
-                  icon: Icon(
-                    _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                if (_isExpanded) ...[
+                  const Divider(),
+                  Text(widget.skill?.rider ?? false ? 'Rider' : 'Horse'),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      '${widget.skill?.category.name} '
+                      '- ${widget.skill?.difficulty.name}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
-                ),
-                Visibility(
-                  visible: widget.isEditState && !widget.isGuest,
-                  child: PopupMenuButton<String>(
-                    iconSize: 18,
-                    itemBuilder: (context) {
-                      return [
-                        PopupMenuItem(
-                          onTap: widget.onEdit,
-                          child: const Text('Edit'),
-                        ),
-                      ];
-                    },
-                  ),
-                ),
+                ],
               ],
             ),
-            Visibility(
-              visible: _isExpanded,
-              child: Text(
-                widget.skill?.rider ?? false ? 'Rider' : 'Horse',
-              ),
-            ),
-            Visibility(
-              visible: _isExpanded,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text('${widget.skill?.category.name} -'
-                    ' ${widget.skill?.difficulty.name}'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

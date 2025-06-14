@@ -14,6 +14,7 @@ part 'skill_create_dialog_state.dart';
 class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   CreateSkillDialogCubit({
     required Skill? skill,
+    required List<Skill?>? allSkills,
     required bool isForRider,
     required RiderProfile usersProfile,
     required SkillTreeRepository skillsRepository,
@@ -22,10 +23,12 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     emit(
       state.copyWith(
         skill: skill,
+        allSkills: allSkills,
         isForRider: isForRider,
         category: skill?.category,
         usersProfile: usersProfile,
         difficulty: skill?.difficulty,
+        prerequisites: skill?.prerequisites ?? [],
         name: SingleWord.dirty(skill?.skillName ?? ''),
         description: SingleWord.dirty(skill?.description ?? ''),
         learningDescription: SingleWord.dirty(skill?.learningDescription ?? ''),
@@ -89,39 +92,32 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       ),
     );
   }
-// create a list of subcategories and a list of
-// subcategories that the skill is in
 
-  // void _setTheSubCategoryList() {
-  //   if (_skill != null) {
-  //     //  get the subcategories that the skill is in
-  //     if (state.allSubCategories != null) {
-  //       final subCategories = _allSubCategories!
-  //           .where((element) => element!.skills.contains(_skill!.id))
-  //           .toList();
+  /// Called when the prerequisites change
+  void prerequisitesChanged(String id) {
+    final current = List<String>.from(state.prerequisites);
 
-  //       emit(
-  //         state.copyWith(
-  //           difficulty: _skill?.difficulty ?? DifficultyState.introductory,
-  //           subCategoryList: subCategories,
-  //         ),
-  //       );
-  //     } else {
-  //       debugPrint('No SubCategories');
-  //       emit(
-  //         state.copyWith(
-  //           subCategoryList: [],
-  //         ),
-  //       );
-  //     }
-  //   } else {
-  //     debugPrint('No Skill');
-  //   }
-  // }
+    if (current.contains(id)) {
+      current.remove(id);
+    } else {
+      current.add(id);
+    }
 
-// user selects a subcategory to add to the skillid to its skills list
-  Future<void> updateSubCategoryList({required SubCategory subCategory}) async {
-    debugPrint('No more SubCategories');
+    emit(state.copyWith(prerequisites: current));
+  }
+
+  /// Sort the skills by isRider
+  List<Skill?> sortSkillsByRider() {
+    final skills = hideEditedSkillFromAllSkills(state.allSkills);
+    return skills.where((skill) => skill?.rider == state.isForRider).toList();
+  }
+
+  /// hide the skill being edited from the list of all skills
+  List<Skill?> hideEditedSkillFromAllSkills(List<Skill?>? allSkills) {
+    if (state.skill != null && allSkills != null) {
+      return allSkills.where((skill) => skill?.id != state.skill?.id).toList();
+    }
+    return allSkills ?? [];
   }
 
   ///   Called when creating new Skill
@@ -139,6 +135,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       difficulty: state.difficulty,
       skillName: state.name.value,
       lastEditDate: DateTime.now(),
+      prerequisites: state.prerequisites,
       description: state.description.value,
       lastEditBy: state.usersProfile?.email,
       learningDescription: state.learningDescription.value,
@@ -164,11 +161,12 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     );
 
     final skill = Skill(
+      rider: state.isForRider,
+      category: state.category,
       lastEditDate: DateTime.now(),
       difficulty: state.difficulty,
       id: editedSkill?.id as String,
-      category: state.category,
-      rider: state.isForRider,
+      prerequisites: state.prerequisites,
       lastEditBy: state.usersProfile?.email,
       position: editedSkill?.position as int,
       skillName: state.name.value.isNotEmpty

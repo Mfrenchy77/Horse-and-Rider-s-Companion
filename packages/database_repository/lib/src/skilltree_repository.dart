@@ -16,9 +16,8 @@ class SkillTreeRepository {
   final _trainingPathDatabaseReference = FirebaseFirestore.instance
       .collection(TRAINING_PATHS)
       .withConverter<TrainingPath>(
-        fromFirestore: TrainingPath.fromFirestore,
-        toFirestore: (TrainingPath trainingPath, options) =>
-            trainingPath.toFirestore(),
+        fromFirestore: (snap, options) => TrainingPath.fromFirestore(snap),
+        toFirestore: (tp, options) => tp.toFirestore(),
       );
 
   /// Create or update a TrainingPath
@@ -34,7 +33,7 @@ class SkillTreeRepository {
   }
 
   /// Retrieve all TrainingPaths
-  Stream<QuerySnapshot> getAllTrainingPaths() {
+  Stream<QuerySnapshot<TrainingPath>> getAllTrainingPaths() {
     return _trainingPathDatabaseReference.snapshots();
   }
 

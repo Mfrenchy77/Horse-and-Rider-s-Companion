@@ -1,4 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
@@ -49,7 +50,10 @@ class TrainingPathView extends StatelessWidget {
                             usersProfile: state.usersProfile!,
                             trainingPath: state.trainingPath,
                             isEdit: true,
-                            allSkills: state.sortedSkills,
+                            allSkills: state.sortedSkills
+                                .where((s) => s != null)
+                                .cast<Skill>()
+                                .toList(),
                             isForRider: true,
                           ),
                         ),
@@ -82,8 +86,7 @@ class TrainingPathView extends StatelessWidget {
                       child: Wrap(
                         children: state.trainingPath?.skillNodes
                                 .where(
-                                  (element) =>
-                                      element!.parentId?.isEmpty ?? false,
+                                  (element) => element!.parentId == null,
                                 )
                                 .where(
                                   (skillNode) =>

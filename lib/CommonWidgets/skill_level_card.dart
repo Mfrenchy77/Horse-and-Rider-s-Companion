@@ -25,24 +25,12 @@ class SkillLevelCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        elevation: 1,
+        elevation: 8,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: skillLevel.levelState == LevelState.PROFICIENT
-                ? skillLevel.verified
-                    ? Colors.yellow
-                    : Colors.blue
-                : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
-            gradient: skillLevel.levelState == LevelState.LEARNING
-                ? LinearGradient(
-                    stops: const [0.5, 0.5],
-                    colors: [
-                      if (skillLevel.verified) Colors.yellow else Colors.blue,
-                      Colors.transparent,
-                    ],
-                  )
-                : null,
+            gradient: _buildGradient(skillLevel),
+            color: _buildBackgroundColor(skillLevel),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -73,6 +61,30 @@ class SkillLevelCard extends StatelessWidget {
   }
 }
 
+Color? _buildBackgroundColor(SkillLevel skillLevel) {
+  if (skillLevel.levelState == LevelState.PROFICIENT) {
+    return skillLevel.verified ? Colors.yellow : Colors.blue;
+  }
+
+  return null; // fallback to transparent
+}
+
+Gradient? _buildGradient(SkillLevel skillLevel) {
+  if (skillLevel.levelState == LevelState.LEARNING) {
+    final fillColor = skillLevel.verified ? Colors.yellow : Colors.blue;
+
+    return LinearGradient(
+      stops: const [0.48, 0.52],
+      colors: [
+        fillColor,
+        Colors.transparent,
+      ],
+    );
+  }
+
+  return null;
+}
+
 Widget _icon(SkillCategory category, DifficultyState difficulty) {
   switch (category) {
     case SkillCategory.Mounted:
@@ -82,7 +94,7 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: .5),
-            offset: const Offset(1,1),
+            offset: const Offset(1, 1),
           ),
         ],
       );
@@ -93,7 +105,7 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: .5),
-            offset: const Offset(1,1),
+            offset: const Offset(1, 1),
           ),
         ],
       );
@@ -104,7 +116,7 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: .5),
-            offset: const Offset(1,1),
+            offset: const Offset(1, 1),
           ),
         ],
       );

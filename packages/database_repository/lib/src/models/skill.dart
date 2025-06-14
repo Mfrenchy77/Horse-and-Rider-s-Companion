@@ -1,23 +1,40 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first, constant_identifier_names, lines_longer_than_80_chars
+// ignore_for_file: constant_identifier_names
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Difficulty state for skills
 enum DifficultyState {
+  /// Introductory level skill
   Introductory,
+
+  /// Intermediate level skill
   Intermediate,
+
+  /// Advanced level skill
   Advanced,
+
+  /// Represents all difficulty levels
   All,
 }
 
+/// Category of a skill
 enum SkillCategory {
+  /// Categort for any skill that does not fit into other categories
   Other,
+
+  /// Category for skills that are performed in-hand
   In_Hand,
+
+  /// Category for skills that are performed while mounted
   Mounted,
+
+  /// Category for skills related to horse care and management
   Husbandry,
 }
 
 /// Model of a Skill
 class Skill implements Comparable<Skill> {
+  /// Creates a new Skill object.
   Skill({
     required this.id,
     required this.rider,
@@ -26,46 +43,51 @@ class Skill implements Comparable<Skill> {
     required this.lastEditBy,
     required this.description,
     required this.lastEditDate,
+    this.prerequisites = const [],
     required this.learningDescription,
     required this.proficientDescription,
     this.category = SkillCategory.Mounted,
     this.difficulty = DifficultyState.Introductory,
   });
 
-  /// The unique identifier of the skill
+  /// Unique identifier for the skill
   final String id;
 
-  /// The position of the skill in the list
+  /// Position of the skill in the skill tree
   int position = -1;
 
-  /// Whether the skill is for a rider or a horse
+  /// Whether the skill is for the rider or not
   final bool rider;
 
-  /// The name of the skill
+  /// Name of the skill
   final String skillName;
 
-  /// The user who last edited the skill
+  /// Last user who edited the skill
   final String? lastEditBy;
 
-  /// The description of the skill
+  /// Description of the skill
   final String? description;
 
-  /// The date the skill was last edited
+  /// Date when the skill was last edited
   final DateTime? lastEditDate;
 
-  /// The difficulty of the skill
-  final DifficultyState difficulty;
-
-  /// The category of the skill
+  /// Category of the skill
   final SkillCategory category;
 
-  /// The description of the skill when learning
+  /// New field: list of prerequisite skill IDs
+  final List<String> prerequisites;
 
+  /// Difficulty level of the skill
+  final DifficultyState difficulty;
+
+  /// Description of the skill when learning
   final String? learningDescription;
 
-  /// The description of the skill when proficient
+  /// Description of the skill when proficient
   final String? proficientDescription;
 
+  /// Creates a Skill object from Firestore data.
+  // ignore: sort_constructors_first
   factory Skill.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     // ignore: avoid_unused_constructor_parameters
@@ -96,11 +118,16 @@ class Skill implements Comparable<Skill> {
               : (data['difficulty'] as String?) == 'Advanced'
                   ? DifficultyState.Advanced
                   : DifficultyState.Introductory,
+
+      // gracefully handle nulls and ensure it's a List<String>
+      prerequisites: (data['prerequisites'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toList() ??
+          [],
     );
   }
 
-  void get subCategoryList {}
-
+  /// Converts the Skill object to a Firestore-compatible map.
   Map<String, Object?> toFirestore() {
     return {
       'id': id,
@@ -118,7 +145,7 @@ class Skill implements Comparable<Skill> {
                   ? 'Mounted'
                   : 'Other',
       'difficulty': difficulty == DifficultyState.Introductory
-          ? 'introductory'
+          ? 'Introductory'
           : difficulty == DifficultyState.Intermediate
               ? 'Intermediate'
               : difficulty == DifficultyState.Advanced
@@ -128,21 +155,19 @@ class Skill implements Comparable<Skill> {
         'learningDescription': learningDescription,
       if (proficientDescription != null)
         'proficientDescription': proficientDescription,
+
+      // only store if non-empty
+      if (prerequisites.isNotEmpty) 'prerequisites': prerequisites,
     };
   }
 
+  /// Gets the position of the skill in the skill tree.
   int getPosition() {
     return position;
   }
 
   @override
   int compareTo(Skill skill) {
-    if (getPosition() > skill.getPosition()) {
-      return 1;
-    } else if (getPosition() < skill.getPosition()) {
-      return -1;
-    } else {
-      return 0;
-    }
+    return position.compareTo(skill.position);
   }
 }

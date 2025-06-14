@@ -1312,18 +1312,15 @@ class AppCubit extends Cubit<AppState> {
 
   void _getTrainingPaths() {
     debugPrint('Get TrainingPaths Called');
-    if (state.trainingPaths.isEmpty) {
-      debugPrint('Training Paths not retrieved yet');
-      _trainingPathsStream =
-          _skillTreeRepository.getAllTrainingPaths().listen((event) {
-        final trainingPaths =
-            event.docs.map((doc) => (doc.data()) as TrainingPath?).toList();
-        debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
-        emit(state.copyWith(trainingPaths: trainingPaths));
-      });
-    } else {
-      debugPrint('Training Paths already retrieved');
-    }
+
+    _trainingPathsStream =
+        _skillTreeRepository.getAllTrainingPaths().listen((event) {
+      final trainingPaths = event.docs.map((doc) => doc.data()).toList();
+
+      debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
+
+      emit(state.copyWith(trainingPaths: trainingPaths));
+    });
   }
 
   /// Whether or not a user can edit a training path or not.
@@ -1574,37 +1571,75 @@ class AppCubit extends Cubit<AppState> {
 
   /// Returns the color for the level of the skill based on the [levelState]
   Color levelColor({
-    required LevelState levelState,
     required Skill skill,
+    required LevelState levelState,
   }) {
-    // Determine whether we are dealing with a rider or a horse profile.
     final currentProfile =
         state.isForRider ? determineCurrentProfile() : state.horseProfile;
-    var isVerified = false;
 
-    if (currentProfile != null) {
-      final skillLevels = currentProfile is RiderProfile
-          ? currentProfile.skillLevels
-          : (currentProfile as HorseProfile).skillLevels;
+    final skillLevels = currentProfile is RiderProfile
+        ? currentProfile.skillLevels
+        : (currentProfile as HorseProfile?)?.skillLevels;
 
-      if (skillLevels != null && skillLevels.isNotEmpty) {
-        final skillLevel = skillLevels.firstWhereOrNull(
-          (element) => element.skillId == skill.id,
-        );
-        if (skillLevel != null) {
-          isVerified = skillLevel.verified;
-          if (skillLevel.levelState.index >= levelState.index) {
-            return isVerified ? Colors.yellow : Colors.blue;
-          }
-        } else {
-          debugPrint('Skill Level is null');
-        }
-      }
-    } else {
-      debugPrint('Profile is not determined');
-      return Colors.grey;
+    final level = skillLevels?.firstWhereOrNull((e) => e.skillId == skill.id);
+
+    if (level == null) return Colors.transparent;
+
+    final isVerified = level.verified;
+
+    return level.levelState.index >= levelState.index
+        ? (isVerified ? Colors.yellow : Colors.blue)
+        : Colors.transparent;
+  }
+
+  Gradient? levelGradient({
+    required Skill skill,
+  }) {
+    final currentProfile =
+        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+
+    final skillLevels = currentProfile is RiderProfile
+        ? currentProfile.skillLevels
+        : (currentProfile as HorseProfile?)?.skillLevels;
+
+    final level = skillLevels?.firstWhereOrNull((e) => e.skillId == skill.id);
+
+    if (level == null || level.levelState != LevelState.LEARNING) {
+      return null;
     }
-    return Colors.grey;
+
+    final fillColor = level.verified ? Colors.yellow : Colors.blue;
+
+    return LinearGradient(
+      stops: const [0.48, 0.52],
+      colors: [fillColor, Colors.transparent],
+    );
+  }
+
+  Gradient? horizontalGradient({
+    required Skill skill,
+  }) {
+    final currentProfile =
+        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+
+    final skillLevels = currentProfile is RiderProfile
+        ? currentProfile.skillLevels
+        : (currentProfile as HorseProfile?)?.skillLevels;
+
+    final level = skillLevels?.firstWhereOrNull((e) => e.skillId == skill.id);
+
+    if (level == null || level.levelState != LevelState.LEARNING) {
+      return null;
+    }
+
+    final fillColor = level.verified ? Colors.yellow : Colors.blue;
+
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      stops: const [0.48, 0.52],
+      colors: [fillColor, Colors.transparent],
+    );
   }
 
   /// Returns the learningDescription for the current skill or the
@@ -1886,7 +1921,6 @@ class AppCubit extends Cubit<AppState> {
     return difference.inDays < 10;
   }
 
-// TODO(mfrenchy): add th ability to open the resource locally https://pub.dev/packages/flutter_inappwebview
   ///   Single Resource is Selected and is being viewed
   Future<void> openResource({required String? url}) async {
     final uri = Uri.parse(url!);
@@ -3153,6 +3187,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Skill Tree Tab Navigation
   void setSkillTreeTabIndex(int index) {
+    debugPrint('Navigating to Skill Tree Tab Index: $index');
     emit(state.copyWith(skillTreeTabIndex: index));
   }
 
@@ -3324,6 +3359,18 @@ class AppCubit extends Cubit<AppState> {
         isFromProfile: state.index == 0,
         pageStatus: AppPageStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillLevel,
+      ),
+    );
+  }
+
+  /// Set the flag of from Training Path for when the user clicks a skill
+  /// from the Training Path View so when they click back we know to return
+  /// to the Training Path View
+  void setIsFromTrainingPath({required bool isFromTrainingPath}) {
+    debugPrint('setIsFromTrainingPath: $isFromTrainingPath');
+    emit(
+      state.copyWith(
+        isFromTrainingPath: isFromTrainingPath,
       ),
     );
   }
