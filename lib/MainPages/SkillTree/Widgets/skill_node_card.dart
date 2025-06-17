@@ -2,9 +2,12 @@ import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillNodeCard extends StatelessWidget {
@@ -44,17 +47,12 @@ class SkillNodeCard extends StatelessWidget {
                 skill: skill,
                 name: skill.skillName,
                 onTap: () {
-                  cubit
-                    ..setIsFromTrainingPath(isFromTrainingPath: true)
-                    ..setSkillTreeTabIndex(1)
-                    ..navigateToSkillLevel(
-                      skill: state.allSkills.firstWhere(
-                        (element) => element?.skillName == skillNode.name,
-                      ),
-                    );
-                  debugPrint('Skill Clicked- ${skillNode.skillId}\n Exixst?'
-                      // ignore: lines_longer_than_80_chars
-                      ' - ${state.allSkills.firstWhere((element) => element?.id == skillNode.skillId) != null}');
+                  cubit.setIsFromTrainingPath(isFromTrainingPath: true);
+
+                  context.goNamed(
+                    SkillTreeView.skillLevelName,
+                    pathParameters: {SkillTreeView.skillPathParam: skill.id},
+                  );
                 },
                 onEdit: () {},
                 isGuest: state.isGuest,

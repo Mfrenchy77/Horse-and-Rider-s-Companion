@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skills_list.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skills_list_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_paths_list.dart';
 
 class SkillTreeSecondaryView extends StatelessWidget {

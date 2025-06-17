@@ -67,6 +67,7 @@ int cmToHands(int cm) {
   final hands = inches ~/ 4;
   return hands;
 }
+
 // Convert centimeters to hands as a whole number and inches as a decimal part.
 double cmToHandsAndInches(int cm) {
   final inchesTotal = cm / 2.54;
@@ -81,7 +82,6 @@ int cmToHandsRemainder(int cm) {
   final remainderInches = inches % 4;
   return remainderInches.toInt();
 }
-
 
 int handsAndInchesToCm(int hands, int inches) {
   final totalInches = hands * 4 + inches;

@@ -1,15 +1,21 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillsListView extends StatelessWidget {
   const SkillsListView({this.onSkillSelected, super.key});
+
+  static const String name = 'SkillsListView';
+  static const String path = 'Skills';
 
   final VoidCallback? onSkillSelected;
 
@@ -29,8 +35,6 @@ class SkillsListView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final skills = state.sortedSkills;
-        debugPrint('SkillsListView: ${skills.length}');
-        debugPrint('All Skills: ${state.allSkills.length}');
 
         return Scaffold(
           floatingActionButton: Visibility(
@@ -124,13 +128,16 @@ class SkillsListView extends StatelessWidget {
                               ),
                               name: skill?.skillName,
                               onTap: () {
-                                cubit
-                                  ..setFromSkills()
-                                  ..navigateToSkillLevel(skill: skill);
-                                if (onSkillSelected != null &&
-                                    MediaQuery.of(context).size.width < 1024) {
-                                  onSkillSelected!();
-                                }
+                                debugPrint(
+                                  'Tapped on skill: ${skill?.skillName}',
+                                );
+                                context.goNamed(
+                                  SkillTreeView.skillLevelName,
+                                  pathParameters: {
+                                    SkillTreeView.skillPathParam:
+                                        skill?.id ?? '',
+                                  },
+                                );
                               },
                               onEdit: () {
                                 if (cubit.canEditSkill(skill)) {

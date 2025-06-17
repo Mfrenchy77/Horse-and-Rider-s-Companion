@@ -16,7 +16,7 @@ class ResourceCommentPage extends StatefulWidget {
 
   static const pathParams = 'resourceId';
   static const name = 'ResourceCommentPage';
-  static const path = 'Comments/:resourceId';
+  static const path = 'Comments/:$pathParams';
 
   final String id;
 

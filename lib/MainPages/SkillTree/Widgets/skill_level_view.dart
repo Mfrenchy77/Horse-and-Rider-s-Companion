@@ -1,26 +1,39 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_progress_bar.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class SkillLevelView extends StatelessWidget {
-  const SkillLevelView({super.key});
+  const SkillLevelView({
+    super.key,
+    required this.skillId,
+  });
+
+  final String? skillId;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      // buildWhen: (previous, current) =>
+      //     previous.usersProfile != current.usersProfile ||
+      //     previous.horseProfile != current.horseProfile ||
+      //     previous.skill != current.skill ||
+      //     previous.allSkills != current.allSkills ||
+      //     previous.isGuest != current.isGuest,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final skill = state.skill;
-        final allSkills = state.allSkills;
 
         if (skill == null) {
-          return const Center(child: Text('No Skill Selected'));
+          return const Center(child: Text('Skill Not Found'));
         }
+        final allSkills = state.allSkills;
 
         final prerequisiteSkills = skill.prerequisites
             .map(
@@ -39,7 +52,6 @@ class SkillLevelView extends StatelessWidget {
               children: [
                 SingleChildScrollView(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 50),
                       Visibility(
@@ -108,14 +120,15 @@ class SkillLevelView extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   gradient:
                                       cubit.horizontalGradient(skill: prereq),
-                                  color:
-                                      cubit.horizontalGradient(skill: prereq) ==
-                                              null
-                                          ? cubit.levelColor(
-                                              skill: prereq,
-                                              levelState: LevelState.PROFICIENT,
-                                            )
-                                          : null,
+                                  color: cubit.horizontalGradient(
+                                            skill: prereq,
+                                          ) ==
+                                          null
+                                      ? cubit.levelColor(
+                                          skill: prereq,
+                                          levelState: LevelState.PROFICIENT,
+                                        )
+                                      : null,
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 8),
@@ -131,9 +144,13 @@ class SkillLevelView extends StatelessWidget {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       onTap: () {
-                                        context.read<AppCubit>()
-                                          ..navigateToSkillLevel(skill: prereq)
-                                          ..setSkillTreeTabIndex(1);
+                                        context.goNamed(
+                                          SkillTreeView.skillLevelName,
+                                          pathParameters: {
+                                            SkillTreeView.skillPathParam:
+                                                prereq.id,
+                                          },
+                                        );
                                       },
                                       trailing:
                                           const Icon(Icons.arrow_forward_ios),

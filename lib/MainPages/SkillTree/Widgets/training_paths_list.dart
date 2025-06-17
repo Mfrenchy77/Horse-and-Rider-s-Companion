@@ -7,9 +7,14 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/training_path_create_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 
 class TrainingPathListView extends StatelessWidget {
   const TrainingPathListView({this.onTrainingPathSelected, super.key});
+
+  static const String name = 'TrainingPathListView';
+  static const String path = 'TrainingPaths';
+
   final VoidCallback? onTrainingPathSelected;
   @override
   Widget build(BuildContext context) {
@@ -134,14 +139,12 @@ class TrainingPathListView extends StatelessWidget {
                                   debugPrint(
                                     'Clicked on ${trainingPath?.name}',
                                   );
-                                  if (onTrainingPathSelected != null &&
-                                      MediaQuery.of(context).size.width <
-                                          1024) {
-                                    onTrainingPathSelected!();
-                                  }
-
-                                  cubit.navigateToTrainingPath(
-                                    trainingPath: trainingPath,
+                                  context.goNamed(
+                                    SkillTreeView.trainingPathViewName,
+                                    pathParameters: {
+                                      SkillTreeView.trainingPathPathParam:
+                                          trainingPath!.id,
+                                    },
                                   );
                                 },
                                 title: Text(trainingPath?.name ?? ''),

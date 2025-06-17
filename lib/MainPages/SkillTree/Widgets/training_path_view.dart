@@ -8,7 +8,13 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_node_c
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class TrainingPathView extends StatelessWidget {
-  const TrainingPathView({super.key});
+  const TrainingPathView({super.key, required this.trainingPathId});
+
+  static const String name = 'TrainingPathView';
+  static const String path = 'TrainingPath/:$pathParams';
+  static const String pathParams = 'trainingPathId';
+
+  final String? trainingPathId;
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +24,11 @@ class TrainingPathView extends StatelessWidget {
         debugPrint('Training Path View: ${state.trainingPath?.name}');
 
         final cubit = context.read<AppCubit>();
+
+        final trainingPath = state.trainingPath;
+        if (trainingPath == null) {
+          return const Center(child: Text('No Training Path Selected'));
+        }
 
         return Align(
           alignment: Alignment.topCenter,
@@ -30,7 +41,7 @@ class TrainingPathView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: AutoSizeText(
-                        state.trainingPath?.name ?? 'Select a Training Path',
+                        trainingPath.name,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w100,

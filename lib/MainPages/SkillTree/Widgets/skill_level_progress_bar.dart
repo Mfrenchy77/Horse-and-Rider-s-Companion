@@ -20,59 +20,62 @@ class SkillLevelProgressBar extends StatelessWidget {
             children: [
               // Learning
               Expanded(
-                child: InkWell(
-                  onTap: state.isGuest || !cubit.isAuthorized()
-                      ? null
-                      : () {
-                          showDialog<AlertDialog>(
-                            context: context,
-                            builder: (context) =>
-                                const SkillLevelSelectedConfimationDialog(
-                              key: Key('levelSelectedConfirmationDialog'),
-                              levelState: LevelState.LEARNING,
-                            ),
-                          );
-                        },
-                  child: ColoredBox(
-                    color: cubit.levelColor(
-                      skill: state.skill!,
-                      levelState: LevelState.LEARNING,
-                    ),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Learning',
-                                textAlign: TextAlign.center,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: state.isGuest || !cubit.isAuthorized()
+                        ? null
+                        : () {
+                            showDialog<AlertDialog>(
+                              context: context,
+                              builder: (context) =>
+                                  const SkillLevelSelectedConfimationDialog(
+                                key: Key('levelSelectedConfirmationDialog'),
+                                levelState: LevelState.LEARNING,
                               ),
-                            ),
-                            GestureDetector(
-                              onTapDown: (details) {
-                                InformationDialog.show(
-                                  context,
-                                  const Text(
-                                    'Learning: This stage indicates that the '
-                                    'individual should be actively engaged in '
-                                    'acquiring the skill. They should be in '
-                                    'the process of understanding and '
-                                    'practicing the basic concepts and '
-                                    'techniques. Mistakes are '
-                                    'common at this level, but they provide '
-                                    'valuable learning experiences. The '
-                                    'individual should be developing their '
-                                    'abilities but not yet mastered the skill.',
-                                  ),
-                                  details.globalPosition,
-                                );
-                              },
-                              child: const Icon(
-                                Icons.info_outline_rounded,
+                            );
+                          },
+                    child: ColoredBox(
+                      color: cubit.levelColor(
+                        skill: state.skill!,
+                        levelState: LevelState.LEARNING,
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Learning',
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                            ),
-                          ],
+                              GestureDetector(
+                                onTapDown: (details) {
+                                  InformationDialog.show(
+                                    context,
+                                    const Text(
+                                      'Learning: This stage indicates that the '
+                                      'individual should be actively engaged in '
+                                      'acquiring the skill. They should be in '
+                                      'the process of understanding and '
+                                      'practicing the basic concepts and '
+                                      'techniques. Mistakes are '
+                                      'common at this level, but they provide '
+                                      'valuable learning experiences. The '
+                                      'individual should be developing their '
+                                      'abilities but not yet mastered the skill.',
+                                    ),
+                                    details.globalPosition,
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.info_outline_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -81,59 +84,62 @@ class SkillLevelProgressBar extends StatelessWidget {
               ),
               // Proficient
               Expanded(
-                child: InkWell(
-                  onTap: state.isGuest || !cubit.isAuthorized()
-                      ? null
-                      : () {
-                          showDialog<AlertDialog>(
-                            context: context,
-                            builder: (context) =>
-                                const SkillLevelSelectedConfimationDialog(
-                              key: Key('levelSelectedConfirmationDialog'),
-                              levelState: LevelState.PROFICIENT,
-                            ),
-                          );
-                        },
-                  child: ColoredBox(
-                    color: cubit.levelColor(
-                      skill: state.skill!,
-                      levelState: LevelState.PROFICIENT,
-                    ),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Proficient',
-                                textAlign: TextAlign.center,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: state.isGuest || !cubit.isAuthorized()
+                        ? null
+                        : () {
+                            showDialog<AlertDialog>(
+                              context: context,
+                              builder: (context) =>
+                                  const SkillLevelSelectedConfimationDialog(
+                                key: Key('levelSelectedConfirmationDialog'),
+                                levelState: LevelState.PROFICIENT,
                               ),
-                            ),
-                            GestureDetector(
-                              onTapDown: (details) {
-                                InformationDialog.show(
-                                  context,
-                                  const Text(
-                                    'Proficient: At this level, the individual '
-                                    'should have achieved a significant degree '
-                                    'of competence in the skill. They should '
-                                    'demonstrate consistent and effective '
-                                    'application of the skill in relevant '
-                                    'situations. Proficiency implies that the '
-                                    'individual can perform the skill '
-                                    'independently and reliably, with a good '
-                                    'understanding of advanced concepts and '
-                                    'techniques.',
-                                  ),
-                                  details.globalPosition,
-                                );
-                              },
-                              child: const Icon(
-                                Icons.info_outline_rounded,
+                            );
+                          },
+                    child: ColoredBox(
+                      color: cubit.levelColor(
+                        skill: state.skill!,
+                        levelState: LevelState.PROFICIENT,
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Proficient',
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                            ),
-                          ],
+                              GestureDetector(
+                                onTapDown: (details) {
+                                  InformationDialog.show(
+                                    context,
+                                    const Text(
+                                      'Proficient: At this level, the individual '
+                                      'should have achieved a significant degree '
+                                      'of competence in the skill. They should '
+                                      'demonstrate consistent and effective '
+                                      'application of the skill in relevant '
+                                      'situations. Proficiency implies that the '
+                                      'individual can perform the skill '
+                                      'independently and reliably, with a good '
+                                      'understanding of advanced concepts and '
+                                      'techniques.',
+                                    ),
+                                    details.globalPosition,
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.info_outline_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

@@ -34,6 +34,7 @@ class GuestProfileSkills extends StatelessWidget {
           children: [
             ...ExampleSkill().getSkillLevels().map(
                   (e) => SkillLevelCard(
+                    hasUnmetPrerequisites: true,
                     category: SkillCategory.In_Hand,
                     difficulty: DifficultyState.Intermediate,
                     onTap: () => context.read<AppCubit>().changeIndex(1),

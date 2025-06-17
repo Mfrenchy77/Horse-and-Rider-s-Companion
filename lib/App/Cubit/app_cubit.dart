@@ -1346,6 +1346,16 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// get the selected Skill id
+  String? getSelectedSkillId() {
+    return state.skill?.id;
+  }
+
+  /// get the selected Training Path id
+  String? getSelectedTrainingPathId() {
+    return state.trainingPath?.id;
+  }
+
   /// Whether or not a user can edit a skill or not. Based on whether they
   /// have created it or their email is in the admin list
   bool canEditSkill(Skill? skill) {
@@ -1360,11 +1370,63 @@ class AppCubit extends Cubit<AppState> {
         AuthorizedEmails.emails.contains(state.usersProfile?.email);
   }
 
-  Skill? getSkillFromId(String id) {
+  /// Returns the full Skill object from the id
+  Skill? _getSkillFromId(String id) {
     final skill = state.allSkills.firstWhereOrNull(
       (element) => element?.id == id,
     );
     return skill;
+  }
+
+  /// Return a Skill item from the id
+  Skill? getSkillFromId(String id) {
+    debugPrint('Getting Skill from id: $id');
+    final skill = _getSkillFromId(id);
+    if (skill == null) {
+      debugPrint('Skill not found for id: $id');
+    } else {
+      debugPrint('Skill Found: ${skill.skillName}');
+    }
+    return skill;
+  }
+
+  /// set the selected Skill from the id
+  void setSkill(String? id) {
+    if (id == null || id.isEmpty) {
+      debugPrint('Skill id is null or empty');
+
+      return;
+    }
+    final skill = _getSkillFromId(id);
+    if (skill != null) {
+      debugPrint('Setting Skill: ${skill.skillName}');
+      emit(state.copyWith(skill: skill));
+    } else {
+      debugPrint('Skill not found for id: $id');
+    }
+  }
+
+  /// Returns the full Training Path object from the id
+  TrainingPath? getTrainingPathFromId(String id) {
+    final trainingPath = state.trainingPaths.firstWhereOrNull(
+      (element) => element?.id == id,
+    );
+    return trainingPath;
+  }
+
+  /// Set the selected Training Path from the id
+  void setTrainingPath(String? id) {
+    if (id == null || id.isEmpty) {
+      debugPrint('Training Path id is null or empty');
+      return;
+    }
+    final trainingPath = getTrainingPathFromId(id);
+    if (trainingPath != null) {
+      debugPrint('Setting Training Path: ${trainingPath.name}');
+      emit(state.copyWith(trainingPath: trainingPath));
+    } else {
+      debugPrint('Training Path not found for id: $id');
+    }
   }
 
   Skill? getSkillFromSkillName(String skillName) {
@@ -1567,6 +1629,31 @@ class AppCubit extends Cubit<AppState> {
   SkillCategory getSkillCategory(String id) {
     final skill = getSkillFromId(id);
     return skill?.category ?? SkillCategory.Other;
+  }
+
+  /// Check if a skill from [skillId] has unmet prerequisites
+  bool hasUnmetPrerequisites(String skillId) {
+    final skill = getSkillFromId(skillId);
+    if (skill == null) return false;
+
+    // Check if the skill has prerequisites
+    if (skill.prerequisites.isEmpty) return false;
+
+    // Get the current profile's skill levels
+    final currentProfile =
+        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+    final skillLevels = currentProfile is RiderProfile
+        ? currentProfile.skillLevels
+        : (currentProfile as HorseProfile?)?.skillLevels;
+
+    // Check if all prerequisites are met
+    return skill.prerequisites.any((prerequisiteId) {
+      final prerequisiteLevel = skillLevels?.firstWhereOrNull(
+        (level) => level.skillId == prerequisiteId,
+      );
+      return prerequisiteLevel == null ||
+          prerequisiteLevel.levelState != LevelState.PROFICIENT;
+    });
   }
 
   /// Returns the color for the level of the skill based on the [levelState]

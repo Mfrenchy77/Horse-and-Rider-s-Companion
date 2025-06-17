@@ -1,11 +1,11 @@
-import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 /// {@template profile_skills}
 /// ProfileSkills widget displays the skills of the user or horse
@@ -32,6 +32,8 @@ class ProfileSkills extends StatelessWidget {
           children: [
             ...skillLevels?.map(
                   (e) => SkillLevelCard(
+                    hasUnmetPrerequisites:
+                        cubit.hasUnmetPrerequisites(e.skillId),
                     category: cubit.getSkillCategory(e.skillId),
                     difficulty: cubit.getDifficulty(e.skillId),
                     skillLevel: e,
@@ -39,17 +41,13 @@ class ProfileSkills extends StatelessWidget {
                         ? null
                         : () {
                             debugPrint('Goto Skill: ${e.skillName}');
-                            context.goNamed(SkillTreePage.name);
-                            final skill = state.allSkills.firstWhereOrNull(
-                              (element) => element?.skillName == e.skillName,
+
+                            context.pushNamed(
+                              SkillTreeView.skillLevelName,
+                              pathParameters: {
+                                SkillTreeView.skillPathParam: e.skillId,
+                              },
                             );
-                            if (skill != null) {
-                              cubit
-                                ..changeIndex(1)
-                                ..navigateToSkillLevel(skill: skill);
-                            } else {
-                              debugPrint('Skill not found: ${e.skillName}');
-                            }
                           },
                   ),
                 ) ??

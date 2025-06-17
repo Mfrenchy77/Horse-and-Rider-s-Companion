@@ -6,6 +6,9 @@ class StringConstants {
       'HorseAndRidersCompanion@gmail.com';
   static const String HORSEANDRIDERCOMPANIONNAME =
       "Horse And Rider's Companion";
+
+  ///Breakpoint for split screen mode
+  static const double splitScreenBreakpoint = 1024;
 }
 
 ///List of Authorized Emails for global editing

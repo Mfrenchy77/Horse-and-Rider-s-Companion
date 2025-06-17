@@ -7,55 +7,84 @@ class SkillLevelCard extends StatelessWidget {
   const SkillLevelCard({
     super.key,
     required this.onTap,
+    this.onPrereqIconTap,
     required this.category,
     required this.difficulty,
     required this.skillLevel,
+    this.hasUnmetPrerequisites = false,
   });
 
   final VoidCallback? onTap;
   final SkillLevel skillLevel;
   final SkillCategory category;
   final DifficultyState difficulty;
+  final bool hasUnmetPrerequisites;
+  final VoidCallback? onPrereqIconTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        elevation: 8,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: _buildGradient(skillLevel),
-            color: _buildBackgroundColor(skillLevel),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: _icon(category, difficulty),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 8,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: _buildGradient(skillLevel),
+                color: _buildBackgroundColor(skillLevel),
               ),
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: 8,
-                  bottom: 8,
-                  left: 16,
-                  right: 16,
-                ),
-                child: Text(
-                  skillLevel.skillName,
-                  style: const TextStyle(
-                    color: Colors.black87,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: _icon(category, difficulty),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 8,
+                      bottom: 8,
+                      left: 16,
+                      right: 16,
+                    ),
+                    child: Text(
+                      skillLevel.skillName,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (hasUnmetPrerequisites)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: InkWell(
+                onTap: onPrereqIconTap,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.error_outlined,
+                    size: 12,
+                    color: Colors.white,
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }

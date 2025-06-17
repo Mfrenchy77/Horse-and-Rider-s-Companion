@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
@@ -17,8 +18,10 @@ import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_pag
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 class Routes {
   GoRouter router({
@@ -253,6 +256,78 @@ class Routes {
                   path: SkillTreePage.path,
                   name: SkillTreePage.name,
                   builder: (context, state) => const SkillTreePage(),
+                  routes: [
+                    // 1) Skills List (always tab 0)
+                    GoRoute(
+                      path: SkillTreeView.skillsListPath,
+                      name: SkillTreeView.skillsListName,
+                      builder: (context, state) {
+                        // Only when we're exactly on /SkillTree/Skills
+                        // (i.e. no skillId param) do we reset to tab 0
+                        if (state
+                                .pathParameters[SkillTreeView.skillPathParam] ==
+                            null) {
+                          context.read<AppCubit>().setSkillTreeTabIndex(0);
+                        }
+                        return const SkillTreeView();
+                      },
+                      routes: [
+                        // 2) Skill Detail
+                        GoRoute(
+                          path: SkillTreeView.skillLevelPath,
+                          name: SkillTreeView.skillLevelName,
+                          builder: (context, state) {
+                            final id = state
+                                .pathParameters[SkillTreeView.skillPathParam]!;
+                            final isLarge = MediaQuery.of(context).size.width >=
+                                StringConstants.splitScreenBreakpoint;
+
+                            context.read<AppCubit>()
+                              ..setSkill(id)
+                              ..setSkillTreeTabIndex(isLarge ? 0 : 1);
+                            return SkillTreeView(skillId: id);
+                          },
+                        ),
+                      ],
+                    ),
+
+                    // 3) Training Paths List (tab 1 on large, tab 2 on small)
+                    GoRoute(
+                      path: 'TrainingPaths',
+                      name: SkillTreeView.trainingPathListName,
+                      builder: (context, state) {
+                        // Only reset to the list‐tab when there's no detail
+                        if (state.pathParameters[
+                                SkillTreeView.trainingPathPathParam] ==
+                            null) {
+                          final isLarge = MediaQuery.of(context).size.width >=
+                              StringConstants.splitScreenBreakpoint;
+                          context
+                              .read<AppCubit>()
+                              .setSkillTreeTabIndex(isLarge ? 1 : 2);
+                        }
+                        return const SkillTreeView();
+                      },
+                      routes: [
+                        // 4) Training Path Detail
+                        GoRoute(
+                          path: SkillTreeView.trainingPathViewPath,
+                          name: SkillTreeView.trainingPathViewName,
+                          builder: (context, state) {
+                            final id = state.pathParameters[
+                                SkillTreeView.trainingPathPathParam]!;
+                            final isLarge = MediaQuery.of(context).size.width >=
+                                StringConstants.splitScreenBreakpoint;
+
+                            context.read<AppCubit>()
+                              ..setTrainingPath(id)
+                              ..setSkillTreeTabIndex(isLarge ? 1 : 3);
+                            return SkillTreeView(trainingPathId: id);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
