@@ -7,7 +7,6 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillNodeCard extends StatelessWidget {

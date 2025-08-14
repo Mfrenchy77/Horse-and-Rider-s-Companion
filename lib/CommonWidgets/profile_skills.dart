@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_level_card.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 /// {@template profile_skills}
 /// ProfileSkills widget displays the skills of the user or horse

@@ -26,8 +26,6 @@ class RiderProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Scaffold(

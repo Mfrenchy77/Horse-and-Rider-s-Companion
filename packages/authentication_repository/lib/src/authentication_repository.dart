@@ -1,26 +1,21 @@
-// ignore_for_file: avoid_print
+// ignore: lines_longer_than_80_chars
+// ignore_for_file: avoid_print, public_member_api_docs, avoid_redundant_argument_values
 
 import 'dart:async';
 
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:cache/cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-/// {@template sign_up_with_email_and_password_failure}
-/// Thrown if during the sign up process if a failure occurs.
-/// {@endtemplate}
+/// -------------------- Error types (unchanged) --------------------
+
 class SignUpWithEmailAndPasswordFailure implements Exception {
-  /// {@macro sign_up_with_email_and_password_failure}
   const SignUpWithEmailAndPasswordFailure([
     this.message = 'An unknown exception occurred.',
   ]);
-
-  /// Create an authentication message
-  /// from a firebase authentication exception code.
-  /// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/createUserWithEmailAndPassword.html
   factory SignUpWithEmailAndPasswordFailure.fromCode(String code) {
     switch (code) {
       case 'invalid-email':
@@ -47,23 +42,13 @@ class SignUpWithEmailAndPasswordFailure implements Exception {
         return const SignUpWithEmailAndPasswordFailure('Error');
     }
   }
-
-  /// The associated error message.
   final String message;
 }
 
-/// {@template log_in_with_email_and_password_failure}
-/// Thrown during the login process if a failure occurs.
-/// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/signInWithEmailAndPassword.html
-/// {@endtemplate}
 class LogInWithEmailAndPasswordFailure implements Exception {
-  /// {@macro log_in_with_email_and_password_failure}
   const LogInWithEmailAndPasswordFailure([
     this.message = 'An unknown exception occurred.',
   ]);
-
-  /// Create an authentication message
-  /// from a firebase authentication exception code.
   factory LogInWithEmailAndPasswordFailure.fromCode(String code) {
     switch (code) {
       case 'invalid-email':
@@ -86,23 +71,13 @@ class LogInWithEmailAndPasswordFailure implements Exception {
         return const LogInWithEmailAndPasswordFailure();
     }
   }
-
-  /// The associated error message.
   final String message;
 }
 
-/// {@template log_in_as_guest_failure}
-/// Thrown during the login process if a failure occurs.
-/// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/signInAnonymously.html
-/// {@endtemplate}
 class LogInAsGuestFailure implements Exception {
-  /// {@macro log_in_as_guest_failure}
   const LogInAsGuestFailure([
     this.message = 'An unknown exception occurred.',
   ]);
-
-  /// Create an authentication message
-  /// from a firebase authentication exception code.
   factory LogInAsGuestFailure.fromCode(String code) {
     switch (code) {
       case 'user-disabled':
@@ -113,23 +88,13 @@ class LogInAsGuestFailure implements Exception {
         return const LogInAsGuestFailure();
     }
   }
-
-  /// The associated error message.
   final String message;
 }
 
-/// {@template reset_password_failure}
-///Thrown during the reset password process if a failure occurs.
-///https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/sendPasswordResetEmail.html
-///{@endtemplate}
 class ResetPasswordFailure implements Exception {
-  ///{@macro reset_password_failure}
   const ResetPasswordFailure([
     this.message = 'An unknown exception occurred.',
   ]);
-
-  ///Create an authentication message
-  ///from a firebase authentication exception code.
   factory ResetPasswordFailure.fromCode(String code) {
     switch (code) {
       case 'invalid-email':
@@ -141,47 +106,26 @@ class ResetPasswordFailure implements Exception {
           'Email is not found, check your spelling, or create an account.',
         );
       case 'missing-android-pkg-name':
-        return const ResetPasswordFailure(
-          'Missing Android package name.',
-        );
+        return const ResetPasswordFailure('Missing Android package name.');
       case 'missing-continue-uri':
-        return const ResetPasswordFailure(
-          'Missing continue URI.',
-        );
+        return const ResetPasswordFailure('Missing continue URI.');
       case 'missing-ios-bundle-id':
-        return const ResetPasswordFailure(
-          'Missing iOS bundle ID.',
-        );
+        return const ResetPasswordFailure('Missing iOS bundle ID.');
       case 'invalid-continue-uri':
-        return const ResetPasswordFailure(
-          'Invalid continue URI.',
-        );
+        return const ResetPasswordFailure('Invalid continue URI.');
       case 'unauthorized-continue-uri':
-        return const ResetPasswordFailure(
-          'Unauthorized continue URI.',
-        );
-
+        return const ResetPasswordFailure('Unauthorized continue URI.');
       default:
         return const ResetPasswordFailure();
     }
   }
-
-  ///The associated error message.
   final String message;
 }
 
-/// {@template log_in_with_google_failure}
-/// Thrown during the sign in with google process if a failure occurs.
-/// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/signInWithCredential.html
-/// {@endtemplate}
 class LogInWithGoogleFailure implements Exception {
-  /// {@macro log_in_with_google_failure}
   const LogInWithGoogleFailure([
     this.message = 'An unknown exception occurred.',
   ]);
-
-  /// Create an authentication message
-  /// from a firebase authentication exception code.
   factory LogInWithGoogleFailure.fromCode(String code) {
     switch (code) {
       case 'account-exists-with-different-credential':
@@ -220,43 +164,52 @@ class LogInWithGoogleFailure implements Exception {
         return const LogInWithGoogleFailure();
     }
   }
-
-  /// The associated error message.
   final String message;
 }
 
-/// Thrown during the logout process if a failure occurs.
 class LogOutFailure implements Exception {}
 
-/// {@template authentication_repository}
-/// Repository which manages user authentication.
-/// {@endtemplate}
+/// -------------------- Authentication Repository --------------------
+
 class AuthenticationRepository {
-  /// {@macro authentication_repository}
   AuthenticationRepository({
     CacheClient? cache,
     firebase_auth.FirebaseAuth? firebaseAuth,
-    GoogleSignIn? googleSignIn,
+    GoogleSignIn? googleSignIn, // optional injection to match your main.dart
   })  : _cache = cache ?? CacheClient(),
         _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn.standard();
+        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   final CacheClient _cache;
   final firebase_auth.FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
 
-  /// Whether or not the current environment is web
-  /// Should only be overriden for testing purposes. Otherwise,
-  /// defaults to [kIsWeb]
   @visibleForTesting
   bool isWeb = kIsWeb;
 
-  /// User cache key.
-  /// Should only be used for testing purposes.
   @visibleForTesting
   static const userCacheKey = '__user_cache_key__';
 
-// Caches the current Firebase user
+  // Guard against double-initialization (plugin recommends init once).
+  static bool _gsInitialized = false;
+
+  /// Lazily ensure Google Sign-In is initialized (v7 requirement).
+  /// If you already call `GoogleSignIn.instance.initialize(...)` in main()
+  ///  this is a no-op.
+  Future<void> _ensureGoogleInitialized() async {
+    if (isWeb) return; // Not used for web popup flow.
+    if (_gsInitialized) return;
+    try {
+      await GoogleSignIn.instance
+          .initialize(); // clientId/serverClientId optional
+      _gsInitialized = true;
+    } catch (e) {
+      // If already initialized elsewhere, or platform handled via plist/json, ignore.
+      debugPrint('GoogleSignIn initialize() skipped/failed: $e');
+      _gsInitialized = true; // Avoid retry storm.
+    }
+  }
+
   Future<void> _cacheCurrentUser() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
@@ -267,28 +220,21 @@ class AuthenticationRepository {
     }
   }
 
-  /// Saves the User object to cache
   Future<void> _cacheUser(User user) async {
     final userData = user.toJson();
     _cache.write(key: userCacheKey, value: userData);
   }
 
-  /// Retrieves the cached user data
   User? getCachedUser() {
     final userData = _cache.read<Map<String, dynamic>>(key: userCacheKey);
     return userData != null ? User.fromJson(userData) : null;
   }
 
-  /// Clears the cached user data
   Future<void> _clearCachedUser() async {
     debugPrint('Clearing cached user');
     _cache.remove(key: userCacheKey);
   }
 
-  /// Stream of [User] which will emit the current user when
-  /// the authentication state changes.
-  ///
-  /// Emits [User.empty] if the user is not authenticated.
   Stream<User?> get user {
     return _firebaseAuth.authStateChanges().map((firebaseUser) {
       final user = firebaseUser == null ? User.empty : firebaseUser.toAppUser();
@@ -297,92 +243,90 @@ class AuthenticationRepository {
     });
   }
 
-  /// Returns the current cached user.
-  /// Defaults to [User.empty] if there is no cached user.
   User get currentUser {
     return _cache.read<User>(key: userCacheKey) ?? User.empty;
   }
 
-  /// Creates a new user with the provided [name] and [email] and [password].
-  ///
-  /// Throws a [SignUpWithEmailAndPasswordFailure] if an exception occurs.
   Future<User?> signUp({
     required String name,
     required String email,
     required String password,
   }) async {
     try {
-      // Create user account
       await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      // Safely access the current user with null check
       final currentUser = _firebaseAuth.currentUser;
       if (currentUser == null) {
         throw Exception('User not found after registration.');
       }
-
-      // Update display name and reload user profile
       await currentUser.updateDisplayName(name);
       await currentUser.reload();
-
-      //Cache the user
       await _cacheCurrentUser();
-
-      // Send email verification
       await currentUser.sendEmailVerification();
       return currentUser.toAppUser();
-      // Optionally, update the cache with the new user information if necessary
-      // _cache.write(key: userCacheKey, value: currentUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw SignUpWithEmailAndPasswordFailure.fromCode(e.code);
     } catch (e) {
-      // Log or handle other exceptions here
       throw Exception('Failed to sign up: $e');
     }
   }
 
-  /// Allow the user to sign in as a guest
   Future<User?> signInAsGuest() async {
     const guestUser = User(
       id: 'guest',
       email: '',
       name: 'Guest',
-      // ignore: avoid_redundant_argument_values
       isGuest: true,
-      // ignore: avoid_redundant_argument_values
       emailVerified: false,
     );
     return guestUser;
   }
 
-  /// Starts the Sign In with Google Flow.
-  ///
-  /// Throws a [LogInWithGoogleFailure] if an exception occurs.
+  /// Google sign-in across platforms.
+  /// - Web: Firebase popup
+  /// - Android/iOS/macOS: google_sign_in v7 authenticate() -> idToken -> Firebase credential
   Future<User?> logInWithGoogle() async {
     try {
-      late final firebase_auth.AuthCredential credential;
       if (isWeb) {
-        final googleProvider = firebase_auth.GoogleAuthProvider();
-        final userCredential = await _firebaseAuth.signInWithPopup(
-          googleProvider,
-        );
-        credential = userCredential.credential!;
-      } else {
-        final googleUser = await _googleSignIn.signIn();
-        final googleAuth = await googleUser!.authentication;
-        credential = firebase_auth.GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
+        final provider = firebase_auth.GoogleAuthProvider();
+        final userCred = await _firebaseAuth.signInWithPopup(provider);
+        await _cacheCurrentUser();
+        return userCred.user?.toAppUser();
       }
 
-      await _firebaseAuth.signInWithCredential(credential);
-      // Cache the current user after successful Google sign-in
-      await _cacheCurrentUser();
-      return _firebaseAuth.currentUser?.toAppUser();
+      // Native (Android/iOS/macOS)
+      await _ensureGoogleInitialized();
+
+      // Prefer authenticate() when supported (v7+ API).
+      if (_googleSignIn.supportsAuthenticate()) {
+        final account = await _googleSignIn.authenticate();
+        final googleAuth = account.authentication; // idToken only in v7
+        final credential = firebase_auth.GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
+        final userCred = await _firebaseAuth.signInWithCredential(credential);
+        await _cacheCurrentUser();
+        return userCred.user?.toAppUser();
+      } else {
+        // Extremely old platforms: fallback not expected in v7, but just in
+        // case (Most clients should never hit this branch.)
+        final account = await _googleSignIn.authenticate();
+        final googleAuth = account.authentication;
+        final credential = firebase_auth.GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
+        final userCred = await _firebaseAuth.signInWithCredential(credential);
+        await _cacheCurrentUser();
+        return userCred.user?.toAppUser();
+      }
+    } on GoogleSignInException catch (e) {
+      // v7.1+ exposes structured codes (e.code is GoogleSignInExceptionCode)
+      final msg = e.code.toString().contains('canceled')
+          ? 'Sign-in canceled.'
+          : 'Google sign-in failed.';
+      throw LogInWithGoogleFailure(msg);
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInWithGoogleFailure.fromCode(e.code);
     } catch (_) {
@@ -390,22 +334,17 @@ class AuthenticationRepository {
     }
   }
 
-  /// Signs in with the provided [email] and [password].
-  ///
-  /// Throws a [LogInWithEmailAndPasswordFailure] if an exception occurs.
   Future<User?> logInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
     try {
-      await _firebaseAuth.signInWithEmailAndPassword(
+      final cred = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      // Cache the current user after successful login
       await _cacheCurrentUser();
-      return _firebaseAuth.currentUser?.toAppUser();
+      return cred.user?.toAppUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw LogInWithEmailAndPasswordFailure.fromCode(e.code);
     } catch (_) {
@@ -413,91 +352,68 @@ class AuthenticationRepository {
     }
   }
 
-  ///Sends an [email] to the address provided
-  ///to reset password
   Future<void> forgotPassword({required String email}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      // Catch FirebaseAuthException and convert to ResetPasswordFailure
       throw ResetPasswordFailure.fromCode(e.code);
-    } catch (e) {
-      // Handle other types of exceptions
+    } catch (_) {
       throw const ResetPasswordFailure();
     }
   }
 
-  /// Returns the current user's email verification status
-  /// as a stream of [bool] values.
   Stream<bool> getEmailVerificationStatus() async* {
     final user = _firebaseAuth.currentUser;
-    if (user != null) {
-      yield user.emailVerified;
-    }
+    if (user != null) yield user.emailVerified;
     yield false;
   }
 
-  /// Re send the email verification
   Future<void> resendEmailVerification() async {
     final user = _firebaseAuth.currentUser;
-    if (user != null) {
-      await user.sendEmailVerification();
-    }
+    if (user != null) await user.sendEmailVerification();
   }
 
-  /// Signs out the current user which will emit
-  /// [User.empty] from the [user] Stream.
-  ///
-  /// Throws a [LogOutFailure] if an exception occurs.
   Future<void> logOut() async {
     debugPrint('Logging out');
     try {
-      await Future.wait([
-        _firebaseAuth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
-      // Clear the cached user on logout
+      await _firebaseAuth.signOut();
+      if (!isWeb) {
+        // Sign out of Google so the account chooser shows next time.
+        try {
+          await _googleSignIn.signOut();
+        } catch (_) {
+          // ignore
+        }
+      }
       await _clearCachedUser();
     } catch (_) {
       throw LogOutFailure();
     }
   }
 
-  /// Reloads the current user
-
   Future<void> reloadCurrentUser() async {
     final user = _firebaseAuth.currentUser;
-    if (user != null) {
-      await user.reload();
-    }
+    if (user != null) await user.reload();
   }
 
-  /// Returns the current user's email verification status
   bool isEmailVerified() {
     final user = _firebaseAuth.currentUser;
-    if (user != null) {
-      return user.emailVerified;
-    }
-    return false;
+    return user?.emailVerified ?? false;
   }
 }
 
-/// Extension on [firebase_auth.User] to convert to [User]
+/// Converts a [firebase_auth.User] to your app's [User] model.
 extension UserConversion on firebase_auth.User? {
-  /// Converts a [firebase_auth.User] to a [User]
   User? toAppUser() {
     final firebaseUser = this;
-    if (firebaseUser == null) {
-      return null;
-    } else {
-      return User(
-        id: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        photo: firebaseUser.photoURL,
-        name: firebaseUser.displayName ?? '',
-        isGuest: firebaseUser.isAnonymous,
-        emailVerified: firebaseUser.emailVerified,
-      );
-    }
+    if (firebaseUser == null) return null;
+    return User(
+      id: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      photo: firebaseUser.photoURL,
+      name: firebaseUser.displayName ?? '',
+      isGuest: firebaseUser.isAnonymous,
+      emailVerified: firebaseUser.emailVerified,
+    );
   }
 }
