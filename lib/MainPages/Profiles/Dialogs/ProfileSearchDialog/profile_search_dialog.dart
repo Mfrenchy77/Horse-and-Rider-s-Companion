@@ -234,31 +234,31 @@ class ProfileSearchDialog extends StatelessWidget {
 
   /// Drop down for location search area,
   ///  visible only when search type is location
-  Widget _locationDropDown({
-    required BuildContext context,
-    required ProfileSearchCubit cubit,
-    required ProfileSearchState state,
-  }) {
-    final items = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-        .map(
-          (location) => DropdownMenuItem<int>(
-            value: location,
-            child: Text(location.toString()),
-          ),
-        )
-        .toList();
-    return state.searchType == SearchType.horseLocation ||
-            state.searchType == SearchType.riderLocation
-        ? DropdownButton<int>(
-            hint: const Text('Select Search Range'),
-            value: state.locationRange.value,
-            items: items,
-            onChanged: (value) {
-              cubit.locationRangeChanged(value);
-            },
-          )
-        : const SizedBox();
-  }
+  // Widget _locationDropDown({
+  //   required BuildContext context,
+  //   required ProfileSearchCubit cubit,
+  //   required ProfileSearchState state,
+  // }) {
+  //   final items = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+  //       .map(
+  //         (location) => DropdownMenuItem<int>(
+  //           value: location,
+  //           child: Text(location.toString()),
+  //         ),
+  //       )
+  //       .toList();
+  //   return state.searchType == SearchType.horseLocation ||
+  //           state.searchType == SearchType.riderLocation
+  //       ? DropdownButton<int>(
+  //           hint: const Text('Select Search Range'),
+  //           value: state.locationRange.value,
+  //           items: items,
+  //           onChanged: (value) {
+  //             cubit.locationRangeChanged(value);
+  //           },
+  //         )
+  //       : const SizedBox();
+  // }
 
   /// Hint Text for the search field depending on the search type
   String _getHintText(SearchType searchType) {

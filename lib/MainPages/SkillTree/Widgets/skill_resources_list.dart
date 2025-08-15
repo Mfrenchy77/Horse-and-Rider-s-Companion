@@ -14,8 +14,7 @@ class SkillResouresList extends StatelessWidget {
           // Filter the resources based on skillTreeIds containing the skill id
           final filteredResources = state.resources
               .where(
-                (element) =>
-                    element.skillTreeIds?.contains(state.skill?.id) ?? false,
+                (element) => element.skillTreeIds.contains(state.skill?.id),
               )
               .toList();
 

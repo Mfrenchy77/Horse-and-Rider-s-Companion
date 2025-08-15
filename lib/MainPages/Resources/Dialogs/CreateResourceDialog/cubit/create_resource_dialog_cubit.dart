@@ -129,7 +129,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     final resource = state.resource ?? Resource();
 
     // Clone the current list of skill IDs to avoid directly modifying the state
-    final updatedSkills = List<String>.from(resource.skillTreeIds ?? []);
+    final updatedSkills = List<String>.from(resource.skillTreeIds);
     debugPrint('updatedSkills: $updatedSkills');
 
     if (updatedSkills.contains(skillId)) {
@@ -400,7 +400,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         id: state.resource?.id ?? ViewUtils.createId(),
         numberOfRates: state.resource?.numberOfRates ?? 0,
         url: state.url.value.isEmpty ? state.resource?.url : state.url.value,
-        skillTreeIds: state.resourceSkills?.map((e) => e?.id).toList() ?? [],
+        skillTreeIds: state.resourceSkills
+                ?.map((e) => e?.id)
+                .whereType<String>()
+                .toList() ??
+            [],
         thumbnail:
             state.imageUrl.isEmpty ? state.resource?.thumbnail : state.imageUrl,
       );

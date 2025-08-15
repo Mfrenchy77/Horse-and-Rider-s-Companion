@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/App/app.dart'; // where AppCubit/AppState/ResourcesSortStatus live
 
 class ResourcesSortDialog extends StatelessWidget {
   const ResourcesSortDialog({super.key});
@@ -13,24 +13,24 @@ class ResourcesSortDialog extends StatelessWidget {
 
         return AlertDialog(
           title: const Text('Sort Resources'),
-          content:
-              // Radio Buttons
-              Column(
-            mainAxisSize: MainAxisSize.min,
-            children:
-                ResourcesSortStatus.values.map((ResourcesSortStatus status) {
-              return RadioListTile<ResourcesSortStatus>(
-                title: Text(_getSortOptionLabel(status)),
-                value: status,
-                groupValue: state.resourcesSortStatus,
-                onChanged: (ResourcesSortStatus? newValue) {
-                  if (newValue != null) {
-                    cubit.updateResourceSortStatus(newValue);
-                    Navigator.of(context).pop();
-                  }
-                },
-              );
-            }).toList(),
+          content: RadioGroup<ResourcesSortStatus>(
+            groupValue: state.resourcesSortStatus,
+            onChanged: (ResourcesSortStatus? newValue) {
+              if (newValue == null) return;
+              cubit.updateResourceSortStatus(newValue);
+              Navigator.of(context).pop();
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: ResourcesSortStatus.values
+                  .map(
+                    (status) => RadioListTile<ResourcesSortStatus>(
+                      title: Text(_getSortOptionLabel(status)),
+                      value: status,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         );
       },

@@ -183,7 +183,7 @@ class UpdateResourceSkills extends StatelessWidget {
                                         ),
                                         textLabel: e?.skillName ?? '',
                                         isSelected: state.resource?.skillTreeIds
-                                                ?.contains(e?.id) ??
+                                                .contains(e?.id) ??
                                             false,
                                         onTap: (value) {
                                           context

@@ -178,7 +178,7 @@ Widget _logTag({
   required AddLogEntryState state,
 }) {
   return DropdownButtonFormField<LogTag>(
-    value: state.tag,
+    initialValue: state.tag,
     onChanged: (value) =>
         context.read<AddLogEntryCubit>().logTagChanged(tag: value!),
     items: const [

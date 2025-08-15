@@ -108,7 +108,8 @@ class _SkillTreeViewState extends State<SkillTreeView>
     final index = _tabController.index;
     final cubit = context.read<AppCubit>();
 
-    // On a wide screen, if we are on index 0 and the flag isFromTrainingPath is true,
+    // On a wide screen, if we are on index 0 and the flag
+    // isFromTrainingPath is true,
     // we should go back to the TrainingPathView.
     if (isLarge && index == 0 && cubit.state.isFromTrainingPath) {
       final pathId = cubit.getSelectedTrainingPathId();
@@ -125,7 +126,8 @@ class _SkillTreeViewState extends State<SkillTreeView>
 
       return;
     } else if (isLarge && index == 0) {
-      // If we are on Skills List and not from TrainingPath, just go back to Profile
+      // If we are on Skills List and not from TrainingPath,
+      // just go back to Profile
       cubit.changeIndex(0);
       return;
     }
@@ -286,7 +288,8 @@ class _SkillTreeViewState extends State<SkillTreeView>
                     ]
                   : [
                       const SkillsListView(
-                          // onSkillSelected: () => _cubit.setSkillTreeTabIndex(1),
+                          // onSkillSelected: () =>
+                          // _cubit.setSkillTreeTabIndex(1),
                           ),
                       SkillLevelView(
                         skillId: widget.skillId,

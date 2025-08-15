@@ -61,7 +61,7 @@ class ResourcesItem extends StatelessWidget {
                   context.goNamed(
                     ResourceCommentPage.name,
                     pathParameters: {
-                      ResourceCommentPage.pathParams: resource.id!,
+                      ResourceCommentPage.pathParams: resource.id ?? '',
                     },
                   );
                 },

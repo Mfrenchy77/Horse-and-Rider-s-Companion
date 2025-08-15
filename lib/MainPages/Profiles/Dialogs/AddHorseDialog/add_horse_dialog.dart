@@ -462,7 +462,7 @@ Widget _horseGender({
   required AddHorseDialogState state,
 }) {
   return DropdownButtonFormField(
-    value: state.horseProfile?.gender ?? 'Mare',
+    initialValue: state.horseProfile?.gender ?? 'Mare',
     onChanged: (value) =>
         context.read<AddHorseDialogCubit>().horseGenderChanged(value as String),
     items: HorseDetails.genders

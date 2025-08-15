@@ -8,23 +8,22 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTraini
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
-import 'package:searchfield/searchfield.dart';
 
 class CreateTrainingPathDialog extends StatelessWidget {
   const CreateTrainingPathDialog({
     super.key,
-    required this.usersProfile,
-    required this.trainingPath,
     required this.isEdit,
     required this.allSkills,
     required this.isForRider,
+    required this.usersProfile,
+    required this.trainingPath,
   });
 
-  final TrainingPath? trainingPath;
   final bool isEdit;
-  final List<Skill> allSkills;
   final bool isForRider;
+  final List<Skill> allSkills;
   final RiderProfile usersProfile;
+  final TrainingPath? trainingPath;
 
   @override
   Widget build(BuildContext context) {
@@ -43,14 +42,13 @@ class CreateTrainingPathDialog extends StatelessWidget {
             Navigator.pop(context);
           }
           if (state.status == FormStatus.failure) {
-            // show error snackbar and then call reset error
             SchedulerBinding.instance.addPostFrameCallback((_) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
                   SnackBar(
                     content: Text(
-                      '$state.error',
+                      '${state.error}',
                       style: const TextStyle(color: Colors.white),
                     ),
                     backgroundColor: Colors.red,
@@ -169,8 +167,8 @@ class CreateTrainingPathDialog extends StatelessWidget {
                               Text(
                                 state.availableSkills.isEmpty
                                     ? 'All skills added to your path'
-                                    : 'Drag & Drop a skill '
-                                        'into the path below:',
+                                    : 'Drag & Drop a skill'
+                                        ' into the path below:',
                               ),
                               gap(),
                               Wrap(
@@ -294,76 +292,107 @@ class CreateTrainingPathDialog extends StatelessWidget {
     );
   }
 
-  /// SearchField overlay
+  /// Search box in the AppBar actions
+  ///  (replaces SearchField with built-in Autocomplete)
   Widget _buildSearch(BuildContext context) {
     final cubit = context.read<CreateTrainingPathCubit>();
-    return BlocBuilder<CreateTrainingPathCubit, CreateTrainingPathState>(
-      builder: (context, state) {
-        final focus = FocusNode();
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            child: SearchField<String>(
+    final theme = HorseAndRidersTheme().getTheme();
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        child: Autocomplete<String>(
+          // Provide suggestions; when query is empty,
+          // show a short list (like Suggestion.expand)
+          optionsBuilder: (TextEditingValue text) {
+            final q = text.text.trim().toLowerCase();
+            final skills = context
+                .read<CreateTrainingPathCubit>()
+                .state
+                .availableSkills
+                .map((s) => s.skillName);
+
+            if (q.isEmpty) {
+              return skills.take(30);
+            }
+            return skills.where((name) => name.toLowerCase().contains(q));
+          },
+
+          displayStringForOption: (s) => s,
+
+          onSelected: (selected) {
+            FocusScope.of(context).unfocus();
+            cubit.skillNodeSelected(skillName: selected);
+          },
+
+          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            // keep the Cubit search state in sync as the user types
+            controller.addListener(() {
+              cubit.searchQueryChanged(query: controller.text);
+            });
+
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
               autofocus: true,
-              focusNode: focus,
-              suggestions: state.availableSkills
-                  .where(
-                    (s) => s.skillName
-                        .toLowerCase()
-                        .contains(state.searchQuery.toLowerCase()),
-                  )
-                  .map(
-                    (s) => SearchFieldListItem<String>(
-                      s.skillName,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Text(s.skillName),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              suggestionState:
-                  state.isSearch ? Suggestion.expand : Suggestion.hidden,
-              searchInputDecoration: SearchInputDecoration(
+              textInputAction: TextInputAction.search,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
                 filled: true,
-                iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
-                fillColor:
-                    HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
-                suffixIcon: IconButton(
-                  onPressed: cubit.isSearch,
-                  icon: const Icon(Icons.clear),
-                ),
+                iconColor: theme.iconTheme.color,
+                fillColor: theme.scaffoldBackgroundColor,
                 hintText: 'Type to filter available skills',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(40),
                 ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                suffixIcon: IconButton(
+                  onPressed: cubit.isSearch, // closes search mode (toggle)
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Clear',
+                ),
               ),
-              onSearchTextChanged: (q) {
-                cubit.searchQueryChanged(query: q);
-                return state.availableSkills
-                    .where(
-                      (s) =>
-                          s.skillName.toLowerCase().contains(q.toLowerCase()),
-                    )
-                    .map(
-                      (s) => SearchFieldListItem<String>(
-                        s.skillName,
+              onSubmitted: (_) => onFieldSubmitted(),
+            );
+          },
+
+          // Popup list styling
+          optionsViewBuilder: (context, onSelected, options) {
+            final textStyle = Theme.of(context).textTheme.bodyMedium;
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(12),
+                child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(maxWidth: 420, maxHeight: 320),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, i) {
+                      final opt = options.elementAt(i);
+                      return InkWell(
+                        onTap: () => onSelected(opt),
                         child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Text(s.skillName),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          child: Text(opt, style: textStyle),
                         ),
-                      ),
-                    )
-                    .toList();
-              },
-              onSuggestionTap: (item) {
-                focus.unfocus();
-                cubit.skillNodeSelected(skillName: item.searchKey);
-              },
-            ),
-          ),
-        );
-      },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 

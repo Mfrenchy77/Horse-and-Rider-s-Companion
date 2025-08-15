@@ -1336,8 +1336,7 @@ class AppCubit extends Cubit<AppState> {
     if (state.resources.isEmpty) {
       debugPrint('Resources not retrieved yet');
       _resourcesStream = _resourcesRepository.getResources().listen((event) {
-        final resources =
-            event.docs.map((doc) => (doc.data()) as Resource).toList();
+        final resources = event.docs.map((doc) => doc.data()).toList();
         debugPrint('Resources Retrieved: ${resources.length}');
         emit(state.copyWith(resources: resources));
       });
@@ -1454,7 +1453,7 @@ class AppCubit extends Cubit<AppState> {
 
       if (skill != null) {
         debugPrint('Skill Selected: ${skill.skillName}');
-        final skillTreeIds = resource.skillTreeIds ?? [];
+        final skillTreeIds = resource.skillTreeIds;
 
         // Toggle the presence of skill.id in skillTreeIds
         if (skillTreeIds.contains(skill.id)) {
@@ -1902,62 +1901,63 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  void skillSearchQueryChanged({required String searchQuery}) {
-    final sortedSkills =
-        _sortSkillsByType(state.allSkills).map((e) => e).toList();
-    if (searchQuery.isEmpty) {
-      emit(
-        state.copyWith(
-          searchList: state.allSkills.map((e) => e?.skillName).toList(),
-          sortedSkills: _sortSkillsByType(state.allSkills),
-        ),
-      );
-      return;
-    }
-    // Filter sortedSkills based on the search query
-    final filteredSkills = sortedSkills
-        .where(
-          (element) =>
-              element?.skillName
-                  .toLowerCase()
-                  .contains(searchQuery.toLowerCase()) ??
-              false,
-        )
-        .toList();
-    debugPrint('filteredSkills: ${filteredSkills.length}');
+// ---------- helpers ----------
+  String _norm(String s) => s.trim().toLowerCase();
 
-    // Sort the filtered skills by type and then filter by search query again
-    final searchList = _sortSkillsByType(filteredSkills)
-        .map((e) => e?.skillName)
-        .toList()
-        .where(
-          (element) =>
-              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
-              false,
-        )
-        .toList();
-    debugPrint('searchList: ${searchList.length}');
+  List<Skill> _sortSkillsByName(List<Skill> list) {
+    final out = list.whereType<Skill>().toList() // drop nulls defensively
+      ..sort((a, b) => _norm(a.skillName).compareTo(_norm(b.skillName)));
+    return out;
+  }
 
-    // Emit the new state with the filtered and sorted skills
+// Optional: quick reset you can call after loading skills, etc.
+  void resetSkillSearchToAll() {
+    final all = state.allSkills.whereType<Skill>().toList();
+    final sortedAll = _sortSkillsByName(all);
     emit(
       state.copyWith(
-        searchList: searchList,
-        sortedSkills: filteredSkills,
+        sortedSkills: sortedAll,
+        searchList: sortedAll.map((s) => s.skillName).toList(),
       ),
     );
   }
 
-  /// Search for Resources query
+// ---------- SKILLS ----------
+  void skillSearchQueryChanged({required String searchQuery}) {
+    final q = _norm(searchQuery);
+    final all = state.allSkills.whereType<Skill>().toList();
+
+    if (q.isEmpty) {
+      final sortedAll = _sortSkillsByName(all);
+      emit(
+        state.copyWith(
+          sortedSkills: sortedAll,
+          searchList: sortedAll.map((s) => s.skillName).toList(),
+        ),
+      );
+      return;
+    }
+
+    final filtered = all.where((s) => _norm(s.skillName).contains(q)).toList();
+    final sortedFiltered = _sortSkillsByName(filtered);
+
+    emit(
+      state.copyWith(
+        sortedSkills: sortedFiltered,
+        searchList: sortedFiltered.map((s) => s.skillName).toList(),
+      ),
+    );
+  }
+
+// ---------- RESOURCES ----------
   void resourceSearchQueryChanged({required String searchQuery}) {
-    final searchList = state.resources
-        .map((e) => e.name)
-        .toList()
-        .where(
-          (element) =>
-              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
-              false,
-        )
-        .toList();
+    final q = _norm(searchQuery);
+    final names = state.resources.map((r) => r.name).whereType<String>();
+
+    final searchList = q.isEmpty
+        ? names.toList() // FULL list when empty
+        : names.where((n) => _norm(n).contains(q)).toList();
+
     emit(state.copyWith(searchList: searchList));
   }
 

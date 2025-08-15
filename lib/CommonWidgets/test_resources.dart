@@ -18,7 +18,7 @@ class TestResource {
 
     // Example of a list of skillTreeIds (you can customize it)
     final skillTreeIds =
-        List<String?>.generate(3, (_) => 'skill-${_random.nextInt(10)}');
+        List<String>.generate(3, (_) => 'skill-${_random.nextInt(10)}');
 
     // Generate a list of users who rated
     final usersWhoRated = List<BaseListItem>.generate(

@@ -153,7 +153,7 @@ final mainThemeLight = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.mainPrimaryLight,
+    backgroundColor: ColorConst.mainPrimaryLight,
   ),
   cardColor: ColorConst.mainBackgroundLight,
   dialogTheme: const DialogThemeData(
@@ -186,7 +186,7 @@ final mainThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.cardDark,
+    backgroundColor: ColorConst.cardDark,
   ),
   cardColor: ColorConst.cardDark,
   cardTheme: const CardThemeData(
@@ -226,7 +226,7 @@ final springTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.springPrimaryLight,
+    backgroundColor: ColorConst.springPrimaryLight,
   ),
   cardColor: ColorConst.springBackgroundLight,
   drawerTheme: const DrawerThemeData(
@@ -262,7 +262,7 @@ final springThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.springPrimaryDark,
+    backgroundColor: ColorConst.springPrimaryDark,
   ),
   cardColor: ColorConst.springBackgroundDark,
   drawerTheme: const DrawerThemeData(
@@ -299,7 +299,7 @@ final summerTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.summerPrimaryLight,
+    backgroundColor: ColorConst.summerPrimaryLight,
   ),
   cardColor: ColorConst.summerBackgroundLight,
   drawerTheme: const DrawerThemeData(
@@ -324,7 +324,7 @@ final summerThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.summerPrimaryDark,
+    backgroundColor: ColorConst.summerPrimaryDark,
   ),
   cardColor: ColorConst.summerBackgroundDark,
   drawerTheme: const DrawerThemeData(
@@ -360,7 +360,7 @@ final autumnTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.fallPrimaryLight,
+    backgroundColor: ColorConst.fallPrimaryLight,
   ),
   cardColor: ColorConst.fallBackgroundLight,
   drawerTheme: const DrawerThemeData(
@@ -378,7 +378,7 @@ final autumnThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.fallPrimaryLight,
+    backgroundColor: ColorConst.fallPrimaryLight,
   ),
   cardColor: ColorConst.fallPrimaryDark,
   drawerTheme: const DrawerThemeData(
@@ -396,7 +396,7 @@ final winterTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.winterPrimaryLight,
+    backgroundColor: ColorConst.winterPrimaryLight,
   ),
   navigationRailTheme: const NavigationRailThemeData(
     backgroundColor: ColorConst.winterPrimaryLight,
@@ -438,7 +438,7 @@ final winterThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.winterPrimaryDark,
+    backgroundColor: ColorConst.winterPrimaryDark,
   ),
   cardColor: ColorConst.winterBackgroundDark,
   dialogTheme: const DialogThemeData(
@@ -476,7 +476,7 @@ final halloweenTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.halloweenPrimaryLight,
+    backgroundColor: ColorConst.halloweenPrimaryLight,
   ),
   cardColor: ColorConst.halloweenBackgroundLight,
   drawerTheme: const DrawerThemeData(
@@ -513,7 +513,7 @@ final halloweenThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.halloweenPrimaryDark,
+    backgroundColor: ColorConst.halloweenPrimaryDark,
   ),
   cardColor: ColorConst.halloweenBackgroundDark,
   drawerTheme: const DrawerThemeData(
@@ -554,7 +554,7 @@ final christmasTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.christmasPrimaryLight,
+    backgroundColor: ColorConst.christmasPrimaryLight,
   ),
   cardColor: ColorConst.christmasBackgroundLight,
   secondaryHeaderColor: ColorConst.christmasPrimaryLight,
@@ -584,7 +584,7 @@ final christmasThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.christmasPrimaryDark,
+    backgroundColor: ColorConst.christmasPrimaryDark,
   ),
   cardColor: ColorConst.christmasBackgroundDark,
   drawerTheme: const DrawerThemeData(
@@ -622,7 +622,7 @@ final easterTheme = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.easterPrimaryLight,
+    backgroundColor: ColorConst.easterPrimaryLight,
   ),
   cardColor: ColorConst.easterBackgroundLight,
   drawerTheme: const DrawerThemeData(
@@ -658,7 +658,7 @@ final easterThemeDark = ThemeData(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    color: ColorConst.easterPrimaryDark,
+    backgroundColor: ColorConst.easterPrimaryDark,
   ),
   cardColor: ColorConst.easterBackgroundDark,
   drawerTheme: const DrawerThemeData(
