@@ -1,14 +1,16 @@
+// ignore_for_file: constant_identifier_names
+
 part of 'create_resource_dialog_cubit.dart';
 
 enum UrlFetchedStatus { initial, fetching, manual, fetched, error }
 
 enum ResourceSubmitStatus { initial, submitting, success, error }
 
-// ignore: constant_identifier_names
 enum DifficultyFilter { All, Introductory, Intermediate, Advanced }
 
-// ignore: constant_identifier_names
 enum CategoryFilter { All, In_Hand, Husbandry, Mounted, Other }
+
+enum ResourceInputType { link, pdf }
 
 class CreateResourceDialogState extends Equatable {
   const CreateResourceDialogState({
@@ -29,58 +31,44 @@ class CreateResourceDialogState extends Equatable {
     this.difficultyFilter = DifficultyFilter.All,
     this.urlFetchedStatus = UrlFetchedStatus.initial,
     this.submitStatus = ResourceSubmitStatus.initial,
+    this.inputType = ResourceInputType.link,
+    // PDF fields
+    this.pdfName,
+    this.pdfBytes,
+    this.pdfPicking = false,
+    this.pdfUploading = false,
+    this.pdfUploadProgress = 0.0,
   });
 
-  /// The url of the resource
   final Url url;
-
-  /// Whether the resource is being edited
   final bool isEdit;
-
-  /// The error message of the form
   final String error;
-
-  /// Whether there is an error in the form
   final bool isError;
-
-  /// The title of the resource
   final String title;
-
-  /// The image url of the resource
   final String imageUrl;
-
-  /// The resource that is being created/edited
   final Resource? resource;
-
-  /// The status of the form
   final FormStatus status;
-
-  /// The description of the resource
   final String description;
 
-  /// The skills that are associated with the resource
   final List<Skill?> skills;
-
-  /// The profile of the user who is creating the resource
   final RiderProfile? usersProfile;
 
-  /// All the skills that are filtered
   final List<Skill?>? filteredSkills;
-
-  /// The category filter
   final CategoryFilter categoryFilter;
-
-  /// The skills that are associated with the resource
   final List<Skill?>? resourceSkills;
-
-  /// The status of the resource submission
   final ResourceSubmitStatus submitStatus;
-
-  /// The status of the url fetching
   final UrlFetchedStatus urlFetchedStatus;
-
-  /// The difficulty filter
   final DifficultyFilter difficultyFilter;
+
+  // Input type
+  final ResourceInputType inputType;
+
+  // PDF
+  final String? pdfName;
+  final Uint8List? pdfBytes;
+  final bool pdfPicking;
+  final bool pdfUploading;
+  final double pdfUploadProgress;
 
   CreateResourceDialogState copyWith({
     Url? url,
@@ -100,6 +88,13 @@ class CreateResourceDialogState extends Equatable {
     DifficultyFilter? difficultyFilter,
     UrlFetchedStatus? urlFetchedStatus,
     ResourceSubmitStatus? submitStatus,
+    ResourceInputType? inputType,
+    // PDF
+    String? pdfName,
+    Uint8List? pdfBytes,
+    bool? pdfPicking,
+    bool? pdfUploading,
+    double? pdfUploadProgress,
   }) {
     return CreateResourceDialogState(
       url: url ?? this.url,
@@ -119,6 +114,13 @@ class CreateResourceDialogState extends Equatable {
       categoryFilter: categoryFilter ?? this.categoryFilter,
       difficultyFilter: difficultyFilter ?? this.difficultyFilter,
       urlFetchedStatus: urlFetchedStatus ?? this.urlFetchedStatus,
+      inputType: inputType ?? this.inputType,
+      // PDF
+      pdfName: pdfName ?? this.pdfName,
+      pdfBytes: pdfBytes ?? this.pdfBytes,
+      pdfPicking: pdfPicking ?? this.pdfPicking,
+      pdfUploading: pdfUploading ?? this.pdfUploading,
+      pdfUploadProgress: pdfUploadProgress ?? this.pdfUploadProgress,
     );
   }
 
@@ -141,5 +143,11 @@ class CreateResourceDialogState extends Equatable {
         resourceSkills,
         difficultyFilter,
         urlFetchedStatus,
+        inputType,
+        pdfName,
+        pdfBytes,
+        pdfPicking,
+        pdfUploading,
+        pdfUploadProgress,
       ];
 }

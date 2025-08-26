@@ -19,8 +19,8 @@ class ResourcesView extends StatelessWidget {
         key: Key('resourcesFloatingActionButton'),
       ),
       appBar: AppBar(
-        leading:  BackButton(
-          onPressed:()=> context.read<AppCubit>().backPressed(),
+        leading: BackButton(
+          onPressed: () => context.read<AppCubit>().backPressed(),
         ),
         centerTitle: true,
         title: const ResourcesSearchTitle(

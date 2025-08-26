@@ -24,13 +24,12 @@ class Resource {
     this.comments,
     this.authorId,
     this.createdAt,
-    this.updatedAt,
     this.thumbnail,
     this.lastEditBy,
     this.authorName,
     this.authorPhoto,
     this.description,
-    this.lastEditDate, // legacy "updatedAt"
+    this.lastEditDate,
     this.coverImageUrl,
     this.usersWhoRated,
     this.numberOfRates,
@@ -64,7 +63,7 @@ class Resource {
   /// List of skillTreeIds that this resource is part of
   List<String> skillTreeIds;
 
-  /// Date of the last edit (legacy). Prefer [updatedAt].
+  /// Date of the last edit
   final DateTime? lastEditDate;
 
   /// List of Comments for this resource
@@ -94,7 +93,6 @@ class Resource {
 
   /// Created/updated timestamps (prefer these over `lastEditDate`)
   final DateTime? createdAt;
-  final DateTime? updatedAt;
 
   /// Simple tags for filtering
   final List<String>? tags;
@@ -125,7 +123,6 @@ class Resource {
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (authorName != null) 'authorName': authorName,
       if (createdAt != null) 'createdAt': _ts(createdAt),
-      if (updatedAt != null) 'updatedAt': _ts(updatedAt),
       if (tags != null && tags!.isNotEmpty) 'tags': tags,
       if (authorPhoto != null) 'authorPhoto': authorPhoto,
       if (description != null) 'description': description,
@@ -211,7 +208,6 @@ class Resource {
       content: data['content'] as String?,
       authorId: data['authorId'] as String?,
       createdAt: _asDate(data['createdAt']),
-      updatedAt: _asDate(data['updatedAt']),
       thumbnail: data['thumbnail'] as String?,
       lastEditBy: data['lastEditBy'] as String?,
       authorName: data['authorName'] as String?,
@@ -274,7 +270,6 @@ class Resource {
       authorId: authorId ?? this.authorId,
       thumbnail: thumbnail ?? this.thumbnail,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
       lastEditBy: lastEditBy ?? this.lastEditBy,
       authorName: authorName ?? this.authorName,
       description: description ?? this.description,

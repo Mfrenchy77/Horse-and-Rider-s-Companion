@@ -6,7 +6,6 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:open_mail_app/open_mail_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'login_state.dart';
@@ -87,7 +86,7 @@ class LoginCubit extends Cubit<LoginState> {
   /// Clears the flag indicating that the email dialog should be shown.
   void clearEmailDialog() {
     // ignore: avoid_redundant_argument_values
-    emit(state.copyWith(showEmailDialog: false, mailAppResult: null));
+    emit(state.copyWith(showEmailDialog: false));
   }
 
   /// Updates the state with the new name value.

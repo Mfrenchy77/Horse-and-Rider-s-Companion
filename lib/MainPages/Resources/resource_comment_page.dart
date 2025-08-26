@@ -1,14 +1,15 @@
 // lib/MainPages/Resources/resource_comment_page.dart
-
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class ResourceCommentPage extends StatefulWidget {
@@ -21,8 +22,7 @@ class ResourceCommentPage extends StatefulWidget {
   final String id;
 
   @override
-  // ignore: library_private_types_in_public_api
-  _ResourceCommentPageState createState() => _ResourceCommentPageState();
+  State<ResourceCommentPage> createState() => _ResourceCommentPageState();
 }
 
 class _ResourceCommentPageState extends State<ResourceCommentPage> {
@@ -30,22 +30,14 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
-  // List to store all items in the ScrollablePositionedList
   List<_ListItem> _listItems = [];
-
-  // List to store indexes of parent comments
   List<int> _parentCommentIndexes = [];
-
-  // Current parent index
   int _currentParentIndex = -1;
-
-  // Initialization flag
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // Listen to item positions to update current parent index
     _itemPositionsListener.itemPositions.addListener(_updateCurrentParentIndex);
   }
 
@@ -56,72 +48,54 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
     super.dispose();
   }
 
+  // ----- Back / URL handling -----
+  void _goBackToResources() {
+    // Reset UI state in your cubit
+    context.read<AppCubit>().resetFromResource();
+
+    // Compute the resources URL explicitly, then go there.
+    final router = GoRouter.of(context);
+    final location = router.namedLocation(ResourcesPage.name);
+    router.go(location); // ensures the browser URL updates on web
+  }
+
+  // ----- Scroll logic -----
   void _updateCurrentParentIndex() {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    // Find the first visible item
     final firstVisible = positions
-        .where((ItemPosition position) => position.itemTrailingEdge > 0)
-        .reduce((min, position) => position.index < min.index ? position : min);
+        .where((p) => p.itemTrailingEdge > 0)
+        .reduce((min, p) => p.index < min.index ? p : min);
 
-    final visibleIndex = firstVisible.index;
-
-    // Check if the visible index is a parent comment
-    final parentIndex = _parentCommentIndexes.indexOf(visibleIndex);
-    if (parentIndex != -1 && parentIndex != _currentParentIndex) {
-      setState(() {
-        _currentParentIndex = parentIndex;
-        debugPrint('Current Parent Index Updated: $_currentParentIndex');
-      });
+    final idx = firstVisible.index;
+    final parentIdx = _parentCommentIndexes.indexOf(idx);
+    if (parentIdx != -1 && parentIdx != _currentParentIndex) {
+      setState(() => _currentParentIndex = parentIdx);
     }
   }
 
   void _scrollToNextParent() {
-    debugPrint(
-      'Attempting to scroll to next parent.'
-      ' Current index: $_currentParentIndex',
-    );
     if (_parentCommentIndexes.isEmpty) return;
-
     if (_currentParentIndex < _parentCommentIndexes.length - 1) {
       _currentParentIndex++;
-      final targetIndex = _parentCommentIndexes[_currentParentIndex];
-      debugPrint('Scrolling to parent at list index: $targetIndex');
       _itemScrollController.scrollTo(
-        index: targetIndex,
+        index: _parentCommentIndexes[_currentParentIndex],
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
-    } else {
-      debugPrint(
-        'Already at the last parent comment. Triggering wiggle and vibration.',
-      );
-      // The ScrollButtons widget will handle the wiggle and vibration
     }
   }
 
   void _scrollToPreviousParent() {
-    debugPrint(
-      'Attempting to scroll to previous parent.'
-      ' Current index: $_currentParentIndex',
-    );
     if (_parentCommentIndexes.isEmpty) return;
-
     if (_currentParentIndex > 0) {
       _currentParentIndex--;
-      final targetIndex = _parentCommentIndexes[_currentParentIndex];
-      debugPrint('Scrolling to parent at list index: $targetIndex');
       _itemScrollController.scrollTo(
-        index: targetIndex,
+        index: _parentCommentIndexes[_currentParentIndex],
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
-    } else {
-      debugPrint(
-        'Already at the first parent comment. Triggering wiggle and vibration.',
-      );
-      // The ScrollButtons widget will handle the wiggle and vibration
     }
   }
 
@@ -129,62 +103,42 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
     _listItems = [];
     _parentCommentIndexes = [];
 
-    // Start with the header
     _listItems.add(_ListItem(type: _ListItemType.header));
-
-    // Current index starts at 1 (header is at 0)
     var currentIndex = 1;
 
     for (final comment in baseComments) {
-      // Record the index of the parent comment
       _parentCommentIndexes.add(currentIndex);
-
-      // Add the parent comment
       _listItems.add(
-        _ListItem(
-          type: _ListItemType.parentComment,
-          comment: comment,
-        ),
+        _ListItem(type: _ListItemType.parentComment, comment: comment),
       );
       currentIndex++;
 
-      // Add child comments
       final childComments =
           context.read<AppCubit>().getChildComments(parentComment: comment);
       for (final child in childComments) {
         _listItems.add(
-          _ListItem(
-            type: _ListItemType.childComment,
-            comment: child,
-          ),
+          _ListItem(type: _ListItemType.childComment, comment: child),
         );
         currentIndex++;
       }
     }
 
-    // Add padding at the end
     _listItems.add(_ListItem(type: _ListItemType.padding));
 
-    // Debugging: Print parent comment indexes
-    debugPrint('Parent Comment Indexes: $_parentCommentIndexes');
-
-    // Initialize _currentParentIndex to 0 if there are
-    // parent comments and it's not yet initialized
     if (!_isInitialized &&
         _parentCommentIndexes.isNotEmpty &&
         _currentParentIndex == -1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _currentParentIndex = 0;
-            _isInitialized = true;
-          });
-          _itemScrollController.scrollTo(
-            index: _parentCommentIndexes[0],
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        }
+        if (!mounted) return;
+        setState(() {
+          _currentParentIndex = 0;
+          _isInitialized = true;
+        });
+        _itemScrollController.scrollTo(
+          index: _parentCommentIndexes[0],
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
       });
     }
   }
@@ -197,120 +151,119 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
         final resource = cubit.getResourceById(widget.id);
 
         if (resource == null) {
-          return PopScope(
-            child: const LoadingPage(
-              key: Key('LoadingPage'),
-            ),
-            onPopInvokedWithResult: (didPop, result) {
-              debugPrint(
-                'Resource Comment Page Pop Invoked: $didPop, result: $result',
-              );
-              cubit.resetFromResource();
+          return PopScope<void>(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) {
+                cubit.resetFromResource();
+                return;
+              }
+              _goBackToResources();
             },
-          );
-        } else {
-          final baseComments = cubit.getBaseComments(resource);
-
-          // Build the list items and record parent indexes
-          _buildListItems(baseComments, resource);
-
-          // Determine if at first or last parent comment
-          final isAtFirstParent = _currentParentIndex <= 0;
-          final isAtLastParent =
-              _currentParentIndex >= _parentCommentIndexes.length - 1;
-
-          // Handle edge case where _currentParentIndex might still be -1
-          if (!_isInitialized &&
-              _parentCommentIndexes.isNotEmpty &&
-              _currentParentIndex == -1) {
-            // The post-frame callback in _buildListItems handles initialization
-          }
-
-          return PopScope(
-            onPopInvokedWithResult: (didPop, result) {
-              debugPrint(
-                'Resource Comment Page Pop Invoked: $didPop, result: $result',
-              );
-              cubit.resetFromResource();
-            },
-            child: Stack(
-              children: [
-                Scaffold(
-                  appBar: AppBar(
-                    title: const Text('Resource Comment Page'),
-                  ),
-                  body: _listItems.isEmpty
-                      ? Column(
-                          children: [
-                            CommentPageHeader(resource: resource),
-                            gap(),
-                            const Center(
-                              child: Text(
-                                'No Comments Yet, Start the Conversation',
-                              ),
-                            ),
-                          ],
-                        )
-                      : ScrollablePositionedList.builder(
-                          itemScrollController: _itemScrollController,
-                          itemPositionsListener: _itemPositionsListener,
-                          shrinkWrap: true,
-                          itemCount: _listItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _listItems[index];
-                            switch (item.type) {
-                              case _ListItemType.header:
-                                return CommentPageHeader(
-                                  resource: resource,
-                                  key: const Key('CommentPageHeader'),
-                                );
-                              case _ListItemType.parentComment:
-                                final isCurrent = _parentCommentIndexes[
-                                        _currentParentIndex] ==
-                                    index;
-                                return ColoredBox(
-                                  color: isCurrent
-                                      ? Colors.blue.withValues(alpha: .1)
-                                      : Colors.transparent,
-                                  child: CommentItem(
-                                    key: Key(item.comment!.id!),
-                                    comment: item.comment!,
-                                  ),
-                                );
-                              case _ListItemType.childComment:
-                                return Padding(
-                                  padding: const EdgeInsets.only(left: 20),
-                                  child: CommentItem(
-                                    comment: item.comment!,
-                                  ),
-                                );
-                              case _ListItemType.padding:
-                                return const SizedBox(height: 500);
-                            }
-                          },
-                        ),
-                ),
-                Positioned(
-                  bottom: 20, // Adjusted for better visibility
-                  left: 0,
-                  right: 0,
-                  child: ScrollButton(
-                    isAtFirstParent: isAtFirstParent,
-                    isAtLastParent: isAtLastParent,
-                    onScrollUp: _scrollToPreviousParent,
-                    onScrollDown: _scrollToNextParent,
-                  ),
-                ),
-              ],
-            ),
+            child: const LoadingPage(key: Key('LoadingPage')),
           );
         }
+
+        final baseComments = cubit.getBaseComments(resource);
+        _buildListItems(baseComments, resource);
+
+        final isAtFirstParent = _currentParentIndex <= 0;
+        final isAtLastParent =
+            _currentParentIndex >= _parentCommentIndexes.length - 1;
+
+        return PopScope<void>(
+          canPop: false, // we override back ourselves
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) {
+              cubit.resetFromResource();
+              return;
+            }
+            _goBackToResources();
+          },
+          child: Stack(
+            children: [
+              Scaffold(
+                appBar: AppBar(
+                  title: const Text('Resource Comment Page'),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _goBackToResources,
+                  ),
+                ),
+                body: _listItems.isEmpty
+                    ? Column(
+                        children: [
+                          CommentPageHeader(
+                            resource: resource,
+                            key: const Key('CommentPageHeader'),
+                          ),
+                          gap(),
+                          const Center(
+                            child: Text(
+                              'No Comments Yet, Start the Conversation',
+                            ),
+                          ),
+                        ],
+                      )
+                    : ScrollablePositionedList.builder(
+                        itemScrollController: _itemScrollController,
+                        itemPositionsListener: _itemPositionsListener,
+                        shrinkWrap: true,
+                        itemCount: _listItems.length,
+                        itemBuilder: (context, index) {
+                          final item = _listItems[index];
+                          switch (item.type) {
+                            case _ListItemType.header:
+                              return CommentPageHeader(
+                                resource: resource,
+                                key: const Key('CommentPageHeader'),
+                              );
+                            case _ListItemType.parentComment:
+                              final isCurrent = _parentCommentIndexes
+                                      .isNotEmpty &&
+                                  _currentParentIndex >= 0 &&
+                                  _currentParentIndex <
+                                      _parentCommentIndexes.length &&
+                                  _parentCommentIndexes[_currentParentIndex] ==
+                                      index;
+                              return ColoredBox(
+                                color: isCurrent
+                                    ? Colors.blue.withValues(alpha: .1)
+                                    : Colors.transparent,
+                                child: CommentItem(
+                                  key: Key(item.comment!.id!),
+                                  comment: item.comment!,
+                                ),
+                              );
+                            case _ListItemType.childComment:
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 20),
+                                child: CommentItem(comment: item.comment!),
+                              );
+                            case _ListItemType.padding:
+                              return const SizedBox(height: 500);
+                          }
+                        },
+                      ),
+              ),
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: ScrollButton(
+                  isAtFirstParent: isAtFirstParent,
+                  isAtLastParent: isAtLastParent,
+                  onScrollUp: _scrollToPreviousParent,
+                  onScrollDown: _scrollToNextParent,
+                ),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
 }
-
-// Helper classes and enums
 
 enum _ListItemType { header, parentComment, childComment, padding }
 

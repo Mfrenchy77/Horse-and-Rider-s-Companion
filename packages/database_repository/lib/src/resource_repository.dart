@@ -1,3 +1,4 @@
+// lib/database_repository/src/resources_repository.dart
 // ignore_for_file: constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,23 +16,59 @@ class ResourcesRepository {
               fromFirestore: Resource.fromFirestore,
               toFirestore: (Resource resource, SetOptions? _) =>
                   resource.toFirestore(),
-            );
+            ),
+        _raw = (firestore ?? FirebaseFirestore.instance).collection(RESOURCES);
+
   static const String RESOURCES = 'Resources';
 
   final CollectionReference<Resource> _ref;
+  final CollectionReference<Map<String, dynamic>> _raw;
+
+  /// Mint a new random document id (avoids key hotspotting).
+  String newId() => _raw.doc().id;
 
   // ---------------------------------------------------------------------------
   // Core CRUD (type-agnostic)
   // ---------------------------------------------------------------------------
 
-  /// Create or update a resource document.
-  /// - Provide a fully-formed `Resource` from your Cubit.
-  /// - Uses `merge:true` so you can do partial updates safely.
+  /// Create or update a resource document (no server timestamps).
   Future<void> createOrUpdateResource({required Resource resource}) async {
     if (resource.id == null) {
       throw ArgumentError('Resource.id must not be null');
     }
     await _ref.doc(resource.id).set(resource, SetOptions(merge: true));
+  }
+
+  /// Create a resource and set server timestamps.
+  /// - Sets `createdAt` if missing, always bumps `updatedAt`.
+  Future<void> createResourceWithServerTimestamps({
+    required Resource resource,
+  }) async {
+    if (resource.id == null) {
+      throw ArgumentError('Resource.id must not be null');
+    }
+    final data = resource.toFirestore();
+    await _raw.doc(resource.id).set(
+      {
+        ...data,
+        if (!data.containsKey('createdAt'))
+          'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Convenience for articles.
+  Future<void> createArticle({required Resource resource}) async {
+    if (resource.type != ResourceType.article) {
+      // Safety: ensure we don't accidentally store wrong type.
+      await createResourceWithServerTimestamps(
+        resource: resource.copyWith(type: ResourceType.article),
+      );
+    } else {
+      await createResourceWithServerTimestamps(resource: resource);
+    }
   }
 
   /// Stream all resources (no ordering to avoid index issues on legacy docs).
@@ -74,7 +111,7 @@ class ResourcesRepository {
   }
 
   // ---------------------------------------------------------------------------
-  // Article-focused helpers (non-intrusive; repo stays generic otherwise)
+  // Article-focused helpers
   // ---------------------------------------------------------------------------
 
   /// Stream of **published** articles, newest first.
@@ -101,7 +138,7 @@ class ResourcesRepository {
   }
 
   /// Update mutable article fields (owner edits).
-  /// Pass only the fields you want to change; `updatedAt` is set server-side.
+  /// Sets `updatedAt` server-side.
   Future<void> updateArticleContent({
     required String id,
     String? title,
@@ -111,32 +148,34 @@ class ResourcesRepository {
     String? coverImageUrl,
   }) async {
     final data = <String, dynamic>{
-      if (title != null) 'name': title, // model uses `name` as title
+      if (title != null) 'name': title,
       if (description != null) 'description': description,
       if (content != null) 'content': content,
       if (tags != null) 'tags': tags,
       if (coverImageUrl != null) 'coverImageUrl': coverImageUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     };
-    await _ref.doc(id).update(data);
+    await _raw.doc(id).set(data, SetOptions(merge: true));
   }
 
-  /// Admin-only: set article status.
+  /// Admin-only: set article status (also bumps updatedAt).
   Future<void> setArticleStatus({
     required String id,
     required ResourceStatus status,
   }) async {
-    await _ref.doc(id).update({
-      'status': status.name,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _raw.doc(id).set(
+      {
+        'status': status.name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   // ---------------------------------------------------------------------------
   // Pagination helpers (optional)
   // ---------------------------------------------------------------------------
 
-  /// Page through published articles. Returns items + lastDoc for next page.
   Future<
       ({
         List<Resource> items,

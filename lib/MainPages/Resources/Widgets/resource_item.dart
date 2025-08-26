@@ -20,48 +20,47 @@ class ResourcesItem extends StatelessWidget {
     required this.resource,
     required this.isResourceList,
   });
+
   final Resource resource;
 
-  /// Determies if the Rating bar should be shown or not
-  /// if it is true then no rating bar will be shown
+  /// If true, show list-only elements (ratings row/buttons).
   final bool isResourceList;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        BaseListItem? newRatingUser = BaseListItem(
-          id: state.usersProfile?.email ?? '',
-          isCollapsed: false,
-          isSelected: false,
-        );
         final isDark = SharedPrefs().isDarkMode;
-        final newList = <BaseListItem>[newRatingUser];
 
-        final user = resource.usersWhoRated?.firstWhere(
-          (element) => element.id == state.usersProfile?.email,
-          orElse: BaseListItem.new,
+        // Avoid mutating the incoming model in a widget; ensure non-null list
+        final resourceForUi = resource.usersWhoRated == null
+            ? resource.copyWith(usersWhoRated: <BaseListItem>[])
+            : resource;
+
+        // Ensure we have a "current user rating item" if already present
+        final currentUserId = state.usersProfile?.email ?? '';
+        resourceForUi.usersWhoRated?.firstWhere(
+          (e) => e.id == currentUserId,
+          orElse: () => BaseListItem(id: currentUserId),
         );
-        if (resource.usersWhoRated != null) {
-          if (user != null) {
-            newRatingUser = user;
-          } else {
-            newRatingUser = newRatingUser;
-          }
-        } else {
-          resource.usersWhoRated = newList;
-        }
+
         return MaxWidthBox(
           maxWidth: 600,
           child: Stack(
             children: [
               InkWell(
                 onTap: () {
-                  debugPrint('Goto Resource: ${resource.name}');
+                  // Web-friendly URL + browser history:
+                  final id = resource.id ?? '';
+                  if (id.isEmpty) {
+                    cubit.createError('Missing resource id');
+                    return;
+                  }
                   context.goNamed(
                     ResourceCommentPage.name,
                     pathParameters: {
-                      ResourceCommentPage.pathParams: resource.id ?? '',
+                      ResourceCommentPage.pathParams: id,
                     },
                   );
                 },
@@ -74,12 +73,12 @@ class ResourcesItem extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        ///   Ratings
+                        // Ratings (list only)
                         Visibility(
                           visible: isResourceList,
                           child: RatingsBar(
-                            isNew: cubit.isNewResource(resource),
-                            resource: resource,
+                            isNew: cubit.isNewResource(resourceForUi),
+                            resource: resourceForUi,
                           ),
                         ),
                         Divider(
@@ -87,11 +86,10 @@ class ResourcesItem extends StatelessWidget {
                           endIndent: 5,
                           indent: 5,
                         ),
-
-                        ///   Info
+                        // Info bar (handles title/description/image and edit menu)
                         ResourceInfoBar(
-                          resource: resource,
                           key: const Key('ResourceInfoBar'),
+                          resource: resourceForUi,
                         ),
                         smallGap(),
                         Divider(
@@ -99,11 +97,12 @@ class ResourcesItem extends StatelessWidget {
                           endIndent: 5,
                           indent: 5,
                         ),
+                        // Rating buttons (list only)
                         Visibility(
                           visible: isResourceList,
                           child: ResourceRatingButtons(
                             key: const Key('ResourceRatingButtons'),
-                            resource: resource,
+                            resource: resourceForUi,
                           ),
                         ),
                       ],
@@ -112,7 +111,7 @@ class ResourcesItem extends StatelessWidget {
                 ),
               ),
               Visibility(
-                visible: cubit.isNewResource(resource),
+                visible: cubit.isNewResource(resourceForUi),
                 child: const Padding(
                   padding: EdgeInsets.only(left: 8, top: 4),
                   child: CornerBanner(

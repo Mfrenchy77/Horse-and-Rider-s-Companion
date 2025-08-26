@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_polic
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Article/create_artilce_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
@@ -341,6 +342,12 @@ class Routes {
                   name: ResourcesPage.name,
                   builder: (context, state) => const ResourcesPage(),
                   routes: <RouteBase>[
+                    // CreateArticlePage
+                    GoRoute(
+                      name: 'CreateArticlePage',
+                      path: 'Articles/New',
+                      builder: (context, state) => const CreateArticlePage(),
+                    ),
                     // ResourceCommentPage
                     GoRoute(
                       name: ResourceCommentPage.name,

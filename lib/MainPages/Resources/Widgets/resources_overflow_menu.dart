@@ -32,7 +32,14 @@ class ResourcesOverflowMenu extends StatelessWidget {
                 onSelected: (value) {
                   switch (value) {
                     case 'Add':
-                      showDialog<CreateResourcDialog>(
+                      showModalBottomSheet<CreateResourcDialog>(
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                        ),
                         context: context,
                         builder: (context) => CreateResourcDialog(
                           skills: state.allSkills,

@@ -1379,13 +1379,10 @@ class AppCubit extends Cubit<AppState> {
 
   /// Return a Skill item from the id
   Skill? getSkillFromId(String id) {
-    debugPrint('Getting Skill from id: $id');
     final skill = _getSkillFromId(id);
     if (skill == null) {
       debugPrint('Skill not found for id: $id');
-    } else {
-      debugPrint('Skill Found: ${skill.skillName}');
-    }
+    } else {}
     return skill;
   }
 
@@ -2008,7 +2005,7 @@ class AppCubit extends Cubit<AppState> {
     return difference.inDays < 10;
   }
 
-  ///   Single Resource is Selected and is being viewed
+  ///   Open Resource in External Browser
   Future<void> openResource({required String? url}) async {
     final uri = Uri.parse(url!);
     if (!await launchUrl(

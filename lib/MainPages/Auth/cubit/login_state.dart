@@ -14,7 +14,6 @@ enum LoginPageStatus {
 class LoginState extends Equatable {
   /// Creates a [LoginState].
   const LoginState({
-    this.mailAppResult,
     this.isError = false,
     this.isGuest = false,
     this.isMessage = false,
@@ -66,9 +65,6 @@ class LoginState extends Equatable {
   /// The current page status in the login flow.
   final LoginPageStatus pageStatus;
 
-  /// Result of attempting to open the mail app, used in email verification.
-  final OpenMailAppResult? mailAppResult;
-
   /// The confirmed password entered by the user, used for registration.
   final ConfirmedPassword confirmedPassword;
 
@@ -87,7 +83,6 @@ class LoginState extends Equatable {
     bool? showEmailDialog,
     bool? isPasswordVisible,
     LoginPageStatus? pageStatus,
-    OpenMailAppResult? mailAppResult,
     ConfirmedPassword? confirmedPassword,
   }) {
     return LoginState(
@@ -100,7 +95,6 @@ class LoginState extends Equatable {
       isMessage: isMessage ?? this.isMessage,
       pageStatus: pageStatus ?? this.pageStatus,
       errorMessage: errorMessage ?? this.errorMessage,
-      mailAppResult: mailAppResult ?? this.mailAppResult,
       forgotEmailSent: forgotEmailSent ?? this.forgotEmailSent,
       showEmailDialog: showEmailDialog ?? this.showEmailDialog,
       isPasswordVisible: isPasswordVisible ?? this.isPasswordVisible,
@@ -119,7 +113,6 @@ class LoginState extends Equatable {
         isMessage,
         pageStatus,
         errorMessage,
-        mailAppResult,
         forgotEmailSent,
         showEmailDialog,
         isPasswordVisible,

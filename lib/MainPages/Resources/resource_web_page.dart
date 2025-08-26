@@ -1,4 +1,7 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_web_view.dart';
 
 class ResourceWebPage extends StatelessWidget {
@@ -8,27 +11,21 @@ class ResourceWebPage extends StatelessWidget {
     required this.title,
   });
 
+  // Simple helper to build from GoRouter state
+  ResourceWebPage.fromState(GoRouterState s)
+      : url = s.pathParameters[urlPathParams]!,
+        title = s.pathParameters[titlePathParams]!,
+        super(key: null);
+
+  static const name = 'ResourceWebPage';
+  static const path = 'Web/:$urlPathParams/:$titlePathParams';
+
   static const urlPathParams = 'url';
   static const titlePathParams = 'title';
-  static const path = 'WebView/:url/:title';
-  static const name = 'ResourceWebPage';
 
   final String url;
   final String title;
 
   @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        debugPrint(
-          'Resource Web Page Pop Invoked: $didPop, result: $result',
-        );
-      },
-      child: ResourceWebView(
-        key: const Key('resourceWebView'),
-        url: url,
-        title: title,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ResourceWebView(url: url, title: title);
 }

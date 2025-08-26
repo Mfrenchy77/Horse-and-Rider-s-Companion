@@ -2,15 +2,13 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 
-/// The `App` class is responsible for building the main
-///  application widget tree.
-/// It provides the necessary dependencies and initializes
-/// the `AppBloc` and `AppView` widgets.
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({
     super.key,
     required this.settingsController,
@@ -36,46 +34,54 @@ class App extends StatelessWidget {
   final AuthenticationRepository _authenticationRepository;
 
   @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  late final AppCubit _appCubit;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _appCubit = AppCubit(
+      messagesRepository: widget._messagesRepository,
+      skillTreeRepository: widget._skillTreeRepository,
+      resourcesRepository: widget._resourcesRepository,
+      horseProfileRepository: widget._horseProfileRepository,
+      riderProfileRepository: widget._riderProfileRepository,
+      authenticationRepository: widget._authenticationRepository,
+    );
+
+    _router = Routes().router(
+      settingsContoller: widget.settingsController,
+      appCubit: _appCubit,
+    );
+  }
+
+  @override
+  void dispose() {
+    _appCubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    debugPrint('App Build');
-    final appCubit = AppCubit(
-      messagesRepository: _messagesRepository,
-      skillTreeRepository: _skillTreeRepository,
-      resourcesRepository: _resourcesRepository,
-      horseProfileRepository: _horseProfileRepository,
-      riderProfileRepository: _riderProfileRepository,
-      authenticationRepository: _authenticationRepository,
-    );
-    final router = Routes().router(
-      settingsContoller: settingsController,
-      appCubit: appCubit,
-    );
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider.value(
-          value: _messagesRepository,
-        ),
-        RepositoryProvider.value(
-          value: _skillTreeRepository,
-        ),
-        RepositoryProvider.value(
-          value: _resourcesRepository,
-        ),
-        RepositoryProvider.value(
-          value: _riderProfileRepository,
-        ),
-        RepositoryProvider.value(
-          value: _horseProfileRepository,
-        ),
-        RepositoryProvider.value(
-          value: _authenticationRepository,
-        ),
+        RepositoryProvider.value(value: widget._messagesRepository),
+        RepositoryProvider.value(value: widget._skillTreeRepository),
+        RepositoryProvider.value(value: widget._resourcesRepository),
+        RepositoryProvider.value(value: widget._riderProfileRepository),
+        RepositoryProvider.value(value: widget._horseProfileRepository),
+        RepositoryProvider.value(value: widget._authenticationRepository),
       ],
       child: BlocProvider.value(
-        value: appCubit,
+        value: _appCubit,
         child: AppView(
-          settingsController: settingsController,
-          router: router,
+          settingsController: widget.settingsController,
+          router: _router,
         ),
       ),
     );
@@ -88,24 +94,38 @@ class AppView extends StatelessWidget {
     required this.settingsController,
     required this.router,
   });
+
   final SettingsController settingsController;
   final GoRouter router;
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('AppView Build');
     return AnimatedBuilder(
       animation: settingsController,
       builder: (context, child) {
         return MaterialApp.router(
-          routerDelegate: router.routerDelegate,
-          routeInformationParser: router.routeInformationParser,
-          routeInformationProvider: router.routeInformationProvider,
           title: "Horse & Rider's Companion",
-          themeMode: settingsController.darkMode,
+          debugShowCheckedModeBanner: false,
+
+          // Theme
           theme: settingsController.theme,
           darkTheme: settingsController.darkTheme,
-          debugShowCheckedModeBanner: false,
+          themeMode: settingsController.darkMode,
+
+          // Modern, single-parameter config
+          routerConfig: router,
+
+          // Localization (English only + Quill)
+          localizationsDelegates: const [
+            FlutterQuillLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en'),
+            Locale('en', 'US'),
+          ],
         );
       },
     );

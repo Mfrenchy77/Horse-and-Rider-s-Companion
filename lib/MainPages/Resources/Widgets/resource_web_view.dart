@@ -1,7 +1,11 @@
+// ignore_for_file: public_member_api_docs
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 
-/// A [StatefulWidget] that displays a web view of a resource.
 class ResourceWebView extends StatefulWidget {
   const ResourceWebView({
     super.key,
@@ -17,57 +21,87 @@ class ResourceWebView extends StatefulWidget {
 }
 
 class _ResourceWebViewState extends State<ResourceWebView> {
-  final GlobalKey webViewKey = GlobalKey();
-  // InAppWebViewController? _controller;
-  InAppWebViewSettings settings = InAppWebViewSettings(
+  final GlobalKey _webViewKey = GlobalKey();
+  InAppWebViewController? _controller;
+
+  final InAppWebViewSettings _settings = InAppWebViewSettings(
     isInspectable: true,
     allowsInlineMediaPlayback: true,
   );
-  double progress = 0;
 
-  @override
-  void initState() {
-    super.initState();
+  double _progress = 0;
+  bool _navigatingAway = false; // throttle duplicate back events
+
+  void _goBackToResources() {
+    if (_navigatingAway) return;
+    _navigatingAway = true;
+    // Use goNamed so the URL changes back to /Resources
+    context.goNamed(ResourcesPage.name);
+  }
+
+  Future<void> _handleBack() async {
+    // If not web and the in-app webview has history, go back inside it first.
+    if (!kIsWeb && _controller != null) {
+      final canGoBack = await _controller!.canGoBack();
+      if (!mounted) return; // avoid BuildContext across async gaps
+      if (canGoBack) {
+        await _controller!.goBack();
+        return; // stay on this page
+      }
+    }
+    // Otherwise navigate back to the list (and update the URL)
+    if (!mounted) return;
+    _goBackToResources();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Stack(
-        children: [
-          InAppWebView(
-            key: webViewKey,
-            initialUrlRequest: URLRequest(url: WebUri(widget.url)),
-            initialSettings: settings,
-            onWebViewCreated: (controller) {
-              // _controller = controller;
-            },
-            onLoadStart: (controller, url) {
-              debugPrint('Loading $url');
-            },
-            onReceivedError: (controller, request, error) {
-              debugPrint('Error: $error');
-            },
-            onProgressChanged: (controller, progress) {
-              debugPrint('Progress: $progress');
-              setState(() {
-                this.progress = progress / 100;
-              });
-            },
-            onConsoleMessage: (controller, consoleMessage) {
-              debugPrint('Console Message: $consoleMessage');
-            },
+    return PopScope(
+      canPop: false, // we’ll decide what “back” means
+      onPopInvokedWithResult: (didPop, _) async {
+        // If something else already popped us, nothing to do.
+        if (didPop) return;
+        await _handleBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _handleBack,
+            tooltip: 'Back',
           ),
-          if (progress < 1)
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.white,
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+          title: Text(widget.title),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.open_in_browser),
+              onPressed: () => context.push(widget.url),
+              tooltip: 'Open in Browser',
             ),
-        ],
+          ],
+        ),
+        body: Stack(
+          children: [
+            InAppWebView(
+              key: _webViewKey,
+              initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+              initialSettings: _settings,
+              onWebViewCreated: (controller) => _controller = controller,
+              onLoadStart: (_, __) {},
+              onReceivedError: (_, __, error) {
+                debugPrint('Web error: $error');
+              },
+              onProgressChanged: (_, p) {
+                setState(() => _progress = p / 100);
+              },
+              onConsoleMessage: (_, msg) => debugPrint('Console: $msg'),
+            ),
+            if (_progress < 1)
+              LinearProgressIndicator(
+                value: _progress,
+                backgroundColor: Colors.white,
+              ),
+          ],
+        ),
       ),
     );
   }
