@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_image.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
@@ -24,8 +25,7 @@ class ResourceInfoBar extends StatelessWidget {
     return (t == null || t.isEmpty) ? 'Untitled' : t;
   }
 
-  /// Prefer coverImageUrl for articles; otherwise thumbnail;
-  ///  for links use thumbnail if present.
+  /// Prefer coverImageUrl for articles; otherwise thumbnail.
   String? _primaryImageUrl() {
     if (_isArticle) {
       return (resource.coverImageUrl?.isNotEmpty ?? false)
@@ -39,9 +39,7 @@ class ResourceInfoBar extends StatelessWidget {
         : null;
   }
 
-  /// Convert the stored Quill Delta JSON (resource.content)
-  ///  into a plain-text snippet.
-  /// Safe fallback to "Article" on any error or empty content.
+  /// Plain-text snippet for articles (from stored Quill Delta).
   String _articleSnippet() {
     final jsonStr = resource.content;
     if (jsonStr == null || jsonStr.trim().isEmpty) return 'Article';
@@ -54,6 +52,32 @@ class ResourceInfoBar extends StatelessWidget {
     } catch (_) {
       return 'Article';
     }
+  }
+
+  // ── Hero tags (must match on both screens) ────────────────────────────────
+  String _heroTagImage() =>
+      'resource-image-${resource.id ?? resource.url ?? _titleOrUntitled()}';
+  String _heroTagTitle() =>
+      'resource-title-${resource.id ?? resource.url ?? _titleOrUntitled()}';
+  String _heroTagDesc() =>
+      'resource-desc-${resource.id ?? resource.url ?? _titleOrUntitled()}';
+
+  // During flight, use the DESTINATION widget's style/child to avoid style pops.
+  // Docs: consider a custom flightShuttleBuilder when inherited styles differ.
+  // https://api.flutter.dev/flutter/widgets/Hero-class.html
+  Widget _textFlightShuttle(
+    BuildContext flightContext,
+    Animation<double> animation,
+    HeroFlightDirection direction,
+    BuildContext fromContext,
+    BuildContext toContext,
+  ) {
+    final toHero = toContext.widget as Hero;
+    // Wrap with transparent Material so text renders correctly while flying.
+    return Material(
+      type: MaterialType.transparency,
+      child: toHero.child,
+    );
   }
 
   void _openLinkOrArticle(BuildContext context) {
@@ -93,31 +117,38 @@ class ResourceInfoBar extends StatelessWidget {
         final imageUrl = _primaryImageUrl();
         final title = _titleOrUntitled();
 
-        // Choose what to show in the left text column:
         final leftText = _isArticle
-            ? _articleSnippet() // <-- article body preview
-            : (resource.description?.trim().isNotEmpty ?? false
+            ? _articleSnippet()
+            : (resource.description?.trim().isNotEmpty ?? false)
                 ? resource.description!.trim()
-                : (resource.url?.trim().isNotEmpty ?? false
+                : (resource.url?.trim().isNotEmpty ?? false)
                     ? resource.url!.trim()
-                    : ''));
+                    : '';
 
         return Column(
           children: [
-            // Title + edit menu
+            // ── Title + edit menu (Title has Hero) ───────────────────────────
             Row(
               children: [
                 Flexible(
                   fit: FlexFit.tight,
                   flex: 4,
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  child: Hero(
+                    tag: _heroTagTitle(),
+                    flightShuttleBuilder: _textFlightShuttle,
+                    // Wrap text in transparent Material so default text style/ink are preserved
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -135,7 +166,7 @@ class ResourceInfoBar extends StatelessWidget {
                       switch (value) {
                         case 'Edit':
                           if (state.usersProfile != null) {
-                            showModalBottomSheet<CreateResourcDialog>(
+                            showModalBottomSheet<CreateResourceDialogCubit>(
                               isScrollControlled: true,
                               useSafeArea: true,
                               shape: const RoundedRectangleBorder(
@@ -166,14 +197,14 @@ class ResourceInfoBar extends StatelessWidget {
             ),
             gap(),
 
-            // Body + image/cover
+            // ── Body + image/cover (Desc + Image each with Hero) ─────────────
             SizedBox(
               height: 150,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Body/Description (7-line preview)
+                  // Description/snippet side
                   Flexible(
                     fit: FlexFit.tight,
                     flex: 2,
@@ -182,18 +213,25 @@ class ResourceInfoBar extends StatelessWidget {
                       child: ConstrainedBox(
                         constraints:
                             BoxConstraints.loose(const Size.fromHeight(300)),
-                        child: Text(
-                          leftText,
-                          maxLines: 7,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16),
+                        child: Hero(
+                          tag: _heroTagDesc(),
+                          flightShuttleBuilder: _textFlightShuttle,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Text(
+                              leftText,
+                              maxLines: 7, // keep same maxLines for smoothness
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
 
-                  // Image / Cover (tap opens link or article)
+                  // Image / Cover
                   InkWell(
                     key: const Key('ResourceImage'),
                     onLongPress: () => cubit.openResource(url: resource.url),
@@ -201,17 +239,23 @@ class ResourceInfoBar extends StatelessWidget {
                     child: Tooltip(
                       message: _isArticle
                           ? 'Read article'
-                          : (resource.url?.isNotEmpty ?? false
+                          : (resource.url?.isNotEmpty ?? false)
                               ? 'Open link'
-                              : 'No link'),
-                      child: MaxWidthBox(
-                        maxWidth: 200,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.grey,
+                              : 'No link',
+                      child: Hero(
+                        tag: _heroTagImage(),
+                        child: MaxWidthBox(
+                          maxWidth: 200,
+                          child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: ResourceImage(url: imageUrl ?? ''),
+                            ),
                           ),
-                          child: ResourceImage(url: imageUrl ?? ''),
                         ),
                       ),
                     ),

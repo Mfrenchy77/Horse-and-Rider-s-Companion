@@ -35,7 +35,7 @@ class Routes {
     final skillTreeNavigatorKey = GlobalKey<NavigatorState>();
     final resourcesNavigatorKey = GlobalKey<NavigatorState>();
 
-    // ── Observers (unchanged behavior) ──────────────────────────────────────
+    // ── Observers (your existing behavior) ───────────────────────────────────
     final routeObserver = RouteObserverWithCallback(
       onPop: (route, previousRoute) {
         debugPrint(
@@ -119,20 +119,18 @@ class Routes {
           builder: (context, state) => const AuthPage(),
         ),
 
-        // ── MAIN SHELL: builder + navigatorContainerBuilder ─────────────────
+        // ── MAIN SHELL: app chrome + animated branch container ───────────────
         StatefulShellRoute(
-          // Wrap the shell with your app chrome (NavigationView).
+          // Your chrome (rail/bottom bar + content)
           builder: (
             BuildContext context,
             GoRouterState state,
             StatefulNavigationShell navigationShell,
           ) {
-            // IMPORTANT: include the navigationShell here so it renders.
             return NavigationView(child: navigationShell);
           },
 
-          // Provide a custom container that lays out &
-          //animates the branch Navigators.
+          // Our container that slides branch Navigators left/right
           navigatorContainerBuilder: (
             BuildContext context,
             StatefulNavigationShell navigationShell,
@@ -145,7 +143,7 @@ class Routes {
           },
 
           branches: [
-            // ── Branch 0: Profile ───────────────────────────────────────────
+            // ── Branch 0: Profile ────────────────────────────────────────────
             StatefulShellBranch(
               observers: [routeObserverProfile],
               navigatorKey: profileNavigatorKey,
@@ -220,7 +218,7 @@ class Routes {
               ],
             ),
 
-            // ── Branch 1: Skill Tree ────────────────────────────────────────
+            // ── Branch 1: Skill Tree (already sliding) ───────────────────────
             StatefulShellBranch(
               observers: [routeObserverSkillTree],
               navigatorKey: skillTreeNavigatorKey,
@@ -230,7 +228,6 @@ class Routes {
                   name: SkillTreePage.name,
                   builder: (context, state) => const SkillTreePage(),
                   routes: [
-                    // 1) Skills List
                     GoRoute(
                       path: SkillTreeView.skillsListPath,
                       name: SkillTreeView.skillsListName,
@@ -243,7 +240,6 @@ class Routes {
                         return const SkillTreeView();
                       },
                       routes: [
-                        // 2) Skill Detail (slide)
                         GoRoute(
                           path: SkillTreeView.skillLevelPath,
                           name: SkillTreeView.skillLevelName,
@@ -265,8 +261,6 @@ class Routes {
                         ),
                       ],
                     ),
-
-                    // 3) Training Paths List (slide)
                     GoRoute(
                       path: 'TrainingPaths',
                       name: SkillTreeView.trainingPathListName,
@@ -286,7 +280,6 @@ class Routes {
                         );
                       },
                       routes: [
-                        // 4) Training Path Detail (slide)
                         GoRoute(
                           path: SkillTreeView.trainingPathViewPath,
                           name: SkillTreeView.trainingPathViewName,
@@ -313,7 +306,7 @@ class Routes {
               ],
             ),
 
-            // ── Branch 2: Resources ─────────────────────────────────────────
+            // ── Branch 2: Resources (NOW with sliding to comments/web) ───────
             StatefulShellBranch(
               observers: [routeObserverResources],
               navigatorKey: resourcesNavigatorKey,
@@ -323,23 +316,33 @@ class Routes {
                   name: ResourcesPage.name,
                   builder: (context, state) => const ResourcesPage(),
                   routes: <RouteBase>[
+                    // Resource → Comment (slide)
                     GoRoute(
                       name: ResourceCommentPage.name,
                       path: ResourceCommentPage.path,
-                      builder: (context, state) => ResourceCommentPage(
-                        id: state
-                            .pathParameters[ResourceCommentPage.pathParams]!,
-                      ),
+                      pageBuilder: (context, state) {
+                        final id = state
+                            .pathParameters[ResourceCommentPage.pathParams]!;
+                        return _horizontalSlidePage(
+                          key: state.pageKey,
+                          child: ResourceCommentPage(id: id),
+                        );
+                      },
                     ),
+                    // Resource → Web (slide)
                     GoRoute(
                       name: ResourceWebPage.name,
                       path: ResourceWebPage.path,
-                      builder: (context, state) => ResourceWebPage(
-                        url: state
-                            .pathParameters[ResourceWebPage.urlPathParams]!,
-                        title: state
-                            .pathParameters[ResourceWebPage.titlePathParams]!,
-                      ),
+                      pageBuilder: (context, state) {
+                        final url = state
+                            .pathParameters[ResourceWebPage.urlPathParams]!;
+                        final title = state
+                            .pathParameters[ResourceWebPage.titlePathParams]!;
+                        return _horizontalSlidePage(
+                          key: state.pageKey,
+                          child: ResourceWebPage(url: url, title: title),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -351,7 +354,7 @@ class Routes {
     );
   }
 
-  // Horizontal slide for in-branch pushes/pops (Skill Tree pages).
+  // Shared left/right slide for in-branch pushes/pops.
   static CustomTransitionPage<dynamic> _horizontalSlidePage({
     required LocalKey key,
     required Widget child,
@@ -366,7 +369,6 @@ class Routes {
         final outTween =
             Tween<Offset>(begin: Offset.zero, end: const Offset(-1, 0))
                 .chain(CurveTween(curve: Curves.easeInOut));
-
         return SlideTransition(
           position: animation.drive(inTween),
           child: SlideTransition(
@@ -380,8 +382,9 @@ class Routes {
 }
 
 /// Holds & animates all branch Navigators. Used by navigatorContainerBuilder.
-/// Keeps state per branch; only current + outgoing
-///  branch are visible during slide.
+/// Keeps state per branch; only current +
+///  outgoing branch are visible during slide.
+/// Also clips so the animating page never draws over the navigation rail.
 class BranchSlideContainer extends StatefulWidget {
   const BranchSlideContainer({
     super.key,
@@ -418,7 +421,6 @@ class _BranchSlideContainerState extends State<BranchSlideContainer> {
         ..add(prev)
         ..add(newIndex);
 
-      // Hide others after animation finishes
       Future.delayed(const Duration(milliseconds: 320), () {
         if (!mounted) return;
         setState(
@@ -433,8 +435,7 @@ class _BranchSlideContainerState extends State<BranchSlideContainer> {
   Widget build(BuildContext context) {
     final curr = _currentIndex;
 
-    // ⬇️ This clip keeps slides inside the content
-    // area so they never cover the rail
+    // Clip so slides never cover the rail on larger screens.
     return ClipRect(
       child: Stack(
         children: widget.children.asMap().entries.map((entry) {

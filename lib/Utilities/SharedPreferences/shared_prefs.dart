@@ -105,7 +105,7 @@ class SharedPrefs {
   /// Retrieves the saved theme mode preference as a string.
   /// Defaults to 'light' if no preference has been set.
   String getSavedThemeMode() {
-    return _sharedPrefs.getString(PREF_DARK_MODE) ?? 'dark';
+    return _sharedPrefs.getString(PREF_DARK_MODE) ?? 'light';
   }
 
   /// Converts the saved theme mode preference to a [ThemeMode] enum.
