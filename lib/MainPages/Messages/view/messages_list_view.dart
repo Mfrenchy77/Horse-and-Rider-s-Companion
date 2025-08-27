@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/view/message_view.dart';
 
@@ -8,7 +7,15 @@ class MessagesView extends StatelessWidget {
   final bool isConversations;
   @override
   Widget build(BuildContext context) {
-    return AdaptiveLayout(
+    return isConversations
+        ? const MessagesList(
+            key: Key('MessagesList'),
+          )
+        : const MessageView(
+            key: Key('MessageView'),
+          );
+
+    /* return AdaptiveLayout(
       internalAnimations: false,
       body: SlotLayout(
         // Large screen layout
@@ -67,5 +74,6 @@ class MessagesView extends StatelessWidget {
         },
       ),
     );
+  } */
   }
 }

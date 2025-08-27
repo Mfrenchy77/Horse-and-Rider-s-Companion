@@ -9,23 +9,36 @@ import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verificatio
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
-class NavigationView extends StatelessWidget {
+/// App "chrome" (rail/bottom bar + banner) that wraps the StatefulNavigationShell.
+/// The actual branch slide animation is provided by the shell's
+/// navigatorContainerBuilder (see Routes).
+class NavigationView extends StatefulWidget {
   const NavigationView({super.key, required this.child});
+
   final StatefulNavigationShell child;
 
   static const double mediumScreenWidth = 600;
   static const double largeScreenWidth = 1024;
 
   @override
+  State<NavigationView> createState() => _NavigationViewState();
+}
+
+class _NavigationViewState extends State<NavigationView> {
+  @override
   Widget build(BuildContext context) {
+    final cubit = context.read<AppCubit>();
+
     return BlocListener<AppCubit, AppState>(
       listener: (context, state) {
-        final cubit = context.read<AppCubit>();
+        // Switch shell branch when AppCubit index changes
+        final newIndex = state.index;
+        final currentIndex = widget.child.currentIndex;
+        if (newIndex != currentIndex) {
+          widget.child.goBranch(newIndex);
+        }
 
-        // Navigation
-        child.goBranch(state.index);
-
-        // Error Handling
+        // Errors
         if (state.isError) {
           SchedulerBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context)
@@ -42,7 +55,7 @@ class NavigationView extends StatelessWidget {
           });
         }
 
-        // Message Handling
+        // Messages
         if (state.isMessage) {
           SchedulerBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context)
@@ -60,9 +73,9 @@ class NavigationView extends StatelessWidget {
           });
         }
 
-        // Email Verification Handling
+        // Email verification
         if (state.showEmailVerification) {
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
             context.pushNamed(
               EmailVerificationDialog.name,
               pathParameters: {
@@ -74,16 +87,16 @@ class NavigationView extends StatelessWidget {
       },
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
-          final cubit = context.read<AppCubit>();
           final screenWidth = MediaQuery.of(context).size.width;
 
-          final isMediumScreen = screenWidth >= mediumScreenWidth;
-          final isLargeScreen = screenWidth >= largeScreenWidth;
-          final Widget navigation = isMediumScreen
+          final isMedium = screenWidth >= NavigationView.mediumScreenWidth;
+          final isLarge = screenWidth >= NavigationView.largeScreenWidth;
+
+          final Widget navigation = isMedium
               ? NavigationRail(
                   selectedIndex: state.index,
-                  onDestinationSelected: cubit.changeIndex,
-                  extended: isLargeScreen,
+                  onDestinationSelected: context.read<AppCubit>().changeIndex,
+                  extended: isLarge,
                   leading: const Padding(
                     padding: EdgeInsets.all(8),
                     child: Image(
@@ -101,7 +114,7 @@ class NavigationView extends StatelessWidget {
                 )
               : BottomNavigationBar(
                   currentIndex: state.index,
-                  onTap: cubit.changeIndex,
+                  onTap: context.read<AppCubit>().changeIndex,
                   items: _buildBottomNavigationBarItems(
                     isForRider: state.isForRider,
                   ),
@@ -116,12 +129,14 @@ class NavigationView extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    if (isMediumScreen) navigation,
-                    Expanded(child: child),
+                    if (isMedium) navigation,
+                    // This renders the active branch content; the sliding
+                    // between branches is handled by the shell container.
+                    Expanded(child: ClipRect(child: widget.child)),
                   ],
                 ),
               ),
-              if (!isMediumScreen) navigation,
+              if (!isMedium) navigation,
               const BannerAdView(key: Key('BannerAdView')),
             ],
           );

@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
+
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
@@ -14,7 +16,6 @@ import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_polic
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/Article/create_artilce_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
@@ -34,119 +35,81 @@ class Routes {
     final skillTreeNavigatorKey = GlobalKey<NavigatorState>();
     final resourcesNavigatorKey = GlobalKey<NavigatorState>();
 
-    /// Route Observers: These are used to observe the route changes
-    /// and perform actions based on the route changes.
-    /// One is needed for each branch of the navigator.
-    /// The observer is used to reset the state of the appCubit
-    /// when the user navigates back from a specific page.
-    /// This is done to ensure that the appCubit is in the correct state
-    /// when the user navigates back to the page.
+    // ── Observers (unchanged behavior) ──────────────────────────────────────
     final routeObserver = RouteObserverWithCallback(
       onPop: (route, previousRoute) {
-        debugPrint('Observer Pop: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
+        debugPrint(
+          'Observer Pop: ${route.settings.name},'
+          ' ${previousRoute?.settings.name}',
+        );
       },
       onPush: (route, previousRoute) {
-        debugPrint('Observer Push: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
+        debugPrint(
+          'Observer Push: ${route.settings.name},'
+          ' ${previousRoute?.settings.name}',
+        );
         if (previousRoute?.settings.name == AuthPage.name) {
           appCubit.setProfile();
         }
       },
     );
+
     final routeObserverProfile = RouteObserverWithCallback(
       onPop: (route, previousRoute) {
-        debugPrint('Profile Observer Pop: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
-        //if from horse profile page
         if (route.settings.name == HorseProfilePage.name &&
             previousRoute?.settings.name == ProfilePage.name) {
-          debugPrint('Horse Profile Page Pop');
           appCubit
             ..resetFromHorseProfile()
             ..sortForHorse();
-        }
-        //if from viewing profile page
-        else if (route.settings.name == ViewingProfilePage.name &&
+        } else if (route.settings.name == ViewingProfilePage.name &&
             previousRoute?.settings.name == ProfilePage.name) {
-          debugPrint('Viewing Profile Page Pop');
           appCubit.resetFromViewingProfile();
         }
       },
       onPush: (route, previousRoute) {
-        debugPrint('Profile Observer Push: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
-        // if route is horse profile page
         if (route.settings.name == HorseProfilePage.name) {
-          debugPrint('Horse Profile Page Push');
           appCubit
             ..setHorseProfile()
             ..sortForHorse();
-        }
-        // if route is viewing profile page
-        else if (route.settings.name == ViewingProfilePage.name) {
-          debugPrint(
-            'Viewing Profile Page Push for: ${route.settings.arguments}',
-          );
+        } else if (route.settings.name == ViewingProfilePage.name) {
           appCubit.setViewingProfile();
         }
       },
     );
+
     final routeObserverSkillTree = RouteObserverWithCallback(
-      onPop: (route, previousRoute) {
-        debugPrint('SkillTree Observer Pop: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
-      },
       onPush: (route, previousRoute) {
-        debugPrint('SkillTree Observer Push: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
         if (route.settings.name == SkillTreePage.name) {
-          debugPrint('SkillTree Page Push');
           appCubit.setSkillTree();
         }
       },
+      onPop: (_, __) {},
     );
+
     final routeObserverResources = RouteObserverWithCallback(
       onPop: (route, previousRoute) {
-        debugPrint('Resource Observer Pop: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
         if (route.settings.name == ResourceCommentPage.name &&
             previousRoute?.settings.name == ResourcesPage.name) {
-          debugPrint('Resource Comment Page Pop');
-
           appCubit.resetFromResource();
         }
         if (route.settings.name == ResourceWebPage.name &&
             previousRoute?.settings.name == ResourcesPage.name) {
-          debugPrint('Resource Web Page Pop');
-
           appCubit.resetFromResource();
         }
       },
       onPush: (route, previousRoute) {
-        debugPrint('Resource Observer Push: '
-            '${route.settings.name}, ${previousRoute?.settings.name}');
         if (route.settings.name == ResourcesPage.name) {
-          debugPrint('Resource Page Push');
           appCubit.setResourcesList();
         }
-        if (route.settings.name == ResourceCommentPage.name) {
-          debugPrint(
-            'Resource Comment Page Push for: ${route.settings.arguments}',
-          );
-          appCubit.setResource();
-        }
-        if (route.settings.name == ResourceWebPage.name) {
-          debugPrint(
-            'Resource Web Page Push for: ${route.settings.arguments}',
-          );
+        if (route.settings.name == ResourceCommentPage.name ||
+            route.settings.name == ResourceWebPage.name) {
           appCubit.setResource();
         }
       },
     );
+
     return GoRouter(
       observers: [routeObserver],
-      //  debugLogDiagnostics: true,
       navigatorKey: routeNavigatorKey,
       initialLocation: ProfilePage.path,
       routes: <RouteBase>[
@@ -156,39 +119,53 @@ class Routes {
           builder: (context, state) => const AuthPage(),
         ),
 
-        //Rider Profile navigation
-        StatefulShellRoute.indexedStack(
-          builder: (context, state, navigationShell) =>
-              NavigationView(child: navigationShell),
+        // ── MAIN SHELL: builder + navigatorContainerBuilder ─────────────────
+        StatefulShellRoute(
+          // Wrap the shell with your app chrome (NavigationView).
+          builder: (
+            BuildContext context,
+            GoRouterState state,
+            StatefulNavigationShell navigationShell,
+          ) {
+            // IMPORTANT: include the navigationShell here so it renders.
+            return NavigationView(child: navigationShell);
+          },
+
+          // Provide a custom container that lays out &
+          //animates the branch Navigators.
+          navigatorContainerBuilder: (
+            BuildContext context,
+            StatefulNavigationShell navigationShell,
+            List<Widget> children,
+          ) {
+            return BranchSlideContainer(
+              navigationShell: navigationShell,
+              children: children,
+            );
+          },
+
           branches: [
-            // RiderProfilePage index 0
+            // ── Branch 0: Profile ───────────────────────────────────────────
             StatefulShellBranch(
               observers: [routeObserverProfile],
               navigatorKey: profileNavigatorKey,
               routes: <RouteBase>[
-                // RiderProfilePage
                 GoRoute(
-                  name: ProfilePage.name,
                   path: ProfilePage.path,
+                  name: ProfilePage.name,
                   builder: (context, state) => const ProfilePage(),
                   routes: [
-                    // Settings
                     GoRoute(
                       name: SettingsView.name,
                       path: SettingsView.routeName,
-                      builder: (context, state) {
-                        return SettingsView(
-                          controller: settingsContoller,
-                        );
-                      },
+                      builder: (context, state) =>
+                          SettingsView(controller: settingsContoller),
                     ),
-                    // MessagesPage
                     GoRoute(
                       name: MessagesPage.name,
                       path: MessagesPage.path,
                       builder: (context, state) => const MessagesPage(),
                       routes: [
-                        // MessagePage
                         GoRoute(
                           name: MessagePage.name,
                           path: MessagePage.path,
@@ -199,7 +176,6 @@ class Routes {
                         ),
                       ],
                     ),
-                    //HorserProfilePage
                     GoRoute(
                       path: HorseProfilePage.path,
                       name: HorseProfilePage.name,
@@ -208,7 +184,6 @@ class Routes {
                             state.pathParameters[HorseProfilePage.pathParams]!,
                       ),
                     ),
-                    // ViewingProfilePage
                     GoRoute(
                       path: ViewingProfilePage.path,
                       name: ViewingProfilePage.name,
@@ -217,19 +192,16 @@ class Routes {
                             .pathParameters[ViewingProfilePage.pathParams]!,
                       ),
                     ),
-                    // Privacy Policy
                     GoRoute(
                       name: PrivacyPolicyPage.name,
                       path: PrivacyPolicyPage.path,
                       builder: (context, state) => const PrivacyPolicyPage(),
                     ),
-                    //About
                     GoRoute(
                       name: AboutPage.name,
                       path: AboutPage.routeName,
                       builder: (context, state) => const AboutPage(),
                     ),
-                    // Email Veriication Dialog
                     GoRoute(
                       name: EmailVerificationDialog.name,
                       path: EmailVerificationDialog.path,
@@ -238,7 +210,6 @@ class Routes {
                             .pathParameters[EmailVerificationDialog.pathParms]!,
                       ),
                     ),
-                    // Delte Account
                     GoRoute(
                       name: DeletePage.name,
                       path: DeletePage.path,
@@ -248,7 +219,8 @@ class Routes {
                 ),
               ],
             ),
-            // SkillTreePage index 1
+
+            // ── Branch 1: Skill Tree ────────────────────────────────────────
             StatefulShellBranch(
               observers: [routeObserverSkillTree],
               navigatorKey: skillTreeNavigatorKey,
@@ -258,13 +230,11 @@ class Routes {
                   name: SkillTreePage.name,
                   builder: (context, state) => const SkillTreePage(),
                   routes: [
-                    // 1) Skills List (always tab 0)
+                    // 1) Skills List
                     GoRoute(
                       path: SkillTreeView.skillsListPath,
                       name: SkillTreeView.skillsListName,
                       builder: (context, state) {
-                        // Only when we're exactly on /SkillTree/Skills
-                        // (i.e. no skillId param) do we reset to tab 0
                         if (state
                                 .pathParameters[SkillTreeView.skillPathParam] ==
                             null) {
@@ -273,11 +243,11 @@ class Routes {
                         return const SkillTreeView();
                       },
                       routes: [
-                        // 2) Skill Detail
+                        // 2) Skill Detail (slide)
                         GoRoute(
                           path: SkillTreeView.skillLevelPath,
                           name: SkillTreeView.skillLevelName,
-                          builder: (context, state) {
+                          pageBuilder: (context, state) {
                             final id = state
                                 .pathParameters[SkillTreeView.skillPathParam]!;
                             final isLarge = MediaQuery.of(context).size.width >=
@@ -286,18 +256,21 @@ class Routes {
                             context.read<AppCubit>()
                               ..setSkill(id)
                               ..setSkillTreeTabIndex(isLarge ? 0 : 1);
-                            return SkillTreeView(skillId: id);
+
+                            return _horizontalSlidePage(
+                              key: state.pageKey,
+                              child: SkillTreeView(skillId: id),
+                            );
                           },
                         ),
                       ],
                     ),
 
-                    // 3) Training Paths List (tab 1 on large, tab 2 on small)
+                    // 3) Training Paths List (slide)
                     GoRoute(
                       path: 'TrainingPaths',
                       name: SkillTreeView.trainingPathListName,
-                      builder: (context, state) {
-                        // Only reset to the list‐tab when there's no detail
+                      pageBuilder: (context, state) {
                         if (state.pathParameters[
                                 SkillTreeView.trainingPathPathParam] ==
                             null) {
@@ -307,14 +280,17 @@ class Routes {
                               .read<AppCubit>()
                               .setSkillTreeTabIndex(isLarge ? 1 : 2);
                         }
-                        return const SkillTreeView();
+                        return _horizontalSlidePage(
+                          key: state.pageKey,
+                          child: const SkillTreeView(),
+                        );
                       },
                       routes: [
-                        // 4) Training Path Detail
+                        // 4) Training Path Detail (slide)
                         GoRoute(
                           path: SkillTreeView.trainingPathViewPath,
                           name: SkillTreeView.trainingPathViewName,
-                          builder: (context, state) {
+                          pageBuilder: (context, state) {
                             final id = state.pathParameters[
                                 SkillTreeView.trainingPathPathParam]!;
                             final isLarge = MediaQuery.of(context).size.width >=
@@ -323,7 +299,11 @@ class Routes {
                             context.read<AppCubit>()
                               ..setTrainingPath(id)
                               ..setSkillTreeTabIndex(isLarge ? 1 : 3);
-                            return SkillTreeView(trainingPathId: id);
+
+                            return _horizontalSlidePage(
+                              key: state.pageKey,
+                              child: SkillTreeView(trainingPathId: id),
+                            );
                           },
                         ),
                       ],
@@ -332,7 +312,8 @@ class Routes {
                 ),
               ],
             ),
-            //ResourcesPage for User index 2
+
+            // ── Branch 2: Resources ─────────────────────────────────────────
             StatefulShellBranch(
               observers: [routeObserverResources],
               navigatorKey: resourcesNavigatorKey,
@@ -342,13 +323,6 @@ class Routes {
                   name: ResourcesPage.name,
                   builder: (context, state) => const ResourcesPage(),
                   routes: <RouteBase>[
-                    // CreateArticlePage
-                    GoRoute(
-                      name: 'CreateArticlePage',
-                      path: 'Articles/New',
-                      builder: (context, state) => const CreateArticlePage(),
-                    ),
-                    // ResourceCommentPage
                     GoRoute(
                       name: ResourceCommentPage.name,
                       path: ResourceCommentPage.path,
@@ -357,7 +331,6 @@ class Routes {
                             .pathParameters[ResourceCommentPage.pathParams]!,
                       ),
                     ),
-                    // ResourceWebPage
                     GoRoute(
                       name: ResourceWebPage.name,
                       path: ResourceWebPage.path,
@@ -375,6 +348,122 @@ class Routes {
           ],
         ),
       ],
+    );
+  }
+
+  // Horizontal slide for in-branch pushes/pops (Skill Tree pages).
+  static CustomTransitionPage<dynamic> _horizontalSlidePage({
+    required LocalKey key,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<dynamic>(
+      key: key,
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final inTween =
+            Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .chain(CurveTween(curve: Curves.easeInOut));
+        final outTween =
+            Tween<Offset>(begin: Offset.zero, end: const Offset(-1, 0))
+                .chain(CurveTween(curve: Curves.easeInOut));
+
+        return SlideTransition(
+          position: animation.drive(inTween),
+          child: SlideTransition(
+            position: secondaryAnimation.drive(outTween),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Holds & animates all branch Navigators. Used by navigatorContainerBuilder.
+/// Keeps state per branch; only current + outgoing
+///  branch are visible during slide.
+class BranchSlideContainer extends StatefulWidget {
+  const BranchSlideContainer({
+    super.key,
+    required this.navigationShell,
+    required this.children,
+  });
+
+  final StatefulNavigationShell navigationShell;
+  final List<Widget> children;
+
+  @override
+  State<BranchSlideContainer> createState() => _BranchSlideContainerState();
+}
+
+class _BranchSlideContainerState extends State<BranchSlideContainer> {
+  late int _currentIndex;
+  final Set<int> _temporarilyVisible = <int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.navigationShell.currentIndex;
+    _temporarilyVisible.add(_currentIndex);
+  }
+
+  @override
+  void didUpdateWidget(covariant BranchSlideContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newIndex = widget.navigationShell.currentIndex;
+    if (newIndex != _currentIndex) {
+      final prev = _currentIndex;
+      _currentIndex = newIndex;
+      _temporarilyVisible
+        ..add(prev)
+        ..add(newIndex);
+
+      // Hide others after animation finishes
+      Future.delayed(const Duration(milliseconds: 320), () {
+        if (!mounted) return;
+        setState(
+          () => _temporarilyVisible.removeWhere((i) => i != _currentIndex),
+        );
+      });
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curr = _currentIndex;
+
+    // ⬇️ This clip keeps slides inside the content
+    // area so they never cover the rail
+    return ClipRect(
+      child: Stack(
+        children: widget.children.asMap().entries.map((entry) {
+          final index = entry.key;
+          final navigator = entry.value;
+
+          final targetOffset = (index == curr)
+              ? Offset.zero
+              : (index < curr ? const Offset(-1, 0) : const Offset(1, 0));
+
+          final show = index == curr || _temporarilyVisible.contains(index);
+
+          return AnimatedSlide(
+            offset: targetOffset,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: Offstage(
+              offstage: !show,
+              child: IgnorePointer(
+                ignoring: index != curr,
+                child: TickerMode(
+                  enabled: index == curr,
+                  child: navigator,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
