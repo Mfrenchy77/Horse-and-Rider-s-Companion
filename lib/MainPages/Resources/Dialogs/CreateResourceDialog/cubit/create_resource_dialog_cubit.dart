@@ -343,7 +343,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           state.copyWith(
             url: Url.dirty(url),
             title: state.title.isNotEmpty ? state.title : merged['title']!,
-            imageUrl: (finalImg ?? '').trim(),
+            imageUrl: finalImg.trim(),
             description: state.description.isNotEmpty
                 ? state.description
                 : (merged['description'] ?? ''),
