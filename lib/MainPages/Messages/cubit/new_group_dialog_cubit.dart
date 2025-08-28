@@ -39,9 +39,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
     debugPrint('getProfile by Name for ${state.name.value}');
     _riderProfileRepository
         .getProfilesByName(name: state.name.value)
-        .listen((event) {
-      final results =
-          event.docs.map((e) => (e.data()) as RiderProfile).toList();
+        .listen((results) {
       emit(state.copyWith(searchResult: _removeUsersProfile(results)));
     });
   }
@@ -77,8 +75,8 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
     final profileResults = <RiderProfile>[];
     _riderProfileRepository
         .getRiderProfile(email: state.email.value.toLowerCase())
-        .listen((event) {
-      final profile = event.data() as RiderProfile;
+        .listen((profile) {
+      if (profile == null) return;
       profileResults.add(profile);
       debugPrint('Result Name: ${profile.name}');
       emit(state.copyWith(searchResult: _removeUsersProfile(profileResults)));

@@ -20,20 +20,27 @@ class SkillsRepository {
   }
 
   /// Retreive Skill from Category [id]
-  Stream<QuerySnapshot> getSkillsFromCategory({required String id}) {
+  Stream<List<Skill>> getSkillsFromCategory({required String id}) {
     return _skillDatabaseReference
         .where('categoryId', isEqualTo: id)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///  Retreives all Skills for
 
-  Stream<QuerySnapshot> getSkillsForRiderSkillTree() {
-    return _skillDatabaseReference.where('rider', isEqualTo: true).snapshots();
+  Stream<List<Skill>> getSkillsForRiderSkillTree() {
+    return _skillDatabaseReference
+        .where('rider', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
-  Stream<QuerySnapshot> getSkillsForHorseSkillTree() {
-    return _skillDatabaseReference.where('rider', isEqualTo: false).snapshots();
+  Stream<List<Skill>> getSkillsForHorseSkillTree() {
+    return _skillDatabaseReference
+        .where('rider', isEqualTo: false)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// delete Skill

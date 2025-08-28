@@ -22,22 +22,27 @@ class CatagorryRepository {
   }
 
   /// get a single [categorry]
-  Stream<DocumentSnapshot> getCategory({required Catagorry categorry}) {
-    return _categoryDatabaseReference.doc(categorry.id).snapshots();
+  Stream<Catagorry?> getCategory({required Catagorry categorry}) {
+    return _categoryDatabaseReference
+        .doc(categorry.id)
+        .snapshots()
+        .map((snap) => snap.data());
   }
 
   ///get all category For Riders Skill Tree
-  Stream<QuerySnapshot> getCatagoriesForRiderSkillTree() {
+  Stream<List<Catagorry>> getCatagoriesForRiderSkillTree() {
     return _categoryDatabaseReference
         .where('rider', isEqualTo: true)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///get all category For Horses Skill Tree
-  Stream<QuerySnapshot> getCatagoriesForHorseSkillTree() {
+  Stream<List<Catagorry>> getCatagoriesForHorseSkillTree() {
     return _categoryDatabaseReference
         .where('rider', isEqualTo: false)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///delete Category at [catagorry]

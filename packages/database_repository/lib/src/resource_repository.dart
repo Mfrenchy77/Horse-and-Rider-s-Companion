@@ -71,12 +71,19 @@ class ResourcesRepository {
     }
   }
 
-  /// Stream all resources (no ordering to avoid index issues on legacy docs).
-  Stream<QuerySnapshot<Resource>> getResources() => _ref.snapshots();
+  /// Stream all resources mapped to domain models.
+  Stream<List<Resource>> getResources() {
+    return _ref
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
+  }
 
   /// Optionally, a convenience stream ordered by `updatedAt` desc (if present).
-  Stream<QuerySnapshot<Resource>> getResourcesOrderedByUpdatedAt() {
-    return _ref.orderBy('updatedAt', descending: true).snapshots();
+  Stream<List<Resource>> getResourcesOrderedByUpdatedAt() {
+    return _ref
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Fetch a single resource by id (returns null if not found).
@@ -116,7 +123,7 @@ class ResourcesRepository {
 
   /// Stream of **published** articles, newest first.
   /// Optional tag filter via `arrayContainsAny` (up to 10 values).
-  Stream<QuerySnapshot<Resource>> getPublishedArticles({
+  Stream<List<Resource>> getPublishedArticles({
     List<String> tagsFilter = const [],
   }) {
     var q = _ref
@@ -127,7 +134,7 @@ class ResourcesRepository {
     if (tagsFilter.isNotEmpty) {
       q = q.where('tags', arrayContainsAny: tagsFilter.take(10).toList());
     }
-    return q.snapshots();
+    return q.snapshots().map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Fetch a single **article** by id (null if not found or not an article).

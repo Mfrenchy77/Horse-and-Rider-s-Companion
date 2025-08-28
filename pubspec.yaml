@@ -19,6 +19,7 @@ dependencies:
   database_repository:
     path: packages/database_repository
   equatable: ^2.0.3
+  fake_cloud_firestore: ^4.0.0
   file_picker: ^10.3.1
   firebase_app_check: ^0.4.0
   firebase_auth: ^6.0.1

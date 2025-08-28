@@ -62,11 +62,10 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
   Future<void> getTransferProfile(String email) async {
     emit(state.copyWith(status: TransferHorseStatus.searching));
     try {
-      final snapshot =
+      final transferProfile =
           await _riderProfileRepository.getRiderProfileByEmail(email: email);
-      if (snapshot.exists) {
-        final transferProfile = snapshot.data();
-        debugPrint('User found: ${transferProfile?.name}');
+      if (transferProfile != null) {
+        debugPrint('User found: ${transferProfile.name}');
 
         emit(
           state.copyWith(
@@ -74,7 +73,7 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
             status: TransferHorseStatus.initial,
             isTransferable: true,
             transferProfile: transferProfile,
-            message: '${transferProfile?.name} found',
+            message: '${transferProfile.name} found',
           ),
         );
       } else {
@@ -122,11 +121,13 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
 
       final conversation = Conversation(
         id: _createHorseConversationId(),
-        parties: [state.userProfile?.email, state.transferProfile?.email]
-            .map((e) => e!.toLowerCase())
-            .toList(),
-        partiesIds: [state.userProfile?.id, state.transferProfile?.id]
+        // Parties: display names
+        parties: [state.userProfile?.name, state.transferProfile?.name]
             .map((e) => e!)
+            .toList(),
+        // PartiesIds: emails (lowercased)
+        partiesIds: [state.userProfile?.email, state.transferProfile?.email]
+            .map((e) => e!.toLowerCase())
             .toList(),
         createdOn: DateTime.now(),
         lastEditDate: DateTime.now(),
@@ -205,6 +206,7 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
       requestItem: request,
       subject: 'Transfer Horse',
       sender: state.userProfile?.name,
+      senderId: state.userProfile?.email.toLowerCase(),
       messageType: MessageType.TRANSFER_HORSE_REQUEST,
       senderProfilePicUrl: state.userProfile?.picUrl,
       message: '${state.userProfile?.name} wants to transfer'

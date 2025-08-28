@@ -8,6 +8,9 @@ const {JSDOM} = require('jsdom');
 const {Readability} = require('@mozilla/readability');
 const cheerio = require('cheerio');
 const {onRequest} = require('firebase-functions/v2/https');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const admin = require('firebase-admin');
+try { admin.app(); } catch { admin.initializeApp(); }
 const logger = require('firebase-functions/logger');
 
 /** ------------------------------------------------------------------------ */
@@ -519,5 +522,83 @@ exports.resolveImage = onRequest(
           res.status(500).json({error: String(e)});
         }
       });
+    },
+);
+
+/** ------------------------------------------------------------------------ */
+/** Messaging Notifications                                                  */
+/** ------------------------------------------------------------------------ */
+
+async function sendPush(tokens, payload) {
+  if (!tokens || tokens.length === 0) return;
+  try {
+    const msg = {
+      notification: {title: payload.title, body: payload.body},
+      data: Object.fromEntries(Object.entries(payload.data || {}).map(([k, v]) => [String(k), String(v)])),
+      tokens,
+    };
+    await admin.messaging().sendMulticast(msg);
+  } catch (e) {
+    logger.error('FCM send error', e);
+  }
+}
+
+async function sendEmail(emails, mail) {
+  if (!emails || emails.length === 0) return;
+  // TODO: Integrate a provider (SendGrid/Mailgun) and set API key env.
+  logger.info(`Email stub -> ${emails.join(', ')} | ${mail.subject}`);
+}
+
+exports.onMessageCreated = onDocumentCreated(
+    'Conversations/{convId}/Messages/{messageId}',
+    async (event) => {
+      const snap = event.data;
+      if (!snap) return;
+      const message = snap.data();
+      const convId = event.params.convId;
+      try {
+        const reqTypes = new Set([
+          'INSTRUCTOR_REQUEST',
+          'STUDENT_REQUEST',
+          'STUDENT_HORSE_REQUEST',
+          'TRANSFER_HORSE_REQUEST',
+        ]);
+        if (!reqTypes.has(message.messageType)) return;
+
+        const convRef = admin.firestore().collection('Conversations').doc(convId);
+        const convSnap = await convRef.get();
+        if (!convSnap.exists) return;
+        const conv = convSnap.data() || {};
+        const parties = Array.isArray(conv.parties) ? conv.parties : [];
+        const partiesIds = Array.isArray(conv.partiesIds) ? conv.partiesIds : [];
+
+        let senderEmail = message.senderId || '';
+        if (!senderEmail) {
+          const idx = parties.findIndex((n) => n === message.sender);
+          if (idx >= 0 && partiesIds[idx]) senderEmail = String(partiesIds[idx]).toLowerCase();
+        }
+
+        const recipients = partiesIds
+            .map((e) => String(e).toLowerCase())
+            .filter((e) => e && e !== senderEmail);
+        if (recipients.length === 0) return;
+
+        const tokenFetches = recipients.map(async (email) => {
+          const col = admin.firestore()
+              .collection('RiderProfiles')
+              .doc(email)
+              .collection('tokens');
+          const qs = await col.get();
+          return qs.docs.map((d) => (d.data() && d.data().token) || d.id).filter(Boolean);
+        });
+        const tokens = (await Promise.all(tokenFetches)).flat();
+
+        const title = message.subject || 'New Request';
+        const body = message.message || `${message.sender || 'Someone'} sent you a request`;
+        await sendPush(tokens, {title, body, data: {convId}});
+        await sendEmail(recipients, {subject: title, text: body});
+      } catch (e) {
+        logger.error('onMessageCreated error', e);
+      }
     },
 );

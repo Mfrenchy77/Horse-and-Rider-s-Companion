@@ -1,5 +1,5 @@
 // ignore_for_file: cast_nullable_to_non_nullable
-import 'dart:async';
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,7 +38,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
           listener: (context, state) {
             final cubit = context.read<NewGroupDialogCubit>();
             if (state.status == FormStatus.success) {
-              unawaited(context.read<AppCubit>().setConversation(state.id));
+              context.read<AppCubit>().setConversation(state.id);
               context.goNamed(
                 MessagePage.name,
                 pathParameters: {MessagePage.pathParams: state.id},

@@ -15,10 +15,9 @@ enum ThemeSeasons {
 
 class HorseAndRidersTheme {
   ThemeData getLightTheme() {
-    final now = DateTime.now();
-    final month = now.month;
-    final day = now.day;
-    final themeSeasons = _getSeason(month, day);
+    // Use cached season (computed once per day) to avoid repeatedly
+    // computing the season on every rebuild.
+    final themeSeasons = getThemeSeason();
 
     if (SharedPrefs().isSeasonalMode()) {
       switch (themeSeasons) {
@@ -45,10 +44,9 @@ class HorseAndRidersTheme {
   }
 
   ThemeData getDarkTheme() {
-    final now = DateTime.now();
-    final month = now.month;
-    final day = now.day;
-    final themeSeasons = _getSeason(month, day);
+    // Use cached season (computed once per day) to avoid repeatedly
+    // computing the season on every rebuild.
+    final themeSeasons = getThemeSeason();
     if (SharedPrefs().isSeasonalMode()) {
       switch (themeSeasons) {
         case ThemeSeasons.main:
@@ -117,11 +115,26 @@ class HorseAndRidersTheme {
 
 /// pulic facing method to get the current theme season
 ThemeSeasons getThemeSeason() {
+  // Cache season per day so frequent rebuilds don't repeatedly compute the
+  // season or generate logging. This function is intentionally cheap and
+  // returns the cached value for any calls during the same day.
   final now = DateTime.now();
-  final month = now.month;
-  final day = now.day;
-  return HorseAndRidersTheme._getSeason(month, day);
+  final today = DateTime(now.year, now.month, now.day);
+  // Use top-level cache variables.
+  if (_cachedSeasonDate != null && _cachedSeason != null) {
+    if (_cachedSeasonDate == today) {
+      return _cachedSeason!;
+    }
+  }
+  final season = HorseAndRidersTheme._getSeason(now.month, now.day);
+  _cachedSeason = season;
+  _cachedSeasonDate = today;
+  return season;
 }
+
+// Top-level cache for the computed season (cleared when day changes).
+DateTime? _cachedSeasonDate;
+ThemeSeasons? _cachedSeason;
 
 ///   Main Theme
 

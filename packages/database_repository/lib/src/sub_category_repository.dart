@@ -22,22 +22,27 @@ class SubCategoryRepository {
   }
 
   /// get a single [subCategory]
-  Stream<DocumentSnapshot> getSubCategory({required SubCategory subCategory}) {
-    return _subCategoryDatabaseReference.doc(subCategory.id).snapshots();
+  Stream<SubCategory?> getSubCategory({required SubCategory subCategory}) {
+    return _subCategoryDatabaseReference
+        .doc(subCategory.id)
+        .snapshots()
+        .map((snap) => snap.data());
   }
 
   ///get all subCategory For Riders Skill Tree
-  Stream<QuerySnapshot> getSubCategoriesForRiderSkillTree() {
+  Stream<List<SubCategory>> getSubCategoriesForRiderSkillTree() {
     return _subCategoryDatabaseReference
         .where('rider', isEqualTo: true)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///get all subCategory For Horses Skill Tree
-  Stream<QuerySnapshot> getSubCategoriesForHorseSkillTree() {
+  Stream<List<SubCategory>> getSubCategoriesForHorseSkillTree() {
     return _subCategoryDatabaseReference
         .where('rider', isEqualTo: false)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///delete [subCategory]

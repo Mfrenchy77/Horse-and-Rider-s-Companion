@@ -1,5 +1,6 @@
 // ignore_for_file: cast_nullable_to_non_nullable, non_constant_identifier_names, lines_longer_than_80_chars
 
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
@@ -31,14 +32,17 @@ class MessageView extends StatelessWidget {
               ? const Center(
                   child: Text('No Conversation Selected'),
                 )
-              : const Stack(
+              : Stack(
                   children: [
-                    MessageList(
+                    const MessageList(
                       key: Key('MessageList'),
                     ),
-                    MessageTextField(
-                      key: Key('MessageTextField'),
-                    ),
+                    // Hybrid mode: hide composer unless this is a Support conversation
+                    if (state.conversation?.recentMessage?.messageType ==
+                        MessageType.SUPPORT)
+                      const MessageTextField(
+                        key: Key('MessageTextField'),
+                      ),
                   ],
                 ),
         );

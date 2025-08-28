@@ -23,7 +23,7 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
     );
     getHorseProfile(horseId);
   }
-  StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
+  StreamSubscription<HorseProfile?>? _horseProfileSubscription;
 
   Future<void> getHorseProfile(String id) async {
     emit(state.copyWith(status: HorseProfileStatus.loading));
@@ -34,9 +34,9 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
       } else {
         debugPrint('Horse Profile not retrieved, getting now');
         try {
-          _horseProfileSubscription =
-              HorseProfileRepository().getHorseProfile(id: id).listen((event) {
-            final horseProfile = event.data() as HorseProfile?;
+          _horseProfileSubscription = HorseProfileRepository()
+              .getHorseProfile(id: id)
+              .listen((horseProfile) {
             debugPrint('Horse Profile Retrieved: ${horseProfile?.name}');
             if (horseProfile != null) {
               if (!_isOwner()) {
@@ -44,8 +44,7 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
                 RiderProfileRepository()
                     .getRiderProfile(email: horseProfile.currentOwnerId)
                     .first
-                    .then((value) {
-                  final ownerProfile = value.data() as RiderProfile?;
+                    .then((ownerProfile) {
                   debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
                   emit(
                     state.copyWith(

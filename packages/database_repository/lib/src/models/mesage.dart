@@ -21,6 +21,7 @@ class Message {
   Message({
     this.parties,
     required this.id,
+    this.senderId,
     this.requestItem,
     required this.date,
     required this.sender,
@@ -36,6 +37,7 @@ class Message {
   final String? id;
   final DateTime? date;
   final String? sender;
+  final String? senderId;
   final String? subject;
   String? message;
   final String? messageId;
@@ -49,6 +51,7 @@ class Message {
   factory Message.fromJson(Map<String, dynamic>? data) => Message(
         id: data?['id'] as String?,
         sender: data?['sender'] as String?,
+        senderId: data?['senderId'] as String?,
         subject: data?['subject'] as String?,
         message: data?['message'] as String?,
         messageId: data?['messageId'] as String?,
@@ -75,8 +78,10 @@ class Message {
                                 ? MessageType.TRANSFER_HORSE_REQUEST
                                 : MessageType.CHAT,
         senderProfilePicUrl: data?['senderProfilePicUrl'] as String?,
-        recipients:
-            (data?['recipient'] as List?)?.map((e) => e as String?).toList(),
+        // Support both legacy 'recipient' and new 'recipients' keys
+        recipients: ((data?['recipients'] ?? data?['recipient']) as List?)
+            ?.map((e) => e as String?)
+            .toList(),
         parties: (data?['parties'] as List?)?.map((e) => e as String).toList(),
       );
 
@@ -89,6 +94,7 @@ class Message {
     return Message(
       id: data!['id'] as String?,
       sender: data['sender'] as String?,
+      senderId: data['senderId'] as String?,
       subject: data['subject'] as String?,
       message: data['message'] as String?,
       messageId: data['messageId'] as String?,
@@ -116,8 +122,11 @@ class Message {
                               : MessageType.CHAT,
       senderProfilePicUrl: data['senderProfilePicUrl'] as String?,
       parties: (data['parties'] as List?)?.map((e) => e as String).toList(),
+      // Support both legacy 'recipient' and new 'recipients' keys
       recipients:
-          (data['recipient'] as List?)?.map((e) => e as String).toList(),
+          ((data['recipients'] ?? data['recipient']) as List?)
+              ?.map((e) => e as String)
+              .toList(),
     );
   }
 
@@ -126,6 +135,7 @@ class Message {
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (sender != null) 'sender': sender,
+      if (senderId != null) 'senderId': senderId,
       if (subject != null) 'subject': subject,
       if (message != null) 'message': message,
       if (parties != null) 'parties': parties,
@@ -156,6 +166,7 @@ class Message {
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (sender != null) 'sender': sender,
+      if (senderId != null) 'senderId': senderId,
       if (subject != null) 'subject': subject,
       if (message != null) 'message': message,
       if (parties != null) 'parties': parties,

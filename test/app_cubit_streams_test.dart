@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:authentication_repository/authentication_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
@@ -48,12 +48,11 @@ void main() {
 
       // Skill/resources fetches run on init; return empty streams to avoid noise
       when(() => skillRepo.getSkills())
-          .thenAnswer((_) => const Stream<QuerySnapshot>.empty());
-      when(() => skillRepo.getAllTrainingPaths()).thenAnswer(
-        (_) => const Stream<QuerySnapshot<TrainingPath>>.empty(),
-      );
+          .thenAnswer((_) => const Stream<List<Skill>>.empty());
+      when(() => skillRepo.getAllTrainingPaths())
+          .thenAnswer((_) => const Stream<List<TrainingPath>>.empty());
       when(() => resourcesRepo.getResources())
-          .thenAnswer((_) => const Stream<QuerySnapshot<Resource>>.empty());
+          .thenAnswer((_) => const Stream<List<Resource>>.empty());
     });
 
     test(
@@ -63,14 +62,14 @@ void main() {
         // Arrange controllers to observe onListen/onCancel
         var listenedA = 0;
         var canceledA = 0;
-        final controllerA = StreamController<DocumentSnapshot<Object?>>();
+        final controllerA = StreamController<HorseProfile?>();
         controllerA.onListen = () => listenedA++;
         controllerA.onCancel = () {
           canceledA++;
           return Future.value();
         };
 
-        final controllerB = StreamController<DocumentSnapshot<Object?>>();
+        final controllerB = StreamController<HorseProfile?>();
 
         when(() => horseRepo.getHorseProfileById(id: 'A'))
             .thenAnswer((_) => controllerA.stream);

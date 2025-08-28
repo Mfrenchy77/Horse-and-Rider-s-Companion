@@ -28,13 +28,18 @@ class SkillTreeRepository {
   }
 
   /// Retrieve a TrainingPath by its ID
-  Stream<DocumentSnapshot> getTrainingPathById({required String id}) {
-    return _trainingPathDatabaseReference.doc(id).snapshots();
+  Stream<TrainingPath?> getTrainingPathById({required String id}) {
+    return _trainingPathDatabaseReference
+        .doc(id)
+        .snapshots()
+        .map((snap) => snap.data());
   }
 
   /// Retrieve all TrainingPaths
-  Stream<QuerySnapshot<TrainingPath>> getAllTrainingPaths() {
-    return _trainingPathDatabaseReference.snapshots();
+  Stream<List<TrainingPath>> getAllTrainingPaths() {
+    return _trainingPathDatabaseReference
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Delete a TrainingPath
@@ -62,25 +67,34 @@ class SkillTreeRepository {
   }
 
   /// Retreive Skill from Category [id]
-  Stream<QuerySnapshot> getSkillsFromCategory({required String id}) {
+  Stream<List<Skill>> getSkillsFromCategory({required String id}) {
     return _skillDatabaseReference
         .where('categoryId', isEqualTo: id)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Retreive all Skills
-  Stream<QuerySnapshot> getSkills() {
-    return _skillDatabaseReference.snapshots();
+  Stream<List<Skill>> getSkills() {
+    return _skillDatabaseReference
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///  Retreives all Skills for Rider SKill Tree
-  Stream<QuerySnapshot> getSkillsForRiderSkillTree() {
-    return _skillDatabaseReference.where('rider', isEqualTo: true).snapshots();
+  Stream<List<Skill>> getSkillsForRiderSkillTree() {
+    return _skillDatabaseReference
+        .where('rider', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///  Retreives all Skills for Horse SKill Tree
-  Stream<QuerySnapshot> getSkillsForHorseSkillTree() {
-    return _skillDatabaseReference.where('rider', isEqualTo: false).snapshots();
+  Stream<List<Skill>> getSkillsForHorseSkillTree() {
+    return _skillDatabaseReference
+        .where('rider', isEqualTo: false)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// delete Skill

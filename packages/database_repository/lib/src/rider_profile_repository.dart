@@ -46,10 +46,11 @@ class RiderProfileRepository {
   }
 
   /// Retrieve the user's profile using [email]
-  Stream<DocumentSnapshot> getRiderProfile({required String email}) {
+  Stream<RiderProfile?> getRiderProfile({required String email}) {
     return _riderProfileDatabaseReference
         .doc(_convertEmailToPath(email: email))
         .snapshots()
+        .map((snap) => snap.data())
         .handleError((Object error) {
       if (error is FirebaseException) {
         handleFirebaseException(error);
@@ -59,21 +60,22 @@ class RiderProfileRepository {
     });
   }
 
-  Future<DocumentSnapshot<RiderProfile>> getRiderProfileByEmail({
+  Future<RiderProfile?> getRiderProfileByEmail({
     required String email,
-  }) {
-    return _riderProfileDatabaseReference
+  }) async {
+    final snap = await _riderProfileDatabaseReference
         .doc(_convertEmailToPath(email: email))
         .get();
+    return snap.data();
   }
 
   ///Retrive a single profile by [name]
-  Stream<DocumentSnapshot> getProfileByName({required String name}) {
+  Stream<RiderProfile?> getProfileByName({required String name}) {
     return _riderProfileDatabaseReference
         .where('name', isEqualTo: name)
         .get()
         .asStream()
-        .map((event) => event.docs.first)
+        .map((event) => event.docs.isNotEmpty ? event.docs.first.data() : null)
         .handleError((Object error) {
       if (error is FirebaseException) {
         handleFirebaseException(error);
@@ -84,14 +86,12 @@ class RiderProfileRepository {
   }
 
   /// Retrieve all profile for [name]
-  Stream<QuerySnapshot> getProfilesByName({required String name}) {
+  Stream<List<RiderProfile>> getProfilesByName({required String name}) {
     return _riderProfileDatabaseReference
         .where('name', isGreaterThanOrEqualTo: name)
-        .where(
-          'name',
-          isLessThanOrEqualTo: '$name\uf8ff',
-        )
+        .where('name', isLessThanOrEqualTo: '$name\uf8ff')
         .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList())
         .handleError((Object error) {
       if (error is FirebaseException) {
         handleFirebaseException(error);
@@ -102,15 +102,18 @@ class RiderProfileRepository {
   }
 
   /// Retrieve all profiles for zipcode
-  Stream<QuerySnapshot> getProfilesByZipcode({required String zipcode}) {
+  Stream<List<RiderProfile>> getProfilesByZipcode({required String zipcode}) {
     return _riderProfileDatabaseReference
         .where('zipCode', isEqualTo: zipcode)
         .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList())
         .handleError((Object error) {
       if (error is FirebaseException) {
         handleFirebaseException(error);
       } else {
-        debugPrint('An unknown error occurred in getProfilesByZipcode: $error');
+        debugPrint(
+          'An unknown error occurred in getProfilesByZipcode: $error',
+        );
       }
     });
   }

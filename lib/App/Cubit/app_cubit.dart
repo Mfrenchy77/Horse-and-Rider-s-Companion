@@ -13,6 +13,7 @@ import 'package:form_inputs/form_inputs.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/notifications/fcm_service.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -50,13 +51,13 @@ class AppCubit extends Cubit<AppState> {
 
   ///Streams
   late final StreamSubscription<User?> _userSubscription;
-  StreamSubscription<QuerySnapshot<Object?>>? _messagesStream;
-  StreamSubscription<QuerySnapshot<Object?>>? _resourcesStream;
-  StreamSubscription<QuerySnapshot<Object?>>? _skillsSubscription;
-  StreamSubscription<QuerySnapshot<Object?>>? _conversationsStream;
-  StreamSubscription<QuerySnapshot<Object?>>? _trainingPathsStream;
-  StreamSubscription<DocumentSnapshot<Object?>>? _usersProfileSubscription;
-  StreamSubscription<DocumentSnapshot<Object?>>? _horseProfileSubscription;
+  StreamSubscription<List<Message>>? _messagesStream;
+  StreamSubscription<List<Resource>>? _resourcesStream;
+  StreamSubscription<List<Skill>>? _skillsSubscription;
+  StreamSubscription<List<Conversation>>? _conversationsStream;
+  StreamSubscription<List<TrainingPath>>? _trainingPathsStream;
+  StreamSubscription<RiderProfile?>? _usersProfileSubscription;
+  StreamSubscription<HorseProfile?>? _horseProfileSubscription;
   late final StreamSubscription<RiderProfile?> _viewingProfileSubscription;
 
   Timer? _emailVerificationTimer;
@@ -162,11 +163,12 @@ class AppCubit extends Cubit<AppState> {
       _usersProfileSubscription?.cancel();
       _usersProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: user.email)
-          .listen((event) {
-        final profile = event.data() as RiderProfile?;
+          .listen((profile) {
         if (profile != null) {
           debugPrint('User Profile exists: ${profile.email}');
           _checkOnboarding();
+          // Register device for push notifications (best-effort)
+          FcmService.ensureRegistered(profile.email);
           emit(
             state.copyWith(
               user: user,
@@ -196,9 +198,9 @@ class AppCubit extends Cubit<AppState> {
   Future<RiderProfile?> _fetchRiderProfile(String email) async {
     debugPrint('Fetching Rider Profile for $email');
     try {
-      final snapshot =
+      final profile =
           await _riderProfileRepository.getRiderProfile(email: email).first;
-      return snapshot.data() as RiderProfile?;
+      return profile;
     } catch (e) {
       debugPrint('Error fetching rider profile: $e');
       return null;
@@ -527,6 +529,7 @@ class AppCubit extends Cubit<AppState> {
     final message = Message(
       date: DateTime.now(),
       id: conversationId,
+      senderId: user.email.toLowerCase(),
       sender: user.name,
       messageId: messageId,
       requestItem: requestItem,
@@ -599,6 +602,7 @@ class AppCubit extends Cubit<AppState> {
     final message = Message(
       id: conversationId,
       sender: user.name,
+      senderId: user.email.toLowerCase(),
       date: DateTime.now(),
       requestItem: requestItem,
       subject: 'Student Request',
@@ -966,9 +970,9 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Horse Profile not retrieved, getting now');
       // Cancel any existing listener before subscribing to a new horse
       await _horseProfileSubscription?.cancel();
-      _horseProfileSubscription =
-          _horseProfileRepository.getHorseProfileById(id: id).listen((event) {
-        final horseProfile = event.data() as HorseProfile?;
+      _horseProfileSubscription = _horseProfileRepository
+          .getHorseProfileById(id: id)
+          .listen((horseProfile) {
         if (horseProfile != null) {
           debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
 
@@ -994,9 +998,9 @@ class AppCubit extends Cubit<AppState> {
   /// Fetches the Horse Profile from the database
   Future<HorseProfile?> _fetchHorseProfile(String id) async {
     try {
-      final snapshot =
+      final profile =
           await _horseProfileRepository.getHorseProfile(id: id).first;
-      return snapshot.data() as HorseProfile?;
+      return profile;
     } catch (e) {
       debugPrint('Error fetching horse profile: $e');
       return null;
@@ -1216,6 +1220,7 @@ class AppCubit extends Cubit<AppState> {
     return Message(
       id: groupId,
       date: DateTime.now(),
+      senderId: state.usersProfile?.email.toLowerCase(),
       requestItem: requestHorse,
       subject: 'Student Horse Request',
       sender: state.usersProfile!.name,
@@ -1307,9 +1312,10 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('getting Skills called');
     if (state.allSkills.isEmpty) {
       debugPrint('Skills not retrieved yet');
-      _skillsSubscription = _skillTreeRepository.getSkills().listen((event) {
-        final skills = event.docs.map((doc) => (doc.data()) as Skill?).toList()
-          ..sort((a, b) => a!.position.compareTo(b!.position));
+      _skillsSubscription =
+          _skillTreeRepository.getSkills().listen((skillsList) {
+        final skills = skillsList.toList()
+          ..sort((a, b) => a.position.compareTo(b.position));
         debugPrint('Skills Retrieved: ${skills.length}');
         emit(
           state.copyWith(
@@ -1327,9 +1333,7 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('Get TrainingPaths Called');
 
     _trainingPathsStream =
-        _skillTreeRepository.getAllTrainingPaths().listen((event) {
-      final trainingPaths = event.docs.map((doc) => doc.data()).toList();
-
+        _skillTreeRepository.getAllTrainingPaths().listen((trainingPaths) {
       debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
 
       emit(state.copyWith(trainingPaths: trainingPaths));
@@ -1348,8 +1352,8 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('Get Resources Called');
     if (state.resources.isEmpty) {
       debugPrint('Resources not retrieved yet');
-      _resourcesStream = _resourcesRepository.getResources().listen((event) {
-        final resources = event.docs.map((doc) => doc.data()).toList();
+      _resourcesStream =
+          _resourcesRepository.getResources().listen((resources) {
         debugPrint('Resources Retrieved: ${resources.length}');
         emit(state.copyWith(resources: resources));
       });
@@ -2575,6 +2579,7 @@ class AppCubit extends Cubit<AppState> {
         subject: 'Support Message',
         message: state.errorMessage,
         messageType: MessageType.SUPPORT,
+        senderId: state.usersProfile?.email.toLowerCase(),
         sender: state.usersProfile!.name,
         senderProfilePicUrl: state.usersProfile?.picUrl,
         messageId: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -2624,12 +2629,11 @@ class AppCubit extends Cubit<AppState> {
       if (state.usersProfile != null) {
         _conversationsStream = _messagesRepository
             .getConversations(userEmail: state.usersProfile!.email)
-            .listen((event) {
-          final conversations =
-              event.docs.map((e) => (e.data()) as Conversation).toList()
-                ..sort(
-                  (a, b) => b.createdOn.compareTo(a.createdOn),
-                );
+            .listen((conversationsList) {
+          final conversations = conversationsList.toList()
+            ..sort(
+              (a, b) => b.createdOn.compareTo(a.createdOn),
+            );
           emit(
             state.copyWith(
               conversations: conversations,
@@ -2668,8 +2672,8 @@ class AppCubit extends Cubit<AppState> {
       _messagesStream?.cancel();
       _messagesStream = _messagesRepository
           .getMessages(conversationId: conversation.id)
-          .listen((event) {
-        final messages = event.docs.map((e) => (e.data()) as Message).toList()
+          .listen((messagesList) {
+        final messages = messagesList.toList()
           ..sort(
             (a, b) => (a.date as DateTime).compareTo(
               b.date as DateTime,
@@ -2712,9 +2716,12 @@ class AppCubit extends Cubit<AppState> {
   /// AppBar title for a conversation showing the other parties name
   String conversationTitle() {
     final conversation = state.conversation;
-
-    final parties = conversation?.parties?..remove(state.usersProfile?.name);
-    return parties?.join(', ') ?? '';
+    // Copy list to avoid mutating the conversation parties
+    final names = conversation == null
+        ? <String>[]
+        : List<String>.from(conversation.parties)
+      ..remove(state.usersProfile?.name);
+    return names.join(', ');
   }
 
   /// Message text changed
@@ -2732,6 +2739,7 @@ class AppCubit extends Cubit<AppState> {
         id: state.conversation!.id,
         message: state.messageText,
         sender: state.usersProfile!.name,
+        senderId: state.usersProfile?.email.toLowerCase(),
         recipients: state.conversation!.parties,
         senderProfilePicUrl: state.usersProfile?.picUrl,
         messageId: DateTime.now().millisecondsSinceEpoch.toString(),

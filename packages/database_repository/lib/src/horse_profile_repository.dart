@@ -25,18 +25,24 @@ class HorseProfileRepository {
   }
 
   ///retrieve all horse profiles for user [ids]
-  Stream<QuerySnapshot> getAllUsersHorses({required List<String>? ids}) {
+  Stream<List<HorseProfile>> getAllUsersHorses({required List<String>? ids}) {
     //retrieve horses assigned to a users profile
-    return _horseProfiledatabaseReference.where('id', whereIn: ids).snapshots();
+    return _horseProfiledatabaseReference
+        .where('id', whereIn: ids)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// retrieve a horse profile by its [id]
-  Stream<DocumentSnapshot> getHorseProfileById({required String id}) {
-    return _horseProfiledatabaseReference.doc(id).snapshots();
+  Stream<HorseProfile?> getHorseProfileById({required String id}) {
+    return _horseProfiledatabaseReference
+        .doc(id)
+        .snapshots()
+        .map((snap) => snap.data());
   }
 
   ///retrieve all horse profiles for  [name]
-  Stream<QuerySnapshot> getHorseByName({required String name}) {
+  Stream<List<HorseProfile>> getHorseByName({required String name}) {
     //retrieve horse with name from database
 
     return _horseProfiledatabaseReference
@@ -45,11 +51,12 @@ class HorseProfileRepository {
           'name',
           isLessThanOrEqualTo: '$name\uf8ff',
         )
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///retrieve all horse profiles for  [nickName]
-  Stream<QuerySnapshot> getHorseByNickName({required String nickName}) {
+  Stream<List<HorseProfile>> getHorseByNickName({required String nickName}) {
     //retrieve horse with name from database
 
     return _horseProfiledatabaseReference
@@ -58,19 +65,24 @@ class HorseProfileRepository {
           'nickName',
           isLessThanOrEqualTo: '$nickName\uf8ff',
         )
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///Retrieve Horse Profile using it's[id]
-  Stream<DocumentSnapshot> getHorseProfile({required String? id}) {
-    return _horseProfiledatabaseReference.doc(id).snapshots();
+  Stream<HorseProfile?> getHorseProfile({required String? id}) {
+    return _horseProfiledatabaseReference
+        .doc(id)
+        .snapshots()
+        .map((snap) => snap.data());
   }
 
   /// Retrieve all horse profiles for a zip code
-  Stream<QuerySnapshot> getHorseByZipCode({required String zipCode}) {
+  Stream<List<HorseProfile>> getHorseByZipCode({required String zipCode}) {
     return _horseProfiledatabaseReference
         .where('zipCode', isEqualTo: zipCode)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///Delete Horse Profile at [id]

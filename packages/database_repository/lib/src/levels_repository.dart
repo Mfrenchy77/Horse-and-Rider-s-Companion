@@ -21,20 +21,27 @@ class LevelsRepository {
   }
 
   ///   Retrieve a single Level
-  Stream<DocumentSnapshot> getLevel({required String id}) {
-    return _levelsDatabaseReference.doc(id).snapshots();
+  Stream<Level?> getLevel({required String id}) {
+    return _levelsDatabaseReference
+        .doc(id)
+        .snapshots()
+        .map((snap) => snap.data());
   }
 
   ///   Retrieve all Levels
-  Stream<QuerySnapshot> getLevelsForRiderSkillTree() {
-    return _levelsDatabaseReference.where('rider', isEqualTo: true).snapshots();
+  Stream<List<Level>> getLevelsForRiderSkillTree() {
+    return _levelsDatabaseReference
+        .where('rider', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///   Retrieve all Levels
-  Stream<QuerySnapshot> getLevelsForHorseSkillTree() {
+  Stream<List<Level>> getLevelsForHorseSkillTree() {
     return _levelsDatabaseReference
         .where('rider', isEqualTo: false)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Delete a Level

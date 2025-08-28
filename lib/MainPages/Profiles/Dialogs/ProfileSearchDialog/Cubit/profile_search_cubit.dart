@@ -26,7 +26,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   final HorseProfileRepository _horseProfileRepository;
   final KeysRepository _keysRepository;
 
-  StreamSubscription<QuerySnapshot<Object?>>? _searchSubscription;
+  StreamSubscription<List<RiderProfile>>? _searchSubscription;
 
   /// Monitors the default Field's [value] in the Search Dialog for
   /// Riders and Horses
@@ -110,10 +110,8 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           .getProfilesByName(
         name: capitalizeWords(state.searchValue.value).trim(),
       )
-          .listen((event) {
-        debugPrint('Results: ${event.docs.length}');
-        final results =
-            event.docs.map((e) => e.data()! as RiderProfile).toList();
+          .listen((results) {
+        debugPrint('Results: ${results.length}');
         if (results.isNotEmpty) {
           emit(
             state.copyWith(
@@ -171,9 +169,8 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     try {
       _riderProfileRepository
           .getRiderProfile(email: state.email.value.trim().toLowerCase())
-          .listen((event) {
-        if (event.data() != null) {
-          final profile = event.data()! as RiderProfile;
+          .listen((profile) {
+        if (profile != null) {
           profileResults.add(profile);
           if (profileResults.isNotEmpty) {
             emit(
@@ -219,10 +216,8 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     try {
       _riderProfileRepository
           .getProfilesByZipcode(zipcode: state.zipCode.value.trim())
-          .listen((event) {
-        debugPrint('Results: ${event.docs.length}');
-        final profiles =
-            event.docs.map((e) => e.data()! as RiderProfile).toList();
+          .listen((profiles) {
+        debugPrint('Results: ${profiles.length}');
         if (profiles.isNotEmpty) {
           debugPrint('Results: ${profiles.length}');
           emit(
@@ -261,9 +256,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     try {
       _horseProfileRepository
           .getHorseByName(name: state.searchValue.value.trim())
-          .listen((event) {
-        final results =
-            event.docs.map((e) => e.data()! as HorseProfile).toList();
+          .listen((results) {
         if (results.isNotEmpty) {
           emit(
             state.copyWith(
@@ -298,9 +291,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     try {
       _horseProfileRepository
           .getHorseByNickName(nickName: state.searchValue.value.trim())
-          .listen((event) {
-        final results =
-            event.docs.map((e) => e.data()! as HorseProfile).toList();
+          .listen((results) {
         if (results.isNotEmpty) {
           emit(
             state.copyWith(
@@ -339,9 +330,10 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
             .getHorseProfileById(
           id: state.searchValue.value.toLowerCase().trim(),
         )
-            .listen((event) {
-          final horseProfile = event.data()! as HorseProfile;
-          horseProfileResults.add(horseProfile);
+            .listen((horseProfile) {
+          if (horseProfile != null) {
+            horseProfileResults.add(horseProfile);
+          }
           if (horseProfileResults.isNotEmpty) {
             emit(
               state.copyWith(
@@ -401,9 +393,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
                 .getHorseByZipCode(
               zipCode: zipCode,
             )
-                .listen((event) {
-              final profiles =
-                  event.docs.map((e) => e.data()! as HorseProfile).toList();
+                .listen((profiles) {
               horseProfileResults.addAll(profiles);
               if (horseProfileResults.isNotEmpty) {
                 emit(

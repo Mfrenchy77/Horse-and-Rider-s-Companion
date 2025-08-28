@@ -16,7 +16,9 @@ class MessagesListItem extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        final parties = conversation.parties..remove(state.usersProfile?.name);
+        // Create a copy before removing current user to avoid mutating source
+        final parties = List<String>.from(conversation.parties)
+          ..remove(state.usersProfile?.name);
         final fromText = parties.join(', ');
         final textColor = cubit.groupTextColor(conversation: conversation);
         return ListTile(

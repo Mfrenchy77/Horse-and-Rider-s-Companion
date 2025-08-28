@@ -9,12 +9,6 @@ class MessagesRepository {
   ///Constant to refer to the General Database Category
   static const String MESSAGES = 'Messages';
 
-  // final _messageDatabaseReference =
-  //     FirebaseFirestore.instance.collection(MESSAGES).withConverter<Message>(
-  //           fromFirestore: Message.fromFirestore,
-  //           toFirestore: (Message message, options) => message.toFirestore(),
-  //         );
-
   ///  create or update [message]
   Future<void> createOrUpdateMessage({required Message message}) {
     return FirebaseFirestore.instance
@@ -30,7 +24,7 @@ class MessagesRepository {
   }
 
   /// retrieve Messages for User using their [conversationId]
-  Stream<QuerySnapshot> getMessages({required String conversationId}) {
+  Stream<List<Message>> getMessages({required String conversationId}) {
     return FirebaseFirestore.instance
         .collection(CONVERSATIONS)
         .doc(conversationId)
@@ -39,7 +33,9 @@ class MessagesRepository {
           fromFirestore: Message.fromFirestore,
           toFirestore: (Message message, options) => message.toFirestore(),
         )
-        .snapshots();
+        .orderBy('sentAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// delete message [messageToDelete]
@@ -51,7 +47,9 @@ class MessagesRepository {
         .collection(CONVERSATIONS)
         .doc(conversationId)
         .collection(MESSAGES)
-        .doc(messageToDelete.id)
+        // Messages are stored under their unique messageId
+        // within a conversation
+        .doc(messageToDelete.messageId)
         .delete();
   }
 
@@ -79,10 +77,11 @@ class MessagesRepository {
   }
 
   ///   Retrieves a List of Groups for a User
-  Stream<QuerySnapshot> getConversations({required String userEmail}) {
+  Stream<List<Conversation>> getConversations({required String userEmail}) {
     return _groupDatabaseReference
         .where('partiesIds', arrayContains: userEmail)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///   Delete a group
