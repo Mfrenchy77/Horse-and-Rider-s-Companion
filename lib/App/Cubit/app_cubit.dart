@@ -88,8 +88,8 @@ class AppCubit extends Cubit<AppState> {
         _lastAuthUserId = user.id;
         _lastAuthEmailVerified = user.emailVerified;
         // Cancel user-scoped streams when switching accounts
-        unawaited(_conversationsStream?.cancel());
-        unawaited(_messagesStream?.cancel());
+        _conversationsStream?.cancel();
+        _messagesStream?.cancel();
         emit(state.copyWith(pageStatus: AppPageStatus.loading));
         debugPrint('User is authenticated');
         _getUsersProfile(user: user);
@@ -159,7 +159,7 @@ class AppCubit extends Cubit<AppState> {
     } else {
       debugPrint('Fetching Rider Profile for ${user.email}');
       // Cancel previous rider profile subscription before switching users
-      unawaited(_usersProfileSubscription?.cancel());
+      _usersProfileSubscription?.cancel();
       _usersProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: user.email)
           .listen((event) {
@@ -256,12 +256,14 @@ class AppCubit extends Cubit<AppState> {
       if (isVerified) {
         _emailVerificationTimer?.cancel();
         debugPrint('Email is verified in Timer');
-        emit(state.copyWith(
-          isProfileSetup: true,
-          isMessage: true,
-          showEmailVerification: false,
-          errorMessage: 'Email has been verified',
-        ));
+        emit(
+          state.copyWith(
+            isProfileSetup: true,
+            isMessage: true,
+            showEmailVerification: false,
+            errorMessage: 'Email has been verified',
+          ),
+        );
       }
     });
   }
@@ -2644,7 +2646,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// User selected a conversation to view
-  Future<void> setConversation(String conversationsId) async {
+  void setConversation(String conversationsId) {
     debugPrint('setConversation: $conversationsId');
     final conversation = getConversationById(conversationsId);
     if (conversation != null) {
@@ -2657,13 +2659,13 @@ class AppCubit extends Cubit<AppState> {
       );
       if (conversation.messageState == MessageState.UNREAD) {
         conversation.messageState = MessageState.READ;
-        unawaited(_messagesRepository.createOrUpdateConversation(
+        _messagesRepository.createOrUpdateConversation(
           conversation: conversation,
-        ));
+        );
       }
       debugPrint('Conversation: ${conversation.parties}');
       // Cancel any existing message listener before opening a new conversation
-      await _messagesStream?.cancel();
+      _messagesStream?.cancel();
       _messagesStream = _messagesRepository
           .getMessages(conversationId: conversation.id)
           .listen((event) {

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,7 +21,7 @@ class MessagesListItem extends StatelessWidget {
         final textColor = cubit.groupTextColor(conversation: conversation);
         return ListTile(
           onTap: () {
-            unawaited(cubit.setConversation(conversation.id));
+            cubit.setConversation(conversation.id);
             context.goNamed(
               MessagePage.name,
               pathParameters: {MessagePage.pathParams: conversation.id},
