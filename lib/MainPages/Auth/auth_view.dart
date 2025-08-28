@@ -38,7 +38,7 @@ class AuthView extends StatelessWidget {
             // }
           }
           if (state.isMessage) {
-            debugPrint('Message: ${state.errorMessage}');
+            debugPrint('Message: ${state.message}');
             SchedulerBinding.instance.addPostFrameCallback((_) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
@@ -46,21 +46,21 @@ class AuthView extends StatelessWidget {
                   SnackBar(
                     backgroundColor:
                         HorseAndRidersTheme().getTheme().primaryColor,
-                    content: Text(state.errorMessage),
+                    content: Text(state.message),
                   ),
                 );
             });
           }
 
           if (state.isError) {
-            debugPrint('Error: ${state.errorMessage}');
+            debugPrint('Error: ${state.message}');
             SchedulerBinding.instance.addPostFrameCallback((_) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
                   SnackBar(
                     backgroundColor: Colors.red,
-                    content: Text(state.errorMessage),
+                    content: Text(state.message),
                   ),
                 );
             });
@@ -96,6 +96,8 @@ class AuthView extends StatelessWidget {
                                       constraints:
                                           const BoxConstraints(maxWidth: 300),
                                       child: Form(
+                                        autovalidateMode:
+                                            AutovalidateMode.onUserInteraction,
                                         child: getView(state: state),
                                       ),
                                     ),
@@ -139,6 +141,8 @@ class AuthView extends StatelessWidget {
                                         constraints:
                                             const BoxConstraints(maxWidth: 300),
                                         child: Form(
+                                          autovalidateMode: AutovalidateMode
+                                              .onUserInteraction,
                                           child: getView(state: state),
                                         ),
                                       ),

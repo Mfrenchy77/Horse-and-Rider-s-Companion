@@ -7,7 +7,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 part 'profile_search_state.dart';
 

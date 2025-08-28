@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 /// {@template horse_height}
 /// HorseHeight widget displays the height of the horse

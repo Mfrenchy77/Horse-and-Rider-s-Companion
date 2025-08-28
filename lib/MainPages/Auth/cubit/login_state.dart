@@ -14,10 +14,10 @@ enum LoginPageStatus {
 class LoginState extends Equatable {
   /// Creates a [LoginState].
   const LoginState({
+    this.message = '',
     this.isError = false,
     this.isGuest = false,
     this.isMessage = false,
-    this.errorMessage = '',
     this.forgotEmailSent = false,
     this.showEmailDialog = false,
     this.name = const Name.pure(),
@@ -38,6 +38,9 @@ class LoginState extends Equatable {
   /// Indicates if an error has occurred.
   final bool isError;
 
+  /// Message to display to the user.
+  final String message;
+
   /// Indicates if there should be a message shown
   final bool isMessage;
 
@@ -49,9 +52,6 @@ class LoginState extends Equatable {
 
   /// The current form validation status.
   final FormStatus status;
-
-  /// Error message to display to the user.
-  final String errorMessage;
 
   /// Indicates if the password reset email has been sent.
   final bool forgotEmailSent;
@@ -75,10 +75,10 @@ class LoginState extends Equatable {
     Email? email,
     bool? isError,
     bool? isGuest,
+    String? message,
     bool? isMessage,
     Password? password,
     FormStatus? status,
-    String? errorMessage,
     bool? forgotEmailSent,
     bool? showEmailDialog,
     bool? isPasswordVisible,
@@ -89,12 +89,12 @@ class LoginState extends Equatable {
       name: name ?? this.name,
       email: email ?? this.email,
       status: status ?? this.status,
+      message: message ?? this.message,
       isError: isError ?? this.isError,
       isGuest: isGuest ?? this.isGuest,
       password: password ?? this.password,
       isMessage: isMessage ?? this.isMessage,
       pageStatus: pageStatus ?? this.pageStatus,
-      errorMessage: errorMessage ?? this.errorMessage,
       forgotEmailSent: forgotEmailSent ?? this.forgotEmailSent,
       showEmailDialog: showEmailDialog ?? this.showEmailDialog,
       isPasswordVisible: isPasswordVisible ?? this.isPasswordVisible,
@@ -107,12 +107,12 @@ class LoginState extends Equatable {
         name,
         email,
         status,
+        message,
         isGuest,
         isError,
         password,
         isMessage,
         pageStatus,
-        errorMessage,
         forgotEmailSent,
         showEmailDialog,
         isPasswordVisible,

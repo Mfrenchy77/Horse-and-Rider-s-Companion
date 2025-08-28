@@ -72,7 +72,19 @@ String _getButtonText(LoginPageStatus pageStatus) {
 }
 
 bool _canClick(LoginState state, LoginCubit cubit) {
-  return state.pageStatus == LoginPageStatus.forgot
-      ? state.email.isNotValid
-      : !cubit.isEmailAndPasswordValid();
+  switch (state.pageStatus) {
+    case LoginPageStatus.forgot:
+      // Disable unless email is valid
+      return state.email.isNotValid;
+    case LoginPageStatus.register:
+      // Require valid name, email, password, and confirmed password
+      final disabled = state.name.isNotValid ||
+          state.email.isNotValid ||
+          state.password.isNotValid ||
+          state.confirmedPassword.isNotValid;
+      return disabled;
+    case LoginPageStatus.login:
+      // Require valid email and password
+      return !cubit.isEmailAndPasswordValid();
+  }
 }

@@ -15,7 +15,7 @@ class LoginLink extends StatelessWidget {
         context.read<LoginCubit>().gotoLogin();
       },
       child: const Text(
-        'Already Have an Account Already? Sign in',
+        'Already have an account? Sign in',
         style: TextStyle(color: Colors.white54),
       ),
     );

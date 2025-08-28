@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 /// This is the widget that will be used to display the list of messages
 class MessagesListItem extends StatelessWidget {
@@ -21,7 +23,7 @@ class MessagesListItem extends StatelessWidget {
         final textColor = cubit.groupTextColor(conversation: conversation);
         return ListTile(
           onTap: () {
-            cubit.setConversation(conversation.id);
+            unawaited(cubit.setConversation(conversation.id));
             context.goNamed(
               MessagePage.name,
               pathParameters: {MessagePage.pathParams: conversation.id},

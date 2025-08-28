@@ -61,6 +61,10 @@ class AppCubit extends Cubit<AppState> {
 
   Timer? _emailVerificationTimer;
 
+  // Track last handled auth user to avoid redundant reloads during rapid events
+  String? _lastAuthUserId;
+  bool? _lastAuthEmailVerified;
+
 /* **************************************************************************
 
 ******************************* User's Profile *********************************
@@ -75,6 +79,17 @@ class AppCubit extends Cubit<AppState> {
           '\nUserId: ${user?.id}');
       _checkFirstLaunch();
       if (user != null && user.id.isNotEmpty) {
+        // Avoid redundant reloads when the authenticated user hasn't changed
+        if (user.id == _lastAuthUserId &&
+            user.emailVerified == _lastAuthEmailVerified) {
+          debugPrint('Auth user unchanged; skipping refresh');
+          return;
+        }
+        _lastAuthUserId = user.id;
+        _lastAuthEmailVerified = user.emailVerified;
+        // Cancel user-scoped streams when switching accounts
+        unawaited(_conversationsStream?.cancel());
+        unawaited(_messagesStream?.cancel());
         emit(state.copyWith(pageStatus: AppPageStatus.loading));
         debugPrint('User is authenticated');
         _getUsersProfile(user: user);
@@ -143,6 +158,8 @@ class AppCubit extends Cubit<AppState> {
       );
     } else {
       debugPrint('Fetching Rider Profile for ${user.email}');
+      // Cancel previous rider profile subscription before switching users
+      unawaited(_usersProfileSubscription?.cancel());
       _usersProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: user.email)
           .listen((event) {
@@ -230,21 +247,21 @@ class AppCubit extends Cubit<AppState> {
       await _authenticationRepository.reloadCurrentUser();
       final isVerified = _authenticationRepository.isEmailVerified();
       debugPrint('Email is verified: $isVerified');
-      emit(
-        state.copyWith(showEmailVerification: !isVerified),
-      );
+      // Only emit when the value actually changes to avoid redundant rebuilds
+      final shouldShow = !isVerified;
+      if (state.showEmailVerification != shouldShow) {
+        emit(state.copyWith(showEmailVerification: shouldShow));
+      }
 
       if (isVerified) {
         _emailVerificationTimer?.cancel();
         debugPrint('Email is verified in Timer');
-        emit(
-          state.copyWith(
-            isProfileSetup: true,
-            isMessage: true,
-            showEmailVerification: false,
-            errorMessage: 'Email has been verified',
-          ),
-        );
+        emit(state.copyWith(
+          isProfileSetup: true,
+          isMessage: true,
+          showEmailVerification: false,
+          errorMessage: 'Email has been verified',
+        ));
       }
     });
   }
@@ -473,19 +490,11 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future<void> logOutRequested() async {
-    emit(
-      state.copyWith(
-        status: AppStatus.unauthenticated,
-        user: User.empty,
-        // ignore: avoid_redundant_argument_values
-        usersProfile: null,
-        // ignore: avoid_redundant_argument_values
-        horseProfile: null,
-        // ignore: avoid_redundant_argument_values
-        viewingProfile: null,
-        isGuest: true,
-      ),
-    );
+    // Cancel active streams tied to the current user session
+    await _messagesStream?.cancel();
+    await _conversationsStream?.cancel();
+
+    emit(const AppState.unauthenticated());
 
     await _authenticationRepository.logOut();
     navigateToAuth();
@@ -953,6 +962,8 @@ class AppCubit extends Cubit<AppState> {
       // State emission if necessary
     } else {
       debugPrint('Horse Profile not retrieved, getting now');
+      // Cancel any existing listener before subscribing to a new horse
+      await _horseProfileSubscription?.cancel();
       _horseProfileSubscription =
           _horseProfileRepository.getHorseProfileById(id: id).listen((event) {
         final horseProfile = event.data() as HorseProfile?;
@@ -2633,7 +2644,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// User selected a conversation to view
-  void setConversation(String conversationsId) {
+  Future<void> setConversation(String conversationsId) async {
     debugPrint('setConversation: $conversationsId');
     final conversation = getConversationById(conversationsId);
     if (conversation != null) {
@@ -2646,11 +2657,13 @@ class AppCubit extends Cubit<AppState> {
       );
       if (conversation.messageState == MessageState.UNREAD) {
         conversation.messageState = MessageState.READ;
-        _messagesRepository.createOrUpdateConversation(
+        unawaited(_messagesRepository.createOrUpdateConversation(
           conversation: conversation,
-        );
+        ));
       }
       debugPrint('Conversation: ${conversation.parties}');
+      // Cancel any existing message listener before opening a new conversation
+      await _messagesStream?.cancel();
       _messagesStream = _messagesRepository
           .getMessages(conversationId: conversation.id)
           .listen((event) {

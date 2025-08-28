@@ -11,37 +11,34 @@ class EmailField extends StatelessWidget {
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
         final cubit = context.read<LoginCubit>();
-        return Form(
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: TextFormField(
-            autofocus: state.pageStatus == LoginPageStatus.login ||
-                state.pageStatus == LoginPageStatus.forgot,
-            style: const TextStyle(
-              color: Colors.white,
+        return TextFormField(
+          autofocus: state.pageStatus == LoginPageStatus.login ||
+              state.pageStatus == LoginPageStatus.forgot,
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+          textInputAction: TextInputAction.next,
+          onChanged: cubit.emailChanged,
+          keyboardType: TextInputType.emailAddress,
+          validator: (value) {
+            if (value == null || value.length < 8) {
+              return null;
+            } else {
+              return state.email.validator(value);
+            }
+          },
+          decoration: const InputDecoration(
+            iconColor: Colors.white54,
+            labelStyle: TextStyle(
+              color: Colors.white54,
             ),
-            textInputAction: TextInputAction.next,
-            onChanged: cubit.emailChanged,
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.length < 8) {
-                return null;
-              } else {
-                return state.email.validator(value);
-              }
-            },
-            decoration: const InputDecoration(
-              iconColor: Colors.white54,
-              labelStyle: TextStyle(
-                color: Colors.white54,
-              ),
-              labelText: 'Email',
-              hintText: 'Enter your email',
-              hintStyle: TextStyle(
-                color: Colors.white54,
-              ),
-              prefixIcon: Icon(Icons.email_outlined, color: Colors.white54),
-              border: UnderlineInputBorder(),
+            labelText: 'Email',
+            hintText: 'Enter your email',
+            hintStyle: TextStyle(
+              color: Colors.white54,
             ),
+            prefixIcon: Icon(Icons.email_outlined, color: Colors.white54),
+            border: UnderlineInputBorder(),
           ),
         );
       },

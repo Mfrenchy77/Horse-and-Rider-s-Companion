@@ -68,14 +68,17 @@ int cmToHands(int cm) {
   return hands;
 }
 
-// Convert centimeters to hands as a whole number and inches as a decimal part.
+// Convert centimeters to hands as a whole number
+// and inches as a decimal digit (0–3).
+// Example: 149.86 cm -> 14 hands 3 inches -> 14.3
 double cmToHandsAndInches(int cm) {
   final inchesTotal = cm / 2.54;
-  final hands = inchesTotal / 4;
-  return hands;
+  final wholeHands = inchesTotal ~/ 4; // integer hands
+  final remainderInches = (inchesTotal % 4).toInt(); // 0..3 inches￼
+  return wholeHands + (remainderInches / 10);
 }
 
-/// Convert centemeters into hands and return the remainder. should be 0-3
+/// Convert centimeters into hands and return the remainder. should be 0-3
 /// as the remainder is the inches
 int cmToHandsRemainder(int cm) {
   final inches = cm / 2.54;

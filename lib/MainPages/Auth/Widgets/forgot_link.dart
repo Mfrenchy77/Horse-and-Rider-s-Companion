@@ -12,7 +12,7 @@ class ForgotPasswordLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: () {
-        context.read<LoginCubit>().gotoforgot();
+        context.read<LoginCubit>().gotoForgot();
       },
       child: const Text(
         'Forgot Your Password?',

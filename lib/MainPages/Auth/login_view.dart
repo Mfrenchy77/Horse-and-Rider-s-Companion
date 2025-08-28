@@ -29,7 +29,7 @@ Widget loginView() {
       gap(),
       _signInAsGuest(),
       gap(),
-      const RegistationLink(
+      const RegistrationLink(
         key: Key('LoginViewRegistrationLink'),
       ),
       gap(),

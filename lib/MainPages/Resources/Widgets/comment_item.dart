@@ -1,19 +1,23 @@
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart'; // Make sure this import is correct based on your project
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_negative_rating_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_positive_rating_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_relpy_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/create_comment_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 class CommentItem extends StatefulWidget {
   const CommentItem({
@@ -132,12 +136,11 @@ class _CommentItemState extends State<CommentItem> {
 
                             // Comment
                             Padding(
-                              padding: const EdgeInsets.only(left: 5, right: 5),
-                              child: Text(
-                                widget.comment.comment ?? '',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 5),
+                              child: _buildCommentBody(
+                                widget.comment.comment,
+                                context,
                               ),
                             ),
                             smallGap(),
@@ -218,15 +221,27 @@ class _CommentItemState extends State<CommentItem> {
                                               : Colors.black54,
                                           tooltip: 'Edit Comment',
                                           onPressed: () {
+                                            final usersProfile =
+                                                state.usersProfile;
+                                            if (usersProfile == null) return;
+
                                             showDialog<AlertDialog>(
                                               context: context,
-                                              builder: (context) =>
-                                                  CreateCommentDialog(
-                                                isEdit: true,
-                                                resource: commentResource,
-                                                usersProfile:
-                                                    state.usersProfile!,
-                                                comment: widget.comment,
+                                              builder: (_) => BlocProvider(
+                                                create: (_) => CommentCubit(
+                                                  comment: widget.comment,
+                                                  resource: commentResource,
+                                                  usersProfile: usersProfile,
+                                                )..setEdit(isEdit: true),
+                                                child: CreateCommentDialog(
+                                                  key: const Key(
+                                                    'CreateCommentDialog_edit',
+                                                  ),
+                                                  isEdit: true,
+                                                  resource: commentResource,
+                                                  usersProfile: usersProfile,
+                                                  comment: widget.comment,
+                                                ),
                                               ),
                                             );
                                           },
@@ -287,6 +302,42 @@ class _CommentItemState extends State<CommentItem> {
           }
         },
       ),
+    );
+  }
+
+  Widget _buildCommentBody(String? raw, BuildContext context) {
+    if (raw == null || raw.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Try to parse Quill Delta JSON (list of ops like [{"insert":"Hello\n"}, ...])
+    try {
+      final decoded = jsonDecode(raw);
+      final looksLikeDelta = decoded is List &&
+          decoded.isNotEmpty &&
+          decoded.first is Map &&
+          (decoded.first as Map).containsKey('insert');
+
+      if (looksLikeDelta) {
+        final doc = quill.Document.fromJson(decoded);
+        final controller = quill.QuillController(
+          document: doc,
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+
+        // Read-only Quill view (no focus, no editor chrome)
+        return quill.QuillEditor.basic(
+          controller: controller,
+        );
+      }
+    } catch (_) {
+      // Not JSON or not a Delta — fall through to plain text
+    }
+
+    // Plain text fallback
+    return SelectableText(
+      raw,
+      style: const TextStyle(fontSize: 16),
     );
   }
 }

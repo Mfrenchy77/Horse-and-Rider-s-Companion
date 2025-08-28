@@ -5,7 +5,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/accept_request_button.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 /// A single message in a conversation
 class MessageItem extends StatelessWidget {

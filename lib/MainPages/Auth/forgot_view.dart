@@ -12,14 +12,14 @@ Widget forgotView() {
     mainAxisSize: MainAxisSize.min,
     children: [
       const EmailField(
-        key: Key('FprgotViewEmail'),
+        key: Key('ForgotViewEmail'),
       ),
       gap(),
       const AuthButton(
         key: Key('ForgotViewAuthButton'),
       ),
       gap(),
-      const RegistationLink(
+      const RegistrationLink(
         key: Key('ForgotViewRegistrationLink'),
       ),
       gap(),

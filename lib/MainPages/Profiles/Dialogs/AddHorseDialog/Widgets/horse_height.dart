@@ -6,7 +6,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialo
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/hands_picker_dialog.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class HorseHeightField extends StatelessWidget {

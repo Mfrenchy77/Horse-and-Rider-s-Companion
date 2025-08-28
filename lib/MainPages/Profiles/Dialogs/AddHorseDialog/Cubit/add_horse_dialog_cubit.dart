@@ -9,7 +9,7 @@ import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:horseandriderscompanion/Utilities/util_methodsd.dart';
+import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:image_picker/image_picker.dart';
 

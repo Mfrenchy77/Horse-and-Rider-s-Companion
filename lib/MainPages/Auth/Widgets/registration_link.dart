@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 
 // Widget that has a text button that takes you to the Registration Page
-class RegistationLink extends StatelessWidget {
-  const RegistationLink({super.key});
+class RegistrationLink extends StatelessWidget {
+  const RegistrationLink({super.key});
 
   @override
   Widget build(BuildContext context) {

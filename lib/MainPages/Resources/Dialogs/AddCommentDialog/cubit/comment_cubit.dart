@@ -1,3 +1,4 @@
+// lib/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart
 import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
@@ -22,72 +23,85 @@ class CommentCubit extends Cubit<CommentState> {
     );
   }
 
-  /// Resource Repository
   final ResourcesRepository _resourceRepository = ResourcesRepository();
 
-  /// Set the edit state to Editing
-  void setEdit({required bool isEdit}) {
-    emit(state.copyWith(isEdit: isEdit));
-  }
+  void setEdit({required bool isEdit}) => emit(state.copyWith(isEdit: isEdit));
 
-  /// Update the comment message
-  void updateCommentMessage(String commentMessage) {
-    emit(
-      state.copyWith(
-        commentMessage: commentMessage,
-      ),
-    );
-  }
+  void updateCommentMessage(String commentMessage) =>
+      emit(state.copyWith(commentMessage: commentMessage));
 
-  /// Send the comment
+  /// Create or update a comment.
   Future<void> sendComment() async {
-    if (state.resource != null) {
-      emit(state.copyWith(status: CommentStatus.loading));
-      final comment = Comment(
+    final res = state.resource;
+    if (res == null) {
+      emit(state.copyWith(status: CommentStatus.initial));
+      debugPrint('Resource is null, cannot send comment');
+      return;
+    }
+
+    emit(state.copyWith(status: CommentStatus.loading));
+
+    // Work on a copy, never mutate in-place
+    final comments = List<Comment>.from(res.comments ?? const <Comment>[]);
+
+    if (state.isEdit && state.comment != null) {
+      // EDIT: replace existing
+      final idx = comments.indexWhere((c) => c.id == state.comment!.id);
+      if (idx != -1) {
+        comments[idx] = state.comment!.copyWith(
+          comment: state.commentMessage.trim(), // JSON string
+          editedDate: DateTime.now(),
+          // keep user/rating/parentId/resourceId as-is
+        );
+      } else {
+        debugPrint('Edit requested but original comment not found; appending.');
+        comments.add(
+          state.comment!.copyWith(
+            comment: state.commentMessage.trim(),
+            editedDate: DateTime.now(),
+          ),
+        );
+      }
+    } else {
+      // NEW or REPLY: parentId = parent comment id (if replying), else null
+      final newComment = Comment(
         id: ViewUtils.createId(),
         parentId: state.comment?.id,
-        comment: state.commentMessage.trim(),
+        comment: state.commentMessage.trim(), // JSON string
         usersWhoRated: <BaseListItem>[],
-        rating: state.isEdit ? state.comment?.rating : 0,
-        editedDate: state.isEdit ? DateTime.now() : null,
-        user: state.isEdit ? state.comment?.user : _createUser(),
-        date: state.isEdit
-            ? state.comment?.date ?? DateTime.now()
-            : DateTime.now(),
-        resourceId:
-            state.isEdit ? state.comment?.resourceId : state.resource!.id,
+        rating: 0,
+        editedDate: null,
+        user: _createUser(),
+        date: DateTime.now(),
+        resourceId: res.id,
       );
+      comments.add(newComment);
+    }
 
-      final updatedResource = state.resource!;
-      updatedResource.comments = updatedResource.comments ?? <Comment>[];
-      updatedResource.comments!.add(comment);
+    final updatedResource = res.copyWith(comments: comments);
 
+    try {
       await _resourceRepository.createOrUpdateResource(
         resource: updatedResource,
       );
       emit(state.copyWith(status: CommentStatus.success));
-    } else {
+    } catch (e) {
+      debugPrint('sendComment error: $e');
       emit(state.copyWith(status: CommentStatus.initial));
-      debugPrint('Resource is null, cannot send comment');
     }
   }
 
-  /// create a user from the usersProfile
-  BaseListItem _createUser() {
-    return BaseListItem(
-      id: state.usersProfile?.email,
-      name: state.usersProfile?.name,
-      imageUrl: state.usersProfile?.picUrl,
-    );
-  }
+  BaseListItem _createUser() => BaseListItem(
+        id: state.usersProfile?.email,
+        name: state.usersProfile?.name,
+        imageUrl: state.usersProfile?.picUrl,
+      );
 
-  /// Determines if user has rated the [comment] positively or not
   bool isRatingPositive(Comment comment) {
     final rating = getUserRatingForComment(comment);
     return rating?.isSelected ?? false;
   }
 
-  /// Gets the user rating for the [comment] or creates a new one
   BaseListItem? getUserRatingForComment(Comment comment) {
     final newRatingUser = BaseListItem(
       id: state.usersProfile?.email ?? '',
@@ -99,14 +113,10 @@ class CommentCubit extends Cubit<CommentState> {
       (element) => element.id == state.usersProfile?.email,
       orElse: BaseListItem.new,
     );
-    if (comment.usersWhoRated == null) {
-      return newRatingUser;
-    } else {
-      return usersRating;
-    }
+    return comment.usersWhoRated == null ? newRatingUser : usersRating;
   }
 
-  ///  User has clicked the recommend [comment] button
+  // --- your recommend / don't recommend methods unchanged below ---
   Future<void> reccomendComment({required Comment comment}) async {
     final commentsResource = state.resource;
     if (commentsResource == null) {
@@ -114,7 +124,6 @@ class CommentCubit extends Cubit<CommentState> {
       debugPrint('Resource is null, cannot recommend comment');
       return;
     } else {
-// set the new rating and add to the update the comment in the resource
       commentsResource.comments?.map((e) {
         if (e.id == comment.id) {
           return _setNewPositiveRating(comment: comment);
@@ -134,7 +143,6 @@ class CommentCubit extends Cubit<CommentState> {
     }
   }
 
-  ///  User has clicked the dont recommend [comment] button
   Future<void> dontReccomendComment({required Comment comment}) async {
     final commentsResource = state.resource;
     if (commentsResource == null) {
@@ -142,7 +150,6 @@ class CommentCubit extends Cubit<CommentState> {
       debugPrint('Resource is null, cannot recommend comment');
       return;
     } else {
-      // set the new rating and add to the update the comment in the resource
       commentsResource.comments?.map((e) {
         if (e.id == comment.id) {
           return _setNewNegativeRating(comment: comment);
@@ -162,85 +169,60 @@ class CommentCubit extends Cubit<CommentState> {
     }
   }
 
-  ///   Sets the new Rating on the [comment] based on whether or not they rated
-  Comment _setNewPositiveRating({
-    required Comment comment,
-  }) {
+  Comment _setNewPositiveRating({required Comment comment}) {
     final userEmail = state.usersProfile?.email;
-
-    //   List item with user and rated is true
-    final newuser = BaseListItem(
-      id: userEmail,
-      isSelected: true,
-      isCollapsed: false,
-    );
-
-    //   List with the user and rated value loaded in
+    final newuser =
+        BaseListItem(id: userEmail, isSelected: true, isCollapsed: false);
     final newUsersWhoRated = [newuser];
 
-    // New Ratings
-    final newPositiveRating = comment.rating! + 1;
-    final newDoublePositveRating = comment.rating! + 2;
-    final newNegativeRating = comment.rating! - 1;
+    final newPositiveRating = (comment.rating ?? 0) + 1;
+    final newDoublePositveRating = (comment.rating ?? 0) + 2;
+    final newNegativeRating = (comment.rating ?? 0) - 1;
 
-    // All Conditions possible
     if (comment.usersWhoRated != null && comment.usersWhoRated!.isNotEmpty) {
-      //   Reference to the user
-      final user = comment.usersWhoRated?.firstWhereOrNull(
-        (element) => element.id == userEmail,
-      );
-      //   'List is not NULL
+      final user =
+          comment.usersWhoRated?.firstWhereOrNull((e) => e.id == userEmail);
       if (user != null) {
-        //   Found UserWhoRated
         if (user.isSelected == null && user.isCollapsed == null) {
-          //   Never Rated before addding User and +1
           comment.usersWhoRated?.add(newuser);
           comment.rating = newPositiveRating;
           return comment;
-          // ignore: use_if_null_to_convert_nulls_to_bools
-        } else if (user.isSelected == true && user.isCollapsed == false) {
-          //   Already Positive Rating, -1
+        } else if (user.isSelected ?? false) {
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isSelected = false;
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isCollapsed = false;
           comment.rating = newNegativeRating;
           return comment;
         } else if (user.isSelected == false && user.isCollapsed == false) {
-          //   User does not have a registered rateing +1
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isSelected = true;
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isCollapsed = false;
           comment.rating = newPositiveRating;
           return comment;
-          // ignore: use_if_null_to_convert_nulls_to_bools
-        } else if (user.isSelected == false && user.isCollapsed == true) {
-          //   User already rated NEGATIVE, adding +2
+        } else if (user.isSelected == false && (user.isCollapsed ?? false)) {
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isSelected = true;
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isCollapsed = false;
           comment.rating = newDoublePositveRating;
           return comment;
         } else {
-          //   Unexpeted Condition  NULL
           return comment;
         }
       } else {
-        //   No UserWhoRated Found, Adding one
         comment.usersWhoRated?.add(newuser);
         comment.rating = newPositiveRating;
         return comment;
       }
     } else {
-      //   UserWhoRated List is null adding and a +1
       comment
         ..usersWhoRated = newUsersWhoRated
         ..rating = newPositiveRating;
@@ -248,83 +230,60 @@ class CommentCubit extends Cubit<CommentState> {
     }
   }
 
-  ///   Sets the new Rating on the [comment] based on whether or not they rated
   Comment _setNewNegativeRating({required Comment comment}) {
     final userEmail = state.usersProfile!.email;
-
-    //   List item with user and rated is true
-    final newuser = BaseListItem(
-      id: userEmail,
-      isSelected: false,
-      isCollapsed: true,
-    );
-
-    //  List with the user and rated value loaded in
+    final newuser =
+        BaseListItem(id: userEmail, isSelected: false, isCollapsed: true);
     final newUsersWhoRated = [newuser];
 
-    //   New Rating Conditions
-    final newPositiveRating = comment.rating! + 1;
-    final newNegativeRating = comment.rating! - 1;
-    final newDoubleNegativeRating = comment.rating! - 2;
+    final newPositiveRating = (comment.rating ?? 0) + 1;
+    final newNegativeRating = (comment.rating ?? 0) - 1;
+    final newDoubleNegativeRating = (comment.rating ?? 0) - 2;
 
     if (comment.usersWhoRated != null && comment.usersWhoRated!.isNotEmpty) {
-      //   Reference to the User
-      final user = comment.usersWhoRated?.firstWhereOrNull(
-        (element) => element.id == userEmail,
-      );
-
-      //  List is not NULL
+      final user =
+          comment.usersWhoRated?.firstWhereOrNull((e) => e.id == userEmail);
       if (user != null) {
-        ///  Found UserWhoRated
         if (user.isSelected == null && user.isCollapsed == null) {
-          //   Never Rated before addding User and -1
           comment.usersWhoRated?.add(newuser);
           comment.rating = newNegativeRating;
           return comment;
-          // ignore: use_if_null_to_convert_nulls_to_bools
-        } else if (user.isSelected == false && user.isCollapsed == true) {
-          //   Already Negative Rating, +1
+        } else if (user.isSelected == false && (user.isCollapsed ?? false)) {
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isSelected = false;
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isCollapsed = false;
           comment.rating = newPositiveRating;
           return comment;
         } else if (user.isSelected == false && user.isCollapsed == false) {
-          //   User does not have a registered rating -1
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isSelected = false;
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isCollapsed = true;
           comment.rating = newNegativeRating;
           return comment;
-          // ignore: use_if_null_to_convert_nulls_to_bools
-        } else if (user.isSelected == true && user.isCollapsed == false) {
-          //   User already rated POSITIVE, adding -2
+        } else if (user.isSelected ?? false) {
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isSelected = false;
           comment.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
+              ?.firstWhere((e) => e.id == userEmail)
               .isCollapsed = true;
           comment.rating = newDoubleNegativeRating;
           return comment;
         } else {
-          //   Unexpeted Condition  NULL
           return comment;
         }
       } else {
-        //   No UserWhoRated Found, Adding one and -1
         comment.usersWhoRated?.add(newuser);
         comment.rating = newNegativeRating;
         return comment;
       }
     } else {
-      //   UserWhoRated List is null adding and a -1
       comment
         ..usersWhoRated = newUsersWhoRated
         ..rating = newNegativeRating;

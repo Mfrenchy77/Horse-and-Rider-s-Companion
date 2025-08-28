@@ -127,7 +127,7 @@ class ResourceInfoBar extends StatelessWidget {
 
         return Column(
           children: [
-            // ── Title + edit menu (Title has Hero) ───────────────────────────
+            // ── Title + edit menu  ───────────────────────────
             Row(
               children: [
                 Flexible(
@@ -136,7 +136,6 @@ class ResourceInfoBar extends StatelessWidget {
                   child: Hero(
                     tag: _heroTagTitle(),
                     flightShuttleBuilder: _textFlightShuttle,
-                    // Wrap text in transparent Material so default text style/ink are preserved
                     child: Material(
                       type: MaterialType.transparency,
                       child: Text(
