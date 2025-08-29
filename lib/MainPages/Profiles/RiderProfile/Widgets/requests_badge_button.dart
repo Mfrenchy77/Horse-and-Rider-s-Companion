@@ -17,7 +17,9 @@ class RequestsBadgeButton extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         final count = cubit.pendingRequestCount();
         if (count == 0) return const SizedBox.shrink();
-        return Stack(
+        return KeyedSubtree(
+          key: const Key('RequestsBadgeButton'),
+          child: Stack(
           clipBehavior: Clip.none,
           children: [
             IconButton(
@@ -42,6 +44,7 @@ class RequestsBadgeButton extends StatelessWidget {
               ),
             ),
           ],
+          ),
         );
       },
     );
