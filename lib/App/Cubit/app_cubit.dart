@@ -3195,6 +3195,29 @@ class AppCubit extends Cubit<AppState> {
             : Colors.grey.shade600;
   }
 
+  /// Returns true if the message is a pending request for the current user
+  bool _isPendingRequestForUser(Message? m) {
+    if (m == null) return false;
+    final isFromCurrentUser = m.sender == state.usersProfile?.name;
+    final isRequestType = m.messageType == MessageType.INSTRUCTOR_REQUEST ||
+        m.messageType == MessageType.STUDENT_HORSE_REQUEST ||
+        m.messageType == MessageType.STUDENT_REQUEST ||
+        m.messageType == MessageType.TRANSFER_HORSE_REQUEST;
+    final notAccepted = !(m.requestItem?.isSelected ?? false);
+    return !isFromCurrentUser && isRequestType && notAccepted;
+  }
+
+  /// Pending request conversations derived from recentMessage only
+  List<Conversation> pendingRequestConversations() {
+    final cons = state.conversations ?? const <Conversation>[];
+    return cons
+        .where((c) => _isPendingRequestForUser(c.recentMessage))
+        .toList();
+  }
+
+  /// Count of pending requests (recent-only heuristic)
+  int pendingRequestCount() => pendingRequestConversations().length;
+
   /// Save a messaged to the database
   Future<void> _persistMessage(Message message) async {
     try {

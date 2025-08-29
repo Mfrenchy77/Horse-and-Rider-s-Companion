@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
 // Removed dependency on a shared GlobalKey to avoid duplicate key issues
@@ -77,9 +78,18 @@ class _RiderProfileViewState extends State<RiderProfileView>
                   )
                 : null,
             title: const AppTitle(key: Key('appTitle')),
-            actions: const [
-              ProfileSearchButton(key: Key('RiderSearchButton')),
-              RiderProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
+            actions: [
+              if (profile.email == state.usersProfile?.email)
+                const SizedBox(width: 4),
+              if (profile.email == state.usersProfile?.email)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: _RequestsAction(),
+                ),
+              const ProfileSearchButton(key: Key('RiderSearchButton')),
+              const RiderProfileOverFlowMenu(
+                key: Key('RiderProfileOverFlowMenu'),
+              ),
             ],
           ),
           // synchronize icon animation with drawer open/close (including
@@ -154,5 +164,13 @@ class _RiderProfileViewState extends State<RiderProfileView>
         );
       },
     );
+  }
+}
+
+class _RequestsAction extends StatelessWidget {
+  const _RequestsAction();
+  @override
+  Widget build(BuildContext context) {
+    return const RequestsBadgeButton(key: Key('RequestsBadgeButton'));
   }
 }
