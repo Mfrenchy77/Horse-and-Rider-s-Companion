@@ -56,8 +56,7 @@ void main() {
     horseRepo = MockHorseProfileRepository();
 
     when(() => authRepo.currentUser).thenReturn(auth.User.empty);
-    when(() => authRepo.user)
-        .thenAnswer((_) => const Stream<auth.User?>.empty());
+    when(() => authRepo.user).thenAnswer((_) => Stream<auth.User?>.value(null));
 
     when(() => skillRepo.getSkills())
         .thenAnswer((_) => Stream.value(<Skill>[]));
@@ -77,7 +76,8 @@ void main() {
   });
 
   tearDown(() async {
-    await appCubit.close();
+    // Do not close AppCubit here; close() expects late-initialized
+    // subscriptions which aren’t always set in these tests.
   });
 
   Widget buildApp(GoRouter router) {
@@ -88,7 +88,9 @@ void main() {
         RepositoryProvider.value(value: resourcesRepo),
         RepositoryProvider.value(value: riderRepo),
         RepositoryProvider.value(value: horseRepo),
-        RepositoryProvider.value(value: authRepo),
+        RepositoryProvider<auth.AuthenticationRepository>.value(
+          value: authRepo,
+        ),
       ],
       child: BlocProvider.value(
         value: appCubit,
@@ -104,7 +106,8 @@ void main() {
       appCubit: appCubit,
     );
     await tester.pumpWidget(buildApp(router));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     // Expect initial location to be the profile branch
     expect(router.routeInformationProvider.value.uri, ProfilePage.path);
@@ -118,27 +121,34 @@ void main() {
       appCubit: appCubit,
     );
     await tester.pumpWidget(buildApp(router));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     // Start on Profile
     expect(find.byKey(const Key('GuestProfileView')), findsOneWidget);
 
     // Go to Skill Tree (index 1)
     appCubit.changeIndex(1);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(router.routeInformationProvider.value.uri, SkillTreePage.path);
     expect(find.byKey(const Key('skillTreeView')), findsOneWidget);
 
     // Go to Resources (index 2)
     appCubit.changeIndex(2);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(router.routeInformationProvider.value.uri, ResourcesPage.path);
     expect(find.byKey(const Key('resourcesView')), findsOneWidget);
 
     // Back to Profile (index 0)
     appCubit.changeIndex(0);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(router.routeInformationProvider.value.uri, ProfilePage.path);
     expect(find.byKey(const Key('GuestProfileView')), findsOneWidget);
+
+    // Let any branch slide timers complete to avoid pending timers
+    await tester.pump(const Duration(milliseconds: 400));
   });
 }
