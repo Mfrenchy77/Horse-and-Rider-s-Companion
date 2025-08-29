@@ -130,4 +130,123 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(router.routeInformationProvider.value.uri, ProfilePage.path);
   });
+
+  testWidgets('Register (verified) navigates to ProfilePage', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await SharedPrefs().init();
+    final settings = SettingsController(SettingsService());
+    await settings.loadSettings();
+
+    final authRepo = MockAuthenticationRepository();
+    final testCubit = LoginCubit(authRepo);
+
+    when(
+      () => authRepo.signUp(
+        name: any(named: 'name'),
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      ),
+    ).thenAnswer(
+      (_) async => const auth.User(
+        id: 'r1',
+        name: 'Reg',
+        email: 'reg@x.com',
+        emailVerified: true,
+        isGuest: false,
+      ),
+    );
+
+    final router = GoRouter(
+      initialLocation: AuthPage.path,
+      routes: [
+        GoRoute(
+          path: AuthPage.path,
+          name: AuthPage.name,
+          builder: (context, state) => BlocProvider.value(
+            value: testCubit,
+            child: const AuthView(),
+          ),
+        ),
+        GoRoute(
+          path: ProfilePage.path,
+          name: ProfilePage.name,
+          builder: (context, state) => const Scaffold(body: Text('Profile!')),
+        ),
+      ],
+    );
+
+    Widget build() => RepositoryProvider<auth.AuthenticationRepository>.value(
+          value: authRepo,
+          child: MaterialApp.router(routerConfig: router),
+        );
+
+    await tester.pumpWidget(build());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+
+    // Enter register inputs
+    testCubit
+      ..gotoRegister()
+      ..nameChanged('Reg')
+      ..emailChanged('reg@x.com')
+      ..passwordChanged('secret123')
+      ..confirmedPasswordChanged('secret123');
+    await tester.pump();
+
+    await testCubit.signUpFormSubmitted(
+      context: tester.element(find.byType(AuthView)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(router.routeInformationProvider.value.uri, ProfilePage.path);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Profile!'), findsOneWidget);
+  });
+
+  testWidgets('Forgot password stays on Auth and shows message',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await SharedPrefs().init();
+
+    final authRepo = MockAuthenticationRepository();
+    final testCubit = LoginCubit(authRepo);
+    when(() => authRepo.forgotPassword(email: any(named: 'email')))
+        .thenAnswer((_) async {});
+
+    final router = GoRouter(
+      initialLocation: AuthPage.path,
+      routes: [
+        GoRoute(
+          path: AuthPage.path,
+          name: AuthPage.name,
+          builder: (context, state) => BlocProvider.value(
+            value: testCubit,
+            child: const AuthView(),
+          ),
+        ),
+      ],
+    );
+
+    Widget build() => RepositoryProvider<auth.AuthenticationRepository>.value(
+          value: authRepo,
+          child: MaterialApp.router(routerConfig: router),
+        );
+
+    await tester.pumpWidget(build());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+
+    testCubit
+      ..gotoForgot()
+      ..emailChanged('forgot@x.com');
+    await tester.pump();
+
+    await testCubit.sendForgotPasswordEmail();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Stays on Auth
+    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+  });
 }

@@ -99,7 +99,8 @@ void main() {
     );
   }
 
-  testWidgets('Routes initial uri shows ProfilePage (guest)', (tester) async {
+  testWidgets('Routes initial location shows ProfilePage (guest)',
+      (tester) async {
     final router = Routes().router(
       settingsContoller: settingsController,
       appCubit: appCubit,
@@ -108,7 +109,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Expect initial uri to be the profile branch
+    // Expect initial location to be the profile branch
     expect(router.routeInformationProvider.value.uri, ProfilePage.path);
     // Guest profile should be visible by default
     expect(find.byKey(const Key('GuestProfileView')), findsOneWidget);

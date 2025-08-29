@@ -13,6 +13,10 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
+// Simple cooldown between SnackBars to avoid rapid spamming.
+late DateTime? _lastSnackShownAt;
+const _snackCooldown = Duration(milliseconds: 1200);
+
 class AuthView extends StatelessWidget {
   const AuthView({super.key});
 
@@ -38,32 +42,44 @@ class AuthView extends StatelessWidget {
             // }
           }
           if (state.isMessage) {
-            debugPrint('Message: ${state.message}');
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    backgroundColor:
-                        HorseAndRidersTheme().getTheme().primaryColor,
-                    content: Text(state.message),
-                  ),
-                );
-            });
+            final now = DateTime.now();
+            final canShow = _lastSnackShownAt == null ||
+                now.difference(_lastSnackShownAt!) >= _snackCooldown;
+            if (canShow) {
+              _lastSnackShownAt = now;
+              debugPrint('Message: ${state.message}');
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      backgroundColor:
+                          HorseAndRidersTheme().getTheme().primaryColor,
+                      content: Text(state.message),
+                    ),
+                  );
+              });
+            }
           }
 
           if (state.isError) {
-            debugPrint('Error: ${state.message}');
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text(state.message),
-                  ),
-                );
-            });
+            final now = DateTime.now();
+            final canShow = _lastSnackShownAt == null ||
+                now.difference(_lastSnackShownAt!) >= _snackCooldown;
+            if (canShow) {
+              _lastSnackShownAt = now;
+              debugPrint('Error: ${state.message}');
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text(state.message),
+                    ),
+                  );
+              });
+            }
           }
         },
         child: BlocBuilder<LoginCubit, LoginState>(

@@ -25,6 +25,7 @@ class NavigationView extends StatefulWidget {
 }
 
 class _NavigationViewState extends State<NavigationView> {
+  bool _emailDialogOpen = false;
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
@@ -74,14 +75,24 @@ class _NavigationViewState extends State<NavigationView> {
         }
 
         // Email verification
-        if (state.showEmailVerification) {
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            context.pushNamed(
+        if (state.showEmailVerification && !_emailDialogOpen) {
+          _emailDialogOpen = true;
+          SchedulerBinding.instance.addPostFrameCallback((_) async {
+            await context.pushNamed(
               EmailVerificationDialog.name,
               pathParameters: {
                 EmailVerificationDialog.pathParms: state.user.email,
               },
             );
+            if (mounted) setState(() => _emailDialogOpen = false);
+          });
+        } else if (!state.showEmailVerification && _emailDialogOpen) {
+          // Close dialog if verification flag turned off
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+            if (mounted) setState(() => _emailDialogOpen = false);
           });
         }
       },

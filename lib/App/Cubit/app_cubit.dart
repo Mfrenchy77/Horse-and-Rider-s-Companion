@@ -3651,6 +3651,7 @@ class AppCubit extends Cubit<AppState> {
 
   @override
   Future<void> close() {
+    _emailVerificationTimer?.cancel();
     _messagesStream?.cancel();
     _userSubscription.cancel();
     _resourcesStream?.cancel();
@@ -3659,7 +3660,11 @@ class AppCubit extends Cubit<AppState> {
     _trainingPathsStream?.cancel();
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();
-    _viewingProfileSubscription.cancel();
+    try {
+      _viewingProfileSubscription.cancel();
+    } catch (_) {
+      // ignore: empty_catches
+    }
     return super.close();
   }
 }
