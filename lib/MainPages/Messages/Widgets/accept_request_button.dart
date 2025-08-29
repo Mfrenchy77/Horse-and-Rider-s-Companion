@@ -4,8 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 
 class AcceptRequestButton extends StatelessWidget {
-  const AcceptRequestButton({super.key, required this.message});
+  const AcceptRequestButton({
+    super.key,
+    required this.message,
+    this.onBeforeAccept,
+  });
   final Message message;
+  final VoidCallback? onBeforeAccept;
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
@@ -15,8 +20,10 @@ class AcceptRequestButton extends StatelessWidget {
         return FilledButton(
           onPressed: isAccepted
               ? null
-              : () => cubit
-                  .acceptRequest(message: message, context: context),
+              : () {
+                  onBeforeAccept?.call();
+                  cubit.acceptRequest(message: message, context: context);
+                },
           child: state.acceptStatus == AcceptStatus.loading
               ? const CircularProgressIndicator()
               : Text(isAccepted ? 'Accepted' : 'Accept Request'),
