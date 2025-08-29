@@ -1,63 +1,95 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 
-class PasswordField extends StatelessWidget {
-  const PasswordField({
-    required this.isConfirmation,
-    super.key,
-  });
+class PasswordField extends StatefulWidget {
+  const PasswordField({required this.isConfirmation, super.key});
   final bool isConfirmation;
+
+  @override
+  State<PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<PasswordField> {
+  static const _debounce = Duration(milliseconds: 5000);
+  final _fieldKey = GlobalKey<FormFieldState<String>>();
+  final _focusNode = FocusNode();
+  bool _showError = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) _validateNow();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _scheduleValidation() {
+    _timer?.cancel();
+    _showError = false;
+    _timer = Timer(_debounce, _validateNow);
+  }
+
+  void _validateNow() {
+    if (mounted) {
+      setState(() => _showError = true);
+      _fieldKey.currentState?.validate();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<LoginCubit>();
-    final passwordFocusNode = FocusNode();
-
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
         return TextFormField(
-          focusNode: passwordFocusNode,
-          style: const TextStyle(
-            color: Colors.white,
-          ),
+          key: _fieldKey,
+          focusNode: _focusNode,
+          autovalidateMode: AutovalidateMode.disabled,
+          style: const TextStyle(color: Colors.white),
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (value) {
-            if (passwordFocusNode.hasFocus) {
+            if (_focusNode.hasFocus) {
               if (state.pageStatus == LoginPageStatus.login) {
                 cubit.logInWithCredentials();
-              } else if (isConfirmation &&
+              } else if (widget.isConfirmation &&
                   state.pageStatus == LoginPageStatus.register) {
                 cubit.signUpFormSubmitted(context: context);
               }
-              passwordFocusNode.unfocus();
+              _focusNode.unfocus();
             }
           },
-          onChanged: (value) => isConfirmation
-              ? cubit.confirmedPasswordChanged(value)
-              : cubit.passwordChanged(value),
+          onChanged: (value) {
+            widget.isConfirmation
+                ? cubit.confirmedPasswordChanged(value)
+                : cubit.passwordChanged(value);
+            _scheduleValidation();
+          },
           validator: (value) {
-            if (value == null || value.isEmpty) {
-              return null;
-            } else if (value.length < 6 && value.length > 2) {
-              return 'Please enter some text';
-            } else {
-              return isConfirmation
-                  ? state.password.confirmValitator(state.password.value, value)
-                  : state.password.validator(value);
+            if (!_showError) return null;
+            if (widget.isConfirmation) {
+              return state.password
+                  .confirmValitator(state.password.value, value ?? '');
             }
+            return state.password.validator(value ?? '');
           },
           obscureText: !state.isPasswordVisible,
           decoration: InputDecoration(
-            labelStyle: const TextStyle(
-              color: Colors.white54,
-            ),
-            labelText: isConfirmation ? 'Re-Enter Password' : 'Password',
-            hintText: isConfirmation
+            labelStyle: const TextStyle(color: Colors.white54),
+            labelText: widget.isConfirmation ? 'Re-Enter Password' : 'Password',
+            hintText: widget.isConfirmation
                 ? 'Confirm your password'
                 : 'Enter your password',
-            hintStyle: const TextStyle(
-              color: Colors.white54,
-            ),
+            hintStyle: const TextStyle(color: Colors.white54),
             prefixIcon:
                 const Icon(Icons.lock_outline_rounded, color: Colors.white54),
             suffixIcon: IconButton(

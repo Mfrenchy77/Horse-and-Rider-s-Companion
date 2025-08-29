@@ -134,6 +134,33 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(showOnboarding: false));
   }
 
+  /// Called from onboarding when the user completes the small profile form.
+  /// Persists the rider profile and marks profile setup as complete.
+  Future<void> completeProfileFromOnboarding(Map<String, String> data) async {
+    final name = data['name'] ?? '';
+    final email = data['email'] ?? state.user.email;
+    final id = (state.user.id.isNotEmpty) ? state.user.id : email;
+
+    final profile = RiderProfile(id: id, name: name, email: email);
+
+    try {
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: profile,
+      );
+      emit(state.copyWith(usersProfile: profile, isProfileSetup: true));
+      // Also dismiss onboarding
+      completeOnboarding();
+    } catch (e) {
+      debugPrint('Error saving profile from onboarding: $e');
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to save profile',
+        ),
+      );
+    }
+  }
+
   void _getUsersProfile({required User user}) {
     if (user.isGuest) {
       debugPrint('Guest User');

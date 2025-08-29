@@ -12,29 +12,36 @@ class AuthButton extends StatelessWidget {
     return BlocBuilder<LoginCubit, LoginState>(
       builder: (context, state) {
         final cubit = context.read<LoginCubit>();
-        return state.status == FormStatus.submitting
-            ? const CircularProgressIndicator()
-            : SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _canClick(state, cubit)
-                      ? null
-                      : () {
-                          _handleClick(
-                            state: state,
-                            cubit: cubit,
-                            context: context,
-                          );
-                        },
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Text(
+        final isSubmitting = state.status == FormStatus.submitting;
+        final isDisabled = isSubmitting || _shouldDisable(state, cubit);
+
+        return SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: isDisabled
+                ? null
+                : () {
+                    _handleClick(
+                      state: state,
+                      cubit: cubit,
+                      context: context,
+                    );
+                  },
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
                       _getButtonText(state.pageStatus),
                       style: const TextStyle(fontSize: 16),
                     ),
-                  ),
-                ),
-              );
+            ),
+          ),
+        );
       },
     );
   }
@@ -71,7 +78,7 @@ String _getButtonText(LoginPageStatus pageStatus) {
   }
 }
 
-bool _canClick(LoginState state, LoginCubit cubit) {
+bool _shouldDisable(LoginState state, LoginCubit cubit) {
   switch (state.pageStatus) {
     case LoginPageStatus.forgot:
       // Disable unless email is valid

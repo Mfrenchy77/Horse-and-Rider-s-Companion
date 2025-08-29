@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -26,6 +27,7 @@ class NavigationView extends StatefulWidget {
 
 class _NavigationViewState extends State<NavigationView> {
   bool _emailDialogOpen = false;
+  bool _onboardingDialogOpen = false;
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
@@ -37,6 +39,29 @@ class _NavigationViewState extends State<NavigationView> {
         final currentIndex = widget.child.currentIndex;
         if (newIndex != currentIndex) {
           widget.child.goBranch(newIndex);
+        }
+
+        // Onboarding dialog presentation
+        if (state.showOnboarding && !_onboardingDialogOpen) {
+          _onboardingDialogOpen = true;
+          SchedulerBinding.instance.addPostFrameCallback((_) async {
+            await showDialog<Map<String, String>?>(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => OnboardingDialog(
+                onProfileComplete: cubit.completeProfileFromOnboarding,
+              ),
+            );
+            if (mounted) setState(() => _onboardingDialogOpen = false);
+          });
+        } else if (!state.showOnboarding && _onboardingDialogOpen) {
+          // Close dialog if onboarding flag turned off
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+            if (mounted) setState(() => _onboardingDialogOpen = false);
+          });
         }
 
         // Errors
