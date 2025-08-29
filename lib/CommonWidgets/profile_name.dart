@@ -13,6 +13,8 @@ class ProfileName extends StatelessWidget {
   final String? profilePicUrl;
   @override
   Widget build(BuildContext context) {
+    final appBarColor =
+        Theme.of(context).appBarTheme.backgroundColor ?? Colors.white;
     // return BlocBuilder<AppCubit, AppState>(
     //   builder: (context, state) {
     if (name != null) {
@@ -20,8 +22,7 @@ class ProfileName extends StatelessWidget {
         children: [
           Expanded(
             child: ColoredBox(
-              color:
-                  Theme.of(context).appBarTheme.backgroundColor ?? Colors.white,
+              color: appBarColor,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
@@ -35,30 +36,46 @@ class ProfileName extends StatelessWidget {
                         color: Colors.white,
                         shape: CircleBorder(),
                       ),
-                      child: Hero(
-                        transitionOnUserGestures: true,
-                        tag: profilePicUrl ?? '',
-                        child: ProfilePhoto(
+                      child: () {
+                        final tag =
+                            (profilePicUrl != null && profilePicUrl!.isNotEmpty)
+                                ? 'profilePic-${profilePicUrl.hashCode}'
+                                : null;
+                        if (tag != null) {
+                          return Hero(
+                            transitionOnUserGestures: true,
+                            tag: tag,
+                            child: ProfilePhoto(
+                              size: 100,
+                              profilePicUrl: profilePicUrl,
+                              heroTag: tag,
+                            ),
+                          );
+                        }
+                        return ProfilePhoto(
                           size: 100,
                           profilePicUrl: profilePicUrl,
+                        );
+                      }(),
+                    ),
+                  ),
+                  if (name != null && name!.isNotEmpty)
+                    Hero(
+                      transitionOnUserGestures: true,
+                      tag: 'profileName-${name.hashCode}',
+                      child: Text(
+                        name!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w200,
+                          color: Colors.white,
                         ),
                       ),
-                    ),
-                  ),
-                  Hero(
-                    transitionOnUserGestures: true,
-                    tag: name!,
-                    child: Text(
-                      name!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 30,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w200,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                    )
+                  else
+                    const SizedBox.shrink(),
                 ],
               ),
             ),

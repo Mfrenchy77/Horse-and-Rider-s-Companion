@@ -17,7 +17,10 @@ import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class UserProfileDrawer extends StatelessWidget {
-  const UserProfileDrawer({super.key});
+  const UserProfileDrawer({super.key, this.onClose, this.iconAnimation});
+
+  final VoidCallback? onClose;
+  final Animation<double>? iconAnimation;
 
   @override
   Widget build(BuildContext context) {
@@ -27,47 +30,99 @@ class UserProfileDrawer extends StatelessWidget {
         return Drawer(
           child: ListView(
             children: [
-              UserAccountsDrawerHeader(
-                // margin: const EdgeInsets.only(top: 8, left: 8),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(
-                      SharedPrefs().isDarkMode
-                          ? 'assets/horse_logo_and_text_dark.png'
-                          : 'assets/horse_logo_and_text_light.png',
+              Stack(
+                children: [
+                  UserAccountsDrawerHeader(
+                    // margin: const EdgeInsets.only(top: 8, left: 8),
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(
+                          SharedPrefs().isDarkMode
+                              ? 'assets/horse_logo_and_text_dark.png'
+                              : 'assets/horse_logo_and_text_light.png',
+                        ),
+                        alignment: Alignment.topLeft,
+                        scale: 10,
+                      ),
                     ),
-                    alignment: Alignment.topLeft,
-                    scale: 10,
-                  ),
-                ),
 
-                accountName: Text(
-                  state.usersProfile!.name,
-                  style: TextStyle(
-                    color:
-                        SharedPrefs().isDarkMode ? Colors.white : Colors.black,
+                    accountName: Text(
+                      state.usersProfile!.name,
+                      style: TextStyle(
+                        color: SharedPrefs().isDarkMode
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                    ),
+                    accountEmail: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            state.usersProfile?.email ?? '',
+                            style: TextStyle(
+                              color: SharedPrefs().isDarkMode
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                        if (SharedPrefs().isSeasonalMode())
+                          const SeasonalDecorationWidget()
+                        else
+                          const SizedBox.shrink(),
+                      ],
+                    ),
                   ),
-                ),
-                accountEmail: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        state.usersProfile?.email ?? '',
-                        style: TextStyle(
-                          color: SharedPrefs().isDarkMode
-                              ? Colors.white
-                              : Colors.black,
+                  // Positioned close button in the top-right of the header
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: SafeArea(
+                      child: Hero(
+                        tag: 'drawer-hamburger-x',
+                        flightShuttleBuilder: (
+                          BuildContext flightContext,
+                          Animation<double> animation,
+                          HeroFlightDirection flightDirection,
+                          BuildContext fromHeroContext,
+                          BuildContext toHeroContext,
+                        ) {
+                          final iconSize =
+                              IconTheme.of(flightContext).size ?? 24.0;
+                          final iconColor = IconTheme.of(flightContext).color;
+                          return Center(
+                            child: IconTheme(
+                              data: IconThemeData(
+                                size: iconSize,
+                                color: iconColor,
+                              ),
+                              child: AnimatedIcon(
+                                icon: AnimatedIcons.menu_close,
+                                progress: animation,
+                              ),
+                            ),
+                          );
+                        },
+                        child: IconButton(
+                          icon: AnimatedIcon(
+                            icon: AnimatedIcons.menu_close,
+                            progress: iconAnimation ??
+                                const AlwaysStoppedAnimation(1),
+                          ),
+                          onPressed: () {
+                            // when using a custom overlay drawer we should not
+                            // call Navigator.pop(context) (that pops the page)
+                            // instead call the provided onClose callback to
+                            // reverse the drawer controller.
+                            onClose?.call();
+                          },
                         ),
                       ),
                     ),
-                    if (SharedPrefs().isSeasonalMode())
-                      const SeasonalDecorationWidget()
-                    else
-                      const SizedBox.shrink(),
-                  ],
-                ),
+                  ),
+                ],
               ),
               Column(
                 children: [
@@ -185,9 +240,9 @@ class UserProfileDrawer extends StatelessWidget {
                     leading: const Icon(Icons.mail),
                     title: const Text('Messages'),
                     onTap: () {
-                      //closes the drawer
-                      Navigator.pop(context);
-                      //opens the messages page
+                      // close custom drawer (don't pop the route)
+                      onClose?.call();
+                      // navigate to messages
                       context.goNamed(MessagesPage.name);
                     },
                   ),
@@ -199,14 +254,12 @@ class UserProfileDrawer extends StatelessWidget {
                     thickness: 1,
                   ),
 
-// Settings
+                  // Settings
                   ListTile(
                     leading: const Icon(Icons.settings),
                     title: const Text('Settings'),
                     onTap: () {
-                      //closes the drawer
-                      Navigator.pop(context);
-                      //opens the settings page
+                      onClose?.call();
                       context.goNamed(SettingsView.name);
                     },
                   ),
@@ -216,9 +269,7 @@ class UserProfileDrawer extends StatelessWidget {
                     leading: const Icon(Icons.info),
                     title: const Text('About'),
                     onTap: () {
-                      //closes the drawer
-                      Navigator.pop(context);
-                      //opens the about page
+                      onClose?.call();
                       context.goNamed(AboutPage.name);
                     },
                   ),
@@ -233,9 +284,8 @@ class UserProfileDrawer extends StatelessWidget {
                       'Send Email to Support',
                     ),
                     onTap: () {
-                      //closes the drawer
                       debugPrint('Send Email to Support');
-                      Navigator.pop(context);
+                      onClose?.call();
 
                       showDialog<SupportMessageDialog>(
                         context: context,
@@ -248,16 +298,17 @@ class UserProfileDrawer extends StatelessWidget {
                   smallGap(),
                   // Delte Account
                   TextButton(
-                    onPressed: () => context.goNamed(DeletePage.name),
+                    onPressed: () {
+                      onClose?.call();
+                      context.goNamed(DeletePage.name);
+                    },
                     child: const Text('Delete Account'),
                   ),
                   smallGap(),
                   // Privacy Policy
                   TextButton(
                     onPressed: () {
-                      //closes the drawer
-                      Navigator.pop(context);
-                      //opens the privacy policy page
+                      onClose?.call();
                       context.goNamed(PrivacyPolicyPage.name);
                     },
                     child: const Text('Privacy Policy'),

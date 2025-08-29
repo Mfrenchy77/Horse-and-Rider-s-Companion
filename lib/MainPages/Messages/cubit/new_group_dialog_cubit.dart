@@ -40,6 +40,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
     _riderProfileRepository
         .getProfilesByName(name: state.name.value)
         .listen((results) {
+      debugPrint('Search results for ${state.name.value}: $results');
       emit(state.copyWith(searchResult: _removeUsersProfile(results)));
     });
   }

@@ -29,6 +29,7 @@ class StudentRequestButton extends StatelessWidget {
             message:
                 isAlreadyStudent ? 'Remove from Students' : 'Add to Students',
             child: ElevatedButton.icon(
+              key: const Key('student_request_button'),
               icon: const Icon(Icons.person_add),
               onPressed: () {
                 if (isAlreadyStudent) {

@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
+import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class EmailVerificationDialog extends StatelessWidget {
   const EmailVerificationDialog({
@@ -57,7 +58,8 @@ class EmailVerificationDialog extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              // close dialog safely
+              safePop(context);
             },
             child: const Text('Close'),
           ),

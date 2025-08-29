@@ -13,6 +13,7 @@ import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
   const UpdateResourceSkills({
@@ -101,7 +102,7 @@ class UpdateResourceSkills extends StatelessWidget {
                                       debugPrint(
                                         'Skill: ${e?.skillName ?? ''}',
                                       );
-                                      Navigator.pop(context);
+                                      safePop(context);
                                     },
                                     text: e?.skillName ?? '',
                                   ),
@@ -206,7 +207,7 @@ class UpdateResourceSkills extends StatelessWidget {
                 actions: [
                   TextButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      safePop(context);
                     },
                     child: const Text('Close'),
                   ),

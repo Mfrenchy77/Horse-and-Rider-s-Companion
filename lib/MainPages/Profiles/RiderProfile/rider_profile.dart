@@ -11,9 +11,9 @@ import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
-import 'package:horseandriderscompanion/Utilities/keys.dart';
+// Removed dependency on a shared GlobalKey to avoid duplicate key issues
 
-class RiderProfileView extends StatelessWidget {
+class RiderProfileView extends StatefulWidget {
   const RiderProfileView({
     required this.profile,
     super.key,
@@ -25,19 +25,55 @@ class RiderProfileView extends StatelessWidget {
   static const double largeBreakpoint = 1024;
 
   @override
+  State<RiderProfileView> createState() => _RiderProfileViewState();
+}
+
+class _RiderProfileViewState extends State<RiderProfileView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _iconController;
+
+  @override
+  void initState() {
+    super.initState();
+    _iconController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+  }
+
+  @override
+  void dispose() {
+    _iconController.dispose();
+    super.dispose();
+  }
+
+  // drawer open/close are handled by Scaffold.onDrawerChanged now
+
+  @override
   Widget build(BuildContext context) {
+    final profile = widget.profile;
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Scaffold(
-          key: Keys.riderProfileScaffoldKey,
           appBar: AppBar(
             leading: profile.email == state.usersProfile?.email
-                ? IconButton(
-                    icon: const Icon(Icons.menu),
-                    key: const Key('HamburgerIcon'),
-                    onPressed: () {
-                      Keys.riderProfileScaffoldKey.currentState?.openDrawer();
-                    },
+                ? Builder(
+                    builder: (context) => IconButton(
+                      icon: AnimatedIcon(
+                        icon: AnimatedIcons.menu_close,
+                        progress: _iconController,
+                      ),
+                      key: const Key('HamburgerIcon'),
+                      onPressed: () {
+                        final scaffold = Scaffold.of(context);
+                        // toggle drawer: if open, close it; otherwise open it
+                        if (scaffold.isDrawerOpen) {
+                          Navigator.pop(context);
+                        } else {
+                          scaffold.openDrawer();
+                        }
+                      },
+                    ),
                   )
                 : null,
             title: const AppTitle(key: Key('appTitle')),
@@ -46,6 +82,15 @@ class RiderProfileView extends StatelessWidget {
               RiderProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
             ],
           ),
+          // synchronize icon animation with drawer open/close (including
+          // user drag) via onDrawerChanged
+          onDrawerChanged: (isOpen) {
+            if (isOpen) {
+              _iconController.forward();
+            } else {
+              _iconController.reverse();
+            }
+          },
           drawer: profile.email == state.usersProfile?.email
               ? const UserProfileDrawer()
               : null,
@@ -53,7 +98,7 @@ class RiderProfileView extends StatelessWidget {
             builder: (context, constraints) {
               final screenWidth = constraints.maxWidth;
 
-              if (screenWidth >= largeBreakpoint) {
+              if (screenWidth >= RiderProfileView.largeBreakpoint) {
                 // Split layout: profile left, skills right
                 return Row(
                   children: [

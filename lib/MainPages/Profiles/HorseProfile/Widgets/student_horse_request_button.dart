@@ -22,6 +22,7 @@ class StudentHorseRequestButton extends StatelessWidget {
                 ? 'Remove Horse as Student'
                 : 'Request to be Student Horse',
             child: ElevatedButton.icon(
+              key: const Key('student_horse_request_button'),
               icon: const Icon(HorseAndRiderIcons.horseIconAdd),
               onPressed: cubit.requestToBeStudentHorse,
               label: Text(

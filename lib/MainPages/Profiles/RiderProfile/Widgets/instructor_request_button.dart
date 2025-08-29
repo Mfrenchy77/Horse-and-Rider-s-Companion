@@ -32,6 +32,7 @@ class InstructorRequestButton extends StatelessWidget {
               ? 'Remove from Instructors'
               : 'Add to Instructors',
           child: ElevatedButton.icon(
+            key: const Key('instructor_request_button'),
             icon: const Icon(Icons.person_add),
             onPressed: () {
               if (isAlreadyInstructor) {

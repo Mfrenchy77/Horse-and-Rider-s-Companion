@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class CreateTrainingPathDialog extends StatelessWidget {
@@ -39,7 +40,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
         listener: (context, state) {
           final cubit = context.read<CreateTrainingPathCubit>();
           if (state.status == FormStatus.success) {
-            Navigator.pop(context);
+            safePop(context);
           }
           if (state.status == FormStatus.failure) {
             SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -256,7 +257,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                                       IconButton(
                                         onPressed: () {
                                           cubit.deleteTrainingPath();
-                                          Navigator.pop(context);
+                                          safePop(context);
                                         },
                                         icon: const Icon(Icons.delete),
                                       ),

@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/Cubit/skill_create_dialog_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class CreateSkillDialog extends StatelessWidget {
   const CreateSkillDialog({
@@ -43,7 +44,7 @@ class CreateSkillDialog extends StatelessWidget {
         child: BlocListener<CreateSkillDialogCubit, CreateSkillDialogState>(
           listener: (context, state) {
             if (state.status == FormStatus.success) {
-              Navigator.pop(context);
+              safePop(context);
             }
             if (state.status == FormStatus.failure) {
               ScaffoldMessenger.of(context)

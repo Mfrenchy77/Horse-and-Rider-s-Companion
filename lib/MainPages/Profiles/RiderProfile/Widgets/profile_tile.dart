@@ -21,17 +21,27 @@ class ProfileTile extends StatelessWidget {
           child: Tooltip(
             message: baseItem.name,
             child: ListTile(
-              leading: Hero(
-                transitionOnUserGestures: true,
-                tag: baseItem.imageUrl ?? '',
-                child: ProfilePhoto(
-                  size: 45,
-                  profilePicUrl: baseItem.imageUrl,
-                ),
-              ),
+              leading: () {
+                final tag =
+                    (baseItem.imageUrl != null && baseItem.imageUrl!.isNotEmpty)
+                        ? 'profilePic-${baseItem.imageUrl.hashCode}'
+                        : null;
+                if (tag != null) {
+                  return Hero(
+                    transitionOnUserGestures: true,
+                    tag: tag,
+                    child: ProfilePhoto(
+                      size: 45,
+                      profilePicUrl: baseItem.imageUrl,
+                      heroTag: tag,
+                    ),
+                  );
+                }
+                return ProfilePhoto(size: 45, profilePicUrl: baseItem.imageUrl);
+              }(),
               title: Hero(
                 transitionOnUserGestures: true,
-                tag: baseItem.name!,
+                tag: 'profileName-${baseItem.name.hashCode}',
                 child: Text(
                   baseItem.name ?? '',
                   textAlign: TextAlign.center,

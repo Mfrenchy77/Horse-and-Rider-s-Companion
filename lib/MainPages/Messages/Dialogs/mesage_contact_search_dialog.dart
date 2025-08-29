@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class MesssageContactsSearchDialog extends StatelessWidget {
   const MesssageContactsSearchDialog({
@@ -43,7 +44,7 @@ class MesssageContactsSearchDialog extends StatelessWidget {
                 MessagePage.name,
                 pathParameters: {MessagePage.pathParams: state.id},
               );
-              Navigator.pop(context);
+              safePop(context);
             }
             if (state.isError) {
               ScaffoldMessenger.of(context)
