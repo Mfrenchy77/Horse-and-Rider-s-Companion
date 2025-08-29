@@ -2893,6 +2893,58 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Deny/Decline a pending request message and convert it to a chat entry
+  Future<void> denyRequest({
+    required Message message,
+    required BuildContext context,
+  }) async {
+    // No repository side-effects beyond updating the message to a normal chat
+    try {
+      String denialText;
+      switch (message.messageType) {
+        case MessageType.INSTRUCTOR_REQUEST:
+          denialText = 'Denied instructor request from ${message.sender}';
+          break;
+        case MessageType.STUDENT_REQUEST:
+          denialText = 'Denied student request from ${message.sender}';
+          break;
+        case MessageType.STUDENT_HORSE_REQUEST:
+          final horseName = message.requestItem?.name ?? 'horse';
+          denialText = 'Denied student horse request for '
+              '$horseName from ${message.sender}';
+          break;
+        case MessageType.TRANSFER_HORSE_REQUEST:
+          denialText = 'Denied horse transfer request';
+          break;
+        case MessageType.EDIT_REQUEST:
+        case MessageType.CHAT:
+        case MessageType.SUPPORT:
+          denialText = 'Request dismissed';
+          break;
+      }
+
+      message
+        ..message = denialText
+        ..messageType = MessageType.CHAT;
+
+      await _persistMessage(message);
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Request denied',
+          acceptStatus: AcceptStatus.waiting,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to deny request: $e',
+        ),
+      );
+    }
+  }
+
   /// Handle transfer horse request
   void _handleTransferHorseRequest() {
     //placeholder for now

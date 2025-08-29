@@ -7,13 +7,30 @@ class MessagesView extends StatelessWidget {
   final bool isConversations;
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isWide = width >= 840;
+
+    if (isWide) {
+      // Split view: list on the left, conversation on the right
+      return const Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: MessagesList(key: Key('MessagesList')),
+          ),
+          VerticalDivider(width: 1),
+          Expanded(
+            flex: 3,
+            child: MessageView(key: Key('MessageView')),
+          ),
+        ],
+      );
+    }
+
+    // Narrow screens: either list or conversation
     return isConversations
-        ? const MessagesList(
-            key: Key('MessagesList'),
-          )
-        : const MessageView(
-            key: Key('MessageView'),
-          );
+        ? const MessagesList(key: Key('MessagesList'))
+        : const MessageView(key: Key('MessageView'));
 
     /* return AdaptiveLayout(
       internalAnimations: false,

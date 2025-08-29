@@ -16,6 +16,17 @@ class MessagesList extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        // On wide screens, auto-select the first conversation if none selected
+        final width = MediaQuery.of(context).size.width;
+        final isWide = width >= 840;
+        if (isWide &&
+            state.conversation == null &&
+            state.conversations != null &&
+            state.conversations!.isNotEmpty) {
+          context
+              .read<AppCubit>()
+              .setConversation(state.conversations!.first.id);
+        }
         return Scaffold(
           appBar: AppBar(
             title: const Text('Messages'),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/accept_request_button.dart';
+import 'package:horseandriderscompanion/MainPages/Messages/Widgets/deny_request_button.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
@@ -47,6 +48,7 @@ class MessageItem extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
                       message.message ?? '',
@@ -59,9 +61,22 @@ class MessageItem extends StatelessWidget {
                       visible: context
                           .read<AppCubit>()
                           .isRequestVisible(message: message),
-                      child: AcceptRequestButton(
-                        message: message,
-                        key: const Key('AcceptRequestButton'),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AcceptRequestButton(
+                              message: message,
+                              key: const Key('AcceptRequestButton'),
+                            ),
+                            const SizedBox(width: 8),
+                            DenyRequestButton(
+                              message: message,
+                              key: const Key('DenyRequestButtonInline'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

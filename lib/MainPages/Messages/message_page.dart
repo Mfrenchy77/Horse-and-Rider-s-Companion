@@ -23,6 +23,16 @@ class MessagePage extends StatelessWidget {
           cubit.getConversations();
         }
 
+        // Ensure the requested conversation is
+        //selected once conversations are loaded
+        if (state.conversations != null &&
+            (state.conversation == null ||
+                state.conversation!.id != messageId)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            cubit.setConversation(messageId);
+          });
+        }
+
         return const MessagesView(
           isConversations: false,
           key: Key('MessagesListView'),

@@ -5,6 +5,11 @@ import 'package:database_repository/database_repository.dart';
 
 /// Repository for Accessing Elements of the SkillTree
 class SkillTreeRepository {
+  /// Constructor for SkillTreeRepository
+  SkillTreeRepository({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
 /* ****
                   ****   TrainingPaths   ****
 
@@ -13,38 +18,32 @@ class SkillTreeRepository {
   /// Constant for Accessing the Training Paths in the Database
   static const String TRAINING_PATHS = 'TrainingPaths';
 
-  final _trainingPathDatabaseReference = FirebaseFirestore.instance
-      .collection(TRAINING_PATHS)
-      .withConverter<TrainingPath>(
-        fromFirestore: (snap, options) => TrainingPath.fromFirestore(snap),
-        toFirestore: (tp, options) => tp.toFirestore(),
-      );
+  CollectionReference<TrainingPath> _trainingPaths() =>
+      _firestore.collection(TRAINING_PATHS).withConverter<TrainingPath>(
+            fromFirestore: (snap, options) => TrainingPath.fromFirestore(snap),
+            toFirestore: (tp, options) => tp.toFirestore(),
+          );
 
   /// Create or update a TrainingPath
   Future<void> createOrEditTrainingPath({required TrainingPath trainingPath}) {
-    return _trainingPathDatabaseReference
-        .doc(trainingPath.id)
-        .set(trainingPath);
+    return _trainingPaths().doc(trainingPath.id).set(trainingPath);
   }
 
   /// Retrieve a TrainingPath by its ID
   Stream<TrainingPath?> getTrainingPathById({required String id}) {
-    return _trainingPathDatabaseReference
-        .doc(id)
-        .snapshots()
-        .map((snap) => snap.data());
+    return _trainingPaths().doc(id).snapshots().map((snap) => snap.data());
   }
 
   /// Retrieve all TrainingPaths
   Stream<List<TrainingPath>> getAllTrainingPaths() {
-    return _trainingPathDatabaseReference
+    return _trainingPaths()
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Delete a TrainingPath
   void deleteTrainingPath({required TrainingPath? trainingPath}) {
-    _trainingPathDatabaseReference.doc(trainingPath?.id).delete();
+    _trainingPaths().doc(trainingPath?.id).delete();
   }
 
 /* ****
@@ -55,35 +54,36 @@ class SkillTreeRepository {
   /// Constant for Accessing the Skills on the Skill Tree
   static const String SKILLS = 'Skills';
 
-  final _skillDatabaseReference =
-      FirebaseFirestore.instance.collection(SKILLS).withConverter<Skill>(
+  CollectionReference<Skill> _skills() =>
+      _firestore.collection(SKILLS).withConverter<Skill>(
             fromFirestore: Skill.fromFirestore,
             toFirestore: (Skill skill, options) => skill.toFirestore(),
           );
 
   /// create or update [skill]
   Future<void> createOrEditSkill({required Skill skill}) {
-    return _skillDatabaseReference.doc(skill.id).set(skill);
+    return _skills().doc(skill.id).set(skill);
   }
 
-  /// Retreive Skill from Category [id]
+  /// Retrieve Skills by a category string stored under 'category'.
+  /// The expected values are 'Husbandry', 'In_Hand', 'Mounted', or 'Other'.
   Stream<List<Skill>> getSkillsFromCategory({required String id}) {
-    return _skillDatabaseReference
-        .where('categoryId', isEqualTo: id)
+    return _skills()
+        .where('category', isEqualTo: id)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   /// Retreive all Skills
   Stream<List<Skill>> getSkills() {
-    return _skillDatabaseReference
+    return _skills()
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
   ///  Retreives all Skills for Rider SKill Tree
   Stream<List<Skill>> getSkillsForRiderSkillTree() {
-    return _skillDatabaseReference
+    return _skills()
         .where('rider', isEqualTo: true)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
@@ -91,7 +91,7 @@ class SkillTreeRepository {
 
   ///  Retreives all Skills for Horse SKill Tree
   Stream<List<Skill>> getSkillsForHorseSkillTree() {
-    return _skillDatabaseReference
+    return _skills()
         .where('rider', isEqualTo: false)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
@@ -99,6 +99,6 @@ class SkillTreeRepository {
 
   /// delete Skill
   void deleteSkill({required Skill? skill}) {
-    _skillDatabaseReference.doc(skill?.id).delete();
+    _skills().doc(skill?.id).delete();
   }
 }

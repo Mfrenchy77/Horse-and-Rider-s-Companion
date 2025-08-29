@@ -23,11 +23,15 @@ class MessagesListItem extends StatelessWidget {
         final textColor = cubit.groupTextColor(conversation: conversation);
         return ListTile(
           onTap: () {
+            final width = MediaQuery.of(context).size.width;
+            final isWide = width >= 840;
             cubit.setConversation(conversation.id);
-            context.goNamed(
-              MessagePage.name,
-              pathParameters: {MessagePage.pathParams: conversation.id},
-            );
+            if (!isWide) {
+              context.goNamed(
+                MessagePage.name,
+                pathParameters: {MessagePage.pathParams: conversation.id},
+              );
+            }
           },
           trailing: Text(
             calculateTimeDifferenceBetween(

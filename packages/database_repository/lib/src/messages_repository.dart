@@ -5,13 +5,18 @@ import 'package:database_repository/database_repository.dart';
 
 ///  Interface for Firebase and Message and Groups
 class MessagesRepository {
+  /// Constructor
+  MessagesRepository({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
   /* *****    Messages      ***** */
   ///Constant to refer to the General Database Category
   static const String MESSAGES = 'Messages';
 
   ///  create or update [message]
   Future<void> createOrUpdateMessage({required Message message}) {
-    return FirebaseFirestore.instance
+    return _firestore
         .collection(CONVERSATIONS)
         .doc(message.id)
         .collection(MESSAGES)
@@ -25,7 +30,7 @@ class MessagesRepository {
 
   /// retrieve Messages for User using their [conversationId]
   Stream<List<Message>> getMessages({required String conversationId}) {
-    return FirebaseFirestore.instance
+    return _firestore
         .collection(CONVERSATIONS)
         .doc(conversationId)
         .collection(MESSAGES)
@@ -33,7 +38,7 @@ class MessagesRepository {
           fromFirestore: Message.fromFirestore,
           toFirestore: (Message message, options) => message.toFirestore(),
         )
-        .orderBy('sentAt', descending: true)
+        .orderBy('date')
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
@@ -43,7 +48,7 @@ class MessagesRepository {
     required Message messageToDelete,
     required String conversationId,
   }) {
-    FirebaseFirestore.instance
+    _firestore
         .collection(CONVERSATIONS)
         .doc(conversationId)
         .collection(MESSAGES)
@@ -62,8 +67,8 @@ class MessagesRepository {
   ///Constant for Conversations
   static const String CONVERSATIONS = 'Conversations';
 
-  final _groupDatabaseReference =
-      FirebaseFirestore.instance.collection(CONVERSATIONS).withConverter(
+  CollectionReference<Conversation> _conversations() =>
+      _firestore.collection(CONVERSATIONS).withConverter(
             fromFirestore: Conversation.fromFirestore,
             toFirestore: (Conversation conversation, options) =>
                 conversation.toFirestore(),
@@ -73,12 +78,12 @@ class MessagesRepository {
   Future<void> createOrUpdateConversation({
     required Conversation conversation,
   }) {
-    return _groupDatabaseReference.doc(conversation.id).set(conversation);
+    return _conversations().doc(conversation.id).set(conversation);
   }
 
   ///   Retrieves a List of Groups for a User
   Stream<List<Conversation>> getConversations({required String userEmail}) {
-    return _groupDatabaseReference
+    return _conversations()
         .where('partiesIds', arrayContains: userEmail)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
@@ -86,6 +91,6 @@ class MessagesRepository {
 
   ///   Delete a group
   void deleteConversation({required Conversation conversation}) {
-    _groupDatabaseReference.doc(conversation.id).delete();
+    _conversations().doc(conversation.id).delete();
   }
 }
