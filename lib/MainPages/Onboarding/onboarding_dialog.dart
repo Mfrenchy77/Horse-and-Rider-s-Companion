@@ -7,6 +7,7 @@ class OnboardingDialog extends StatefulWidget {
     super.key,
     this.initialTabIndex = 0,
     this.onProfileComplete,
+    this.onSkip,
   });
 
   final int initialTabIndex;
@@ -14,6 +15,9 @@ class OnboardingDialog extends StatefulWidget {
   /// Called when the profile form is saved.
   ///  Receives a map with keys 'name' and 'email'.
   final void Function(Map<String, String>)? onProfileComplete;
+  
+  /// Called when the user dismisses/skips onboarding via the close button.
+  final VoidCallback? onSkip;
 
   @override
   State<OnboardingDialog> createState() => _OnboardingDialogState();
@@ -100,7 +104,11 @@ class _OnboardingDialogState extends State<OnboardingDialog>
       actions: [
         TextButton(
           key: const Key('onboarding_close_button'),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Allow the host to clear the onboarding flag when closing.
+            widget.onSkip?.call();
+            Navigator.of(context).pop();
+          },
           child: const Text('Close'),
         ),
       ],

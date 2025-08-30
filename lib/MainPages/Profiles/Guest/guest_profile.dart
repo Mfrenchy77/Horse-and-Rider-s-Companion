@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
@@ -18,8 +20,14 @@ class GuestProfile extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const AppTitle(key: Key('appTitle')),
-        actions: const [
-          ProfileSearchButton(key: Key('GuestSearchButton')),
+        actions: [
+          const ProfileSearchButton(key: Key('GuestSearchButton')),
+          IconButton(
+            key: const Key('GuestTutorialButton'),
+            tooltip: 'Tutorial',
+            icon: const Icon(Icons.school),
+            onPressed: () => context.read<AppCubit>().showOnboardingNow(),
+          ),
         ],
       ),
       body: LayoutBuilder(

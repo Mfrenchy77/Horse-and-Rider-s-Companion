@@ -96,7 +96,14 @@ class AppCubit extends Cubit<AppState> {
         _getUsersProfile(user: user);
       } else {
         debugPrint('User is unauthenticated or email not verified');
-        emit(state.copyWith(isGuest: true, pageStatus: AppPageStatus.loaded));
+        // Ensure guest onboarding flag also reflects SharedPrefs setting
+        _checkOnboarding();
+        emit(
+          state.copyWith(
+            isGuest: true,
+            pageStatus: AppPageStatus.loaded,
+          ),
+        );
       }
     });
   }
@@ -132,6 +139,15 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('Setting Onboarding to false');
     SharedPrefs().setShowOnboarding(show: false);
     emit(state.copyWith(showOnboarding: false));
+  }
+
+  /// Forces onboarding presentation immediately depending on auth state.
+  void showOnboardingNow() {
+    if (state.status == AppStatus.authenticated) {
+      emit(state.copyWith(showOnboarding: true));
+    } else {
+      emit(state.copyWith(showFirstLaunch: true, showOnboarding: true));
+    }
   }
 
   /// Called from onboarding when the user completes the small profile form.
@@ -524,6 +540,9 @@ class AppCubit extends Cubit<AppState> {
     // Cancel active streams tied to the current user session
     await _messagesStream?.cancel();
     await _conversationsStream?.cancel();
+    await _resourcesStream?.cancel();
+    await _skillsSubscription?.cancel();
+    await _trainingPathsStream?.cancel();
 
     emit(const AppState.unauthenticated());
 
@@ -1341,14 +1360,17 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Skills not retrieved yet');
       _skillsSubscription =
           _skillTreeRepository.getSkills().listen((skillsList) {
-        final skills = skillsList.toList()
+        // Normalize and sort by position
+        final next = skillsList.toList()
           ..sort((a, b) => a.position.compareTo(b.position));
-        debugPrint('Skills Retrieved: ${skills.length}');
-        emit(
-          state.copyWith(
-            allSkills: skills,
-          ),
-        );
+
+        // Avoid redundant emits if same as current (by id:pos:lastEditDate)
+        if (_sameSkills(next, state.allSkills)) {
+          return;
+        }
+
+        debugPrint('Skills Retrieved: ${next.length}');
+        emit(state.copyWith(allSkills: next));
         _sortSkills(state.categorySortState, state.difficultySortState);
       });
     } else {
@@ -1358,11 +1380,19 @@ class AppCubit extends Cubit<AppState> {
 
   void _getTrainingPaths() {
     debugPrint('Get TrainingPaths Called');
-
+    if (_trainingPathsStream != null) return;
     _trainingPathsStream =
         _skillTreeRepository.getAllTrainingPaths().listen((trainingPaths) {
       debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
-
+      // Shallow guard by length + first/last id
+      final curr = state.trainingPaths;
+      if (curr.length == trainingPaths.length &&
+          curr.isNotEmpty &&
+          trainingPaths.isNotEmpty &&
+          curr.first?.id == trainingPaths.first.id &&
+          curr.last?.id == trainingPaths.last.id) {
+        return;
+      }
       emit(state.copyWith(trainingPaths: trainingPaths));
     });
   }
@@ -1381,6 +1411,10 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Resources not retrieved yet');
       _resourcesStream =
           _resourcesRepository.getResources().listen((resources) {
+        // Guard redundant emits by id + lastEditDate/createdAt length/signature
+        if (_sameResources(resources, state.resources)) {
+          return;
+        }
         debugPrint('Resources Retrieved: ${resources.length}');
         emit(state.copyWith(resources: resources));
       });
@@ -1843,7 +1877,8 @@ class AppCubit extends Cubit<AppState> {
     CategorySortState categorySort,
     DifficultySortState difficultySort,
   ) {
-    var sortedSkills = state.allSkills
+    // Do NOT mutate state's list in-place. Work on a copy.
+    var sortedSkills = List<Skill?>.from(state.allSkills)
       ..sort((a, b) => a!.skillName.compareTo(b!.skillName));
 
     // First, sort by category
@@ -1855,6 +1890,42 @@ class AppCubit extends Cubit<AppState> {
     // Emit the sorted skills
     debugPrint('Emitting ${sortedSkills.length} Sorted Skills');
     emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
+  }
+
+  // --------- List equality guards (by id + version-ish fields) ---------
+  bool _sameSkills(List<Skill> a, List<Skill?> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final ai = a[i];
+      final bi = b[i];
+      if (bi == null) return false;
+      if (ai.id != bi.id) return false;
+      if (ai.position != bi.position) return false;
+      // If both have lastEditDate, compare; otherwise ignore.
+      final ad = ai.lastEditDate?.millisecondsSinceEpoch;
+      final bd = bi.lastEditDate?.millisecondsSinceEpoch;
+      if (ad != null || bd != null) {
+        if (ad != bd) return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameResources(List<Resource> a, List<Resource> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final ai = a[i];
+      final bi = b[i];
+      if (ai.id != bi.id) return false;
+      final ad = ai.lastEditDate?.millisecondsSinceEpoch ??
+          ai.createdAt?.millisecondsSinceEpoch;
+      final bd = bi.lastEditDate?.millisecondsSinceEpoch ??
+          bi.createdAt?.millisecondsSinceEpoch;
+      if (ad != null || bd != null) {
+        if (ad != bd) return false;
+      }
+    }
+    return true;
   }
 
   List<Skill?> _sortSkillsByCategory(

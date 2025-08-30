@@ -264,6 +264,16 @@ class UserProfileDrawer extends StatelessWidget {
                     },
                   ),
 
+                  // Tutorial (Onboarding)
+                  ListTile(
+                    leading: const Icon(Icons.school),
+                    title: const Text('Tutorial'),
+                    onTap: () {
+                      onClose?.call();
+                      context.read<AppCubit>().showOnboardingNow();
+                    },
+                  ),
+
                   // About
                   ListTile(
                     leading: const Icon(Icons.info),

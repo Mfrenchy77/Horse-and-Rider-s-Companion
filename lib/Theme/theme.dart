@@ -161,14 +161,14 @@ final mainThemeLight = ThemeData(
     unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
     selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
   ),
-  scaffoldBackgroundColor: ColorConst.mainBackgroundLight,
+  scaffoldBackgroundColor: const Color.fromARGB(255, 224, 228, 226),
   appBarTheme: const AppBarTheme(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
     backgroundColor: ColorConst.mainPrimaryLight,
   ),
-  cardColor: ColorConst.mainBackgroundLight,
+  cardColor: const Color.fromARGB(255, 186, 200, 197),
   dialogTheme: const DialogThemeData(
     backgroundColor: ColorConst.mainBackgroundLight,
   ),

@@ -158,31 +158,7 @@ class SettingsView extends StatelessWidget {
                       ],
                     ),
                     gap(),
-                    Divider(
-                      color: Theme.of(context).colorScheme.secondary,
-                      indent: 8,
-                      endIndent: 8,
-                    ),
-                    gap(),
-                    // Show onboarding
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('Reset opening tutorial'),
-                            FilledButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                controller.updateOnboardingStatus();
-                              },
-                              child: const Text('Reset Tutorial'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    // End of settings
                   ],
                 ),
               ),

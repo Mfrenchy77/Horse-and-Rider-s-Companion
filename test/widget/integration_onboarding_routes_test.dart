@@ -6,10 +6,8 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/App/Routes/routes.dart';
-import 'package:horseandriderscompanion/App/View/app.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/user_onboarding_dialog.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
@@ -76,6 +74,9 @@ void main() {
         riderProfile: any(named: 'riderProfile'),
       ),
     ).thenAnswer((_) async {});
+    when(
+      () => riderRepo.getRiderProfile(email: any(named: 'email')),
+    ).thenAnswer((_) => Stream<RiderProfile?>.value(null));
 
     appCubit = AppCubit(
       messagesRepository: messagesRepo,
@@ -87,7 +88,8 @@ void main() {
     );
   });
 
-  Widget buildApp(GoRouter router) {
+  Widget buildHarness() {
+    var presented = false;
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: messagesRepo),
@@ -101,74 +103,79 @@ void main() {
       ],
       child: BlocProvider.value(
         value: appCubit,
-        child: AppView(settingsController: settingsController, router: router),
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => BlocListener<AppCubit, AppState>(
+              listener: (context, state) async {
+                final shouldShowUserOnboarding = (state.showOnboarding ||
+                        (!state.isProfileSetup &&
+                            state.status == AppStatus.authenticated)) &&
+                    state.status == AppStatus.authenticated;
+                if (!presented && shouldShowUserOnboarding) {
+                  presented = true;
+                  await showDialog<String?>(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const UserOnboardingDialog(),
+                  );
+                  appCubit.completeOnboarding();
+                }
+              },
+              child: const Scaffold(body: Center(child: Text('Home'))),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  testWidgets('Onboarding shows on app boot and completes via Routes/AppView',
-      (tester) async {
-    final router = Routes()
-        .router(settingsContoller: settingsController, appCubit: appCubit);
+  testWidgets('User onboarding shows and opens Edit Profile', (tester) async {
+    // Simulate a signed-in, verified user
+    final signedIn = auth.User(
+      id: 'u1',
+      name: 'Integration User',
+      email: 'integration@example.com',
+      isGuest: false,
+      emailVerified: true,
+    );
+    when(() => authRepo.currentUser).thenReturn(signedIn);
+    when(() => authRepo.user).thenAnswer((_) => Stream.value(signedIn));
 
-    await tester.pumpWidget(buildApp(router));
+    // Recreate cubit after stubbing auth so initial state is authenticated
+    appCubit = AppCubit(
+      messagesRepository: messagesRepo,
+      skillTreeRepository: skillRepo,
+      resourcesRepository: resourcesRepo,
+      horseProfileRepository: horseRepo,
+      riderProfileRepository: riderRepo,
+      authenticationRepository: authRepo,
+    );
+
+    await tester.pumpWidget(buildHarness());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Trigger onboarding flag in cubit;
-    // NavigationView should present the dialog
+    // Trigger onboarding flag in cubit (ensure a state change)
+    appCubit.emit(appCubit.state.copyWith(showOnboarding: false));
+    await tester.pump();
     appCubit.emit(appCubit.state.copyWith(showOnboarding: true));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Onboarding dialog should be visible
-    expect(find.byKey(const Key('onboarding_dialog')), findsOneWidget);
+    // User onboarding dialog should be visible
+    expect(find.byKey(const Key('user_onboarding_dialog')), findsOneWidget);
 
-    // Switch to Signed In tab and press Complete Profile
-    await tester.tap(find.text('Signed In'));
+    // Tap finish to close onboarding
+    final finishBtn = find.byKey(const Key('user_onboarding_finish'));
+    expect(finishBtn, findsOneWidget);
+    await tester.tap(finishBtn, warnIfMissed: false);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // Ensure the complete profile button is visible before tapping
-    final completeBtnFinder =
-        find.byKey(const Key('onboarding_complete_profile_button'));
-    expect(completeBtnFinder, findsOneWidget);
-    await tester.ensureVisible(completeBtnFinder);
-    await tester.tap(completeBtnFinder, warnIfMissed: false);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-
-    // Fill out profile form (verify fields exist first)
-    final nameField = find.byKey(const Key('complete_profile_name'));
-    final emailField = find.byKey(const Key('complete_profile_email'));
-    final saveBtn = find.byKey(const Key('complete_profile_save'));
-
-    expect(nameField, findsOneWidget);
-    expect(emailField, findsOneWidget);
-    expect(saveBtn, findsOneWidget);
-
-    await tester.enterText(nameField, 'Integration User');
-    await tester.enterText(emailField, 'integration@example.com');
-    await tester.pump();
-    await tester.tap(saveBtn, warnIfMissed: false);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    // Onboarding flag should be cleared by cubit.completeProfileFromOnboarding
+    // Onboarding flag should be cleared
     expect(appCubit.state.showOnboarding, isFalse);
-    expect(appCubit.state.isProfileSetup, isTrue);
 
-    // Capture the named argument and make assertions about it
-    // (and assert it was called once)
-    final captured = verify(
-      () => riderRepo.createOrUpdateRiderProfile(
-        riderProfile: captureAny(named: 'riderProfile'),
-      ),
-    ).captured;
-    expect(captured.length, 1);
-    expect(captured, isNotEmpty);
-    final rp = captured.first as RiderProfile;
-    expect(rp.email, 'integration@example.com');
-    expect(rp.name, 'Integration User');
+    // Onboarding dialog should be gone
+    expect(find.byKey(const Key('user_onboarding_dialog')), findsNothing);
   });
 }

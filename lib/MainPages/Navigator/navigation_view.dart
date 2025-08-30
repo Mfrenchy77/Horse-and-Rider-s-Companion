@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_onboarding_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/user_onboarding_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -41,18 +43,46 @@ class _NavigationViewState extends State<NavigationView> {
           widget.child.goBranch(newIndex);
         }
 
-        // Onboarding dialog presentation
+        // Manual onboarding presentation (guest vs signed-in)
         if (state.showOnboarding && !_onboardingDialogOpen) {
           _onboardingDialogOpen = true;
           SchedulerBinding.instance.addPostFrameCallback((_) async {
-            await showDialog<Map<String, String>?>(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => OnboardingDialog(
-                onProfileComplete: cubit.completeProfileFromOnboarding,
-              ),
-            );
-            if (mounted) setState(() => _onboardingDialogOpen = false);
+            if (!mounted) return;
+            final dialogContext = context;
+            if (state.status == AppStatus.authenticated) {
+              final result = await showDialog<String?>(
+                context: dialogContext,
+                barrierDismissible: false,
+                builder: (ctx) => UserOnboardingDialog(
+                  onSkip: cubit.completeOnboarding,
+                ),
+              );
+              if (!dialogContext.mounted) return;
+              cubit.completeOnboarding();
+              if (result == 'finish') {
+                if (!dialogContext.mounted) return;
+                await showDialog<EditRiderProfileDialog>(
+                  context: dialogContext,
+                  builder: (ctx) => EditRiderProfileDialog(
+                    onProfileUpdated: () {},
+                    riderProfile: state.usersProfile,
+                    user: state.user,
+                  ),
+                );
+              }
+            } else {
+              await showDialog<void>(
+                context: dialogContext,
+                barrierDismissible: false,
+                builder: (ctx) => GuestOnboardingDialog(
+                  onSkip: cubit.completeOnboarding,
+                ),
+              );
+              if (!dialogContext.mounted) return;
+              cubit.completeOnboarding();
+            }
+            if (!mounted) return;
+            setState(() => _onboardingDialogOpen = false);
           });
         } else if (!state.showOnboarding && _onboardingDialogOpen) {
           // Close dialog if onboarding flag turned off
@@ -103,13 +133,15 @@ class _NavigationViewState extends State<NavigationView> {
         if (state.showEmailVerification && !_emailDialogOpen) {
           _emailDialogOpen = true;
           SchedulerBinding.instance.addPostFrameCallback((_) async {
-            await context.pushNamed(
+            final router = GoRouter.of(context);
+            await router.pushNamed(
               EmailVerificationDialog.name,
               pathParameters: {
                 EmailVerificationDialog.pathParms: state.user.email,
               },
             );
-            if (mounted) setState(() => _emailDialogOpen = false);
+            if (!mounted) return;
+            setState(() => _emailDialogOpen = false);
           });
         } else if (!state.showEmailVerification && _emailDialogOpen) {
           // Close dialog if verification flag turned off

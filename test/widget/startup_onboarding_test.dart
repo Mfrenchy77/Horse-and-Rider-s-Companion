@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_onboarding_dialog.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockMessagesRepository extends Mock implements MessagesRepository {}
 
@@ -24,42 +26,14 @@ class MockHorseProfileRepository extends Mock
 class MockAuthenticationRepository extends Mock
     implements AuthenticationRepository {}
 
-class TestAppCubit extends AppCubit {
-  TestAppCubit({
-    required super.messagesRepository,
-    required super.skillTreeRepository,
-    required super.resourcesRepository,
-    required super.riderProfileRepository,
-    required super.horseProfileRepository,
-    required super.authenticationRepository,
-  });
-
-  Map<String, String>? lastProfileData;
-
-  @override
-  Future<void> completeProfileFromOnboarding(Map<String, String> data) async {
-    // Record the data and mark onboarding complete in state
-    // (no repository calls here)
-    lastProfileData = Map.from(data);
-    final profile = RiderProfile(
-      id: data['email'] ?? '',
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-    );
-    emit(
-      state.copyWith(
-        usersProfile: profile,
-        isProfileSetup: true,
-        showOnboarding: false,
-      ),
-    );
-  }
-}
+// No custom cubit needed; we only verify guest onboarding presentation
 
 void main() {
   testWidgets(
       'Onboarding dialog shown on startup and completing profile calls cubit',
       (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await SharedPrefs().init();
     final messagesRepo = MockMessagesRepository();
     final skillRepo = MockSkillTreeRepository();
     final resourcesRepo = MockResourcesRepository();
@@ -77,7 +51,7 @@ void main() {
     when(resourcesRepo.getResources)
         .thenAnswer((_) => const Stream<List<Resource>>.empty());
 
-    final cubit = TestAppCubit(
+    final cubit = AppCubit(
       messagesRepository: messagesRepo,
       skillTreeRepository: skillRepo,
       resourcesRepository: resourcesRepo,
@@ -96,11 +70,11 @@ void main() {
               return BlocListener<AppCubit, AppState>(
                 listener: (context, state) async {
                   if (state.showOnboarding) {
-                    await showDialog<Map<String, String>?>(
+                    await showDialog<void>(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => OnboardingDialog(
-                        onProfileComplete: cubit.completeProfileFromOnboarding,
+                      builder: (context) => GuestOnboardingDialog(
+                        onSkip: cubit.completeOnboarding,
                       ),
                     );
                   }
@@ -113,45 +87,18 @@ void main() {
       ),
     );
 
-    // Trigger onboarding presentation
+    // Manually trigger onboarding presentation
     cubit.emit(cubit.state.copyWith(showOnboarding: true));
     await tester.pumpAndSettle();
 
     // Dialog should be shown
-    expect(find.byKey(const Key('onboarding_dialog')), findsOneWidget);
+    expect(find.byKey(const Key('guest_onboarding_dialog')), findsOneWidget);
 
-    // Switch to Signed In tab and tap Complete Profile
-    await tester.tap(find.text('Signed In'));
+    // Close guest onboarding
+    await tester.tap(find.byKey(const Key('guest_onboarding_close')));
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('onboarding_complete_profile_button')),
-      findsOneWidget,
-    );
-    await tester
-        .tap(find.byKey(const Key('onboarding_complete_profile_button')));
-    await tester.pumpAndSettle();
-
-    // Complete profile dialog should appear
-    expect(find.byKey(const Key('complete_profile_dialog')), findsOneWidget);
-
-    await tester.enterText(
-      find.byKey(const Key('complete_profile_name')),
-      'Startup User',
-    );
-    await tester.enterText(
-      find.byKey(const Key('complete_profile_email')),
-      'startup@example.com',
-    );
-    await tester.tap(find.byKey(const Key('complete_profile_save')));
-    await tester.pumpAndSettle();
-
-    // Our TestAppCubit should have recorded the
-    // profile data and onboarding cleared
-    expect(cubit.lastProfileData, isNotNull);
-    expect(cubit.lastProfileData!['name'], 'Startup User');
-    expect(cubit.lastProfileData!['email'], 'startup@example.com');
+    // Onboarding flag should be cleared
     expect(cubit.state.showOnboarding, isFalse);
-    expect(cubit.state.isProfileSetup, isTrue);
   });
 }
