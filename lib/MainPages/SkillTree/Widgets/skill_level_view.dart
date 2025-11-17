@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,9 +38,8 @@ class SkillLevelView extends StatelessWidget {
 
         final prerequisiteSkills = skill.prerequisites
             .map(
-              (id) => allSkills.firstWhere(
+              (id) => allSkills.firstWhereOrNull(
                 (s) => s?.id == id,
-                orElse: () => null,
               ),
             )
             .whereType<Skill>()

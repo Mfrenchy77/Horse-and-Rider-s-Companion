@@ -1464,6 +1464,10 @@ class AppCubit extends Cubit<AppState> {
     return skill;
   }
 
+  bool skillExists(String id) {
+    return state.allSkills.any((skill) => skill?.id == id);
+  }
+
   /// set the selected Skill from the id
   void setSkill(String? id) {
     if (id == null || id.isEmpty) {
@@ -1801,6 +1805,51 @@ class AppCubit extends Cubit<AppState> {
       stops: const [0.48, 0.52],
       colors: [fillColor, Colors.transparent],
     );
+  }
+
+  Future<void> removeDeprecatedSkillLevels({
+    required RiderProfile profile,
+    required List<SkillLevel> deprecatedLevels,
+  }) async {
+    if (deprecatedLevels.isEmpty) return;
+
+    final idsToRemove = deprecatedLevels.map((level) => level.skillId).toSet();
+    final updatedSkillLevels = (profile.skillLevels ?? [])
+        .where((level) => !idsToRemove.contains(level.skillId))
+        .toList();
+
+    final updatedProfile = profile.copyWith(skillLevels: updatedSkillLevels);
+
+    try {
+      await _riderProfileRepository.createOrUpdateRiderProfile(
+        riderProfile: updatedProfile,
+      );
+
+      var nextState = state;
+      if (profile.email == state.usersProfile?.email) {
+        nextState = nextState.copyWith(usersProfile: updatedProfile);
+      }
+      if (profile.email == state.viewingProfile?.email) {
+        nextState = nextState.copyWith(viewingProfile: updatedProfile);
+      }
+
+      final removalCount = idsToRemove.length;
+      nextState = nextState.copyWith(
+        isMessage: true,
+        errorMessage:
+            '$removalCount deprecated skill${removalCount == 1 ? '' : 's'} '
+            'deleted',
+      );
+
+      emit(nextState);
+    } catch (error) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to delete deprecated skills',
+        ),
+      );
+    }
   }
 
   /// Returns the learningDescription for the current skill or the

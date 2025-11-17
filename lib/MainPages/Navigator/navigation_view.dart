@@ -6,9 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Onboarding/guest_onboarding_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Onboarding/user_onboarding_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -29,7 +26,7 @@ class NavigationView extends StatefulWidget {
 
 class _NavigationViewState extends State<NavigationView> {
   bool _emailDialogOpen = false;
-  bool _onboardingDialogOpen = false;
+  final bool _onboardingDialogOpen = false;
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
@@ -45,53 +42,54 @@ class _NavigationViewState extends State<NavigationView> {
 
         // Manual onboarding presentation (guest vs signed-in)
         if (state.showOnboarding && !_onboardingDialogOpen) {
-          _onboardingDialogOpen = true;
-          SchedulerBinding.instance.addPostFrameCallback((_) async {
-            if (!mounted) return;
-            final dialogContext = context;
-            if (state.status == AppStatus.authenticated) {
-              final result = await showDialog<String?>(
-                context: dialogContext,
-                barrierDismissible: false,
-                builder: (ctx) => UserOnboardingDialog(
-                  onSkip: cubit.completeOnboarding,
-                ),
-              );
-              if (!dialogContext.mounted) return;
-              cubit.completeOnboarding();
-              if (result == 'finish') {
-                if (!dialogContext.mounted) return;
-                await showDialog<EditRiderProfileDialog>(
-                  context: dialogContext,
-                  builder: (ctx) => EditRiderProfileDialog(
-                    onProfileUpdated: () {},
-                    riderProfile: state.usersProfile,
-                    user: state.user,
-                  ),
-                );
-              }
-            } else {
-              await showDialog<void>(
-                context: dialogContext,
-                barrierDismissible: false,
-                builder: (ctx) => GuestOnboardingDialog(
-                  onSkip: cubit.completeOnboarding,
-                ),
-              );
-              if (!dialogContext.mounted) return;
-              cubit.completeOnboarding();
-            }
-            if (!mounted) return;
-            setState(() => _onboardingDialogOpen = false);
-          });
-        } else if (!state.showOnboarding && _onboardingDialogOpen) {
-          // Close dialog if onboarding flag turned off
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-            if (mounted) setState(() => _onboardingDialogOpen = false);
-          });
+          debugPrint('onboarding');
+          //   _onboardingDialogOpen = true;
+          //   SchedulerBinding.instance.addPostFrameCallback((_) async {
+          //     if (!mounted) return;
+          //     final dialogContext = context;
+          //     if (state.status == AppStatus.authenticated) {
+          //       final result = await showDialog<String?>(
+          //         context: dialogContext,
+          //         barrierDismissible: false,
+          //         builder: (ctx) => UserOnboardingDialog(
+          //           onSkip: cubit.completeOnboarding,
+          //         ),
+          //       );
+          //       if (!dialogContext.mounted) return;
+          //       cubit.completeOnboarding();
+          //       if (result == 'finish') {
+          //         if (!dialogContext.mounted) return;
+          //         await showDialog<EditRiderProfileDialog>(
+          //           context: dialogContext,
+          //           builder: (ctx) => EditRiderProfileDialog(
+          //             onProfileUpdated: () {},
+          //             riderProfile: state.usersProfile,
+          //             user: state.user,
+          //           ),
+          //         );
+          //       }
+          //     } else {
+          //       await showDialog<void>(
+          //         context: dialogContext,
+          //         barrierDismissible: false,
+          //         builder: (ctx) => GuestOnboardingDialog(
+          //           onSkip: cubit.completeOnboarding,
+          //         ),
+          //       );
+          //       if (!dialogContext.mounted) return;
+          //       cubit.completeOnboarding();
+          //     }
+          //     if (!mounted) return;
+          //     setState(() => _onboardingDialogOpen = false);
+          //   });
+          // } else if (!state.showOnboarding && _onboardingDialogOpen) {
+          //   // Close dialog if onboarding flag turned off
+          //   SchedulerBinding.instance.addPostFrameCallback((_) {
+          //     if (Navigator.of(context).canPop()) {
+          //       Navigator.of(context).pop();
+          //     }
+          //     if (mounted) setState(() => _onboardingDialogOpen = false);
+          //   });
         }
 
         // Errors

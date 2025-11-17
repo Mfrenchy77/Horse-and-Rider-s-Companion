@@ -12,6 +12,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
+import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 // Removed dependency on a shared GlobalKey to avoid duplicate key issues
 
 class RiderProfileView extends StatefulWidget {
@@ -127,6 +128,7 @@ class _RiderProfileViewState extends State<RiderProfileView>
                             key: Key('ProfileSkillsBanner'),
                           ),
                           gap(),
+                          _DeprecatedSkillsCleanupCard(profile: profile),
                           ProfileSkills(
                             skillLevels: profile.skillLevels,
                             key: const Key('ProfileSkills'),
@@ -148,6 +150,7 @@ class _RiderProfileViewState extends State<RiderProfileView>
                     ),
                     const SkillsTextButton(key: Key('SkillsTextButton')),
                     gap(),
+                    _DeprecatedSkillsCleanupCard(profile: profile),
                     ProfileSkills(
                       skillLevels: profile.skillLevels,
                       key: const Key('ProfileSkills'),
@@ -156,6 +159,79 @@ class _RiderProfileViewState extends State<RiderProfileView>
                 ),
               );
             },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DeprecatedSkillsCleanupCard extends StatelessWidget {
+  const _DeprecatedSkillsCleanupCard({required this.profile});
+
+  final RiderProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.allSkills != current.allSkills ||
+          previous.usersProfile != current.usersProfile ||
+          previous.viewingProfile != current.viewingProfile,
+      builder: (context, state) {
+        if (state.allSkills.whereType<Skill>().isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final audit = SkillLevelAudit.evaluate(
+          profileSkillLevels: profile.skillLevels,
+          allSkills: state.allSkills,
+        );
+        final isOwner = profile.email == state.usersProfile?.email;
+        if (!audit.isCatalogReady ||
+            audit.deprecatedLevels.isEmpty ||
+            !isOwner) {
+          return const SizedBox.shrink();
+        }
+
+        final theme = Theme.of(context);
+        final warningTextColor = theme.colorScheme.onErrorContainer;
+        final sampleNames = audit.deprecatedLevels
+            .take(3)
+            .map((level) => level.skillName)
+            .join(', ');
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Card(
+            color: theme.colorScheme.errorContainer,
+            child: ListTile(
+              leading: Icon(
+                Icons.warning_amber_rounded,
+                color: warningTextColor,
+              ),
+              title: Text(
+                'Remove deprecated skills',
+                style: TextStyle(color: warningTextColor),
+              ),
+              subtitle: Text(
+                sampleNames.isEmpty
+                    ? 'We found ${audit.deprecatedLevels.length} skills that '
+                        'no longer exist in the catalog.'
+                    : 'Found ${audit.deprecatedLevels.length} deprecated '
+                        'skill(s): $sampleNames',
+                style: TextStyle(color: warningTextColor),
+              ),
+              trailing: FilledButton.tonal(
+                onPressed: () {
+                  context.read<AppCubit>().removeDeprecatedSkillLevels(
+                        profile: profile,
+                        deprecatedLevels: audit.deprecatedLevels,
+                      );
+                },
+                child: const Text('Delete'),
+              ),
+            ),
           ),
         );
       },
