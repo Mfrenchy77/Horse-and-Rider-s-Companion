@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
@@ -15,220 +14,194 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
   TransferHorseCubit({
     required RiderProfile userProfile,
     required HorseProfile horseProfile,
-    required MessagesRepository messagesRepository,
-    required RiderProfileRepository riderProfileRepository,
-  })  : _messagesRepository = messagesRepository,
-        _riderProfileRepository = riderProfileRepository,
-        super(const TransferHorseState()) {
-    emit(
-      state.copyWith(
-        userProfile: userProfile,
-        horseProfile: horseProfile,
-      ),
-    );
+    required this._messagesRepository,
+    required this._riderProfileRepository,
+  }) : super(const TransferHorseState()) {
+    emit(state.copyWith(userProfile: userProfile, horseProfile: horseProfile));
   }
 
   Timer? _debounce;
   final MessagesRepository _messagesRepository;
   final RiderProfileRepository _riderProfileRepository;
 
-  /// Email text changed
-  void emailChanged(String email) {
-    final emailField = Email.dirty(email);
+  int _lookupVersion = 0;
+  bool _sending = false;
 
+  /// Email text changed. Invalidate old results before the debounce finishes.
+  void emailChanged(String email) {
+    final normalized = email.trim().toLowerCase();
+    final emailField = Email.dirty(normalized);
+    _lookupVersion++;
+    _debounce?.cancel();
     emit(
-      state.copyWith(email: emailField),
+      state.copyWith(
+        email: emailField,
+        clearTransferProfile: true,
+        isTransferable: false,
+        isError: false,
+        isMessage: false,
+        message: '',
+        status: TransferHorseStatus.initial,
+      ),
     );
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    if (!emailField.isValid) return;
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      if (emailField.isValid) {
-        debugPrint('Email is valid: $email');
-        getTransferProfile(email);
-      } else {
-        debugPrint('Email is not valid: $email');
-        emit(
-          state.copyWith(
-            isTransferable: false,
-            // ignore: avoid_redundant_argument_values
-            transferProfile: null,
-            status: TransferHorseStatus.initial,
-          ),
-        );
-      }
+      getTransferProfile(normalized);
     });
   }
 
-  /// Try to get the transfer profile
+  /// Only the latest recipient lookup may update this dialog.
   Future<void> getTransferProfile(String email) async {
-    emit(state.copyWith(status: TransferHorseStatus.searching));
+    if (isClosed) return;
+    final version = ++_lookupVersion;
+    final normalized = email.trim().toLowerCase();
+    final emailField = Email.dirty(normalized);
+    emit(
+      state.copyWith(
+        email: emailField,
+        clearTransferProfile: true,
+        isTransferable: false,
+        isError: false,
+        message: '',
+        status: emailField.isValid
+            ? TransferHorseStatus.searching
+            : TransferHorseStatus.initial,
+      ),
+    );
+    if (!emailField.isValid) return;
     try {
-      final transferProfile =
-          await _riderProfileRepository.getRiderProfileByEmail(email: email);
-      if (transferProfile != null) {
-        debugPrint('User found: ${transferProfile.name}');
-
-        emit(
-          state.copyWith(
-            isError: false,
-            status: TransferHorseStatus.initial,
-            isTransferable: true,
-            transferProfile: transferProfile,
-            message: '${transferProfile.name} found',
-          ),
-        );
-      } else {
-        emit(
-          state.copyWith(
-            isTransferable: false,
-            // ignore: avoid_redundant_argument_values
-            transferProfile: null,
-            status: TransferHorseStatus.initial,
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error in getTransferProfile: $e');
-
+      final profile = await _riderProfileRepository.getRiderProfileByEmail(
+        email: normalized,
+      );
+      if (isClosed || version != _lookupVersion) return;
       emit(
         state.copyWith(
-          isError: true,
-          status: TransferHorseStatus.error,
-          message: 'An error occurred while searching for the user.',
+          transferProfile: profile,
+          clearTransferProfile: profile == null,
+          isTransferable:
+              profile != null &&
+              profile.email.toLowerCase() !=
+                  state.userProfile?.email.toLowerCase(),
+          status: TransferHorseStatus.initial,
+          message: profile == null ? '' : '${profile.name} found',
         ),
       );
+    } catch (error) {
+      if (isClosed || version != _lookupVersion) return;
+      _fail('An error occurred while searching for the user.');
     }
   }
 
-  /// Send a message to the transfer profile to accept the horse
+  /// Persist the conversation and its request using one captured recipient.
   Future<void> sendTransferRequest() async {
+    if (isClosed || _sending) return;
+    final sender = state.userProfile;
+    final recipient = state.transferProfile;
+    final horse = state.horseProfile;
+    if (sender == null ||
+        recipient == null ||
+        horse == null ||
+        sender.email.isEmpty ||
+        recipient.email.isEmpty) {
+      _fail('Select a valid recipient before transferring this horse.');
+      return;
+    }
+    if (sender.email.toLowerCase() == recipient.email.toLowerCase()) {
+      _fail('You cannot transfer this horse to yourself');
+      return;
+    }
+    if (!state.isTransferable) {
+      _fail('Select a valid recipient before transferring this horse.');
+      return;
+    }
+    if (horse.currentOwnerId.toLowerCase() != sender.email.toLowerCase()) {
+      _fail('Only the current owner can transfer this horse.');
+      return;
+    }
+
+    _sending = true;
     emit(
       state.copyWith(
         status: TransferHorseStatus.sending,
+        isError: false,
+        isMessage: false,
+        message: '',
       ),
     );
-    // send a message to the transfer profile to accept the horse
-    if (state.userProfile?.email != state.transferProfile?.email) {
-      final horse = BaseListItem(
-        id: state.horseProfile?.id,
-        name: state.horseProfile?.name,
-        extra: state.userProfile?.email,
-        imageUrl: state.horseProfile?.picUrl,
-        parentId: state.horseProfile?.currentOwnerId,
-        message: state.horseProfile?.currentOwnerName,
+    try {
+      final emails = [sender.email.toLowerCase(), recipient.email.toLowerCase()]
+        ..sort();
+      final conversationId = convertEmailToPath(emails.join('_'));
+      final request = BaseListItem(
+        id: horse.id,
+        name: horse.name,
+        extra: sender.email,
+        imageUrl: horse.picUrl,
+        parentId: horse.currentOwnerId,
+        message: horse.currentOwnerName,
         isCollapsed: false,
         isSelected: false,
       );
-
+      final message = Message(
+        id: conversationId,
+        date: DateTime.now(),
+        requestItem: request,
+        subject: 'Transfer Horse',
+        sender: sender.name,
+        senderId: sender.email.toLowerCase(),
+        messageType: MessageType.TRANSFER_HORSE_REQUEST,
+        senderProfilePicUrl: sender.picUrl,
+        message: '${sender.name} wants to transfer ${horse.name} to you',
+        messageId: ViewUtils.createId(),
+        recipients: [sender.name, recipient.name],
+      );
       final conversation = Conversation(
-        id: _createHorseConversationId(),
-        // Parties: display names
-        parties: [state.userProfile?.name, state.transferProfile?.name]
-            .map((e) => e!)
-            .toList(),
-        // PartiesIds: emails (lowercased)
-        partiesIds: [state.userProfile?.email, state.transferProfile?.email]
-            .map((e) => e!.toLowerCase())
-            .toList(),
+        id: conversationId,
+        parties: [sender.name, recipient.name],
+        partiesIds: [sender.email.toLowerCase(), recipient.email.toLowerCase()],
         createdOn: DateTime.now(),
         lastEditDate: DateTime.now(),
-        createdBy: state.userProfile!.name,
-        lastEditBy: state.userProfile?.name,
-        recentMessage: _createTransferMessage(
-          request: horse,
-          groupId: _createHorseConversationId(),
-        ),
+        createdBy: sender.name,
+        lastEditBy: sender.name,
+        recentMessage: message,
       );
-
-      if (state.userProfile?.email != null &&
-          state.transferProfile?.email != null &&
-          state.userProfile!.email != state.transferProfile!.email) {
-        try {
-          await _messagesRepository.createOrUpdateConversation(
-            conversation: conversation,
-          );
-          await _messagesRepository
-              .createOrUpdateMessage(
-            message: _createTransferMessage(
-              request: horse,
-              groupId: conversation.id,
-            ),
-          )
-              .then(
-            (value) {
-              debugPrint('Message sent');
-              emit(
-                state.copyWith(
-                  isMessage: true,
-                  status: TransferHorseStatus.success,
-                  message: 'Message sent to '
-                      '${state.transferProfile?.email}',
-                ),
-              );
-            },
-          );
-        } catch (e) {
-          debugPrint('Error in sendTransferRequest: $e');
-          emit(
-            state.copyWith(
-              isError: true,
-              status: TransferHorseStatus.error,
-              message: 'Error sending transfer request',
-            ),
-          );
-        }
-      } else {
+      await _messagesRepository.createOrUpdateConversation(
+        conversation: conversation,
+      );
+      await _messagesRepository.createOrUpdateMessage(message: message);
+      if (!isClosed) {
         emit(
           state.copyWith(
-            isError: true,
-            status: TransferHorseStatus.error,
-            message: 'You cannot transfer this horse to yourself',
+            isMessage: true,
+            status: TransferHorseStatus.success,
+            message: 'Message sent to ${recipient.email}',
           ),
         );
       }
-    } else {
+    } catch (error) {
+      _fail('Error sending transfer request');
+    } finally {
+      _sending = false;
+    }
+  }
+
+  void _fail(String message) {
+    if (!isClosed) {
       emit(
         state.copyWith(
           isError: true,
           status: TransferHorseStatus.error,
-          message: 'Not a valid transfer',
+          message: message,
         ),
       );
     }
   }
 
-  Message _createTransferMessage({
-    required BaseListItem request,
-    required String groupId,
-  }) {
-    return Message(
-      id: groupId,
-      date: DateTime.now(),
-      requestItem: request,
-      subject: 'Transfer Horse',
-      sender: state.userProfile?.name,
-      senderId: state.userProfile?.email.toLowerCase(),
-      messageType: MessageType.TRANSFER_HORSE_REQUEST,
-      senderProfilePicUrl: state.userProfile?.picUrl,
-      message: '${state.userProfile?.name} wants to transfer'
-          ' ${state.horseProfile?.name} to you',
-      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-      recipients: [state.userProfile?.name, state.transferProfile?.name]
-          .map((e) => e)
-          .toList(),
-    );
-  }
-
-  /// Creates a unique group id for the message
-  String _createHorseConversationId() {
-    // Create a list of the two emails, converted to paths and in lowercase
-    final emails = <String>[
-      state.userProfile?.email.toLowerCase() as String,
-      state.transferProfile?.email.toLowerCase() as String,
-    ]..sort();
-
-    // Join the emails with an underscore
-    final idbuff = emails.join('_');
-    return convertEmailToPath(idbuff);
+  @override
+  Future<void> close() {
+    _lookupVersion++;
+    _debounce?.cancel();
+    return super.close();
   }
 
   /// Clear the error message

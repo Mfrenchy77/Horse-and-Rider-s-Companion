@@ -10,14 +10,14 @@ import 'package:database_repository/database_repository.dart'; // exports Resour
 /// - Keeps repository slim: Cubits/UseCases build the Resource instance.
 class ResourcesRepository {
   ResourcesRepository({FirebaseFirestore? firestore})
-      : _ref = (firestore ?? FirebaseFirestore.instance)
-            .collection(RESOURCES)
-            .withConverter<Resource>(
-              fromFirestore: Resource.fromFirestore,
-              toFirestore: (Resource resource, SetOptions? _) =>
-                  resource.toFirestore(),
-            ),
-        _raw = (firestore ?? FirebaseFirestore.instance).collection(RESOURCES);
+    : _ref = (firestore ?? FirebaseFirestore.instance)
+          .collection(RESOURCES)
+          .withConverter<Resource>(
+            fromFirestore: Resource.fromFirestore,
+            toFirestore: (Resource resource, SetOptions? _) =>
+                resource.toFirestore(),
+          ),
+      _raw = (firestore ?? FirebaseFirestore.instance).collection(RESOURCES);
 
   static const String RESOURCES = 'Resources';
 
@@ -48,15 +48,12 @@ class ResourcesRepository {
       throw ArgumentError('Resource.id must not be null');
     }
     final data = resource.toFirestore();
-    await _raw.doc(resource.id).set(
-      {
-        ...data,
-        if (!data.containsKey('createdAt'))
-          'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _raw.doc(resource.id).set({
+      ...data,
+      if (!data.containsKey('createdAt'))
+        'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   /// Convenience for articles.
@@ -73,9 +70,9 @@ class ResourcesRepository {
 
   /// Stream all resources mapped to domain models.
   Stream<List<Resource>> getResources() {
-    return _ref
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
+    return _ref.snapshots().map(
+      (snap) => snap.docs.map((d) => d.data()).toList(),
+    );
   }
 
   /// Optionally, a convenience stream ordered by `updatedAt` desc (if present).
@@ -101,6 +98,71 @@ class ResourcesRepository {
   // Ratings (kept for backward compatibility with your existing schema)
   // Stores per-user rating items in a subcollection: usersWhoRated/{userId}
   // ---------------------------------------------------------------------------
+
+  /// Toggle a comment vote against the latest saved comment, atomically.
+  /// Only comments are written, preserving newer resource edits.
+  Future<Comment> rateComment({
+    required String resourceId,
+    required String commentId,
+    required String userEmail,
+    required int vote,
+  }) async {
+    if (resourceId.trim().isEmpty ||
+        commentId.trim().isEmpty ||
+        userEmail.trim().isEmpty ||
+        (vote != 1 && vote != -1)) {
+      throw ArgumentError(
+        'A resource, comment, user and +1/-1 vote are required',
+      );
+    }
+    final ref = _raw.doc(resourceId);
+    return _raw.firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(ref);
+      final data = snapshot.data();
+      if (data == null) throw StateError('Resource no longer exists');
+      final comments = List<Map<String, dynamic>>.from(
+        (data['comments'] as List? ?? const []).map(
+          (item) => Map<String, dynamic>.from(item as Map),
+        ),
+      );
+      final index = comments.indexWhere((item) => item['id'] == commentId);
+      if (index < 0) throw StateError('Comment no longer exists');
+      final current = comments[index];
+      final ratings = List<Map<String, dynamic>>.from(
+        (current['usersWhoRated'] as List? ?? const []).map(
+          (item) => Map<String, dynamic>.from(item as Map),
+        ),
+      );
+      final previous = ratings.where((item) => item['id'] == userEmail);
+      final previousVote = previous.isEmpty
+          ? 0
+          : previous.first['isSelected'] == true
+          ? 1
+          : previous.first['isCollapsed'] == true
+          ? -1
+          : 0;
+      final nextVote = previousVote == vote ? 0 : vote;
+      ratings.removeWhere((item) => item['id'] == userEmail);
+      if (nextVote != 0) {
+        ratings.add({
+          'id': userEmail,
+          'isSelected': nextVote == 1,
+          'isCollapsed': nextVote == -1,
+        });
+      }
+      final updated = <String, dynamic>{
+        ...current,
+        'rating':
+            ((current['rating'] as num?)?.toInt() ?? 0) -
+            previousVote +
+            nextVote,
+        'usersWhoRated': ratings,
+      };
+      comments[index] = updated;
+      transaction.update(ref, {'comments': comments});
+      return Comment.fromJson(updated);
+    });
+  }
 
   Future<void> editResourceRating({
     required Resource resource,
@@ -170,24 +232,18 @@ class ResourcesRepository {
     required String id,
     required ResourceStatus status,
   }) async {
-    await _raw.doc(id).set(
-      {
-        'status': status.name,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _raw.doc(id).set({
+      'status': status.name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   // ---------------------------------------------------------------------------
   // Pagination helpers (optional)
   // ---------------------------------------------------------------------------
 
-  Future<
-      ({
-        List<Resource> items,
-        DocumentSnapshot<Resource>? lastDoc,
-      })> fetchPublishedArticlesPage({
+  Future<({List<Resource> items, DocumentSnapshot<Resource>? lastDoc})>
+  fetchPublishedArticlesPage({
     int limit = 20,
     DocumentSnapshot<Resource>? startAfter,
     List<String> tagsFilter = const [],
@@ -205,7 +261,7 @@ class ResourcesRepository {
     final snap = await q.limit(limit).get();
     return (
       items: snap.docs.map((d) => d.data()).toList(),
-      lastDoc: snap.docs.isEmpty ? null : snap.docs.last
+      lastDoc: snap.docs.isEmpty ? null : snap.docs.last,
     );
   }
 }

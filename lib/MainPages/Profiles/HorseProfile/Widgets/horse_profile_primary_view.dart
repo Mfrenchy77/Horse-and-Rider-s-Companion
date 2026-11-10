@@ -25,53 +25,31 @@ class HorseProfilePrimaryView extends StatelessWidget {
     final cubit = context.read<AppCubit>();
     return Column(
       children: [
-        const HorseProfileName(
-          key: Key('horseProfileName'),
-        ),
+        const HorseProfileName(key: Key('horseProfileName')),
         gap(),
         Padding(
           padding: const EdgeInsets.all(8),
           child: Column(
             children: [
-              const CurrentOwner(
-                key: Key('currentOwner'),
-              ),
+              const CurrentOwner(key: Key('currentOwner')),
               gap(),
-              const HorseNickName(
-                key: Key('horseNickName'),
-              ),
+              const HorseNickName(key: Key('horseNickName')),
               gap(),
-              const HorseLocation(
-                key: Key('horseLocation'),
-              ),
+              const HorseLocation(key: Key('horseLocation')),
               gap(),
-              const HorseAge(
-                key: Key('horseAge'),
-              ),
+              const HorseAge(key: Key('horseAge')),
               gap(),
-              const HorseColor(
-                key: Key('horseColor'),
-              ),
+              const HorseColor(key: Key('horseColor')),
               gap(),
-              const HorseBreed(
-                key: Key('horseBreed'),
-              ),
+              const HorseBreed(key: Key('horseBreed')),
               gap(),
-              const HorseGender(
-                key: Key('horseGender'),
-              ),
+              const HorseGender(key: Key('horseGender')),
               gap(),
-              const HorseHeight(
-                key: Key('horseHeight'),
-              ),
+              const HorseHeight(key: Key('horseHeight')),
               gap(),
-              const HorseDateOfBirth(
-                key: Key('horseDateOfBirth'),
-              ),
+              const HorseDateOfBirth(key: Key('horseDateOfBirth')),
               gap(),
-              const HorseInstructors(
-                key: Key('horseInstructors'),
-              ),
+              const HorseInstructors(key: Key('horseInstructors')),
               gap(),
               const StudentHorseRequestButton(
                 key: Key('studentHorseRequestButton'),

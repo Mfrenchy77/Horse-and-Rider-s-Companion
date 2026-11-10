@@ -17,18 +17,13 @@ class HorseNickName extends StatelessWidget {
       builder: (context, state) {
         return Row(
           children: [
-            const Expanded(
-              flex: 5,
-              child: Text('NickName: '),
-            ),
+            const Expanded(flex: 5, child: Text('NickName: ')),
             Expanded(
               flex: 5,
               child: Text(
                 '${state.horseProfile?.nickname}',
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  fontSize: 18,
-                ),
+                style: const TextStyle(fontSize: 18),
               ),
             ),
           ],

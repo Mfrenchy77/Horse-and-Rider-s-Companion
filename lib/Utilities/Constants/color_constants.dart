@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class ColorConst {
 //  Constants for the colors used in the app
-  static const Color backgroundDark = Color.fromARGB(255, 51, 51, 51);
+  static const Color backgroundDark = Color(0xFF14272D);
   static const Color backgroundLight = Color.fromARGB(255, 235, 235, 235);
 
 // Light Theme Colors
@@ -16,12 +16,15 @@ class ColorConst {
   static const Color errorLightBlueGrey = Color(0xFFF44336);
 
   // Dark Theme Colors
-  static const Color cardDark = Color.fromARGB(255, 53, 54, 54);
-  static const Color mainPrimaryDark = Color.fromARGB(255, 61, 61, 61);
-  static const Color mainAccentDark = Colors.blue;
-  static const Color mainBackgroundDark = Color.fromARGB(255, 82, 82, 82);
-  static const Color cardDarkBlueGrey = Color.fromARGB(255, 54, 54, 54);
-  static const Color dividerDarkBlueGrey = Color(0xFFCFD8DC);
+  static const Color cardDark = Color(0xFF244047);
+  static const Color mainPrimaryDark = Color(0xFF203B42);
+  static const Color mainAccentDark = Color(0xFFF29A81);
+  static const Color mainHighlightDark = Color(0xFFE4B66E);
+  static const Color darkForeground = Color(0xFFF0F2EE);
+  static const Color darkMuted = Color(0xFFB7C1C3);
+  static const Color mainBackgroundDark = Color(0xFF1A3036);
+  static const Color cardDarkBlueGrey = Color(0xFF244047);
+  static const Color dividerDarkBlueGrey = Color(0xFF425A60);
   static const Color errorDarkBlueGrey = Color(0xFFE53935);
 
   // Spring colors

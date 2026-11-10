@@ -20,7 +20,6 @@ class CommentPositiveRatingButton extends StatelessWidget {
   final RiderProfile? usersProfile;
   @override
   Widget build(BuildContext context) {
-    var isPositiveSelected = false;
     final isDark = SharedPrefs().isDarkMode;
 
     if (usersProfile == null) {
@@ -28,48 +27,54 @@ class CommentPositiveRatingButton extends StatelessWidget {
         icon: const Icon(Icons.thumb_up_outlined),
         onPressed: () {
           context.read<AppCubit>().createError(
-                'You must be logged in to rate a comment',
-              );
+            'You must be logged in to rate a comment',
+          );
         },
       );
     } else {
-      return BlocProvider(
-        create: (context) => CommentCubit(
-          comment: comment,
-          resource: resource,
-          usersProfile: usersProfile!,
-        ),
-        child: BlocListener<CommentCubit, CommentState>(
-          listener: (context, state) {
-            if (state.positiveStatus == PositiveStatus.success) {
-              //refresh the widget
-              onTap();
-            }
+      return BlocListener<CommentCubit, CommentState>(
+        listenWhen: (previous, current) =>
+            previous.positiveStatus != current.positiveStatus,
+        listener: (context, state) {
+          if (state.positiveStatus == PositiveStatus.success) {
+            onTap();
+          } else if (state.positiveStatus == PositiveStatus.failure) {
+            context.read<AppCubit>().createError(
+              'Could not save your comment rating. Please try again.',
+            );
+          }
+        },
+        child: BlocBuilder<CommentCubit, CommentState>(
+          builder: (context, state) {
+            final cubit = context.read<CommentCubit>();
+            final rater = cubit.getUserRatingForComment(comment);
+            final selected = rater?.isSelected ?? false;
+            final busy =
+                state.positiveStatus == PositiveStatus.loading ||
+                state.negativeStatus == NegativeStatus.loading;
+            return state.positiveStatus == PositiveStatus.loading
+                ? const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Recommend comment',
+                    icon: Icon(
+                      selected ? Icons.thumb_up : Icons.thumb_up_outlined,
+                    ),
+                    color: selected
+                        ? HorseAndRidersTheme().getTheme().colorScheme.primary
+                        : isDark
+                        ? Colors.grey.shade300
+                        : Colors.black54,
+                    onPressed: busy
+                        ? null
+                        : () => cubit.reccomendComment(comment: comment),
+                  );
           },
-          child: BlocBuilder<CommentCubit, CommentState>(
-            builder: (context, state) {
-              final cubit = context.read<CommentCubit>();
-              final rater = cubit.getUserRatingForComment(comment);
-              isPositiveSelected = rater?.isSelected ?? false;
-              return state.positiveStatus == PositiveStatus.loading
-                  ? const CircularProgressIndicator()
-                  : IconButton(
-                      icon: Icon(
-                        isPositiveSelected
-                            ? Icons.thumb_up
-                            : Icons.thumb_up_outlined,
-                      ),
-                      color: isPositiveSelected
-                          ? HorseAndRidersTheme().getTheme().colorScheme.primary
-                          : isDark
-                              ? Colors.grey.shade300
-                              : Colors.black54,
-                      onPressed: () {
-                        cubit.reccomendComment(comment: comment);
-                      },
-                    );
-            },
-          ),
         ),
       );
     }

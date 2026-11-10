@@ -20,7 +20,6 @@ class CommentNegativeButton extends StatelessWidget {
   final RiderProfile? usersProfile;
   @override
   Widget build(BuildContext context) {
-    var isNegativeSelected = false;
     final isDark = SharedPrefs().isDarkMode;
 
     if (usersProfile == null) {
@@ -28,45 +27,54 @@ class CommentNegativeButton extends StatelessWidget {
         icon: const Icon(Icons.thumb_down_outlined),
         onPressed: () {
           context.read<AppCubit>().createError(
-                'You must be logged in to rate a comment',
-              );
+            'You must be logged in to rate a comment',
+          );
         },
       );
     } else {
-      return BlocProvider(
-        create: (context) => CommentCubit(
-          comment: comment,
-          resource: resource,
-          usersProfile: usersProfile!,
-        ),
-        child: BlocListener<CommentCubit, CommentState>(
-          listener: (context, state) {
+      return BlocListener<CommentCubit, CommentState>(
+        listenWhen: (previous, current) =>
+            previous.negativeStatus != current.negativeStatus,
+        listener: (context, state) {
+          if (state.negativeStatus == NegativeStatus.success) {
             onTap();
+          } else if (state.negativeStatus == NegativeStatus.failure) {
+            context.read<AppCubit>().createError(
+              'Could not save your comment rating. Please try again.',
+            );
+          }
+        },
+        child: BlocBuilder<CommentCubit, CommentState>(
+          builder: (context, state) {
+            final cubit = context.read<CommentCubit>();
+            final rater = cubit.getUserRatingForComment(comment);
+            final selected = rater?.isCollapsed ?? false;
+            final busy =
+                state.positiveStatus == PositiveStatus.loading ||
+                state.negativeStatus == NegativeStatus.loading;
+            return state.negativeStatus == NegativeStatus.loading
+                ? const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Do not recommend comment',
+                    icon: Icon(
+                      selected ? Icons.thumb_down : Icons.thumb_down_outlined,
+                    ),
+                    color: selected
+                        ? Colors.red
+                        : isDark
+                        ? Colors.grey.shade300
+                        : Colors.black54,
+                    onPressed: busy
+                        ? null
+                        : () => cubit.dontReccomendComment(comment: comment),
+                  );
           },
-          child: BlocBuilder<CommentCubit, CommentState>(
-            builder: (context, state) {
-              final cubit = context.read<CommentCubit>();
-              final rater = cubit.getUserRatingForComment(comment);
-              isNegativeSelected = rater?.isCollapsed ?? false;
-              return state.negativeStatus == NegativeStatus.loading
-                  ? const CircularProgressIndicator()
-                  : IconButton(
-                      icon: Icon(
-                        isNegativeSelected
-                            ? Icons.thumb_down
-                            : Icons.thumb_down_outlined,
-                      ),
-                      color: isNegativeSelected
-                          ? Colors.red
-                          : isDark
-                              ? Colors.grey.shade300
-                              : Colors.black54,
-                      onPressed: () {
-                        cubit.dontReccomendComment(comment: comment);
-                      },
-                    );
-            },
-          ),
         ),
       );
     }

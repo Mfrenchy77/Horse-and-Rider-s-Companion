@@ -20,12 +20,10 @@ import 'package:intl/intl.dart';
 class AddHorseDialog extends StatelessWidget {
   const AddHorseDialog({
     super.key,
-    required bool editProfile,
+    required this._editProfile,
     required RiderProfile userProfile,
-    required HorseProfile? horseProfile,
-  })  : _editProfile = editProfile,
-        _usersProfile = userProfile,
-        _horseProfile = horseProfile;
+    required this._horseProfile,
+  }) : _usersProfile = userProfile;
 
   ///   If editProfile is true then we are editing an existing horse profile
   final bool _editProfile;
@@ -38,8 +36,8 @@ class AddHorseDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-// if horseProfile is null then we are creating a new horse profile
-// and editProfile should be false
+    // if horseProfile is null then we are creating a new horse profile
+    // and editProfile should be false
 
     return MultiRepositoryProvider(
       providers: [
@@ -87,41 +85,25 @@ class AddHorseDialog extends StatelessWidget {
                       gap(),
 
                       ///   Horse Name
-                      _horseName(
-                        context: context,
-                        state: state,
-                      ),
+                      _horseName(context: context, state: state),
                       gap(),
 
                       ///   Horse NickName
-                      _horseNickName(
-                        context: context,
-                        state: state,
-                      ),
+                      _horseNickName(context: context, state: state),
                       gap(),
 
                       ///  Horse Location
-                      _horseLocation(
-                        context: context,
-                        state: state,
-                      ),
+                      _horseLocation(context: context, state: state),
                       gap(),
 
                       ///   Horse Gender
-                      _horseGender(
-                        state: state,
-                        context: context,
-                      ),
+                      _horseGender(state: state, context: context),
 
                       ///   Horse Breed
-                      _horseBreed(
-                        state: state,
-                        context: context,
-                      ),
+                      _horseBreed(state: state, context: context),
                       gap(),
 
                       ///   Horse Date of Birth
-
                       _horseDateOfBirth(
                         state: state,
                         cubit: cubit,
@@ -130,16 +112,11 @@ class AddHorseDialog extends StatelessWidget {
                       gap(),
 
                       ///   Horse Color
-                      _horseColor(
-                        state: state,
-                        context: context,
-                      ),
+                      _horseColor(state: state, context: context),
                       gap(),
 
                       ///   Horse Height
-                      HorseHeightField(
-                        controller: TextEditingController(),
-                      ),
+                      HorseHeightField(controller: TextEditingController()),
                       gap(),
                       _didPurchaseHorse(context: context, state: state),
 
@@ -155,10 +132,7 @@ class AddHorseDialog extends StatelessWidget {
                       gap(),
 
                       ///   HorsePurchase Price
-                      _horsePurchasePrice(
-                        context: context,
-                        state: state,
-                      ),
+                      _horsePurchasePrice(context: context, state: state),
 
                       errorText(state: state),
                     ],
@@ -188,10 +162,7 @@ Widget errorText({required AddHorseDialogState state}) {
   if (state.status == FormStatus.failure) {
     return Text(
       state.error,
-      style: const TextStyle(
-        color: Colors.white,
-        backgroundColor: Colors.red,
-      ),
+      style: const TextStyle(color: Colors.white, backgroundColor: Colors.red),
     );
   } else {
     return gap();
@@ -212,9 +183,9 @@ Widget _didPurchaseHorse({
     value: isPurchaced,
     onChanged: (value) {
       if (value != null) {
-        context
-            .read<AddHorseDialogCubit>()
-            .toogleIsPurchased(isPurchaced: value);
+        context.read<AddHorseDialogCubit>().toogleIsPurchased(
+          isPurchaced: value,
+        );
       }
     },
   );
@@ -259,7 +230,8 @@ Widget _horsePhoto({
           child: const CircularProgressIndicator(),
         ),
         Visibility(
-          visible: state.picStatus == PictureGetterStatus.got ||
+          visible:
+              state.picStatus == PictureGetterStatus.got ||
               state.picStatus == PictureGetterStatus.nothing,
           child: CachedNetworkImage(
             placeholderFadeInDuration: const Duration(milliseconds: 500),
@@ -338,15 +310,11 @@ Widget _horseBreed({
     controller: breedController,
     suggestionsCallback: (pattern) {
       return HorseDetails.breeds
-          .where(
-            (item) => item.toLowerCase().startsWith(pattern.toLowerCase()),
-          )
+          .where((item) => item.toLowerCase().startsWith(pattern.toLowerCase()))
           .toList();
     },
     itemBuilder: (context, suggestion) {
-      return ListTile(
-        title: Text(suggestion),
-      );
+      return ListTile(title: Text(suggestion));
     },
     onSelected: (suggestion) {
       breedController.text = suggestion;
@@ -424,15 +392,11 @@ Widget _horseColor({
     constraints: const BoxConstraints(maxHeight: 200),
     suggestionsCallback: (pattern) {
       return HorseDetails.colors
-          .where(
-            (item) => item.toLowerCase().startsWith(pattern.toLowerCase()),
-          )
+          .where((item) => item.toLowerCase().startsWith(pattern.toLowerCase()))
           .toList();
     },
     itemBuilder: (context, suggestion) {
-      return ListTile(
-        title: Text(suggestion),
-      );
+      return ListTile(title: Text(suggestion));
     },
     onSelected: (suggestion) {
       controller.text = suggestion;
@@ -466,12 +430,7 @@ Widget _horseGender({
     onChanged: (value) =>
         context.read<AddHorseDialogCubit>().horseGenderChanged(value as String),
     items: HorseDetails.genders
-        .map(
-          (e) => DropdownMenuItem(
-            value: e,
-            child: Text(e),
-          ),
-        )
+        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
         .toList(),
     decoration: const InputDecoration(
       labelText: "Horse's Gender",
@@ -490,16 +449,14 @@ Widget _horsePurchaseDate({
       ? DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int)
       : DateTime.now();
   if (state.horseProfile != null) {
-    context
-        .read<AddHorseDialogCubit>()
-        .horseDateOfPurchaseChanged(state.horseProfile?.dateOfPurchase);
+    context.read<AddHorseDialogCubit>().horseDateOfPurchaseChanged(
+      state.horseProfile?.dateOfPurchase,
+    );
   }
 
   final dateOfPurchase = state.dateOfPurchase != null
       ? DateFormat('MMMM dd yyyy').format(
-          DateTime.fromMillisecondsSinceEpoch(
-            state.dateOfPurchase as int,
-          ),
+          DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int),
         )
       : '';
 
@@ -556,14 +513,15 @@ Widget _horseLocation({
         controller: countryController,
         constraints: const BoxConstraints(maxHeight: 200),
         suggestionsCallback: (pattern) async {
-          final countries =
-              await context.read<AddHorseDialogCubit>().getCountries();
+          final countries = await context
+              .read<AddHorseDialogCubit>()
+              .getCountries();
           // Filter the country names based on the pattern
           return countries
               .where(
-                (country) => country.name
-                    .toLowerCase()
-                    .startsWith(pattern.toLowerCase()),
+                (country) => country.name.toLowerCase().startsWith(
+                  pattern.toLowerCase(),
+                ),
               )
               .toList();
         },
@@ -587,9 +545,9 @@ Widget _horseLocation({
         onSelected: (country) {
           countryController.text = country.name;
           context.read<AddHorseDialogCubit>().countryChanged(
-                countryIso: country.iso2,
-                countryName: country.name,
-              );
+            countryIso: country.iso2,
+            countryName: country.name,
+          );
         },
       ),
 
@@ -599,15 +557,15 @@ Widget _horseLocation({
           controller: stateController,
           constraints: const BoxConstraints(maxHeight: 200),
           suggestionsCallback: (pattern) async {
-            final states = await context
-                .read<AddHorseDialogCubit>()
-                .getStates(countryIso: state.countryIso!);
+            final states = await context.read<AddHorseDialogCubit>().getStates(
+              countryIso: state.countryIso!,
+            );
             // Filter the state names based on the pattern
             return states
                 .where(
-                  (state) => state.name
-                      .toLowerCase()
-                      .startsWith(pattern.toLowerCase()),
+                  (state) => state.name.toLowerCase().startsWith(
+                    pattern.toLowerCase(),
+                  ),
                 )
                 .toList();
           },
@@ -632,9 +590,9 @@ Widget _horseLocation({
           onSelected: (state) {
             stateController.text = state.name;
             context.read<AddHorseDialogCubit>().stateChanged(
-                  stateName: state.name,
-                  stateId: state.iso2!,
-                );
+              stateName: state.name,
+              stateId: state.iso2!,
+            );
           },
         ),
 
@@ -646,17 +604,18 @@ Widget _horseLocation({
               controller: cityController,
               constraints: const BoxConstraints(maxHeight: 200),
               suggestionsCallback: (pattern) async {
-                final cities =
-                    await context.read<AddHorseDialogCubit>().getCities(
-                          countryIso: state.countryIso!,
-                          stateIso: state.stateId!,
-                        );
+                final cities = await context
+                    .read<AddHorseDialogCubit>()
+                    .getCities(
+                      countryIso: state.countryIso!,
+                      stateIso: state.stateId!,
+                    );
                 // Filter the city names based on the pattern
                 return cities
                     .where(
-                      (city) => city.name
-                          .toLowerCase()
-                          .startsWith(pattern.toLowerCase()),
+                      (city) => city.name.toLowerCase().startsWith(
+                        pattern.toLowerCase(),
+                      ),
                     )
                     .toList();
               },
@@ -681,8 +640,8 @@ Widget _horseLocation({
               onSelected: (city) {
                 cityController.text = city.name;
                 context.read<AddHorseDialogCubit>().cityChanged(
-                      city: city.name,
-                    );
+                  city: city.name,
+                );
               },
             ),
             if (state.prediction != null)
@@ -712,9 +671,7 @@ Widget _horseLocation({
                   );
                 },
                 itemBuilder: (context, zip) {
-                  return ListTile(
-                    title: Text(zip),
-                  );
+                  return ListTile(title: Text(zip));
                 },
                 onSelected: (zip) {
                   zipController.text = zip;
@@ -739,7 +696,8 @@ Widget _horseLocation({
                       controller: controller,
                       initiallyExpanded: true,
                       title: Text('Postal Code: $postalCode'),
-                      children: locations
+                      children:
+                          locations
                               ?.map(
                                 (location) => ListTile(
                                   title: Text(location.city),

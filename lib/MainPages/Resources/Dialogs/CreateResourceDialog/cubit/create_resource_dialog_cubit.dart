@@ -23,7 +23,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required Resource? resource,
     required List<Skill?>? skills,
     required RiderProfile? usersProfile,
-    required ResourcesRepository resourcesRepository,
+    required this._resourcesRepository,
     FirebaseStorage? storage,
 
     /// Optional overrides (handy for emulator/local testing)
@@ -31,7 +31,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
   }) : _debounce = null,
-       _resourcesRepository = resourcesRepository,
        _storage = storage ?? FirebaseStorage.instance,
        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
            ? _kDefaultPreviewMetaUrl
@@ -551,27 +550,15 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   Future<void> pickPdf() async {
     emit(state.copyWith(pdfPicking: true, error: '', isError: false));
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: const ['pdf'],
-        withData: true,
       );
-      if (result == null || result.files.isEmpty) {
+      if (file == null) {
         emit(state.copyWith(pdfPicking: false));
         return;
       }
-      final file = result.files.single;
-      final bytes = file.bytes;
-      if (bytes == null) {
-        emit(
-          state.copyWith(
-            pdfPicking: false,
-            error: 'Could not read file bytes.',
-            isError: true,
-          ),
-        );
-        return;
-      }
+      final bytes = await file.readAsBytes();
       emit(
         state.copyWith(pdfPicking: false, pdfBytes: bytes, pdfName: file.name),
       );

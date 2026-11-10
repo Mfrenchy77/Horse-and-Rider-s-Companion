@@ -20,61 +20,56 @@ class ResourcesListView extends StatelessWidget {
                 state.resourcesSortStatus == ResourcesSortStatus.oldest
                     ? 'Resources - Oldest'
                     : state.resourcesSortStatus ==
-                            ResourcesSortStatus.mostRecommended
-                        ? 'Resources - Most Recommended'
-                        : state.resourcesSortStatus ==
-                                ResourcesSortStatus.recent
-                            ? 'Resources - Most Recent'
-                            : 'Resources - Saved',
+                          ResourcesSortStatus.mostRecommended
+                    ? 'Resources - Most Recommended'
+                    : state.resourcesSortStatus == ResourcesSortStatus.recent
+                    ? 'Resources - Most Recent'
+                    : 'Resources - Saved',
                 style: const TextStyle(fontSize: 20),
               ),
               smallGap(),
               if (state.resourcesSortStatus == ResourcesSortStatus.saved)
-                state.savedResources.isNotEmpty
-                    ? Wrap(
-                        alignment: WrapAlignment.center,
-                        runSpacing: 4,
-                        children: cubit
-                            .sortResources(state.savedResources)
-                            .map(
-                              (e) => ResourcesItem(
-                                resource: e,
-                                isResourceList: true,
-                              ),
-                            )
-                            .toList(),
+                if (state.savedResources.isNotEmpty)
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    runSpacing: 4,
+                    children: cubit
+                        .sortResources(state.savedResources)
+                        .map(
+                          (e) =>
+                              ResourcesItem(resource: e, isResourceList: true),
+                        )
+                        .toList(),
+                  )
+                else
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    runSpacing: 4,
+                    children: List.generate(
+                      4,
+                      (index) => const ResourceItemPlaceholder(),
+                    ),
+                  )
+              else if (state.resources.isNotEmpty)
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  runSpacing: 4,
+                  children: cubit
+                      .sortResources(state.resources)
+                      .map(
+                        (e) => ResourcesItem(resource: e, isResourceList: true),
                       )
-                    : Wrap(
-                        alignment: WrapAlignment.center,
-                        runSpacing: 4,
-                        children: List.generate(
-                          4,
-                          (index) => const ResourceItemPlaceholder(),
-                        ),
-                      )
+                      .toList(),
+                )
               else
-                state.resources.isNotEmpty
-                    ? Wrap(
-                        alignment: WrapAlignment.center,
-                        runSpacing: 4,
-                        children: cubit
-                            .sortResources(state.resources)
-                            .map(
-                              (e) => ResourcesItem(
-                                resource: e,
-                                isResourceList: true,
-                              ),
-                            )
-                            .toList(),
-                      )
-                    : Wrap(
-                        alignment: WrapAlignment.center,
-                        runSpacing: 4,
-                        children: List.generate(
-                          4,
-                          (index) => const ResourceItemPlaceholder(),
-                        ),
-                      ),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  runSpacing: 4,
+                  children: List.generate(
+                    4,
+                    (index) => const ResourceItemPlaceholder(),
+                  ),
+                ),
             ],
           ),
         );

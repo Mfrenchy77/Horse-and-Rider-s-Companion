@@ -237,7 +237,9 @@ class Routes {
                         if (state.pathParameters[SkillTreeView
                                 .skillPathParam] ==
                             null) {
-                          context.read<AppCubit>().setSkillTreeTabIndex(0);
+                          context.read<AppCubit>()
+                            ..navigateToSkillsList()
+                            ..setSkillTreeTabIndex(0);
                         }
                         return const SkillTreeView();
                       },
@@ -252,8 +254,10 @@ class Routes {
                                 MediaQuery.of(context).size.width >=
                                 StringConstants.splitScreenBreakpoint;
 
-                            context.read<AppCubit>()
-                              ..setSkill(id)
+                            final cubit = context.read<AppCubit>()
+                              ..setSkill(id);
+                            cubit
+                              ..navigateToSkillLevel(skill: cubit.state.skill)
                               ..setSkillTreeTabIndex(isLarge ? 0 : 1);
 
                             return _horizontalSlidePage(

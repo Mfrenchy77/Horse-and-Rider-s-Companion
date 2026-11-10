@@ -10,12 +10,10 @@ part 'add_log_entry_state.dart';
 
 class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   AddLogEntryCubit({
-    required HorseProfileRepository horseProfileRepository,
-    required RiderProfileRepository riderProfileRepository,
+    required this._horseProfileRepository,
+    required this._riderProfileRepository,
     required this.usersProfile,
-  })  : _horseProfileRepository = horseProfileRepository,
-        _riderProfileRepository = riderProfileRepository,
-        super(AddLogEntryState(date: DateTime.now()));
+  }) : super(AddLogEntryState(date: DateTime.now()));
 
   final HorseProfileRepository _horseProfileRepository;
   final RiderProfileRepository _riderProfileRepository;
@@ -24,9 +22,7 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   /// Changed the log entry value
   void logEntryChanged({required String value}) {
     final logEntry = SingleWord.dirty(value);
-    emit(
-      state.copyWith(logEntry: logEntry),
-    );
+    emit(state.copyWith(logEntry: logEntry));
   }
 
   /// Changed the Log Tag
@@ -40,9 +36,7 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   }
 
   /// Process the log entry and persist it to the database
-  Future<void> addLogEntry({
-    required HorseProfile? horseProfile,
-  }) async {
+  Future<void> addLogEntry({required HorseProfile? horseProfile}) async {
     if (!state.logEntry.isValid) {
       emit(state.copyWith(status: FormStatus.failure));
       return;

@@ -15,20 +15,16 @@ part 'edit_rider_profile_state.dart';
 class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   EditRiderProfileCubit({
     required User? user,
-    required RiderProfile? riderProfile,
-    required KeysRepository keysRepository,
-    required CloudRepository cloudRepository,
-    required RiderProfileRepository riderProfileRepository,
-  })  : _user = user,
-        _riderProfile = riderProfile,
-        _keysRepository = keysRepository,
-        _cloudRepository = cloudRepository,
-        _riderProfileRepository = riderProfileRepository,
-        super(const EditRiderProfileState()) {
+    required this._riderProfile,
+    required this._keysRepository,
+    required this._cloudRepository,
+    required this._riderProfileRepository,
+  }) : _user = user,
+       super(const EditRiderProfileState()) {
     _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
-    _keysRepository
-        .getLocationApiKey()
-        .then((value) => _locationApiKey = value);
+    _keysRepository.getLocationApiKey().then(
+      (value) => _locationApiKey = value,
+    );
     emit(
       state.copyWith(
         user: _user,
@@ -66,12 +62,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
   void riderLocationChanged({required String value}) {
     final zipCode = ZipCode.dirty(value);
-    emit(
-      state.copyWith(
-        locationName: '',
-        zipCode: zipCode,
-      ),
-    );
+    emit(state.copyWith(locationName: '', zipCode: zipCode));
   }
 
   /// Toggle the trainer status
@@ -119,11 +110,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
   void riderZipCodeChanged({required String value}) {
     final zipCode = ZipCode.dirty(value);
-    emit(
-      state.copyWith(
-        zipCode: zipCode,
-      ),
-    );
+    emit(state.copyWith(zipCode: zipCode));
   }
 
   /// Get the list of countries from the location api
@@ -177,20 +164,10 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     debugPrint('Zip Code: $selectedZipCode');
     final zipCode = ZipCode.dirty(selectedZipCode);
     if (zipCode.isValid) {
-      emit(
-        state.copyWith(
-          locationName: locationName,
-          zipCode: zipCode,
-        ),
-      );
+      emit(state.copyWith(locationName: locationName, zipCode: zipCode));
     } else {
       debugPrint('Zip Code is not valid');
-      emit(
-        state.copyWith(
-          locationName: locationName,
-          zipCode: zipCode,
-        ),
-      );
+      emit(state.copyWith(locationName: locationName, zipCode: zipCode));
     }
   }
 
@@ -220,8 +197,9 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
             );
           } else {
             debugPrint('One result');
-            final zipCode =
-                ZipCode.dirty(zipResponse.results.results.keys.elementAt(0));
+            final zipCode = ZipCode.dirty(
+              zipResponse.results.results.keys.elementAt(0),
+            );
             emit(
               state.copyWith(
                 zipCode: zipCode,
@@ -350,9 +328,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       );
       try {
         await _riderProfileRepository
-            .createOrUpdateRiderProfile(
-              riderProfile: riderProfile,
-            )
+            .createOrUpdateRiderProfile(riderProfile: riderProfile)
             .then(
               (value) => emit(state.copyWith(status: SubmissionStatus.success)),
             );

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 /// App "chrome" (rail/bottom bar + banner) that wraps the StatefulNavigationShell.
@@ -37,7 +37,15 @@ class _NavigationViewState extends State<NavigationView> {
         final newIndex = state.index;
         final currentIndex = widget.child.currentIndex;
         if (newIndex != currentIndex) {
-          widget.child.goBranch(newIndex);
+          // A deep link can emit app state before the shell rebuilds with its
+          // new branch. Switching immediately would replace the requested URL.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final requestedIndex = cubit.state.index;
+            if (widget.child.currentIndex != requestedIndex) {
+              widget.child.goBranch(requestedIndex);
+            }
+          });
         }
 
         // Manual onboarding presentation (guest vs signed-in)
@@ -120,8 +128,9 @@ class _NavigationViewState extends State<NavigationView> {
                     state.errorMessage,
                     style: const TextStyle(color: Colors.white),
                   ),
-                  backgroundColor:
-                      HorseAndRidersTheme().getTheme().primaryColor,
+                  backgroundColor: HorseAndRidersTheme()
+                      .getTheme()
+                      .primaryColor,
                 ),
               ).closed.then((_) => cubit.clearErrorMessage());
           });
@@ -158,36 +167,77 @@ class _NavigationViewState extends State<NavigationView> {
           final isMedium = screenWidth >= NavigationView.mediumScreenWidth;
           final isLarge = screenWidth >= NavigationView.largeScreenWidth;
 
+          final isOceanCoralDark =
+              Theme.of(context).brightness == Brightness.dark &&
+              Theme.of(context).colorScheme.primary ==
+                  ColorConst.mainAccentDark;
           final Widget navigation = isMedium
-              ? NavigationRail(
-                  selectedIndex: state.index,
-                  onDestinationSelected: context.read<AppCubit>().changeIndex,
-                  extended: isLarge,
-                  leading: const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Image(
-                      color: Colors.white,
-                      fit: BoxFit.contain,
-                      image: AssetImage('assets/horse_logo.png'),
-                      height: 40,
+              ? DecoratedBox(
+                  decoration: isOceanCoralDark
+                      ? const BoxDecoration(
+                          border: Border(
+                            right: BorderSide(
+                              color: ColorConst.dividerDarkBlueGrey,
+                            ),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFF365A61),
+                              ColorConst.mainPrimaryDark,
+                              ColorConst.backgroundDark,
+                            ],
+                          ),
+                        )
+                      : const BoxDecoration(),
+                  child: NavigationRail(
+                    selectedIndex: state.index,
+                    onDestinationSelected: context.read<AppCubit>().changeIndex,
+                    extended: isLarge,
+                    leading: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Image(
+                        color: Colors.white,
+                        fit: BoxFit.contain,
+                        image: AssetImage('assets/horse_logo.png'),
+                        height: 40,
+                      ),
                     ),
+                    destinations: _buildNavigationRailDestinations(
+                      isForRider: state.isForRider,
+                    ),
+                    backgroundColor: isOceanCoralDark
+                        ? Colors.transparent
+                        : Theme.of(context).appBarTheme.backgroundColor,
                   ),
-                  destinations: _buildNavigationRailDestinations(
-                    isForRider: state.isForRider,
-                  ),
-                  backgroundColor:
-                      Theme.of(context).appBarTheme.backgroundColor,
                 )
-              : BottomNavigationBar(
-                  currentIndex: state.index,
-                  onTap: context.read<AppCubit>().changeIndex,
-                  items: _buildBottomNavigationBarItems(
-                    isForRider: state.isForRider,
+              : DecoratedBox(
+                  decoration: isOceanCoralDark
+                      ? const BoxDecoration(
+                          color: ColorConst.mainPrimaryDark,
+                          border: Border(
+                            top: BorderSide(
+                              color: ColorConst.dividerDarkBlueGrey,
+                            ),
+                          ),
+                        )
+                      : const BoxDecoration(),
+                  child: BottomNavigationBar(
+                    currentIndex: state.index,
+                    onTap: context.read<AppCubit>().changeIndex,
+                    items: _buildBottomNavigationBarItems(
+                      isForRider: state.isForRider,
+                    ),
+                    backgroundColor: isOceanCoralDark
+                        ? Colors.transparent
+                        : Theme.of(context).appBarTheme.backgroundColor,
+                    selectedItemColor: Colors.white,
+                    unselectedItemColor: isOceanCoralDark
+                        ? ColorConst.darkMuted
+                        : Colors.grey,
+                    elevation: 0,
                   ),
-                  backgroundColor:
-                      Theme.of(context).appBarTheme.backgroundColor,
-                  selectedItemColor: Colors.white,
-                  unselectedItemColor: Colors.grey,
                 );
 
           return Column(
@@ -214,51 +264,49 @@ class _NavigationViewState extends State<NavigationView> {
 
 List<NavigationRailDestination> _buildNavigationRailDestinations({
   required bool isForRider,
-}) =>
-    [
-      NavigationRailDestination(
-        icon: isForRider
-            ? const Icon(Icons.person_outline)
-            : const Icon(HorseAndRiderIcons.horseIcon),
-        selectedIcon: isForRider
-            ? const Icon(Icons.person)
-            : const Icon(HorseAndRiderIcons.horseIconCircle),
-        label: Text(isForRider ? 'Profile' : 'Horse Profile'),
-      ),
-      NavigationRailDestination(
-        icon: isForRider
-            ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-            : const Icon(HorseAndRiderIcons.horseSkillIcon),
-        selectedIcon: isForRider
-            ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-            : const Icon(HorseAndRiderIcons.horseSkillIcon),
-        label: const Text('Skill Tree'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(HorseAndRiderIcons.resourcesIcon),
-        selectedIcon: Icon(HorseAndRiderIcons.resourcesIcon),
-        label: Text('Resources'),
-      ),
-    ];
+}) => [
+  NavigationRailDestination(
+    icon: isForRider
+        ? const Icon(Icons.person_outline)
+        : const Icon(HorseAndRiderIcons.horseIcon),
+    selectedIcon: isForRider
+        ? const Icon(Icons.person)
+        : const Icon(HorseAndRiderIcons.horseIconCircle),
+    label: Text(isForRider ? 'Profile' : 'Horse Profile'),
+  ),
+  NavigationRailDestination(
+    icon: isForRider
+        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+        : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    selectedIcon: isForRider
+        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+        : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    label: const Text('Skill Tree'),
+  ),
+  const NavigationRailDestination(
+    icon: Icon(HorseAndRiderIcons.resourcesIcon),
+    selectedIcon: Icon(HorseAndRiderIcons.resourcesIcon),
+    label: Text('Resources'),
+  ),
+];
 
 List<BottomNavigationBarItem> _buildBottomNavigationBarItems({
   required bool isForRider,
-}) =>
-    [
-      BottomNavigationBarItem(
-        icon: isForRider
-            ? const Icon(Icons.person_outline)
-            : const Icon(HorseAndRiderIcons.horseIcon),
-        label: isForRider ? 'Profile' : 'Horse Profile',
-      ),
-      BottomNavigationBarItem(
-        icon: isForRider
-            ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-            : const Icon(HorseAndRiderIcons.horseSkillIcon),
-        label: 'Skill Tree',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(HorseAndRiderIcons.resourcesIcon),
-        label: 'Resources',
-      ),
-    ];
+}) => [
+  BottomNavigationBarItem(
+    icon: isForRider
+        ? const Icon(Icons.person_outline)
+        : const Icon(HorseAndRiderIcons.horseIcon),
+    label: isForRider ? 'Profile' : 'Horse Profile',
+  ),
+  BottomNavigationBarItem(
+    icon: isForRider
+        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+        : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    label: 'Skill Tree',
+  ),
+  const BottomNavigationBarItem(
+    icon: Icon(HorseAndRiderIcons.resourcesIcon),
+    label: 'Resources',
+  ),
+];

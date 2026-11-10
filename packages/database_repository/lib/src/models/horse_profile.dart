@@ -142,8 +142,9 @@ class HorseProfile {
       skillLevels: data['skillLevels'] == null
           ? null
           : _convertSkillLevel(data['skillLevels'] as List),
-      notes:
-          data['notes'] == null ? null : _baseListItem(data['notes'] as List),
+      notes: data['notes'] == null
+          ? null
+          : _baseListItem(data['notes'] as List),
       instructors: data['instructors'] == null
           ? null
           : _baseListItem(data['instructors'] as List),

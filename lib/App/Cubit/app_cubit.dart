@@ -21,18 +21,13 @@ part 'app_state.dart';
 
 class AppCubit extends Cubit<AppState> {
   AppCubit({
-    required MessagesRepository messagesRepository,
-    required SkillTreeRepository skillTreeRepository,
-    required ResourcesRepository resourcesRepository,
-    required RiderProfileRepository riderProfileRepository,
-    required HorseProfileRepository horseProfileRepository,
+    required this._messagesRepository,
+    required this._skillTreeRepository,
+    required this._resourcesRepository,
+    required this._riderProfileRepository,
+    required this._horseProfileRepository,
     required AuthenticationRepository authenticationRepository,
-  }) : _messagesRepository = messagesRepository,
-       _skillTreeRepository = skillTreeRepository,
-       _resourcesRepository = resourcesRepository,
-       _riderProfileRepository = riderProfileRepository,
-       _horseProfileRepository = horseProfileRepository,
-       _authenticationRepository = authenticationRepository,
+  }) : _authenticationRepository = authenticationRepository,
        super(
          authenticationRepository.currentUser.isNotEmpty
              ? AppState.authenticated(authenticationRepository.currentUser)
@@ -345,10 +340,8 @@ class AppCubit extends Cubit<AppState> {
     // If the state is focused on a horse and the horseProfile exists
     if (!state.isForRider && horseProfile != null && usersProfile != null) {
       // Owner check for horse
-      if (usersProfile.ownedHorses?.any(
-            (ownedHorse) => ownedHorse.id == horseProfile.id,
-          ) ??
-          false) {
+      if (horseProfile.currentOwnerId.toLowerCase() ==
+          usersProfile.email.toLowerCase()) {
         debugPrint('Horse Owner');
         return true;
       }
@@ -361,6 +354,9 @@ class AppCubit extends Cubit<AppState> {
         return true;
       }
     }
+
+    // A loaded rider profile does not authorize edits to an unrelated horse.
+    if (!state.isForRider) return false;
 
     // Default authorization based on user profile availability
     if (usersProfile != null) {
@@ -1406,7 +1402,18 @@ class AppCubit extends Cubit<AppState> {
           return;
         }
         debugPrint('Resources Retrieved: ${resources.length}');
-        emit(state.copyWith(resources: resources));
+        final selected = resources.firstWhereOrNull(
+          (resource) => resource.id == state.resource?.id,
+        );
+        emit(
+          state.copyWith(
+            resources: resources,
+            resource: selected,
+            resourceComments: selected == null
+                ? state.resourceComments
+                : List<Comment>.of(selected.comments ?? const []),
+          ),
+        );
       });
     } else {
       debugPrint('Resources already retrieved');
@@ -1465,7 +1472,7 @@ class AppCubit extends Cubit<AppState> {
   void setSkill(String? id) {
     if (id == null || id.isEmpty) {
       debugPrint('Skill id is null or empty');
-
+      emit(state.copyWith(clearSkill: true));
       return;
     }
     final skill = _getSkillFromId(id);
@@ -1474,6 +1481,7 @@ class AppCubit extends Cubit<AppState> {
       emit(state.copyWith(skill: skill));
     } else {
       debugPrint('Skill not found for id: $id');
+      emit(state.copyWith(clearSkill: true));
     }
   }
 
@@ -2924,6 +2932,12 @@ class AppCubit extends Cubit<AppState> {
     required Message message,
     required BuildContext context,
   }) async {
+    // Transfer acceptance still needs a complete ownership-update workflow.
+    // Do not treat a horse ID as a rider email or leave the UI loading.
+    if (message.messageType == MessageType.TRANSFER_HORSE_REQUEST) {
+      _handleTransferHorseRequest();
+      return;
+    }
     emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     final String requestorId;
     if (message.requestItem?.id != null) {
@@ -3068,8 +3082,13 @@ class AppCubit extends Cubit<AppState> {
 
   /// Handle transfer horse request
   void _handleTransferHorseRequest() {
-    //placeholder for now
-    debugPrint('Transfer Horse Request being handled');
+    emit(
+      state.copyWith(
+        acceptStatus: AcceptStatus.waiting,
+        isError: true,
+        errorMessage: 'Accepting horse transfers is not implemented yet.',
+      ),
+    );
   }
 
   /// handles the Instructor Request
@@ -3615,6 +3634,7 @@ class AppCubit extends Cubit<AppState> {
     emit(
       state.copyWith(
         skill: skill,
+        clearSkill: skill == null,
         isSearch: false,
         isFromProfile: state.index == 0,
         pageStatus: AppPageStatus.skillTree,

@@ -3,10 +3,10 @@ version: 1.0.1
 publish_to: none
 
 environment:
-  sdk: '>=3.10.0 <4.0.0'
+  sdk: '>=3.12.0 <4.0.0'
 
 dependencies:
-  formz: ^0.8.0
+  formz: ^0.8.1
 
 dev_dependencies:
-  very_good_analysis: ^10.0.0
+  very_good_analysis: ^11.0.0

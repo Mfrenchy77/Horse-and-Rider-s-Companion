@@ -13,10 +13,9 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
   CreateArticleCubit({
     ResourcesRepository? resourcesRepository,
     FirebaseStorage? storage,
-    RiderProfile? user,
+    this._user,
   }) : _repo = resourcesRepository ?? ResourcesRepository(),
        _storage = storage ?? FirebaseStorage.instance,
-       _user = user,
        super(const ArticleCreateState());
 
   final ResourcesRepository _repo;
@@ -54,27 +53,14 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
   Future<void> pickAndUploadCover() async {
     emit(state.copyWith(status: ArticleCreateStatus.pickingCover));
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) {
+      final file = await FilePicker.pickFile(type: FileType.image);
+      if (file == null) {
         emit(state.copyWith(status: ArticleCreateStatus.idle));
         return;
       }
 
-      final file = result.files.single;
-      final bytes = file.bytes;
+      final bytes = await file.readAsBytes();
       final filename = file.name;
-      if (bytes == null) {
-        emit(
-          state.copyWith(
-            status: ArticleCreateStatus.failure,
-            errorMessage: 'Could not read file bytes. Try a smaller image.',
-          ),
-        );
-        return;
-      }
 
       if (_user == null) {
         emit(
@@ -91,7 +77,9 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
 
       emit(state.copyWith(status: ArticleCreateStatus.uploadingCover));
 
-      final ref = _storage.ref().child('covers/$_user.email/$tempId/$filename');
+      final ref = _storage.ref().child(
+        'covers/${_user.email}/$tempId/$filename',
+      );
       final meta = SettableMetadata(contentType: _guessContentType(filename));
       final task = await ref.putData(bytes, meta);
       final downloadUrl = await task.ref.getDownloadURL();

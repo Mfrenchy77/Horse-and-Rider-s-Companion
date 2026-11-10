@@ -178,38 +178,68 @@ final mainThemeLight = ThemeData(
 );
 
 final mainThemeDark = ThemeData(
-  navigationBarTheme: NavigationBarThemeData(
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-  ),
   brightness: Brightness.dark,
-  colorSchemeSeed: Colors.blueGrey,
-  scaffoldBackgroundColor: const Color.fromARGB(255, 44, 44, 44),
+  colorScheme:
+      ColorScheme.fromSeed(
+        seedColor: ColorConst.mainAccentDark,
+        brightness: Brightness.dark,
+      ).copyWith(
+        primary: ColorConst.mainAccentDark,
+        onPrimary: ColorConst.mainPrimaryDark,
+        secondary: ColorConst.mainHighlightDark,
+        onSecondary: ColorConst.mainPrimaryDark,
+        surface: ColorConst.mainBackgroundDark,
+        onSurface: ColorConst.darkForeground,
+        outline: ColorConst.dividerDarkBlueGrey,
+      ),
+  primaryColor: ColorConst.mainPrimaryDark,
+  scaffoldBackgroundColor: Colors.transparent,
+  navigationBarTheme: NavigationBarThemeData(
+    backgroundColor: ColorConst.mainPrimaryDark,
+    indicatorColor: ColorConst.mainAccentDark,
+    iconTheme: WidgetStateProperty.resolveWith((states) {
+      final isSelected = states.contains(WidgetState.selected);
+      return IconThemeData(
+        color: isSelected
+            ? ColorConst.mainPrimaryDark
+            : ColorConst.darkForeground,
+      );
+    }),
+    labelTextStyle: WidgetStateProperty.resolveWith((states) {
+      return TextStyle(
+        color: states.contains(WidgetState.selected)
+            ? ColorConst.darkForeground
+            : ColorConst.darkMuted,
+      );
+    }),
+  ),
+  navigationRailTheme: const NavigationRailThemeData(
+    backgroundColor: ColorConst.mainPrimaryDark,
+    indicatorColor: ColorConst.mainAccentDark,
+    unselectedIconTheme: IconThemeData(color: ColorConst.darkMuted),
+    selectedLabelTextStyle: TextStyle(color: ColorConst.darkForeground),
+    unselectedLabelTextStyle: TextStyle(color: ColorConst.darkMuted),
+    selectedIconTheme: IconThemeData(
+      color: ColorConst.mainPrimaryDark,
+      size: 30,
+    ),
+  ),
   appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.cardDark,
+    titleTextStyle: TextStyle(color: ColorConst.darkForeground, fontSize: 20),
+    iconTheme: IconThemeData(color: ColorConst.darkForeground),
+    toolbarTextStyle: TextStyle(color: ColorConst.darkForeground),
+    backgroundColor: Colors.transparent,
+    surfaceTintColor: Colors.transparent,
+    elevation: 0,
   ),
   cardColor: ColorConst.cardDark,
-  cardTheme: const CardThemeData(
-    color: ColorConst.cardDark,
-  ),
+  cardTheme: const CardThemeData(color: ColorConst.cardDark),
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.mainBackgroundDark,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.mainBackgroundDark),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.mainBackgroundDark,
+  ),
 );
 
 ///     Spring Theme
@@ -245,8 +275,9 @@ final springTheme = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.springBackgroundLight,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.springBackgroundLight),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.springBackgroundLight,
+  ),
 );
 
 final springThemeDark = ThemeData(
@@ -281,8 +312,9 @@ final springThemeDark = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.springBackgroundDark,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.springBackgroundDark),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.springBackgroundDark,
+  ),
 );
 
 ///   Summer Theme
@@ -318,8 +350,9 @@ final summerTheme = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.summerBackgroundLight,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.summerBackgroundLight),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.summerBackgroundLight,
+  ),
 );
 
 final summerThemeDark = ThemeData(
@@ -343,8 +376,9 @@ final summerThemeDark = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.summerBackgroundDark,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.summerBackgroundDark),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.summerBackgroundDark,
+  ),
 );
 
 ///   Autumn Theme
@@ -379,8 +413,9 @@ final autumnTheme = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.fallBackgroundLight,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.fallBackgroundLight),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.fallBackgroundLight,
+  ),
 );
 
 final autumnThemeDark = ThemeData(
@@ -397,8 +432,9 @@ final autumnThemeDark = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.fallPrimaryDark,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.fallPrimaryDark),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.fallPrimaryDark,
+  ),
 );
 
 ///   Winter Theme
@@ -432,8 +468,9 @@ final winterTheme = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.winterBackgroundLight,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.winterBackgroundLight),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.winterBackgroundLight,
+  ),
 );
 
 final winterThemeDark = ThemeData(
@@ -641,8 +678,9 @@ final easterTheme = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.easterBackgroundLight,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.easterBackgroundLight),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.easterBackgroundLight,
+  ),
 );
 
 final easterThemeDark = ThemeData(
@@ -677,6 +715,7 @@ final easterThemeDark = ThemeData(
   drawerTheme: const DrawerThemeData(
     backgroundColor: ColorConst.easterBackgroundDark,
   ),
-  dialogTheme:
-      const DialogThemeData(backgroundColor: ColorConst.easterBackgroundDark),
+  dialogTheme: const DialogThemeData(
+    backgroundColor: ColorConst.easterBackgroundDark,
+  ),
 );

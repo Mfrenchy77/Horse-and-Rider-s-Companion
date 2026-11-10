@@ -13,7 +13,9 @@ class CommentCubit extends Cubit<CommentState> {
     required Comment? comment,
     required Resource resource,
     required RiderProfile usersProfile,
-  }) : super(const CommentState()) {
+    ResourcesRepository? resourcesRepository,
+  }) : _resourceRepository = resourcesRepository ?? ResourcesRepository(),
+       super(const CommentState()) {
     emit(
       state.copyWith(
         comment: comment,
@@ -23,7 +25,7 @@ class CommentCubit extends Cubit<CommentState> {
     );
   }
 
-  final ResourcesRepository _resourceRepository = ResourcesRepository();
+  final ResourcesRepository _resourceRepository;
 
   void setEdit({required bool isEdit}) => emit(state.copyWith(isEdit: isEdit));
 
@@ -84,18 +86,25 @@ class CommentCubit extends Cubit<CommentState> {
       await _resourceRepository.createOrUpdateResource(
         resource: updatedResource,
       );
-      emit(state.copyWith(status: CommentStatus.success));
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            resource: updatedResource,
+            status: CommentStatus.success,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('sendComment error: $e');
-      emit(state.copyWith(status: CommentStatus.initial));
+      if (!isClosed) emit(state.copyWith(status: CommentStatus.initial));
     }
   }
 
   BaseListItem _createUser() => BaseListItem(
-        id: state.usersProfile?.email,
-        name: state.usersProfile?.name,
-        imageUrl: state.usersProfile?.picUrl,
-      );
+    id: state.usersProfile?.email,
+    name: state.usersProfile?.name,
+    imageUrl: state.usersProfile?.picUrl,
+  );
 
   bool isRatingPositive(Comment comment) {
     final rating = getUserRatingForComment(comment);
@@ -103,191 +112,102 @@ class CommentCubit extends Cubit<CommentState> {
   }
 
   BaseListItem? getUserRatingForComment(Comment comment) {
-    final newRatingUser = BaseListItem(
-      id: state.usersProfile?.email ?? '',
-      isCollapsed: false,
-      isSelected: false,
+    final current =
+        state.resource?.comments?.firstWhereOrNull(
+          (item) => item.id == comment.id,
+        ) ??
+        comment;
+    return current.usersWhoRated?.firstWhereOrNull(
+      (item) => item.id == state.usersProfile?.email,
     );
-
-    final usersRating = comment.usersWhoRated?.firstWhere(
-      (element) => element.id == state.usersProfile?.email,
-      orElse: BaseListItem.new,
-    );
-    return comment.usersWhoRated == null ? newRatingUser : usersRating;
   }
 
-  // --- your recommend / don't recommend methods unchanged below ---
-  Future<void> reccomendComment({required Comment comment}) async {
-    final commentsResource = state.resource;
-    if (commentsResource == null) {
-      emit(state.copyWith(positiveStatus: PositiveStatus.loading));
-      debugPrint('Resource is null, cannot recommend comment');
-      return;
-    } else {
-      commentsResource.comments?.map((e) {
-        if (e.id == comment.id) {
-          return _setNewPositiveRating(comment: comment);
-        } else {
-          return e;
-        }
-      }).toList();
-      try {
-        await _resourceRepository.createOrUpdateResource(
-          resource: commentsResource,
-        );
-        emit(state.copyWith(positiveStatus: PositiveStatus.success));
-      } catch (e) {
-        emit(state.copyWith(positiveStatus: PositiveStatus.initial));
-        debugPrint('Error Positive Comment Recommendation: $e');
-      }
+  /// Keep the rating controls in sync with new resource snapshots.
+  void updateResource(Resource resource) {
+    if (!isClosed && !identical(state.resource, resource)) {
+      emit(state.copyWith(resource: resource));
     }
   }
 
-  Future<void> dontReccomendComment({required Comment comment}) async {
-    final commentsResource = state.resource;
-    if (commentsResource == null) {
-      emit(state.copyWith(negativeStatus: NegativeStatus.loading));
-      debugPrint('Resource is null, cannot recommend comment');
-      return;
-    } else {
-      commentsResource.comments?.map((e) {
-        if (e.id == comment.id) {
-          return _setNewNegativeRating(comment: comment);
-        } else {
-          return e;
-        }
-      }).toList();
-      try {
-        await _resourceRepository.createOrUpdateResource(
-          resource: commentsResource,
-        );
-        emit(state.copyWith(negativeStatus: NegativeStatus.success));
-      } catch (e) {
-        emit(state.copyWith(negativeStatus: NegativeStatus.initial));
-        debugPrint('Error Negative Comment Recommendation: $e');
-      }
-    }
-  }
+  bool _ratingInFlight = false;
 
-  Comment _setNewPositiveRating({required Comment comment}) {
+  Future<void> reccomendComment({required Comment comment}) =>
+      _rateComment(comment: comment, vote: 1);
+
+  Future<void> dontReccomendComment({required Comment comment}) =>
+      _rateComment(comment: comment, vote: -1);
+
+  Future<void> _rateComment({
+    required Comment comment,
+    required int vote,
+  }) async {
+    if (_ratingInFlight || isClosed) return;
+    final resource = state.resource;
     final userEmail = state.usersProfile?.email;
-    final newuser =
-        BaseListItem(id: userEmail, isSelected: true, isCollapsed: false);
-    final newUsersWhoRated = [newuser];
-
-    final newPositiveRating = (comment.rating ?? 0) + 1;
-    final newDoublePositveRating = (comment.rating ?? 0) + 2;
-    final newNegativeRating = (comment.rating ?? 0) - 1;
-
-    if (comment.usersWhoRated != null && comment.usersWhoRated!.isNotEmpty) {
-      final user =
-          comment.usersWhoRated?.firstWhereOrNull((e) => e.id == userEmail);
-      if (user != null) {
-        if (user.isSelected == null && user.isCollapsed == null) {
-          comment.usersWhoRated?.add(newuser);
-          comment.rating = newPositiveRating;
-          return comment;
-        } else if (user.isSelected ?? false) {
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isSelected = false;
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isCollapsed = false;
-          comment.rating = newNegativeRating;
-          return comment;
-        } else if (user.isSelected == false && user.isCollapsed == false) {
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isSelected = true;
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isCollapsed = false;
-          comment.rating = newPositiveRating;
-          return comment;
-        } else if (user.isSelected == false && (user.isCollapsed ?? false)) {
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isSelected = true;
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isCollapsed = false;
-          comment.rating = newDoublePositveRating;
-          return comment;
-        } else {
-          return comment;
-        }
-      } else {
-        comment.usersWhoRated?.add(newuser);
-        comment.rating = newPositiveRating;
-        return comment;
-      }
-    } else {
-      comment
-        ..usersWhoRated = newUsersWhoRated
-        ..rating = newPositiveRating;
-      return comment;
+    final comments = List<Comment>.from(resource?.comments ?? const []);
+    final index = comments.indexWhere((item) => item.id == comment.id);
+    if (resource == null ||
+        resource.id == null ||
+        comment.id == null ||
+        userEmail == null ||
+        userEmail.trim().isEmpty ||
+        index < 0) {
+      return;
     }
-  }
 
-  Comment _setNewNegativeRating({required Comment comment}) {
-    final userEmail = state.usersProfile!.email;
-    final newuser =
-        BaseListItem(id: userEmail, isSelected: false, isCollapsed: true);
-    final newUsersWhoRated = [newuser];
-
-    final newPositiveRating = (comment.rating ?? 0) + 1;
-    final newNegativeRating = (comment.rating ?? 0) - 1;
-    final newDoubleNegativeRating = (comment.rating ?? 0) - 2;
-
-    if (comment.usersWhoRated != null && comment.usersWhoRated!.isNotEmpty) {
-      final user =
-          comment.usersWhoRated?.firstWhereOrNull((e) => e.id == userEmail);
-      if (user != null) {
-        if (user.isSelected == null && user.isCollapsed == null) {
-          comment.usersWhoRated?.add(newuser);
-          comment.rating = newNegativeRating;
-          return comment;
-        } else if (user.isSelected == false && (user.isCollapsed ?? false)) {
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isSelected = false;
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isCollapsed = false;
-          comment.rating = newPositiveRating;
-          return comment;
-        } else if (user.isSelected == false && user.isCollapsed == false) {
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isSelected = false;
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isCollapsed = true;
-          comment.rating = newNegativeRating;
-          return comment;
-        } else if (user.isSelected ?? false) {
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isSelected = false;
-          comment.usersWhoRated
-              ?.firstWhere((e) => e.id == userEmail)
-              .isCollapsed = true;
-          comment.rating = newDoubleNegativeRating;
-          return comment;
-        } else {
-          return comment;
-        }
-      } else {
-        comment.usersWhoRated?.add(newuser);
-        comment.rating = newNegativeRating;
-        return comment;
+    _ratingInFlight = true;
+    emit(
+      state.copyWith(
+        positiveStatus: vote == 1
+            ? PositiveStatus.loading
+            : state.positiveStatus,
+        negativeStatus: vote == -1
+            ? NegativeStatus.loading
+            : state.negativeStatus,
+      ),
+    );
+    try {
+      final updatedComment = await _resourceRepository.rateComment(
+        resourceId: resource.id!,
+        commentId: comment.id!,
+        userEmail: userEmail,
+        vote: vote,
+      );
+      final latest = state.resource ?? resource;
+      final updatedResource = latest.copyWith(
+        comments: [
+          for (final item in latest.comments ?? <Comment>[])
+            if (item.id == updatedComment.id) updatedComment else item,
+        ],
+      );
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            resource: updatedResource,
+            positiveStatus: vote == 1
+                ? PositiveStatus.success
+                : state.positiveStatus,
+            negativeStatus: vote == -1
+                ? NegativeStatus.success
+                : state.negativeStatus,
+          ),
+        );
       }
-    } else {
-      comment
-        ..usersWhoRated = newUsersWhoRated
-        ..rating = newNegativeRating;
-      return comment;
+    } catch (error) {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            positiveStatus: vote == 1
+                ? PositiveStatus.failure
+                : state.positiveStatus,
+            negativeStatus: vote == -1
+                ? NegativeStatus.failure
+                : state.negativeStatus,
+          ),
+        );
+      }
+    } finally {
+      _ratingInFlight = false;
     }
   }
 }

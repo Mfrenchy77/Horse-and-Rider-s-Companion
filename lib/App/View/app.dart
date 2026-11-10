@@ -7,23 +7,19 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
 class App extends StatefulWidget {
   const App({
     super.key,
     required this.settingsController,
-    required MessagesRepository messagesRepository,
-    required SkillTreeRepository skillTreeRepository,
-    required ResourcesRepository resourcesRepository,
-    required RiderProfileRepository riderProfileRepository,
-    required HorseProfileRepository horseProfileRepository,
-    required AuthenticationRepository authenticationRepository,
-  })  : _messagesRepository = messagesRepository,
-        _skillTreeRepository = skillTreeRepository,
-        _resourcesRepository = resourcesRepository,
-        _riderProfileRepository = riderProfileRepository,
-        _horseProfileRepository = horseProfileRepository,
-        _authenticationRepository = authenticationRepository;
+    required this._messagesRepository,
+    required this._skillTreeRepository,
+    required this._resourcesRepository,
+    required this._riderProfileRepository,
+    required this._horseProfileRepository,
+    required this._authenticationRepository,
+  });
 
   final SettingsController settingsController;
   final MessagesRepository _messagesRepository;
@@ -111,6 +107,28 @@ class AppView extends StatelessWidget {
           theme: settingsController.theme,
           darkTheme: settingsController.darkTheme,
           themeMode: settingsController.darkMode,
+          builder: (context, child) {
+            final useOceanCoralBackground =
+                !settingsController.seasonalMode &&
+                Theme.of(context).brightness == Brightness.dark;
+            return DecoratedBox(
+              decoration: useOceanCoralBackground
+                  ? const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          ColorConst.mainPrimaryDark,
+                          ColorConst.backgroundDark,
+                          ColorConst.mainBackgroundDark,
+                        ],
+                        stops: [0, 0.56, 1],
+                      ),
+                    )
+                  : const BoxDecoration(),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
 
           // Modern, single-parameter config
           routerConfig: router,
@@ -122,10 +140,7 @@ class AppView extends StatelessWidget {
             GlobalMaterialLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          supportedLocales: const [
-            Locale('en'),
-            Locale('en', 'US'),
-          ],
+          supportedLocales: const [Locale('en'), Locale('en', 'US')],
         );
       },
     );

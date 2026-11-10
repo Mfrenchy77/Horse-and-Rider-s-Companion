@@ -11,8 +11,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_negative_rating_button.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_positive_rating_button.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_rating_buttons.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_relpy_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/create_comment_dialog.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -20,10 +19,7 @@ import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 class CommentItem extends StatefulWidget {
-  const CommentItem({
-    super.key,
-    required this.comment,
-  });
+  const CommentItem({super.key, required this.comment});
 
   final Comment comment;
 
@@ -38,6 +34,10 @@ class _CommentItemState extends State<CommentItem> {
     setState(() {
       _isActionsVisible = !_isActionsVisible;
     });
+  }
+
+  void _hideActions() {
+    if (_isActionsVisible) setState(() => _isActionsVisible = false);
   }
 
   @override
@@ -76,7 +76,8 @@ class _CommentItemState extends State<CommentItem> {
               // This is the box that will show a colored boarder if
               // the comment id a child of the parent comment
               child: ColoredBox(
-                color: Theme.of(context).appBarTheme.backgroundColor ??
+                color:
+                    Theme.of(context).appBarTheme.backgroundColor ??
                     Colors.white,
                 child: Padding(
                   padding: EdgeInsets.only(left: isParent ? 5 : 0),
@@ -101,14 +102,14 @@ class _CommentItemState extends State<CommentItem> {
                                     style: TextStyle(
                                       color: hasUserRated
                                           ? isPositiveSelected
-                                              ? HorseAndRidersTheme()
-                                                  .getTheme()
-                                                  .colorScheme
-                                                  .primary
-                                              : Colors.red
+                                                ? HorseAndRidersTheme()
+                                                      .getTheme()
+                                                      .colorScheme
+                                                      .primary
+                                                : Colors.red
                                           : isDark
-                                              ? Colors.grey.shade300
-                                              : Colors.black54,
+                                          ? Colors.grey.shade300
+                                          : Colors.black54,
                                       //bold
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -118,9 +119,7 @@ class _CommentItemState extends State<CommentItem> {
                                   Text(
                                     widget.comment.user?.name ?? '',
                                     textAlign: TextAlign.left,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                    ),
+                                    style: const TextStyle(fontSize: 12),
                                   ),
                                   const Spacer(),
                                   smallGap(),
@@ -136,8 +135,9 @@ class _CommentItemState extends State<CommentItem> {
 
                             // Comment
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                              ),
                               child: _buildCommentBody(
                                 widget.comment.comment,
                                 context,
@@ -148,34 +148,20 @@ class _CommentItemState extends State<CommentItem> {
                             // hidden by default
                             Visibility(
                               visible: _isActionsVisible,
+                              maintainState: true,
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 15),
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    // Positive rating button
                                     Expanded(
-                                      child: CommentPositiveRatingButton(
-                                        onTap: _toggleActionsVisibility,
-                                        key: const Key(
-                                          'positive_rating_button',
-                                        ),
+                                      flex: 2,
+                                      child: CommentRatingButtons(
                                         comment: widget.comment,
                                         resource: commentResource,
                                         usersProfile: state.usersProfile,
-                                      ),
-                                    ),
-                                    // Negative rating button
-                                    Expanded(
-                                      child: CommentNegativeButton(
-                                        onTap: _toggleActionsVisibility,
-                                        key: const Key(
-                                          'negative_rating_button',
-                                        ),
-                                        comment: widget.comment,
-                                        resource: commentResource,
-                                        usersProfile: state.usersProfile,
+                                        onSaved: _hideActions,
                                       ),
                                     ),
                                     // if not user show a button to link
@@ -187,7 +173,8 @@ class _CommentItemState extends State<CommentItem> {
                                           color: isDark
                                               ? Colors.grey.shade300
                                               : Colors.black54,
-                                          tooltip: 'Open '
+                                          tooltip:
+                                              'Open '
                                               '${widget.comment.user?.name}'
                                               "'s Profile",
                                           onPressed: () => context.pushNamed(
@@ -260,8 +247,10 @@ class _CommentItemState extends State<CommentItem> {
                                         switch (value) {
                                           case 'Report':
                                             _toggleActionsVisibility();
-                                            debugPrint('Report Comment: '
-                                                '${widget.comment.id}');
+                                            debugPrint(
+                                              'Report Comment: '
+                                              '${widget.comment.id}',
+                                            );
                                             showDialog<AlertDialog>(
                                               context: context,
                                               builder: (context) =>
@@ -288,9 +277,7 @@ class _CommentItemState extends State<CommentItem> {
                             // List of child comments
                             if (childComments.isNotEmpty)
                               for (final Comment child in childComments)
-                                CommentItem(
-                                  comment: child,
-                                ),
+                                CommentItem(comment: child),
                           ],
                         ),
                       ),
@@ -313,7 +300,8 @@ class _CommentItemState extends State<CommentItem> {
     // Try to parse Quill Delta JSON (list of ops like [{"insert":"Hello\n"}, ...])
     try {
       final decoded = jsonDecode(raw);
-      final looksLikeDelta = decoded is List &&
+      final looksLikeDelta =
+          decoded is List &&
           decoded.isNotEmpty &&
           decoded.first is Map &&
           (decoded.first as Map).containsKey('insert');
@@ -326,18 +314,13 @@ class _CommentItemState extends State<CommentItem> {
         );
 
         // Read-only Quill view (no focus, no editor chrome)
-        return quill.QuillEditor.basic(
-          controller: controller,
-        );
+        return quill.QuillEditor.basic(controller: controller);
       }
     } catch (_) {
       // Not JSON or not a Delta — fall through to plain text
     }
 
     // Plain text fallback
-    return SelectableText(
-      raw,
-      style: const TextStyle(fontSize: 16),
-    );
+    return SelectableText(raw, style: const TextStyle(fontSize: 16));
   }
 }

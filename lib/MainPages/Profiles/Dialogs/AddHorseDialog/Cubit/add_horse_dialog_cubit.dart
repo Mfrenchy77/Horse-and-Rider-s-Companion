@@ -19,17 +19,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   AddHorseDialogCubit({
     required RiderProfile usersProfile,
     required HorseProfile? horseProfile,
-    required KeysRepository keysRepository,
-    required HorseProfileRepository horseProfileRepository,
-    required RiderProfileRepository riderProfileRepository,
-  })  : _keysRepository = keysRepository,
-        _horseProfileRepository = horseProfileRepository,
-        _riderProfileRepository = riderProfileRepository,
-        super(const AddHorseDialogState()) {
+    required this._keysRepository,
+    required this._horseProfileRepository,
+    required this._riderProfileRepository,
+  }) : super(const AddHorseDialogState()) {
     _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
-    _keysRepository
-        .getLocationApiKey()
-        .then((value) => _locationApiKey = value);
+    _keysRepository.getLocationApiKey().then(
+      (value) => _locationApiKey = value,
+    );
     emit(
       state.copyWith(
         id: horseProfile?.id ?? DateTime.now().toString(),
@@ -62,25 +59,17 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   void horseNameChanged(String value) {
     final horseName = SingleWord.dirty(value);
-    emit(
-      state.copyWith(horseName: horseName),
-    );
+    emit(state.copyWith(horseName: horseName));
   }
 
   void horseNicknameChanged(String value) {
     final horseNickname = SingleWord.dirty(value);
-    emit(
-      state.copyWith(horseNickname: horseNickname),
-    );
+    emit(state.copyWith(horseNickname: horseNickname));
   }
 
   void horseBreedChanged(String value) {
     final breed = SingleWord.dirty(value);
-    emit(
-      state.copyWith(
-        breed: breed,
-      ),
-    );
+    emit(state.copyWith(breed: breed));
   }
 
   List<String> getAutocompleteBreedSuggestions(String query) {
@@ -107,9 +96,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   void horseGenderChanged(String value) {
     final gender = SingleWord.dirty(value);
-    emit(
-      state.copyWith(gender: gender),
-    );
+    emit(state.copyWith(gender: gender));
   }
 
   Future<void> horsePicButtonClicked() async {
@@ -151,19 +138,12 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   }
 
   Future<void> horseDateOfBirthChanged(DateTime? date) async {
-    emit(
-      state.copyWith(
-        dateStatus: DateStatus.dateSet,
-        dateOfBirth: date,
-      ),
-    );
+    emit(state.copyWith(dateStatus: DateStatus.dateSet, dateOfBirth: date));
   }
 
   void horseColorChanged(String value) {
     final color = SingleWord.dirty(value);
-    emit(
-      state.copyWith(color: color),
-    );
+    emit(state.copyWith(color: color));
   }
 
   /// Toggle the location search
@@ -173,12 +153,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   void horseZipChanged(String value) {
     final zipCode = ZipCode.dirty(value);
-    emit(
-      state.copyWith(
-        locationName: '',
-        zipCode: zipCode,
-      ),
-    );
+    emit(state.copyWith(locationName: '', zipCode: zipCode));
   }
 
   /// Get the list of countries from the location api
@@ -226,9 +201,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   void zipCodeChanged(String value) {
     final zipCode = ZipCode.dirty(value);
-    emit(
-      state.copyWith(zipCode: zipCode),
-    );
+    emit(state.copyWith(zipCode: zipCode));
   }
 
   Future<void> _searchForZip() async {
@@ -257,8 +230,9 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
             );
           } else {
             debugPrint('One result');
-            final zipCode =
-                ZipCode.dirty(zipResponse.results.results.keys.elementAt(0));
+            final zipCode = ZipCode.dirty(
+              zipResponse.results.results.keys.elementAt(0),
+            );
             emit(
               state.copyWith(
                 zipCode: zipCode,
@@ -305,29 +279,15 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     debugPrint('Zip Code: $selectedZipCode');
     final zipCode = ZipCode.dirty(selectedZipCode);
     if (zipCode.isValid) {
-      emit(
-        state.copyWith(
-          locationName: locationName,
-          zipCode: zipCode,
-        ),
-      );
+      emit(state.copyWith(locationName: locationName, zipCode: zipCode));
     } else {
       debugPrint('Zip Code is not valid');
-      emit(
-        state.copyWith(
-          locationName: locationName,
-          zipCode: zipCode,
-        ),
-      );
+      emit(state.copyWith(locationName: locationName, zipCode: zipCode));
     }
   }
 
   void horseHeightChanged(int height) {
-    emit(
-      state.copyWith(
-        height: height,
-      ),
-    );
+    emit(state.copyWith(height: height));
   }
 
   /// Update the height from the Hands Number Picker
@@ -351,22 +311,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     debugPrint('Incrementing Height from: ${state.height}');
     final height = state.height + 1;
     debugPrint('New Height: $height');
-    emit(
-      state.copyWith(
-        height: height,
-      ),
-    );
+    emit(state.copyWith(height: height));
   }
 
   /// decrement the height value by 1 centimeter
   void decrementHeightByCentimeter() {
     debugPrint('Decrementing Height');
     final height = state.height - 1;
-    emit(
-      state.copyWith(
-        height: height,
-      ),
-    );
+    emit(state.copyWith(height: height));
   }
 
   void incrementHeightByInch() {
@@ -389,20 +341,12 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   Future<void> horseDateOfPurchaseChanged(DateTime? date) async {
     final dop = date?.millisecondsSinceEpoch;
-    emit(
-      state.copyWith(
-        dateOfPurchase: dop,
-      ),
-    );
+    emit(state.copyWith(dateOfPurchase: dop));
   }
 
   void horsePurchasePriceChanged(int value) {
     final purchasePrice = Numberz.dirty(value);
-    emit(
-      state.copyWith(
-        purchasePrice: purchasePrice,
-      ),
-    );
+    emit(state.copyWith(purchasePrice: purchasePrice));
   }
 
   void toogleIsPurchased({required bool isPurchaced}) {
@@ -414,9 +358,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   }
 
   Future<void> createHorseProfile() async {
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
+    emit(state.copyWith(status: FormStatus.submitting));
 
     final initialNoteEntry = BaseListItem(
       id: state.horseProfile?.id ?? state.id,
@@ -427,7 +369,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       date: DateTime.now(),
     );
     final notes = [initialNoteEntry];
-// ignore: omit_local_variable_types
+    // ignore: omit_local_variable_types
     final HorseProfile horseProfile = HorseProfile(
       notes: notes,
       height: state.height,
@@ -445,9 +387,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       currentOwnerId: state.usersProfile?.email.trim() as String,
       currentOwnerName: state.usersProfile?.name.trim() as String,
       dateOfPurchase: state.dateOfPurchase != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              state.dateOfPurchase as int,
-            )
+          ? DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int)
           : null,
       dateOfBirth: state.dateOfBirth,
       color: state.color.value.trim(),
@@ -501,21 +441,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       );
     } catch (e) {
       debugPrint('Something went Wrong: $e');
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
     }
   }
 
   Future<void> editHorseProfile() async {
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
+    emit(state.copyWith(status: FormStatus.submitting));
 
-// ignore: omit_local_variable_types
+    // ignore: omit_local_variable_types
     final HorseProfile horseProfile = state.horseProfile!.copyWith(
       lastEditDate: DateTime.now(),
       dateOfBirth: state.dateOfBirth,
@@ -565,7 +498,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
           "${horseProfile.name}'s profile was edited by ${state.usersProfile?.name}",
     );
     horseProfile.notes?.add(editNote);
-// update the users profile with the edited horses detail in owned horses
+    // update the users profile with the edited horses detail in owned horses
     final ownedHorse = BaseListItem(
       id: horseProfile.id,
       name: horseProfile.name,
@@ -598,21 +531,12 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       );
     } on FirebaseException catch (e) {
       debugPrint('Something went Wrong: $e');
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
     }
   }
 
-  Future<void> deleteHorseProfile({
-    required HorseProfile? horseProfile,
-  }) async {
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
+  Future<void> deleteHorseProfile({required HorseProfile? horseProfile}) async {
+    emit(state.copyWith(status: FormStatus.submitting));
     final deleteNote = BaseListItem(
       id: DateTime.now().toString(),
       date: DateTime.now(),
@@ -654,12 +578,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       );
     } on FirebaseException catch (e) {
       debugPrint('Something went Wrong: $e');
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
     }
   }
 }

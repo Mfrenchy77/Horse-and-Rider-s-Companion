@@ -7,7 +7,7 @@ import Foundation
 
 import cloud_firestore
 import device_info_plus
-import file_picker
+import file_picker_darwin
 import file_selector_macos
 import firebase_app_check
 import firebase_auth
@@ -17,7 +17,6 @@ import firebase_remote_config
 import firebase_storage
 import flutter_inappwebview_macos
 import google_sign_in_ios
-import path_provider_foundation
 import quill_native_bridge_macos
 import shared_preferences_foundation
 import sqflite_darwin
@@ -36,8 +35,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FirebaseRemoteConfigPlugin.register(with: registry.registrar(forPlugin: "FirebaseRemoteConfigPlugin"))
   FLTFirebaseStoragePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseStoragePlugin"))
   InAppWebViewFlutterPlugin.register(with: registry.registrar(forPlugin: "InAppWebViewFlutterPlugin"))
-  FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))
-  PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
+  GoogleSignInPlugin.register(with: registry.registrar(forPlugin: "GoogleSignInPlugin"))
   QuillNativeBridgePlugin.register(with: registry.registrar(forPlugin: "QuillNativeBridgePlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
   SqflitePlugin.register(with: registry.registrar(forPlugin: "SqflitePlugin"))

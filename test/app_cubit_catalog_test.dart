@@ -151,6 +151,32 @@ void main() {
       expect(cubit.state.resources.single.rating, 2);
     },
   );
+  test('resource stream refreshes the open comment page', () async {
+    Comment commentWithRating(int rating) => Comment(
+      id: 'comment',
+      user: BaseListItem(id: 'author@example.com'),
+      date: date,
+      rating: rating,
+      comment: 'Helpful advice',
+      parentId: null,
+      editedDate: null,
+      resourceId: 'resource',
+      usersWhoRated: const [],
+    );
+    resources.add([
+      Resource(id: 'resource', comments: [commentWithRating(0)]),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    cubit.getResourceById('resource');
+
+    resources.add([
+      Resource(id: 'resource', comments: [commentWithRating(1)]),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(cubit.getResourceById('resource')?.comments?.single.rating, 1);
+    expect(cubit.state.resourceComments.single.rating, 1);
+  });
   test('does not subscribe to disabled training paths at startup', () {
     verifyNever(skills.getAllTrainingPaths);
     expect(cubit.state.trainingPaths, isEmpty);

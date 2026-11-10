@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 // Simple cooldown between SnackBars to avoid rapid spamming.
+// ignore: use_late_for_private_fields_and_variables
 DateTime? _lastSnackShownAt;
 const _snackCooldown = Duration(milliseconds: 1200);
 
@@ -24,7 +25,11 @@ class AuthView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     return Scaffold(
-      backgroundColor: ColorConst.backgroundDark,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.dark &&
+              Theme.of(context).colorScheme.primary == ColorConst.mainAccentDark
+          ? Colors.transparent
+          : ColorConst.backgroundDark,
       body: BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
           if (state.status == FormStatus.success) {
@@ -43,7 +48,8 @@ class AuthView extends StatelessWidget {
           }
           if (state.isMessage) {
             final now = DateTime.now();
-            final canShow = _lastSnackShownAt == null ||
+            final canShow =
+                _lastSnackShownAt == null ||
                 now.difference(_lastSnackShownAt!) >= _snackCooldown;
             if (canShow) {
               _lastSnackShownAt = now;
@@ -54,8 +60,9 @@ class AuthView extends StatelessWidget {
                   ..hideCurrentSnackBar()
                   ..showSnackBar(
                     SnackBar(
-                      backgroundColor:
-                          HorseAndRidersTheme().getTheme().primaryColor,
+                      backgroundColor: HorseAndRidersTheme()
+                          .getTheme()
+                          .primaryColor,
                       content: Text(state.message),
                     ),
                   );
@@ -65,7 +72,8 @@ class AuthView extends StatelessWidget {
 
           if (state.isError) {
             final now = DateTime.now();
-            final canShow = _lastSnackShownAt == null ||
+            final canShow =
+                _lastSnackShownAt == null ||
                 now.difference(_lastSnackShownAt!) >= _snackCooldown;
             if (canShow) {
               _lastSnackShownAt = now;
@@ -111,8 +119,9 @@ class AuthView extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Container(
-                                      constraints:
-                                          const BoxConstraints(maxWidth: 300),
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 300,
+                                      ),
                                       child: Form(
                                         autovalidateMode:
                                             AutovalidateMode.onUserInteraction,
@@ -156,8 +165,9 @@ class AuthView extends StatelessWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                        constraints:
-                                            const BoxConstraints(maxWidth: 300),
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 300,
+                                        ),
                                         child: Form(
                                           autovalidateMode: AutovalidateMode
                                               .onUserInteraction,
@@ -194,9 +204,7 @@ String getScreenName(LoginPageStatus pageStatus) {
 }
 
 /// Returns the view for the page status
-Widget getView({
-  required LoginState state,
-}) {
+Widget getView({required LoginState state}) {
   switch (state.pageStatus) {
     case LoginPageStatus.login:
       return loginView();

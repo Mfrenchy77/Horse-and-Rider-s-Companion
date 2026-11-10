@@ -3,17 +3,10 @@
 part of 'app_cubit.dart';
 
 /// The current status of the app.
-enum AppStatus {
-  authenticated,
-  unauthenticated,
-}
+enum AppStatus { authenticated, unauthenticated }
 
 /// The Status of the Message to Support
-enum MessageToSupportStatus {
-  initial,
-  sending,
-  success,
-}
+enum MessageToSupportStatus { initial, sending, success }
 
 /// The Sort State of the Resources
 enum ResourcesSortStatus {
@@ -25,75 +18,36 @@ enum ResourcesSortStatus {
 }
 
 /// The Sort State of the Comments
-enum CommentSortState {
-  Best,
-  Recent,
-  Oldest,
-  Worst,
-}
+enum CommentSortState { Best, Recent, Oldest, Worst }
 
 /// The Sorting of Conversations
-enum ConversationsSort {
-  unread,
-  oldest,
-  createdDate,
-  lastupdatedDate,
-}
+enum ConversationsSort { unread, oldest, createdDate, lastupdatedDate }
 
 /// The State of the Conversation
-enum ConversationState {
-  error,
-  loaded,
-  loading,
-}
+enum ConversationState { error, loaded, loading }
 
 /// The state of the Conversations
-enum ConversationsState {
-  error,
-  loaded,
-  loading,
-}
+enum ConversationsState { error, loaded, loading }
 
 /// The Status of the Accept Request
-enum AcceptStatus {
-  loading,
-  waiting,
-  accepted,
-}
+enum AcceptStatus { loading, waiting, accepted }
 
 /// The Navigation within the SkillTree Section
 enum SkillTreeNavigation {
   SkillList,
   SkillLevel,
   TrainingPath,
-  TrainingPathList
+  TrainingPathList,
 }
 
 /// The Sort State of the Skills
-enum CategorySortState {
-  Husbandry,
-  Mounted,
-  In_Hand,
-  Other,
-  All,
-}
+enum CategorySortState { Husbandry, Mounted, In_Hand, Other, All }
 
 ///  The Difficulty Sort State of the SKills
-enum DifficultySortState {
-  Introductory,
-  Intermediate,
-  Advanced,
-  All,
-}
+enum DifficultySortState { Introductory, Intermediate, Advanced, All }
 
 /// Tag for the Log Entry
-enum LogTag {
-  Show,
-  Edit,
-  Other,
-  Health,
-  Training,
-}
+enum LogTag { Show, Edit, Other, Health, Training }
 
 /// The Page Status of the App
 enum AppPageStatus {
@@ -171,7 +125,7 @@ class AppState extends Equatable {
   });
 
   const AppState.authenticated(User user)
-      : this._(status: AppStatus.authenticated, user: user);
+    : this._(status: AppStatus.authenticated, user: user);
 
   const AppState.unauthenticated() : this._(status: AppStatus.unauthenticated);
 
@@ -343,6 +297,7 @@ class AppState extends Equatable {
   final MessageToSupportStatus messageToSupportStatus;
 
   AppState copyWith({
+    bool clearSkill = false,
     int? index,
     User? user,
     Skill? skill,
@@ -401,7 +356,7 @@ class AppState extends Equatable {
   }) {
     return AppState._(
       user: user ?? this.user,
-      skill: skill ?? this.skill,
+      skill: clearSkill ? null : skill ?? this.skill,
       index: index ?? this.index,
       isEdit: isEdit ?? this.isEdit,
       status: status ?? this.status,
@@ -463,60 +418,60 @@ class AppState extends Equatable {
 
   @override
   List<Object?> get props => [
-        user,
-        skill,
-        index,
-        status,
-        isEdit,
-        isGuest,
-        message,
-        horseId,
-        isError,
-        messages,
-        resource,
-        bannerAd,
-        isSearch,
-        messageId,
-        isMessage,
-        isViewing,
-        resources,
-        allSkills,
-        isForRider,
-        pageStatus,
-        searchList,
-        deleteEmail,
-        messageText,
-        conversation,
-        acceptStatus,
-        sortedSkills,
-        trainingPath,
-        errorMessage,
-        horseProfile,
-        usersProfile,
-        conversations,
-        ownersProfile,
-        isFromProfile,
-        trainingPaths,
-        savedResources,
-        showOnboarding,
-        viewingProfile,
-        isProfileSetup,
-        showFirstLaunch,
-        isBannerAdReady,
-        resourceComments,
-        commentSortState,
-        skillTreeTabIndex,
-        conversationState,
-        conversationsSort,
-        conversationsState,
-        isFromTrainingPath,
-        categorySortState,
-        skillTreeNavigation,
-        resourcesSortStatus,
-        viewingProfielEmail,
-        difficultySortState,
-        showEmailVerification,
-        isFromTrainingPathList,
-        messageToSupportStatus,
-      ];
+    user,
+    skill,
+    index,
+    status,
+    isEdit,
+    isGuest,
+    message,
+    horseId,
+    isError,
+    messages,
+    resource,
+    bannerAd,
+    isSearch,
+    messageId,
+    isMessage,
+    isViewing,
+    resources,
+    allSkills,
+    isForRider,
+    pageStatus,
+    searchList,
+    deleteEmail,
+    messageText,
+    conversation,
+    acceptStatus,
+    sortedSkills,
+    trainingPath,
+    errorMessage,
+    horseProfile,
+    usersProfile,
+    conversations,
+    ownersProfile,
+    isFromProfile,
+    trainingPaths,
+    savedResources,
+    showOnboarding,
+    viewingProfile,
+    isProfileSetup,
+    showFirstLaunch,
+    isBannerAdReady,
+    resourceComments,
+    commentSortState,
+    skillTreeTabIndex,
+    conversationState,
+    conversationsSort,
+    conversationsState,
+    isFromTrainingPath,
+    categorySortState,
+    skillTreeNavigation,
+    resourcesSortStatus,
+    viewingProfielEmail,
+    difficultySortState,
+    showEmailVerification,
+    isFromTrainingPathList,
+    messageToSupportStatus,
+  ];
 }

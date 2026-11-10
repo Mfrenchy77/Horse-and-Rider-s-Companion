@@ -43,8 +43,9 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
 
   @override
   void dispose() {
-    _itemPositionsListener.itemPositions
-        .removeListener(_updateCurrentParentIndex);
+    _itemPositionsListener.itemPositions.removeListener(
+      _updateCurrentParentIndex,
+    );
     super.dispose();
   }
 
@@ -99,7 +100,7 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
     }
   }
 
-  void _buildListItems(List<Comment> baseComments, Resource resource) {
+  void _buildListItems(List<Comment> baseComments) {
     _listItems = [];
     _parentCommentIndexes = [];
 
@@ -113,14 +114,8 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
       );
       currentIndex++;
 
-      final childComments =
-          context.read<AppCubit>().getChildComments(parentComment: comment);
-      for (final child in childComments) {
-        _listItems.add(
-          _ListItem(type: _ListItemType.childComment, comment: child),
-        );
-        currentIndex++;
-      }
+      // CommentItem renders the full reply thread. Adding replies here too
+      // would display the same comment more than once.
     }
 
     _listItems.add(_ListItem(type: _ListItemType.padding));
@@ -165,7 +160,7 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
         }
 
         final baseComments = cubit.getBaseComments(resource);
-        _buildListItems(baseComments, resource);
+        _buildListItems(baseComments);
 
         final isAtFirstParent = _currentParentIndex <= 0;
         final isAtLastParent =
@@ -219,8 +214,8 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                                 key: const Key('CommentPageHeader'),
                               );
                             case _ListItemType.parentComment:
-                              final isCurrent = _parentCommentIndexes
-                                      .isNotEmpty &&
+                              final isCurrent =
+                                  _parentCommentIndexes.isNotEmpty &&
                                   _currentParentIndex >= 0 &&
                                   _currentParentIndex <
                                       _parentCommentIndexes.length &&
@@ -234,11 +229,6 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                                   key: Key(item.comment!.id!),
                                   comment: item.comment!,
                                 ),
-                              );
-                            case _ListItemType.childComment:
-                              return Padding(
-                                padding: const EdgeInsets.only(left: 20),
-                                child: CommentItem(comment: item.comment!),
                               );
                             case _ListItemType.padding:
                               return const SizedBox(height: 500);
@@ -265,7 +255,7 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
   }
 }
 
-enum _ListItemType { header, parentComment, childComment, padding }
+enum _ListItemType { header, parentComment, padding }
 
 class _ListItem {
   _ListItem({required this.type, this.comment});

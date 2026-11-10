@@ -17,45 +17,30 @@ class FcmService {
       // Request permissions on iOS
       await _messaging.requestPermission();
 
-      final token = await _messaging.getToken();
-      if (token == null || token.isEmpty) return;
+      _messaging.onRegistered.listen((token) async {
+        if (token.isEmpty) return;
 
-      final doc = _db
-          .collection('RiderProfiles')
-          .doc(email.toLowerCase())
-          .collection('tokens')
-          .doc(token);
-
-      await doc.set(
-        {
-          'token': token,
-          'platform': kIsWeb
-              ? 'web'
-              : Platform.isAndroid
-                  ? 'android'
-                  : Platform.isIOS
-                      ? 'ios'
-                      : 'other',
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-
-      // Keep Firestore up to date on rotation
-      _messaging.onTokenRefresh.listen((newToken) async {
-        final td = _db
+        final doc = _db
             .collection('RiderProfiles')
             .doc(email.toLowerCase())
             .collection('tokens')
-            .doc(newToken);
-        await td.set(
+            .doc(token);
+
+        await doc.set(
           {
-            'token': newToken,
+            'token': token,
+            'platform': Platform.isAndroid
+                ? 'android'
+                : Platform.isIOS
+                    ? 'ios'
+                    : 'other',
             'updatedAt': FieldValue.serverTimestamp(),
           },
           SetOptions(merge: true),
         );
       });
+
+      await _messaging.register();
     } catch (_) {
       // Silently ignore; notifications are best-effort
     }

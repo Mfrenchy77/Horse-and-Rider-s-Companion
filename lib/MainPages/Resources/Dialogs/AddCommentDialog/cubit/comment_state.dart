@@ -1,22 +1,10 @@
 part of 'comment_cubit.dart';
 
-enum CommentStatus {
-  initial,
-  loading,
-  success,
-}
+enum CommentStatus { initial, loading, success }
 
-enum PositiveStatus {
-  initial,
-  loading,
-  success,
-}
+enum PositiveStatus { initial, loading, success, failure }
 
-enum NegativeStatus {
-  initial,
-  loading,
-  success,
-}
+enum NegativeStatus { initial, loading, success, failure }
 
 class CommentState extends Equatable {
   const CommentState({
@@ -78,13 +66,13 @@ class CommentState extends Equatable {
 
   @override
   List<Object?> get props => [
-        isEdit,
-        status,
-        comment,
-        resource,
-        usersProfile,
-        commentMessage,
-        positiveStatus,
-        negativeStatus,
-      ];
+    isEdit,
+    status,
+    comment,
+    resource,
+    usersProfile,
+    commentMessage,
+    positiveStatus,
+    negativeStatus,
+  ];
 }

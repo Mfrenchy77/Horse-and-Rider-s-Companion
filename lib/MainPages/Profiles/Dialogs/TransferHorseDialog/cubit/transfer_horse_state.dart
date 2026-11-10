@@ -1,12 +1,6 @@
 part of 'transfer_horse_cubit.dart';
 
-enum TransferHorseStatus {
-  error,
-  initial,
-  sending,
-  success,
-  searching,
-}
+enum TransferHorseStatus { error, initial, sending, success, searching }
 
 class TransferHorseState extends Equatable {
   const TransferHorseState({
@@ -58,6 +52,7 @@ class TransferHorseState extends Equatable {
     HorseProfile? horseProfile,
     TransferHorseStatus? status,
     RiderProfile? transferProfile,
+    bool clearTransferProfile = false,
   }) {
     return TransferHorseState(
       email: email ?? this.email,
@@ -68,20 +63,22 @@ class TransferHorseState extends Equatable {
       userProfile: userProfile ?? this.userProfile,
       horseProfile: horseProfile ?? this.horseProfile,
       isTransferable: isTransferable ?? this.isTransferable,
-      transferProfile: transferProfile ?? this.transferProfile,
+      transferProfile: clearTransferProfile
+          ? null
+          : transferProfile ?? this.transferProfile,
     );
   }
 
   @override
   List<Object?> get props => [
-        email,
-        status,
-        isError,
-        message,
-        isMessage,
-        userProfile,
-        horseProfile,
-        isTransferable,
-        transferProfile,
-      ];
+    email,
+    status,
+    isError,
+    message,
+    isMessage,
+    userProfile,
+    horseProfile,
+    isTransferable,
+    transferProfile,
+  ];
 }

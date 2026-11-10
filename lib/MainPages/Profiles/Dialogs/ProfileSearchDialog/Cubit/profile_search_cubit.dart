@@ -13,13 +13,10 @@ part 'profile_search_state.dart';
 
 class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   ProfileSearchCubit({
-    required KeysRepository keysRepository,
-    required RiderProfileRepository riderProfileRepository,
-    required HorseProfileRepository horseProfileRepository,
-  })  : _keysRepository = keysRepository,
-        _horseProfileRepository = horseProfileRepository,
-        _riderProfileRepository = riderProfileRepository,
-        super(const ProfileSearchState());
+    required this._keysRepository,
+    required this._riderProfileRepository,
+    required this._horseProfileRepository,
+  }) : super(const ProfileSearchState());
 
   ///Repositories
   final RiderProfileRepository _riderProfileRepository;
@@ -33,9 +30,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void nameChanged(String value) {
     debugPrint('Name Changed to $value');
     final name = Name.dirty(value);
-    emit(
-      state.copyWith(searchValue: name),
-    );
+    emit(state.copyWith(searchValue: name));
   }
 
   /// Monitor the Email Field's [value] in the Search Dialog
@@ -58,9 +53,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     debugPrint('Location Range Changed to $value');
     if (value != null) {
       final locationRange = LocationRange.dirty(value);
-      emit(
-        state.copyWith(locationRange: locationRange),
-      );
+      emit(state.copyWith(locationRange: locationRange));
     } else {
       emit(
         state.copyWith(
@@ -108,27 +101,27 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     try {
       _searchSubscription = _riderProfileRepository
           .getProfilesByName(
-        name: capitalizeWords(state.searchValue.value).trim(),
-      )
+            name: capitalizeWords(state.searchValue.value).trim(),
+          )
           .listen((results) {
-        debugPrint('Results: ${results.length}');
-        if (results.isNotEmpty) {
-          emit(
-            state.copyWith(
-              riderProfiles: results,
-              status: FormStatus.success,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              status: FormStatus.failure,
-              error: 'No Results',
-              isError: true,
-            ),
-          );
-        }
-      });
+            debugPrint('Results: ${results.length}');
+            if (results.isNotEmpty) {
+              emit(
+                state.copyWith(
+                  riderProfiles: results,
+                  status: FormStatus.success,
+                ),
+              );
+            } else {
+              emit(
+                state.copyWith(
+                  status: FormStatus.failure,
+                  error: 'No Results',
+                  isError: true,
+                ),
+              );
+            }
+          });
     } catch (e) {
       emit(
         state.copyWith(
@@ -147,13 +140,16 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       return state.riderProfiles;
     }
 
-    debugPrint('Removing User Profile: '
-        '${usersProfile.email} from Search Results');
+    debugPrint(
+      'Removing User Profile: '
+      '${usersProfile.email} from Search Results',
+    );
     // Create a new list to avoid modifying the state directly
     final profiles = List<RiderProfile>.from(state.riderProfiles);
     // Find the index of the profile to remove
-    final index =
-        profiles.indexWhere((profile) => profile.email == usersProfile.email);
+    final index = profiles.indexWhere(
+      (profile) => profile.email == usersProfile.email,
+    );
 
     // If found, remove the profile from the list
     if (index != -1) {
@@ -170,39 +166,31 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       _riderProfileRepository
           .getRiderProfile(email: state.email.value.trim().toLowerCase())
           .listen((profile) {
-        if (profile != null) {
-          profileResults.add(profile);
-          if (profileResults.isNotEmpty) {
-            emit(
-              state.copyWith(
-                riderProfiles: profileResults,
-                status: FormStatus.success,
-              ),
-            );
-          } else {
-            emit(
-              state.copyWith(
-                status: FormStatus.failure,
-                error: 'No Results',
-              ),
-            );
-          }
-        } else {
-          emit(
-            state.copyWith(
-              status: FormStatus.failure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
+            if (profile != null) {
+              profileResults.add(profile);
+              if (profileResults.isNotEmpty) {
+                emit(
+                  state.copyWith(
+                    riderProfiles: profileResults,
+                    status: FormStatus.success,
+                  ),
+                );
+              } else {
+                emit(
+                  state.copyWith(
+                    status: FormStatus.failure,
+                    error: 'No Results',
+                  ),
+                );
+              }
+            } else {
+              emit(
+                state.copyWith(status: FormStatus.failure, error: 'No Results'),
+              );
+            }
+          });
     } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.message,
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
       debugPrint("Failed with error '${e.code}': ${e.message}");
     }
@@ -217,32 +205,24 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       _riderProfileRepository
           .getProfilesByZipcode(zipcode: state.zipCode.value.trim())
           .listen((profiles) {
-        debugPrint('Results: ${profiles.length}');
-        if (profiles.isNotEmpty) {
-          debugPrint('Results: ${profiles.length}');
-          emit(
-            state.copyWith(
-              riderProfiles: profiles,
-              status: FormStatus.success,
-            ),
-          );
-        } else {
-          debugPrint('No Results');
-          emit(
-            state.copyWith(
-              status: FormStatus.failure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
+            debugPrint('Results: ${profiles.length}');
+            if (profiles.isNotEmpty) {
+              debugPrint('Results: ${profiles.length}');
+              emit(
+                state.copyWith(
+                  riderProfiles: profiles,
+                  status: FormStatus.success,
+                ),
+              );
+            } else {
+              debugPrint('No Results');
+              emit(
+                state.copyWith(status: FormStatus.failure, error: 'No Results'),
+              );
+            }
+          });
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
       debugPrint("Failed with error '$e': $e");
     }
   }
@@ -257,29 +237,21 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       _horseProfileRepository
           .getHorseByName(name: state.searchValue.value.trim())
           .listen((results) {
-        if (results.isNotEmpty) {
-          emit(
-            state.copyWith(
-              horseProfiles: results,
-              status: FormStatus.success,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              status: FormStatus.failure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
+            if (results.isNotEmpty) {
+              emit(
+                state.copyWith(
+                  horseProfiles: results,
+                  status: FormStatus.success,
+                ),
+              );
+            } else {
+              emit(
+                state.copyWith(status: FormStatus.failure, error: 'No Results'),
+              );
+            }
+          });
     } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.message,
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
       debugPrint("Failed with error '${e.code}': ${e.message}");
     }
@@ -292,29 +264,21 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       _horseProfileRepository
           .getHorseByNickName(nickName: state.searchValue.value.trim())
           .listen((results) {
-        if (results.isNotEmpty) {
-          emit(
-            state.copyWith(
-              horseProfiles: results,
-              status: FormStatus.success,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              status: FormStatus.failure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
+            if (results.isNotEmpty) {
+              emit(
+                state.copyWith(
+                  horseProfiles: results,
+                  status: FormStatus.success,
+                ),
+              );
+            } else {
+              emit(
+                state.copyWith(status: FormStatus.failure, error: 'No Results'),
+              );
+            }
+          });
     } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-          error: e.message,
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
       debugPrint("Failed with error '${e.code}': ${e.message}");
     }
@@ -328,35 +292,30 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       try {
         _horseProfileRepository
             .getHorseProfileById(
-          id: state.searchValue.value.toLowerCase().trim(),
-        )
+              id: state.searchValue.value.toLowerCase().trim(),
+            )
             .listen((horseProfile) {
-          if (horseProfile != null) {
-            horseProfileResults.add(horseProfile);
-          }
-          if (horseProfileResults.isNotEmpty) {
-            emit(
-              state.copyWith(
-                horseProfiles: horseProfileResults,
-                status: FormStatus.success,
-              ),
-            );
-          } else {
-            emit(
-              state.copyWith(
-                status: FormStatus.failure,
-                error: 'No Results',
-              ),
-            );
-          }
-        });
+              if (horseProfile != null) {
+                horseProfileResults.add(horseProfile);
+              }
+              if (horseProfileResults.isNotEmpty) {
+                emit(
+                  state.copyWith(
+                    horseProfiles: horseProfileResults,
+                    status: FormStatus.success,
+                  ),
+                );
+              } else {
+                emit(
+                  state.copyWith(
+                    status: FormStatus.failure,
+                    error: 'No Results',
+                  ),
+                );
+              }
+            });
       } on FirebaseException catch (e) {
-        emit(
-          state.copyWith(
-            status: FormStatus.failure,
-            error: e.message,
-          ),
-        );
+        emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
         debugPrint("Failed with error '${e.code}': ${e.message}");
       }
@@ -378,49 +337,44 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       final zipcodeRepository = ZipcodeRepository(apiKey: value);
       zipcodeRepository
           .queryRadius(
-        postalCode: state.zipCode.value,
-        radius: state.locationRange.value,
-      )
+            postalCode: state.zipCode.value,
+            radius: state.locationRange.value,
+          )
           .then((event) {
-        /// results are a list of zip codes
-        /// we want to get all the profiles that have the
-        /// zip codes in their profile for each zip code
-        final results = event?.postalCodes;
-        if (results != null) {
-          final horseProfileResults = <HorseProfile>[];
-          for (final zipCode in results) {
-            _horseProfileRepository
-                .getHorseByZipCode(
-              zipCode: zipCode,
-            )
-                .listen((profiles) {
-              horseProfileResults.addAll(profiles);
-              if (horseProfileResults.isNotEmpty) {
-                emit(
-                  state.copyWith(
-                    horseProfiles: horseProfileResults,
-                    status: FormStatus.success,
-                  ),
-                );
-              } else {
-                emit(
-                  state.copyWith(
-                    status: FormStatus.failure,
-                    error: 'No Results',
-                  ),
-                );
+            /// results are a list of zip codes
+            /// we want to get all the profiles that have the
+            /// zip codes in their profile for each zip code
+            final results = event?.postalCodes;
+            if (results != null) {
+              final horseProfileResults = <HorseProfile>[];
+              for (final zipCode in results) {
+                _horseProfileRepository
+                    .getHorseByZipCode(zipCode: zipCode)
+                    .listen((profiles) {
+                      horseProfileResults.addAll(profiles);
+                      if (horseProfileResults.isNotEmpty) {
+                        emit(
+                          state.copyWith(
+                            horseProfiles: horseProfileResults,
+                            status: FormStatus.success,
+                          ),
+                        );
+                      } else {
+                        emit(
+                          state.copyWith(
+                            status: FormStatus.failure,
+                            error: 'No Results',
+                          ),
+                        );
+                      }
+                    });
               }
-            });
-          }
-        } else {
-          emit(
-            state.copyWith(
-              status: FormStatus.failure,
-              error: 'No Results',
-            ),
-          );
-        }
-      });
+            } else {
+              emit(
+                state.copyWith(status: FormStatus.failure, error: 'No Results'),
+              );
+            }
+          });
     });
   }
 
