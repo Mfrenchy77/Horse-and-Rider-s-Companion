@@ -14,7 +14,7 @@ import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 // Simple cooldown between SnackBars to avoid rapid spamming.
-late DateTime? _lastSnackShownAt;
+DateTime? _lastSnackShownAt;
 const _snackCooldown = Duration(milliseconds: 1200);
 
 class AuthView extends StatelessWidget {
@@ -49,6 +49,7 @@ class AuthView extends StatelessWidget {
               _lastSnackShownAt = now;
               debugPrint('Message: ${state.message}');
               SchedulerBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(
@@ -70,6 +71,7 @@ class AuthView extends StatelessWidget {
               _lastSnackShownAt = now;
               debugPrint('Error: ${state.message}');
               SchedulerBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(

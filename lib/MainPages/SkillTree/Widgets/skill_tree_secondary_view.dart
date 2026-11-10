@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skills_list_view.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_paths_list.dart';
+// Training paths disabled.
+// import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_paths_list.dart';
 
 class SkillTreeSecondaryView extends StatelessWidget {
   const SkillTreeSecondaryView({super.key});
@@ -14,15 +15,19 @@ class SkillTreeSecondaryView extends StatelessWidget {
         switch (state.skillTreeNavigation) {
           case SkillTreeNavigation.SkillList:
             return const SkillsListView(key: Key('SkillsListView'));
-          case SkillTreeNavigation.TrainingPathList:
-            return const TrainingPathListView(
-              key: Key('TrainingPathListView'),
-            );
-          case SkillTreeNavigation.TrainingPath:
-            return const TrainingPathListView(
-              key: Key('TrainingPathListView'),
-            );
+          // Training-path secondary views retained for restoration.
+          //           case SkillTreeNavigation.TrainingPathList:
+          //             return const TrainingPathListView(
+          //               key: Key('TrainingPathListView'),
+          //             );
+          //           case SkillTreeNavigation.TrainingPath:
+          //             return const TrainingPathListView(
+          //               key: Key('TrainingPathListView'),
+          //             );
           case SkillTreeNavigation.SkillLevel:
+          // Legacy states fall back to the active skills list.
+          case SkillTreeNavigation.TrainingPathList:
+          case SkillTreeNavigation.TrainingPath:
             return const SkillsListView(key: Key('SkillsListView'));
         }
       },

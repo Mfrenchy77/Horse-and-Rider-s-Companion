@@ -16,6 +16,6 @@ class Numberz extends FormzInput<int, NumberValidationError> {
 
   @override
   NumberValidationError? validator(int value) {
-    return value >= 0 ? NumberValidationError.empty : null;
+    return value < 0 ? NumberValidationError.empty : null;
   }
 }

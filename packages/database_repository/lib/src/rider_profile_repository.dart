@@ -1,20 +1,24 @@
-// ignore_for_file: constant_identifier_names, public_member_api_docs
+// ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/models.dart';
-import 'package:database_repository/src/models/rider_profile.dart';
 import 'package:flutter/foundation.dart';
 
 ///Interface for Firebase and Rider's Profile
 class RiderProfileRepository {
+  RiderProfileRepository({FirebaseFirestore? firestore})
+      : _riderProfileDatabaseReference =
+            (firestore ?? FirebaseFirestore.instance)
+                .collection(RIDER_PROFILE)
+                .withConverter<RiderProfile>(
+                  fromFirestore: RiderProfile.fromFirestore,
+                  toFirestore: (riderProfile, options) =>
+                      riderProfile.toFirestore(),
+                );
+
   static const String RIDER_PROFILE = 'Rider_Profile';
   static const String OWNED_HORSES = 'ownedHorses';
-  final _riderProfileDatabaseReference =
-      FirebaseFirestore.instance.collection(RIDER_PROFILE).withConverter(
-            fromFirestore: RiderProfile.fromFirestore,
-            toFirestore: (RiderProfile riderProfile, options) =>
-                riderProfile.toFirestore(),
-          );
+  final CollectionReference<RiderProfile> _riderProfileDatabaseReference;
 
   ///create or update [riderProfile] for user
 
@@ -27,6 +31,7 @@ class RiderProfileRepository {
           .set(riderProfile);
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
+      rethrow;
     }
   }
 
@@ -38,10 +43,13 @@ class RiderProfileRepository {
       await _riderProfileDatabaseReference
           .doc(_convertEmailToPath(email: riderProfile?.email))
           .update({
-        OWNED_HORSES: FieldValue.arrayUnion([horseId]),
+        OWNED_HORSES: FieldValue.arrayUnion([
+          BaseListItem(id: horseId).toFirestore(),
+        ]),
       });
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
+      rethrow;
     }
   }
 
@@ -126,6 +134,7 @@ class RiderProfileRepository {
           .delete();
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
+      rethrow;
     }
   }
 

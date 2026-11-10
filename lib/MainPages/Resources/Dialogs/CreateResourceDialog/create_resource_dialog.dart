@@ -1,3 +1,5 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +25,10 @@ class CreateResourcDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<CreateResourceDialogCubit>();
+    debugPrint(
+      'Skills - ${skills?.length} CubitSkills ${cubit.state.resourceSkills?.length}',
+    );
     final titleController = TextEditingController(text: resource?.name ?? '');
     final descController =
         TextEditingController(text: resource?.description ?? '');

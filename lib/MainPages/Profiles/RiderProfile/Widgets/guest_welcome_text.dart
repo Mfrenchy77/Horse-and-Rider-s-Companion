@@ -28,9 +28,11 @@ class GuestWelcomeText extends StatelessWidget {
                   'and care. Browse through a curated selection of'
                   ' articles and videos, meticulously linked to specific'
                   ' skills, providing you with valuable resources for focused'
-                  " learning.\n\n Discover our unique 'Training Paths', "
-                  'crafted by experienced trainers and instructors, to '
-                  'guide you through structured learning experiences. '
+                  ' learning.\n\n'
+                  // Training-path introduction retained for restoration.
+                  //    " learning.\n\n Discover our unique 'Training Paths', "
+                  //   'crafted by experienced trainers and instructors, to '
+                  //     'guide you through structured learning experiences. '
                   "Although you're currently exploring as a guest, a full "
                   'membership offers personalized tracking of your progress, '
                   'the ability to assign instructors for skill validation,'
@@ -39,9 +41,7 @@ class GuestWelcomeText extends StatelessWidget {
                   ' the world of '
                   "Horse & Rider's Companion, where your passion for horse "
                   'riding and care is our utmost priority.',
-                  style: TextStyle(
-                    fontSize: 18,
-                  ),
+                  style: TextStyle(fontSize: 18),
                 ),
               ),
             ),

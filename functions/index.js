@@ -474,6 +474,7 @@ exports.resolveImage = onRequest(
 
           // 1) Fetch target (follow redirects)
           const resp = await fetch(url, {headers: DEFAULT_HEADERS, redirect: 'follow'});
+          if (!resp.ok) return res.status(502).json({error: `Fetch failed: ${resp.status}`});
           const finalUrl = resp.url;
           const contentType = (resp.headers.get('content-type') || '').toLowerCase();
 
@@ -535,9 +536,9 @@ async function sendPush(tokens, payload) {
     const msg = {
       notification: {title: payload.title, body: payload.body},
       data: Object.fromEntries(Object.entries(payload.data || {}).map(([k, v]) => [String(k), String(v)])),
-      tokens,
+      tokens: Array.from(new Set(tokens)),
     };
-    await admin.messaging().sendMulticast(msg);
+    await admin.messaging().sendEachForMulticast(msg);
   } catch (e) {
     logger.error('FCM send error', e);
   }
@@ -572,7 +573,7 @@ exports.onMessageCreated = onDocumentCreated(
         const parties = Array.isArray(conv.parties) ? conv.parties : [];
         const partiesIds = Array.isArray(conv.partiesIds) ? conv.partiesIds : [];
 
-        let senderEmail = message.senderId || '';
+        let senderEmail = String(message.senderId || '').toLowerCase();
         if (!senderEmail) {
           const idx = parties.findIndex((n) => n === message.sender);
           if (idx >= 0 && partiesIds[idx]) senderEmail = String(partiesIds[idx]).toLowerCase();

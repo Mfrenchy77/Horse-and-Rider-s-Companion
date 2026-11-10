@@ -27,17 +27,17 @@ class AppCubit extends Cubit<AppState> {
     required RiderProfileRepository riderProfileRepository,
     required HorseProfileRepository horseProfileRepository,
     required AuthenticationRepository authenticationRepository,
-  })  : _messagesRepository = messagesRepository,
-        _skillTreeRepository = skillTreeRepository,
-        _resourcesRepository = resourcesRepository,
-        _riderProfileRepository = riderProfileRepository,
-        _horseProfileRepository = horseProfileRepository,
-        _authenticationRepository = authenticationRepository,
-        super(
-          authenticationRepository.currentUser.isNotEmpty
-              ? AppState.authenticated(authenticationRepository.currentUser)
-              : const AppState.unauthenticated(),
-        ) {
+  }) : _messagesRepository = messagesRepository,
+       _skillTreeRepository = skillTreeRepository,
+       _resourcesRepository = resourcesRepository,
+       _riderProfileRepository = riderProfileRepository,
+       _horseProfileRepository = horseProfileRepository,
+       _authenticationRepository = authenticationRepository,
+       super(
+         authenticationRepository.currentUser.isNotEmpty
+             ? AppState.authenticated(authenticationRepository.currentUser)
+             : const AppState.unauthenticated(),
+       ) {
     _beginListeningForUserChanges();
   }
 
@@ -55,7 +55,8 @@ class AppCubit extends Cubit<AppState> {
   StreamSubscription<List<Resource>>? _resourcesStream;
   StreamSubscription<List<Skill>>? _skillsSubscription;
   StreamSubscription<List<Conversation>>? _conversationsStream;
-  StreamSubscription<List<TrainingPath>>? _trainingPathsStream;
+  // Training paths disabled; subscription retained for restoration.
+  // StreamSubscription<List<TrainingPath>>? _trainingPathsStream;
   StreamSubscription<RiderProfile?>? _usersProfileSubscription;
   StreamSubscription<HorseProfile?>? _horseProfileSubscription;
   late final StreamSubscription<RiderProfile?> _viewingProfileSubscription;
@@ -66,7 +67,7 @@ class AppCubit extends Cubit<AppState> {
   String? _lastAuthUserId;
   bool? _lastAuthEmailVerified;
 
-/* **************************************************************************
+  /* **************************************************************************
 
 ******************************* User's Profile *********************************
 
@@ -74,10 +75,12 @@ class AppCubit extends Cubit<AppState> {
   void _beginListeningForUserChanges() {
     _getSkillTreeLists();
     _userSubscription = _authenticationRepository.user.listen((user) {
-      debugPrint('Listening for user changes: '
-          '\nUserEmail: ${user?.email} '
-          '\nUserGuest: ${user?.isGuest} '
-          '\nUserId: ${user?.id}');
+      debugPrint(
+        'Listening for user changes: '
+        '\nUserEmail: ${user?.email} '
+        '\nUserGuest: ${user?.isGuest} '
+        '\nUserId: ${user?.id}',
+      );
       _checkFirstLaunch();
       if (user != null && user.id.isNotEmpty) {
         // Avoid redundant reloads when the authenticated user hasn't changed
@@ -98,12 +101,7 @@ class AppCubit extends Cubit<AppState> {
         debugPrint('User is unauthenticated or email not verified');
         // Ensure guest onboarding flag also reflects SharedPrefs setting
         _checkOnboarding();
-        emit(
-          state.copyWith(
-            isGuest: true,
-            pageStatus: AppPageStatus.loaded,
-          ),
-        );
+        emit(state.copyWith(isGuest: true, pageStatus: AppPageStatus.loaded));
       }
     });
   }
@@ -169,10 +167,7 @@ class AppCubit extends Cubit<AppState> {
     } catch (e) {
       debugPrint('Error saving profile from onboarding: $e');
       emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed to save profile',
-        ),
+        state.copyWith(isError: true, errorMessage: 'Failed to save profile'),
       );
     }
   }
@@ -207,33 +202,33 @@ class AppCubit extends Cubit<AppState> {
       _usersProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: user.email)
           .listen((profile) {
-        if (profile != null) {
-          debugPrint('User Profile exists: ${profile.email}');
-          _checkOnboarding();
-          // Register device for push notifications (best-effort)
-          FcmService.ensureRegistered(profile.email);
-          emit(
-            state.copyWith(
-              user: user,
-              isGuest: false,
-              usersProfile: profile,
-              isProfileSetup: true,
-              status: AppStatus.authenticated,
-              pageStatus: AppPageStatus.loaded,
-            ),
-          );
-        } else {
-          debugPrint('No User Profile, needs setup');
-          emit(
-            state.copyWith(
-              user: user,
-              isProfileSetup: false,
-              status: AppStatus.authenticated,
-              pageStatus: AppPageStatus.loaded,
-            ),
-          );
-        }
-      });
+            if (profile != null) {
+              debugPrint('User Profile exists: ${profile.email}');
+              _checkOnboarding();
+              // Register device for push notifications (best-effort)
+              FcmService.ensureRegistered(profile.email);
+              emit(
+                state.copyWith(
+                  user: user,
+                  isGuest: false,
+                  usersProfile: profile,
+                  isProfileSetup: true,
+                  status: AppStatus.authenticated,
+                  pageStatus: AppPageStatus.loaded,
+                ),
+              );
+            } else {
+              debugPrint('No User Profile, needs setup');
+              emit(
+                state.copyWith(
+                  user: user,
+                  isProfileSetup: false,
+                  status: AppStatus.authenticated,
+                  pageStatus: AppPageStatus.loaded,
+                ),
+              );
+            }
+          });
     }
   }
 
@@ -241,8 +236,9 @@ class AppCubit extends Cubit<AppState> {
   Future<RiderProfile?> _fetchRiderProfile(String email) async {
     debugPrint('Fetching Rider Profile for $email');
     try {
-      final profile =
-          await _riderProfileRepository.getRiderProfile(email: email).first;
+      final profile = await _riderProfileRepository
+          .getRiderProfile(email: email)
+          .first;
       return profile;
     } catch (e) {
       debugPrint('Error fetching rider profile: $e');
@@ -254,10 +250,7 @@ class AppCubit extends Cubit<AppState> {
   Future<void> resendEmailVerification() async {
     await _authenticationRepository.resendEmailVerification();
     emit(
-      state.copyWith(
-        isMessage: true,
-        errorMessage: 'Email Verification Sent',
-      ),
+      state.copyWith(isMessage: true, errorMessage: 'Email Verification Sent'),
     );
     await openEmail(state.user.email);
   }
@@ -286,8 +279,9 @@ class AppCubit extends Cubit<AppState> {
   /// Peroiodically checks the email verification status.
   void _checkEmailVerificationStatus() {
     _emailVerificationTimer?.cancel();
-    _emailVerificationTimer =
-        Timer.periodic(const Duration(seconds: 10), (_) async {
+    _emailVerificationTimer = Timer.periodic(const Duration(seconds: 10), (
+      _,
+    ) async {
       debugPrint('Checking Email Verification Status');
       await _authenticationRepository.reloadCurrentUser();
       final isVerified = _authenticationRepository.isEmailVerified();
@@ -335,8 +329,9 @@ class AppCubit extends Cubit<AppState> {
           return true;
         }
         // Instructor check for the viewing profile
-        if (viewingProfile.instructors
-                ?.any((instructor) => instructor.id == usersProfile.email) ??
+        if (viewingProfile.instructors?.any(
+              (instructor) => instructor.id == usersProfile.email,
+            ) ??
             false) {
           debugPrint('Viewing Profile Instructor');
           return true;
@@ -350,15 +345,17 @@ class AppCubit extends Cubit<AppState> {
     // If the state is focused on a horse and the horseProfile exists
     if (!state.isForRider && horseProfile != null && usersProfile != null) {
       // Owner check for horse
-      if (usersProfile.ownedHorses
-              ?.any((ownedHorse) => ownedHorse.id == horseProfile.id) ??
+      if (usersProfile.ownedHorses?.any(
+            (ownedHorse) => ownedHorse.id == horseProfile.id,
+          ) ??
           false) {
         debugPrint('Horse Owner');
         return true;
       }
       // Instructor check for horse
-      if (horseProfile.instructors
-              ?.any((instructor) => instructor.id == usersProfile.email) ??
+      if (horseProfile.instructors?.any(
+            (instructor) => instructor.id == usersProfile.email,
+          ) ??
           false) {
         debugPrint('Horse Instructor');
         return true;
@@ -376,9 +373,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Opens a Rider Profile Page for  [email]
-  void getProfileToBeViewed({
-    required String email,
-  }) {
+  void getProfileToBeViewed({required String email}) {
     emit(
       state.copyWith(
         horseId: '',
@@ -407,10 +402,7 @@ class AppCubit extends Cubit<AppState> {
           );
         } else {
           emit(
-            state.copyWith(
-              isError: true,
-              errorMessage: 'Profile Not Found',
-            ),
+            state.copyWith(isError: true, errorMessage: 'Profile Not Found'),
           );
         }
       });
@@ -497,9 +489,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Persists the changes to the rider profile to the repository
-  Future<void> _persistRiderProfileChanges(
-    RiderProfile riderProfile,
-  ) async {
+  Future<void> _persistRiderProfileChanges(RiderProfile riderProfile) async {
     try {
       await _riderProfileRepository.createOrUpdateRiderProfile(
         riderProfile: riderProfile,
@@ -542,7 +532,7 @@ class AppCubit extends Cubit<AppState> {
     await _conversationsStream?.cancel();
     await _resourcesStream?.cancel();
     await _skillsSubscription?.cancel();
-    await _trainingPathsStream?.cancel();
+    // await _trainingPathsStream?.cancel(); // Training paths disabled.
 
     emit(const AppState.unauthenticated());
 
@@ -583,7 +573,8 @@ class AppCubit extends Cubit<AppState> {
       senderProfilePicUrl: user.picUrl,
       messageType: MessageType.INSTRUCTOR_REQUEST,
       recipients: [user.name, instructorProfile.name],
-      message: '${user.name} has requested '
+      message:
+          '${user.name} has requested '
           '${instructorProfile.name} to be their Instructor',
     );
 
@@ -615,10 +606,7 @@ class AppCubit extends Cubit<AppState> {
     } catch (e) {
       debugPrint('Failed to send instructor request: $e');
       emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed to send request',
-        ),
+        state.copyWith(isError: true, errorMessage: 'Failed to send request'),
       );
     }
   }
@@ -655,7 +643,8 @@ class AppCubit extends Cubit<AppState> {
       senderProfilePicUrl: user.picUrl,
       messageType: MessageType.STUDENT_REQUEST,
       recipients: [user.name, studentProfile.name],
-      message: '${user.name} has requested '
+      message:
+          '${user.name} has requested '
           '${studentProfile.name} to be their Student',
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
@@ -688,10 +677,7 @@ class AppCubit extends Cubit<AppState> {
     } catch (e) {
       debugPrint('Failed to send student request: $e');
       emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed to send request',
-        ),
+        state.copyWith(isError: true, errorMessage: 'Failed to send request'),
       );
     }
   }
@@ -699,9 +685,7 @@ class AppCubit extends Cubit<AppState> {
   ///  removes a student from the your student list
   ///  and removes the your from the their instructor list
   ///  and adds a note to both users
-  Future<void> removeStudent({
-    required RiderProfile studentProfile,
-  }) async {
+  Future<void> removeStudent({required RiderProfile studentProfile}) async {
     final user = state.usersProfile!;
 
     // Remove student from the user's list
@@ -750,10 +734,7 @@ class AppCubit extends Cubit<AppState> {
     } catch (e) {
       debugPrint('Failed to remove student: $e');
       emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed to remove student',
-        ),
+        state.copyWith(isError: true, errorMessage: 'Failed to remove student'),
       );
     }
   }
@@ -771,8 +752,9 @@ class AppCubit extends Cubit<AppState> {
     );
 
     // Remove user from the instructor's student list
-    instructorProfile.students
-        ?.removeWhere((student) => student.id == user.email.toLowerCase());
+    instructorProfile.students?.removeWhere(
+      (student) => student.id == user.email.toLowerCase(),
+    );
 
     // Add notes about the removal to both profiles
     final userNote = BaseListItem(
@@ -820,9 +802,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// adds the Viewing Profile to the users contacts
   /// and adds a note to both users
-  Future<void> addToContact({
-    required RiderProfile riderProfile,
-  }) async {
+  Future<void> addToContact({required RiderProfile riderProfile}) async {
     final user = state.usersProfile!;
     final contact = BaseListItem(
       isCollapsed: true,
@@ -889,13 +869,12 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// removes the Viewing Profile from the user's contacts
-  Future<void> removeFromContacts({
-    required RiderProfile riderProfile,
-  }) async {
+  Future<void> removeFromContacts({required RiderProfile riderProfile}) async {
     final user = state.usersProfile!;
 
-    user.savedProfilesList
-        ?.removeWhere((item) => item.id == riderProfile.email.toLowerCase());
+    user.savedProfilesList?.removeWhere(
+      (item) => item.id == riderProfile.email.toLowerCase(),
+    );
     user.notes?.add(
       BaseListItem(
         message: user.name,
@@ -906,8 +885,9 @@ class AppCubit extends Cubit<AppState> {
       ),
     );
 
-    riderProfile.savedProfilesList
-        ?.removeWhere((item) => item.id == user.email.toLowerCase());
+    riderProfile.savedProfilesList?.removeWhere(
+      (item) => item.id == user.email.toLowerCase(),
+    );
     riderProfile.notes?.add(
       BaseListItem(
         message: user.name,
@@ -943,15 +923,17 @@ class AppCubit extends Cubit<AppState> {
 
   /// Returns true if the viewingProfile is in the userProfile contacts
   bool isContact() {
-    return state.usersProfile?.savedProfilesList
-            ?.any((element) => element.id == state.viewingProfile?.email) ??
+    return state.usersProfile?.savedProfilesList?.any(
+          (element) => element.id == state.viewingProfile?.email,
+        ) ??
         false;
   }
 
   ///  Returns true if the userProfile is an instructor of the viewingProfile
   bool isInstuctor() {
-    return state.viewingProfile?.instructors
-            ?.any((element) => element.id == state.usersProfile?.email) ??
+    return state.viewingProfile?.instructors?.any(
+          (element) => element.id == state.usersProfile?.email,
+        ) ??
         false;
   }
 
@@ -992,15 +974,12 @@ class AppCubit extends Cubit<AppState> {
       }
     } else {
       emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed to delete account',
-        ),
+        state.copyWith(isError: true, errorMessage: 'Failed to delete account'),
       );
     }
   }
 
-/* ***************************************************************************
+  /* ***************************************************************************
 
 ******************************* Horse Profile**********************************
 
@@ -1019,33 +998,34 @@ class AppCubit extends Cubit<AppState> {
       _horseProfileSubscription = _horseProfileRepository
           .getHorseProfileById(id: id)
           .listen((horseProfile) {
-        if (horseProfile != null) {
-          debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
+            if (horseProfile != null) {
+              debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
 
-          _checkAndSetOwnerProfile(horseProfile);
-          emit(
-            state.copyWith(
-              horseId: horseProfile.id,
-              horseProfile: horseProfile,
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              pageStatus: AppPageStatus.error,
-              errorMessage: 'Failed to retrieve horse profile',
-            ),
-          );
-        }
-      });
+              _checkAndSetOwnerProfile(horseProfile);
+              emit(
+                state.copyWith(
+                  horseId: horseProfile.id,
+                  horseProfile: horseProfile,
+                ),
+              );
+            } else {
+              emit(
+                state.copyWith(
+                  pageStatus: AppPageStatus.error,
+                  errorMessage: 'Failed to retrieve horse profile',
+                ),
+              );
+            }
+          });
     }
   }
 
   /// Fetches the Horse Profile from the database
   Future<HorseProfile?> _fetchHorseProfile(String id) async {
     try {
-      final profile =
-          await _horseProfileRepository.getHorseProfile(id: id).first;
+      final profile = await _horseProfileRepository
+          .getHorseProfile(id: id)
+          .first;
       return profile;
     } catch (e) {
       debugPrint('Error fetching horse profile: $e');
@@ -1058,14 +1038,11 @@ class AppCubit extends Cubit<AppState> {
     if (!isOwner() &&
         state.ownersProfile?.email != horseProfile.currentOwnerId) {
       debugPrint('Not Owner, fetching owner profile');
-      final ownerProfile =
-          await _fetchRiderProfile(horseProfile.currentOwnerId);
-      debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
-      emit(
-        state.copyWith(
-          ownersProfile: ownerProfile,
-        ),
+      final ownerProfile = await _fetchRiderProfile(
+        horseProfile.currentOwnerId,
       );
+      debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
+      emit(state.copyWith(ownersProfile: ownerProfile));
     } else {
       debugPrint('Owner or same owner profile, no need to fetch');
     }
@@ -1098,8 +1075,9 @@ class AppCubit extends Cubit<AppState> {
       final updatedSkillLevels = horseProfile.skillLevels ?? [];
 
       // Attempt to find existing skill level index
-      final existingIndex = updatedSkillLevels
-          .indexWhere((element) => element.skillId == state.skill?.id);
+      final existingIndex = updatedSkillLevels.indexWhere(
+        (element) => element.skillId == state.skill?.id,
+      );
 
       // Replace or add the skill level
       if (existingIndex != -1) {
@@ -1144,8 +1122,9 @@ class AppCubit extends Cubit<AppState> {
 
   /// Determines if the Horse Profile is a Student Horse of the current user
   bool isStudentHorse() {
-    return state.horseProfile?.instructors
-            ?.any((instructor) => instructor.id == state.usersProfile?.email) ??
+    return state.horseProfile?.instructors?.any(
+          (instructor) => instructor.id == state.usersProfile?.email,
+        ) ??
         false;
   }
 
@@ -1163,10 +1142,12 @@ class AppCubit extends Cubit<AppState> {
   ///  Removes the horse from the users student horse list
   void _removeStudentHorse(HorseProfile horseProfile) {
     debugPrint('Remove Student Horse');
-    state.usersProfile?.studentHorses
-        ?.removeWhere((element) => element.id == horseProfile.id);
-    horseProfile.instructors
-        ?.removeWhere((element) => element.id == state.usersProfile?.email);
+    state.usersProfile?.studentHorses?.removeWhere(
+      (element) => element.id == horseProfile.id,
+    );
+    horseProfile.instructors?.removeWhere(
+      (element) => element.id == state.usersProfile?.email,
+    );
 
     if (state.usersProfile != null) {
       try {
@@ -1198,10 +1179,13 @@ class AppCubit extends Cubit<AppState> {
       return;
     } else {
       final requestHorse = _createRequestHorse();
-      final conversation =
-          _createStudentHorseRequestConnversation(requestHorse);
-      final message =
-          _createStudentHorseRequestMessage(requestHorse, conversation.id);
+      final conversation = _createStudentHorseRequestConnversation(
+        requestHorse,
+      );
+      final message = _createStudentHorseRequestMessage(
+        requestHorse,
+        conversation.id,
+      );
 
       _messagesRepository
         ..createOrUpdateConversation(conversation: conversation)
@@ -1210,7 +1194,8 @@ class AppCubit extends Cubit<AppState> {
       emit(
         state.copyWith(
           isMessage: true,
-          errorMessage: 'Request to add '
+          errorMessage:
+              'Request to add '
               '${state.horseProfile?.name} as a student horse has been sent to '
               '${state.ownersProfile?.name}',
         ),
@@ -1237,12 +1222,14 @@ class AppCubit extends Cubit<AppState> {
     BaseListItem requestHorse,
   ) {
     final id = _createHorseConversationId();
-    final memberNames = [state.usersProfile?.name, state.ownersProfile?.name]
-        .map((e) => e!)
-        .toList();
-    final memberIds = [state.usersProfile?.email, state.ownersProfile?.email]
-        .map((e) => e!.toLowerCase())
-        .toList();
+    final memberNames = [
+      state.usersProfile?.name,
+      state.ownersProfile?.name,
+    ].map((e) => e!).toList();
+    final memberIds = [
+      state.usersProfile?.email,
+      state.ownersProfile?.email,
+    ].map((e) => e!.toLowerCase()).toList();
 
     return Conversation(
       id: id,
@@ -1252,10 +1239,7 @@ class AppCubit extends Cubit<AppState> {
       lastEditDate: DateTime.now(),
       createdBy: state.usersProfile!.name,
       lastEditBy: state.usersProfile?.name,
-      recentMessage: _createStudentHorseRequestMessage(
-        requestHorse,
-        id,
-      ),
+      recentMessage: _createStudentHorseRequestMessage(requestHorse, id),
     );
   }
 
@@ -1272,12 +1256,14 @@ class AppCubit extends Cubit<AppState> {
       sender: state.usersProfile!.name,
       messageType: MessageType.STUDENT_HORSE_REQUEST,
       senderProfilePicUrl: state.usersProfile?.picUrl,
-      message: '${state.usersProfile?.name} has requested to add '
+      message:
+          '${state.usersProfile?.name} has requested to add '
           '${state.horseProfile?.name} as a student horse.',
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-      recipients: [state.usersProfile?.name, state.ownersProfile?.name]
-          .map((e) => e!)
-          .toList(),
+      recipients: [
+        state.usersProfile?.name,
+        state.ownersProfile?.name,
+      ].map((e) => e!).toList(),
     );
   }
 
@@ -1305,8 +1291,9 @@ class AppCubit extends Cubit<AppState> {
     if (state.ownersProfile != null && state.horseProfile != null) {
       // Update owner's profile
       final updatedOwnersProfile = state.ownersProfile!
-        ..ownedHorses
-            ?.removeWhere((element) => element.id == state.horseProfile!.id);
+        ..ownedHorses?.removeWhere(
+          (element) => element.id == state.horseProfile!.id,
+        );
 
       // Update horse profile
       final updatedHorseProfile = state.horseProfile!
@@ -1338,7 +1325,7 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-/* **************************************************************************
+  /* **************************************************************************
 
 ******************************* Skill Tree **********************************
 
@@ -1350,7 +1337,8 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('getSkillTreeLists');
 
     _getSkills();
-    _getTrainingPaths();
+    // Training paths disabled: do not subscribe to Firestore at startup.
+    // _getTrainingPaths();
     _getResources();
   }
 
@@ -1358,8 +1346,9 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('getting Skills called');
     if (state.allSkills.isEmpty) {
       debugPrint('Skills not retrieved yet');
-      _skillsSubscription =
-          _skillTreeRepository.getSkills().listen((skillsList) {
+      _skillsSubscription = _skillTreeRepository.getSkills().listen((
+        skillsList,
+      ) {
         // Normalize and sort by position
         final next = skillsList.toList()
           ..sort((a, b) => a.position.compareTo(b.position));
@@ -1378,39 +1367,40 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  void _getTrainingPaths() {
-    debugPrint('Get TrainingPaths Called');
-    if (_trainingPathsStream != null) return;
-    _trainingPathsStream =
-        _skillTreeRepository.getAllTrainingPaths().listen((trainingPaths) {
-      debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
-      // Shallow guard by length + first/last id
-      final curr = state.trainingPaths;
-      if (curr.length == trainingPaths.length &&
-          curr.isNotEmpty &&
-          trainingPaths.isNotEmpty &&
-          curr.first?.id == trainingPaths.first.id &&
-          curr.last?.id == trainingPaths.last.id) {
-        return;
-      }
-      emit(state.copyWith(trainingPaths: trainingPaths));
-    });
-  }
+  // Training-path subscription retained for possible restoration.
+  //   void _getTrainingPaths() {
+  //     debugPrint('Get TrainingPaths Called');
+  //     if (_trainingPathsStream != null) return;
+  //     _trainingPathsStream =
+  //         _skillTreeRepository.getAllTrainingPaths().listen((trainingPaths) {
+  //       debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
+  //       final curr = state.trainingPaths;
+  //       if (const DeepCollectionEquality().equals(
+  //         curr.map((path) => path?.toFirestore()).toList(),
+  //         trainingPaths.map((path) => path.toFirestore()).toList(),
+  //       )) {
+  //         return;
+  //       }
+  //       emit(state.copyWith(trainingPaths: trainingPaths));
+  //     });
+  //   }
 
   /// Whether or not a user can edit a training path or not.
   ///  Based on whether they have created it or their email
   ///  is in the admin list
   bool canEditTrainingPath(TrainingPath trainingPath) {
-    return state.usersProfile?.email == trainingPath.lastEditBy ||
-        AuthorizedEmails.emails.contains(state.usersProfile?.email);
+    return state.usersProfile != null &&
+        (state.usersProfile?.email == trainingPath.createdById ||
+            AuthorizedEmails.emails.contains(state.usersProfile?.email));
   }
 
   void _getResources() {
     debugPrint('Get Resources Called');
     if (state.resources.isEmpty) {
       debugPrint('Resources not retrieved yet');
-      _resourcesStream =
-          _resourcesRepository.getResources().listen((resources) {
+      _resourcesStream = _resourcesRepository.getResources().listen((
+        resources,
+      ) {
         // Guard redundant emits by id + lastEditDate/createdAt length/signature
         if (_sameResources(resources, state.resources)) {
           return;
@@ -1436,15 +1426,18 @@ class AppCubit extends Cubit<AppState> {
   /// Whether or not a user can edit a skill or not. Based on whether they
   /// have created it or their email is in the admin list
   bool canEditSkill(Skill? skill) {
-    return state.usersProfile?.email == skill?.lastEditBy ||
-        AuthorizedEmails.emails.contains(state.usersProfile?.email);
+    return state.usersProfile != null &&
+        (state.usersProfile?.email == skill?.lastEditBy ||
+            AuthorizedEmails.emails.contains(state.usersProfile?.email));
   }
 
   /// Wheter or not a user can edit a resource or not. Based on whether they
   /// have created it or their email is in the admin list
   bool canEditResource(Resource resource) {
-    return state.usersProfile?.email == resource.lastEditBy ||
-        AuthorizedEmails.emails.contains(state.usersProfile?.email);
+    return state.usersProfile != null &&
+        (state.usersProfile?.email == resource.authorId ||
+            state.usersProfile?.email == resource.lastEditBy ||
+            AuthorizedEmails.emails.contains(state.usersProfile?.email));
   }
 
   /// Returns the full Skill object from the id
@@ -1592,10 +1585,7 @@ class AppCubit extends Cubit<AppState> {
   /// Set the from Skills state
   void setFromSkills() {
     emit(
-      state.copyWith(
-        isFromTrainingPath: false,
-        isFromTrainingPathList: false,
-      ),
+      state.copyWith(isFromTrainingPath: false, isFromTrainingPathList: false),
     );
   }
 
@@ -1607,16 +1597,19 @@ class AppCubit extends Cubit<AppState> {
       if (state.viewingProfile != null && state.isViewing) {
         // process the level change for the viewing profile
         // and add a note to the user's
-        debugPrint('Changing and Verifing ${state.viewingProfile?.name}'
-            ' ${state.skill} '
-            'to $levelState');
+        debugPrint(
+          'Changing and Verifing ${state.viewingProfile?.name}'
+          ' ${state.skill} '
+          'to $levelState',
+        );
         final note = BaseListItem(
           date: DateTime.now(),
           imageUrl: LogTag.Edit.toString(),
           message: state.usersProfile?.name,
           parentId: state.usersProfile?.email,
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: '${state.usersProfile?.name} changed ${state.skill?.skillName} '
+          name:
+              '${state.usersProfile?.name} changed ${state.skill?.skillName} '
               'level to ${levelState.name} ',
         );
         final newViewingProfile = state.viewingProfile;
@@ -1630,7 +1623,8 @@ class AppCubit extends Cubit<AppState> {
             message: state.usersProfile?.name,
             parentId: state.usersProfile?.email,
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            name: '${state.usersProfile?.name} verified '
+            name:
+                '${state.usersProfile?.name} verified '
                 '${state.skill?.skillName} to'
                 ' ${levelState.name} for ${state.viewingProfile?.name}',
           ),
@@ -1639,8 +1633,9 @@ class AppCubit extends Cubit<AppState> {
         // process the level change for the user's profile
         // add a note to the user's profile
         debugPrint(
-            'Changing ${state.usersProfile?.name} ${state.skill?.skillName} '
-            'to $levelState');
+          'Changing ${state.usersProfile?.name} ${state.skill?.skillName} '
+          'to $levelState',
+        );
         final newUsersProfile = state.usersProfile;
         final note = BaseListItem(
           date: DateTime.now(),
@@ -1648,7 +1643,8 @@ class AppCubit extends Cubit<AppState> {
           message: state.usersProfile?.name,
           parentId: state.usersProfile?.email,
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: 'Changed their ${state.skill?.skillName} level '
+          name:
+              'Changed their ${state.skill?.skillName} level '
               'to ${levelState.name}',
         );
         _updateRiderSkillLevel(newUsersProfile, levelState, note);
@@ -1656,15 +1652,17 @@ class AppCubit extends Cubit<AppState> {
     } else {
       // process the level change for the horse's profile
       // add a note to the horse's profile and the user's profile
-      debugPrint('Changing ${state.horseProfile?.name} ${state.skill} '
-          'to $levelState');
+      debugPrint(
+        'Changing ${state.horseProfile?.name} ${state.skill} '
+        'to $levelState',
+      );
       final newHorseProfile = state.horseProfile;
       final horseNote =
           state.usersProfile?.email != newHorseProfile?.currentOwnerId
-              ? '${state.usersProfile?.name} verified '
-                  '${state.skill?.skillName} to ${levelState.name}'
-              : '${state.usersProfile?.name} changed '
-                  '${state.skill?.skillName} to ${levelState.name}';
+          ? '${state.usersProfile?.name} verified '
+                '${state.skill?.skillName} to ${levelState.name}'
+          : '${state.usersProfile?.name} changed '
+                '${state.skill?.skillName} to ${levelState.name}';
       final note = BaseListItem(
         name: horseNote,
         date: DateTime.now(),
@@ -1677,12 +1675,12 @@ class AppCubit extends Cubit<AppState> {
       final newUsersProfile = state.usersProfile;
       final userNote =
           state.usersProfile?.email != newHorseProfile.currentOwnerId
-              ? '${state.usersProfile?.name} verified '
-                  '${state.skill?.skillName} to $levelState '
-                  'for ${state.horseProfile?.name}'
-              : '${state.usersProfile?.name} changed '
-                  '${state.skill?.skillName} to $levelState'
-                  ' for ${state.horseProfile?.name}';
+          ? '${state.usersProfile?.name} verified '
+                '${state.skill?.skillName} to $levelState '
+                'for ${state.horseProfile?.name}'
+          : '${state.usersProfile?.name} changed '
+                '${state.skill?.skillName} to $levelState'
+                ' for ${state.horseProfile?.name}';
       _addNoteToProfile(
         newUsersProfile!,
         BaseListItem(
@@ -1711,36 +1709,39 @@ class AppCubit extends Cubit<AppState> {
 
   /// Check if a skill from [skillId] has unmet prerequisites
   bool hasUnmetPrerequisites(String skillId) {
-    final skill = getSkillFromId(skillId);
-    if (skill == null) return false;
+    // Prerequisites disabled: skill progress is independent of other skills.
+    return false;
 
-    // Check if the skill has prerequisites
-    if (skill.prerequisites.isEmpty) return false;
-
-    // Get the current profile's skill levels
-    final currentProfile =
-        state.isForRider ? determineCurrentProfile() : state.horseProfile;
-    final skillLevels = currentProfile is RiderProfile
-        ? currentProfile.skillLevels
-        : (currentProfile as HorseProfile?)?.skillLevels;
-
-    // Check if all prerequisites are met
-    return skill.prerequisites.any((prerequisiteId) {
-      final prerequisiteLevel = skillLevels?.firstWhereOrNull(
-        (level) => level.skillId == prerequisiteId,
-      );
-      return prerequisiteLevel == null ||
-          prerequisiteLevel.levelState != LevelState.PROFICIENT;
-    });
+    // Original prerequisite check retained for possible restoration.
+    //     final skill = getSkillFromId(skillId);
+    //     if (skill == null) return false;
+    //
+    //     // Check if the skill has prerequisites
+    //     if (skill.prerequisites.isEmpty) return false;
+    //
+    //     // Get the current profile's skill levels
+    //     final currentProfile = state.isForRider
+    //         ? determineCurrentProfile()
+    //         : state.horseProfile;
+    //     final skillLevels = currentProfile is RiderProfile
+    //         ? currentProfile.skillLevels
+    //         : (currentProfile as HorseProfile?)?.skillLevels;
+    //
+    //     // Check if all prerequisites are met
+    //     return skill.prerequisites.any((prerequisiteId) {
+    //       final prerequisiteLevel = skillLevels?.firstWhereOrNull(
+    //         (level) => level.skillId == prerequisiteId,
+    //       );
+    //       return prerequisiteLevel == null ||
+    //           prerequisiteLevel.levelState != LevelState.PROFICIENT;
+    //     });
   }
 
   /// Returns the color for the level of the skill based on the [levelState]
-  Color levelColor({
-    required Skill skill,
-    required LevelState levelState,
-  }) {
-    final currentProfile =
-        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+  Color levelColor({required Skill skill, required LevelState levelState}) {
+    final currentProfile = state.isForRider
+        ? determineCurrentProfile()
+        : state.horseProfile;
 
     final skillLevels = currentProfile is RiderProfile
         ? currentProfile.skillLevels
@@ -1757,11 +1758,10 @@ class AppCubit extends Cubit<AppState> {
         : Colors.transparent;
   }
 
-  Gradient? levelGradient({
-    required Skill skill,
-  }) {
-    final currentProfile =
-        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+  Gradient? levelGradient({required Skill skill}) {
+    final currentProfile = state.isForRider
+        ? determineCurrentProfile()
+        : state.horseProfile;
 
     final skillLevels = currentProfile is RiderProfile
         ? currentProfile.skillLevels
@@ -1781,11 +1781,10 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-  Gradient? horizontalGradient({
-    required Skill skill,
-  }) {
-    final currentProfile =
-        state.isForRider ? determineCurrentProfile() : state.horseProfile;
+  Gradient? horizontalGradient({required Skill skill}) {
+    final currentProfile = state.isForRider
+        ? determineCurrentProfile()
+        : state.horseProfile;
 
     final skillLevels = currentProfile is RiderProfile
         ? currentProfile.skillLevels
@@ -1907,9 +1906,7 @@ class AppCubit extends Cubit<AppState> {
       ' ${state.isForRider ? 'Rider' : 'Horse'}',
     );
     final sortedSkills = skills
-        .where(
-          (element) => element?.rider == state.isForRider,
-        )
+        .where((element) => element?.rider == state.isForRider)
         .toList();
     debugPrint('Returning ${sortedSkills.length} skills');
     return sortedSkills;
@@ -1961,20 +1958,10 @@ class AppCubit extends Cubit<AppState> {
   }
 
   bool _sameResources(List<Resource> a, List<Resource> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      final ai = a[i];
-      final bi = b[i];
-      if (ai.id != bi.id) return false;
-      final ad = ai.lastEditDate?.millisecondsSinceEpoch ??
-          ai.createdAt?.millisecondsSinceEpoch;
-      final bd = bi.lastEditDate?.millisecondsSinceEpoch ??
-          bi.createdAt?.millisecondsSinceEpoch;
-      if (ad != null || bd != null) {
-        if (ad != bd) return false;
-      }
-    }
-    return true;
+    return const DeepCollectionEquality().equals(
+      a.map((resource) => resource.toFirestore()).toList(),
+      b.map((resource) => resource.toFirestore()).toList(),
+    );
   }
 
   List<Skill?> _sortSkillsByCategory(
@@ -2062,16 +2049,19 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-// ---------- helpers ----------
+  // ---------- helpers ----------
   String _norm(String s) => s.trim().toLowerCase();
 
   List<Skill> _sortSkillsByName(List<Skill> list) {
-    final out = list.whereType<Skill>().toList() // drop nulls defensively
-      ..sort((a, b) => _norm(a.skillName).compareTo(_norm(b.skillName)));
+    final out =
+        list
+            .whereType<Skill>()
+            .toList() // drop nulls defensively
+          ..sort((a, b) => _norm(a.skillName).compareTo(_norm(b.skillName)));
     return out;
   }
 
-// Optional: quick reset you can call after loading skills, etc.
+  // Optional: quick reset you can call after loading skills, etc.
   void resetSkillSearchToAll() {
     final all = state.allSkills.whereType<Skill>().toList();
     final sortedAll = _sortSkillsByName(all);
@@ -2083,7 +2073,7 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-// ---------- SKILLS ----------
+  // ---------- SKILLS ----------
   void skillSearchQueryChanged({required String searchQuery}) {
     final q = _norm(searchQuery);
     final all = state.allSkills.whereType<Skill>().toList();
@@ -2110,13 +2100,14 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-// ---------- RESOURCES ----------
+  // ---------- RESOURCES ----------
   void resourceSearchQueryChanged({required String searchQuery}) {
     final q = _norm(searchQuery);
     final names = state.resources.map((r) => r.name).whereType<String>();
 
     final searchList = q.isEmpty
-        ? names.toList() // FULL list when empty
+        ? names
+              .toList() // FULL list when empty
         : names.where((n) => _norm(n).contains(q)).toList();
 
     emit(state.copyWith(searchList: searchList));
@@ -2172,10 +2163,7 @@ class AppCubit extends Cubit<AppState> {
   ///   Open Resource in External Browser
   Future<void> openResource({required String? url}) async {
     final uri = Uri.parse(url!);
-    if (!await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    )) {
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw Exception('Could Not Launch: $uri');
     }
   }
@@ -2195,9 +2183,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// returns a list of child comments for a parent comment
-  List<Comment> getChildComments({
-    required Comment parentComment,
-  }) {
+  List<Comment> getChildComments({required Comment parentComment}) {
     final childComments = List<Comment>.empty(growable: true);
     final commentResource = state.resources.firstWhereOrNull(
       (element) => element.id == parentComment.resourceId,
@@ -2242,17 +2228,14 @@ class AppCubit extends Cubit<AppState> {
       return state.resource; // Return the already set resource
     }
 
-    final resource =
-        state.resources.firstWhereOrNull((element) => element.id == id);
+    final resource = state.resources.firstWhereOrNull(
+      (element) => element.id == id,
+    );
 
     if (resource != null) {
       debugPrint('Resource found: ${resource.name}');
       getResourceComments(resource);
-      emit(
-        state.copyWith(
-          resource: resource,
-        ),
-      );
+      emit(state.copyWith(resource: resource));
     } else {
       debugPrint('Resource not found');
     }
@@ -2282,27 +2265,28 @@ class AppCubit extends Cubit<AppState> {
   /// Returns a sorted list of resources based on the
   /// [ResourcesSortStatus]
   List<Resource> sortResources(List<Resource?> resources) {
-    final sortedList = resources;
+    final sortedList = resources.whereType<Resource>().toList();
     switch (state.resourcesSortStatus) {
       case ResourcesSortStatus.leastRecommended:
-        sortedList.sort((a, b) => a!.rating!.compareTo(b!.rating!));
+        sortedList.sort((a, b) => (a.rating ?? 0).compareTo(b.rating ?? 0));
         break;
       case ResourcesSortStatus.mostRecommended:
-        sortedList.sort((a, b) => b!.rating!.compareTo(a!.rating!));
+        sortedList.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
         break;
       case ResourcesSortStatus.recent:
-        sortedList.sort((a, b) => b!.lastEditDate!.compareTo(a!.lastEditDate!));
+        sortedList.sort((a, b) => _resourceDate(b).compareTo(_resourceDate(a)));
         break;
       case ResourcesSortStatus.oldest:
-        sortedList.sort((a, b) => a!.lastEditDate!.compareTo(b!.lastEditDate!));
+        sortedList.sort((a, b) => _resourceDate(a).compareTo(_resourceDate(b)));
         break;
       case ResourcesSortStatus.saved:
         final savedResources = <Resource>[];
         if (state.usersProfile != null) {
           if (state.usersProfile?.savedResourcesList != null) {
-            for (final resource in resources) {
-              if (state.usersProfile!.savedResourcesList!
-                  .contains(resource!.id)) {
+            for (final resource in sortedList) {
+              if (state.usersProfile!.savedResourcesList!.contains(
+                resource.id,
+              )) {
                 savedResources.add(resource);
               }
             }
@@ -2311,8 +2295,11 @@ class AppCubit extends Cubit<AppState> {
         return savedResources;
     }
 
-    return sortedList as List<Resource>;
+    return sortedList;
   }
+
+  DateTime _resourceDate(Resource resource) =>
+      resource.lastEditDate ?? resource.createdAt ?? DateTime(1970);
 
   void updateResourceSortStatus(ResourcesSortStatus status) {
     switch (status) {
@@ -2336,10 +2323,8 @@ class AppCubit extends Cubit<AppState> {
 
   /// Sort the resources by the ones with the highest rating
   void _sortMostRecommended() {
-    final sortedList = state.resources
-      ..sort(
-        (a, b) => (b.rating!).compareTo(a.rating!),
-      );
+    final sortedList = List<Resource>.of(state.resources)
+      ..sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
     emit(
       state.copyWith(
         resources: sortedList,
@@ -2350,10 +2335,8 @@ class AppCubit extends Cubit<AppState> {
 
   /// Sort the resources by the ones with the lowest rating
   void _sortByLeastRecommended() {
-    final sortedList = state.resources
-      ..sort(
-        (a, b) => (a.rating!).compareTo(b.rating!),
-      );
+    final sortedList = List<Resource>.of(state.resources)
+      ..sort((a, b) => (a.rating ?? 0).compareTo(b.rating ?? 0));
     emit(
       state.copyWith(
         resources: sortedList,
@@ -2365,11 +2348,8 @@ class AppCubit extends Cubit<AppState> {
   ///  Sort the resources by the newest last edit date
   void _sortByNew() {
     debugPrint('Sorting by New');
-    final sortedList = state.resources
-      ..sort(
-        (a, b) =>
-            (b.lastEditDate as DateTime).compareTo(a.lastEditDate as DateTime),
-      );
+    final sortedList = List<Resource>.of(state.resources)
+      ..sort((a, b) => _resourceDate(b).compareTo(_resourceDate(a)));
     emit(
       state.copyWith(
         resources: sortedList,
@@ -2382,11 +2362,8 @@ class AppCubit extends Cubit<AppState> {
   /// last edit date
   void _sortByOld() {
     debugPrint('Sorting by Old');
-    final sortedList = state.resources
-      ..sort(
-        (a, b) =>
-            (a.lastEditDate as DateTime).compareTo(b.lastEditDate as DateTime),
-      );
+    final sortedList = List<Resource>.of(state.resources)
+      ..sort((a, b) => _resourceDate(a).compareTo(_resourceDate(b)));
     emit(
       state.copyWith(
         resources: sortedList,
@@ -2423,8 +2400,9 @@ class AppCubit extends Cubit<AppState> {
     if (currentUsersProfile != null) {
       List<String> savedResourcesList;
       if (currentUsersProfile.savedResourcesList != null) {
-        savedResourcesList =
-            currentUsersProfile.savedResourcesList as List<String>;
+        savedResourcesList = List<String>.from(
+          currentUsersProfile.savedResourcesList!,
+        );
       } else {
         savedResourcesList = [];
       }
@@ -2434,10 +2412,12 @@ class AppCubit extends Cubit<AppState> {
       } else {
         savedResourcesList.remove(resource.id);
       }
-      currentUsersProfile.savedResourcesList = savedResourcesList;
+      final updatedProfile = currentUsersProfile.copyWith(
+        savedResourcesList: savedResourcesList,
+      );
 
       await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: currentUsersProfile,
+        riderProfile: updatedProfile,
       );
       // create message notifiying if added or removed
       final message = savedResourcesList.contains(resource.id)
@@ -2445,6 +2425,7 @@ class AppCubit extends Cubit<AppState> {
           : 'Removed "${resource.name}" from saved resources';
       emit(
         state.copyWith(
+          usersProfile: updatedProfile,
           isMessage: true,
           errorMessage: message,
         ),
@@ -2482,12 +2463,7 @@ class AppCubit extends Cubit<AppState> {
     final message = isRatingPositive(resource)
         ? 'Added a positive Rating to "${resource.name}"'
         : 'Removed positive Rating from "${resource.name}"';
-    emit(
-      state.copyWith(
-        isMessage: true,
-        errorMessage: message,
-      ),
-    );
+    emit(state.copyWith(isMessage: true, errorMessage: message));
   }
 
   ///  User has clicked the dont recommend [resource] button
@@ -2498,12 +2474,7 @@ class AppCubit extends Cubit<AppState> {
     final message = isRatingNegative(resource)
         ? 'Negatively Rated "${resource.name}"'
         : 'Removed negative Rating from "${resource.name}"';
-    emit(
-      state.copyWith(
-        isMessage: true,
-        errorMessage: message,
-      ),
-    );
+    emit(state.copyWith(isMessage: true, errorMessage: message));
   }
 
   ///   Sets the new Rating on the [resource] based on whether or not they rated
@@ -2543,32 +2514,38 @@ class AppCubit extends Cubit<AppState> {
         } else if (user.isSelected == true && user.isCollapsed == false) {
           //   Already Positive Rating, -1
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isSelected = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isSelected =
+              false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isCollapsed = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isCollapsed =
+              false;
           resource.rating = newNegativeRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == false) {
           //   User does not have a registered rateing +1
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isSelected = true;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isSelected =
+              true;
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isCollapsed = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isCollapsed =
+              false;
           resource.rating = newPositiveRating;
           return resource;
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
           //   User already rated NEGATIVE, adding +2
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isSelected = true;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isSelected =
+              true;
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isCollapsed = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isCollapsed =
+              false;
           resource.rating = newDoublePositveRating;
           return resource;
         } else {
@@ -2627,32 +2604,38 @@ class AppCubit extends Cubit<AppState> {
         } else if (user.isSelected == false && user.isCollapsed == true) {
           //   Already Negative Rating, +1
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isSelected = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isSelected =
+              false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isCollapsed = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isCollapsed =
+              false;
           resource.rating = newPositiveRating;
           return resource;
         } else if (user.isSelected == false && user.isCollapsed == false) {
           //   User does not have a registered rating -1
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isSelected = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isSelected =
+              false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isCollapsed = true;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isCollapsed =
+              true;
           resource.rating = newNegativeRating;
           return resource;
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
           //   User already rated POSITIVE, adding -2
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isSelected = false;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isSelected =
+              false;
           resource.usersWhoRated
-              ?.firstWhere((element) => element.id == userEmail)
-              .isCollapsed = true;
+                  ?.firstWhere((element) => element.id == userEmail)
+                  .isCollapsed =
+              true;
           resource.rating = newDoubleNegativeRating;
           return resource;
         } else {
@@ -2679,7 +2662,7 @@ class AppCubit extends Cubit<AppState> {
     _resourcesRepository.deleteResource(resource: resource);
   }
 
-/* **************************************************************************
+  /* **************************************************************************
 
 ******************************* Messagees **********************************
 
@@ -2687,11 +2670,7 @@ class AppCubit extends Cubit<AppState> {
 
   ///monitors the message entered into the message support dialog
   void messageToSupportChanged(String value) {
-    emit(
-      state.copyWith(
-        errorMessage: value,
-      ),
-    );
+    emit(state.copyWith(errorMessage: value));
   }
 
   void sendMessageToSupport() {
@@ -2750,7 +2729,8 @@ class AppCubit extends Cubit<AppState> {
           state.copyWith(
             messageToSupportStatus: MessageToSupportStatus.success,
             isMessage: true,
-            errorMessage: 'Sent Message to the '
+            errorMessage:
+                'Sent Message to the '
                 "Horse & Rider's Companion Support Team",
           ),
         );
@@ -2777,17 +2757,15 @@ class AppCubit extends Cubit<AppState> {
         _conversationsStream = _messagesRepository
             .getConversations(userEmail: state.usersProfile!.email)
             .listen((conversationsList) {
-          final conversations = conversationsList.toList()
-            ..sort(
-              (a, b) => b.createdOn.compareTo(a.createdOn),
-            );
-          emit(
-            state.copyWith(
-              conversations: conversations,
-              conversationsState: ConversationsState.loaded,
-            ),
-          );
-        });
+              final conversations = conversationsList.toList()
+                ..sort((a, b) => b.createdOn.compareTo(a.createdOn));
+              emit(
+                state.copyWith(
+                  conversations: conversations,
+                  conversationsState: ConversationsState.loaded,
+                ),
+              );
+            });
       } else {
         debugPrint('User Profile is null');
       }
@@ -2820,20 +2798,18 @@ class AppCubit extends Cubit<AppState> {
       _messagesStream = _messagesRepository
           .getMessages(conversationId: conversation.id)
           .listen((messagesList) {
-        final messages = messagesList.toList()
-          ..sort(
-            (a, b) => (a.date as DateTime).compareTo(
-              b.date as DateTime,
-            ),
-          );
-        debugPrint('Messages Retrieved: ${messages.length}');
-        emit(
-          state.copyWith(
-            messages: messages.reversed.toList(),
-            conversationState: ConversationState.loaded,
-          ),
-        );
-      });
+            final messages = messagesList.toList()
+              ..sort(
+                (a, b) => (a.date as DateTime).compareTo(b.date as DateTime),
+              );
+            debugPrint('Messages Retrieved: ${messages.length}');
+            emit(
+              state.copyWith(
+                messages: messages.reversed.toList(),
+                conversationState: ConversationState.loaded,
+              ),
+            );
+          });
     } else {
       debugPrint('Conversation is null');
       emit(
@@ -2864,10 +2840,11 @@ class AppCubit extends Cubit<AppState> {
   String conversationTitle() {
     final conversation = state.conversation;
     // Copy list to avoid mutating the conversation parties
-    final names = conversation == null
-        ? <String>[]
-        : List<String>.from(conversation.parties)
-      ..remove(state.usersProfile?.name);
+    final names =
+        conversation == null
+              ? <String>[]
+              : List<String>.from(conversation.parties)
+          ..remove(state.usersProfile?.name);
     return names.join(', ');
   }
 
@@ -2899,9 +2876,7 @@ class AppCubit extends Cubit<AppState> {
           ..messageState = MessageState.UNREAD;
         _messagesRepository
           ..createOrUpdateMessage(message: message)
-          ..createOrUpdateConversation(
-            conversation: updatedconversation,
-          );
+          ..createOrUpdateConversation(conversation: updatedconversation);
       } else {
         debugPrint('Conversation is null');
       }
@@ -2915,9 +2890,7 @@ class AppCubit extends Cubit<AppState> {
 
     switch (value) {
       case ConversationsSort.createdDate:
-        sortedConversations?.sort(
-          (a, b) => b.createdOn.compareTo(a.createdOn),
-        );
+        sortedConversations?.sort((a, b) => b.createdOn.compareTo(a.createdOn));
         break;
       case ConversationsSort.lastupdatedDate:
         sortedConversations?.sort(
@@ -2930,9 +2903,7 @@ class AppCubit extends Cubit<AppState> {
         );
         break;
       case ConversationsSort.oldest:
-        sortedConversations?.sort(
-          (a, b) => a.createdOn.compareTo(b.createdOn),
-        );
+        sortedConversations?.sort((a, b) => a.createdOn.compareTo(b.createdOn));
     }
     emit(
       state.copyWith(
@@ -2956,8 +2927,10 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     final String requestorId;
     if (message.requestItem?.id != null) {
-      debugPrint('acceptRequest from: ${message.requestItem?.id}'
-          ' for ${message.messageType}');
+      debugPrint(
+        'acceptRequest from: ${message.requestItem?.id}'
+        ' for ${message.messageType}',
+      );
       if (message.messageType == MessageType.STUDENT_HORSE_REQUEST) {
         requestorId = message.requestItem!.extra!;
       } else {
@@ -3057,7 +3030,8 @@ class AppCubit extends Cubit<AppState> {
           break;
         case MessageType.STUDENT_HORSE_REQUEST:
           final horseName = message.requestItem?.name ?? 'horse';
-          denialText = 'Denied student horse request for '
+          denialText =
+              'Denied student horse request for '
               '$horseName from ${message.sender}';
           break;
         case MessageType.TRANSFER_HORSE_REQUEST:
@@ -3149,7 +3123,8 @@ class AppCubit extends Cubit<AppState> {
         message
           ..requestItem?.isSelected = true
           ..messageType = MessageType.CHAT
-          ..message = 'Added ${state.usersProfile?.name} as an Instructor for '
+          ..message =
+              'Added ${state.usersProfile?.name} as an Instructor for '
               '${requestorProfile.name}';
         await _persistMessage(message).then((value) {
           emit(
@@ -3233,7 +3208,8 @@ class AppCubit extends Cubit<AppState> {
       message: studentHorse.name,
       id: DateTime.now().toString(),
       imageUrl: LogTag.Edit.toString(),
-      name: 'Added ${requestorProfile.name} as '
+      name:
+          'Added ${requestorProfile.name} as '
           'a trainer for ${studentHorse.name}',
     );
 
@@ -3267,7 +3243,8 @@ class AppCubit extends Cubit<AppState> {
 
       message
         ..requestItem?.isSelected = true
-        ..message = 'Added ${requestorProfile.name} as a trainer '
+        ..message =
+            'Added ${requestorProfile.name} as a trainer '
             'for ${studentHorse.name}'
         ..messageType = MessageType.CHAT;
       await _persistMessage(message);
@@ -3275,7 +3252,8 @@ class AppCubit extends Cubit<AppState> {
       emit(
         state.copyWith(
           isMessage: true,
-          errorMessage: 'Added ${requestorProfile.name} as'
+          errorMessage:
+              'Added ${requestorProfile.name} as'
               ' a trainer for ${studentHorse.name}',
           acceptStatus: AcceptStatus.accepted,
         ),
@@ -3323,9 +3301,7 @@ class AppCubit extends Cubit<AppState> {
       requestorProfile.students?.removeWhere(
         (element) => element.id == user.id,
       );
-      requestorProfile.students?.add(
-        user,
-      );
+      requestorProfile.students?.add(user);
     }
     requestorProfile.notes?.add(studentAcceptNote);
 
@@ -3336,9 +3312,7 @@ class AppCubit extends Cubit<AppState> {
       state.usersProfile?.instructors?.removeWhere(
         (element) => element.id == requestor.id,
       );
-      state.usersProfile?.instructors?.add(
-        requestor,
-      );
+      state.usersProfile?.instructors?.add(requestor);
     }
     state.usersProfile?.notes?.add(instructorAcceptNote);
 
@@ -3349,13 +3323,15 @@ class AppCubit extends Cubit<AppState> {
         message
           ..requestItem?.isSelected = true
           ..messageType = MessageType.CHAT
-          ..message = 'Added ${requestorProfile.name} as an instructor '
+          ..message =
+              'Added ${requestorProfile.name} as an instructor '
               'for ${state.usersProfile?.name}';
         await _persistMessage(message).then((value) {
           emit(
             state.copyWith(
               isMessage: true,
-              errorMessage: 'Added ${requestorProfile.name} as an '
+              errorMessage:
+                  'Added ${requestorProfile.name} as an '
                   'instructor for ${state.usersProfile?.name}',
               acceptStatus: AcceptStatus.accepted,
             ),
@@ -3387,18 +3363,19 @@ class AppCubit extends Cubit<AppState> {
     final isDark = SharedPrefs().isDarkMode;
     return conversation.messageState == MessageState.UNREAD
         ? isDark
-            ? Colors.white
-            : Colors.black
+              ? Colors.white
+              : Colors.black
         : isDark
-            ? Colors.grey.shade400
-            : Colors.grey.shade600;
+        ? Colors.grey.shade400
+        : Colors.grey.shade600;
   }
 
   /// Returns true if the message is a pending request for the current user
   bool _isPendingRequestForUser(Message? m) {
     if (m == null) return false;
     final isFromCurrentUser = m.sender == state.usersProfile?.name;
-    final isRequestType = m.messageType == MessageType.INSTRUCTOR_REQUEST ||
+    final isRequestType =
+        m.messageType == MessageType.INSTRUCTOR_REQUEST ||
         m.messageType == MessageType.STUDENT_HORSE_REQUEST ||
         m.messageType == MessageType.STUDENT_REQUEST ||
         m.messageType == MessageType.TRANSFER_HORSE_REQUEST;
@@ -3422,12 +3399,7 @@ class AppCubit extends Cubit<AppState> {
     try {
       await _messagesRepository.createOrUpdateMessage(message: message);
     } on FirebaseException catch (e) {
-      emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed: ${e.message}',
-        ),
-      );
+      emit(state.copyWith(isError: true, errorMessage: 'Failed: ${e.message}'));
       debugPrint(e.toString());
     }
   }
@@ -3440,8 +3412,8 @@ class AppCubit extends Cubit<AppState> {
     final isCurrentUser = message.sender == state.usersProfile?.name;
     final isMessageTypeValid =
         message.messageType == MessageType.INSTRUCTOR_REQUEST ||
-            message.messageType == MessageType.STUDENT_HORSE_REQUEST ||
-            message.messageType == MessageType.STUDENT_REQUEST;
+        message.messageType == MessageType.STUDENT_HORSE_REQUEST ||
+        message.messageType == MessageType.STUDENT_REQUEST;
 
     return !isCurrentUser &&
         isMessageTypeValid &&
@@ -3455,19 +3427,22 @@ class AppCubit extends Cubit<AppState> {
       debugPrint(
         'Instructor/Student List: ${state.usersProfile?.instructors?.map((e) => e.name)}',
       );
-      return state.usersProfile?.instructors
-              ?.any((element) => element.name == message.sender) ??
+      return state.usersProfile?.instructors?.any(
+            (element) => element.name == message.sender,
+          ) ??
           false;
     } else if (message.messageType == MessageType.STUDENT_HORSE_REQUEST) {
-      final senderProfile =
-          await _fetchRiderProfile(message.requestItem!.extra!);
+      final senderProfile = await _fetchRiderProfile(
+        message.requestItem!.extra!,
+      );
 
       debugPrint(
         'StudentHorses: ${senderProfile?.studentHorses?.map((e) => e.name)}',
       );
       debugPrint('message.requestItem?.name: ${message.requestItem?.name}');
-      return senderProfile?.studentHorses
-              ?.any((element) => element.name == message.requestItem?.name) ??
+      return senderProfile?.studentHorses?.any(
+            (element) => element.name == message.requestItem?.name,
+          ) ??
           false;
     }
 
@@ -3488,27 +3463,14 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('Changing index from ${state.index} to $index');
     switch (index) {
       case 0:
-        emit(
-          state.copyWith(
-            index: index,
-            pageStatus: AppPageStatus.profile,
-          ),
-        );
+        emit(state.copyWith(index: index, pageStatus: AppPageStatus.profile));
         break;
       case 1:
-        emit(
-          state.copyWith(
-            index: index,
-            pageStatus: AppPageStatus.skillTree,
-          ),
-        );
+        emit(state.copyWith(index: index, pageStatus: AppPageStatus.skillTree));
         break;
       case 2:
         emit(
-          state.copyWith(
-            index: index,
-            pageStatus: AppPageStatus.resourceList,
-          ),
+          state.copyWith(index: index, pageStatus: AppPageStatus.resourceList),
         );
         break;
     }
@@ -3522,29 +3484,15 @@ class AppCubit extends Cubit<AppState> {
 
   /// Set the page status to Loading
   void setLoading() {
-    emit(
-      state.copyWith(
-        pageStatus: AppPageStatus.loading,
-      ),
-    );
+    emit(state.copyWith(pageStatus: AppPageStatus.loading));
   }
 
   void setProfile() {
-    emit(
-      state.copyWith(
-        index: 0,
-        pageStatus: AppPageStatus.profile,
-      ),
-    );
+    emit(state.copyWith(index: 0, pageStatus: AppPageStatus.profile));
   }
 
   void navigateToAuth() {
-    emit(
-      state.copyWith(
-        index: 0,
-        pageStatus: AppPageStatus.auth,
-      ),
-    );
+    emit(state.copyWith(index: 0, pageStatus: AppPageStatus.auth));
   }
 
   /// Navigate to the Horse Profile Page
@@ -3608,31 +3556,16 @@ class AppCubit extends Cubit<AppState> {
 
   /// Set the Resources List
   void setResourcesList() {
-    emit(
-      state.copyWith(
-        index: 2,
-        pageStatus: AppPageStatus.resourceList,
-      ),
-    );
+    emit(state.copyWith(index: 2, pageStatus: AppPageStatus.resourceList));
   }
 
   void setResource() {
-    emit(
-      state.copyWith(
-        index: 2,
-        pageStatus: AppPageStatus.resource,
-      ),
-    );
+    emit(state.copyWith(index: 2, pageStatus: AppPageStatus.resource));
   }
 
   /// Set the Skill Tree Page
   void setSkillTree() {
-    emit(
-      state.copyWith(
-        index: 1,
-        pageStatus: AppPageStatus.skillTree,
-      ),
-    );
+    emit(state.copyWith(index: 1, pageStatus: AppPageStatus.skillTree));
   }
 
   ///Reset from the Resource Page to the Resource List
@@ -3677,9 +3610,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Navigates to a the Skill Level Screen in the Skill Tree
 
-  void navigateToSkillLevel({
-    required Skill? skill,
-  }) {
+  void navigateToSkillLevel({required Skill? skill}) {
     debugPrint('navigateToSkillLevel for ${skill?.skillName}');
     emit(
       state.copyWith(
@@ -3697,11 +3628,7 @@ class AppCubit extends Cubit<AppState> {
   /// to the Training Path View
   void setIsFromTrainingPath({required bool isFromTrainingPath}) {
     debugPrint('setIsFromTrainingPath: $isFromTrainingPath');
-    emit(
-      state.copyWith(
-        isFromTrainingPath: isFromTrainingPath,
-      ),
-    );
+    emit(state.copyWith(isFromTrainingPath: isFromTrainingPath));
   }
 
   /// Navigates to the List of Training Paths
@@ -3717,9 +3644,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Navigates to a  Training Path
-  void navigateToTrainingPath({
-    required TrainingPath? trainingPath,
-  }) {
+  void navigateToTrainingPath({required TrainingPath? trainingPath}) {
     debugPrint('navigateToTrainingPath for ${trainingPath?.name}');
     emit(
       state.copyWith(
@@ -3735,21 +3660,13 @@ class AppCubit extends Cubit<AppState> {
   /// Navigates to the Settings Page
   void navigateToSettings() {
     debugPrint('navigateToSettings');
-    emit(
-      state.copyWith(
-        pageStatus: AppPageStatus.settings,
-      ),
-    );
+    emit(state.copyWith(pageStatus: AppPageStatus.settings));
   }
 
   /// Navigates to the Messages Page
   void navigateToMessages() {
     debugPrint('navigateToMessages');
-    emit(
-      state.copyWith(
-        pageStatus: AppPageStatus.messages,
-      ),
-    );
+    emit(state.copyWith(pageStatus: AppPageStatus.messages));
   }
 
   /// Navigates to the Resources Page
@@ -3766,10 +3683,7 @@ class AppCubit extends Cubit<AppState> {
   void navigateToResourceComments(Resource resource) {
     debugPrint('navigateToResourceComments');
     emit(
-      state.copyWith(
-        resource: resource,
-        pageStatus: AppPageStatus.resource,
-      ),
+      state.copyWith(resource: resource, pageStatus: AppPageStatus.resource),
     );
   }
 
@@ -3804,7 +3718,7 @@ class AppCubit extends Cubit<AppState> {
     _resourcesStream?.cancel();
     _skillsSubscription?.cancel();
     _conversationsStream?.cancel();
-    _trainingPathsStream?.cancel();
+    // _trainingPathsStream?.cancel(); // Training paths disabled.
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();
     try {

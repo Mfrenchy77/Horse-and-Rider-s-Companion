@@ -40,9 +40,13 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   }
 
   /// Process the log entry and persist it to the database
-  void addLogEntry({
+  Future<void> addLogEntry({
     required HorseProfile? horseProfile,
-  }) {
+  }) async {
+    if (!state.logEntry.isValid) {
+      emit(state.copyWith(status: FormStatus.failure));
+      return;
+    }
     final riderProfile = usersProfile;
     emit(state.copyWith(status: FormStatus.submitting));
     if (horseProfile != null) {
@@ -55,12 +59,13 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
         id: DateTime.now().toString(),
         imageUrl: state.tag.toString(),
       );
-      horseProfile.notes ??= [];
-      horseProfile.notes?.add(logEntry);
+      final updatedHorse = horseProfile.copyWith(
+        notes: [...?horseProfile.notes, logEntry],
+      );
 
       try {
-        _horseProfileRepository.createOrUpdateHorseProfile(
-          horseProfile: horseProfile,
+        await _horseProfileRepository.createOrUpdateHorseProfile(
+          horseProfile: updatedHorse,
         );
         emit(state.copyWith(status: FormStatus.success));
       } catch (e) {
@@ -76,11 +81,12 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
         id: DateTime.now().toString(),
         imageUrl: state.tag.toString(),
       );
-      riderProfile.notes ??= [];
-      riderProfile.notes?.add(logEntry);
+      final updatedRider = riderProfile.copyWith(
+        notes: [...?riderProfile.notes, logEntry],
+      );
       try {
-        _riderProfileRepository.createOrUpdateRiderProfile(
-          riderProfile: riderProfile,
+        await _riderProfileRepository.createOrUpdateRiderProfile(
+          riderProfile: updatedRider,
         );
         emit(state.copyWith(status: FormStatus.success));
       } catch (e) {

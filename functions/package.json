@@ -6,6 +6,7 @@
     "node": "20"
   },
   "scripts": {
+    "test": "node --test test/*.test.js",
     "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",

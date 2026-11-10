@@ -92,7 +92,7 @@ void main() {
     await tester.pumpWidget(build());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+    expect(router.routeInformationProvider.value.uri.path, AuthPage.path);
 
     // Fill login via cubit and submit
     final loginCubit = testCubit;
@@ -128,7 +128,7 @@ void main() {
 
     // Navigates back to Profile
     await tester.pump(const Duration(milliseconds: 300));
-    expect(router.routeInformationProvider.value.uri, ProfilePage.path);
+    expect(router.routeInformationProvider.value.uri.path, ProfilePage.path);
   });
 
   testWidgets('Register (verified) navigates to ProfilePage', (tester) async {
@@ -183,7 +183,7 @@ void main() {
     await tester.pumpWidget(build());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+    expect(router.routeInformationProvider.value.uri.path, AuthPage.path);
 
     // Enter register inputs
     testCubit
@@ -199,7 +199,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(router.routeInformationProvider.value.uri, ProfilePage.path);
+    expect(router.routeInformationProvider.value.uri.path, ProfilePage.path);
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('Profile!'), findsOneWidget);
   });
@@ -236,7 +236,7 @@ void main() {
     await tester.pumpWidget(build());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+    expect(router.routeInformationProvider.value.uri.path, AuthPage.path);
 
     testCubit
       ..gotoForgot()
@@ -247,6 +247,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     // Stays on Auth
-    expect(router.routeInformationProvider.value.uri, AuthPage.path);
+    expect(router.routeInformationProvider.value.uri.path, AuthPage.path);
   });
 }

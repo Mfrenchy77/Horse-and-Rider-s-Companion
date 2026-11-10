@@ -19,8 +19,8 @@ class CreateSkillDialog extends StatelessWidget {
     required this.allSkills,
     required this.isForRider,
     required RiderProfile usersProfile,
-  })  : _position = position,
-        _usersProfile = usersProfile;
+  }) : _position = position,
+       _usersProfile = usersProfile;
 
   final bool isEdit;
   final Skill? skill;
@@ -50,9 +50,7 @@ class CreateSkillDialog extends StatelessWidget {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
-                  const SnackBar(
-                    content: Text('Submission Failure'),
-                  ),
+                  const SnackBar(content: Text('Submission Failure')),
                 );
             }
             if (state.updateSubCategoryList == UpdateSubCategoryList.error) {
@@ -69,9 +67,10 @@ class CreateSkillDialog extends StatelessWidget {
             builder: (context, state) {
               final cubit = context.read<CreateSkillDialogCubit>();
 
-              final skills = cubit.sortSkillsByRider()
-                ..sort((a, b) => a!.skillName.compareTo(b!.skillName));
-              debugPrint('sorted skills: ${skills.length}');
+              // Prerequisite choices retained for possible restoration.
+              //               final skills = cubit.sortSkillsByRider()
+              //                 ..sort((a, b) => a!.skillName.compareTo(b!.skillName));
+              //               debugPrint('sorted skills: ${skills.length}');
 
               return Scaffold(
                 backgroundColor: Colors.transparent,
@@ -128,8 +127,9 @@ class CreateSkillDialog extends StatelessWidget {
 
                         ///   Learning Description
                         TextFormField(
-                          initialValue:
-                              isEdit ? skill?.learningDescription : '',
+                          initialValue: isEdit
+                              ? skill?.learningDescription
+                              : '',
                           textCapitalization: TextCapitalization.sentences,
                           maxLines: 8,
                           minLines: 3,
@@ -149,8 +149,9 @@ class CreateSkillDialog extends StatelessWidget {
 
                         ///   Proficient Description
                         TextFormField(
-                          initialValue:
-                              isEdit ? skill?.proficientDescription : '',
+                          initialValue: isEdit
+                              ? skill?.proficientDescription
+                              : '',
                           textCapitalization: TextCapitalization.sentences,
                           maxLines: 8,
                           minLines: 3,
@@ -168,9 +169,7 @@ class CreateSkillDialog extends StatelessWidget {
                         ),
                         smallGap(),
                         // Is for Horse/Rider
-                        const Center(
-                          child: Text('Rider or Horse'),
-                        ),
+                        const Center(child: Text('Rider or Horse')),
                         SegmentedButton<bool>(
                           segments: const [
                             ButtonSegment(
@@ -178,9 +177,7 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Rider',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                             ButtonSegment(
@@ -188,24 +185,18 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Horse',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                           ],
-                          selected: <bool>{
-                            state.isForRider,
-                          },
+                          selected: <bool>{state.isForRider},
                           onSelectionChanged: (value) {
                             debugPrint('Rider or Horse: $value');
                             cubit.isForRiderChanged(isForRider: value.first);
                           },
                         ),
                         // Difficulty
-                        const Center(
-                          child: Text('Difficulty'),
-                        ),
+                        const Center(child: Text('Difficulty')),
                         SegmentedButton<DifficultyState>(
                           segments: const [
                             ButtonSegment(
@@ -213,9 +204,7 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Introductory',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                             ButtonSegment(
@@ -223,9 +212,7 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Intermediate',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                             ButtonSegment(
@@ -233,15 +220,11 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Advanced',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                           ],
-                          selected: <DifficultyState>{
-                            state.difficulty,
-                          },
+                          selected: <DifficultyState>{state.difficulty},
                           onSelectionChanged: (value) {
                             debugPrint('Difficulty: $value');
                             cubit.skillDifficultyChanged(value.first);
@@ -251,9 +234,7 @@ class CreateSkillDialog extends StatelessWidget {
                         smallGap(),
 
                         // Category
-                        const Center(
-                          child: Text('Category'),
-                        ),
+                        const Center(child: Text('Category')),
                         SegmentedButton<SkillCategory>(
                           segments: const [
                             ButtonSegment(
@@ -261,9 +242,7 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Mounted',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                             ButtonSegment(
@@ -271,9 +250,7 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'In Hand',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                             ButtonSegment(
@@ -281,9 +258,7 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Husbandry',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                             ButtonSegment(
@@ -291,15 +266,11 @@ class CreateSkillDialog extends StatelessWidget {
                               label: Text(
                                 'Other',
                                 overflow: TextOverflow.visible,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                           ],
-                          selected: <SkillCategory>{
-                            state.category,
-                          },
+                          selected: <SkillCategory>{state.category},
                           onSelectionChanged: (value) {
                             debugPrint('Category: $value');
                             cubit.skillCategoryChanged(value.first);
@@ -307,41 +278,42 @@ class CreateSkillDialog extends StatelessWidget {
                         ),
                         smallGap(),
 
-                        /// Prerequisites
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Select Prerequisite Skills if any\n If '
-                              'there are no prerequisites, leave this blank'
-                              ' and the Skill will be considered'
-                              ' a "Base Skill"',
-                              textAlign: TextAlign.center,
-                            ),
-                            smallGap(),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 6,
-                              children: skills.map((s) {
-                                final selected =
-                                    state.prerequisites.contains(s?.id);
-                                return FilterChip(
-                                  label: Text(s!.skillName),
-                                  selected: selected,
-                                  onSelected: (bool value) {
-                                    debugPrint(
-                                      'Prerequisite Skill Selected: ${s.skillName}',
-                                    );
-
-                                    context
-                                        .read<CreateSkillDialogCubit>()
-                                        .prerequisitesChanged(s.id);
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
+                        // Prerequisite editor retained for restoration.
+                        //                         /// Prerequisites
+                        //                         Column(
+                        //                           crossAxisAlignment: CrossAxisAlignment.start,
+                        //                           children: [
+                        //                             const Text(
+                        //                               'Select Prerequisite Skills if any\n If '
+                        //                               'there are no prerequisites, leave this blank'
+                        //                               ' and the Skill will be considered'
+                        //                               ' a "Base Skill"',
+                        //                               textAlign: TextAlign.center,
+                        //                             ),
+                        //                             smallGap(),
+                        //                             Wrap(
+                        //                               alignment: WrapAlignment.center,
+                        //                               spacing: 6,
+                        //                               children: skills.map((s) {
+                        //                                 final selected =
+                        //                                     state.prerequisites.contains(s?.id);
+                        //                                 return FilterChip(
+                        //                                   label: Text(s!.skillName),
+                        //                                   selected: selected,
+                        //                                   onSelected: (bool value) {
+                        //                                     debugPrint(
+                        //                                       'Prerequisite Skill Selected: ${s.skillName}',
+                        //                                     );
+                        //
+                        //                                     context
+                        //                                         .read<CreateSkillDialogCubit>()
+                        //                                         .prerequisitesChanged(s.id);
+                        //                                   },
+                        //                                 );
+                        //                               }).toList(),
+                        //                             ),
+                        //                           ],
+                        //                         ),
                       ],
                     ),
                   ),
@@ -376,14 +348,15 @@ class CreateSkillDialog extends StatelessWidget {
                                 : () {
                                     isEdit
                                         ? context
-                                            .read<CreateSkillDialogCubit>()
-                                            .editSkill(editedSkill: skill)
+                                              .read<CreateSkillDialogCubit>()
+                                              .editSkill(editedSkill: skill)
                                         : context
-                                            .read<CreateSkillDialogCubit>()
-                                            .createSkill(_position);
+                                              .read<CreateSkillDialogCubit>()
+                                              .createSkill(_position);
                                   },
-                            child:
-                                Text(isEdit ? 'Submit Edited Skill' : 'Submit'),
+                            child: Text(
+                              isEdit ? 'Submit Edited Skill' : 'Submit',
+                            ),
                           ),
                       ],
                     ),

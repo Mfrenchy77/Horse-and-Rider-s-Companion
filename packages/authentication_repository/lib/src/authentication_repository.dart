@@ -221,13 +221,11 @@ class AuthenticationRepository {
   }
 
   Future<void> _cacheUser(User user) async {
-    final userData = user.toJson();
-    _cache.write(key: userCacheKey, value: userData);
+    _cache.write<User>(key: userCacheKey, value: user);
   }
 
   User? getCachedUser() {
-    final userData = _cache.read<Map<String, dynamic>>(key: userCacheKey);
-    return userData != null ? User.fromJson(userData) : null;
+    return _cache.read<User>(key: userCacheKey);
   }
 
   Future<void> _clearCachedUser() async {
@@ -364,8 +362,7 @@ class AuthenticationRepository {
 
   Stream<bool> getEmailVerificationStatus() async* {
     final user = _firebaseAuth.currentUser;
-    if (user != null) yield user.emailVerified;
-    yield false;
+    yield user?.emailVerified ?? false;
   }
 
   Future<void> resendEmailVerification() async {

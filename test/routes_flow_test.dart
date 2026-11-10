@@ -58,12 +58,15 @@ void main() {
     when(() => authRepo.currentUser).thenReturn(auth.User.empty);
     when(() => authRepo.user).thenAnswer((_) => Stream<auth.User?>.value(null));
 
-    when(() => skillRepo.getSkills())
-        .thenAnswer((_) => Stream.value(<Skill>[]));
-    when(() => skillRepo.getAllTrainingPaths())
-        .thenAnswer((_) => Stream.value(<TrainingPath>[]));
-    when(() => resourcesRepo.getResources())
-        .thenAnswer((_) => Stream.value(<Resource>[]));
+    when(
+      () => skillRepo.getSkills(),
+    ).thenAnswer((_) => Stream.value(<Skill>[]));
+    when(
+      () => skillRepo.getAllTrainingPaths(),
+    ).thenAnswer((_) => Stream.value(<TrainingPath>[]));
+    when(
+      () => resourcesRepo.getResources(),
+    ).thenAnswer((_) => Stream.value(<Resource>[]));
 
     appCubit = AppCubit(
       messagesRepository: messagesRepo,
@@ -99,8 +102,9 @@ void main() {
     );
   }
 
-  testWidgets('Routes initial location shows ProfilePage (guest)',
-      (tester) async {
+  testWidgets('Routes initial location shows ProfilePage (guest)', (
+    tester,
+  ) async {
     final router = Routes().router(
       settingsContoller: settingsController,
       appCubit: appCubit,
@@ -110,9 +114,31 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     // Expect initial location to be the profile branch
-    expect(router.routeInformationProvider.value.uri, ProfilePage.path);
+    expect(router.routeInformationProvider.value.uri.path, ProfilePage.path);
     // Guest profile should be visible by default
     expect(find.byKey(const Key('GuestProfileView')), findsOneWidget);
+  });
+
+  testWidgets('training-path deep links are disabled', (tester) async {
+    final router = Routes().router(
+      settingsContoller: settingsController,
+      appCubit: appCubit,
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(buildApp(router));
+    await tester.pump();
+
+    for (final path in [
+      '/SkillTree/TrainingPaths',
+      '/SkillTree/TrainingPaths/TrainingPath::old-path',
+    ]) {
+      router.go(path);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(router.routerDelegate.currentConfiguration.isError, isTrue);
+      expect(find.text('Training Paths'), findsNothing);
+      expect(find.byKey(const Key('createTrainingPathButton')), findsNothing);
+    }
   });
 
   testWidgets('Branch navigation via AppCubit index changes', (tester) async {
@@ -131,21 +157,21 @@ void main() {
     appCubit.changeIndex(1);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(router.routeInformationProvider.value.uri, SkillTreePage.path);
+    expect(router.routeInformationProvider.value.uri.path, SkillTreePage.path);
     expect(find.byKey(const Key('skillTreeView')), findsOneWidget);
 
     // Go to Resources (index 2)
     appCubit.changeIndex(2);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(router.routeInformationProvider.value.uri, ResourcesPage.path);
+    expect(router.routeInformationProvider.value.uri.path, ResourcesPage.path);
     expect(find.byKey(const Key('resourcesView')), findsOneWidget);
 
     // Back to Profile (index 0)
     appCubit.changeIndex(0);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(router.routeInformationProvider.value.uri, ProfilePage.path);
+    expect(router.routeInformationProvider.value.uri.path, ProfilePage.path);
     expect(find.byKey(const Key('GuestProfileView')), findsOneWidget);
 
     // Let any branch slide timers complete to avoid pending timers

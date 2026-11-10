@@ -92,6 +92,7 @@ class CreateResourceDialogState extends Equatable {
     // PDF
     String? pdfName,
     Uint8List? pdfBytes,
+    bool clearPdf = false,
     bool? pdfPicking,
     bool? pdfUploading,
     double? pdfUploadProgress,
@@ -116,8 +117,8 @@ class CreateResourceDialogState extends Equatable {
       urlFetchedStatus: urlFetchedStatus ?? this.urlFetchedStatus,
       inputType: inputType ?? this.inputType,
       // PDF
-      pdfName: pdfName ?? this.pdfName,
-      pdfBytes: pdfBytes ?? this.pdfBytes,
+      pdfName: clearPdf ? null : pdfName ?? this.pdfName,
+      pdfBytes: clearPdf ? null : pdfBytes ?? this.pdfBytes,
       pdfPicking: pdfPicking ?? this.pdfPicking,
       pdfUploading: pdfUploading ?? this.pdfUploading,
       pdfUploadProgress: pdfUploadProgress ?? this.pdfUploadProgress,

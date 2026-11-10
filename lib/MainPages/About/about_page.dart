@@ -60,7 +60,9 @@ class AboutPage extends StatelessWidget {
             ),
             const Text(
               "The core of Horse & Rider's Companion is its community-driven"
-              ' content. The skills and training paths available on our'
+              // Training-path wording retained for restoration.
+              // ' content. The skills and training paths available on our'
+              ' content. The skills available on our'
               ' platform are created and refined by the community, for the'
               ' community. This approach ensures that our content is not '
               'only up-to-date and comprehensive but also tailored to the'
@@ -80,7 +82,9 @@ class AboutPage extends StatelessWidget {
               'tips to advanced techniques.\n'
               '- Community Contributions: Every member has the opportunity to'
               ' contribute insights, vote on the usefulness of content, '
-              'and create paths that benefit others.\n'
+              // Training-path wording retained for restoration.
+              // 'and create paths that benefit others.\n'
+              'and share knowledge that benefits others.\n'
               '- Quality Assurance: With community feedback and expert '
               'reviews, the information on our platform maintains high '
               'standards of reliability and relevance.',
@@ -113,9 +117,7 @@ class AboutPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 FilledButton.tonalIcon(
-                  icon: const Icon(
-                    Icons.close,
-                  ),
+                  icon: const Icon(Icons.close),
                   onPressed: () => context.pop(),
                   label: const Text('Close'),
                 ),

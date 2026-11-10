@@ -27,11 +27,15 @@ class EmailValidator extends FormzInput<String, String> {
   const EmailValidator.dirty([super.value = '']) : super.dirty();
 
   static final RegExp _emailRegExp = RegExp(
-    r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$",
   );
 
   @override
   String? validator(String? value) {
-    return _emailRegExp.hasMatch(value ?? '') ? null : 'Invalid email address';
+    return value != null &&
+            !value.contains(RegExp(r'\s')) &&
+            _emailRegExp.hasMatch(value)
+        ? null
+        : 'Invalid email address';
   }
 }

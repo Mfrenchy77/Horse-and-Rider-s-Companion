@@ -88,7 +88,7 @@ class SharedPrefs {
                 .instance.platformDispatcher.platformBrightness ==
             Brightness.dark;
       default:
-        return false;
+        return true;
     }
   }
 
@@ -105,7 +105,7 @@ class SharedPrefs {
   /// Retrieves the saved theme mode preference as a string.
   /// Defaults to 'light' if no preference has been set.
   String getSavedThemeMode() {
-    return _sharedPrefs.getString(PREF_DARK_MODE) ?? 'light';
+    return _sharedPrefs.getString(PREF_DARK_MODE) ?? 'dark';
   }
 
   /// Converts the saved theme mode preference to a [ThemeMode] enum.
@@ -116,8 +116,10 @@ class SharedPrefs {
         return ThemeMode.light;
       case 'dark':
         return ThemeMode.dark;
-      default:
+      case 'system':
         return ThemeMode.system;
+      default:
+        return ThemeMode.dark;
     }
   }
 

@@ -123,12 +123,12 @@ class Resource {
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (authorName != null) 'authorName': authorName,
       if (createdAt != null) 'createdAt': _ts(createdAt),
-      if (tags != null && tags!.isNotEmpty) 'tags': tags,
+      if (tags != null) 'tags': tags,
       if (authorPhoto != null) 'authorPhoto': authorPhoto,
       if (description != null) 'description': description,
       if (numberOfRates != null) 'numberOfRates': numberOfRates,
       if (coverImageUrl != null) 'coverImageUrl': coverImageUrl,
-      if (skillTreeIds.isNotEmpty) 'skillTreeIds': skillTreeIds,
+      'skillTreeIds': skillTreeIds,
       if (lastEditDate != null) 'lastEditDate': _ts(lastEditDate),
       if (usersWhoRated != null)
         'usersWhoRated':

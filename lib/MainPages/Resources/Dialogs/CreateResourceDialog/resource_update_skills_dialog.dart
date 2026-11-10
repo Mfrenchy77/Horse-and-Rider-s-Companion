@@ -12,7 +12,6 @@ import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class UpdateResourceSkills extends StatelessWidget {
@@ -44,7 +43,7 @@ class UpdateResourceSkills extends StatelessWidget {
             BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
           listener: (context, state) {
             final cubit = context.read<CreateResourceDialogCubit>();
-            if (state.status == FormStatus.success) {
+            if (state.submitStatus == ResourceSubmitStatus.success) {
               Navigator.of(context).pop();
             }
             if (state.isError) {
@@ -65,6 +64,12 @@ class UpdateResourceSkills extends StatelessWidget {
               final cubit = context.read<CreateResourceDialogCubit>();
               final canViewSkillEditor = !appCubit.state.isGuest &&
                   (state.usersProfile?.editor ?? false);
+              final associatedSkills = state.resourceSkills ??
+                  cubit.getSkillsForResource(
+                    ids: state.resource?.skillTreeIds,
+                  );
+              final selectedSkillIds =
+                  state.resource?.skillTreeIds ?? const <String>[];
               return AlertDialog(
                 title: const Text('Associated Skills for:'),
                 content: SingleChildScrollView(
@@ -76,11 +81,9 @@ class UpdateResourceSkills extends StatelessWidget {
                       Wrap(
                         alignment: WrapAlignment.center,
                         runSpacing: 4,
-                        children: cubit
-                                .getSkillsForResource(
-                                  ids: resource?.skillTreeIds,
-                                )
-                                ?.map(
+                        children: (associatedSkills?.isNotEmpty ?? false)
+                            ? associatedSkills!
+                                .map(
                                   (e) => ResourceTextButton(
                                     tooltip: 'Category: ${e?.category}\n'
                                         'Difficulty: ${e?.difficulty}\n'
@@ -107,8 +110,8 @@ class UpdateResourceSkills extends StatelessWidget {
                                     text: e?.skillName ?? '',
                                   ),
                                 )
-                                .toList() ??
-                            [const Text('No Skills Found')],
+                                .toList()
+                            : [const Text('No Skills Found')],
                       ),
                       gap(),
                       Visibility(
@@ -183,9 +186,8 @@ class UpdateResourceSkills extends StatelessWidget {
                                           difficulty: e?.difficulty,
                                         ),
                                         textLabel: e?.skillName ?? '',
-                                        isSelected: state.resource?.skillTreeIds
-                                                .contains(e?.id) ??
-                                            false,
+                                        isSelected: selectedSkillIds
+                                            .contains(e?.id ?? ''),
                                         onTap: (value) {
                                           context
                                               .read<CreateResourceDialogCubit>()
@@ -219,7 +221,10 @@ class UpdateResourceSkills extends StatelessWidget {
                             .read<CreateResourceDialogCubit>()
                             .editResource();
                       },
-                      child: const Text('Update'),
+                      child:
+                          state.submitStatus == ResourceSubmitStatus.submitting
+                              ? const CircularProgressIndicator()
+                              : const Text('Update'),
                     ),
                   ),
                 ],

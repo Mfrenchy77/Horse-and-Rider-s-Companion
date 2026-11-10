@@ -67,6 +67,8 @@ void main() {
         authenticationRepository: authRepo,
       );
 
+      addTearDown(cubit.close);
+
       final me = RiderProfile(id: 'me', name: 'Me', email: 'me@example.com');
       cubit.emit(cubit.state.copyWith(usersProfile: me));
 
@@ -105,7 +107,9 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // The catalog is intentionally unloaded,
+      // so its progress indicator keeps animating.
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const Key('RequestsBadgeButton')), findsOneWidget);
 
       // 2) Viewing someone else -> badge should be hidden
@@ -119,7 +123,9 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // The catalog is intentionally unloaded,
+      // so its progress indicator keeps animating.
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const Key('RequestsBadgeButton')), findsNothing);
     });
   });

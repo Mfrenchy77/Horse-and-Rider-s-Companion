@@ -21,9 +21,7 @@ class GuestProfileSkills extends StatelessWidget {
             'instructor has verified the skill, '
             'it will marked as such and in yellow.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-            ),
+            style: TextStyle(fontSize: 18),
           ),
         ),
         gap(),
@@ -33,14 +31,15 @@ class GuestProfileSkills extends StatelessWidget {
           runSpacing: 5,
           children: [
             ...ExampleSkill().getSkillLevels().map(
-                  (e) => SkillLevelCard(
-                    hasUnmetPrerequisites: true,
-                    category: SkillCategory.In_Hand,
-                    difficulty: DifficultyState.Intermediate,
-                    onTap: () => context.read<AppCubit>().changeIndex(1),
-                    skillLevel: e,
-                  ),
-                ),
+              (e) => SkillLevelCard(
+                // Prerequisites disabled; example badge input retained.
+                // hasUnmetPrerequisites: true,
+                category: SkillCategory.In_Hand,
+                difficulty: DifficultyState.Intermediate,
+                onTap: () => context.read<AppCubit>().changeIndex(1),
+                skillLevel: e,
+              ),
+            ),
           ],
         ),
       ],

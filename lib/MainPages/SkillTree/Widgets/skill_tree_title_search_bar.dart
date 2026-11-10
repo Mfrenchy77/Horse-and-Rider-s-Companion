@@ -19,8 +19,9 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
 
         final isSkillList =
             state.skillTreeNavigation == SkillTreeNavigation.SkillList;
-        final isTrainingPathList =
-            state.skillTreeNavigation == SkillTreeNavigation.TrainingPathList;
+        //         final isTrainingPathList =
+        //             state.skillTreeNavigation
+        //== SkillTreeNavigation.TrainingPathList;
         final hint = isSkillList ? 'Search Skills' : 'Search Resources';
 
         return Autocomplete<String>(
@@ -42,18 +43,20 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
               return;
             }
 
-            if (isTrainingPathList) {
-              cubit.navigateToTrainingPath(
-                trainingPath: state.trainingPaths.firstWhere(
-                  (tp) => tp?.name == value,
-                ),
-              );
-              return;
-            }
+            // Training-path search selection retained for restoration.
+            //             if (isTrainingPathList) {
+            //               cubit.navigateToTrainingPath(
+            //                 trainingPath: state.trainingPaths.firstWhere(
+            //                   (tp) => tp?.name == value,
+            //                 ),
+            //               );
+            //               return;
+            //             }
 
             // SkillLevel: confirm add/remove resource
-            final resource =
-                state.resources.firstWhereOrNull((r) => r.name == value);
+            final resource = state.resources.firstWhereOrNull(
+              (r) => r.name == value,
+            );
             final isLinked =
                 resource?.skillTreeIds.contains(state.skill?.id) ?? false;
 
@@ -99,22 +102,27 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                 } else if (state.skillTreeNavigation ==
                     SkillTreeNavigation.SkillLevel) {
                   cubit.resourceSearchQueryChanged(searchQuery: query);
-                } else {
-                  cubit.trainingPathSearchQueryChanged(searchQuery: query);
                 }
+                // Training paths disabled.
+                // else {
+                //   cubit.trainingPathSearchQueryChanged(searchQuery: query);
+                // }
               },
               onSubmitted: (_) => onFieldSubmitted(),
               decoration: InputDecoration(
                 filled: true,
                 iconColor: HorseAndRidersTheme().getTheme().iconTheme.color,
-                fillColor:
-                    HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
+                fillColor: HorseAndRidersTheme()
+                    .getTheme()
+                    .scaffoldBackgroundColor,
                 hintText: hint,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(40)),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 suffixIcon: IconButton(
                   onPressed: () {
                     // toggle search state and if search is acitve,
@@ -141,8 +149,10 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
                 elevation: 4,
                 borderRadius: BorderRadius.circular(12),
                 child: ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(maxWidth: 420, maxHeight: 320),
+                  constraints: const BoxConstraints(
+                    maxWidth: 420,
+                    maxHeight: 320,
+                  ),
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shrinkWrap: true,

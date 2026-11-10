@@ -14,10 +14,7 @@ class ProfileSkills extends StatelessWidget {
   /// {@macro profile_skills}
   /// Displays the skills of the user or horse
   /// {@macro key}
-  const ProfileSkills({
-    super.key,
-    required this.skillLevels,
-  });
+  const ProfileSkills({super.key, required this.skillLevels});
   final List<SkillLevel>? skillLevels;
 
   @override
@@ -41,28 +38,29 @@ class ProfileSkills extends StatelessWidget {
         final children = visibleLevels.isEmpty
             ? <Widget>[const Text('No Skills')]
             : visibleLevels
-                .map(
-                  (e) => SkillLevelCard(
-                    hasUnmetPrerequisites:
-                        cubit.hasUnmetPrerequisites(e.skillId),
-                    category: cubit.getSkillCategory(e.skillId),
-                    difficulty: cubit.getDifficulty(e.skillId),
-                    skillLevel: e,
-                    onTap: state.isGuest
-                        ? null
-                        : () {
-                            debugPrint('Goto Skill: ${e.skillName}');
+                  .map(
+                    (e) => SkillLevelCard(
+                      // Prerequisites disabled; badge input retained.
+                      // hasUnmetPrerequisites:
+                      //     cubit.hasUnmetPrerequisites(e.skillId),
+                      category: cubit.getSkillCategory(e.skillId),
+                      difficulty: cubit.getDifficulty(e.skillId),
+                      skillLevel: e,
+                      onTap: state.isGuest
+                          ? null
+                          : () {
+                              debugPrint('Goto Skill: ${e.skillName}');
 
-                            context.pushNamed(
-                              SkillTreeView.skillLevelName,
-                              pathParameters: {
-                                SkillTreeView.skillPathParam: e.skillId,
-                              },
-                            );
-                          },
-                  ),
-                )
-                .toList();
+                              context.pushNamed(
+                                SkillTreeView.skillLevelName,
+                                pathParameters: {
+                                  SkillTreeView.skillPathParam: e.skillId,
+                                },
+                              );
+                            },
+                    ),
+                  )
+                  .toList();
 
         return Wrap(
           spacing: 5,

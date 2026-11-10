@@ -144,30 +144,38 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
 
   /// Remove any node (root or child) and return its Skill to the pool
   void removeNode(SkillNode node) {
-    // restore the Skill
-    final skill =
-        state.initialAllSkills.firstWhere((s) => s.id == node.skillId);
-
-    // remove from roots if present
-    final newRoots = List.of(state.rootNodes)
-      ..removeWhere((n) => n.id == node.id);
-
-    // adjust children map
-    final newChildren = Map<String, List<SkillNode>>.from(state.childNodes);
-    final pid = node.parentId ?? '';
-    if (pid.isEmpty) {
-      // removed a root: also drop its subtree if you like
-      newChildren.remove(node.id);
-    } else {
-      final sibs = List.of(newChildren[pid]!)
-        ..removeWhere((n) => n.id == node.id);
-      newChildren[pid] = sibs;
+    final removedIds = <String>{};
+    final removedSkillIds = <String>{};
+    void collectSubtree(SkillNode current) {
+      if (!removedIds.add(current.id)) return;
+      removedSkillIds.add(current.skillId);
+      for (final child in state.childNodes[current.id] ?? <SkillNode>[]) {
+        collectSubtree(child);
+      }
     }
 
+    collectSubtree(node);
+    final newChildren = <String, List<SkillNode>>{
+      for (final entry in state.childNodes.entries)
+        if (!removedIds.contains(entry.key))
+          entry.key: entry.value
+              .where((child) => !removedIds.contains(child.id))
+              .toList(),
+    };
+    final availableIds = state.availableSkills.map((skill) => skill.id).toSet();
     emit(
       state.copyWith(
-        availableSkills: List.from(state.availableSkills)..add(skill),
-        rootNodes: newRoots,
+        availableSkills: [
+          ...state.availableSkills,
+          ...state.initialAllSkills.where(
+            (skill) =>
+                removedSkillIds.contains(skill.id) &&
+                !availableIds.contains(skill.id),
+          ),
+        ],
+        rootNodes: state.rootNodes
+            .where((root) => !removedIds.contains(root.id))
+            .toList(),
         childNodes: newChildren,
       ),
     );
@@ -199,7 +207,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
       description: state.description.value,
       isForRider: state.isForRider,
       skillNodes: allNodes,
-      skills: allNodes.map((n) => n.id).toList(),
+      skills: allNodes.map((n) => n.skillId).toList(),
       createdAt: state.trainingPath?.createdAt ?? DateTime.now(),
       createdBy: state.usersProfile!.name,
       createdById: state.usersProfile!.email,

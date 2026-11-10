@@ -13,7 +13,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
-// Removed dependency on a shared GlobalKey to avoid duplicate key issues
 
 class RiderProfileView extends StatefulWidget {
   const RiderProfileView({

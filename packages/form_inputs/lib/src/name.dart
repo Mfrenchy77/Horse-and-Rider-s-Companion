@@ -13,6 +13,9 @@ class Name extends FormzInput<String, String> {
 
   @override
   String? validator(String value) {
+    if (value.trim().isEmpty) {
+      return 'Name must be at least 3 characters';
+    }
     return NameValidator.dirty(value).error;
   }
 }

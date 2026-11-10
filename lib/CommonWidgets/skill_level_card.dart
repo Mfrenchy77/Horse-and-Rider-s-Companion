@@ -18,6 +18,7 @@ class SkillLevelCard extends StatelessWidget {
   final SkillLevel skillLevel;
   final SkillCategory category;
   final DifficultyState difficulty;
+  // These inputs are retained for the disabled prerequisite badge.
   final bool hasUnmetPrerequisites;
   final VoidCallback? onPrereqIconTap;
 
@@ -55,35 +56,34 @@ class SkillLevelCard extends StatelessWidget {
                     ),
                     child: Text(
                       skillLevel.skillName,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                      ),
+                      style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          if (hasUnmetPrerequisites)
-            Positioned(
-              top: -4,
-              right: -4,
-              child: InkWell(
-                onTap: onPrereqIconTap,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.error_outlined,
-                    size: 12,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+          // Prerequisite warning badge retained for possible restoration.
+          //           if (hasUnmetPrerequisites)
+          //             Positioned(
+          //               top: -4,
+          //               right: -4,
+          //               child: InkWell(
+          //                 onTap: onPrereqIconTap,
+          //                 child: Container(
+          //                   padding: const EdgeInsets.all(4),
+          //                   decoration: const BoxDecoration(
+          //                     color: Colors.redAccent,
+          //                     shape: BoxShape.circle,
+          //                   ),
+          //                   child: const Icon(
+          //                     Icons.error_outlined,
+          //                     size: 12,
+          //                     color: Colors.white,
+          //                   ),
+          //                 ),
+          //               ),
+          //             ),
         ],
       ),
     );
@@ -104,10 +104,7 @@ Gradient? _buildGradient(SkillLevel skillLevel) {
 
     return LinearGradient(
       stops: const [0.48, 0.52],
-      colors: [
-        fillColor,
-        Colors.transparent,
-      ],
+      colors: [fillColor, Colors.transparent],
     );
   }
 

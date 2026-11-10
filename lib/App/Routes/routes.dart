@@ -122,25 +122,27 @@ class Routes {
         // ── MAIN SHELL: app chrome + animated branch container ───────────────
         StatefulShellRoute(
           // Your chrome (rail/bottom bar + content)
-          builder: (
-            BuildContext context,
-            GoRouterState state,
-            StatefulNavigationShell navigationShell,
-          ) {
-            return NavigationView(child: navigationShell);
-          },
+          builder:
+              (
+                BuildContext context,
+                GoRouterState state,
+                StatefulNavigationShell navigationShell,
+              ) {
+                return NavigationView(child: navigationShell);
+              },
 
           // Our container that slides branch Navigators left/right
-          navigatorContainerBuilder: (
-            BuildContext context,
-            StatefulNavigationShell navigationShell,
-            List<Widget> children,
-          ) {
-            return BranchSlideContainer(
-              navigationShell: navigationShell,
-              children: children,
-            );
-          },
+          navigatorContainerBuilder:
+              (
+                BuildContext context,
+                StatefulNavigationShell navigationShell,
+                List<Widget> children,
+              ) {
+                return BranchSlideContainer(
+                  navigationShell: navigationShell,
+                  children: children,
+                );
+              },
 
           branches: [
             // ── Branch 0: Profile ────────────────────────────────────────────
@@ -232,8 +234,8 @@ class Routes {
                       path: SkillTreeView.skillsListPath,
                       name: SkillTreeView.skillsListName,
                       builder: (context, state) {
-                        if (state
-                                .pathParameters[SkillTreeView.skillPathParam] ==
+                        if (state.pathParameters[SkillTreeView
+                                .skillPathParam] ==
                             null) {
                           context.read<AppCubit>().setSkillTreeTabIndex(0);
                         }
@@ -246,7 +248,8 @@ class Routes {
                           pageBuilder: (context, state) {
                             final id = state
                                 .pathParameters[SkillTreeView.skillPathParam]!;
-                            final isLarge = MediaQuery.of(context).size.width >=
+                            final isLarge =
+                                MediaQuery.of(context).size.width >=
                                 StringConstants.splitScreenBreakpoint;
 
                             context.read<AppCubit>()
@@ -261,46 +264,47 @@ class Routes {
                         ),
                       ],
                     ),
-                    GoRoute(
-                      path: 'TrainingPaths',
-                      name: SkillTreeView.trainingPathListName,
-                      pageBuilder: (context, state) {
-                        if (state.pathParameters[
-                                SkillTreeView.trainingPathPathParam] ==
-                            null) {
-                          final isLarge = MediaQuery.of(context).size.width >=
-                              StringConstants.splitScreenBreakpoint;
-                          context
-                              .read<AppCubit>()
-                              .setSkillTreeTabIndex(isLarge ? 1 : 2);
-                        }
-                        return _horizontalSlidePage(
-                          key: state.pageKey,
-                          child: const SkillTreeView(),
-                        );
-                      },
-                      routes: [
-                        GoRoute(
-                          path: SkillTreeView.trainingPathViewPath,
-                          name: SkillTreeView.trainingPathViewName,
-                          pageBuilder: (context, state) {
-                            final id = state.pathParameters[
-                                SkillTreeView.trainingPathPathParam]!;
-                            final isLarge = MediaQuery.of(context).size.width >=
-                                StringConstants.splitScreenBreakpoint;
-
-                            context.read<AppCubit>()
-                              ..setTrainingPath(id)
-                              ..setSkillTreeTabIndex(isLarge ? 1 : 3);
-
-                            return _horizontalSlidePage(
-                              key: state.pageKey,
-                              child: SkillTreeView(trainingPathId: id),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                    // Training paths disabled; route definitions retained.
+                    //                  GoRoute(
+                    //                       path: 'TrainingPaths',
+                    //                 name: SkillTreeView.trainingPathListName,
+                    //                       pageBuilder: (context, state) {
+                    //                         if (state.pathParameters[
+                    //                  SkillTreeView.trainingPathPathParam] ==
+                    //                            null) {
+                    //      final isLarge = MediaQuery.of(context).size.width >=
+                    //                StringConstants.splitScreenBreakpoint;
+                    //                           context
+                    //                               .read<AppCubit>()
+                    //                .setSkillTreeTabIndex(isLarge ? 1 : 2);
+                    //                         }
+                    //                         return _horizontalSlidePage(
+                    //                           key: state.pageKey,
+                    //                           child: const SkillTreeView(),
+                    //                         );
+                    //                       },
+                    //                       routes: [
+                    //                         GoRoute(
+                    //            path: SkillTreeView.trainingPathViewPath,
+                    //           name: SkillTreeView.trainingPathViewName,
+                    //                 pageBuilder: (context, state) {
+                    //                  final id = state.pathParameters[
+                    //                 SkillTreeView.trainingPathPathParam]!;
+                    //  final isLarge = MediaQuery.of(context).size.width >=
+                    //                 StringConstants.splitScreenBreakpoint;
+                    //
+                    //                             context.read<AppCubit>()
+                    //                               ..setTrainingPath(id)
+                    //                ..setSkillTreeTabIndex(isLarge ? 1 : 3);
+                    //
+                    //                             return _horizontalSlidePage(
+                    //                               key: state.pageKey,
+                    //                 child: SkillTreeView(trainingPathId: id),
+                    //                             );
+                    //                           },
+                    //                         ),
+                    //                       ],
+                    //                     ),
                   ],
                 ),
               ],
@@ -363,12 +367,14 @@ class Routes {
       key: key,
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final inTween =
-            Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-                .chain(CurveTween(curve: Curves.easeInOut));
-        final outTween =
-            Tween<Offset>(begin: Offset.zero, end: const Offset(-1, 0))
-                .chain(CurveTween(curve: Curves.easeInOut));
+        final inTween = Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeInOut));
+        final outTween = Tween<Offset>(
+          begin: Offset.zero,
+          end: const Offset(-1, 0),
+        ).chain(CurveTween(curve: Curves.easeInOut));
         return SlideTransition(
           position: animation.drive(inTween),
           child: SlideTransition(
@@ -456,10 +462,7 @@ class _BranchSlideContainerState extends State<BranchSlideContainer> {
               offstage: !show,
               child: IgnorePointer(
                 ignoring: index != curr,
-                child: TickerMode(
-                  enabled: index == curr,
-                  child: navigator,
-                ),
+                child: TickerMode(enabled: index == curr, child: navigator),
               ),
             ),
           );

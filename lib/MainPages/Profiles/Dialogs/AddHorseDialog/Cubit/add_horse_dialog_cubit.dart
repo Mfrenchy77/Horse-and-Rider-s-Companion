@@ -449,9 +449,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
               state.dateOfPurchase as int,
             )
           : null,
-      dateOfBirth: state.dateOfBirth != null
-          ? DateTime.fromMillisecondsSinceEpoch(state.dateOfBirth as int)
-          : null,
+      dateOfBirth: state.dateOfBirth,
       color: state.color.value.trim(),
     );
     if (horseProfile.dateOfBirth != null) {
@@ -462,7 +460,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         id: state.dateOfBirth.toString(),
         message: state.usersProfile?.name.trim(),
         parentId: state.usersProfile?.email.trim(),
-        name: '${state.horseProfile?.name} was Born',
+        name: '${horseProfile.name} was Born',
       );
       horseProfile.notes?.add(dobNote);
     }
@@ -518,13 +516,13 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     );
 
 // ignore: omit_local_variable_types
-    final HorseProfile horseProfile = HorseProfile(
+    final HorseProfile horseProfile = state.horseProfile!.copyWith(
       lastEditDate: DateTime.now(),
       dateOfBirth: state.dateOfBirth,
       picUrl: state.picUrl.isNotEmpty
           ? state.picUrl.trim()
           : state.horseProfile?.picUrl,
-      notes: state.horseProfile?.notes,
+      notes: [...?state.horseProfile?.notes],
       breed: state.breed.value.isNotEmpty
           ? state.breed.value.trim()
           : state.horseProfile?.breed,
@@ -567,7 +565,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
           "${horseProfile.name}'s profile was edited by ${state.usersProfile?.name}",
     );
     horseProfile.notes?.add(editNote);
-    state.usersProfile?.notes?.add(editNote);
 // update the users profile with the edited horses detail in owned horses
     final ownedHorse = BaseListItem(
       id: horseProfile.id,
@@ -643,7 +640,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
     try {
       debugPrint("Deleting ${horseProfile?.name}'s Profile");
-      _horseProfileRepository.deleteHorseProfile(
+      await _horseProfileRepository.deleteHorseProfile(
         id: horseProfile?.id as String,
       );
       await _riderProfileRepository.createOrUpdateRiderProfile(

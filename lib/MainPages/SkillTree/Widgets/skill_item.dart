@@ -2,7 +2,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class SkillItem extends StatefulWidget {
@@ -36,81 +35,154 @@ class _SkillItemState extends State<SkillItem> {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<AppCubit>();
+    return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) => previous.skill != current.skill,
+      builder: (context, state) {
+        final cubit = context.read<AppCubit>();
+        final isSelected = state.skill?.id == widget.skill?.id;
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
 
-    final gradient = cubit.levelGradient(skill: widget.skill!);
-    final bgColor = cubit.levelColor(
-      skill: widget.skill!,
-      levelState: LevelState.PROFICIENT,
-    );
+        final gradient = cubit.levelGradient(skill: widget.skill!);
+        final bgColor = cubit.levelColor(
+          skill: widget.skill!,
+          levelState: LevelState.PROFICIENT,
+        );
 
-    return IntrinsicWidth(
-      child: Card(
-        color: HorseAndRidersTheme().getTheme().cardColor,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        clipBehavior: Clip.hardEdge,
-        child: InkWell(
-          onTap: widget.onTap,
-          child: Container(
+        // Calculate glow color based on theme brightness
+        final glowColor = isSelected
+            ? (Theme.of(context).brightness == Brightness.dark
+                ? colorScheme.primary.withValues(alpha: 0.5)
+                : colorScheme.primary.withValues(alpha: 0.7))
+            : Colors.transparent;
+
+        final borderRadius = BorderRadius.circular(35);
+        final neutralFillColor = theme.brightness == Brightness.dark
+            ? colorScheme.surfaceContainerHigh
+            : colorScheme.surface;
+        final effectiveFillColor =
+            bgColor == Colors.transparent ? neutralFillColor : bgColor;
+
+        return IntrinsicWidth(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              gradient: gradient,
-              color: gradient == null ? bgColor : null,
+              borderRadius: borderRadius,
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: glowColor,
+                        blurRadius: 20,
+                        spreadRadius: 4,
+                      ),
+                    ]
+                  : [],
             ),
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _icon(widget.skill!.category, widget.skill!.difficulty),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        widget.name ?? '',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () =>
-                          setState(() => _isExpanded = !_isExpanded),
-                      icon: Icon(
-                        _isExpanded
-                            ? Icons.arrow_drop_up
-                            : Icons.arrow_drop_down,
-                      ),
-                    ),
-                    if (widget.isEditState && !widget.isGuest)
-                      PopupMenuButton<String>(
-                        iconSize: 18,
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            onTap: widget.onEdit,
-                            child: const Text('Edit'),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-                if (_isExpanded) ...[
-                  const Divider(),
-                  Text(widget.skill?.rider ?? false ? 'Rider' : 'Horse'),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '${widget.skill?.category.name} '
-                      '- ${widget.skill?.difficulty.name}',
-                      style: const TextStyle(fontSize: 12),
+            child: Material(
+              type: MaterialType.transparency,
+              borderRadius: borderRadius,
+              child: InkWell(
+                borderRadius: borderRadius,
+                onTap: widget.onTap,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    borderRadius: borderRadius,
+                    color: gradient == null
+                        ? effectiveFillColor
+                        : neutralFillColor,
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.white
+                          : colorScheme.outlineVariant,
+                      width: isSelected ? 2 : 1,
                     ),
                   ),
-                ],
-              ],
+                  child: _buildGradientOverlay(
+                    gradient: gradient,
+                    borderRadius: borderRadius,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _icon(
+                                widget.skill!.category,
+                                widget.skill!.difficulty,
+                              ),
+                              const SizedBox(width: 10),
+                              Flexible(
+                                child: Text(
+                                  widget.name ?? '',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () =>
+                                    setState(() => _isExpanded = !_isExpanded),
+                                icon: Icon(
+                                  _isExpanded
+                                      ? Icons.arrow_drop_up
+                                      : Icons.arrow_drop_down,
+                                ),
+                              ),
+                              if (widget.isEditState && !widget.isGuest)
+                                PopupMenuButton<String>(
+                                  iconSize: 18,
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      onTap: widget.onEdit,
+                                      child: const Text('Edit'),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                          if (_isExpanded) ...[
+                            const Divider(),
+                            Text(
+                              widget.skill?.rider ?? false ? 'Rider' : 'Horse',
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                '${widget.skill?.category.name} '
+                                '- ${widget.skill?.difficulty.name}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGradientOverlay({
+    required Gradient? gradient,
+    required BorderRadius borderRadius,
+    required Widget child,
+  }) {
+    if (gradient == null) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        gradient: gradient,
       ),
+      child: child,
     );
   }
 }

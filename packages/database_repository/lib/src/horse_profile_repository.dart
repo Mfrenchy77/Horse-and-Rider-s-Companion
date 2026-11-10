@@ -1,19 +1,23 @@
-// ignore_for_file: constant_identifier_names, public_member_api_docs
+// ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/horse_profile.dart';
 
 ///Interface between Horse and Riders and Firebase
 class HorseProfileRepository {
+  HorseProfileRepository({FirebaseFirestore? firestore})
+      : _horseProfiledatabaseReference =
+            (firestore ?? FirebaseFirestore.instance)
+                .collection(HORSE_PROFILE)
+                .withConverter<HorseProfile>(
+                  fromFirestore: HorseProfile.fromFirestore,
+                  toFirestore: (horseProfile, options) =>
+                      horseProfile.toFirestore(),
+                );
+
   static const String HORSE_PROFILE = 'Horse_Profile';
 
-  final _horseProfiledatabaseReference = FirebaseFirestore.instance
-      .collection(HORSE_PROFILE)
-      .withConverter<HorseProfile>(
-        fromFirestore: HorseProfile.fromFirestore,
-        toFirestore: (HorseProfile horseProfile, options) =>
-            horseProfile.toFirestore(),
-      );
+  final CollectionReference<HorseProfile> _horseProfiledatabaseReference;
 
   ///create or update [horseProfile]
   Future<void> createOrUpdateHorseProfile({
@@ -26,6 +30,9 @@ class HorseProfileRepository {
 
   ///retrieve all horse profiles for user [ids]
   Stream<List<HorseProfile>> getAllUsersHorses({required List<String>? ids}) {
+    if (ids == null || ids.isEmpty) {
+      return Stream.value(<HorseProfile>[]);
+    }
     //retrieve horses assigned to a users profile
     return _horseProfiledatabaseReference
         .where('id', whereIn: ids)
@@ -60,9 +67,9 @@ class HorseProfileRepository {
     //retrieve horse with name from database
 
     return _horseProfiledatabaseReference
-        .where('nickName', isGreaterThanOrEqualTo: nickName)
+        .where('nickname', isGreaterThanOrEqualTo: nickName)
         .where(
-          'nickName',
+          'nickname',
           isLessThanOrEqualTo: '$nickName\uf8ff',
         )
         .snapshots()
@@ -86,7 +93,7 @@ class HorseProfileRepository {
   }
 
   ///Delete Horse Profile at [id]
-  void deleteHorseProfile({required String id}) {
-    _horseProfiledatabaseReference.doc(id).delete();
+  Future<void> deleteHorseProfile({required String id}) {
+    return _horseProfiledatabaseReference.doc(id).delete();
   }
 }

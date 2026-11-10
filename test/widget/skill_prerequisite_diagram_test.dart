@@ -67,5 +67,37 @@ void main() {
       expect(data.edges, isEmpty);
       expect(data.hasDiagram, isFalse);
     });
+
+    test('collects dependent skills when enabled', () {
+      final base = buildSkill('base');
+      final focus = buildSkill('focus', prerequisites: ['base']);
+      final advanced = buildSkill('advanced', prerequisites: ['focus']);
+      final mastery = buildSkill('mastery', prerequisites: ['advanced']);
+
+      final data = SkillPrerequisiteGraphBuilder(
+        skill: focus,
+        allSkills: [base, focus, advanced, mastery],
+        includeDependents: true,
+      ).build();
+
+      expect(
+        data.skillById.keys,
+        containsAll(['base', 'focus', 'advanced', 'mastery']),
+      );
+      expect(data.descendantSkillIds, containsAll(['advanced', 'mastery']));
+      expect(data.downstreamDepthBySkillId['focus'], 0);
+      expect(data.downstreamDepthBySkillId['advanced'], 1);
+      expect(data.downstreamDepthBySkillId['mastery'], 2);
+      expect(
+        data.edges,
+        containsAll(
+          [
+            const SkillPrerequisiteEdge('base', 'focus'),
+            const SkillPrerequisiteEdge('focus', 'advanced'),
+            const SkillPrerequisiteEdge('advanced', 'mastery'),
+          ],
+        ),
+      );
+    });
   });
 }

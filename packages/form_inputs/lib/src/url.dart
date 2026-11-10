@@ -19,11 +19,14 @@ class Url extends FormzInput<String, UrlValidationError> {
 
   @override
   UrlValidationError? validator(String? value) {
-    if (value != null) {
-      return Uri.parse(value).host.isNotEmpty
+    try {
+      final uri = Uri.tryParse(value ?? '');
+      return uri != null &&
+              (uri.scheme == 'http' || uri.scheme == 'https') &&
+              uri.host.isNotEmpty
           ? null
           : UrlValidationError.invalid;
-    } else {
+    } on FormatException {
       return UrlValidationError.invalid;
     }
   }

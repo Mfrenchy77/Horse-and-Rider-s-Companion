@@ -195,15 +195,14 @@ class ResourcesRepository {
     var q = _ref
         .where('type', isEqualTo: 'article')
         .where('status', isEqualTo: 'published')
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
+        .orderBy('createdAt', descending: true);
 
     if (tagsFilter.isNotEmpty) {
       q = q.where('tags', arrayContainsAny: tagsFilter.take(10).toList());
     }
     if (startAfter != null) q = q.startAfterDocument(startAfter);
 
-    final snap = await q.get();
+    final snap = await q.limit(limit).get();
     return (
       items: snap.docs.map((d) => d.data()).toList(),
       lastDoc: snap.docs.isEmpty ? null : snap.docs.last

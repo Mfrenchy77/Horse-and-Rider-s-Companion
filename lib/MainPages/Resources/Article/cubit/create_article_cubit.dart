@@ -14,10 +14,10 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
     ResourcesRepository? resourcesRepository,
     FirebaseStorage? storage,
     RiderProfile? user,
-  })  : _repo = resourcesRepository ?? ResourcesRepository(),
-        _storage = storage ?? FirebaseStorage.instance,
-        _user = user,
-        super(const ArticleCreateState());
+  }) : _repo = resourcesRepository ?? ResourcesRepository(),
+       _storage = storage ?? FirebaseStorage.instance,
+       _user = user,
+       super(const ArticleCreateState());
 
   final ResourcesRepository _repo;
   final FirebaseStorage _storage;
@@ -38,9 +38,8 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
     emit(state.copyWith(tags: [...state.tags, t]));
   }
 
-  void removeTag(String v) => emit(
-        state.copyWith(tags: [...state.tags]..remove(v)),
-      );
+  void removeTag(String v) =>
+      emit(state.copyWith(tags: [...state.tags]..remove(v)));
 
   /// Called by the view when the Quill document changes.
   void editorUpdated({
@@ -53,22 +52,18 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
   // ------------------ Cover upload ------------------
 
   Future<void> pickAndUploadCover() async {
-    emit(
-      state.copyWith(
-        status: ArticleCreateStatus.pickingCover,
-      ),
-    );
+    emit(state.copyWith(status: ArticleCreateStatus.pickingCover));
     try {
-      final res = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
         withData: true,
       );
-      if (res == null || res.files.isEmpty) {
+      if (result == null || result.files.isEmpty) {
         emit(state.copyWith(status: ArticleCreateStatus.idle));
         return;
       }
 
-      final file = res.files.single;
+      final file = result.files.single;
       final bytes = file.bytes;
       final filename = file.name;
       if (bytes == null) {
@@ -132,7 +127,8 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
     if (!state.isFormValid) {
       emit(
         state.copyWith(
-          errorMessage: 'Please fix validation: title ≥ 3 chars,'
+          errorMessage:
+              'Please fix validation: title ≥ 3 chars,'
               ' content ≥ 20 chars, ≤ 6 tags.',
         ),
       );
@@ -148,31 +144,28 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
       return;
     }
 
-    emit(
-      state.copyWith(
-        status: ArticleCreateStatus.submitting,
-      ),
-    );
+    emit(state.copyWith(status: ArticleCreateStatus.submitting));
     try {
       final id = state.createdResourceId ?? _repo.newId();
 
       final resource = Resource(
         id: id,
         rating: 0,
-        lastEditBy: _user?.email,
+        lastEditBy: _user.email,
         lastEditDate: DateTime.now(),
         thumbnail: state.coverImageUrl,
         type: ResourceType.article,
         status: publishNow ? ResourceStatus.published : ResourceStatus.pending,
         name: state.title.trim(),
-        description:
-            state.description.trim().isEmpty ? null : state.description.trim(),
+        description: state.description.trim().isEmpty
+            ? null
+            : state.description.trim(),
         content: state.content,
         tags: state.tags,
         coverImageUrl: state.coverImageUrl,
-        authorId: _user?.email,
-        authorName: _user?.name,
-        authorPhoto: _user?.picUrl,
+        authorId: _user.email,
+        authorName: _user.name,
+        authorPhoto: _user.picUrl,
       );
 
       await _repo.createArticle(resource: resource);

@@ -15,6 +15,6 @@ class SingleWord extends FormzInput<String, WordValidationError> {
   const SingleWord.dirty([super.value = '']) : super.dirty();
   @override
   WordValidationError? validator(String value) {
-    return value.isEmpty ? WordValidationError.empty : null;
+    return value.trim().isEmpty ? WordValidationError.empty : null;
   }
 }

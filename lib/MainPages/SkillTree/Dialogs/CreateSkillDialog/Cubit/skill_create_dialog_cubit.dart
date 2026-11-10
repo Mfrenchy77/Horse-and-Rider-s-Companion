@@ -18,8 +18,8 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     required bool isForRider,
     required RiderProfile usersProfile,
     required SkillTreeRepository skillsRepository,
-  })  : _skillsRepository = skillsRepository,
-        super(const CreateSkillDialogState()) {
+  }) : _skillsRepository = skillsRepository,
+       super(const CreateSkillDialogState()) {
     emit(
       state.copyWith(
         skill: skill,
@@ -32,8 +32,9 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
         name: SingleWord.dirty(skill?.skillName ?? ''),
         description: SingleWord.dirty(skill?.description ?? ''),
         learningDescription: SingleWord.dirty(skill?.learningDescription ?? ''),
-        proficientDescription:
-            SingleWord.dirty(skill?.proficientDescription ?? ''),
+        proficientDescription: SingleWord.dirty(
+          skill?.proficientDescription ?? '',
+        ),
       ),
     );
   }
@@ -49,25 +50,19 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   /// Called when the new Skill Description changes
   void skillDescriptionChanged(String value) {
     final description = SingleWord.dirty(value);
-    emit(
-      state.copyWith(description: description),
-    );
+    emit(state.copyWith(description: description));
   }
 
   /// Called when the new Skill Learning Description changes
   void skillLearningDescriptionChanged(String value) {
     final learningDescription = SingleWord.dirty(value);
-    emit(
-      state.copyWith(learningDescription: learningDescription),
-    );
+    emit(state.copyWith(learningDescription: learningDescription));
   }
 
   /// Called when the new Skill Proficient Description changes
   void skillProficientDescriptionChanged(String value) {
     final proficientDescription = SingleWord.dirty(value);
-    emit(
-      state.copyWith(proficientDescription: proficientDescription),
-    );
+    emit(state.copyWith(proficientDescription: proficientDescription));
   }
 
   /// Called when the Skill is for a Rider or a Horse changes
@@ -77,34 +72,27 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
 
   /// Called when the new Skill Difficulty changes
   void skillDifficultyChanged(DifficultyState value) {
-    emit(
-      state.copyWith(
-        difficulty: value,
-      ),
-    );
+    emit(state.copyWith(difficulty: value));
   }
 
   /// Called when the new Skill Category changes
   void skillCategoryChanged(SkillCategory value) {
-    emit(
-      state.copyWith(
-        category: value,
-      ),
-    );
+    emit(state.copyWith(category: value));
   }
 
-  /// Called when the prerequisites change
-  void prerequisitesChanged(String id) {
-    final current = List<String>.from(state.prerequisites);
-
-    if (current.contains(id)) {
-      current.remove(id);
-    } else {
-      current.add(id);
-    }
-
-    emit(state.copyWith(prerequisites: current));
-  }
+  // Prerequisite editing retained for possible restoration.
+  //   /// Called when the prerequisites change
+  //   void prerequisitesChanged(String id) {
+  //     final current = List<String>.from(state.prerequisites);
+  //
+  //     if (current.contains(id)) {
+  //       current.remove(id);
+  //     } else {
+  //       current.add(id);
+  //     }
+  //
+  //     emit(state.copyWith(prerequisites: current));
+  //   }
 
   /// Sort the skills by isRider
   List<Skill?> sortSkillsByRider() {
@@ -123,9 +111,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
   ///   Called when creating new Skill
   Future<void> createSkill(int position) async {
     // final subCategories = state.subCategoryList ?? [];
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
+    emit(state.copyWith(status: FormStatus.submitting));
 
     final skill = Skill(
       id: ViewUtils.createId(),
@@ -135,7 +121,8 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       difficulty: state.difficulty,
       skillName: state.name.value,
       lastEditDate: DateTime.now(),
-      prerequisites: state.prerequisites,
+      // Prerequisites disabled for new skills.
+      // prerequisites: state.prerequisites,
       description: state.description.value,
       lastEditBy: state.usersProfile?.email,
       learningDescription: state.learningDescription.value,
@@ -143,22 +130,16 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     );
 
     try {
-      await _skillsRepository.createOrEditSkill(
-        skill: skill,
-      );
+      await _skillsRepository.createOrEditSkill(skill: skill);
       emit(state.copyWith(status: FormStatus.success));
     } catch (e) {
       debugPrint(e.toString());
-      emit(
-        state.copyWith(status: FormStatus.failure),
-      );
+      emit(state.copyWith(status: FormStatus.failure));
     }
   }
 
   Future<void> editSkill({Skill? editedSkill}) async {
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
+    emit(state.copyWith(status: FormStatus.submitting));
 
     final skill = Skill(
       rider: state.isForRider,
@@ -166,7 +147,9 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
       lastEditDate: DateTime.now(),
       difficulty: state.difficulty,
       id: editedSkill?.id as String,
-      prerequisites: state.prerequisites,
+      // Prerequisite editing disabled; preserve the original saved links.
+      // prerequisites: state.prerequisites,
+      prerequisites: editedSkill?.prerequisites ?? const [],
       lastEditBy: state.usersProfile?.email,
       position: editedSkill?.position as int,
       skillName: state.name.value.isNotEmpty
@@ -184,35 +167,23 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     );
 
     try {
-      await _skillsRepository.createOrEditSkill(
-        skill: skill,
-      );
+      await _skillsRepository.createOrEditSkill(skill: skill);
       emit(state.copyWith(status: FormStatus.success));
     } catch (e) {
       debugPrint(e.toString());
-      emit(
-        state.copyWith(
-          status: FormStatus.failure,
-        ),
-      );
+      emit(state.copyWith(status: FormStatus.failure));
     }
   }
 
   void deleteSkill({required Skill skill}) {
-    emit(
-      state.copyWith(status: FormStatus.submitting),
-    );
+    emit(state.copyWith(status: FormStatus.submitting));
 
     try {
-      _skillsRepository.deleteSkill(
-        skill: skill,
-      );
+      _skillsRepository.deleteSkill(skill: skill);
       emit(state.copyWith(status: FormStatus.success));
     } catch (e) {
       debugPrint(e.toString());
-      emit(
-        state.copyWith(status: FormStatus.failure),
-      );
+      emit(state.copyWith(status: FormStatus.failure));
     }
   }
 

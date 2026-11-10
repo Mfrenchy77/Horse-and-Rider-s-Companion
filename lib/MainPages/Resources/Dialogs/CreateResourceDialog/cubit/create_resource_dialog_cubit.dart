@@ -30,19 +30,19 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? previewMetaEndpoint,
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
-  })  : _debounce = null,
-        _resourcesRepository = resourcesRepository,
-        _storage = storage ?? FirebaseStorage.instance,
-        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
-            ? _kDefaultPreviewMetaUrl
-            : previewMetaEndpoint!.trim(),
-        _fetchReadableUrl = (fetchReadableEndpoint?.trim().isEmpty ?? true)
-            ? _kDefaultFetchReadableUrl
-            : fetchReadableEndpoint!.trim(),
-        _resolveImageUrl = (resolveImageEndpoint?.trim().isEmpty ?? true)
-            ? _kDefaultResolveImageUrl
-            : resolveImageEndpoint!.trim(),
-        super(const CreateResourceDialogState()) {
+  }) : _debounce = null,
+       _resourcesRepository = resourcesRepository,
+       _storage = storage ?? FirebaseStorage.instance,
+       _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
+           ? _kDefaultPreviewMetaUrl
+           : previewMetaEndpoint!.trim(),
+       _fetchReadableUrl = (fetchReadableEndpoint?.trim().isEmpty ?? true)
+           ? _kDefaultFetchReadableUrl
+           : fetchReadableEndpoint!.trim(),
+       _resolveImageUrl = (resolveImageEndpoint?.trim().isEmpty ?? true)
+           ? _kDefaultResolveImageUrl
+           : resolveImageEndpoint!.trim(),
+       super(const CreateResourceDialogState()) {
     emit(
       state.copyWith(
         skills: skills,
@@ -59,6 +59,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
             : ResourceInputType.link,
       ),
     );
+
+    final initialResourceSkills = getSkillsForResource(
+      ids: resource?.skillTreeIds,
+    );
+    emit(state.copyWith(resourceSkills: initialResourceSkills));
   }
 
   // --------------------------------------------------------------------------
@@ -125,15 +130,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       emit(state.copyWith(title: value, urlFetchedStatus: _inferLinkStatus()));
 
   void imageUrlChanged(String value) => emit(
-        state.copyWith(imageUrl: value, urlFetchedStatus: _inferLinkStatus()),
-      );
+    state.copyWith(imageUrl: value, urlFetchedStatus: _inferLinkStatus()),
+  );
 
   void descriptionChanged(String value) => emit(
-        state.copyWith(
-          description: value,
-          urlFetchedStatus: _inferLinkStatus(),
-        ),
-      );
+    state.copyWith(description: value, urlFetchedStatus: _inferLinkStatus()),
+  );
 
   UrlFetchedStatus _inferLinkStatus() {
     final isComplete = state.title.isNotEmpty && state.url.value.isNotEmpty;
@@ -226,19 +228,22 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         : pick(readable?['excerpt']);
     final rImg = _absUrl(pick(readable?['image']), pageUrl);
 
-    final title = [rTitle, pTitle, fallbackTitle]
-        .firstWhere((s) => s.trim().isNotEmpty, orElse: () => fallbackTitle);
+    final title = [
+      rTitle,
+      pTitle,
+      fallbackTitle,
+    ].firstWhere((s) => s.trim().isNotEmpty, orElse: () => fallbackTitle);
 
-    final desc = [rDesc, pDesc].firstWhere(
-      (s) => s.trim().isNotEmpty,
-      orElse: () => '',
-    );
+    final desc = [
+      rDesc,
+      pDesc,
+    ].firstWhere((s) => s.trim().isNotEmpty, orElse: () => '');
 
     // Prefer readable image first, then preview image
-    final img = [rImg, pImg].firstWhere(
-      (s) => s.trim().isNotEmpty,
-      orElse: () => '',
-    );
+    final img = [
+      rImg,
+      pImg,
+    ].firstWhere((s) => s.trim().isNotEmpty, orElse: () => '');
 
     return {'title': title, 'description': _clip(desc), 'image': img};
   }
@@ -291,10 +296,16 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
     // Try Cloud Functions first
     try {
-      final p =
-          await _postJson(_previewMetaUrl, body: {'url': url}, trace: trace);
-      final r =
-          await _postJson(_fetchReadableUrl, body: {'url': url}, trace: trace);
+      final p = await _postJson(
+        _previewMetaUrl,
+        body: {'url': url},
+        trace: trace,
+      );
+      final r = await _postJson(
+        _fetchReadableUrl,
+        body: {'url': url},
+        trace: trace,
+      );
 
       _d(
         'getMetadata',
@@ -321,8 +332,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
             : (merged['image'] ?? '');
         String? finalImg;
         try {
-          final resolved =
-              await _resolveImage(url, hint: candidateImg, trace: trace);
+          final resolved = await _resolveImage(
+            url,
+            hint: candidateImg,
+            trace: trace,
+          );
           if (resolved != null && resolved.isNotEmpty) {
             finalImg = resolved;
           } else {
@@ -381,8 +395,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         // Try resolver to upgrade to a verified direct/wp upload if possible
         String? finalImg = mergedImg;
         try {
-          final resolved =
-              await _resolveImage(url, hint: mergedImg, trace: trace);
+          final resolved = await _resolveImage(
+            url,
+            hint: mergedImg,
+            trace: trace,
+          );
           if (resolved != null && resolved.isNotEmpty) {
             finalImg = resolved;
           }
@@ -399,10 +416,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         emit(
           state.copyWith(
             url: Url.dirty(url),
-            title:
-                state.title.isNotEmpty ? state.title : (metadata.title ?? ''),
-            imageUrl:
-                state.imageUrl.isNotEmpty ? state.imageUrl : (finalImg ?? ''),
+            title: state.title.isNotEmpty
+                ? state.title
+                : (metadata.title ?? ''),
+            imageUrl: state.imageUrl.isNotEmpty
+                ? state.imageUrl
+                : (finalImg ?? ''),
             description: state.description.isNotEmpty
                 ? state.description
                 : _clip(metadata.desc ?? ''),
@@ -532,16 +551,16 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   Future<void> pickPdf() async {
     emit(state.copyWith(pdfPicking: true, error: '', isError: false));
     try {
-      final res = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['pdf'],
         withData: true,
       );
-      if (res == null || res.files.isEmpty) {
+      if (result == null || result.files.isEmpty) {
         emit(state.copyWith(pdfPicking: false));
         return;
       }
-      final file = res.files.single;
+      final file = result.files.single;
       final bytes = file.bytes;
       if (bytes == null) {
         emit(
@@ -554,11 +573,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         return;
       }
       emit(
-        state.copyWith(
-          pdfPicking: false,
-          pdfBytes: bytes,
-          pdfName: file.name,
-        ),
+        state.copyWith(pdfPicking: false, pdfBytes: bytes, pdfName: file.name),
       );
     } catch (e) {
       emit(
@@ -571,8 +586,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     }
   }
 
-  // ignore: avoid_redundant_argument_values
-  void clearPickedPdf() => emit(state.copyWith(pdfBytes: null, pdfName: null));
+  void clearPickedPdf() => emit(state.copyWith(clearPdf: true));
 
   // ----------------- Edit Resource ------------------
   Future<void> editResource() async {
@@ -587,16 +601,17 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       );
       return;
     }
-    final editedResource = Resource(
+    final editedResource = (state.resource ?? Resource()).copyWith(
       comments: state.resource?.comments ?? [],
       lastEditDate: DateTime.now(),
       name: state.title.isEmpty ? state.resource?.name : state.title,
       rating: state.resource?.rating ?? 1,
-      lastEditBy: state.usersProfile?.name,
+      lastEditBy: state.usersProfile?.email,
       description: state.description.isEmpty
           ? state.resource?.description
           : state.description,
-      usersWhoRated: state.resource?.usersWhoRated ??
+      usersWhoRated:
+          state.resource?.usersWhoRated ??
           [
             BaseListItem(
               isSelected: true,
@@ -607,7 +622,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       id: state.resource?.id ?? ViewUtils.createId(),
       numberOfRates: state.resource?.numberOfRates ?? 0,
       url: state.url.value.isEmpty ? state.resource?.url : state.url.value,
-      skillTreeIds: state.resourceSkills
+      skillTreeIds:
+          state.resourceSkills
               ?.map((e) => e?.id)
               .whereType<String>()
               .toList() ??
@@ -622,8 +638,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       );
       emit(state.copyWith(submitStatus: ResourceSubmitStatus.success));
     } catch (e) {
-      final msg =
-          (e is FirebaseException) ? (e.message ?? 'Firebase Error') : 'Error';
+      final msg = (e is FirebaseException)
+          ? (e.message ?? 'Firebase Error')
+          : 'Error';
       emit(
         state.copyWith(
           isError: true,
@@ -675,8 +692,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         state.copyWith(
           submitStatus: ResourceSubmitStatus.error,
           isError: true,
-          error:
-              e is FirebaseException ? (e.message ?? 'Firebase error') : '$e',
+          error: e is FirebaseException
+              ? (e.message ?? 'Firebase error')
+              : '$e',
         ),
       );
     }
@@ -697,12 +715,13 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       comments: [],
       lastEditDate: DateTime.now(),
       authorId: state.usersProfile?.email,
-      lastEditBy: state.usersProfile?.name,
+      lastEditBy: state.usersProfile?.email,
       authorName: state.usersProfile?.name,
       authorPhoto: state.usersProfile?.picUrl,
       thumbnail: state.imageUrl.isNotEmpty ? state.imageUrl : null,
       description: state.description.isNotEmpty ? state.description : null,
-      skillTreeIds: state.resourceSkills
+      skillTreeIds:
+          state.resourceSkills
               ?.map((e) => e?.id)
               .whereType<String>()
               .toList() ??
@@ -725,8 +744,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     final uploadTask = ref.putData(bytes, meta);
 
     uploadTask.snapshotEvents.listen((snap) {
-      final p =
-          snap.totalBytes == 0 ? 0.0 : snap.bytesTransferred / snap.totalBytes;
+      final p = snap.totalBytes == 0
+          ? 0.0
+          : snap.bytesTransferred / snap.totalBytes;
       emit(state.copyWith(pdfUploadProgress: p));
     });
 
@@ -743,11 +763,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       createdAt: DateTime.now(),
       lastEditDate: DateTime.now(),
       authorId: state.usersProfile?.email,
-      lastEditBy: state.usersProfile?.name,
+      lastEditBy: state.usersProfile?.email,
       authorName: state.usersProfile?.name,
       authorPhoto: state.usersProfile?.picUrl,
       description: state.description.isNotEmpty ? state.description : null,
-      skillTreeIds: state.resourceSkills
+      skillTreeIds:
+          state.resourceSkills
               ?.map((e) => e?.id)
               .whereType<String>()
               .toList() ??
@@ -766,12 +787,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.manual));
 
   void clearError() => emit(
-        state.copyWith(
-          error: '',
-          isError: false,
-          submitStatus: ResourceSubmitStatus.initial,
-        ),
-      );
+    state.copyWith(
+      error: '',
+      isError: false,
+      submitStatus: ResourceSubmitStatus.initial,
+    ),
+  );
 
   @override
   Future<void> close() {

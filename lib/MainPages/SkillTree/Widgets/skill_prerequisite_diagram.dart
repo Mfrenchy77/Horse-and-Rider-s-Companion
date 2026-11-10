@@ -54,6 +54,7 @@ class SkillPrerequisiteDiagram extends StatefulWidget {
     required this.skill,
     required this.allSkills,
     required this.onSkillSelected,
+    this.skillLevelsById = const {},
     this.showDescription = true,
     this.showLegend = true,
   });
@@ -66,6 +67,9 @@ class SkillPrerequisiteDiagram extends StatefulWidget {
 
   /// Callback fired when the user taps any skill node.
   final ValueChanged<Skill> onSkillSelected;
+
+  /// Map of skill id to the viewer's progress for that skill.
+  final Map<String, SkillLevel> skillLevelsById;
 
   /// Whether to show helper text above the diagram.
   final bool showDescription;
@@ -82,8 +86,6 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
   late final TransformationController _controller;
   double _currentScale = 1;
   Offset _currentPan = Offset.zero;
-  bool _isMouseWheelScrolling = false;
-  Timer? _wheelCooldown;
   bool _hasAutoCentered = false;
 
   @override
@@ -94,7 +96,6 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
 
   @override
   void dispose() {
-    _wheelCooldown?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -104,7 +105,9 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
     final diagramData = SkillPrerequisiteGraphBuilder(
       skill: widget.skill,
       allSkills: widget.allSkills,
+      includeDependents: true,
     ).build();
+    final skillLevelsById = widget.skillLevelsById;
 
     if (!diagramData.hasDiagram) {
       return const _DiagramPlaceholder();
@@ -137,7 +140,8 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
       children: [
         if (widget.showDescription) ...[
           Text(
-            'Explore how this skill connects back to foundational skills.',
+            'Explore how this skill connects back to foundational skills '
+            'and forward to future unlocks.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -164,7 +168,7 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
                         boundaryMargin: const EdgeInsets.all(160),
                         minScale: 0.5,
                         maxScale: 2.4,
-                        scaleEnabled: !_isMouseWheelScrolling,
+                        scaleEnabled: false,
                         onInteractionEnd: (_) => _captureCurrentTransform(),
                         child: GraphView(
                           graph: graph,
@@ -184,14 +188,22 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
                             final isDirectPrerequisite = diagramData
                                 .directPrerequisiteIds
                                 .contains(skillId);
+                            final isDescendant = diagramData.descendantSkillIds
+                                .contains(skillId);
+                            final descendantDepth =
+                                diagramData.downstreamDepthBySkillId[skillId];
                             final depth =
                                 diagramData.depthBySkillId[skillId] ?? 0;
+                            final skillLevel = skillLevelsById[skillId];
                             return _SkillDiagramNode(
                               skill: nodeSkill,
                               depth: depth,
                               isBase: isBase,
                               isSelected: isSelected,
                               isDirectPrerequisite: isDirectPrerequisite,
+                              isDescendant: isDescendant,
+                              descendantDepth: descendantDepth,
+                              skillLevel: skillLevel,
                               onTap: () => widget.onSkillSelected(nodeSkill),
                             );
                           },
@@ -264,19 +276,13 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
       scrollable.position.jumpTo(target);
       return;
     }
-    _wheelCooldown?.cancel();
-    setState(() => _isMouseWheelScrolling = true);
-    _wheelCooldown = Timer(const Duration(milliseconds: 350), () {
-      if (mounted) {
-        setState(() => _isMouseWheelScrolling = false);
-      }
-    });
   }
 
   void _centerGraph(Size viewport) {
     if (!mounted || viewport.isEmpty) return;
-    final matrix = Matrix4.identity();
-    matrix.translate(viewport.width * 0.15, viewport.height * 0.05);
+    final matrix = Matrix4.identity()
+      ..setEntry(0, 3, viewport.width * 0.15)
+      ..setEntry(1, 3, viewport.height * 0.05);
     _controller.value = matrix;
     _currentPan = Offset(matrix.row0[3], matrix.row1[3]);
     _currentScale = 1;
@@ -314,6 +320,9 @@ class _SkillDiagramNode extends StatelessWidget {
     required this.isBase,
     required this.isSelected,
     required this.isDirectPrerequisite,
+    required this.isDescendant,
+    this.descendantDepth,
+    this.skillLevel,
     required this.onTap,
   });
 
@@ -322,26 +331,51 @@ class _SkillDiagramNode extends StatelessWidget {
   final bool isBase;
   final bool isSelected;
   final bool isDirectPrerequisite;
+  final bool isDescendant;
+  final int? descendantDepth;
+  final SkillLevel? skillLevel;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final highlightDescendant = isDescendant && !isSelected;
+    final levelState = skillLevel?.levelState ?? LevelState.NO_PROGRESS;
+    final hasProgress =
+        skillLevel != null && levelState != LevelState.NO_PROGRESS;
+    final statusColor = _statusColor(colorScheme, skillLevel);
     final backgroundColor = isSelected
         ? colorScheme.primaryContainer
         : isBase
             ? colorScheme.secondaryContainer
-            : colorScheme.surfaceContainerHighest;
+            : highlightDescendant
+                ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+                : colorScheme.surfaceContainerHighest;
+    final gradient = _learningGradient(skillLevel, colorScheme);
     final borderColor = isSelected
         ? colorScheme.primary
         : isDirectPrerequisite
             ? colorScheme.tertiary
-            : isBase
-                ? colorScheme.secondary
-                : colorScheme.outlineVariant;
+            : hasProgress
+                ? statusColor
+                : highlightDescendant
+                    ? colorScheme.primary
+                    : isBase
+                        ? colorScheme.secondary
+                        : colorScheme.outlineVariant;
     final textColor = isSelected
         ? colorScheme.onPrimaryContainer
-        : colorScheme.onSurfaceVariant;
+        : highlightDescendant
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant;
+    final levelLabel = isSelected
+        ? 'Current Skill'
+        : highlightDescendant
+            ? 'Future Level ${(descendantDepth ?? 0) + 1}'
+            : 'Level ${depth + 1}';
+    final statusPill = hasProgress && skillLevel != null
+        ? _SkillStatusPill(skillLevel: skillLevel!)
+        : null;
 
     return GestureDetector(
       onTap: onTap,
@@ -352,7 +386,8 @@ class _SkillDiagramNode extends StatelessWidget {
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: backgroundColor,
+          color: gradient == null ? backgroundColor : null,
+          gradient: gradient,
           border: Border.all(
             color: borderColor,
             width: isSelected ? 4 : 1.5,
@@ -370,9 +405,15 @@ class _SkillDiagramNode extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Level ${depth + 1}',
-              style: Theme.of(context).textTheme.labelSmall,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  levelLabel,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                if (statusPill != null) statusPill,
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -389,6 +430,80 @@ class _SkillDiagramNode extends StatelessWidget {
             _DifficultyPill(difficulty: skill.difficulty, textColor: textColor),
           ],
         ),
+      ),
+    );
+  }
+}
+
+Color _statusColor(ColorScheme colorScheme, SkillLevel? skillLevel) {
+  if (skillLevel == null) {
+    return colorScheme.outlineVariant;
+  }
+  switch (skillLevel.levelState) {
+    case LevelState.LEARNING:
+      return skillLevel.verified ? Colors.amber : colorScheme.primary;
+    case LevelState.PROFICIENT:
+      return colorScheme.tertiary;
+    case LevelState.VERIFIED:
+      return Colors.amber;
+    case LevelState.NO_PROGRESS:
+      return colorScheme.outlineVariant;
+  }
+}
+
+Gradient? _learningGradient(
+  SkillLevel? skillLevel,
+  ColorScheme colorScheme,
+) {
+  if (skillLevel == null || skillLevel.levelState != LevelState.LEARNING) {
+    return null;
+  }
+  final fillColor =
+      skillLevel.verified ? Colors.amber : colorScheme.primaryContainer;
+  return LinearGradient(
+    stops: const [0.35, 0.65],
+    colors: [fillColor.withValues(alpha: 0.85), Colors.transparent],
+  );
+}
+
+String? _statusLabel(SkillLevel skillLevel) {
+  switch (skillLevel.levelState) {
+    case LevelState.NO_PROGRESS:
+      return null;
+    case LevelState.LEARNING:
+      return 'Learning';
+    case LevelState.PROFICIENT:
+      return 'Proficient';
+    case LevelState.VERIFIED:
+      return 'Verified';
+  }
+}
+
+class _SkillStatusPill extends StatelessWidget {
+  const _SkillStatusPill({required this.skillLevel});
+
+  final SkillLevel skillLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _statusLabel(skillLevel);
+    if (label == null) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    final color = _statusColor(colors, skillLevel);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -478,6 +593,10 @@ class _DiagramLegend extends StatelessWidget {
           colorType: _LegendColorType.directPrereq,
         ),
         _LegendItem(
+          label: 'Unlockable skill',
+          colorType: _LegendColorType.dependent,
+        ),
+        _LegendItem(
           label: 'Selected skill',
           colorType: _LegendColorType.selected,
         ),
@@ -501,7 +620,8 @@ class _LegendItem extends StatelessWidget {
     final color = switch (colorType) {
       _LegendColorType.base => colorScheme.secondary,
       _LegendColorType.directPrereq => colorScheme.tertiary,
-      _LegendColorType.selected => colorScheme.primary,
+      _LegendColorType.dependent => colorScheme.primary,
+      _LegendColorType.selected => colorScheme.primaryContainer,
     };
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -521,7 +641,7 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-enum _LegendColorType { base, directPrereq, selected }
+enum _LegendColorType { base, directPrereq, dependent, selected }
 
 /// Immutable graph representation returned by [SkillPrerequisiteGraphBuilder].
 class SkillPrerequisiteGraphData {
@@ -531,11 +651,16 @@ class SkillPrerequisiteGraphData {
     required Set<String> baseSkillIds,
     required Set<String> directPrerequisiteIds,
     required Map<String, int> depthBySkillId,
+    required Set<String> descendantSkillIds,
+    required Map<String, int> downstreamDepthBySkillId,
   })  : skillById = UnmodifiableMapView(skillById),
         edges = UnmodifiableSetView(edges),
         baseSkillIds = UnmodifiableSetView(baseSkillIds),
         directPrerequisiteIds = UnmodifiableSetView(directPrerequisiteIds),
-        depthBySkillId = UnmodifiableMapView(depthBySkillId);
+        depthBySkillId = UnmodifiableMapView(depthBySkillId),
+        descendantSkillIds = UnmodifiableSetView(descendantSkillIds),
+        downstreamDepthBySkillId =
+            UnmodifiableMapView(downstreamDepthBySkillId);
 
   /// Skills participating in the graph keyed by id.
   final Map<String, Skill> skillById;
@@ -552,6 +677,12 @@ class SkillPrerequisiteGraphData {
   /// Depth of each skill within the ancestor tree (0 = base skill).
   final Map<String, int> depthBySkillId;
 
+  /// Skills that unlock after the selected skill.
+  final Set<String> descendantSkillIds;
+
+  /// Steps away from the selected skill within the dependent tree.
+  final Map<String, int> downstreamDepthBySkillId;
+
   /// Whether there is anything to visualize beyond the selected skill itself.
   bool get hasDiagram => skillById.length > 1 && edges.isNotEmpty;
 }
@@ -561,21 +692,36 @@ class SkillPrerequisiteGraphBuilder {
   SkillPrerequisiteGraphBuilder({
     required this.skill,
     required this.allSkills,
+    this.includeDependents = false,
   });
 
   final Skill skill;
   final List<Skill?> allSkills;
+  final bool includeDependents;
 
   SkillPrerequisiteGraphData build() {
     final skillMap = {
       for (final entry in allSkills.whereType<Skill>()) entry.id: entry,
     };
 
-    final visited = <String>{};
-    _collectAncestors(skill.id, skillMap, visited);
+    final dependentsBySkillId = <String, List<String>>{};
+    for (final entry in skillMap.entries) {
+      for (final prereq in entry.value.prerequisites) {
+        dependentsBySkillId.putIfAbsent(prereq, () => []).add(entry.key);
+      }
+    }
 
+    final ancestorIds = <String>{};
+    _collectAncestors(skill.id, skillMap, ancestorIds);
+
+    final descendantIds = <String>{};
+    if (includeDependents) {
+      _collectDescendants(skill.id, dependentsBySkillId, descendantIds);
+    }
+
+    final relevantIds = <String>{...ancestorIds, ...descendantIds};
     final relevantSkills = {
-      for (final id in visited)
+      for (final id in relevantIds)
         if (skillMap[id] != null) id: skillMap[id]!,
     };
 
@@ -590,7 +736,7 @@ class SkillPrerequisiteGraphBuilder {
       final filteredPrereqs =
           current.prerequisites.where(relevantSkills.containsKey).toList();
 
-      if (filteredPrereqs.isEmpty) {
+      if (current.prerequisites.isEmpty) {
         baseIds.add(entry.key);
       } else {
         for (final prereqId in filteredPrereqs) {
@@ -608,12 +754,22 @@ class SkillPrerequisiteGraphBuilder {
       adjacency: adjacency,
     );
 
+    final downstreamDepthBySkillId = includeDependents
+        ? _calculateDownstreamDepths(
+            rootId: skill.id,
+            dependents: dependentsBySkillId,
+            allowedIds: relevantIds,
+          )
+        : <String, int>{};
+
     return SkillPrerequisiteGraphData(
       skillById: relevantSkills,
       edges: edges,
       baseSkillIds: baseIds,
       directPrerequisiteIds: directPrereqIds,
       depthBySkillId: depthBySkillId,
+      descendantSkillIds: descendantIds,
+      downstreamDepthBySkillId: downstreamDepthBySkillId,
     );
   }
 
@@ -654,6 +810,44 @@ class SkillPrerequisiteGraphBuilder {
     for (final prereqId in current.prerequisites) {
       _collectAncestors(prereqId, skillMap, accumulator);
     }
+  }
+
+  void _collectDescendants(
+    String skillId,
+    Map<String, List<String>> dependentsBySkillId,
+    Set<String> accumulator,
+  ) {
+    for (final dependentId
+        in dependentsBySkillId[skillId] ?? const <String>[]) {
+      if (accumulator.add(dependentId)) {
+        _collectDescendants(dependentId, dependentsBySkillId, accumulator);
+      }
+    }
+  }
+
+  Map<String, int> _calculateDownstreamDepths({
+    required String rootId,
+    required Map<String, List<String>> dependents,
+    required Set<String> allowedIds,
+  }) {
+    final depths = <String, int>{rootId: 0};
+    final queue = Queue<String>()..add(rootId);
+
+    while (queue.isNotEmpty) {
+      final current = queue.removeFirst();
+      final currentDepth = depths[current] ?? 0;
+      for (final child in dependents[current] ?? const <String>[]) {
+        if (!allowedIds.contains(child)) continue;
+        final nextDepth = currentDepth + 1;
+        final existing = depths[child];
+        if (existing == null || existing > nextDepth) {
+          depths[child] = nextDepth;
+          queue.add(child);
+        }
+      }
+    }
+
+    return depths;
   }
 }
 
