@@ -22,6 +22,7 @@ class LoginCubit extends Cubit<LoginState> {
   LoginCubit(this._authenticationRepository) : super(const LoginState());
 
   final AuthenticationRepository _authenticationRepository;
+  bool _submitting = false;
 
   /// Toggles the visibility of the password field.
   void togglePasswordVisible() {
@@ -103,10 +104,8 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Updates the state with the new email value.
   void emailChanged(String value) {
-    final email = Email.dirty(value);
-    emit(
-      state.copyWith(email: email),
-    );
+    final email = Email.dirty(value.trim());
+    emit(state.copyWith(email: email));
   }
 
   /// Return true if email and password are valid
@@ -129,15 +128,17 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Updates the state with the new confirmed password value.
   void confirmedPasswordChanged(String value) {
-    final confirmedPassword =
-        ConfirmedPassword.dirty(password: state.password.value, value: value);
-    emit(
-      state.copyWith(confirmedPassword: confirmedPassword),
+    final confirmedPassword = ConfirmedPassword.dirty(
+      password: state.password.value,
+      value: value,
     );
+    emit(state.copyWith(confirmedPassword: confirmedPassword));
   }
 
   /// Submits the sign-up form.
   Future<void> signUpFormSubmitted({required BuildContext context}) async {
+    if (_submitting) return;
+    _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
     try {
       final value = await _authenticationRepository.signUp(
@@ -145,6 +146,7 @@ class LoginCubit extends Cubit<LoginState> {
         email: state.email.value,
         password: state.password.value,
       );
+      if (isClosed) return;
 
       if (value == null) {
         debugPrint('User not created');
@@ -178,6 +180,7 @@ class LoginCubit extends Cubit<LoginState> {
         clearError();
       }
     } on SignUpWithEmailAndPasswordFailure catch (e) {
+      if (isClosed) return;
       debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
@@ -188,6 +191,7 @@ class LoginCubit extends Cubit<LoginState> {
       );
       clearError();
     } catch (_) {
+      if (isClosed) return;
       debugPrint('Submission Failure');
       emit(
         state.copyWith(
@@ -197,17 +201,22 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
+    } finally {
+      _submitting = false;
     }
   }
 
   /// Logs in with the provided email and password.
   Future<void> logInWithCredentials() async {
+    if (_submitting) return;
+    _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
     try {
       final value = await _authenticationRepository.logInWithEmailAndPassword(
         email: state.email.value,
         password: state.password.value,
       );
+      if (isClosed) return;
 
       if (value == null) {
         debugPrint('User not created');
@@ -230,6 +239,7 @@ class LoginCubit extends Cubit<LoginState> {
         clearError();
       }
     } on LogInWithEmailAndPasswordFailure catch (e) {
+      if (isClosed) return;
       debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
@@ -240,6 +250,7 @@ class LoginCubit extends Cubit<LoginState> {
       );
       clearError();
     } catch (_) {
+      if (isClosed) return;
       debugPrint('Submission Failure');
       emit(
         state.copyWith(
@@ -249,15 +260,20 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
+    } finally {
+      _submitting = false;
     }
   }
 
   /// Logs in with Google authentication.
   Future<void> logInWithGoogle() async {
     debugPrint('Log in with Google');
+    if (_submitting) return;
+    _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
     try {
       final value = await _authenticationRepository.logInWithGoogle();
+      if (isClosed) return;
       if (value == null) {
         debugPrint('User not created');
         emit(
@@ -279,6 +295,7 @@ class LoginCubit extends Cubit<LoginState> {
         clearError();
       }
     } on LogInWithGoogleFailure catch (e) {
+      if (isClosed) return;
       debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
@@ -289,6 +306,7 @@ class LoginCubit extends Cubit<LoginState> {
       );
       clearError();
     } catch (_) {
+      if (isClosed) return;
       debugPrint('Submission Failure');
       emit(
         state.copyWith(
@@ -298,15 +316,20 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
+    } finally {
+      _submitting = false;
     }
   }
 
   /// Logs in as a guest.
   Future<void> logInAsGuest() async {
     debugPrint('Log in as Guest');
+    if (_submitting) return;
+    _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
     try {
       final value = await _authenticationRepository.signInAsGuest();
+      if (isClosed) return;
       if (value == null) {
         debugPrint('User not created');
         emit(
@@ -329,6 +352,7 @@ class LoginCubit extends Cubit<LoginState> {
         clearError();
       }
     } catch (_) {
+      if (isClosed) return;
       debugPrint('Submission Failure');
       emit(
         state.copyWith(
@@ -338,15 +362,20 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
+    } finally {
+      _submitting = false;
     }
   }
 
   /// Sends a forgot password email.
   Future<void> sendForgotPasswordEmail() async {
     debugPrint('Send Forgot Password Email');
+    if (_submitting) return;
+    _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
     try {
       await _authenticationRepository.forgotPassword(email: state.email.value);
+      if (isClosed) return;
       emit(
         state.copyWith(
           isMessage: true,
@@ -358,6 +387,7 @@ class LoginCubit extends Cubit<LoginState> {
       );
       clearError();
     } on ResetPasswordFailure catch (e) {
+      if (isClosed) return;
       debugPrint('Error: ${e.message}');
       emit(
         state.copyWith(
@@ -368,6 +398,7 @@ class LoginCubit extends Cubit<LoginState> {
       );
       clearError();
     } catch (_) {
+      if (isClosed) return;
       debugPrint('Submission Failure');
       emit(
         state.copyWith(
@@ -377,6 +408,8 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
+    } finally {
+      _submitting = false;
     }
   }
 

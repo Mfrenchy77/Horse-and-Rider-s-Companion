@@ -58,47 +58,66 @@ class AppCubit extends Cubit<AppState> {
 
   Timer? _emailVerificationTimer;
 
-  // Track last handled auth user to avoid redundant reloads during rapid events
-  String? _lastAuthUserId;
-  bool? _lastAuthEmailVerified;
+  User? _lastAuthUser;
+  bool _verificationReloadInProgress = false;
 
-  /* **************************************************************************
-
-******************************* User's Profile *********************************
-
-***************************************************************************** */
   void _beginListeningForUserChanges() {
     _getSkillTreeLists();
-    _userSubscription = _authenticationRepository.user.listen((user) {
-      debugPrint(
-        'Listening for user changes: '
-        '\nUserEmail: ${user?.email} '
-        '\nUserGuest: ${user?.isGuest} '
-        '\nUserId: ${user?.id}',
-      );
-      _checkFirstLaunch();
-      if (user != null && user.id.isNotEmpty) {
-        // Avoid redundant reloads when the authenticated user hasn't changed
-        if (user.id == _lastAuthUserId &&
-            user.emailVerified == _lastAuthEmailVerified) {
-          debugPrint('Auth user unchanged; skipping refresh');
-          return;
-        }
-        _lastAuthUserId = user.id;
-        _lastAuthEmailVerified = user.emailVerified;
-        // Cancel user-scoped streams when switching accounts
-        _conversationsStream?.cancel();
-        _messagesStream?.cancel();
-        emit(state.copyWith(pageStatus: AppPageStatus.loading));
-        debugPrint('User is authenticated');
-        _getUsersProfile(user: user);
-      } else {
-        debugPrint('User is unauthenticated or email not verified');
-        // Ensure guest onboarding flag also reflects SharedPrefs setting
-        _checkOnboarding();
-        emit(state.copyWith(isGuest: true, pageStatus: AppPageStatus.loaded));
-      }
-    });
+    _userSubscription = _authenticationRepository.user.listen(
+      (user) => _handleAuthUser(user ?? User.empty),
+    );
+  }
+
+  void _handleAuthUser(User user) {
+    final previous = _lastAuthUser;
+    if (user == previous) return;
+    _lastAuthUser = user;
+    if (previous != null &&
+        previous.id == user.id &&
+        previous.email == user.email &&
+        previous.isGuest == user.isGuest &&
+        previous.emailVerified == user.emailVerified) {
+      // Name and photo changes do not require a new profile listener.
+      emit(state.copyWith(user: user));
+      return;
+    }
+
+    _emailVerificationTimer?.cancel();
+    unawaited(_usersProfileSubscription?.cancel());
+    _usersProfileSubscription = null;
+    final priorUser = previous ?? state.user;
+    if (priorUser.isNotEmpty &&
+        (priorUser.id != user.id ||
+            priorUser.email != user.email ||
+            priorUser.isGuest != user.isGuest ||
+            (priorUser.emailVerified && !user.emailVerified))) {
+      _clearAccountState();
+    }
+    _checkFirstLaunch();
+    _checkOnboarding();
+    if (user.isEmpty) {
+      emit(state.copyWith(pageStatus: AppPageStatus.loaded));
+      return;
+    }
+    _getUsersProfile(user: user);
+  }
+
+  void _clearAccountState() {
+    unawaited(_conversationsStream?.cancel());
+    unawaited(_messagesStream?.cancel());
+    unawaited(_horseProfileSubscription?.cancel());
+    _conversationsStream = null;
+    _messagesStream = null;
+    _horseProfileSubscription = null;
+    emit(
+      const AppState.unauthenticated().copyWith(
+        allSkills: state.allSkills,
+        sortedSkills: state.sortedSkills,
+        resources: state.resources,
+        hasResourceCatalogue: state.hasResourceCatalogue,
+        index: state.index,
+      ),
+    );
   }
 
   /// Checks if the user is a first time user and launces the About Page
@@ -191,38 +210,31 @@ class AppCubit extends Cubit<AppState> {
         ),
       );
     } else {
-      debugPrint('Fetching Rider Profile for ${user.email}');
-      // Cancel previous rider profile subscription before switching users
-      _usersProfileSubscription?.cancel();
+      emit(
+        state.copyWith(
+          user: user,
+          isGuest: false,
+          showEmailVerification: false,
+          pageStatus: AppPageStatus.loading,
+        ),
+      );
+      var registeredForNotifications = false;
       _usersProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: user.email)
           .listen((profile) {
-            if (profile != null) {
-              debugPrint('User Profile exists: ${profile.email}');
-              _checkOnboarding();
-              // Register device for push notifications (best-effort)
-              FcmService.ensureRegistered(profile.email);
-              emit(
-                state.copyWith(
-                  user: user,
-                  isGuest: false,
-                  usersProfile: profile,
-                  isProfileSetup: true,
-                  status: AppStatus.authenticated,
-                  pageStatus: AppPageStatus.loaded,
-                ),
-              );
-            } else {
-              debugPrint('No User Profile, needs setup');
-              emit(
-                state.copyWith(
-                  user: user,
-                  isProfileSetup: false,
-                  status: AppStatus.authenticated,
-                  pageStatus: AppPageStatus.loaded,
-                ),
-              );
+            if (profile != null && !registeredForNotifications) {
+              registeredForNotifications = true;
+              unawaited(FcmService.ensureRegistered(profile.email));
             }
+            emit(
+              state.copyWith(
+                usersProfile: profile,
+                clearUsersProfile: profile == null,
+                isProfileSetup: profile != null,
+                status: AppStatus.authenticated,
+                pageStatus: AppPageStatus.loaded,
+              ),
+            );
           });
     }
   }
@@ -273,31 +285,19 @@ class AppCubit extends Cubit<AppState> {
 
   /// Peroiodically checks the email verification status.
   void _checkEmailVerificationStatus() {
-    _emailVerificationTimer?.cancel();
     _emailVerificationTimer = Timer.periodic(const Duration(seconds: 10), (
       _,
     ) async {
-      debugPrint('Checking Email Verification Status');
-      await _authenticationRepository.reloadCurrentUser();
-      final isVerified = _authenticationRepository.isEmailVerified();
-      debugPrint('Email is verified: $isVerified');
-      // Only emit when the value actually changes to avoid redundant rebuilds
-      final shouldShow = !isVerified;
-      if (state.showEmailVerification != shouldShow) {
-        emit(state.copyWith(showEmailVerification: shouldShow));
-      }
-
-      if (isVerified) {
-        _emailVerificationTimer?.cancel();
-        debugPrint('Email is verified in Timer');
-        emit(
-          state.copyWith(
-            isProfileSetup: true,
-            isMessage: true,
-            showEmailVerification: false,
-            errorMessage: 'Email has been verified',
-          ),
-        );
+      if (_verificationReloadInProgress) return;
+      _verificationReloadInProgress = true;
+      try {
+        // Firebase userChanges delivers the refreshed user to the same
+        // handler as sign-in. The timer only asks Firebase to refresh it.
+        await _authenticationRepository.reloadCurrentUser();
+      } catch (error) {
+        debugPrint('Unable to refresh email verification: $error');
+      } finally {
+        _verificationReloadInProgress = false;
       }
     });
   }
@@ -523,17 +523,15 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future<void> logOutRequested() async {
-    // Cancel active streams tied to the current user session
-    await _messagesStream?.cancel();
-    await _conversationsStream?.cancel();
-    await _resourcesStream?.cancel();
-    await _skillsSubscription?.cancel();
-    // await _trainingPathsStream?.cancel(); // Training paths disabled.
-
-    emit(const AppState.unauthenticated());
-
-    await _authenticationRepository.logOut();
-    navigateToAuth();
+    try {
+      await _authenticationRepository.logOut();
+      if (isClosed) return;
+      _handleAuthUser(User.empty);
+      navigateToAuth();
+    } on LogOutFailure {
+      if (isClosed) return;
+      emit(state.copyWith(isError: true, errorMessage: 'Unable to sign out'));
+    }
   }
 
   /// sends a message to the a riderProfile with a
@@ -1328,39 +1326,30 @@ class AppCubit extends Cubit<AppState> {
 ***************************************************************************** */
 
   /// Retrieves the Skills from the database if needed
-
   void _getSkillTreeLists() {
     debugPrint('getSkillTreeLists');
 
     _getSkills();
+    // Skills are shared by the rider profile and Skill Tree.
     // Training paths disabled: do not subscribe to Firestore at startup.
     // _getTrainingPaths();
-    _getResources();
   }
 
   void _getSkills() {
-    debugPrint('getting Skills called');
-    if (state.allSkills.isEmpty) {
-      debugPrint('Skills not retrieved yet');
-      _skillsSubscription = _skillTreeRepository.getSkills().listen((
-        skillsList,
-      ) {
-        // Normalize and sort by position
+    if (_skillsSubscription != null) return;
+    debugPrint('Listening for skill catalogue updates');
+    _skillsSubscription = _skillTreeRepository.getSkills().listen(
+      (skillsList) {
         final next = skillsList.toList()
           ..sort((a, b) => a.position.compareTo(b.position));
-
-        // Avoid redundant emits if same as current (by id:pos:lastEditDate)
-        if (_sameSkills(next, state.allSkills)) {
-          return;
-        }
-
-        debugPrint('Skills Retrieved: ${next.length}');
+        if (_sameSkills(next, state.allSkills)) return;
         emit(state.copyWith(allSkills: next));
         _sortSkills(state.categorySortState, state.difficultySortState);
-      });
-    } else {
-      debugPrint('Skills already retrieved');
-    }
+      },
+      onError: (Object error) {
+        debugPrint('Failed to listen for skill catalogue: $error');
+      },
+    );
   }
 
   // Training-path subscription retained for possible restoration.
@@ -1390,34 +1379,36 @@ class AppCubit extends Cubit<AppState> {
             AuthorizedEmails.emails.contains(state.usersProfile?.email));
   }
 
-  void _getResources() {
-    debugPrint('Get Resources Called');
-    if (state.resources.isEmpty) {
-      debugPrint('Resources not retrieved yet');
-      _resourcesStream = _resourcesRepository.getResources().listen((
-        resources,
-      ) {
-        // Guard redundant emits by id + lastEditDate/createdAt length/signature
-        if (_sameResources(resources, state.resources)) {
+  void loadResourcesIfNeeded() {
+    if (_resourcesStream != null) return;
+    debugPrint('Listening for resource updates after entering Resources');
+    _resourcesStream = _resourcesRepository.getResources().listen(
+      (resources) {
+        if (state.hasResourceCatalogue &&
+            _sameResources(resources, state.resources)) {
           return;
         }
-        debugPrint('Resources Retrieved: ${resources.length}');
         final selected = resources.firstWhereOrNull(
           (resource) => resource.id == state.resource?.id,
         );
         emit(
           state.copyWith(
             resources: resources,
+            hasResourceCatalogue: true,
             resource: selected,
             resourceComments: selected == null
                 ? state.resourceComments
                 : List<Comment>.of(selected.comments ?? const []),
           ),
         );
-      });
-    } else {
-      debugPrint('Resources already retrieved');
-    }
+      },
+      onError: (Object error) {
+        _resourcesStream = null;
+        emit(state.copyWith(hasResourceCatalogue: false));
+        debugPrint('Failed to listen for resource updates: $error');
+      },
+      cancelOnError: true,
+    );
   }
 
   /// get the selected Skill id
@@ -2137,6 +2128,10 @@ class AppCubit extends Cubit<AppState> {
 
   /// Toggle the search state
   void toggleSearch() {
+    if (!state.isSearch &&
+        state.skillTreeNavigation == SkillTreeNavigation.SkillLevel) {
+      loadResourcesIfNeeded();
+    }
     emit(state.copyWith(isSearch: !state.isSearch));
   }
 
@@ -2758,7 +2753,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Loads the Groups/Conversations for the user
   void getConversations() {
-    if (state.conversations == null) {
+    if (state.conversations == null && _conversationsStream == null) {
       emit(state.copyWith(conversationsState: ConversationsState.loading));
       debugPrint('getConversations');
       if (state.usersProfile != null) {
@@ -3488,6 +3483,7 @@ class AppCubit extends Cubit<AppState> {
         emit(state.copyWith(index: index, pageStatus: AppPageStatus.skillTree));
         break;
       case 2:
+        loadResourcesIfNeeded();
         emit(
           state.copyWith(index: index, pageStatus: AppPageStatus.resourceList),
         );
@@ -3575,10 +3571,12 @@ class AppCubit extends Cubit<AppState> {
 
   /// Set the Resources List
   void setResourcesList() {
+    loadResourcesIfNeeded();
     emit(state.copyWith(index: 2, pageStatus: AppPageStatus.resourceList));
   }
 
   void setResource() {
+    loadResourcesIfNeeded();
     emit(state.copyWith(index: 2, pageStatus: AppPageStatus.resource));
   }
 
@@ -3692,6 +3690,7 @@ class AppCubit extends Cubit<AppState> {
   /// Navigates to the Resources Page
   void navigateToResources(Resource resource) {
     debugPrint('navigateToResources');
+    loadResourcesIfNeeded();
     emit(
       state.copyWith(
         resource: resource,
@@ -3735,9 +3734,9 @@ class AppCubit extends Cubit<AppState> {
     _emailVerificationTimer?.cancel();
     _messagesStream?.cancel();
     _userSubscription.cancel();
+    _conversationsStream?.cancel();
     _resourcesStream?.cancel();
     _skillsSubscription?.cancel();
-    _conversationsStream?.cancel();
     // _trainingPathsStream?.cancel(); // Training paths disabled.
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();

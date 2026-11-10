@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'dart:async';
+
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/widgets.dart';
@@ -58,6 +60,40 @@ void main() {
       ],
     );
   });
+
+  test(
+    'a pending sign-in blocks duplicate and competing submissions',
+    () async {
+      final pending = Completer<User?>();
+      when(
+        () => authRepo.logInWithEmailAndPassword(
+          email: 'sam@example.com',
+          password: 'secret123',
+        ),
+      ).thenAnswer((_) => pending.future);
+
+      cubit
+        ..emailChanged(' sam@example.com ')
+        ..passwordChanged('secret123');
+      final first = cubit.logInWithCredentials();
+      cubit.gotoRegister();
+      await cubit.logInWithCredentials();
+      await cubit.logInWithGoogle();
+      verify(
+        () => authRepo.logInWithEmailAndPassword(
+          email: 'sam@example.com',
+          password: 'secret123',
+        ),
+      ).called(1);
+      verifyNever(authRepo.logInWithGoogle);
+
+      await cubit.close();
+      pending.complete(
+        const User(id: '1', name: 'Sam', email: 'sam@example.com'),
+      );
+      await first;
+    },
+  );
 
   group('Login with credentials', () {
     blocTest<LoginCubit, LoginState>(

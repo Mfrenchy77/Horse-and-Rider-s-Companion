@@ -95,6 +95,7 @@ class AppState extends Equatable {
     this.user = User.empty,
     this.allSkills = const [],
     this.resources = const [],
+    this.hasResourceCatalogue = false,
     this.skillTreeTabIndex = 0,
     this.isFromProfile = false,
     this.searchList = const [],
@@ -226,6 +227,9 @@ class AppState extends Equatable {
   /// The database resources
   final List<Resource> resources;
 
+  /// Whether the full resource query has delivered its first snapshot.
+  final bool hasResourceCatalogue;
+
   /// Whether we want to display the email verification dialog
   final bool showEmailVerification;
 
@@ -313,6 +317,8 @@ class AppState extends Equatable {
     String? messageId,
     AppStatus? status,
     Resource? resource,
+    bool? hasResourceCatalogue,
+    bool clearUsersProfile = false,
     Email? deleteEmail,
     BannerAd? bannerAd,
     String? messageText,
@@ -372,6 +378,7 @@ class AppState extends Equatable {
       isMessage: isMessage ?? this.isMessage,
       isViewing: isViewing ?? this.isViewing,
       resources: resources ?? this.resources,
+      hasResourceCatalogue: hasResourceCatalogue ?? this.hasResourceCatalogue,
       allSkills: allSkills ?? this.allSkills,
       pageStatus: pageStatus ?? this.pageStatus,
       isForRider: isForRider ?? this.isForRider,
@@ -384,7 +391,9 @@ class AppState extends Equatable {
       trainingPath: trainingPath ?? this.trainingPath,
       errorMessage: errorMessage ?? this.errorMessage,
       horseProfile: horseProfile ?? this.horseProfile,
-      usersProfile: usersProfile ?? this.usersProfile,
+      usersProfile: clearUsersProfile
+          ? null
+          : usersProfile ?? this.usersProfile,
       conversations: conversations ?? this.conversations,
       trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: ownersProfile ?? this.ownersProfile,
@@ -435,6 +444,7 @@ class AppState extends Equatable {
     isMessage,
     isViewing,
     resources,
+    hasResourceCatalogue,
     allSkills,
     isForRider,
     pageStatus,

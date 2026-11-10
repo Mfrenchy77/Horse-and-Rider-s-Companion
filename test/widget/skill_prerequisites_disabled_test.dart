@@ -27,6 +27,7 @@ class MockHorses extends Mock implements HorseProfileRepository {}
 
 void main() {
   late AppCubit cubit;
+  late MockResources resources;
   late MockSkills skills;
   final date = DateTime.utc(2025);
   final rider = RiderProfile(
@@ -54,11 +55,14 @@ void main() {
     await SharedPrefs().init();
     final auth = MockAuth();
     skills = MockSkills();
-    final resources = MockResources();
+    resources = MockResources();
     when(() => auth.currentUser).thenReturn(User.empty);
     when(() => auth.user).thenAnswer((_) => const Stream.empty());
     when(skills.getSkills).thenAnswer((_) => const Stream.empty());
     when(resources.getResources).thenAnswer((_) => const Stream.empty());
+    when(
+      () => resources.getResourcesForSkill(skillId: 'target'),
+    ).thenAnswer((_) => Stream.value(<Resource>[]));
     cubit = AppCubit(
       authenticationRepository: auth,
       skillTreeRepository: skills,
@@ -72,7 +76,10 @@ void main() {
 
   Widget app(Widget child) => BlocProvider.value(
     value: cubit,
-    child: MaterialApp(home: Scaffold(body: child)),
+    child: RepositoryProvider<ResourcesRepository>.value(
+      value: resources,
+      child: MaterialApp(home: Scaffold(body: child)),
+    ),
   );
 
   for (final forRider in [true, false]) {

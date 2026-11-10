@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class EmailVerificationDialog extends StatelessWidget {
-  const EmailVerificationDialog({
-    required this.email,
-    super.key,
-  });
+  const EmailVerificationDialog({required this.email, super.key});
   static const name = 'EmailVerificationDialog';
   static const path = 'EmailVerificationDialog/:email';
   static const pathParms = 'email';
@@ -21,10 +16,10 @@ class EmailVerificationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<AppCubit, AppState>(
+      listenWhen: (previous, current) =>
+          previous.showEmailVerification && !current.showEmailVerification,
       listener: (context, state) {
-        if (!state.showEmailVerification) {
-          if (context.mounted) context.pushReplacementNamed(ProfilePage.name);
-        }
+        if (ModalRoute.isCurrentOf(context) ?? false) safePop(context);
       },
       child: AlertDialog(
         backgroundColor: ColorConst.backgroundDark,
@@ -43,9 +38,9 @@ class EmailVerificationDialog extends StatelessWidget {
             Text(
               email.isEmpty
                   ? 'An email has been sent to your email. '
-                      'Please verify your email to continue.'
+                        'Please verify your email to continue.'
                   : 'An email has been sent to $email. '
-                      'Please verify your email to continue.',
+                        'Please verify your email to continue.',
               style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
             gap(),

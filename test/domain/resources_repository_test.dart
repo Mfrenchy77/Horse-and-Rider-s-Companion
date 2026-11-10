@@ -13,17 +13,16 @@ void main() {
     ResourceStatus status = ResourceStatus.published,
     List<String> tags = const ['training'],
     DateTime? createdAt,
-  }) =>
-      Resource(
-        id: id,
-        name: 'Article $id',
-        type: ResourceType.article,
-        status: status,
-        tags: tags,
-        createdAt: createdAt ?? date,
-        content: 'A useful training article',
-        skillTreeIds: ['s1'],
-      );
+  }) => Resource(
+    id: id,
+    name: 'Article $id',
+    type: ResourceType.article,
+    status: status,
+    tags: tags,
+    createdAt: createdAt ?? date,
+    content: 'A useful training article',
+    skillTreeIds: ['s1'],
+  );
 
   setUp(() {
     db = FakeFirebaseFirestore();
@@ -37,6 +36,24 @@ void main() {
 
   test('missing resource returns null', () async {
     expect(await repository.getResourceById('missing'), isNull);
+  });
+
+  test('loads only resources linked to the selected skill', () async {
+    final linked = article(
+      'linked',
+      tags: const ['care'],
+    ).copyWith(skillTreeIds: ['s1', 's3']);
+    final unrelated = article('unrelated').copyWith(skillTreeIds: ['s2']);
+    await repository.createOrUpdateResource(resource: linked);
+    await repository.createOrUpdateResource(resource: unrelated);
+
+    final results = await repository.getResourcesForSkill(skillId: 's1').first;
+
+    expect(results.map((resource) => resource.id), ['linked']);
+    final otherSkill = await repository
+        .getResourcesForSkill(skillId: 's3')
+        .first;
+    expect(otherSkill.map((resource) => resource.id), ['linked']);
   });
 
   test('create, read, update and delete a link resource', () async {
@@ -68,17 +85,19 @@ void main() {
     );
   });
 
-  test('clears the last skill and tag when updating an existing resource',
-      () async {
-    final value = article('r1');
-    await repository.createOrUpdateResource(resource: value);
-    await repository.createOrUpdateResource(
-      resource: value.copyWith(skillTreeIds: [], tags: []),
-    );
-    final saved = await repository.getResourceById('r1');
-    expect(saved?.skillTreeIds, isEmpty);
-    expect(saved?.tags, isEmpty);
-  });
+  test(
+    'clears the last skill and tag when updating an existing resource',
+    () async {
+      final value = article('r1');
+      await repository.createOrUpdateResource(resource: value);
+      await repository.createOrUpdateResource(
+        resource: value.copyWith(skillTreeIds: [], tags: []),
+      );
+      final saved = await repository.getResourceById('r1');
+      expect(saved?.skillTreeIds, isEmpty);
+      expect(saved?.tags, isEmpty);
+    },
+  );
 
   test('server timestamps are set and creation date is preserved', () async {
     await repository.createResourceWithServerTimestamps(
@@ -105,25 +124,28 @@ void main() {
     expect(await repository.getArticleById('missing'), isNull);
   });
 
-  test('published query excludes drafts and filters tags newest first',
-      () async {
-    for (final value in [
-      article('old'),
-      article('new', createdAt: date.add(const Duration(days: 1))),
-      article('draft', status: ResourceStatus.pending),
-      article('other', tags: ['health']),
-      Resource(
-        id: 'link',
-        type: ResourceType.link,
-        status: ResourceStatus.published,
-      ),
-    ]) {
-      await repository.createOrUpdateResource(resource: value);
-    }
-    final results =
-        await repository.getPublishedArticles(tagsFilter: ['training']).first;
-    expect(results.map((r) => r.id), ['new', 'old']);
-  });
+  test(
+    'published query excludes drafts and filters tags newest first',
+    () async {
+      for (final value in [
+        article('old'),
+        article('new', createdAt: date.add(const Duration(days: 1))),
+        article('draft', status: ResourceStatus.pending),
+        article('other', tags: ['health']),
+        Resource(
+          id: 'link',
+          type: ResourceType.link,
+          status: ResourceStatus.published,
+        ),
+      ]) {
+        await repository.createOrUpdateResource(resource: value);
+      }
+      final results = await repository
+          .getPublishedArticles(tagsFilter: ['training'])
+          .first;
+      expect(results.map((r) => r.id), ['new', 'old']);
+    },
+  );
 
   test('article pagination advances without duplicate results', () async {
     for (var i = 0; i < 5; i++) {
@@ -144,10 +166,13 @@ void main() {
       limit: 2,
       startAfter: third.lastDoc,
     );
-    expect(
-      [...first.items, ...second.items, ...third.items].map((r) => r.id),
-      ['r4', 'r3', 'r2', 'r1', 'r0'],
-    );
+    expect([...first.items, ...second.items, ...third.items].map((r) => r.id), [
+      'r4',
+      'r3',
+      'r2',
+      'r1',
+      'r0',
+    ]);
     expect(end.items, isEmpty);
     expect(end.lastDoc, isNull);
   });
@@ -202,8 +227,10 @@ void main() {
 
   group('Resource serialization', () {
     test('legacy records tolerate missing new fields', () {
-      final value =
-          Resource.fromMap({'name': 'Legacy', 'rating': '3'}, idFromDoc: 'doc');
+      final value = Resource.fromMap({
+        'name': 'Legacy',
+        'rating': '3',
+      }, idFromDoc: 'doc');
       expect(value.id, 'doc');
       expect(value.rating, 3);
       expect(value.type, isNull);
@@ -228,9 +255,9 @@ void main() {
         date.toIso8601String(),
       ]) {
         expect(
-          Resource.fromMap({'createdAt': input})
-              .createdAt
-              ?.isAtSameMomentAs(date),
+          Resource.fromMap({
+            'createdAt': input,
+          }).createdAt?.isAtSameMomentAs(date),
           isTrue,
         );
       }

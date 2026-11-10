@@ -71,6 +71,58 @@ The shared offline fixture is [app_test_harness.dart](test/support/app_test_harn
 | Retired features | Training-path/prerequisite UI stays disabled; saved prerequisite links survive skill edits. Standalone archived implementation tests remain available. |
 | Backend | Metadata/readable article/image handlers with real parsers and mocked HTTP/Firebase; notification recipients, token deduplication and error handling |
 
+## Firebase sign-in and catalogue reads
+
+- The app subscribes once to Firebase `userChanges()` through
+  `AuthenticationRepository`. Email/password and Google sign-in feed the
+  same app session. Native Google Sign-In initializes in bootstrap with the
+  app's OAuth configuration. Web uses the Firebase popup. Login forms allow
+  one submission at a time, trim email input, and ignore completions after
+  their cubit closes. Firebase's invalid-credential response becomes a
+  clear email or password error.
+- Registration updates the Firebase display name and sends a verification
+  email. While verification is pending, the account has guest access and the
+  app reloads the Firebase user every 10 seconds, with one reload in flight.
+  The prompt opens once per pending email while the navigation shell is
+  mounted. A verified user update closes it and starts one live
+  rider-profile document listener. Repeated user events and name or photo
+  changes reuse the listener. The profile snapshot determines whether the
+  profile is set up. Notification registration is requested on the first
+  existing profile snapshot for that session.
+- Firebase sign-out and account switches discard account state and cancel its
+  profile, horse and messaging listeners. Explicit sign-out waits for Firebase
+  to succeed before changing the UI. Public catalogue data stays available.
+  Guest browsing uses signed-out access and does not create anonymous Firebase
+  users. The deployed Firestore rules must allow the public catalogue queries.
+- Resource links are stored as an array of skill IDs in `skillTreeIds`. Before
+  the full Resources snapshot arrives, a skill detail uses one live
+  `array-contains` query for its skill ID. When the full snapshot is available,
+  the detail filters it in memory and releases the scoped listener. An empty
+  full snapshot also counts as loaded. Multi-skill resources appear under each
+  linked skill. A failed full listener is canceled so a later load can retry.
+- The conversations query starts once for the current rider, including while
+  the first snapshot is pending.
+
+| Remaining full or unbounded Firestore reads | When the app uses them |
+| --- | --- |
+| Skills collection | One live catalogue at startup for the profile and Skill Tree, including local search and filtering. |
+| Resources collection | One live catalogue after opening the Resources branch or using the resource picker from a skill. Resource comments and web views are nested under that branch. The catalogue supplies local search, sorting, and live comment updates. |
+| Messages subcollection for a conversation | One conversation's complete message history when it is opened. The parent conversations query is filtered by rider. |
+
+Training paths are disabled and their full-collection query is dormant.
+The ordered-resource and published-article query methods have no live callers.
+The query-count tests count repository calls, which represent app listener
+creation. Firestore can reconnect or serve snapshots from cache independently.
+
+Run the focused tests with:
+
+```sh
+flutter test test/app_auth_session_test.dart test/app_catalogue_loading_test.dart \
+  test/app_cubit_catalog_test.dart test/login_cubit_test.dart \
+  test/domain/authentication_repository_test.dart test/domain/resources_repository_test.dart \
+  test/routes_flow_test.dart test/email_verification_dialog_test.dart
+```
+
 ## Coverage reports
 
 Each complete check run regenerates:

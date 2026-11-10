@@ -70,11 +70,12 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
     // Build initial document from JSON if editing; else an empty doc.
     final initialJsonString =
         widget.isEdit && (widget.comment?.comment?.isNotEmpty ?? false)
-            ? widget.comment!.comment!
-            : jsonEncode(quill.Document().toDelta().toJson());
+        ? widget.comment!.comment!
+        : jsonEncode(quill.Document().toDelta().toJson());
 
-    final initialDoc =
-        quill.Document.fromJson(jsonDecode(initialJsonString) as List<dynamic>);
+    final initialDoc = quill.Document.fromJson(
+      jsonDecode(initialJsonString) as List<dynamic>,
+    );
     _controller = quill.QuillController(
       document: initialDoc,
       selection: const TextSelection.collapsed(offset: 0),
@@ -130,8 +131,8 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
     final titleText = widget.comment == null && !widget.isEdit
         ? 'Commenting on ${widget.resource.name ?? 'Resource'}'
         : widget.comment != null && !widget.isEdit
-            ? 'Replying to ${widget.comment!.user?.name ?? 'User'}'
-            : 'Edit comment';
+        ? 'Replying to ${widget.comment!.user?.name ?? 'User'}'
+        : 'Edit comment';
 
     final screen = MediaQuery.of(context).size;
     final maxW = screen.width.clamp(320.0, 720.0);
@@ -187,16 +188,23 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
 
               const SizedBox(height: 8),
 
-              // Toolbar (bounded height; don't wrap in another scroll view)
+              // Comments only need basic inline formatting.
               SizedBox(
                 height: 44,
-                child: quill.QuillSimpleToolbar(
-                  controller: _controller,
-                  config: const quill.QuillSimpleToolbarConfig(
-                    multiRowsDisplay: false,
-                    showInlineCode: false,
-                    showCodeBlock: false,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (final attribute in [
+                      quill.Attribute.bold,
+                      quill.Attribute.italic,
+                      quill.Attribute.underline,
+                      quill.Attribute.strikeThrough,
+                    ])
+                      quill.QuillToolbarToggleStyleButton(
+                        controller: _controller,
+                        attribute: attribute,
+                      ),
+                  ],
                 ),
               ),
 

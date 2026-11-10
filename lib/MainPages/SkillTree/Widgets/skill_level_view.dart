@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_
 // Prerequisites disabled; import retained for restoration.
 // import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_prerequisite_diagram.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
+
 // Prerequisites disabled; import retained for restoration.
 // import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 
@@ -147,7 +148,10 @@ class SkillLevelView extends StatelessWidget {
                   ),
                   const Divider(indent: 20, endIndent: 20),
                   smallGap(),
-                  const SkillResouresList(key: Key('skillResourcesList')),
+                  SkillResouresList(
+                    key: const Key('skillResourcesList'),
+                    skillId: skill.id,
+                  ),
                   smallGap(),
                   const SizedBox(height: 50),
                 ],

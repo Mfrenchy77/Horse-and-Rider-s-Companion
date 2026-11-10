@@ -67,7 +67,7 @@ void main() {
     skills = MockSkills();
     final repo = MockResources();
     riders = MockRiders();
-    resources = StreamController<List<Resource>>();
+    resources = StreamController<List<Resource>>.broadcast();
     paths = StreamController<List<TrainingPath>>.broadcast();
     when(() => auth.currentUser).thenReturn(User.empty);
     when(() => auth.user).thenAnswer((_) => const Stream.empty());
@@ -144,6 +144,7 @@ void main() {
   test(
     'resource stream applies rating changes without an edit timestamp change',
     () async {
+      cubit.loadResourcesIfNeeded();
       resources.add([Resource(id: 'r', rating: 1, lastEditDate: date)]);
       await Future<void>.delayed(Duration.zero);
       resources.add([Resource(id: 'r', rating: 2, lastEditDate: date)]);
@@ -152,6 +153,7 @@ void main() {
     },
   );
   test('resource stream refreshes the open comment page', () async {
+    cubit.loadResourcesIfNeeded();
     Comment commentWithRating(int rating) => Comment(
       id: 'comment',
       user: BaseListItem(id: 'author@example.com'),

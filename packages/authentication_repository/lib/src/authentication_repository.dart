@@ -63,6 +63,10 @@ class LogInWithEmailAndPasswordFailure implements Exception {
         return const LogInWithEmailAndPasswordFailure(
           'Email is not found, check spelling or please create an account.',
         );
+      case 'invalid-credential':
+        return const LogInWithEmailAndPasswordFailure(
+          'Email or password is incorrect.',
+        );
       case 'wrong-password':
         return const LogInWithEmailAndPasswordFailure(
           'Incorrect password, please try again.',
@@ -190,26 +194,6 @@ class AuthenticationRepository {
   @visibleForTesting
   static const userCacheKey = '__user_cache_key__';
 
-  // Guard against double-initialization (plugin recommends init once).
-  static bool _gsInitialized = false;
-
-  /// Lazily ensure Google Sign-In is initialized (v7 requirement).
-  /// If you already call `GoogleSignIn.instance.initialize(...)` in main()
-  ///  this is a no-op.
-  Future<void> _ensureGoogleInitialized() async {
-    if (isWeb) return; // Not used for web popup flow.
-    if (_gsInitialized) return;
-    try {
-      await GoogleSignIn.instance
-          .initialize(); // clientId/serverClientId optional
-      _gsInitialized = true;
-    } catch (e) {
-      // If already initialized elsewhere, or platform handled via plist/json, ignore.
-      debugPrint('GoogleSignIn initialize() skipped/failed: $e');
-      _gsInitialized = true; // Avoid retry storm.
-    }
-  }
-
   Future<void> _cacheCurrentUser() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
@@ -234,7 +218,7 @@ class AuthenticationRepository {
   }
 
   Stream<User?> get user {
-    return _firebaseAuth.authStateChanges().map((firebaseUser) {
+    return _firebaseAuth.userChanges().map((firebaseUser) {
       final user = firebaseUser == null ? User.empty : firebaseUser.toAppUser();
       _cache.write<User>(key: userCacheKey, value: user!);
       return user;
@@ -251,19 +235,18 @@ class AuthenticationRepository {
     required String password,
   }) async {
     try {
-      await _firebaseAuth.createUserWithEmailAndPassword(
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      final currentUser = _firebaseAuth.currentUser;
-      if (currentUser == null) {
+      final createdUser = credential.user;
+      if (createdUser == null) {
         throw Exception('User not found after registration.');
       }
-      await currentUser.updateDisplayName(name);
-      await currentUser.reload();
+      await createdUser.updateDisplayName(name);
+      await createdUser.sendEmailVerification();
       await _cacheCurrentUser();
-      await currentUser.sendEmailVerification();
-      return currentUser.toAppUser();
+      return _firebaseAuth.currentUser.toAppUser();
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw SignUpWithEmailAndPasswordFailure.fromCode(e.code);
     } catch (e) {
@@ -294,34 +277,28 @@ class AuthenticationRepository {
         return userCred.user?.toAppUser();
       }
 
-      // Native (Android/iOS/macOS)
-      await _ensureGoogleInitialized();
-
-      // Prefer authenticate() when supported (v7+ API).
-      if (_googleSignIn.supportsAuthenticate()) {
-        final account = await _googleSignIn.authenticate();
-        final googleAuth = account.authentication; // idToken only in v7
-        final credential = firebase_auth.GoogleAuthProvider.credential(
-          idToken: googleAuth.idToken,
+      // The app initializes the native Google SDK in bootstrap.
+      if (!_googleSignIn.supportsAuthenticate()) {
+        throw const LogInWithGoogleFailure(
+          'Google sign-in is unavailable on this platform.',
         );
-        final userCred = await _firebaseAuth.signInWithCredential(credential);
-        await _cacheCurrentUser();
-        return userCred.user?.toAppUser();
-      } else {
-        // Extremely old platforms: fallback not expected in v7, but just in
-        // case (Most clients should never hit this branch.)
-        final account = await _googleSignIn.authenticate();
-        final googleAuth = account.authentication;
-        final credential = firebase_auth.GoogleAuthProvider.credential(
-          idToken: googleAuth.idToken,
-        );
-        final userCred = await _firebaseAuth.signInWithCredential(credential);
-        await _cacheCurrentUser();
-        return userCred.user?.toAppUser();
       }
+      final account = await _googleSignIn.authenticate();
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw const LogInWithGoogleFailure('Google sign-in returned no token.');
+      }
+      final credential = firebase_auth.GoogleAuthProvider.credential(
+        idToken: idToken,
+      );
+      final userCred = await _firebaseAuth.signInWithCredential(credential);
+      await _cacheCurrentUser();
+      return userCred.user.toAppUser();
+    } on LogInWithGoogleFailure {
+      rethrow;
     } on GoogleSignInException catch (e) {
       // v7.1+ exposes structured codes (e.code is GoogleSignInExceptionCode)
-      final msg = e.code.toString().contains('canceled')
+      final msg = e.code == GoogleSignInExceptionCode.canceled
           ? 'Sign-in canceled.'
           : 'Google sign-in failed.';
       throw LogInWithGoogleFailure(msg);

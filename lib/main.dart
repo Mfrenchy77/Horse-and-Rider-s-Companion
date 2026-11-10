@@ -3,7 +3,6 @@
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 
 import 'package:horseandriderscompanion/App/View/app.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
@@ -23,11 +22,6 @@ Future<void> main() async {
     final authenticationRepository = AuthenticationRepository(
       firebaseAuth: FirebaseAuth.instance,
     );
-
-    // Helpful debug log whenever auth state changes
-    authenticationRepository.user.listen((value) {
-      debugPrint('User is $value');
-    });
 
     // Load user settings
     final settingsController = SettingsController(SettingsService());

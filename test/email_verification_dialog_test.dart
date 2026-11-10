@@ -31,83 +31,90 @@ class MockHorseProfileRepository extends Mock
     implements HorseProfileRepository {}
 
 void main() {
-  testWidgets('Shows email verification dialog when user not verified',
-      (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await SharedPrefs().init();
-    final settings = SettingsController(SettingsService());
-    await settings.loadSettings();
+  testWidgets(
+    'Shows the pending verification prompt and closes it after verification',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await SharedPrefs().init();
+      final settings = SettingsController(SettingsService());
+      await settings.loadSettings();
 
-    final authRepo = MockAuthenticationRepository();
-    final messagesRepo = MockMessagesRepository();
-    final skillRepo = MockSkillTreeRepository();
-    final resourcesRepo = MockResourcesRepository();
-    final riderRepo = MockRiderProfileRepository();
-    final horseRepo = MockHorseProfileRepository();
+      final authRepo = MockAuthenticationRepository();
+      final messagesRepo = MockMessagesRepository();
+      final skillRepo = MockSkillTreeRepository();
+      final resourcesRepo = MockResourcesRepository();
+      final riderRepo = MockRiderProfileRepository();
+      final horseRepo = MockHorseProfileRepository();
 
-    final ctrl = StreamController<auth.User?>.broadcast();
-    when(() => authRepo.currentUser).thenReturn(auth.User.empty);
-    when(() => authRepo.user).thenAnswer((_) => ctrl.stream);
-    when(skillRepo.getSkills).thenAnswer((_) => Stream.value(<Skill>[]));
-    when(skillRepo.getAllTrainingPaths)
-        .thenAnswer((_) => Stream.value(<TrainingPath>[]));
-    when(resourcesRepo.getResources)
-        .thenAnswer((_) => Stream.value(<Resource>[]));
+      final ctrl = StreamController<auth.User?>.broadcast();
+      when(() => authRepo.currentUser).thenReturn(auth.User.empty);
+      when(() => authRepo.user).thenAnswer((_) => ctrl.stream);
+      when(skillRepo.getSkills).thenAnswer((_) => Stream.value(<Skill>[]));
+      when(
+        skillRepo.getAllTrainingPaths,
+      ).thenAnswer((_) => Stream.value(<TrainingPath>[]));
+      when(
+        resourcesRepo.getResources,
+      ).thenAnswer((_) => Stream.value(<Resource>[]));
 
-    final appCubit = AppCubit(
-      messagesRepository: messagesRepo,
-      skillTreeRepository: skillRepo,
-      resourcesRepository: resourcesRepo,
-      horseProfileRepository: horseRepo,
-      riderProfileRepository: riderRepo,
-      authenticationRepository: authRepo,
-    );
+      final appCubit = AppCubit(
+        messagesRepository: messagesRepo,
+        skillTreeRepository: skillRepo,
+        resourcesRepository: resourcesRepo,
+        horseProfileRepository: horseRepo,
+        riderProfileRepository: riderRepo,
+        authenticationRepository: authRepo,
+      );
 
-    final router =
-        Routes().router(settingsContoller: settings, appCubit: appCubit);
+      final router = Routes().router(
+        settingsContoller: settings,
+        appCubit: appCubit,
+      );
 
-    Widget build() => MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider.value(value: messagesRepo),
-            RepositoryProvider.value(value: skillRepo),
-            RepositoryProvider.value(value: resourcesRepo),
-            RepositoryProvider.value(value: riderRepo),
-            RepositoryProvider.value(value: horseRepo),
-            RepositoryProvider<auth.AuthenticationRepository>.value(
-              value: authRepo,
-            ),
-          ],
-          child: BlocProvider.value(
-            value: appCubit,
-            child: AppView(settingsController: settings, router: router),
+      Widget build() => MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider.value(value: messagesRepo),
+          RepositoryProvider.value(value: skillRepo),
+          RepositoryProvider.value(value: resourcesRepo),
+          RepositoryProvider.value(value: riderRepo),
+          RepositoryProvider.value(value: horseRepo),
+          RepositoryProvider<auth.AuthenticationRepository>.value(
+            value: authRepo,
           ),
-        );
+        ],
+        child: BlocProvider.value(
+          value: appCubit,
+          child: AppView(settingsController: settings, router: router),
+        ),
+      );
 
-    await tester.pumpWidget(build());
-    await tester.pump();
+      when(
+        () => riderRepo.getRiderProfile(email: 'u@x.com'),
+      ).thenAnswer((_) => Stream<RiderProfile?>.value(null));
 
-    // Start unauthenticated
-    ctrl.add(null);
-    await tester.pump(const Duration(milliseconds: 100));
+      ctrl.add(
+        const auth.User(id: 'u1', name: 'U', email: 'u@x.com', isGuest: false),
+      );
+      await tester.pump();
+      await tester.pumpWidget(build());
+      await tester.pumpAndSettle();
+      expect(find.text('Email Verification Needed'), findsOneWidget);
 
-    // Emit a not-verified user
-    ctrl.add(
-      const auth.User(
-        id: 'u1',
-        name: 'U',
-        email: 'u@x.com',
-        isGuest: false,
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    // Allow pushNamed scheduled on post-frame
-    await tester.pump(const Duration(milliseconds: 400));
+      ctrl.add(
+        const auth.User(
+          id: 'u1',
+          name: 'U',
+          email: 'u@x.com',
+          isGuest: false,
+          emailVerified: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Email Verification Needed'), findsNothing);
+      expect(router.routeInformationProvider.value.uri.path, '/');
 
-    // Dialog route pushed and visible
-    expect(find.text('Email Verification Needed'), findsOneWidget);
-
-    await ctrl.close();
-    await appCubit.close();
-  });
+      await ctrl.close();
+      await appCubit.close();
+    },
+  );
 }

@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -24,17 +25,18 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     debugPrintStack(stackTrace: stack);
   }
 
-  // Initialize Google Sign-In once (v7 API)
-  try {
-    await GoogleSignIn.instance.initialize(
-      clientId:
-          '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
-      serverClientId:
-          '854658032014-hlrq1mf9jkv4qv0fkj59h7un5cfddnet.apps.googleusercontent.com',
-    );
-  } catch (e) {
-    // Safe to ignore if already initialized elsewhere or provided via plist/json
-    debugPrint('GoogleSignIn initialize skipped/failed: $e');
+  // Web sign-in uses the Firebase popup.
+  if (!kIsWeb) {
+    try {
+      await GoogleSignIn.instance.initialize(
+        clientId:
+            '854658032014-q869gh7ekm1n0rahk51vc927j8v5m2o8.apps.googleusercontent.com',
+        serverClientId:
+            '854658032014-hlrq1mf9jkv4qv0fkj59h7un5cfddnet.apps.googleusercontent.com',
+      );
+    } catch (e) {
+      debugPrint('GoogleSignIn initialization failed: $e');
+    }
   }
 
   // Pretty URLs for Flutter web

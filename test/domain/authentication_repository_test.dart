@@ -13,6 +13,8 @@ class MockCredential extends Mock implements firebase.UserCredential {}
 
 class MockGoogleSignIn extends Mock implements GoogleSignIn {}
 
+class MockGoogleAccount extends Mock implements GoogleSignInAccount {}
+
 void main() {
   late MockFirebaseAuth auth;
   late MockFirebaseUser user;
@@ -48,7 +50,7 @@ void main() {
   });
 
   test('auth stream and both cache readers agree', () async {
-    when(auth.authStateChanges).thenAnswer((_) => Stream.value(user));
+    when(auth.userChanges).thenAnswer((_) => Stream.value(user));
     final result = await repository.user.first;
     expect(result?.email, 'rider@example.com');
     expect(result?.isGuest, isFalse);
@@ -74,6 +76,7 @@ void main() {
   for (final code in [
     'invalid-email',
     'wrong-password',
+    'invalid-credential',
     'user-disabled',
     'unknown',
   ]) {
@@ -94,28 +97,79 @@ void main() {
     });
   }
 
-  test('signup updates name, reloads, verifies and caches user', () async {
-    when(
-      () => auth.createUserWithEmailAndPassword(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
+  test(
+    'signup updates name, sends verification and caches without reloading',
+    () async {
+      when(
+        () => auth.createUserWithEmailAndPassword(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => credential);
+      when(() => user.updateDisplayName('Rider')).thenAnswer((_) async {});
+      when(user.sendEmailVerification).thenAnswer((_) async {});
+      final result = await repository.signUp(
+        name: 'Rider',
+        email: 'rider@example.com',
+        password: 'secret',
+      );
+      verifyInOrder([
+        () => user.updateDisplayName('Rider'),
+        user.sendEmailVerification,
+      ]);
+      verifyNever(user.reload);
+      expect(repository.currentUser, result);
+      expect(repository.getCachedUser(), result);
+    },
+  );
+
+  test('native Google sign-in checks support before authenticating', () async {
+    repository.isWeb = false;
+    when(google.supportsAuthenticate).thenReturn(false);
+    await expectLater(
+      repository.logInWithGoogle(),
+      throwsA(
+        isA<LogInWithGoogleFailure>().having(
+          (error) => error.message,
+          'message',
+          contains('unavailable'),
+        ),
       ),
-    ).thenAnswer((_) async => credential);
-    when(() => user.updateDisplayName('Rider')).thenAnswer((_) async {});
-    when(user.reload).thenAnswer((_) async {});
-    when(user.sendEmailVerification).thenAnswer((_) async {});
-    final result = await repository.signUp(
-      name: 'Rider',
-      email: 'rider@example.com',
-      password: 'secret',
     );
-    verifyInOrder([
-      () => user.updateDisplayName('Rider'),
-      user.reload,
-      user.sendEmailVerification,
-    ]);
-    expect(repository.currentUser, result);
-    expect(repository.getCachedUser(), result);
+    verifyNever(() => google.authenticate());
+    verifyZeroInteractions(auth);
+  });
+
+  test('native Google sign-in exchanges the injected account token', () async {
+    repository.isWeb = false;
+    final account = MockGoogleAccount();
+    when(google.supportsAuthenticate).thenReturn(true);
+    when(() => google.authenticate()).thenAnswer((_) async => account);
+    when(() => account.authentication).thenReturn(
+      const GoogleSignInAuthentication(idToken: 'test-token'),
+    );
+    registerFallbackValue(
+      firebase.GoogleAuthProvider.credential(idToken: 'fallback'),
+    );
+    when(() => auth.signInWithCredential(any()))
+        .thenAnswer((_) async => credential);
+
+    expect((await repository.logInWithGoogle())?.id, 'u1');
+    final sent = verify(() => auth.signInWithCredential(captureAny()))
+        .captured
+        .single as firebase.OAuthCredential;
+    expect(sent.idToken, 'test-token');
+    verify(() => google.authenticate()).called(1);
+  });
+
+  test('web Google sign-in uses the Firebase popup', () async {
+    repository.isWeb = true;
+    registerFallbackValue(firebase.GoogleAuthProvider());
+    when(() => auth.signInWithPopup(any())).thenAnswer((_) async => credential);
+    final result = await repository.logInWithGoogle();
+    expect(result?.id, 'u1');
+    verify(() => auth.signInWithPopup(any())).called(1);
+    verifyZeroInteractions(google);
   });
 
   test('signup maps duplicate accounts', () async {

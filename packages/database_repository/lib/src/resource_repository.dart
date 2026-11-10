@@ -75,6 +75,14 @@ class ResourcesRepository {
     );
   }
 
+  /// Listen only to resources linked to a particular skill.
+  Stream<List<Resource>> getResourcesForSkill({required String skillId}) {
+    return _ref
+        .where('skillTreeIds', arrayContains: skillId)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => doc.data()).toList());
+  }
+
   /// Optionally, a convenience stream ordered by `updatedAt` desc (if present).
   Stream<List<Resource>> getResourcesOrderedByUpdatedAt() {
     return _ref

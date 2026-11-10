@@ -81,6 +81,10 @@ void main() {
       () => resourcesRepo.getResources(),
     ).thenAnswer((_) => Stream.value(<Resource>[]));
 
+    when(
+      () => resourcesRepo.getResourcesForSkill(skillId: any(named: 'skillId')),
+    ).thenAnswer((_) => Stream.value(<Resource>[]));
+
     appCubit = AppCubit(
       messagesRepository: messagesRepo,
       skillTreeRepository: skillRepo,
@@ -101,7 +105,7 @@ void main() {
       providers: [
         RepositoryProvider.value(value: messagesRepo),
         RepositoryProvider.value(value: skillRepo),
-        RepositoryProvider.value(value: resourcesRepo),
+        RepositoryProvider<ResourcesRepository>.value(value: resourcesRepo),
         RepositoryProvider.value(value: riderRepo),
         RepositoryProvider.value(value: horseRepo),
         RepositoryProvider<auth.AuthenticationRepository>.value(

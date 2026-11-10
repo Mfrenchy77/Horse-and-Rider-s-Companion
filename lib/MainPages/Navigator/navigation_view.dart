@@ -25,11 +25,35 @@ class NavigationView extends StatefulWidget {
 }
 
 class _NavigationViewState extends State<NavigationView> {
-  bool _emailDialogOpen = false;
+  String? _promptedVerificationEmail;
   final bool _onboardingDialogOpen = false;
+  void _showEmailVerificationIfNeeded(AppCubit cubit) {
+    final state = cubit.state;
+    if (!state.showEmailVerification) {
+      _promptedVerificationEmail = null;
+      return;
+    }
+
+    final email = state.user.email;
+    if (_promptedVerificationEmail == email) return;
+    _promptedVerificationEmail = email;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !cubit.state.showEmailVerification ||
+          cubit.state.user.email != email) {
+        return;
+      }
+      GoRouter.of(context).pushNamed(
+        EmailVerificationDialog.name,
+        pathParameters: {EmailVerificationDialog.pathParms: email},
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
+    _showEmailVerificationIfNeeded(cubit);
 
     return BlocListener<AppCubit, AppState>(
       listener: (context, state) {
@@ -136,29 +160,7 @@ class _NavigationViewState extends State<NavigationView> {
           });
         }
 
-        // Email verification
-        if (state.showEmailVerification && !_emailDialogOpen) {
-          _emailDialogOpen = true;
-          SchedulerBinding.instance.addPostFrameCallback((_) async {
-            final router = GoRouter.of(context);
-            await router.pushNamed(
-              EmailVerificationDialog.name,
-              pathParameters: {
-                EmailVerificationDialog.pathParms: state.user.email,
-              },
-            );
-            if (!mounted) return;
-            setState(() => _emailDialogOpen = false);
-          });
-        } else if (!state.showEmailVerification && _emailDialogOpen) {
-          // Close dialog if verification flag turned off
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-            if (mounted) setState(() => _emailDialogOpen = false);
-          });
-        }
+        _showEmailVerificationIfNeeded(cubit);
       },
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
