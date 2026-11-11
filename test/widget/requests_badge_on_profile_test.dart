@@ -27,7 +27,7 @@ class MockAuthenticationRepository extends Mock
     implements AuthenticationRepository {}
 
 void main() {
-  group('Requests badge on RiderProfileView', () {
+  group('Disabled legacy requests on RiderProfileView', () {
     late MockMessagesRepository messagesRepo;
     late MockSkillTreeRepository skillRepo;
     late MockResourcesRepository resourcesRepo;
@@ -45,12 +45,15 @@ void main() {
 
       when(() => authRepo.currentUser).thenReturn(User.empty);
       when(() => authRepo.user).thenAnswer((_) => const Stream<User?>.empty());
-      when(() => skillRepo.getSkills())
-          .thenAnswer((_) => const Stream<List<Skill>>.empty());
-      when(() => skillRepo.getAllTrainingPaths())
-          .thenAnswer((_) => const Stream<List<TrainingPath>>.empty());
-      when(() => resourcesRepo.getResources())
-          .thenAnswer((_) => const Stream<List<Resource>>.empty());
+      when(
+        () => skillRepo.getSkills(),
+      ).thenAnswer((_) => const Stream<List<Skill>>.empty());
+      when(
+        () => skillRepo.getAllTrainingPaths(),
+      ).thenAnswer((_) => const Stream<List<TrainingPath>>.empty());
+      when(
+        () => resourcesRepo.getResources(),
+      ).thenAnswer((_) => const Stream<List<Resource>>.empty());
 
       // Initialize SharedPrefs for widgets that depend on it
       SharedPreferences.setMockInitialValues({});
@@ -98,7 +101,7 @@ void main() {
       );
       cubit.emit(cubit.state.copyWith(conversations: [conv]));
 
-      // 1) Own profile -> badge should be visible
+      // Own profiles hide the legacy message request badge.
       await tester.pumpWidget(
         MaterialApp(
           home: BlocProvider.value(
@@ -110,11 +113,14 @@ void main() {
       // The catalog is intentionally unloaded,
       // so its progress indicator keeps animating.
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.byKey(const Key('RequestsBadgeButton')), findsOneWidget);
+      expect(find.byKey(const Key('RequestsBadgeButton')), findsNothing);
 
       // 2) Viewing someone else -> badge should be hidden
-      final other =
-          RiderProfile(id: 'o', name: 'Other', email: 'o@example.com');
+      final other = RiderProfile(
+        id: 'o',
+        name: 'Other',
+        email: 'o@example.com',
+      );
       await tester.pumpWidget(
         MaterialApp(
           home: BlocProvider.value(

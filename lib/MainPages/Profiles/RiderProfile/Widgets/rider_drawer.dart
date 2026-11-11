@@ -6,11 +6,10 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/seasonal_decoration.dart';
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_list.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
@@ -82,33 +81,37 @@ class UserProfileDrawer extends StatelessWidget {
                     child: SafeArea(
                       child: Hero(
                         tag: 'drawer-hamburger-x',
-                        flightShuttleBuilder: (
-                          BuildContext flightContext,
-                          Animation<double> animation,
-                          HeroFlightDirection flightDirection,
-                          BuildContext fromHeroContext,
-                          BuildContext toHeroContext,
-                        ) {
-                          final iconSize =
-                              IconTheme.of(flightContext).size ?? 24.0;
-                          final iconColor = IconTheme.of(flightContext).color;
-                          return Center(
-                            child: IconTheme(
-                              data: IconThemeData(
-                                size: iconSize,
-                                color: iconColor,
-                              ),
-                              child: AnimatedIcon(
-                                icon: AnimatedIcons.menu_close,
-                                progress: animation,
-                              ),
-                            ),
-                          );
-                        },
+                        flightShuttleBuilder:
+                            (
+                              BuildContext flightContext,
+                              Animation<double> animation,
+                              HeroFlightDirection flightDirection,
+                              BuildContext fromHeroContext,
+                              BuildContext toHeroContext,
+                            ) {
+                              final iconSize =
+                                  IconTheme.of(flightContext).size ?? 24.0;
+                              final iconColor = IconTheme.of(
+                                flightContext,
+                              ).color;
+                              return Center(
+                                child: IconTheme(
+                                  data: IconThemeData(
+                                    size: iconSize,
+                                    color: iconColor,
+                                  ),
+                                  child: AnimatedIcon(
+                                    icon: AnimatedIcons.menu_close,
+                                    progress: animation,
+                                  ),
+                                ),
+                              );
+                            },
                         child: IconButton(
                           icon: AnimatedIcon(
                             icon: AnimatedIcons.menu_close,
-                            progress: iconAnimation ??
+                            progress:
+                                iconAnimation ??
                                 const AlwaysStoppedAnimation(1),
                           ),
                           onPressed: () {
@@ -136,24 +139,14 @@ class UserProfileDrawer extends StatelessWidget {
                   ListTile(
                     leading: const Icon(HorseAndRiderIcons.riderLogIcon),
                     title: const Text('Log Book'),
-                    onTap: () => showDialog<AlertDialog>(
-                      context: context,
-                      builder: (dialogContext) => LogViewDialog(
-                        appContext: context,
-                        name: state.viewingProfile?.name ??
-                            state.usersProfile!.name,
-                        notes: state.viewingProfile?.notes ??
-                            state.usersProfile!.notes,
-                        isRider: true,
-                      ),
-                    ),
+                    onTap: () => RiderLogbookPage.open(context),
                   ),
 
                   //  saved profile list
                   Visibility(
                     visible:
                         state.usersProfile?.savedProfilesList?.isNotEmpty ??
-                            false,
+                        false,
                     child: ExpansionTile(
                       leading: const Icon(Icons.people_alt),
                       title: const Text('Contacts'),
@@ -187,9 +180,7 @@ class UserProfileDrawer extends StatelessWidget {
                       leading: const Icon(Icons.people_alt),
                       title: const Text('Students'),
                       children: [
-                        ProfileList(
-                          list: state.usersProfile?.students ?? [],
-                        ),
+                        ProfileList(list: state.usersProfile?.students ?? []),
                       ],
                     ),
                   ),
@@ -236,20 +227,10 @@ class UserProfileDrawer extends StatelessWidget {
                       debugPrint('Search Clicked');
                     },
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.mail),
-                    title: const Text('Messages'),
-                    onTap: () {
-                      // close custom drawer (don't pop the route)
-                      onClose?.call();
-                      // navigate to messages
-                      context.goNamed(MessagesPage.name);
-                    },
-                  ),
-
                   Divider(
-                    color:
-                        SharedPrefs().isDarkMode ? Colors.white : Colors.black,
+                    color: SharedPrefs().isDarkMode
+                        ? Colors.white
+                        : Colors.black,
                     height: 10,
                     thickness: 1,
                   ),
@@ -287,12 +268,8 @@ class UserProfileDrawer extends StatelessWidget {
 
                   // Email Support
                   ListTile(
-                    leading: const Icon(
-                      Icons.help,
-                    ),
-                    title: const Text(
-                      'Send Email to Support',
-                    ),
+                    leading: const Icon(Icons.help),
+                    title: const Text('Send Email to Support'),
                     onTap: () {
                       debugPrint('Send Email to Support');
                       onClose?.call();

@@ -20,30 +20,33 @@ class RequestsBadgeButton extends StatelessWidget {
         return KeyedSubtree(
           key: const Key('RequestsBadgeButton'),
           child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            IconButton(
-              tooltip: 'Requests',
-              key: const Key('RequestsIconButton'),
-              icon: const Icon(Icons.notifications),
-              onPressed: () => _showRequestsSheet(context),
-            ),
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$count',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'Requests',
+                key: const Key('RequestsIconButton'),
+                icon: const Icon(Icons.notifications),
+                onPressed: () => _showRequestsSheet(context),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
           ),
         );
       },
@@ -63,11 +66,18 @@ class RequestsBadgeButton extends StatelessWidget {
           child: BlocListener<AppCubit, AppState>(
             listenWhen: (prev, curr) => prev.acceptStatus != curr.acceptStatus,
             listener: (context, state) {
-              if (state.acceptStatus == AcceptStatus.accepted) {
+              if (state.acceptStatus == AcceptStatus.submitted ||
+                  state.acceptStatus == AcceptStatus.accepted) {
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(
-                    const SnackBar(content: Text('Request accepted')),
+                    SnackBar(
+                      content: Text(
+                        state.errorMessage.isEmpty
+                            ? 'Request processed'
+                            : state.errorMessage,
+                      ),
+                    ),
                   );
                 Navigator.of(context).maybePop();
               }
@@ -76,93 +86,87 @@ class RequestsBadgeButton extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                const ListTile(
-                  title: Text('Requests'),
-                  subtitle: Text('Incoming requests awaiting your action'),
-                ),
-                const Divider(height: 1),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: list.length,
-                    itemBuilder: (context, index) {
-                      final c = list[index];
-                      final otherNames = List<String>.from(c.parties)
-                        ..remove(cubit.state.usersProfile?.name);
-                      final m = c.recentMessage;
-                      return ListTile(
-                        onTap: () {
-                          // Open the conversation
-                          cubit.setConversation(c.id);
-                          context.goNamed(
-                            MessagePage.name,
-                            pathParameters: {MessagePage.pathParams: c.id},
-                          );
-                        },
-                        title: Text(otherNames.join(', ')),
-                        subtitle: Text(
-                          m?.message ?? '',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: m == null
-                            ? null
-                            : AcceptRequestButton(
-                                key: Key(
-                                  'Accept_${m.messageId ?? m.id ?? index}',
+                  const ListTile(
+                    title: Text('Requests'),
+                    subtitle: Text(
+                      'Send a new connection request from an older message.',
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: list.length,
+                      itemBuilder: (context, index) {
+                        final c = list[index];
+                        final otherNames = List<String>.from(c.parties)
+                          ..remove(cubit.state.usersProfile?.name);
+                        final m = c.recentMessage;
+                        return ListTile(
+                          onTap: () {
+                            // Open the conversation
+                            cubit.setConversation(c.id);
+                            context.goNamed(
+                              MessagePage.name,
+                              pathParameters: {MessagePage.pathParams: c.id},
+                            );
+                          },
+                          title: Text(otherNames.join(', ')),
+                          subtitle: Text(
+                            m?.message ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: m == null
+                              ? null
+                              : AcceptRequestButton(
+                                  key: Key(
+                                    'Accept_${m.messageId ?? m.id ?? index}',
+                                  ),
+                                  message: m,
                                 ),
-                                message: m,
-                                onBeforeAccept: () {
-                                  Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context)
-                                    ..hideCurrentSnackBar()
-                                    ..showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Request accepted'),
-                                      ),
-                                    );
-                                },
-                              ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        // ignore: lines_longer_than_80_chars
-                        'Updated ${calculateTimeDifferenceBetween(referenceDate: DateTime.now())}',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton(
-                            key: const Key('ViewAllRequestsButton'),
-                            onPressed: () {
-                              Navigator.pop(context);
-                              context.pushNamed(MessagesPage.name);
-                            },
-                            child: const Text('View All'),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          // ignore: lines_longer_than_80_chars
+                          'Updated ${calculateTimeDifferenceBetween(referenceDate: DateTime.now())}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
                           ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextButton(
+                              key: const Key('ViewAllRequestsButton'),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                context.pushNamed(MessagesPage.name);
+                              },
+                              child: const Text('View All'),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           ),
         );
       },

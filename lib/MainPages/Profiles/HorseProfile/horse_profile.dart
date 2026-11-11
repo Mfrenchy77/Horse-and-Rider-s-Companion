@@ -1,88 +1,66 @@
-// ignore_for_file: cast_nullable_to_non_nullable
-
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
-import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
-import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_primary_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 
 class HorseProfileView extends StatelessWidget {
   const HorseProfileView({super.key, required this.horseProfile});
+
   final HorseProfile horseProfile;
 
-  static const double largeBreakpoint = 1024;
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const AppTitle(key: Key('appTitle')),
-        actions: const [
-          ProfileSearchButton(key: Key('HorseSearchButton')),
-          HorseProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
-        ],
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Horse profile'),
+      actions: const [
+        ProfileSearchButton(key: Key('HorseSearchButton')),
+        HorseProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
+      ],
+    ),
+    body: ProfileLayout(
+      wideKey: const Key('horseProfileWide'),
+      compactKey: const Key('horseProfileCompact'),
+      identity: HorseProfilePrimaryView(
+        horseProfile: horseProfile,
+        key: const Key('HorseProfilePrimaryView'),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isLarge = constraints.maxWidth >= largeBreakpoint;
-
-          if (isLarge) {
-            // Large screen: split view
-            return Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: ListView(
-                    children: [
-                      HorseProfilePrimaryView(
-                        horseProfile: horseProfile,
-                        key: const Key('HorseProfilePrimaryView'),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: ListView(
-                    children: [
-                      const ProfileSkillsBanner(
-                        key: Key('ProfileSkillsBanner'),
-                      ),
-                      gap(),
-                      ProfileSkills(
-                        skillLevels: horseProfile.skillLevels,
-                        key: const Key('ProfileSkills'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }
-
-          // Small & medium: stacked layout
-          return ListView(
+      skills: GradientCard(
+        key: const Key('horseSkills'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              HorseProfilePrimaryView(
-                horseProfile: horseProfile,
-                key: const Key('HorseProfilePrimaryView'),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text('Skills', style: Theme.of(context).textTheme.titleLarge),
+                  TextButton(
+                    onPressed: () {
+                      context.read<AppCubit>().navigateToSkillsList();
+                      context.goNamed(SkillTreePage.name);
+                    },
+                    child: const Text('Explore Skill Tree'),
+                  ),
+                ],
               ),
-              gap(),
-              const SkillsTextButton(key: Key('SkillsTextButton')),
-              gap(),
               ProfileSkills(
-                skillLevels: horseProfile.skillLevels,
                 key: const Key('ProfileSkills'),
+                skillLevels: horseProfile.skillLevels,
               ),
             ],
-          );
-        },
+          ),
+        ),
       ),
-    );
-  }
+    ),
+  );
 }

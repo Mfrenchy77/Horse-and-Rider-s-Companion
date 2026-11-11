@@ -29,6 +29,7 @@ class HorseProfile {
     this.purchasePrice,
     required this.name,
     this.dateOfPurchase,
+    this.archiveStatus = 'active',
     this.currentOwnerId = '',
     this.currentOwnerName = '',
   });
@@ -65,6 +66,13 @@ class HorseProfile {
 
   /// the horse's location state name
   String? locationName;
+
+  /// Current archive status, managed by the coaching callable.
+  final String archiveStatus;
+
+  /// Whether this horse is outside its owner's active roster.
+  bool get isArchived =>
+      archiveStatus == 'archived' || archiveStatus == 'deceased';
 
   /// the horse's current owner id
   String currentOwnerId;
@@ -134,6 +142,7 @@ class HorseProfile {
       countryName: data['countryName'] as String?,
       purchasePrice: data['purchasePrice'] as int?,
       locationName: data['locationName'] as String?,
+      archiveStatus: data['archiveStatus'] as String? ?? 'active',
       currentOwnerId: data['currentOwnerId'] as String,
       currentOwnerName: data['currentOwnerName'] as String,
       dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
@@ -151,7 +160,7 @@ class HorseProfile {
     );
   }
 
-  ///Converts a [HorseProfile] to a [Map<String, dynamic>]
+  /// Serializes editable fields. The archive status is written by the server.
   Map<String, Object?> toFirestore() {
     return {
       'id': id,
@@ -236,6 +245,7 @@ class HorseProfile {
       lastEditDate: lastEditDate ?? this.lastEditDate,
       locationName: locationName ?? this.locationName,
       purchasePrice: purchasePrice ?? this.purchasePrice,
+      archiveStatus: archiveStatus,
       currentOwnerId: currentOwnerId ?? this.currentOwnerId,
       dateOfPurchase: dateOfPurchase ?? this.dateOfPurchase,
       currentOwnerName: currentOwnerName ?? this.currentOwnerName,

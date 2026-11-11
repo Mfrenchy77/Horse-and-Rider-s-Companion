@@ -9,23 +9,32 @@ class ResourceWebPage extends StatelessWidget {
     super.key,
     required this.url,
     required this.title,
+    this.resourceId,
   });
 
   // Simple helper to build from GoRouter state
   ResourceWebPage.fromState(GoRouterState s)
-      : url = s.pathParameters[urlPathParams]!,
-        title = s.pathParameters[titlePathParams]!,
-        super(key: null);
+    : url = s.pathParameters[urlPathParams]!,
+      title = s.pathParameters[titlePathParams]!,
+      resourceId = s.uri.queryParameters[resourceIdQueryParam],
+      super(key: null);
 
   static const name = 'ResourceWebPage';
   static const path = 'Web/:$urlPathParams/:$titlePathParams';
 
   static const urlPathParams = 'url';
   static const titlePathParams = 'title';
+  static const resourceIdQueryParam = 'resourceId';
 
   final String url;
   final String title;
+  final String? resourceId;
 
   @override
-  Widget build(BuildContext context) => ResourceWebView(url: url, title: title);
+  Widget build(BuildContext context) => ResourceWebView(
+    key: ValueKey(url),
+    url: url,
+    title: title,
+    resourceId: resourceId,
+  );
 }

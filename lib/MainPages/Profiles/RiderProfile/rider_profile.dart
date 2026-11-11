@@ -6,9 +6,9 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
@@ -19,7 +19,7 @@ class RiderProfileView extends StatefulWidget {
   final RiderProfile profile;
 
   static const double mediumBreakpoint = 600;
-  static const double largeBreakpoint = 1024;
+  static const double largeBreakpoint = ProfileLayout.largeBreakpoint;
 
   @override
   State<RiderProfileView> createState() => _RiderProfileViewState();
@@ -78,14 +78,9 @@ class _RiderProfileViewState extends State<RiderProfileView>
                   ? 'My profile'
                   : 'Rider profile',
             ),
-            actions: [
-              const ProfileSearchButton(key: Key('RiderSearchButton')),
-              // Show requests badge for the owner viewing their own profile
-              if (profile.email == state.usersProfile?.email)
-                const RequestsBadgeButton(),
-              const RiderProfileOverFlowMenu(
-                key: Key('RiderProfileOverFlowMenu'),
-              ),
+            actions: const [
+              ProfileSearchButton(key: Key('RiderSearchButton')),
+              RiderProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
             ],
           ),
           // synchronize icon animation with drawer open/close (including
@@ -100,8 +95,8 @@ class _RiderProfileViewState extends State<RiderProfileView>
           drawer: profile.email == state.usersProfile?.email
               ? const UserProfileDrawer()
               : null,
-          body: LayoutBuilder(
-            builder: (context, constraints) {
+          body: Builder(
+            builder: (context) {
               final skills = GradientCard(
                 key: const Key('riderSkills'),
                 child: Padding(
@@ -137,33 +132,11 @@ class _RiderProfileViewState extends State<RiderProfileView>
                 profile: profile,
                 key: const Key('ProfileView'),
               );
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1320),
-                    child:
-                        constraints.maxWidth >= RiderProfileView.largeBreakpoint
-                        ? Row(
-                            key: const Key('riderProfileWide'),
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 5, child: identity),
-                              const SizedBox(width: 20),
-                              Expanded(flex: 6, child: skills),
-                            ],
-                          )
-                        : Column(
-                            key: const Key('riderProfileCompact'),
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              identity,
-                              const SizedBox(height: 16),
-                              skills,
-                            ],
-                          ),
-                  ),
-                ),
+              return ProfileLayout(
+                identity: identity,
+                skills: skills,
+                wideKey: const Key('riderProfileWide'),
+                compactKey: const Key('riderProfileCompact'),
               );
             },
           ),

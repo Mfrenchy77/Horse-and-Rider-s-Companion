@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:intl/intl.dart';
@@ -28,10 +29,12 @@ class LogViewDialog extends StatefulWidget {
     required this.notes,
     required this.isRider,
     required this.appContext,
+    this.horseId,
   });
 
   final String name;
   final bool isRider;
+  final String? horseId;
   final BuildContext appContext;
   final List<BaseListItem>? notes;
 
@@ -43,42 +46,105 @@ class LogViewDialogState extends State<LogViewDialog> {
   // Initial sort option
   LogSort _selectedSortOption = LogSort.dateNewest;
 
+  String? _historyUid;
+  Future<List<BaseListItem>>? _history;
+
+  Future<List<BaseListItem>>? _historyFor(
+    BuildContext context,
+    AppState state,
+  ) {
+    final uid = state.isGuest ? null : state.user.id;
+    if (_historyUid != uid) {
+      _historyUid = uid;
+      _history = uid == null || uid.isEmpty || widget.horseId == null
+          ? null
+          : context.read<ConnectionRepository?>()?.history({
+              'action': 'horseHistory',
+              'horseId': widget.horseId,
+            });
+    }
+    return _history;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final notes = widget.notes ?? [];
+    final state = context.watch<AppCubit>().state;
+    final horse = state.horseProfile;
+    final rider = state.usersProfile;
+    final currentHorse = widget.horseId != null && horse?.id == widget.horseId
+        ? horse
+        : null;
+    final notes = [
+      ...?(currentHorse == null ? widget.notes : currentHorse.notes),
+      if (!state.isGuest &&
+          rider != null &&
+          currentHorse?.currentOwnerId.toLowerCase() ==
+              rider.email.toLowerCase())
+        ...?rider.notes?.where(
+          (note) => note.riderLog?.horseId == widget.horseId,
+        ),
+    ];
 
-    return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.9,
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _logEntryTitle(
-                isRider: widget.isRider,
-                name: widget.name,
-                context: context,
+    return FutureBuilder<List<BaseListItem>>(
+      future: _historyFor(context, state),
+      builder: (context, snapshot) {
+        final shared =
+            snapshot.connectionState == ConnectionState.done && !state.isGuest
+            ? snapshot.data ?? const <BaseListItem>[]
+            : const <BaseListItem>[];
+        final ids = shared.map((note) => note.id).toSet();
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _logEntryTitle(
+                    isRider: widget.isRider,
+                    name: widget.name,
+                    context: context,
+                  ),
+                  if (_history != null)
+                    TextButton.icon(
+                      onPressed: () => setState(() => _historyUid = null),
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Refresh shared history'),
+                    ),
+                  gap(),
+                  _buildSortOption(),
+                  gap(),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const LinearProgressIndicator(),
+                  if (snapshot.hasError)
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _historyUid = null;
+                      }),
+                      child: const Text('Shared history unavailable. Retry'),
+                    ),
+                  Expanded(
+                    child: _logBookList(
+                      notes: [
+                        ...notes.where((note) => !ids.contains(note.id)),
+                        ...shared,
+                      ],
+                      isRider: widget.isRider,
+                      sortOption: _selectedSortOption,
+                    ),
+                  ),
+                ],
               ),
-              gap(),
-              _buildSortOption(),
-              gap(),
-              Expanded(
-                child: _logBookList(
-                  notes: notes,
-                  isRider: widget.isRider,
-                  sortOption: _selectedSortOption,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -120,9 +186,7 @@ class LogViewDialogState extends State<LogViewDialog> {
             ],
           ),
           const SizedBox(height: 8),
-          const AddLogEntry(
-            key: Key('AddLogEntry'),
-          ),
+          const AddLogEntry(key: Key('AddLogEntry')),
         ],
       );
     } else {
@@ -151,9 +215,7 @@ class LogViewDialogState extends State<LogViewDialog> {
             ),
           ),
           const SizedBox(height: 8),
-          const AddLogEntry(
-            key: Key('AddLogEntry'),
-          ),
+          const AddLogEntry(key: Key('AddLogEntry')),
         ],
       );
     }
@@ -209,9 +271,7 @@ Widget _logBookList({
   required LogSort sortOption,
 }) {
   if (notes.isEmpty) {
-    return const Center(
-      child: Text('No Entries in the Log'),
-    );
+    return const Center(child: Text('No Entries in the Log'));
   } else {
     var sortedNotes = List<BaseListItem>.from(notes);
 
@@ -271,22 +331,22 @@ Widget _logBookList({
         },
       );
     } else {
-      return const Center(
-        child: Text('No Entries in the Log for this filter'),
-      );
+      return const Center(child: Text('No Entries in the Log for this filter'));
     }
   }
 }
 
 class AddLogEntry extends StatelessWidget {
-  const AddLogEntry({
-    super.key,
-  });
+  const AddLogEntry({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        if (!context.read<AppCubit>().canWriteProfileRecords() ||
+            (!state.isForRider && (state.horseProfile?.isArchived ?? false))) {
+          return const SizedBox.shrink();
+        }
         return FilledButton.icon(
           label: const Text('Add Log Entry'),
           onPressed: () {
@@ -313,14 +373,16 @@ Widget _noteItem({required BaseListItem note}) {
     child: ColoredBox(
       color: HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
       child: ListTile(
-        title: Text(
-          note.name ?? '',
-          style: const TextStyle(
-            fontSize: 16,
-          ),
-        ),
+        title: Text(note.name ?? '', style: const TextStyle(fontSize: 16)),
         subtitle: Text(
-          DateFormat('MMM dd, yyyy').format(note.date ?? DateTime.now()),
+          [
+            DateFormat('MMM dd, yyyy').format(note.date ?? DateTime.now()),
+            if (note.extra?.isNotEmpty ?? false) 'Rider: ${note.extra}',
+            if (note.riderLog?.authorRole == 'instructor')
+              'Added by instructor ${note.message ?? note.parentId ?? ''}',
+            if (note.riderLog?.authorRole == 'trainer')
+              'Added by trainer ${note.message ?? note.parentId ?? ''}',
+          ].join('\n'),
           style: const TextStyle(color: Colors.grey),
         ),
         leading: _logTag(tag: tag),
@@ -334,28 +396,17 @@ Widget _logTag({required LogTag? tag}) {
     width: 60, // Adjust the width as needed
     height: double.infinity,
     alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: _logTagColor(tag: tag),
-    ),
+    decoration: BoxDecoration(color: _logTagColor(tag: tag)),
     child: Text(
       _logTagText(tag: tag),
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       textAlign: TextAlign.center,
     ),
   );
 }
 
 /// Enum representing the different log tags
-enum LogTag {
-  Show,
-  Training,
-  Health,
-  Other,
-  Edit,
-}
+enum LogTag { Show, Training, Health, Other, Edit }
 
 LogTag convertStringToLogTag(String? tag) {
   switch (tag) {

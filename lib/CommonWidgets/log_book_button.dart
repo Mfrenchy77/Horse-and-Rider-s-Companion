@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 ///{@template log_book_button}
@@ -27,6 +28,18 @@ class LogBookButton extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 
+        if (horseProfile == null) {
+          return !state.isGuest &&
+                  profile?.email == state.usersProfile?.email &&
+                  state.usersProfile != null
+              ? FilledButton.tonalIcon(
+                  onPressed: () => RiderLogbookPage.open(context),
+                  icon: const Icon(HorseAndRiderIcons.riderLogIcon),
+                  label: const Text("Rider's Log Book"),
+                )
+              : const SizedBox.shrink();
+        }
+
         return !cubit.isAuthorized() || state.isGuest
             ? const SizedBox.shrink()
             : Wrap(
@@ -43,33 +56,32 @@ class LogBookButton extends StatelessWidget {
                           context: context,
                           builder: (dialogContext) => LogViewDialog(
                             appContext: context,
-                            name: horseProfile?.name ?? profile?.name ?? '',
-                            notes: horseProfile?.notes ?? profile?.notes,
-                            isRider: horseProfile == null,
+                            name: horseProfile!.name,
+                            horseId: horseProfile!.id,
+                            notes: horseProfile!.notes,
+                            isRider: false,
                           ),
                         );
                       },
                       icon: const Icon(HorseAndRiderIcons.riderLogIcon),
-                      label: Text(
-                        horseProfile == null
-                            ? "Rider's Log Book"
-                            : "Horse's Log Book",
-                      ),
+                      label: const Text("Horse's Log Book"),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Add an Entry into the Log',
-                    onPressed: () {
-                      showDialog<AddLogEntryDialog>(
-                        context: context,
-                        builder: (context) => AddLogEntryDialog(
-                          usersProfile: cubit.state.usersProfile!,
-                          horseProfile: horseProfile,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                  ),
+                  if (!horseProfile!.isArchived &&
+                      cubit.canWriteProfileRecords())
+                    IconButton(
+                      tooltip: 'Add an Entry into the Log',
+                      onPressed: () {
+                        showDialog<AddLogEntryDialog>(
+                          context: context,
+                          builder: (context) => AddLogEntryDialog(
+                            usersProfile: cubit.state.usersProfile!,
+                            horseProfile: horseProfile,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                    ),
                 ],
               );
       },

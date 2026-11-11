@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,70 +48,152 @@ void main() {
 
   tearDown(() => cubit.close());
 
-  Widget app({String? skillId}) => MaterialApp(
-    home: BlocProvider.value(
-      value: cubit,
-      child: SkillTreeView(skillId: skillId),
+  Widget app(SkillTreeLayout layout) => MaterialApp(
+    home: SkillTreeLayoutScope(
+      layout: layout,
+      child: BlocProvider.value(value: cubit, child: const SkillTreeView()),
     ),
   );
 
-  for (final width in [800.0, 1280.0]) {
-    testWidgets('shows only skill tabs at width $width', (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = Size(width, 900);
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(app());
-      await tester.pump();
+  for (final layout in SkillTreeLayout.values) {
+    for (final width in [390.0, 1280.0]) {
+      testWidgets(
+        '${layout.label} opens skill details and resources at $width',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = Size(width, 900);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final skill = Skill(
+            id: 'leading',
+            rider: true,
+            position: 0,
+            skillName: 'Lead at the walk',
+            difficulty: DifficultyState.Intermediate,
+            category: SkillCategory.In_Hand,
+            lastEditBy: 'editor',
+            lastEditDate: DateTime.utc(2025),
+            description: 'Lead on a loose rope.',
+            learningDescription: 'Practice a calm halt.',
+            proficientDescription: 'Change direction with light cues.',
+          );
+          cubit.emit(
+            cubit.state.copyWith(
+              isForRider: true,
+              allSkills: [skill],
+              sortedSkills: [skill],
+              hasResourceCatalogue: true,
+              resources: [
+                Resource(
+                  id: 'linked',
+                  name: 'Leading practice guide',
+                  skillTreeIds: ['leading'],
+                ),
+                Resource(
+                  id: 'other',
+                  name: 'Unlinked article',
+                  skillTreeIds: ['other'],
+                ),
+              ],
+            ),
+          );
+          await tester.pumpWidget(app(layout));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(
+              Key(switch (layout) {
+                SkillTreeLayout.library =>
+                  width < 740 ? 'skillLibraryCompact' : 'skillLibraryWide',
+                SkillTreeLayout.expandInPlace => 'skillExpandInPlace',
+                SkillTreeLayout.progressBoard => 'skillProgressBoard',
+              }),
+            ),
+            findsOneWidget,
+          );
+          expect(find.byType(TabBar), findsNothing);
+          expect(find.text('Training Paths'), findsNothing);
+          expect(
+            find.byKey(const Key('createTrainingPathButton')),
+            findsNothing,
+          );
+          expect(find.text('Intermediate'), findsOneWidget);
+          await tester.tap(find.byKey(const ValueKey('library-skill-leading')));
+          await tester.pumpAndSettle();
+          expect(find.text('Lead on a loose rope.'), findsOneWidget);
+          expect(find.text('Practice a calm halt.'), findsOneWidget);
+          expect(find.text('In Hand · Intermediate'), findsOneWidget);
+          final row = tester.getRect(
+            find.byKey(const ValueKey('library-skill-leading')),
+          );
+          final detail = tester.getRect(find.text('Lead on a loose rope.'));
+          if (layout == SkillTreeLayout.library && width >= 740) {
+            expect(detail.left, greaterThan(row.right));
+          } else {
+            expect(detail.top, greaterThan(row.bottom));
+          }
+          expect(find.text('Leading practice guide'), findsOneWidget);
+          expect(find.text('Unlinked article'), findsNothing);
+          expect(
+            find.byKey(const ValueKey('library-skill-leading')),
+            findsOneWidget,
+          );
+          await tester.tap(find.text('Close details'));
+          await tester.pumpAndSettle();
+          expect(find.text('Lead on a loose rope.'), findsNothing);
+          expect(
+            find.byKey(const ValueKey('library-skill-leading')),
+            findsOneWidget,
+          );
+          final difficulty = find.byType(
+            DropdownButtonFormField<DifficultySortState>,
+          );
+          await tester.ensureVisible(difficulty);
+          await tester.tap(difficulty);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Advanced').last);
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const ValueKey('library-skill-leading')),
+            findsNothing,
+          );
+          await tester.tap(difficulty);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Intermediate').last);
+          await tester.pumpAndSettle();
+          final tile = find.byKey(const ValueKey('library-skill-leading'));
+          expect(tile, findsOneWidget);
 
-      final tabs = tester.widget<TabBar>(find.byType(TabBar));
-      expect(tabs.tabs, hasLength(width < 1024 ? 2 : 1));
-      expect(find.widgetWithText(Tab, 'Skills'), findsOneWidget);
-      expect(
-        find.widgetWithText(Tab, 'Detail'),
-        width < 1024 ? findsOneWidget : findsNothing,
+          cubit.emit(
+            cubit.state.copyWith(
+              usersProfile: RiderProfile(
+                id: 'rider',
+                email: 'rider@example.com',
+                name: 'Rider',
+                skillLevels: [
+                  SkillLevel(
+                    skillId: skill.id,
+                    skillName: skill.skillName,
+                    lastEditBy: null,
+                    lastEditDate: null,
+                    levelState: LevelState.LEARNING,
+                  ),
+                ],
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(
+            layout == SkillTreeLayout.progressBoard
+                ? find.descendant(
+                    of: find.byKey(const ValueKey(LevelState.LEARNING)),
+                    matching: tile,
+                  )
+                : find.descendant(of: tile, matching: find.text('Learning')),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull);
+        },
       );
-      expect(find.text('Training Paths'), findsNothing);
-      expect(find.text('Path Detail'), findsNothing);
-      expect(find.byKey(const Key('createTrainingPathButton')), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+    }
   }
-
-  testWidgets('resizes skill detail across the split-view breakpoint', (
-    tester,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(500, 900);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(app(skillId: 'selected-skill'));
-    await tester.pump();
-    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 1);
-
-    tester.view.physicalSize = const Size(1280, 900);
-    await tester.pump();
-    expect(tester.widget<TabBar>(find.byType(TabBar)).tabs, hasLength(1));
-    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 0);
-
-    tester.view.physicalSize = const Size(500, 900);
-    await tester.pump();
-    expect(tester.widget<TabBar>(find.byType(TabBar)).tabs, hasLength(2));
-    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 1);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('old training-path tab indices safely fall back to skills', (
-    tester,
-  ) async {
-    cubit.setSkillTreeTabIndex(3);
-    await tester.pumpWidget(app());
-    await tester.pump();
-    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 0);
-
-    cubit.setSkillTreeTabIndex(2);
-    await tester.pumpAndSettle();
-    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 0);
-    expect(tester.takeException(), isNull);
-  });
 }

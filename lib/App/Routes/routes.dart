@@ -9,8 +9,6 @@ import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Navigator/navigation_view.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
@@ -23,7 +21,6 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
 class Routes {
   GoRouter router({
@@ -162,17 +159,12 @@ class Routes {
                           SettingsView(controller: settingsContoller),
                     ),
                     GoRoute(
-                      name: MessagesPage.name,
-                      path: MessagesPage.path,
-                      builder: (context, state) => const MessagesPage(),
+                      path: 'Messages',
+                      redirect: (_, _) => ProfilePage.path,
                       routes: [
                         GoRoute(
-                          name: MessagePage.name,
-                          path: MessagePage.path,
-                          builder: (context, state) => MessagePage(
-                            messageId:
-                                state.pathParameters[MessagePage.pathParams]!,
-                          ),
+                          path: 'Message/:messageId',
+                          redirect: (_, _) => ProfilePage.path,
                         ),
                       ],
                     ),
@@ -250,15 +242,11 @@ class Routes {
                           pageBuilder: (context, state) {
                             final id = state
                                 .pathParameters[SkillTreeView.skillPathParam]!;
-                            final isLarge =
-                                MediaQuery.of(context).size.width >=
-                                StringConstants.splitScreenBreakpoint;
-
                             final cubit = context.read<AppCubit>()
                               ..setSkill(id);
-                            cubit
-                              ..navigateToSkillLevel(skill: cubit.state.skill)
-                              ..setSkillTreeTabIndex(isLarge ? 0 : 1);
+                            cubit.navigateToSkillLevel(
+                              skill: cubit.state.skill,
+                            );
 
                             return _horizontalSlidePage(
                               key: state.pageKey,
@@ -331,9 +319,9 @@ class Routes {
                       pageBuilder: (context, state) {
                         final id = state
                             .pathParameters[ResourceCommentPage.pathParams]!;
-                        return _horizontalSlidePage(
+                        return _resourceCommentPage(
                           key: state.pageKey,
-                          child: ResourceCommentPage(id: id),
+                          child: ResourceCommentPage(key: ValueKey(id), id: id),
                         );
                       },
                     ),
@@ -342,13 +330,9 @@ class Routes {
                       name: ResourceWebPage.name,
                       path: ResourceWebPage.path,
                       pageBuilder: (context, state) {
-                        final url = state
-                            .pathParameters[ResourceWebPage.urlPathParams]!;
-                        final title = state
-                            .pathParameters[ResourceWebPage.titlePathParams]!;
                         return _horizontalSlidePage(
                           key: state.pageKey,
-                          child: ResourceWebPage(url: url, title: title),
+                          child: ResourceWebPage.fromState(state),
                         );
                       },
                     ),
@@ -387,6 +371,21 @@ class Routes {
           ),
         );
       },
+    );
+  }
+
+  /// The resource summary is the only moving element on this transition.
+  /// Keeping the page itself stationary prevents a second lateral motion from
+  /// being combined with the Hero's move between the list card and header.
+  static CustomTransitionPage<dynamic> _resourceCommentPage({
+    required LocalKey key,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<dynamic>(
+      key: key,
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          FadeTransition(opacity: animation, child: child),
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Shared metadata resolver for the editor and failed preview recovery.
 const resourceImageResolverEndpoint =
     'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/resolveImage';
@@ -15,16 +17,26 @@ Uri? resourceWebUri(String? raw) {
   return uri;
 }
 
-/// Whether [raw] points to Facebook, which blocks or degrades embedded web
-/// views. Open these links in the browser so Facebook can use its normal
-/// sign-in and cookie flow.
-bool shouldOpenResourceExternally(String? raw) {
-  final host = resourceWebUri(raw)?.host.toLowerCase();
-  if (host == null) return false;
-  return host == 'facebook.com' ||
+/// Opens cross-origin links in a browser tab to avoid frame failures.
+bool shouldOpenResourceExternally(
+  String? raw, {
+  bool isWeb = kIsWeb,
+  bool blocksEmbedding = false,
+  Uri? appUri,
+}) {
+  final uri = resourceWebUri(raw);
+  if (uri == null) return false;
+  final host = uri.host.toLowerCase();
+  if (host == 'facebook.com' ||
       host.endsWith('.facebook.com') ||
       host == 'fb.com' ||
-      host.endsWith('.fb.com');
+      host.endsWith('.fb.com')) {
+    return true;
+  }
+  if (!isWeb) return false;
+
+  final app = resourceWebUri((appUri ?? Uri.base).toString());
+  return blocksEmbedding || uri.origin != app?.origin;
 }
 
 /// Recovers the source image from stored wsrv/weserv URLs, including old

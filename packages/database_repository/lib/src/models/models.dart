@@ -17,6 +17,7 @@ export 'url_meta_data.dart';
 export 'web_page_data.dart';
 export 'horse_profile.dart';
 export 'rider_profile.dart';
+export 'rider_log_details.dart';
 export 'location_info.dart';
 export 'training_path.dart';
 export 'base_list_item.dart';

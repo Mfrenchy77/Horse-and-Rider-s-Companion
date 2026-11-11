@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
+import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -74,6 +76,44 @@ void main() {
       }
     },
   );
+  testWidgets('Settings offers and remembers all three Skill Tree layouts', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(800, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    expect(controller.skillTreeLayout, SkillTreeLayout.library);
+    await tester.pumpWidget(
+      MaterialApp(home: SettingsView(controller: controller)),
+    );
+    final dropdown = find.byKey(const Key('skillTreeLayoutSetting'));
+    await tester.ensureVisible(dropdown);
+    for (final layout in [
+      SkillTreeLayout.progressBoard,
+      SkillTreeLayout.expandInPlace,
+      SkillTreeLayout.library,
+    ]) {
+      final selected = find.descendant(
+        of: dropdown,
+        matching: find.text(controller.skillTreeLayout.label),
+      );
+      await tester.ensureVisible(selected);
+      await tester.pumpAndSettle();
+      await tester.tap(selected);
+      await tester.pumpAndSettle();
+      for (final option in SkillTreeLayout.values) {
+        expect(find.text(option.label), findsWidgets);
+      }
+      await tester.tap(find.text(layout.label).last);
+      await tester.pumpAndSettle();
+      expect(controller.skillTreeLayout, layout);
+      final restored = SettingsController(SettingsService());
+      await restored.loadSettings();
+      expect(restored.skillTreeLayout, layout);
+      restored.dispose();
+    }
+  });
   test('onboarding and first-launch flags round trip', () {
     prefs
       ..setFirstLaunch(isFirst: false)

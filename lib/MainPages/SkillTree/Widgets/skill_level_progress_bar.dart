@@ -23,16 +23,16 @@ class SkillLevelProgressBar extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: state.isGuest || !cubit.isAuthorized()
+                    onTap: !cubit.canWriteProfileRecords()
                         ? null
                         : () {
                             showDialog<AlertDialog>(
                               context: context,
                               builder: (context) =>
                                   const SkillLevelSelectedConfimationDialog(
-                                key: Key('levelSelectedConfirmationDialog'),
-                                levelState: LevelState.LEARNING,
-                              ),
+                                    key: Key('levelSelectedConfirmationDialog'),
+                                    levelState: LevelState.LEARNING,
+                                  ),
                             );
                           },
                     child: ColoredBox(
@@ -72,9 +72,7 @@ class SkillLevelProgressBar extends StatelessWidget {
                                     details.globalPosition,
                                   );
                                 },
-                                child: const Icon(
-                                  Icons.info_outline_rounded,
-                                ),
+                                child: const Icon(Icons.info_outline_rounded),
                               ),
                             ],
                           ),
@@ -89,16 +87,16 @@ class SkillLevelProgressBar extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: state.isGuest || !cubit.isAuthorized()
+                    onTap: !cubit.canWriteProfileRecords()
                         ? null
                         : () {
                             showDialog<AlertDialog>(
                               context: context,
                               builder: (context) =>
                                   const SkillLevelSelectedConfimationDialog(
-                                key: Key('levelSelectedConfirmationDialog'),
-                                levelState: LevelState.PROFICIENT,
-                              ),
+                                    key: Key('levelSelectedConfirmationDialog'),
+                                    levelState: LevelState.PROFICIENT,
+                                  ),
                             );
                           },
                     child: ColoredBox(
@@ -139,9 +137,7 @@ class SkillLevelProgressBar extends StatelessWidget {
                                     details.globalPosition,
                                   );
                                 },
-                                child: const Icon(
-                                  Icons.info_outline_rounded,
-                                ),
+                                child: const Icon(Icons.info_outline_rounded),
                               ),
                             ],
                           ),

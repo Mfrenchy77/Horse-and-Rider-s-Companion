@@ -1,18 +1,13 @@
-// Prerequisites disabled; import retained for restoration.
-// import 'package:database_repository/database_repository.dart';
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_progress_bar.dart';
-// Prerequisites disabled; import retained for restoration.
-// import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_prerequisite_diagram.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
-
-// Prerequisites disabled; import retained for restoration.
-// import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillLevelView extends StatelessWidget {
   const SkillLevelView({super.key, required this.skillId});
@@ -21,172 +16,100 @@ class SkillLevelView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      // buildWhen: (previous, current) =>
-      //     previous.usersProfile != current.usersProfile ||
-      //     previous.horseProfile != current.horseProfile ||
-      //     previous.skill != current.skill ||
-      //     previous.allSkills != current.allSkills ||
-      //     previous.isGuest != current.isGuest,
-      builder: (context, state) {
-        final skill = state.skill;
-
-        if (skill == null) {
-          return const Center(child: Text('Skill Not Found'));
-        }
-        // Prerequisite diagram data retained for possible restoration.
-        //         final allSkills = state.allSkills;
-        //
-        //         final profileSkillLevels = state.isForRider
-        //             ? state.viewingProfile?.skillLevels ??
-        //                 state.usersProfile?.skillLevels ??
-        //                 state.ownersProfile?.skillLevels
-        //             : state.horseProfile?.skillLevels;
-        //         final skillLevelsById = {
-        //     for (final level in profileSkillLevels ?? const <SkillLevel>[])
-        //             level.skillId: level,
-        //         };
-        //
-        //         final isBaseSkill = skill.prerequisites.isEmpty;
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final scrollableContent = SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 96),
-              child: Column(
+    final state = context.watch<AppCubit>().state;
+    final skill = state.skill;
+    if (skill == null || (skillId != null && skillId != skill.id)) {
+      return const Center(child: Text('Skill Not Found'));
+    }
+    final theme = Theme.of(context);
+    final level = getLevelState(
+      skill: skill,
+      profile: state.viewingProfile ?? state.usersProfile,
+      horseProfile: state.isForRider ? null : state.horseProfile,
+    );
+    final canWrite = context.read<AppCubit>().canWriteProfileRecords();
+    final difficulty = skill.difficulty == DifficultyState.All
+        ? 'All levels'
+        : skill.difficulty.name;
+    return GradientCard(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 14,
+          children: [
+            Text(
+              '${skill.category.name.replaceAll('_', ' ')} · $difficulty',
+              style: theme.textTheme.labelLarge,
+            ),
+            Text(skill.skillName, style: theme.textTheme.headlineSmall),
+            if (skill.description?.trim().isNotEmpty ?? false)
+              Text(skill.description!),
+            for (final (label, description) in [
+              ('Learning', skill.learningDescription),
+              ('Proficient', skill.proficientDescription),
+            ])
+              if (description?.trim().isNotEmpty ?? false)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 4,
+                  children: [
+                    Text(label, style: theme.textTheme.titleMedium),
+                    Text(description!),
+                  ],
+                ),
+            if (state.isGuest)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.login),
+                  onPressed: () => context.goNamed(
+                    AuthPage.name,
+                    queryParameters: {'mode': 'login'},
+                  ),
+                  label: const Text('Sign in to track progress'),
+                ),
+              )
+            else if (canWrite)
+              Wrap(
+                key: const Key('skillLevelProgressBar'),
+                spacing: 8,
+                runSpacing: 6,
                 children: [
-                  const SizedBox(height: 50),
-                  if (state.isGuest)
-                    TextButton.icon(
-                      icon: const Icon(Icons.login),
-                      onPressed: () => context.goNamed(
-                        AuthPage.name,
-                        queryParameters: {'mode': 'login'},
-                      ),
-                      label: const Text('Sign in to track progress'),
+                  for (final (label, target) in [
+                    ('Mark as learning', LevelState.LEARNING),
+                    ('Mark as proficient', LevelState.PROFICIENT),
+                  ])
+                    OutlinedButton(
+                      onPressed:
+                          level == target ||
+                              (target == LevelState.PROFICIENT &&
+                                  level == LevelState.VERIFIED)
+                          ? null
+                          : () => showDialog<AlertDialog>(
+                              context: context,
+                              builder: (_) =>
+                                  SkillLevelSelectedConfimationDialog(
+                                    key: const Key(
+                                      'levelSelectedConfirmationDialog',
+                                    ),
+                                    levelState: target,
+                                  ),
+                            ),
+                      child: Text(label),
                     ),
-                  Text(
-                    skill.skillName,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w100,
-                    ),
-                  ),
-                  const Divider(indent: 20, endIndent: 20),
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Text(skill.description ?? ''),
-                  ),
-                  const Text(
-                    'Learning Description: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(skill.learningDescription ?? ''),
-                  ),
-                  const Text(
-                    'Proficient Description: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(skill.proficientDescription ?? ''),
-                  ),
-
-                  // Prerequisite display retained for possible restoration.
-                  //                   ///  Prerequisites
-                  //                   const Divider(indent: 20, endIndent: 20),
-                  //                   Text(
-                  //               isBaseSkill ? 'Base Skill' : 'Prerequisites',
-                  //                     style: const TextStyle(
-                  //                       fontSize: 24,
-                  //                       fontWeight: FontWeight.w100,
-                  //                     ),
-                  //                   ),
-                  //                   const Divider(indent: 20, endIndent: 20),
-                  //                   if (isBaseSkill)
-                  //                     Padding(
-                  //       padding: const EdgeInsets.symmetric(horizontal: 16),
-                  //                       child: Text(
-                  //          'This is a foundational skill and can be started '
-                  //               'without completing other skills first.',
-                  //                         textAlign: TextAlign.center,
-                  //             style: Theme.of(context).textTheme.bodyMedium,
-                  //                       ),
-                  //                     )
-                  //                   else
-                  //                     Padding(
-                  //        padding: const EdgeInsets.symmetric(horizontal: 8),
-                  //                     child: Card(
-                  //                         elevation: 6,
-                  //                         clipBehavior: Clip.hardEdge,
-                  //                         child: SizedBox(
-                  //                           height: 520,
-                  //                           child: SkillPrerequisiteDiagram(
-                  //                             skill: skill,
-                  //                             allSkills: allSkills,
-                  //                          skillLevelsById: skillLevelsById,
-                  //                             onSkillSelected: (selected) {
-                  //                               context.goNamed(
-                  //                              SkillTreeView.skillLevelName,
-                  //                                 pathParameters: {
-                  //              SkillTreeView.skillPathParam: selected.id,
-                  //                                 },
-                  //                               );
-                  //                             },
-                  //                           ),
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  const Divider(indent: 20, endIndent: 20),
-                  const Text(
-                    'Resources',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w100),
-                  ),
-                  const Divider(indent: 20, endIndent: 20),
-                  smallGap(),
-                  SkillResouresList(
-                    key: const Key('skillResourcesList'),
-                    skillId: skill.id,
-                  ),
-                  smallGap(),
-                  const SizedBox(height: 50),
                 ],
               ),
-            );
-
-            final constrainedContent = constraints.hasBoundedHeight
-                ? SizedBox(
-                    height: constraints.maxHeight,
-                    width: constraints.maxWidth,
-                    child: scrollableContent,
-                  )
-                : scrollableContent;
-
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                constrainedContent,
-
-                /// Progress Bar at the top
-                Visibility(
-                  visible: state.skill != null,
-                  child: const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: SkillLevelProgressBar(
-                      key: Key('skillLevelProgressBar'),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+            const Divider(),
+            Text('Resources', style: theme.textTheme.titleLarge),
+            SkillResouresList(
+              key: const Key('skillResourcesList'),
+              skillId: skill.id,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

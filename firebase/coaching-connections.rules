@@ -1,0 +1,18 @@
+// Reference fragment for the two new collections. See firestore.rules for
+// the complete staged ruleset.
+// Remove overlapping broad grants for this collection before deployment.
+match /CoachingConnections/{connectionId} {
+  allow get, list: if request.auth != null
+    && request.auth.token.email_verified == true
+    && request.auth.uid in resource.data.participantUids;
+  // Only the Cloud Function writes these documents through the Admin SDK.
+  allow create, update, delete: if false;
+}
+
+// Horse and instructor history reads go through the callable.
+match /SharedRidingEntries/{entryId} {
+  allow get, list: if request.auth != null
+    && request.auth.token.email_verified == true
+    && request.auth.uid == resource.data.riderUid;
+  allow create, update, delete: if false;
+}

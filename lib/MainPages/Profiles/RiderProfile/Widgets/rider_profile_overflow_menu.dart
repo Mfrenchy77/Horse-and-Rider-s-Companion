@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 
 class RiderProfileOverFlowMenu extends StatelessWidget {
@@ -58,18 +58,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   // Log out
                   break;
                 case 3:
-                  // Navigate to the log book page
-                  showDialog<AlertDialog>(
-                    context: context,
-                    builder: (dialogContext) => LogViewDialog(
-                      appContext: context,
-                      name: state.viewingProfile?.name ??
-                          state.usersProfile!.name,
-                      notes: state.viewingProfile?.notes ??
-                          state.usersProfile!.notes,
-                      isRider: true,
-                    ),
-                  );
+                  RiderLogbookPage.open(context);
                   break;
                 case 4:
                   // Navigate to the add horse page

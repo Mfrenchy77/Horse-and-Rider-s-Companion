@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
@@ -14,6 +15,17 @@ class SettingsService {
 
   Future<void> updateResourceLayout(ResourceLayout layout) async {
     await SharedPrefs().setResourceLayout(layout.name);
+  }
+
+  SkillTreeLayout getSkillTreeLayout() =>
+      switch (SharedPrefs().skillTreeLayout) {
+        'expandInPlace' => SkillTreeLayout.expandInPlace,
+        'progressBoard' => SkillTreeLayout.progressBoard,
+        _ => SkillTreeLayout.library,
+      };
+
+  Future<void> updateSkillTreeLayout(SkillTreeLayout layout) async {
+    await SharedPrefs().setSkillTreeLayout(layout.name);
   }
 
   /// Loads the User's preferred ThemeMode from local or remote storage.

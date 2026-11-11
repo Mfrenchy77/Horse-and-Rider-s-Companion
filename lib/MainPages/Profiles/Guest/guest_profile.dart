@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDi
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class GuestProfile extends StatelessWidget {
   const GuestProfile({super.key});
@@ -104,14 +105,14 @@ class GuestProfile extends StatelessWidget {
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final skills = _ExploreCard(
-                      icon: Icons.account_tree_outlined,
+                      icon: HorseAndRiderIcons.horseSkillIcon,
                       title: 'Skill Tree',
                       description:
                           'Find groundwork and riding skills to practise.',
                       onTap: () => context.goNamed(SkillTreePage.name),
                     );
                     final resources = _ExploreCard(
-                      icon: Icons.auto_stories_outlined,
+                      icon: HorseAndRiderIcons.resourcesIcon,
                       title: 'Resources',
                       description:
                           'Find articles, videos and guides linked to skills.',

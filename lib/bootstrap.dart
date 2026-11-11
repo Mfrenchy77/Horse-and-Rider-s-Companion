@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:horseandriderscompanion/App/bloc_observer.dart';
 import 'package:horseandriderscompanion/Initialization/ads_initialization.dart';
+import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_initialization.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
@@ -18,11 +19,15 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase (helper encapsulates platform setup)
-  try {
-    await FirebaseInitialization.initializeFirebase();
-  } catch (e, stack) {
-    debugPrint('Firebase initialization failed: $e');
-    debugPrintStack(stackTrace: stack);
+  if (FirebaseEmulators.enabled) {
+    await FirebaseEmulators.initialize();
+  } else {
+    try {
+      await FirebaseInitialization.initializeFirebase();
+    } catch (e, stack) {
+      debugPrint('Firebase initialization failed: $e');
+      debugPrintStack(stackTrace: stack);
+    }
   }
 
   // Web sign-in uses the Firebase popup.

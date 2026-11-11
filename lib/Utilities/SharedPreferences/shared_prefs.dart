@@ -28,6 +28,13 @@ class SharedPrefs {
   Future<bool> setResourceLayout(String layout) =>
       _sharedPrefs.setString(_resourceLayoutKey, layout);
 
+  static const String _skillTreeLayoutKey = 'SkillTreeLayout';
+
+  String? get skillTreeLayout => _sharedPrefs.getString(_skillTreeLayoutKey);
+
+  Future<bool> setSkillTreeLayout(String layout) =>
+      _sharedPrefs.setString(_skillTreeLayoutKey, layout);
+
   /// The instance of [SharedPreferences] used for
   ///  storing and retrieving preferences.
   static late SharedPreferences _sharedPrefs;
@@ -92,7 +99,9 @@ class SharedPrefs {
         return true;
       case 'system':
         return SchedulerBinding
-                .instance.platformDispatcher.platformBrightness ==
+                .instance
+                .platformDispatcher
+                .platformBrightness ==
             Brightness.dark;
       default:
         return true;

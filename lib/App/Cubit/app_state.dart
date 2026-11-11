@@ -30,7 +30,7 @@ enum ConversationState { error, loaded, loading }
 enum ConversationsState { error, loaded, loading }
 
 /// The Status of the Accept Request
-enum AcceptStatus { loading, waiting, accepted }
+enum AcceptStatus { loading, waiting, accepted, submitted }
 
 /// The Navigation within the SkillTree Section
 enum SkillTreeNavigation {

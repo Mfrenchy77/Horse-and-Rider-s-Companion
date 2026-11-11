@@ -34,11 +34,34 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
   List<int> _parentCommentIndexes = [];
   int _currentParentIndex = -1;
   bool _isInitialized = false;
+  String? _loadFailure;
 
   @override
   void initState() {
     super.initState();
     _itemPositionsListener.itemPositions.addListener(_updateCurrentParentIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadResource();
+    });
+  }
+
+  Future<void> _loadResource() async {
+    final cubit = context.read<AppCubit>();
+    final id = widget.id;
+    if (cubit.getResourceById(id) != null) return;
+    try {
+      final resource = await cubit.fetchResource(id);
+      if (!mounted || widget.id != id) return;
+      if (resource != null) {
+        if (cubit.getResourceById(id) == null) cubit.selectResource(resource);
+      } else {
+        setState(() => _loadFailure = 'This resource could not be found.');
+      }
+    } catch (_) {
+      if (mounted && widget.id == id) {
+        setState(() => _loadFailure = 'Could not load this resource.');
+      }
+    }
   }
 
   @override
@@ -51,13 +74,15 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
 
   // ----- Back / URL handling -----
   void _goBackToResources() {
-    // Reset UI state in your cubit
+    // Pop the pushed comments route so the resource-summary Hero has the
+    // original card as its destination. A directly opened URL has no route to
+    // pop, so it falls back to the resources list.
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
     context.read<AppCubit>().resetFromResource();
-
-    // Compute the resources URL explicitly, then go there.
-    final router = GoRouter.of(context);
-    final location = router.namedLocation(ResourcesPage.name);
-    router.go(location); // ensures the browser URL updates on web
+    context.goNamed(ResourcesPage.name);
   }
 
   // ----- Scroll logic -----
@@ -147,7 +172,6 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
 
         if (resource == null) {
           return PopScope<void>(
-            canPop: false,
             onPopInvokedWithResult: (didPop, _) {
               if (didPop) {
                 cubit.resetFromResource();
@@ -155,7 +179,29 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
               }
               _goBackToResources();
             },
-            child: const LoadingPage(key: Key('LoadingPage')),
+            child: _loadFailure == null
+                ? const LoadingPage(key: Key('LoadingPage'))
+                : Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Resource'),
+                      leading: BackButton(onPressed: _goBackToResources),
+                    ),
+                    body: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_loadFailure!),
+                          TextButton(
+                            onPressed: () {
+                              setState(() => _loadFailure = null);
+                              _loadResource();
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           );
         }
 
@@ -167,7 +213,6 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
             _currentParentIndex >= _parentCommentIndexes.length - 1;
 
         return PopScope<void>(
-          canPop: false, // we override back ourselves
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) {
               cubit.resetFromResource();

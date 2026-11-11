@@ -67,7 +67,10 @@ class GradientCard extends StatelessWidget {
       margin: margin,
       elevation: elevation,
       color: color,
-      clipBehavior: Clip.antiAlias,
+      // Avoid anti-aliased clipping here. On some web GPU backends that
+      // produces an unsupported Skia coverage shader when rendering profile
+      // cards. The card's Material still supplies the rounded visual surface.
+      clipBehavior: Clip.none,
       child: color != null
           ? child
           : Ink(

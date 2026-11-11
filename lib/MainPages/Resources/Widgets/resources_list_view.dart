@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_item_placeholder.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/resources_sort_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 
 class ResourcesListView extends StatelessWidget {
@@ -16,16 +17,28 @@ class ResourcesListView extends StatelessWidget {
         return Center(
           child: ListView(
             children: [
-              Text(
-                state.resourcesSortStatus == ResourcesSortStatus.oldest
-                    ? 'Resources - Oldest'
-                    : state.resourcesSortStatus ==
-                          ResourcesSortStatus.mostRecommended
-                    ? 'Resources - Most Recommended'
-                    : state.resourcesSortStatus == ResourcesSortStatus.recent
-                    ? 'Resources - Most Recent'
-                    : 'Resources - Saved',
-                style: const TextStyle(fontSize: 20),
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: InkWell(
+                  onTap: () => showDialog<AlertDialog>(
+                    context: context,
+                    builder: (context) => const ResourcesSortDialog(
+                      key: Key('resources_sort_dialog'),
+                    ),
+                  ),
+                  child: Text(
+                    state.resourcesSortStatus == ResourcesSortStatus.oldest
+                        ? 'Resources - Oldest'
+                        : state.resourcesSortStatus ==
+                              ResourcesSortStatus.mostRecommended
+                        ? 'Resources - Most Recommended'
+                        : state.resourcesSortStatus ==
+                              ResourcesSortStatus.recent
+                        ? 'Resources - Most Recent'
+                        : 'Resources - Saved',
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
               ),
               smallGap(),
               if (state.resourcesSortStatus == ResourcesSortStatus.saved)

@@ -7,11 +7,17 @@ const cors = require('cors')({origin: true});
 const {JSDOM} = require('jsdom');
 const {Readability} = require('@mozilla/readability');
 const cheerio = require('cheerio');
-const {onRequest} = require('firebase-functions/v2/https');
+const {onCall, onRequest} = require('firebase-functions/v2/https');
 const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 try { admin.app(); } catch { admin.initializeApp(); }
 const logger = require('firebase-functions/logger');
+const {connectionHandler} = require('./connections');
+
+exports.coachingConnection = onCall(
+    {region: 'us-central1'},
+    (request) => connectionHandler(admin.firestore(), admin.auth())(request),
+);
 
 /** ------------------------------------------------------------------------ */
 /** Shared helpers                                                           */
@@ -353,6 +359,17 @@ function proxied(u) {
   return `https://wsrv.nl/?url=${encodeURIComponent(u)}`;
 }
 
+// Report explicit frame restrictions from the final response we already fetch.
+function requiresTopLevelBrowser(headers) {
+  const frameOptions = headers.get('x-frame-options') || '';
+  if (/\b(?:deny|sameorigin)\b/i.test(frameOptions)) return true;
+  const policy = headers.get('content-security-policy') || '';
+  return policy.split(/[;,]/).some((directive) => {
+    const [name, ...sources] = directive.trim().toLowerCase().split(/\s+/);
+    return name === 'frame-ancestors' && !sources.includes('*');
+  });
+}
+
 /** ------------------------------------------------------------------------ */
 /** previewMeta: POST { url } -> { url, title, description, image }          */
 /** ------------------------------------------------------------------------ */
@@ -394,7 +411,10 @@ exports.previewMeta = onRequest(
           '';
 
           const image = absUrl(rawImage, r.url);
-          res.json({url: r.url, title, description, image});
+          res.json({
+            url: r.url, title, description, image,
+            ...(requiresTopLevelBrowser(r.headers) ? {blocksEmbedding: true} : {}),
+          });
         } catch (e) {
           logger.error(e);
           res.status(500).json({error: String(e)});

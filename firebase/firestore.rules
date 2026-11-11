@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verifiedEmailIs(email) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == email;
+    }
+
+    match /CoachingConnections/{connectionId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.uid in resource.data.participantUids;
+      allow create, update, delete: if false;
+    }
+
+    match /SharedRidingEntries/{entryId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.uid == resource.data.riderUid;
+      allow create, update, delete: if false;
+    }
+
+    match /Horse_Profile/{horseId} {
+      allow read: if true;
+      allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
+        && request.resource.data.get('archiveStatus', 'active') == 'active';
+      allow update: if verifiedEmailIs(resource.data.currentOwnerId)
+        && request.resource.data.currentOwnerId == resource.data.currentOwnerId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['archiveStatus']);
+      // Keep the horse ID reserved for its shared history when archived.
+      allow delete: if false;
+    }
+
+    match /Rider_Profile/{riderId} {
+      allow read: if true;
+      allow create: if verifiedEmailIs(request.resource.data.email)
+        && request.resource.data.get('archivedHorses', []) == [];
+      allow update: if verifiedEmailIs(resource.data.email)
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', []);
+      allow delete: if verifiedEmailIs(resource.data.email);
+    }
+
+    match /{collection}/{document=**} {
+      allow read: if !(collection in [
+        'CoachingConnections', 'SharedRidingEntries'
+      ]);
+      allow write: if request.auth != null && !(collection in [
+        'CoachingConnections', 'SharedRidingEntries',
+        'Horse_Profile', 'Rider_Profile'
+      ]);
+    }
+  }
+}

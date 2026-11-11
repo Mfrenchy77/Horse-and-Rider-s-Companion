@@ -1,6 +1,7 @@
 // ignore_for_file:  sort_constructors_first
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/models/rider_log_details.dart';
 
 /// This is a multi use container. It is used to represent a Rating for a
 ///  Resource, a Log Entry for Horse or Rider, a Instructor Request, a Contact
@@ -18,6 +19,7 @@ class BaseListItem {
     this.parentId,
     this.isSelected,
     this.isCollapsed,
+    this.riderLog,
   });
 
   /// Not sure what this is used for
@@ -98,19 +100,41 @@ class BaseListItem {
   /// the requestors email.
   final String? extra;
 
+  /// Structured fields for rider journal entries.
+  final RiderLogDetails? riderLog;
+
+  /// Uses the structured category or maps the old log tag.
+  RiderLogType get riderLogType =>
+      riderLog?.type ??
+      switch (imageUrl) {
+        'LogTag.Training' => RiderLogType.training,
+        'LogTag.Show' => RiderLogType.show,
+        'LogTag.Health' => RiderLogType.care,
+        'LogTag.Edit' => RiderLogType.activity,
+        _ => RiderLogType.reflection,
+      };
+
+  /// Checks that this is a journal entry attributed to the given rider.
+  bool canEditRiderLog(String email) =>
+      (id?.isNotEmpty ?? false) &&
+      riderLogType != RiderLogType.activity &&
+      email.isNotEmpty &&
+      parentId?.toLowerCase() == email.toLowerCase();
+
   /// Creates a BaseListItem from a json map
   factory BaseListItem.fromJson(Map<String, dynamic> json) => BaseListItem(
-        id: json['id'] as String?,
-        depth: json['depth'] as int?,
-        name: json['name'] as String?,
-        extra: json['extra'] as String?,
-        message: json['message'] as String?,
-        parentId: json['parentId'] as String?,
-        isSelected: json['isSelected'] as bool?,
-        imageUrl: json['imageUrl'] as String?,
-        isCollapsed: json['isCollapsed'] as bool?,
-        date: (json['date'] as Timestamp?)?.toDate(),
-      );
+    id: json['id'] as String?,
+    riderLog: RiderLogDetails.fromMap(json['riderLog']),
+    depth: json['depth'] as int?,
+    name: json['name'] as String?,
+    extra: json['extra'] as String?,
+    message: json['message'] as String?,
+    parentId: json['parentId'] as String?,
+    isSelected: json['isSelected'] as bool?,
+    imageUrl: json['imageUrl'] as String?,
+    isCollapsed: json['isCollapsed'] as bool?,
+    date: (json['date'] as Timestamp?)?.toDate(),
+  );
 
   /// Creates a BaseListItem from a firestore snapshot
   factory BaseListItem.fromFirestore(
@@ -121,6 +145,7 @@ class BaseListItem {
     final data = snapshot.data();
     return BaseListItem(
       id: data!['id'] as String?,
+      riderLog: RiderLogDetails.fromMap(data['riderLog']),
       depth: data['depth'] as int?,
       name: data['name'] as String?,
       extra: data['extra'] as String?,
@@ -137,6 +162,7 @@ class BaseListItem {
   Map<String, dynamic> toFirestore() {
     return {
       if (id != null) 'id': id,
+      if (riderLog != null) 'riderLog': riderLog!.toMap(),
       if (name != null) 'name': name,
       if (date != null) 'date': date,
       if (depth != null) 'depth': depth,
@@ -153,6 +179,7 @@ class BaseListItem {
   Map<String, Object?> toJson() {
     return {
       if (id != null) 'id': id,
+      if (riderLog != null) 'riderLog': riderLog!.toMap(),
       if (name != null) 'name': name,
       if (date != null) 'date': date,
       if (depth != null) 'depth': depth,

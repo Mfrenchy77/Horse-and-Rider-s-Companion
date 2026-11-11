@@ -19,12 +19,14 @@ class ResourcesItem extends StatelessWidget {
     super.key,
     required this.resource,
     required this.isResourceList,
+    this.fromSkillTree = false,
   });
 
   final Resource resource;
 
   /// If true, show list-only elements (ratings row/buttons).
   final bool isResourceList;
+  final bool fromSkillTree;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,15 @@ class ResourcesItem extends StatelessWidget {
             cubit.createError('Missing resource id');
             return;
           }
-          context.goNamed(
+          if (fromSkillTree) {
+            cubit.selectResource(resource);
+            context.goNamed(
+              ResourceCommentPage.name,
+              pathParameters: {ResourceCommentPage.pathParams: id},
+            );
+            return;
+          }
+          context.pushNamed(
             ResourceCommentPage.name,
             pathParameters: {ResourceCommentPage.pathParams: id},
           );

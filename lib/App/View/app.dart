@@ -6,8 +6,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
 class App extends StatefulWidget {
@@ -36,6 +38,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final AppCubit _appCubit;
+  final _connections = ConnectionRepository();
   late final GoRouter _router;
 
   @override
@@ -49,6 +52,7 @@ class _AppState extends State<App> {
       horseProfileRepository: widget._horseProfileRepository,
       riderProfileRepository: widget._riderProfileRepository,
       authenticationRepository: widget._authenticationRepository,
+      submitCoachingAction: _connections.submit,
     );
 
     _router = Routes().router(
@@ -67,6 +71,7 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider.value(value: _connections),
         RepositoryProvider.value(value: widget._messagesRepository),
         RepositoryProvider.value(value: widget._skillTreeRepository),
         RepositoryProvider.value(value: widget._resourcesRepository),
@@ -76,9 +81,13 @@ class _AppState extends State<App> {
       ],
       child: BlocProvider.value(
         value: _appCubit,
-        child: AppView(
-          settingsController: widget.settingsController,
-          router: _router,
+        child: BlocProvider(
+          create: (context) =>
+              ConnectionsCubit(context.read<ConnectionRepository>(), _appCubit),
+          child: AppView(
+            settingsController: widget.settingsController,
+            router: _router,
+          ),
         ),
       ),
     );
@@ -129,7 +138,10 @@ class AppView extends StatelessWidget {
                   : const BoxDecoration(),
               child: ResourceLayoutScope(
                 layout: settingsController.resourceLayout,
-                child: child ?? const SizedBox.shrink(),
+                child: SkillTreeLayoutScope(
+                  layout: settingsController.skillTreeLayout,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             );
           },

@@ -156,11 +156,22 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   void linkTypeChanged(ResourceType type) =>
       emit(state.copyWith(linkType: type));
 
+  Uri? _restrictedPage;
+
+  bool _blocksEmbedding(String? url) {
+    final uri = resourceWebUri(url);
+    return uri != null &&
+        (uri == _restrictedPage ||
+            (uri == resourceWebUri(state.resource?.url) &&
+                (state.resource?.blocksEmbedding ?? false)));
+  }
+
   Resource get linkPreview {
     final note = state.recommendation.trim();
     return Resource(
       name: state.title.trim(),
       url: state.url.value,
+      blocksEmbedding: _blocksEmbedding(state.url.value),
       type: state.linkType,
       thumbnail: imageSourceUrl(state.imageUrl)?.toString(),
       description: note.isEmpty ? state.description.trim() : note,
@@ -306,6 +317,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         trace: trace,
       );
       if (!isCurrent()) return;
+      if (p?['blocksEmbedding'] == true) {
+        _restrictedPage = resourceWebUri(url);
+      }
       final r = await _postJson(
         _fetchReadableUrl,
         body: {'url': url},
@@ -629,6 +643,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       id: state.resource?.id ?? ViewUtils.createId(),
       numberOfRates: state.resource?.numberOfRates ?? 0,
       url: state.url.value.isEmpty ? state.resource?.url : state.url.value,
+      blocksEmbedding: _blocksEmbedding(
+        state.url.value.isEmpty ? state.resource?.url : state.url.value,
+      ),
       skillTreeIds:
           state.resourceSkills
               ?.map((e) => e?.id)

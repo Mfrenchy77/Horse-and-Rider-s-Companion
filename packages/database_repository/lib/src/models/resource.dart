@@ -31,6 +31,7 @@ class Resource {
     this.description,
     this.lastEditDate,
     this.coverImageUrl,
+    this.blocksEmbedding = false,
     this.usersWhoRated,
     this.numberOfRates,
     List<String>? skillTreeIds,
@@ -41,6 +42,9 @@ class Resource {
 
   /// Url of the resource (for link/video/pdf)
   final String? url;
+
+  /// Whether the publisher requires links to open outside a web frame.
+  final bool blocksEmbedding;
 
   /// Name/title of the resource
   final String? name;
@@ -129,10 +133,12 @@ class Resource {
       if (numberOfRates != null) 'numberOfRates': numberOfRates,
       if (coverImageUrl != null) 'coverImageUrl': coverImageUrl,
       'skillTreeIds': skillTreeIds,
+      'blocksEmbedding': blocksEmbedding,
       if (lastEditDate != null) 'lastEditDate': _ts(lastEditDate),
       if (usersWhoRated != null)
-        'usersWhoRated':
-            List<dynamic>.from(usersWhoRated!.map((e) => e.toJson())),
+        'usersWhoRated': List<dynamic>.from(
+          usersWhoRated!.map((e) => e.toJson()),
+        ),
       if (comments != null)
         'comments': List<dynamic>.from(comments!.map((e) => e.toJson())),
     };
@@ -219,6 +225,7 @@ class Resource {
       numberOfRates: _asInt(data['numberOfRates']),
       coverImageUrl: data['coverImageUrl'] as String?,
       skillTreeIds: _asStringList(data['skillTreeIds']),
+      blocksEmbedding: data['blocksEmbedding'] == true,
       comments: data['comments'] == null
           ? null
           : _convertComments(data['comments'] as List),
@@ -257,6 +264,7 @@ class Resource {
     DateTime? lastEditDate,
     List<Comment>? comments,
     List<String>? skillTreeIds,
+    bool? blocksEmbedding,
     List<BaseListItem>? usersWhoRated,
   }) {
     return Resource(
@@ -277,6 +285,7 @@ class Resource {
       description: description ?? this.description,
       authorPhoto: authorPhoto ?? this.authorPhoto,
       skillTreeIds: skillTreeIds ?? this.skillTreeIds,
+      blocksEmbedding: blocksEmbedding ?? this.blocksEmbedding,
       lastEditDate: lastEditDate ?? this.lastEditDate,
       usersWhoRated: usersWhoRated ?? this.usersWhoRated,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,

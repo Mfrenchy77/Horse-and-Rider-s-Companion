@@ -68,7 +68,11 @@ Widget _resourceItems(Iterable<Resource> resources) {
     runSpacing: 4,
     children: [
       for (final resource in resources)
-        ResourcesItem(resource: resource, isResourceList: false),
+        ResourcesItem(
+          resource: resource,
+          isResourceList: false,
+          fromSkillTree: true,
+        ),
     ],
   );
 }

@@ -30,6 +30,7 @@ class RiderProfile {
     this.subscriptionEndDate,
     this.skillLevels = const [],
     this.ownedHorses = const [],
+    this.archivedHorses,
     this.instructors = const [],
     this.messagesList = const [],
     this.studentHorses = const [],
@@ -115,6 +116,9 @@ class RiderProfile {
   /// List of horses the rider owns
   List<BaseListItem>? ownedHorses;
 
+  /// Horses archived by this owner.
+  final List<BaseListItem>? archivedHorses;
+
   /// List of resources the rider has saved
   List<String>? savedResourcesList;
 
@@ -155,44 +159,34 @@ class RiderProfile {
       subscriptionEndDate: data['subscriptionEndDate'] as DateTime?,
       notes: data['notes'] == null
           ? null
-          : _convertBaseListItem(
-              data['notes'] as List,
-            ),
+          : _convertBaseListItem(data['notes'] as List),
       students: data['students'] == null
           ? null
-          : _convertBaseListItem(
-              data['students'] as List,
-            ),
+          : _convertBaseListItem(data['students'] as List),
       skillLevels: data['skillLevels'] == null
           ? null
-          : _convertSkillLevel(
-              data['skillLevels'] as List,
-            ),
+          : _convertSkillLevel(data['skillLevels'] as List),
       ownedHorses: data['ownedHorses'] == null
           ? null
-          : _convertBaseListItem(
-              data['ownedHorses'] as List,
-            ),
+          : _convertBaseListItem(data['ownedHorses'] as List),
+      archivedHorses: data['archivedHorses'] == null
+          ? null
+          : _convertBaseListItem(data['archivedHorses'] as List),
       instructors: data['instructors'] == null
           ? null
-          : _convertBaseListItem(
-              data['instructors'] as List,
-            ),
+          : _convertBaseListItem(data['instructors'] as List),
       studentHorses: data['studentHorses'] == null
           ? null
-          : _convertBaseListItem(
-              data['studentHorses'] as List,
-            ),
+          : _convertBaseListItem(data['studentHorses'] as List),
       savedProfilesList: data['savedProfilesList'] == null
           ? null
-          : _convertBaseListItem(
-              data['savedProfilesList'] as List,
-            ),
+          : _convertBaseListItem(data['savedProfilesList'] as List),
       savedResourcesList: (data['savedResourcesList'] as List?)
           ?.map((e) => e as String)
           .toList(),
-      messagesList:
-          (data['messagesList'] as List?)?.map((e) => e as String).toList(),
+      messagesList: (data['messagesList'] as List?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 
@@ -225,17 +219,21 @@ class RiderProfile {
       if (subscriptionEndDate != null)
         'subscriptionEndDate': subscriptionEndDate,
       if (studentHorses != null)
-        'studentHorses':
-            List<dynamic>.from(studentHorses!.map((e) => e.toJson())),
+        'studentHorses': List<dynamic>.from(
+          studentHorses!.map((e) => e.toJson()),
+        ),
       if (students != null)
         'students': List<dynamic>.from(students!.map((e) => e.toJson())),
       if (savedProfilesList != null)
-        'savedProfilesList':
-            List<dynamic>.from(savedProfilesList!.map((e) => e.toJson())),
+        'savedProfilesList': List<dynamic>.from(
+          savedProfilesList!.map((e) => e.toJson()),
+        ),
       if (skillLevels != null)
         'skillLevels': List<dynamic>.from(skillLevels!.map((e) => e.toJson())),
       if (ownedHorses != null)
         'ownedHorses': List<dynamic>.from(ownedHorses!.map((e) => e.toJson())),
+      if (archivedHorses != null)
+        'archivedHorses': archivedHorses!.map((e) => e.toJson()).toList(),
       if (instructors != null)
         'instructors': List<dynamic>.from(instructors!.map((e) => e.toJson())),
     };
@@ -292,6 +290,7 @@ class RiderProfile {
       countryName: countryName ?? this.countryName,
       skillLevels: skillLevels ?? this.skillLevels,
       ownedHorses: ownedHorses ?? this.ownedHorses,
+      archivedHorses: archivedHorses,
       instructors: instructors ?? this.instructors,
       locationName: locationName ?? this.locationName,
       lastEditDate: lastEditDate ?? this.lastEditDate,

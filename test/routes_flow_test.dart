@@ -12,8 +12,6 @@ import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
@@ -123,7 +121,6 @@ void main() {
     AuthPage.name: '/SignIn',
     ProfilePage.name: '/',
     SettingsView.name: '/Settings',
-    MessagesPage.name: '/Messages',
     PrivacyPolicyPage.name: '/PrivacyPolicy',
     AboutPage.name: '/About',
     DeletePage.name: '/Delete',
@@ -150,7 +147,6 @@ void main() {
     ViewingProfilePage.name: {
       ViewingProfilePage.pathParams: 'rider+tag@example.com',
     },
-    MessagePage.name: {MessagePage.pathParams: 'conversation/with spaces'},
     SkillTreeView.skillLevelName: {SkillTreeView.skillPathParam: 'Skill::one'},
     ResourceCommentPage.name: {
       ResourceCommentPage.pathParams: 'resource?part=1',
@@ -231,6 +227,90 @@ void main() {
     },
   );
 
+  testWidgets('a linked skill resource opens on the Resources rail', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1250, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final router = Routes().router(
+      settingsContoller: settingsController,
+      appCubit: appCubit,
+    );
+    addTearDown(router.dispose);
+    final resource = Resource(
+      id: 'guide',
+      name: 'Leading guide',
+      skillTreeIds: ['s1'],
+    );
+    when(
+      () => resourcesRepo.getResourcesForSkill(skillId: 's1'),
+    ).thenAnswer((_) => Stream.value([resource]));
+    await tester.pumpWidget(buildApp(router));
+    await tester.pumpAndSettle();
+    final skill = Skill(
+      id: 's1',
+      skillName: 'Leading',
+      rider: true,
+      position: 0,
+      lastEditBy: 'editor',
+      lastEditDate: DateTime.utc(2025),
+      description: 'Leading safely',
+      learningDescription: 'Practice',
+      proficientDescription: 'Reliable',
+    );
+    appCubit.emit(
+      appCubit.state.copyWith(allSkills: [skill], sortedSkills: [skill]),
+    );
+    router.goNamed(
+      SkillTreeView.skillLevelName,
+      pathParameters: {SkillTreeView.skillPathParam: skill.id},
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<NavigationRail>(find.byType(NavigationRail)).selectedIndex,
+      1,
+    );
+    final guide = find.text('Leading guide');
+    await tester.ensureVisible(guide);
+    await tester.tap(guide);
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/Resources/Comments/guide',
+    );
+    expect(
+      tester.widget<NavigationRail>(find.byType(NavigationRail)).selectedIndex,
+      2,
+    );
+    expect(find.text('Resource Comment Page'), findsOneWidget);
+    expect(find.text('Leading guide'), findsWidgets);
+    verifyNever(() => resourcesRepo.getResourceById('guide'));
+  });
+
+  testWidgets('a missing resource URL shows a result instead of spinning', (
+    tester,
+  ) async {
+    when(
+      () => resourcesRepo.getResourceById('missing'),
+    ).thenAnswer((_) async => null);
+    final router = Routes().router(
+      settingsContoller: settingsController,
+      appCubit: appCubit,
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(buildApp(router));
+    await tester.pumpAndSettle();
+    router.goNamed(
+      ResourceCommentPage.name,
+      pathParameters: {ResourceCommentPage.pathParams: 'missing'},
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('This resource could not be found.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
   testWidgets(
     'an unknown skill URL does not display the previously selected skill',
     (tester) async {
@@ -301,6 +381,24 @@ void main() {
       expect(find.text('Training Paths'), findsNothing);
       expect(find.byKey(const Key('createTrainingPathButton')), findsNothing);
     }
+  });
+
+  testWidgets('old Messages links return to Profile', (tester) async {
+    final router = Routes().router(
+      settingsContoller: settingsController,
+      appCubit: appCubit,
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(buildApp(router));
+    for (final path in ['/Messages', '/Messages/Message/old-thread']) {
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, ProfilePage.path);
+      expect(find.byKey(const Key('GuestProfileView')), findsOneWidget);
+    }
+    verifyNever(
+      () => messagesRepo.getConversations(userEmail: any(named: 'userEmail')),
+    );
   });
 
   testWidgets('Branch navigation via AppCubit index changes', (tester) async {

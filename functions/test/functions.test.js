@@ -31,21 +31,21 @@ function harness({fetch, conversation, tokens = ['token-1']} = {}) {
     'cors': () => (req, res, next) => next(),
     'firebase-admin': admin,
     'firebase-functions/logger': {error: (...args) => errors.push(args), info() {}},
-    'firebase-functions/v2/https': {onRequest: (_, handler) => handler},
+    'firebase-functions/v2/https': {onRequest: (_, handler) => handler, onCall: (_, handler) => handler},
     'firebase-functions/v2/firestore': {onDocumentCreated: (_, handler) => handler},
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8'), {
     exports, URL, AbortSignal,
     fetch: fetch || (async () => { throw new Error('Unexpected network access'); }),
-    require: (id) => mocks[id] || require(id),
+    require: (id) => mocks[id] || (id === './connections' ? require('../connections') : require(id)),
   }, {filename: 'index.js'});
   return {handlers: exports, pushes, errors, tokenOwners};
 }
 
 function response({url = 'https://stable.example/guide', status = 200,
-  type = 'text/html', html = ''} = {}) {
+  type = 'text/html', html = '', headers = {}} = {}) {
   return {url, ok: status >= 200 && status < 300, status,
-    headers: {get: () => type}, text: async () => html, json: async () => []};
+    headers: {get: (name) => name === 'content-type' ? type : headers[name]}, text: async () => html, json: async () => []};
 }
 
 async function request(handler, {method = 'POST', body = {}} = {}) {
@@ -90,6 +90,18 @@ test('previewMeta extracts metadata and resolves relative image URLs after redir
     url: 'https://stable.example/guide', title: 'Training guide',
     description: 'Learn transitions', image: 'https://stable.example/cover.jpg',
   }});
+});
+
+test('previewMeta reports restrictions from the publisher response', async () => {
+  for (const headers of [
+    {'x-frame-options': 'SAMEORIGIN'},
+    {'x-frame-options': 'DENY'},
+    {'content-security-policy': 'default-src \'self\'; frame-ancestors \'none\''},
+  ]) {
+    const {handlers} = harness({fetch: async () => response({headers})});
+    const result = await request(handlers.previewMeta, {body: {url: 'https://stable.example'}});
+    assert.equal(result.body.blocksEmbedding, true);
+  }
 });
 
 test('previewMeta falls back to title and empty optional metadata', async () => {

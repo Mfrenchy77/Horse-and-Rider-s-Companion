@@ -11,7 +11,16 @@ class FakeContext extends Fake implements BuildContext {}
 void main() {
   late AppTestHarness harness;
   final rider = RiderProfile(id: 'r', name: 'Rider', email: 'r@example.com');
-  setUp(() async => harness = await AppTestHarness.create());
+  final actions = <Map<String, Object?>>[];
+  setUp(() async {
+    actions.clear();
+    harness = await AppTestHarness.create(
+      submitCoachingAction: (action) async {
+        actions.add(action);
+        return {'status': 'pending'};
+      },
+    );
+  });
   tearDown(() => harness.close());
 
   test(
@@ -41,6 +50,68 @@ void main() {
       verifyZeroInteractions(harness.messages);
     },
   );
+
+  test(
+    'legacy instructor messages send a new request without editing profiles',
+    () async {
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(usersProfile: rider, isGuest: false),
+      );
+      await harness.cubit.acceptRequest(
+        context: FakeContext(),
+        message: Message(
+          id: 'conversation',
+          messageId: 'message',
+          date: DateTime.utc(2025),
+          sender: 'Student',
+          senderId: 'student@example.com',
+          subject: 'Instructor request',
+          message: 'Please be my instructor',
+          recipients: const ['Rider'],
+          senderProfilePicUrl: '',
+          messageType: MessageType.INSTRUCTOR_REQUEST,
+          requestItem: BaseListItem(id: 'student@example.com'),
+        ),
+      );
+      expect(actions, [
+        {
+          'action': 'send',
+          'kind': 'rider',
+          'learnerEmail': 'student@example.com',
+          'coachEmail': rider.email,
+        },
+      ]);
+      expect(harness.cubit.state.acceptStatus, AcceptStatus.submitted);
+      expect(harness.cubit.state.errorMessage, contains('needs to accept'));
+      verifyZeroInteractions(harness.riders);
+      verifyZeroInteractions(harness.horses);
+      verifyZeroInteractions(harness.messages);
+    },
+  );
+
+  test('only a signed-in owner can archive a horse', () async {
+    final horse = HorseProfile(
+      id: 'atlas',
+      name: 'Atlas',
+      currentOwnerId: rider.email,
+    );
+    final cubit = harness.cubit;
+    cubit.emit(cubit.state.copyWith(usersProfile: rider, horseProfile: horse));
+    await cubit.setHorseArchive('deceased');
+    expect(actions, isEmpty);
+    cubit.emit(cubit.state.copyWith(isGuest: false));
+    await cubit.setHorseArchive('deceased');
+    expect(actions, [
+      {
+        'action': 'setHorseArchive',
+        'horseId': 'atlas',
+        'archiveStatus': 'deceased',
+      },
+    ]);
+    expect(horse.currentOwnerId, rider.email);
+    verifyZeroInteractions(harness.riders);
+    verifyZeroInteractions(harness.horses);
+  });
 
   test('guests cannot edit progress even when a profile is present', () {
     harness.cubit.emit(harness.cubit.state.copyWith(usersProfile: rider));

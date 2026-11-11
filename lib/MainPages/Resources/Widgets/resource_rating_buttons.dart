@@ -87,7 +87,7 @@ class ResourceRatingButtons extends StatelessWidget {
                     : '${resource.comments!.length} Comments',
                 onPressed: () {
                   // Show the comments associated with this resource
-                  context.goNamed(
+                  context.pushNamed(
                     ResourceCommentPage.name,
                     pathParameters: {
                       ResourceCommentPage.pathParams: resource.id ?? '',

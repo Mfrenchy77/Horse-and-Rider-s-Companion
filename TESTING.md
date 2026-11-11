@@ -123,6 +123,143 @@ flutter test test/app_auth_session_test.dart test/app_catalogue_loading_test.dar
   test/routes_flow_test.dart test/email_verification_dialog_test.dart
 ```
 
+## Rider logbook
+
+Open **Rider's Log Book** from your profile, its drawer, or its menu.
+The timeline uses the rider profile already loaded by the app. Filter by
+entry type and choose newest or oldest independently. Tap an entry to read
+its details. Add and edit entries from the logbook. The horse profile keeps
+its existing horse logbook entry point.
+
+The Add/Edit screen uses type tiles and separate cards for entry details
+and notes. Date and horse sit side by side when space allows. The Save
+action stays below the scrolling form.
+
+A note is required. Title, instructor for a lesson, horse, work or focus,
+and next steps are optional. The horse picker uses the rider's loaded owned
+and student horse links. **Other** accepts a write-in name. Existing entries
+with only a horse name open under Other. Show placings display a labelled
+ribbon, with gold for first, silver for second, and bronze for third.
+
+A horse-linked entry has one canonical record in `SharedRidingEntries`. The
+rider logbook listens for updates. The horse logbook loads the same records
+when opened or refreshed, so edits and deletions apply to both views. A new
+horse owner can open entries already linked to the horse. Other and
+horse-free rider entries stay in the rider's existing profile notes unless
+they were previously shared. Editing a legacy horse-linked rider note moves
+it to the canonical collection in the same transaction. Existing automatic
+Edit notes appear as read-only Activity.
+
+In a trainer's logbook, choosing Lesson displays a **Student** dropdown
+with accepted students and a **My logbook** option. Choosing a student
+loads that student's horse links. Saving creates an attributed entry in
+the student's logbook and, when a horse is linked, its history. The same
+editor opens from **Add lesson record** on an accepted connection. A
+connected instructor can open **Lesson history** for the student and can
+edit or delete lessons they authored. **Add training record** and **Horse
+history** are available on accepted horse coaching connections.
+
+```sh
+flutter test test/widget/rider_logbook_test.dart \
+  test/domain/rider_logbook_repository_test.dart test/cubits/add_log_entry_cubit_test.dart
+```
+
+## Instructor and trainer connections
+
+Verified riders use **Connections and requests** on rider or horse profiles.
+A rider can ask a trainer to be their instructor, and a trainer can invite
+a rider as a student. A horse owner can invite a trainer by email, or a
+trainer can request the horse from its profile. The rider's own profile
+shows incoming and outgoing requests and accepted connections. The
+participant query is shared across the profile surfaces. Requests use a
+dedicated collection and do not create conversations.
+
+One connection document covers each pair of participants in a given role
+and horse. Repeated and crossed requests reuse a pending document. The
+recipient must explicitly accept or decline. The sender can cancel. Either
+participant can end an accepted connection. Each new request gets a
+version so a response from an earlier request cannot apply to a new one.
+
+The callable Cloud Function validates the Firebase identity and current
+connection in a transaction. An accepted instructor can save a lesson and
+optionally update one matching rider skill's Learning or Proficient level.
+An accepted horse trainer can append a training note and optionally update
+one matching horse skill. Horse grants check the current owner on each
+write. Linking a horse to a rider entry requires both a rider-side horse
+link and current ownership, a reciprocal horse instructor link, or an
+active trainer grant for that rider. These operations can write log entries
+and skill progress. Profile identity, ownership, and permissions are
+outside their write scope.
+
+### Local browser testing
+
+A normal localhost Flutter run uses the live Firebase project. To exercise
+the local archive callable without real user data, run the following from
+the repository root in two terminals. Use the Firebase CLI and install
+the Functions dependencies first.
+
+```sh
+firebase emulators:start --only auth,firestore,functions --project demo-horse-rules
+```
+
+```sh
+flutter run -d chrome --dart-define=FIREBASE_EMULATORS=true
+```
+
+Register with a test email in the local app and use the verification link
+printed by the Auth emulator. Sign in with that test account, create a
+rider profile and a sample horse, then archive and restore the horse.
+The demo project starts with an empty database and separate test accounts.
+
+### Firestore rollout
+
+The complete staged ruleset is `firebase/firestore.rules`, configured in
+`firebase.json`. It preserves guest profile reads and limits profile writes
+to verified owners. Direct horse ownership changes and deletes are blocked.
+**Archive horse** offers an optional deceased status. The callable updates
+the horse status and moves its link from Owned horses to Archived horses
+in one transaction. The owner and full logbook stay with the horse. An
+owner can open an archived horse from their rider profile and restore it.
+Archived horses are unavailable for new linked log entries, and existing
+linked entries can still be corrected. Transfer is hidden until its
+acceptance flow is implemented.
+
+Messages is disabled in app navigation. Old message URLs return to
+Profile. Existing conversation data stays in Firestore. Coaching requests
+remain available in the profile's Connections panel. Saved contacts are
+personal bookmarks.
+
+The rules use exact comparisons between Firebase Auth email and profile
+email fields. Check these values on existing accounts in the test project
+before rollout. The fallback retains the current access rules for other
+collections. Public profile documents still contain legacy notes, which
+remain readable through those documents.
+
+Run the rules suite against a demo Firestore emulator. From the repository
+root with Node 22, Java 21, and the Functions dependencies installed:
+
+```sh
+rules_deps="$(mktemp -d)"
+npm install --prefix "$rules_deps" firebase-tools@14 @firebase/rules-unit-testing@4 firebase@11
+NODE_PATH="$rules_deps/node_modules:$PWD/functions/node_modules" \
+  "$rules_deps/node_modules/.bin/firebase" emulators:exec --only firestore \
+  --project demo-horse-rules 'node --test firebase/firestore.rules.test.cjs'
+```
+
+The suite covers profile ownership checks, the app's participant and journal
+queries, blocked client writes, and the callable's shared lesson, archive,
+and restore transactions. In a Firebase test project, smoke-test owner
+profile edits, archive and restore, saved contacts, coaching requests,
+and old Messages links. Publish the tested rules with the `coachingConnection`
+callable and the corresponding app release. The endpoint uses the current
+Firebase project's us-central1 region.
+
+```sh
+npm --prefix functions test
+flutter test test/app_authorization_test.dart \
+  test/widget/connection_panel_test.dart test/widget/rider_logbook_test.dart
+```
+
 ## Welcome, rider profiles, and card styling
 
 The Profile tab shows a welcome page for guests, with direct links to the

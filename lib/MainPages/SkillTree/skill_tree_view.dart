@@ -1,40 +1,30 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_app_bar_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_title_search_bar.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skills_list_view.dart';
-// Training paths disabled; keep imports for restoration.
-// import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_path_view.dart';
-// Training paths disabled; keep imports for restoration.
-// import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/training_paths_list.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
-// Training paths are disabled. Their widgets, dialogs, models and repository
-// remain in place; the tab integration below, routes, search entry points and
-// AppCubit startup subscription are commented out for possible restoration.
 class SkillTreeView extends StatefulWidget {
   const SkillTreeView({super.key, this.skillId, this.trainingPathId});
 
-  ///Full screnn Naming constants
-
-  /// Mobile Naming Constants
-  static const String skillsListName = 'SkillsList';
-  static const String skillLevelName = 'SkillLevel';
-  static const String trainingPathListName = 'TrainingPathList';
-  static const String trainingPathViewName = 'TrainingPathView';
-  static const String skillsListPath = '/Skills';
-  static const String skillLevelPath = 'Skill::$skillPathParam';
-  static const String trainingPathListPath = '/TrainingPaths';
-  static const String trainingPathViewPath =
-      'TrainingPath::$trainingPathPathParam';
-  static const String skillPathParam = 'skillId';
-  static const String trainingPathPathParam = 'trainingPathId';
+  static const skillsListName = 'SkillsList';
+  static const skillLevelName = 'SkillLevel';
+  static const trainingPathListName = 'TrainingPathList';
+  static const trainingPathViewName = 'TrainingPathView';
+  static const skillsListPath = '/Skills';
+  static const skillLevelPath = 'Skill::$skillPathParam';
+  static const trainingPathListPath = '/TrainingPaths';
+  static const trainingPathViewPath = 'TrainingPath::$trainingPathPathParam';
+  static const skillPathParam = 'skillId';
+  static const trainingPathPathParam = 'trainingPathId';
 
   final String? skillId;
   final String? trainingPathId;
@@ -43,366 +33,507 @@ class SkillTreeView extends StatefulWidget {
   State<SkillTreeView> createState() => _SkillTreeViewState();
 }
 
-class _SkillTreeViewState extends State<SkillTreeView>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
-  late AppCubit _cubit;
-  late bool isInitialized;
+class _SkillTreeViewState extends State<SkillTreeView> {
+  final _scroll = ScrollController();
+  final _detail = GlobalKey();
+  double _listOffset = 0;
 
   @override
   void initState() {
     super.initState();
-    _cubit = context.read<AppCubit>();
-    isInitialized = false;
-  }
-
-  // @override
-  // void didUpdateWidget(covariant SkillTreeView old) {
-  //   super.didUpdateWidget(old);
-  //   final isLarge = MediaQuery.of(context).size.width >=
-  //       StringConstants.splitScreenBreakpoint;
-
-  //   // 1) Skill deep‐link changed?
-  //   if (widget.skillId != old.skillId && widget.skillId != null) {
-  //     _cubit.setSkill(widget.skillId);
-  //     _tabController.index = isLarge ? 0 : 1;
-  //   } else {
-  //     debugPrint('SkillId ${widget.skillId} is'
-  //         ' skill in state null ${_cubit.state.skill?.skillName}');
-  //   }
-  //   // 2) TrainingPath deep‐link changed?
-  //   if (widget.trainingPathId != old.trainingPathId &&
-  //       widget.trainingPathId != null) {
-  //     _cubit.setTrainingPath(widget.trainingPathId);
-  //     _tabController.index = isLarge ? 1 : 3;
-  //   } else {
-  //     debugPrint('SkillId ${widget.skillId} and '
-  //         'TrainingPathId ${widget.trainingPathId} is'
-  //         ' trainingPath in state null ${_cubit.state.trainingPath?.name}');
-  //     _cubit.setSkillTreeTabIndex(0);
-  //   }
-  // }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    final isLargeScreen =
-        MediaQuery.of(context).size.width >=
-        StringConstants.splitScreenBreakpoint;
-    final tabCount = isLargeScreen ? 1 : 2;
-
-    if (!isInitialized || _tabController.length != tabCount) {
-      if (isInitialized) _tabController.dispose();
-      // Training paths disabled: previously 2 wide-screen / 4 mobile tabs.
-      // final tabCount = isLargeScreen ? 2 : 4;
-      final requestedIndex = widget.skillId != null
-          ? (isLargeScreen ? 0 : 1)
-          : _cubit.state.skillTreeTabIndex;
-      final initialIndex = requestedIndex >= 0 && requestedIndex < tabCount
-          ? requestedIndex
-          : 0;
-
-      _tabController = TabController(
-        length: tabCount,
-        vsync: this,
-        initialIndex: initialIndex,
-      );
-
-      isInitialized = true;
-    }
+    if (widget.skillId != null) _showDetail();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
-  void _handleBackPressed() {
-    final cubit = context.read<AppCubit>();
-    if (_tabController.index == 1) {
-      context.goNamed(SkillTreeView.skillsListName);
-    } else {
-      cubit.changeIndex(0);
-    }
+  void _showDetail() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final detail = _detail.currentContext;
+      if (mounted &&
+          detail != null &&
+          (ModalRoute.of(context)?.isCurrent ?? true)) {
+        Scrollable.ensureVisible(
+          detail,
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 220),
+        );
+      }
+    });
   }
 
-  // Training-path back navigation retained for possible restoration.
-  //   void _handleBackPressed() {
-  //     final isLarge = MediaQuery.of(context).size.width >=
-  //         StringConstants.splitScreenBreakpoint;
-  //     final index = _tabController.index;
-  //     final cubit = context.read<AppCubit>();
-  //
-  //     // On a wide screen, if we are on index 0 and the flag
-  //     // isFromTrainingPath is true,
-  //     // we should go back to the TrainingPathView.
-  //     if (isLarge && index == 0 && cubit.state.isFromTrainingPath) {
-  //       final pathId = cubit.getSelectedTrainingPathId();
-  //       debugPrint('Back pressed on Skills List, '
-  //           'going to TrainingPathView with pathId: $pathId');
-  //
-  //       context.goNamed(
-  //         SkillTreeView.trainingPathViewName,
-  //         pathParameters: {
-  //           SkillTreeView.trainingPathPathParam: pathId ?? '',
-  //         },
-  //       );
-  //       cubit.setIsFromTrainingPath(isFromTrainingPath: false);
-  //
-  //       return;
-  //     } else if (isLarge && index == 0) {
-  //       // If we are on Skills List and not from TrainingPath,
-  //       // just go back to Profile
-  //       cubit.changeIndex(0);
-  //       return;
-  //     }
-  //     // SMALL SCREEN LOGIC:
-  //     switch (index) {
-  //       // 1: Skill Detail
-  //       case 1:
-  //         // If we arrived here via TrainingPathView
-  //         if (cubit.state.isFromTrainingPath) {
-  //           cubit.setIsFromTrainingPath(isFromTrainingPath: false);
-  //           final pathId = cubit.getSelectedTrainingPathId();
-  //           debugPrint('Back pressed on Skill Detail, '
-  //               'going to TrainingPathView with pathId: $pathId');
-  //           if (pathId != null) {
-  //             context.goNamed(
-  //               SkillTreeView.trainingPathViewName,
-  //               pathParameters: {
-  //                 SkillTreeView.trainingPathPathParam: pathId,
-  //               },
-  //             );
-  //           }
-  //         } else {
-  //           // Otherwise just go back to the Skills list
-  //           context.goNamed(SkillTreeView.skillsListName);
-  //         }
-  //         break;
-  //
-  //       // 3: Training Path Detail
-  //       case 3:
-  //         // Go back to the TrainingPaths list
-  //         context.goNamed(SkillTreeView.trainingPathListName);
-  //         break;
-  //
-  //       // 2: Training Paths List
-  //       case 2:
-  //         context.goNamed(
-  //           SkillTreeView.skillLevelName,
-  //           pathParameters: {
-  //             SkillTreeView.skillPathParam: cubit.state.skill?.id ?? '',
-  //           },
-  //         );
-  //
-  //         break;
-  //
-  //       // 0: Skills List
-  //       default:
-  //         // Last stop: go back to Profile
-  //         cubit.changeIndex(0);
-  //     }
-  //   }
+  void _closeDetail() {
+    if (widget.skillId != null) {
+      context.goNamed(SkillTreeView.skillsListName);
+      return;
+    }
+    context.read<AppCubit>().navigateToSkillsList();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scroll.hasClients) {
+        _scroll.jumpTo(
+          _listOffset.clamp(0.0, _scroll.position.maxScrollExtent),
+        );
+      }
+    });
+  }
+
+  void _editSkill(AppState state, [Skill? skill]) {
+    final cubit = context.read<AppCubit>();
+    if (skill != null && !cubit.canEditSkill(skill)) {
+      cubit.createError('You do not have permission to edit this skill');
+      return;
+    }
+    final rider = state.usersProfile;
+    if (rider == null) return;
+    showDialog<CreateSkillDialog>(
+      context: context,
+      builder: (_) => CreateSkillDialog(
+        skill: skill,
+        isEdit: skill != null,
+        allSkills: state.allSkills,
+        isForRider: skill?.rider ?? state.isForRider,
+        usersProfile: rider,
+        position: skill?.position ?? state.sortedSkills.length,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isLargeScreen =
-        MediaQuery.of(context).size.width >=
-        StringConstants.splitScreenBreakpoint;
-
-    return BlocListener<AppCubit, AppState>(
+    final cubit = context.read<AppCubit>();
+    final layout = SkillTreeLayoutScope.of(context);
+    return BlocConsumer<AppCubit, AppState>(
       listenWhen: (previous, current) =>
-          previous.skillTreeTabIndex != current.skillTreeTabIndex,
+          previous.skill?.id != current.skill?.id ||
+          previous.skillTreeNavigation != current.skillTreeNavigation ||
+          (widget.skillId != null && previous.allSkills != current.allSkills),
       listener: (context, state) {
-        debugPrint(
-          'SkillTreeView BlocListener: '
-          'Tab Index changed from ${_tabController.index} to '
-          '${state.skillTreeTabIndex}',
-        );
-        final requestedIndex = state.skillTreeTabIndex;
-        final index =
-            requestedIndex >= 0 && requestedIndex < _tabController.length
-            ? requestedIndex
-            : 0;
-        if (_tabController.index != index) {
-          _tabController.animateTo(index);
+        if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
+        if (widget.skillId case final id?) {
+          if (state.skill == null && cubit.skillExists(id)) {
+            cubit.setSkill(id);
+            return;
+          }
+        }
+        if (state.skillTreeNavigation == SkillTreeNavigation.SkillLevel) {
+          _showDetail();
         }
       },
-      child: BlocBuilder<AppCubit, AppState>(
-        builder: (context, state) {
-          return Scaffold(
-            appBar: AppBar(
-              leading: BackButton(onPressed: _handleBackPressed),
-              centerTitle: true,
-              title: const SkillTreeSearchTitleBar(
-                key: Key('skillTreeSearchTitleBar'),
-              ),
-              actions: const [
-                AppBarSearchButton(),
-                SkillTreeAppBarOverFlowMenu(),
-              ],
-              bottom: TabBar(
-                controller: _tabController,
-                onTap: (index) {
-                  if (index == 0) {
-                    context.goNamed(SkillTreeView.skillsListName);
-                  } else {
-                    final skillId = _cubit.getSelectedSkillId();
-                    if (skillId != null) {
-                      context.goNamed(
-                        SkillTreeView.skillLevelName,
-                        pathParameters: {SkillTreeView.skillPathParam: skillId},
-                      );
-                    }
-                  }
-                },
-                // Training-path tab navigation retained for restoration.
-                //                 onTap: (index) {
-                //                   final isLarge = MediaQuery.of(context)
-                //.size.width >=
-                //                       StringConstants.splitScreenBreakpoint;
-                //                   final cubit = context.read<AppCubit>();
-                //
-                //                   switch (index) {
-                //                     // SKILLS LIST
-                //                     case 0:
-                //                       context.goNamed(
-                //                         SkillTreeView.skillsListName,
-                //                         // no params
-                //                       );
-                //                       break;
-                //
-                //                     // DETAIL (skill or path)
-                //                     case 1:
-                //                       if (isLarge) {
-                //                         // on a wide screen this is "TrainingPaths List"
-                //                         context.goNamed(SkillTreeView.
-                // trainingPathListName);
-                //                       } else {
-                //                         // small: detail of selected skill
-                //                         final skillId =
-                // cubit.getSelectedSkillId();
-                //                         if (skillId != null) {
-                //                           context.goNamed(
-                //                             SkillTreeView.skillLevelName,
-                //                             pathParameters: {
-                //                               SkillTreeView.skillPathParam:
-                // skillId,
-                //                             },
-                //                           );
-                //                         }
-                //                       }
-                //                       break;
-                //
-                //                     // TRAINING PATHS LIST (only on small screens is index 2)
-                //                     case 2:
-                //                       if (!isLarge) {
-                //                         context.goNamed
-                // (SkillTreeView.trainingPathListName);
-                //                       }
-                //                       break;
-                //
-                //                     // PATH DETAIL
-                //                     case 3:
-                //                       final pathId = cubit.
-                // getSelectedTrainingPathId();
-                //                       if (pathId != null) {
-                //                         context.goNamed(
-                //                           SkillTreeView.trainingPathViewName,
-                //                           pathParameters: {
-                //                             SkillTreeView.
-                //trainingPathPathParam: pathId,
-                //                           },
-                //                         );
-                //                       }
-                //                       break;
-                //                   }
-                //                 },
-                tabs: isLargeScreen
-                    ? const [
-                        Tab(text: 'Skills'),
-                        // Training paths disabled.
-                        //                         Tab(text: 'Training Paths'),
-                      ]
-                    : const [
-                        Tab(text: 'Skills'),
-                        Tab(text: 'Detail'),
-                        // Training paths disabled.
-                        //                         Tab(text: 'Training Paths'),
-                        // Training paths disabled.
-                        //                         Tab(text: 'Path Detail'),
-                      ],
-              ),
-            ),
-            body: TabBarView(
-              controller: _tabController,
-              children: isLargeScreen
-                  ? [
-                      _SplitSkillsView(skillId: widget.skillId),
-                      // Training paths disabled.
-                      //                       const _SplitTrainingPathsView(),
-                    ]
-                  : [
-                      const SkillsListView(
-                        // onSkillSelected: () =>
-                        // _cubit.setSkillTreeTabIndex(1),
-                      ),
-                      SkillLevelView(skillId: widget.skillId),
-                      //
-                      // const TrainingPathListView(
-                      //                           // onTrainingPathSelected: () =>
-                      //                           //     _cubit.setSkillTreeTabIndex(3),
-                      //                           ),
-                      //                       TrainingPathView(
-                      //                         trainingPathId: context
-                      //                             .read<AppCubit>()
+      builder: (context, state) {
+        final showsDetail =
+            widget.skillId != null ||
+            state.skillTreeNavigation == SkillTreeNavigation.SkillLevel;
+        final skills = state.sortedSkills.whereType<Skill>().toList();
+        final canEdit =
+            !state.isGuest && state.isEdit && state.usersProfile != null;
+        final selectedId = showsDetail ? state.skill?.id : null;
+        final details = showsDetail ? _skillDetails(selectedId) : null;
 
-                      //                             .getSelectedTrainingPathId(),
-                      //                       ),
-                    ],
+        LevelState levelFor(Skill skill) => getLevelState(
+          skill: skill,
+          profile: state.viewingProfile ?? state.usersProfile,
+          horseProfile: state.isForRider ? null : state.horseProfile,
+        );
+
+        Widget row(Skill skill, {bool showStatus = true}) => _SkillLibraryRow(
+          skill: skill,
+          level: levelFor(skill),
+          showStatus: showStatus,
+          selected: selectedId == skill.id,
+          onSelect: () {
+            if (_scroll.hasClients) _listOffset = _scroll.offset;
+            if (selectedId == skill.id) {
+              if (layout == SkillTreeLayout.expandInPlace) {
+                _closeDetail();
+              } else {
+                _showDetail();
+              }
+            } else {
+              cubit.navigateToSkillLevel(skill: skill);
+            }
+          },
+          onEdit: canEdit ? () => _editSkill(state, skill) : null,
+        );
+
+        return Scaffold(
+          appBar: AppBar(
+            leading: BackButton(
+              onPressed: showsDetail
+                  ? _closeDetail
+                  : () => cubit.changeIndex(0),
             ),
-          );
-        },
+            title: const SkillTreeSearchTitleBar(
+              key: Key('skillTreeSearchTitleBar'),
+            ),
+            actions: const [
+              AppBarSearchButton(),
+              SkillTreeAppBarOverFlowMenu(),
+            ],
+          ),
+          floatingActionButton: canEdit
+              ? FloatingActionButton(
+                  key: const Key('addSkillButton'),
+                  tooltip: 'Add a skill',
+                  onPressed: () => _editSkill(state),
+                  child: const Icon(Icons.add),
+                )
+              : null,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final wideLibrary =
+                  layout == SkillTreeLayout.library &&
+                  constraints.maxWidth >= 740;
+              final header = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 14,
+                children: [
+                  Text(
+                    state.isForRider ? 'Rider Skills' : 'Horse Skills',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      for (final category in CategorySortState.values)
+                        ChoiceChip(
+                          label: Text(
+                            category == CategorySortState.In_Hand
+                                ? 'In hand'
+                                : category.name,
+                          ),
+                          selected: category == state.categorySortState,
+                          onSelected: (_) =>
+                              cubit.categorySortChanged(category),
+                        ),
+                      SizedBox(
+                        width: 196,
+                        child: DropdownButtonFormField<DifficultySortState>(
+                          key: ValueKey(state.difficultySortState),
+                          initialValue: state.difficultySortState,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Difficulty',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: [
+                            for (final difficulty in DifficultySortState.values)
+                              DropdownMenuItem(
+                                value: difficulty,
+                                child: Text(
+                                  difficulty == DifficultySortState.All
+                                      ? 'All levels'
+                                      : difficulty.name,
+                                ),
+                              ),
+                          ],
+                          onChanged: (difficulty) {
+                            if (difficulty != null) {
+                              cubit.difficultySortChanged(difficulty);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+              final selectedIsVisible = skills.any(
+                (skill) => skill.id == selectedId,
+              );
+              return Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout == SkillTreeLayout.expandInPlace
+                        ? 850
+                        : 1320,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      wideLibrary ? 0 : 16,
+                    ),
+                    child: wideLibrary
+                        ? Column(
+                            key: const Key('skillLibraryWide'),
+                            spacing: 16,
+                            children: [
+                              header,
+                              Expanded(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 20,
+                                  children: [
+                                    Expanded(
+                                      flex: 4,
+                                      child: skills.isEmpty
+                                          ? const Text(
+                                              'No skills match these filters.',
+                                            )
+                                          : ListView.separated(
+                                              primary: false,
+                                              padding: const EdgeInsets.only(
+                                                bottom: 88,
+                                              ),
+                                              itemCount: skills.length,
+                                              separatorBuilder: (_, _) =>
+                                                  const SizedBox(height: 8),
+                                              itemBuilder: (_, index) =>
+                                                  row(skills[index]),
+                                            ),
+                                    ),
+                                    Expanded(
+                                      flex: 6,
+                                      child: SingleChildScrollView(
+                                        key: ValueKey(selectedId),
+                                        primary: false,
+                                        padding: const EdgeInsets.only(
+                                          bottom: 88,
+                                        ),
+                                        child:
+                                            details ??
+                                            const GradientCard(
+                                              margin: EdgeInsets.zero,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(20),
+                                                child: Text(
+                                                  'Select a skill to view its '
+                                                  'details and resources.',
+                                                ),
+                                              ),
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : SingleChildScrollView(
+                            key: ValueKey(switch (layout) {
+                              SkillTreeLayout.library => 'skillLibraryCompact',
+                              SkillTreeLayout.expandInPlace =>
+                                'skillExpandInPlace',
+                              SkillTreeLayout.progressBoard =>
+                                'skillProgressBoard',
+                            }),
+                            controller: _scroll,
+                            padding: const EdgeInsets.only(bottom: 88),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: 8,
+                              children: [
+                                header,
+                                const SizedBox(height: 4),
+                                if (layout ==
+                                    SkillTreeLayout.progressBoard) ...[
+                                  _SkillProgressBoard(
+                                    skills: skills,
+                                    levelFor: levelFor,
+                                    row: (skill) =>
+                                        row(skill, showStatus: false),
+                                  ),
+                                  if (details != null)
+                                    KeyedSubtree(key: _detail, child: details),
+                                ] else ...[
+                                  if (details != null && !selectedIsVisible)
+                                    KeyedSubtree(key: _detail, child: details),
+                                  if (skills.isEmpty)
+                                    const Text(
+                                      'No skills match these filters.',
+                                    ),
+                                  for (final skill in skills) ...[
+                                    row(skill),
+                                    if (details != null &&
+                                        selectedId == skill.id)
+                                      KeyedSubtree(
+                                        key: _detail,
+                                        child: details,
+                                      ),
+                                  ],
+                                ],
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _skillDetails(String? selectedId) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: 6,
+    children: [
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          onPressed: _closeDetail,
+          icon: const Icon(Icons.close),
+          label: const Text('Close details'),
+        ),
+      ),
+      SkillLevelView(skillId: selectedId ?? widget.skillId),
+    ],
+  );
+}
+
+class _SkillLibraryRow extends StatelessWidget {
+  const _SkillLibraryRow({
+    required this.skill,
+    required this.level,
+    required this.selected,
+    required this.showStatus,
+    required this.onSelect,
+    this.onEdit,
+  });
+
+  final Skill skill;
+  final LevelState level;
+  final bool selected;
+  final bool showStatus;
+  final VoidCallback onSelect;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final status = switch (level) {
+      LevelState.LEARNING => 'Learning',
+      LevelState.PROFICIENT || LevelState.VERIFIED => 'Proficient',
+      LevelState.NO_PROGRESS => 'Not started',
+    };
+    return Material(
+      color: selected ? colors.secondaryContainer : colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(
+          color: selected ? colors.primary : colors.outlineVariant,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        selected: selected,
+        key: ValueKey('library-skill-${skill.id}'),
+        title: Text(skill.skillName),
+        subtitle: Wrap(
+          spacing: 8,
+          runSpacing: 3,
+          children: [
+            Text(
+              skill.difficulty == DifficultyState.All
+                  ? 'All levels'
+                  : skill.difficulty.name,
+            ),
+            if (showStatus)
+              Text(
+                status,
+                style: TextStyle(
+                  color: level == LevelState.NO_PROGRESS
+                      ? colors.onSurfaceVariant
+                      : colors.primary,
+                ),
+              ),
+          ],
+        ),
+        onTap: onSelect,
+        trailing: onEdit == null
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Edit ${skill.skillName}',
+                onPressed: onEdit,
+              ),
       ),
     );
   }
 }
 
-class _SplitSkillsView extends StatelessWidget {
-  const _SplitSkillsView({required this.skillId});
-  final String? skillId;
+class _SkillProgressBoard extends StatelessWidget {
+  const _SkillProgressBoard({
+    required this.skills,
+    required this.levelFor,
+    required this.row,
+  });
+
+  final List<Skill> skills;
+  final LevelState Function(Skill) levelFor;
+  final Widget Function(Skill) row;
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(flex: 3, child: SkillsListView()),
-        const VerticalDivider(width: 1),
-        Expanded(flex: 2, child: SkillLevelView(skillId: skillId)),
-      ],
+    final lanes = <LevelState, List<Skill>>{
+      LevelState.NO_PROGRESS: [],
+      LevelState.LEARNING: [],
+      LevelState.PROFICIENT: [],
+    };
+    for (final skill in skills) {
+      final level = levelFor(skill);
+      lanes[level == LevelState.VERIFIED ? LevelState.PROFICIENT : level]!.add(
+        skill,
+      );
+    }
+
+    final theme = Theme.of(context);
+    final columns = [
+      for (final entry in lanes.entries)
+        GradientCard(
+          key: ValueKey(entry.key),
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(switch (entry.key) {
+                        LevelState.LEARNING => 'Learning',
+                        LevelState.PROFICIENT => 'Proficient',
+                        _ => 'Not started',
+                      }, style: theme.textTheme.titleMedium),
+                    ),
+                    Text(
+                      '${entry.value.length}',
+                      style: theme.textTheme.labelLarge,
+                    ),
+                  ],
+                ),
+                if (entry.value.isEmpty)
+                  Text('No skills', style: theme.textTheme.bodySmall),
+                for (final skill in entry.value) row(skill),
+              ],
+            ),
+          ),
+        ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth >= 690
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [for (final column in columns) Expanded(child: column)],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 12,
+              children: columns,
+            ),
     );
   }
 }
-
-// Training-path split view retained for possible restoration.
-// class _SplitTrainingPathsView extends StatelessWidget {
-//   const _SplitTrainingPathsView();
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       children: [
-//         const Expanded(flex: 3, child: TrainingPathListView()),
-//         const VerticalDivider(width: 1),
-//         Expanded(
-//           flex: 2,
-//           child: TrainingPathView(
-//             trainingPathId:
-//                 context.read<AppCubit>().getSelectedTrainingPathId(),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }

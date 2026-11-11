@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 /// A class that many Widgets can interact with to read user settings, update
@@ -22,6 +23,7 @@ class SettingsController with ChangeNotifier {
   late bool _isHands;
   late bool _isPounds;
   ResourceLayout _resourceLayout = ResourceLayout.vertical;
+  SkillTreeLayout _skillTreeLayout = SkillTreeLayout.library;
 
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get darkMode => _darkMode;
@@ -31,6 +33,7 @@ class SettingsController with ChangeNotifier {
   bool get isHands => _isHands;
   bool get isPounds => _isPounds;
   ResourceLayout get resourceLayout => _resourceLayout;
+  SkillTreeLayout get skillTreeLayout => _skillTreeLayout;
   bool get onBoardingStatus => _settingsService.getOnboardingStatus();
 
   /// Load the user's settings from the SettingsService. It may load from a
@@ -43,6 +46,7 @@ class SettingsController with ChangeNotifier {
       _isHands = _settingsService.getHorseHeightUnit();
       _isPounds = _settingsService.getHorseWeightUnit();
       _resourceLayout = _settingsService.getResourceLayout();
+      _skillTreeLayout = _settingsService.getSkillTreeLayout();
       notifyListeners();
     } catch (e) {
       // Handle the error, log it, or show a user-friendly message
@@ -55,6 +59,13 @@ class SettingsController with ChangeNotifier {
     _resourceLayout = layout;
     notifyListeners();
     await _settingsService.updateResourceLayout(layout);
+  }
+
+  Future<void> updateSkillTreeLayout(SkillTreeLayout? layout) async {
+    if (layout == null || layout == _skillTreeLayout) return;
+    _skillTreeLayout = layout;
+    notifyListeners();
+    await _settingsService.updateSkillTreeLayout(layout);
   }
 
   /// Update and persist the ThemeMode based on the user's selection.

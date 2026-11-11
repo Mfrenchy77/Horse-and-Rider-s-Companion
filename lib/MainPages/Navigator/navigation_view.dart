@@ -194,7 +194,7 @@ class _NavigationViewState extends State<NavigationView> {
                         )
                       : const BoxDecoration(),
                   child: NavigationRail(
-                    selectedIndex: state.index,
+                    selectedIndex: widget.child.currentIndex,
                     onDestinationSelected: context.read<AppCubit>().changeIndex,
                     extended: isLarge,
                     leading: const Padding(
@@ -226,7 +226,7 @@ class _NavigationViewState extends State<NavigationView> {
                         )
                       : const BoxDecoration(),
                   child: BottomNavigationBar(
-                    currentIndex: state.index,
+                    currentIndex: widget.child.currentIndex,
                     onTap: context.read<AppCubit>().changeIndex,
                     items: _buildBottomNavigationBarItems(
                       isForRider: state.isForRider,

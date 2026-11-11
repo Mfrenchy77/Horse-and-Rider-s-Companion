@@ -127,7 +127,7 @@ skill details hide prerequisite and base-skill sections for $prerequisites''',
         expect(find.text('Learning'), findsOneWidget);
         expect(find.text('Proficient'), findsOneWidget);
         expect(find.text('Resources'), findsOneWidget);
-        await tester.tap(find.text('Learning'));
+        await tester.tap(find.text('Mark as learning'));
         await tester.pumpAndSettle();
         expect(find.text('Confirm Skill Level'), findsOneWidget);
         expect(tester.takeException(), isNull);

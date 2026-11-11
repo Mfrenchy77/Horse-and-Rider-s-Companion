@@ -191,6 +191,8 @@ final mainThemeLight = ThemeData(
   ),
 );
 
+// change the floating action button color to match the secondary color
+
 final mainThemeDark = ThemeData(
   brightness: Brightness.dark,
   colorScheme:
@@ -250,6 +252,10 @@ final mainThemeDark = ThemeData(
             : null,
       ),
     ),
+  ),
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: ColorConst.mainAccentDark,
+    foregroundColor: ColorConst.mainPrimaryDark,
   ),
   scaffoldBackgroundColor: Colors.transparent,
   navigationBarTheme: NavigationBarThemeData(

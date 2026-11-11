@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_profile.dart';
@@ -55,6 +56,64 @@ GoRouter _router() => GoRouter(
 );
 
 void main() {
+  for (final width in [390.0, 1250.0]) {
+    testWidgets('horse profile uses the shared cover and layout at $width', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 1200);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final rider = RiderProfile(
+        id: 'owner',
+        email: 'owner@example.com',
+        name: 'Morgan',
+      );
+      final horse = HorseProfile(
+        id: 'atlas',
+        name: 'Atlas',
+        nickname: 'Al',
+        breed: 'Andalusian',
+        currentOwnerId: rider.email,
+        currentOwnerName: rider.name,
+        archiveStatus: 'deceased',
+      );
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          usersProfile: rider,
+          horseProfile: horse,
+          isGuest: false,
+          isForRider: false,
+        ),
+      );
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: harness.cubit,
+          child: MaterialApp(home: HorseProfileView(horseProfile: horse)),
+        ),
+      );
+      await tester.pump();
+      final cover = tester.getRect(find.byKey(const Key('horseIdentity')));
+      final skills = tester.getRect(find.byKey(const Key('horseSkills')));
+      expect(cover.height, inInclusiveRange(220, 380));
+      expect(find.text('Archived · Deceased'), findsOneWidget);
+      expect(find.text('Owner · Morgan'), findsOneWidget);
+      expect(find.text('Andalusian'), findsOneWidget);
+      expect(find.text('Date of birth'), findsNothing);
+      expect(find.text('Height'), findsNothing);
+      expect(find.text("Horse's Log Book"), findsOneWidget);
+      if (width < 1024) {
+        expect(skills.top, greaterThan(cover.bottom));
+      } else {
+        expect(skills.left, greaterThan(cover.right));
+        expect(skills.top, cover.top);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('guest can browse and reach the right account action', (
     tester,
   ) async {

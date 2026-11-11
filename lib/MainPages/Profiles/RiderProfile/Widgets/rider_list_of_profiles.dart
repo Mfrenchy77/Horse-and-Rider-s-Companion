@@ -1,5 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 
@@ -9,8 +11,11 @@ class RiderListOfProfiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppCubit>().state;
     final groups = {
       'Owned horses': profile.ownedHorses,
+      if (!app.isGuest && app.usersProfile?.email == profile.email)
+        'Archived horses': profile.archivedHorses,
       'Students': profile.students,
       'Student horses': profile.studentHorses,
       'Instructors': profile.instructors,

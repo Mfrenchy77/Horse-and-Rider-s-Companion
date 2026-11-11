@@ -34,7 +34,10 @@ class AppTestHarness {
   final messages = MockMessagesRepository();
   late final AppCubit cubit;
 
-  static Future<AppTestHarness> create() async {
+  static Future<AppTestHarness> create({
+    Future<Map<String, dynamic>> Function(Map<String, Object?>)?
+    submitCoachingAction,
+  }) async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({
       SharedPrefs.PREF_SHOW_ONBOARDING: false,
@@ -55,6 +58,7 @@ class AppTestHarness {
       riderProfileRepository: harness.riders,
       horseProfileRepository: harness.horses,
       messagesRepository: harness.messages,
+      submitCoachingAction: submitCoachingAction,
     );
     return harness;
   }

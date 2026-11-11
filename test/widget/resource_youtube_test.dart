@@ -71,6 +71,36 @@ void main() {
     );
   });
 
+  test('unchecked cross-origin links open in a browser tab', () {
+    final app = Uri.parse('http://localhost:33599/Resources');
+    for (final url in [
+      'https://www.horseandhound.co.uk/features/leading-a-horse-632789',
+      'https://www.fei.org/stories/lifestyle/teach-me/dressage-movements-101-advanced-piaffe-passage-canter-pirouette',
+      'https://unknown-publisher.example/article',
+      'http://localhost:33600/article',
+    ]) {
+      expect(
+        shouldOpenResourceExternally(url, isWeb: true, appUri: app),
+        isTrue,
+      );
+      expect(shouldOpenResourceExternally(url, isWeb: false), isFalse);
+    }
+    const sameOrigin = 'http://localhost:33599/article';
+    expect(
+      shouldOpenResourceExternally(sameOrigin, isWeb: true, appUri: app),
+      isFalse,
+    );
+    expect(
+      shouldOpenResourceExternally(
+        sameOrigin,
+        isWeb: true,
+        appUri: app,
+        blocksEmbedding: true,
+      ),
+      isTrue,
+    );
+  });
+
   testWidgets('taps on the card and preview launch YouTube externally', (
     tester,
   ) async {

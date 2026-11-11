@@ -3,6 +3,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 
 /// Displays the various settings that can be customized by the user.
 ///
@@ -174,7 +175,26 @@ class SettingsView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // End of settings
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: DropdownButtonFormField<SkillTreeLayout>(
+                        key: const Key('skillTreeLayoutSetting'),
+                        initialValue: controller.skillTreeLayout,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Skill Tree layout',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          for (final layout in SkillTreeLayout.values)
+                            DropdownMenuItem(
+                              value: layout,
+                              child: Text(layout.label),
+                            ),
+                        ],
+                        onChanged: controller.updateSkillTreeLayout,
+                      ),
+                    ),
                   ],
                 ),
               ),
