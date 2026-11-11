@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
@@ -20,6 +21,7 @@ class SettingsController with ChangeNotifier {
 
   late bool _isHands;
   late bool _isPounds;
+  ResourceLayout _resourceLayout = ResourceLayout.vertical;
 
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get darkMode => _darkMode;
@@ -28,6 +30,7 @@ class SettingsController with ChangeNotifier {
   ThemeData get darkTheme => HorseAndRidersTheme().getDarkTheme();
   bool get isHands => _isHands;
   bool get isPounds => _isPounds;
+  ResourceLayout get resourceLayout => _resourceLayout;
   bool get onBoardingStatus => _settingsService.getOnboardingStatus();
 
   /// Load the user's settings from the SettingsService. It may load from a
@@ -39,11 +42,19 @@ class SettingsController with ChangeNotifier {
       _seasonalMode = _settingsService.getSeasonalMode();
       _isHands = _settingsService.getHorseHeightUnit();
       _isPounds = _settingsService.getHorseWeightUnit();
+      _resourceLayout = _settingsService.getResourceLayout();
       notifyListeners();
     } catch (e) {
       // Handle the error, log it, or show a user-friendly message
       debugPrint('Error loading settings: $e');
     }
+  }
+
+  Future<void> updateResourceLayout(ResourceLayout? layout) async {
+    if (layout == null || layout == _resourceLayout) return;
+    _resourceLayout = layout;
+    notifyListeners();
+    await _settingsService.updateResourceLayout(layout);
   }
 
   /// Update and persist the ThemeMode based on the user's selection.
@@ -91,6 +102,4 @@ class SettingsController with ChangeNotifier {
     await _settingsService.updateOnboardingStatus();
     notifyListeners();
   }
-
-
 }

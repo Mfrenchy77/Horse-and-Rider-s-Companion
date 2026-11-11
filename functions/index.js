@@ -101,11 +101,12 @@ function pathLooksLikeWpUpload(u) {
  * Validate if URL returns an image. Some origins reject HEAD, so fall back to a tiny GET.
  * Always follows redirects and checks content-type.
  * @param {string} u URL to test
+ * @param {AbortSignal} signal Shared resolver deadline
  * @return {Promise<boolean>} True if the URL serves image/* content
  */
-async function isImageUrl(u) {
+async function isImageUrl(u, signal) {
   try {
-    let r = await fetch(u, {method: 'HEAD', redirect: 'follow', headers: DEFAULT_HEADERS});
+    let r = await fetch(u, {method: 'HEAD', redirect: 'follow', headers: DEFAULT_HEADERS, signal});
     let ok = r.ok && String(r.headers.get('content-type') || '').toLowerCase().startsWith('image/');
     if (!ok) {
       // Some sites/CDNs reject HEAD, try range GET (first byte).
@@ -113,8 +114,10 @@ async function isImageUrl(u) {
         method: 'GET',
         redirect: 'follow',
         headers: {...DEFAULT_HEADERS, Range: 'bytes=0-0'},
+        signal,
       });
       ok = r.ok && String(r.headers.get('content-type') || '').toLowerCase().startsWith('image/');
+      await r.body?.cancel();
     }
     return ok;
   } catch {
@@ -272,9 +275,10 @@ function sortCandidatesHeuristically(candidates, pageUrl) {
  *  - Also attempts oEmbed thumbnail discovery.
  * @param {string} pageUrl Page URL (used for origin)
  * @param {string} originalUrl A related URL/filename to seed the search (e.g., OG image)
+ * @param {AbortSignal} signal Shared resolver deadline
  * @return {Promise<string[]>} Candidate media URLs (absolute, de-duplicated)
  */
-async function wpMediaCandidates(pageUrl, originalUrl) {
+async function wpMediaCandidates(pageUrl, originalUrl, signal) {
   const out = [];
   try {
     const base = new URL(pageUrl);
@@ -299,7 +303,7 @@ async function wpMediaCandidates(pageUrl, originalUrl) {
     // Try oEmbed first (often returns a thumbnail_url)
     try {
       const oembed = `${origin}/wp-json/oembed/1.0/embed?url=${encodeURIComponent(pageUrl)}`;
-      const r = await fetch(oembed, {headers: DEFAULT_HEADERS, redirect: 'follow'});
+      const r = await fetch(oembed, {headers: DEFAULT_HEADERS, redirect: 'follow', signal});
       if (r.ok) {
         const j = await r.json();
         if (j && j.thumbnail_url) out.push(j.thumbnail_url);
@@ -309,9 +313,10 @@ async function wpMediaCandidates(pageUrl, originalUrl) {
     }
 
     // Try media search with variants (stop when we’ve found a few)
-    for (const v of variants) {
+    for (const v of variants.slice(0, 2)) {
+      if (signal.aborted) break;
       const api = `${origin}/wp-json/wp/v2/media?search=${encodeURIComponent(v)}`;
-      const r = await fetch(api, {headers: DEFAULT_HEADERS, redirect: 'follow'});
+      const r = await fetch(api, {headers: DEFAULT_HEADERS, redirect: 'follow', signal});
       if (!r.ok) continue;
       const arr = await r.json();
       for (const item of (Array.isArray(arr) ? arr : [])) {
@@ -472,51 +477,43 @@ exports.resolveImage = onRequest(
           const {url, hint} = req.body || {};
           if (!url || typeof url !== 'string') return badRequest(res, 'Missing url');
 
-          // 1) Fetch target (follow redirects)
-          const resp = await fetch(url, {headers: DEFAULT_HEADERS, redirect: 'follow'});
+          const signal = AbortSignal.timeout(9000);
+          const resp = await fetch(url, {headers: DEFAULT_HEADERS, redirect: 'follow', signal});
           if (!resp.ok) return res.status(502).json({error: `Fetch failed: ${resp.status}`});
           const finalUrl = resp.url;
           const contentType = (resp.headers.get('content-type') || '').toLowerCase();
 
-          // If the target is already an image, we're done.
           if (contentType.startsWith('image/')) {
-            const direct = finalUrl;
-            return res.json({resolvedUrl: direct, proxiedUrl: proxied(direct)});
+            await resp.body?.cancel();
+            return res.json({resolvedUrl: finalUrl, proxiedUrl: proxied(finalUrl)});
+          }
+          if (!contentType.includes('text/html')) {
+            return res.status(404).json({error: 'No image found'});
           }
 
-          // 2) Parse HTML and gather candidates
-          const html = await resp.text();
-          const candidatesBase = collectImageCandidates(html, finalUrl);
-
-          // 3) WordPress media lookup (often resolves CDN/S3/migrations)
-          const wpCand = await wpMediaCandidates(finalUrl, hint || candidatesBase[0] || url);
-
-          // 4) Optional hint first (front of the line)
-          const all = [];
-          if (hint) all.push(absUrl(hint, finalUrl));
-          all.push(...candidatesBase);
-          all.push(...wpCand);
-
-          // 5) Sort heuristically to prioritize best bets
-          const ordered = sortCandidatesHeuristically(
-          // de-dup before scoring
-              Array.from(new Set(all.map((u) => absUrl(u, finalUrl)))),
-              finalUrl,
-          );
-
-          // 6) Validate in order; return first real image
-          const seen = Object.create(null);
-          for (const c of ordered) {
-            if (!c) continue;
-            const abs = absUrl(c, finalUrl);
-            if (seen[abs]) continue;
-            seen[abs] = true;
-
-            if (await isImageUrl(abs)) {
-              return res.json({resolvedUrl: abs, proxiedUrl: proxied(abs)});
+          const seen = new Set();
+          const findImage = async (candidates, limit) => {
+            let checked = 0;
+            for (const candidate of candidates) {
+              if (signal.aborted || checked >= limit) break;
+              const image = absUrl(candidate, finalUrl);
+              if (!image || seen.has(image)) continue;
+              seen.add(image);
+              checked++;
+              if (await isImageUrl(image, signal)) return image;
             }
-          }
+            return null;
+          };
 
+          // Current page metadata comes first. The stored hint may be stale.
+          const candidates = collectImageCandidates(await resp.text(), finalUrl);
+          let image = await findImage([...candidates.slice(0, 5), hint], 6);
+          if (!image && !signal.aborted) {
+            const wp = await wpMediaCandidates(finalUrl, hint || candidates[0] || url, signal);
+            image = await findImage(sortCandidatesHeuristically(wp, finalUrl), 4);
+          }
+          if (image) return res.json({resolvedUrl: image, proxiedUrl: proxied(image)});
+          if (signal.aborted) return res.status(504).json({error: 'Image lookup timed out'});
           return res.status(404).json({error: 'No image found'});
         } catch (e) {
           logger.error(e);

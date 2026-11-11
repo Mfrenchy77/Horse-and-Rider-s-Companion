@@ -11,396 +11,415 @@ import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 
-class CreateResourcDialog extends StatelessWidget {
+class CreateResourcDialog extends StatefulWidget {
   const CreateResourcDialog({
     super.key,
     required this.skills,
     required this.resource,
     required this.userProfile,
+    this.initialInputType = ResourceInputType.link,
   });
 
   final Resource? resource;
   final List<Skill?>? skills;
   final RiderProfile userProfile;
+  final ResourceInputType initialInputType;
+
+  @override
+  State<CreateResourcDialog> createState() => _CreateResourcDialogState();
+}
+
+class _CreateResourcDialogState extends State<CreateResourcDialog> {
+  late final titleController = TextEditingController(
+    text: widget.resource?.name,
+  );
+  late final descController = TextEditingController(
+    text: widget.resource?.description,
+  );
+  late final imageController = TextEditingController(
+    text: widget.resource?.thumbnail,
+  );
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descController.dispose();
+    imageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<CreateResourceDialogCubit>();
-    debugPrint(
-      'Skills - ${skills?.length} CubitSkills ${cubit.state.resourceSkills?.length}',
-    );
-    final titleController = TextEditingController(text: resource?.name ?? '');
-    final descController =
-        TextEditingController(text: resource?.description ?? '');
-    final imageController =
-        TextEditingController(text: resource?.thumbnail ?? '');
+    return BlocProvider(
+      create: (context) => CreateResourceDialogCubit(
+        skills: widget.skills,
+        resource: widget.resource,
+        isEdit: widget.resource != null,
+        initialInputType: widget.initialInputType,
+        usersProfile: widget.userProfile,
+        resourcesRepository: context.read<ResourcesRepository>(),
+      ),
+      child: BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
+        listenWhen: (p, c) =>
+            p.title != c.title ||
+            p.imageUrl != c.imageUrl ||
+            p.description != c.description ||
+            p.submitStatus != c.submitStatus ||
+            p.urlFetchedStatus != c.urlFetchedStatus ||
+            p.error != c.error,
+        listener: (context, state) {
+          final cubit = context.read<CreateResourceDialogCubit>();
 
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider(create: (_) => ResourcesRepository()),
-        RepositoryProvider(create: (_) => KeysRepository()),
-      ],
-      child: BlocProvider(
-        create: (context) => CreateResourceDialogCubit(
-          skills: skills,
-          resource: resource,
-          isEdit: resource != null,
-          usersProfile: userProfile,
-          resourcesRepository: context.read<ResourcesRepository>(),
-        ),
-        child:
-            BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
-          listenWhen: (p, c) =>
-              p.title != c.title ||
-              p.imageUrl != c.imageUrl ||
-              p.description != c.description ||
-              p.submitStatus != c.submitStatus ||
-              p.urlFetchedStatus != c.urlFetchedStatus ||
-              p.error != c.error,
-          listener: (context, state) {
-            final cubit = context.read<CreateResourceDialogCubit>();
+          // Autofill fields after parsing link
+          if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
+            titleController.text = state.title;
+            descController.text = state.description;
+            imageController.text = state.imageUrl;
+          }
 
-            // Autofill fields after parsing link
-            if (state.urlFetchedStatus == UrlFetchedStatus.fetched) {
-              titleController.text = state.title;
-              descController.text = state.description;
-              imageController.text = state.imageUrl;
-            }
+          if (state.submitStatus == ResourceSubmitStatus.success) {
+            Navigator.of(context).pop();
+          }
 
-            if (state.submitStatus == ResourceSubmitStatus.success) {
-              Navigator.of(context).pop();
-            }
-
-            if (state.isError ||
-                state.submitStatus == ResourceSubmitStatus.error) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    duration: const Duration(seconds: 5),
-                    backgroundColor: Colors.red,
-                    content: Text(
-                      state.error.isEmpty
-                          ? 'Something went wrong'
-                          : state.error,
-                    ),
+          if (state.isError ||
+              state.submitStatus == ResourceSubmitStatus.error) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  duration: const Duration(seconds: 5),
+                  backgroundColor: Colors.red,
+                  content: Text(
+                    state.error.isEmpty ? 'Something went wrong' : state.error,
                   ),
-                ).closed.then((_) => cubit.clearError());
-            }
-          },
-          child:
-              BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
-            builder: (context, state) {
-              final cubit = context.read<CreateResourceDialogCubit>();
-              final canSubmit = state.inputType == ResourceInputType.link
-                  ? cubit.isFormValidForLink()
-                  : cubit.isFormValidForPdf();
-
-              return Scaffold(
-                backgroundColor: Colors.transparent,
-                appBar: AppBar(
-                  title: Text(state.isEdit ? 'Edit Resource' : 'Add Resource'),
                 ),
-                body: AlertDialog(
-                  scrollable: true,
-                  title: Text(
-                    state.isEdit ? 'Edit Resource' : 'Create New Resource',
-                  ),
-                  content: Form(
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 1) Mode toggle
-                        SegmentedButton<ResourceInputType>(
-                          segments: const [
-                            ButtonSegment(
-                              value: ResourceInputType.link,
-                              label: Text('Link'),
-                              icon: Icon(Icons.link),
-                            ),
-                            ButtonSegment(
-                              value: ResourceInputType.pdf,
-                              label: Text('PDF'),
-                              icon: Icon(Icons.picture_as_pdf),
-                            ),
-                          ],
-                          selected: {state.inputType},
-                          onSelectionChanged: (s) =>
-                              cubit.inputTypeChanged(s.first),
-                        ),
-                        gap(),
+              ).closed.then((_) {
+                if (!cubit.isClosed) cubit.clearError();
+              });
+          }
+        },
+        child: BlocBuilder<CreateResourceDialogCubit, CreateResourceDialogState>(
+          builder: (context, state) {
+            final cubit = context.read<CreateResourceDialogCubit>();
+            final canSubmit = state.inputType == ResourceInputType.link
+                ? cubit.isFormValidForLink()
+                : cubit.isFormValidForPdf();
 
-                        // 2) LINK MODE
-                        if (state.inputType == ResourceInputType.link) ...[
-                          _UrlField(
-                            state: state,
-                            onChanged: cubit.urlChanged,
-                            onFetch: () => cubit.getMetadata(state.url.value),
-                            onClear: () => cubit.urlChanged(''),
-                            onPasteFromClipboard: () async {
-                              final data =
-                                  await Clipboard.getData('text/plain');
-                              final text = data?.text?.trim() ?? '';
-                              if (text.isNotEmpty) cubit.urlChanged(text);
-                            },
+            return Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                title: Text(state.isEdit ? 'Edit Resource' : 'Add Resource'),
+              ),
+              body: AlertDialog(
+                scrollable: true,
+                title: Text(
+                  state.isEdit ? 'Edit Resource' : 'Create New Resource',
+                ),
+                content: Form(
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1) Mode toggle
+                      SegmentedButton<ResourceInputType>(
+                        segments: const [
+                          ButtonSegment(
+                            value: ResourceInputType.link,
+                            label: Text('Link'),
+                            icon: Icon(Icons.link),
                           ),
-                          smallGap(),
-                          if (state.urlFetchedStatus ==
-                              UrlFetchedStatus.fetching)
-                            const _InlineProgress(
-                              message: 'Fetching website information...',
-                            ),
-                          if (state.urlFetchedStatus == UrlFetchedStatus.error)
-                            const _InlineError(
-                              message: 'Failed to fetch details.'
-                                  ' You can fill in the fields below manually.',
-                            ),
-                          if (state.urlFetchedStatus ==
-                                  UrlFetchedStatus.fetched ||
-                              state.urlFetchedStatus ==
-                                  UrlFetchedStatus.manual) ...[
-                            // Quick visual preview
-                            ResourcesItem(
-                              isResourceList: false,
-                              resource: Resource(
-                                type: ResourceType.link,
-                                name: state.title,
-                                description: state.description,
-                                thumbnail: state.imageUrl,
-                                lastEditDate: DateTime.now(),
-                              ),
-                            ),
-                            gap(),
-
-                            // Details collapsed by default to reduce clutter
-                            ExpansionTile(
-                              initiallyExpanded: state.title.isEmpty,
-                              title: const Text('Details'),
-                              childrenPadding: const EdgeInsets.only(
-                                left: 8,
-                                right: 8,
-                                bottom: 8,
-                              ),
-                              children: [
-                                TextFormField(
-                                  controller: titleController,
-                                  minLines: 1,
-                                  maxLines: 3,
-                                  onChanged: cubit.titleChanged,
-                                  textInputAction: TextInputAction.next,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Title',
-                                    hintText: 'Resource title',
-                                    icon: Icon(Icons.title),
-                                  ),
-                                  validator: (v) =>
-                                      (v == null || v.trim().isEmpty)
-                                          ? 'Title is required'
-                                          : null,
-                                ),
-                                gap(),
-                                TextFormField(
-                                  controller: descController,
-                                  minLines: 1,
-                                  maxLines: 5,
-                                  onChanged: cubit.descriptionChanged,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Description',
-                                    hintText: 'Short description (optional)',
-                                    icon: Icon(Icons.description),
-                                  ),
-                                ),
-                                gap(),
-                                TextFormField(
-                                  controller: imageController,
-                                  onChanged: cubit.imageUrlChanged,
-                                  keyboardType: TextInputType.url,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Image URL',
-                                    hintText: 'Enter an image URL (optional)',
-                                    icon: Icon(Icons.image),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ButtonSegment(
+                            value: ResourceInputType.pdf,
+                            label: Text('PDF'),
+                            icon: Icon(Icons.picture_as_pdf),
+                          ),
                         ],
+                        selected: {state.inputType},
+                        onSelectionChanged: (s) =>
+                            cubit.inputTypeChanged(s.first),
+                      ),
+                      gap(),
 
-                        // 3) PDF MODE
-                        if (state.inputType == ResourceInputType.pdf) ...[
-                          _PdfPicker(
-                            fileName: state.pdfName,
-                            picking: state.pdfPicking,
-                            uploading: state.pdfUploading,
-                            progress: state.pdfUploadProgress,
-                            onPickPressed: cubit.pickPdf,
-                            onClearPressed: cubit.clearPickedPdf,
+                      // 2) LINK MODE
+                      if (state.inputType == ResourceInputType.link) ...[
+                        _UrlField(
+                          state: state,
+                          onChanged: cubit.urlChanged,
+                          onFetch: () => cubit.getMetadata(state.url.value),
+                          onClear: () => cubit.urlChanged(''),
+                          onPasteFromClipboard: () async {
+                            final data = await Clipboard.getData('text/plain');
+                            final text = data?.text?.trim() ?? '';
+                            if (text.isNotEmpty) cubit.urlChanged(text);
+                          },
+                        ),
+                        smallGap(),
+                        if (state.urlFetchedStatus == UrlFetchedStatus.fetching)
+                          const _InlineProgress(
+                            message: 'Fetching website information...',
+                          ),
+                        if (state.urlFetchedStatus == UrlFetchedStatus.error)
+                          const _InlineError(
+                            message:
+                                'Failed to fetch details.'
+                                ' You can fill in the fields below manually.',
+                          ),
+                        if (state.urlFetchedStatus ==
+                                UrlFetchedStatus.fetched ||
+                            state.urlFetchedStatus ==
+                                UrlFetchedStatus.manual) ...[
+                          // Quick visual preview
+                          ResourcesItem(
+                            isResourceList: false,
+                            resource: Resource(
+                              type: ResourceType.link,
+                              name: state.title,
+                              description: state.description,
+                              thumbnail: state.imageUrl,
+                              lastEditDate: DateTime.now(),
+                            ),
                           ),
                           gap(),
-                          if (state.pdfBytes != null)
-                            ExpansionTile(
-                              initiallyExpanded: true,
-                              title: const Text('Details'),
-                              childrenPadding: const EdgeInsets.only(
-                                left: 8,
-                                right: 8,
-                                bottom: 8,
-                              ),
-                              children: [
-                                TextFormField(
-                                  controller: titleController,
-                                  minLines: 1,
-                                  maxLines: 3,
-                                  onChanged: cubit.titleChanged,
-                                  textInputAction: TextInputAction.next,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Title',
-                                    hintText: 'Document title',
-                                    icon: Icon(Icons.title),
-                                  ),
-                                  validator: (v) =>
-                                      (v == null || v.trim().isEmpty)
-                                          ? 'Title is required'
-                                          : null,
-                                ),
-                                gap(),
-                                TextFormField(
-                                  controller: descController,
-                                  minLines: 1,
-                                  maxLines: 6,
-                                  onChanged: cubit.descriptionChanged,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Description',
-                                    hintText: 'Short description (optional)',
-                                    icon: Icon(Icons.description),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
 
-                        gap(),
-
-                        // 4) Skills (progressive disclosure)
-                        if ((state.inputType == ResourceInputType.link &&
-                                (state.urlFetchedStatus ==
-                                        UrlFetchedStatus.fetched ||
-                                    state.urlFetchedStatus ==
-                                        UrlFetchedStatus.manual)) ||
-                            (state.inputType == ResourceInputType.pdf &&
-                                state.pdfBytes != null))
+                          // Details collapsed by default to reduce clutter
                           ExpansionTile(
-                            title: const Text('Related skills (optional)'),
+                            initiallyExpanded: state.title.isEmpty,
+                            title: const Text('Details'),
                             childrenPadding: const EdgeInsets.only(
                               left: 8,
                               right: 8,
                               bottom: 8,
                             ),
                             children: [
-                              SearchBar(
-                                hintText: 'Search skills',
-                                onChanged: cubit.searchSkills,
-                              ),
-                              smallGap(),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  DropdownButton<CategoryFilter>(
-                                    value: state.categoryFilter,
-                                    onChanged: cubit.categoryFilterChanged,
-                                    items: CategoryFilter.values
-                                        .map(
-                                          (c) => DropdownMenuItem(
-                                            value: c,
-                                            child: Text(c.name),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                  smallGap(),
-                                  DropdownButton<DifficultyFilter>(
-                                    value: state.difficultyFilter,
-                                    onChanged: cubit.difficultyFilterChanged,
-                                    items: DifficultyFilter.values
-                                        .map(
-                                          (d) => DropdownMenuItem(
-                                            value: d,
-                                            child: Text(d.name),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ],
+                              TextFormField(
+                                controller: titleController,
+                                minLines: 1,
+                                maxLines: 3,
+                                onChanged: cubit.titleChanged,
+                                textInputAction: TextInputAction.next,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                decoration: const InputDecoration(
+                                  labelText: 'Title',
+                                  hintText: 'Resource title',
+                                  icon: Icon(Icons.title),
+                                ),
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                    ? 'Title is required'
+                                    : null,
                               ),
                               gap(),
-                              Wrap(
-                                spacing: 8,
-                                children:
-                                    state.filteredSkills!.map((Skill? skill) {
-                                  return SkillSelectChip(
-                                    trailingIcon: SkillTypeIcon(
-                                      difficulty: skill?.difficulty,
-                                      isRider: skill?.rider ?? true,
-                                    ),
-                                    skill: skill,
-                                    leadingIcon: ResourceIcon(
-                                      category: skill?.category,
-                                      difficulty: skill?.difficulty,
-                                    ),
-                                    textLabel: skill?.skillName ?? '',
-                                    isSelected: state.resourceSkills?.any(
-                                          (s) => s?.id == skill?.id,
-                                        ) ??
-                                        false,
-                                    onTap: (_) => context
-                                        .read<CreateResourceDialogCubit>()
-                                        .resourceSkillsChanged(skill?.id ?? ''),
-                                  );
-                                }).toList(),
+                              TextFormField(
+                                controller: descController,
+                                minLines: 1,
+                                maxLines: 5,
+                                onChanged: cubit.descriptionChanged,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                decoration: const InputDecoration(
+                                  labelText: 'Description',
+                                  hintText: 'Short description (optional)',
+                                  icon: Icon(Icons.description),
+                                ),
+                              ),
+                              gap(),
+                              TextFormField(
+                                controller: imageController,
+                                onChanged: cubit.imageUrlChanged,
+                                keyboardType: TextInputType.url,
+                                decoration: const InputDecoration(
+                                  labelText: 'Image URL',
+                                  hintText: 'Enter an image URL (optional)',
+                                  icon: Icon(Icons.image),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+
+                      // 3) PDF MODE
+                      if (state.inputType == ResourceInputType.pdf) ...[
+                        _PdfPicker(
+                          fileName: state.pdfName,
+                          picking: state.pdfPicking,
+                          uploading: state.pdfUploading,
+                          progress: state.pdfUploadProgress,
+                          onPickPressed: cubit.pickPdf,
+                          onClearPressed: cubit.clearPickedPdf,
+                        ),
+                        gap(),
+                        if (state.pdfBytes != null)
+                          ExpansionTile(
+                            initiallyExpanded: true,
+                            title: const Text('Details'),
+                            childrenPadding: const EdgeInsets.only(
+                              left: 8,
+                              right: 8,
+                              bottom: 8,
+                            ),
+                            children: [
+                              TextFormField(
+                                controller: titleController,
+                                minLines: 1,
+                                maxLines: 3,
+                                onChanged: cubit.titleChanged,
+                                textInputAction: TextInputAction.next,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                decoration: const InputDecoration(
+                                  labelText: 'Title',
+                                  hintText: 'Document title',
+                                  icon: Icon(Icons.title),
+                                ),
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                    ? 'Title is required'
+                                    : null,
+                              ),
+                              gap(),
+                              TextFormField(
+                                controller: descController,
+                                minLines: 1,
+                                maxLines: 6,
+                                onChanged: cubit.descriptionChanged,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                decoration: const InputDecoration(
+                                  labelText: 'Description',
+                                  hintText: 'Short description (optional)',
+                                  icon: Icon(Icons.description),
+                                ),
                               ),
                             ],
                           ),
                       ],
-                    ),
+
+                      gap(),
+
+                      // 4) Skills (progressive disclosure)
+                      if ((state.inputType == ResourceInputType.link &&
+                              (state.urlFetchedStatus ==
+                                      UrlFetchedStatus.fetched ||
+                                  state.urlFetchedStatus ==
+                                      UrlFetchedStatus.manual)) ||
+                          (state.inputType == ResourceInputType.pdf &&
+                              state.pdfBytes != null))
+                        ExpansionTile(
+                          title: Text(
+                            state.inputType == ResourceInputType.link
+                                ? 'Related skills'
+                                : 'Related skills (optional)',
+                          ),
+                          childrenPadding: const EdgeInsets.only(
+                            left: 8,
+                            right: 8,
+                            bottom: 8,
+                          ),
+                          children: [
+                            SearchBar(
+                              hintText: 'Search skills',
+                              onChanged: cubit.searchSkills,
+                            ),
+                            smallGap(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                DropdownButton<CategoryFilter>(
+                                  value: state.categoryFilter,
+                                  onChanged: cubit.categoryFilterChanged,
+                                  items: CategoryFilter.values
+                                      .map(
+                                        (c) => DropdownMenuItem(
+                                          value: c,
+                                          child: Text(c.name),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                                smallGap(),
+                                DropdownButton<DifficultyFilter>(
+                                  value: state.difficultyFilter,
+                                  onChanged: cubit.difficultyFilterChanged,
+                                  items: DifficultyFilter.values
+                                      .map(
+                                        (d) => DropdownMenuItem(
+                                          value: d,
+                                          child: Text(d.name),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+                            gap(),
+                            Wrap(
+                              spacing: 8,
+                              children: state.filteredSkills!.map((
+                                Skill? skill,
+                              ) {
+                                return SkillSelectChip(
+                                  trailingIcon: SkillTypeIcon(
+                                    difficulty: skill?.difficulty,
+                                    isRider: skill?.rider ?? true,
+                                  ),
+                                  skill: skill,
+                                  leadingIcon: ResourceIcon(
+                                    category: skill?.category,
+                                    difficulty: skill?.difficulty,
+                                  ),
+                                  textLabel: skill?.skillName ?? '',
+                                  isSelected:
+                                      state.resourceSkills?.any(
+                                        (s) => s?.id == skill?.id,
+                                      ) ??
+                                      false,
+                                  onTap: (_) => context
+                                      .read<CreateResourceDialogCubit>()
+                                      .resourceSkillsChanged(skill?.id ?? ''),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
-                    ),
-                    if (state.submitStatus == ResourceSubmitStatus.submitting)
-                      const Padding(
-                        padding: EdgeInsets.only(right: 12),
-                        child: SizedBox(
-                          height: 26,
-                          width: 26,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    else
-                      FilledButton.icon(
-                        icon: const Icon(Icons.check),
-                        onPressed: canSubmit ? cubit.submit : null,
-                        label: Text(
-                          state.inputType == ResourceInputType.link
-                              ? 'Save link'
-                              : 'Upload PDF',
-                        ),
-                      ),
-                  ],
                 ),
-              );
-            },
-          ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                  if (state.submitStatus == ResourceSubmitStatus.submitting)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: SizedBox(
+                        height: 26,
+                        width: 26,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    FilledButton.icon(
+                      icon: const Icon(Icons.check),
+                      onPressed:
+                          state.isEdit &&
+                              state.inputType == ResourceInputType.link
+                          ? cubit.editResource
+                          : canSubmit
+                          ? cubit.submit
+                          : null,
+                      label: Text(
+                        state.inputType == ResourceInputType.link
+                            ? 'Save link'
+                            : 'Upload PDF',
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

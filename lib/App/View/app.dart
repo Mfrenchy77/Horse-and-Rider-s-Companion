@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
@@ -126,7 +127,10 @@ class AppView extends StatelessWidget {
                       ),
                     )
                   : const BoxDecoration(),
-              child: child ?? const SizedBox.shrink(),
+              child: ResourceLayoutScope(
+                layout: settingsController.resourceLayout,
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
 

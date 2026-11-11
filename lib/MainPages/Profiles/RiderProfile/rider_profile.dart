@@ -1,24 +1,20 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
-import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
-import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 
 class RiderProfileView extends StatefulWidget {
-  const RiderProfileView({
-    required this.profile,
-    super.key,
-  });
+  const RiderProfileView({required this.profile, super.key});
 
   final RiderProfile profile;
 
@@ -77,7 +73,11 @@ class _RiderProfileViewState extends State<RiderProfileView>
                     ),
                   )
                 : null,
-            title: const AppTitle(key: Key('appTitle')),
+            title: Text(
+              profile.email == state.usersProfile?.email
+                  ? 'My profile'
+                  : 'Rider profile',
+            ),
             actions: [
               const ProfileSearchButton(key: Key('RiderSearchButton')),
               // Show requests badge for the owner viewing their own profile
@@ -102,59 +102,67 @@ class _RiderProfileViewState extends State<RiderProfileView>
               : null,
           body: LayoutBuilder(
             builder: (context, constraints) {
-              final screenWidth = constraints.maxWidth;
-
-              if (screenWidth >= RiderProfileView.largeBreakpoint) {
-                // Split layout: profile left, skills right
-                return Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: ListView(
+              final skills = GradientCard(
+                key: const Key('riderSkills'),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          PrimaryRiderView(
-                            profile: profile,
-                            key: const Key('ProfileView'),
+                          Text(
+                            'Skills',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                context.goNamed(SkillTreePage.name),
+                            child: const Text('Explore Skill Tree'),
                           ),
                         ],
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: ListView(
-                        children: [
-                          const ProfileSkillsBanner(
-                            key: Key('ProfileSkillsBanner'),
-                          ),
-                          gap(),
-                          _DeprecatedSkillsCleanupCard(profile: profile),
-                          ProfileSkills(
-                            skillLevels: profile.skillLevels,
-                            key: const Key('ProfileSkills'),
-                          ),
-                        ],
+                      _DeprecatedSkillsCleanupCard(profile: profile),
+                      ProfileSkills(
+                        skillLevels: profile.skillLevels,
+                        key: const Key('ProfileSkills'),
                       ),
-                    ),
-                  ],
-                );
-              }
-
-              // Single column layout
+                    ],
+                  ),
+                ),
+              );
+              final identity = PrimaryRiderView(
+                profile: profile,
+                key: const Key('ProfileView'),
+              );
               return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    PrimaryRiderView(
-                      profile: profile,
-                      key: const Key('ProfileView'),
-                    ),
-                    const SkillsTextButton(key: Key('SkillsTextButton')),
-                    gap(),
-                    _DeprecatedSkillsCleanupCard(profile: profile),
-                    ProfileSkills(
-                      skillLevels: profile.skillLevels,
-                      key: const Key('ProfileSkills'),
-                    ),
-                  ],
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1320),
+                    child:
+                        constraints.maxWidth >= RiderProfileView.largeBreakpoint
+                        ? Row(
+                            key: const Key('riderProfileWide'),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 5, child: identity),
+                              const SizedBox(width: 20),
+                              Expanded(flex: 6, child: skills),
+                            ],
+                          )
+                        : Column(
+                            key: const Key('riderProfileCompact'),
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              identity,
+                              const SizedBox(height: 16),
+                              skills,
+                            ],
+                          ),
+                  ),
                 ),
               );
             },
@@ -216,17 +224,17 @@ class _DeprecatedSkillsCleanupCard extends StatelessWidget {
               subtitle: Text(
                 sampleNames.isEmpty
                     ? 'We found ${audit.deprecatedLevels.length} skills that '
-                        'no longer exist in the catalog.'
+                          'no longer exist in the catalog.'
                     : 'Found ${audit.deprecatedLevels.length} deprecated '
-                        'skill(s): $sampleNames',
+                          'skill(s): $sampleNames',
                 style: TextStyle(color: warningTextColor),
               ),
               trailing: FilledButton.tonal(
                 onPressed: () {
                   context.read<AppCubit>().removeDeprecatedSkillLevels(
-                        profile: profile,
-                        deprecatedLevels: audit.deprecatedLevels,
-                      );
+                    profile: profile,
+                    deprecatedLevels: audit.deprecatedLevels,
+                  );
                 },
                 child: const Text('Delete'),
               ),

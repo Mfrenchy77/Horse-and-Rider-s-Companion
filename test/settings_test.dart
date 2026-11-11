@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
@@ -57,6 +58,22 @@ void main() {
     expect(prefs.isHeightInHands, isTrue);
     expect(prefs.isWeightInPounds, isTrue);
   });
+  test(
+    'resource layout defaults to vertical and restores both choices',
+    () async {
+      expect(controller.resourceLayout, ResourceLayout.vertical);
+      for (final layout in [
+        ResourceLayout.horizontal,
+        ResourceLayout.vertical,
+      ]) {
+        await controller.updateResourceLayout(layout);
+        final restored = SettingsController(SettingsService());
+        await restored.loadSettings();
+        expect(restored.resourceLayout, layout);
+        restored.dispose();
+      }
+    },
+  );
   test('onboarding and first-launch flags round trip', () {
     prefs
       ..setFirstLaunch(isFirst: false)

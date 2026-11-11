@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
@@ -14,7 +15,20 @@ enum ThemeSeasons {
 }
 
 class HorseAndRidersTheme {
-  ThemeData getLightTheme() {
+  ThemeData getLightTheme() => _withCardGradient(_lightTheme());
+  ThemeData getDarkTheme() => _withCardGradient(_darkTheme());
+
+  static final _gradientThemes = Expando<ThemeData>();
+
+  ThemeData _withCardGradient(ThemeData theme) =>
+      _gradientThemes[theme] ??= theme.copyWith(
+        extensions: [
+          ...theme.extensions.values,
+          CardGradientTheme.fromTheme(theme),
+        ],
+      );
+
+  ThemeData _lightTheme() {
     // Use cached season (computed once per day) to avoid repeatedly
     // computing the season on every rebuild.
     final themeSeasons = getThemeSeason();
@@ -43,7 +57,7 @@ class HorseAndRidersTheme {
     }
   }
 
-  ThemeData getDarkTheme() {
+  ThemeData _darkTheme() {
     // Use cached season (computed once per day) to avoid repeatedly
     // computing the season on every rebuild.
     final themeSeasons = getThemeSeason();
@@ -191,8 +205,52 @@ final mainThemeDark = ThemeData(
         surface: ColorConst.mainBackgroundDark,
         onSurface: ColorConst.darkForeground,
         outline: ColorConst.dividerDarkBlueGrey,
+        outlineVariant: ColorConst.dividerDarkBlueGrey,
+        secondaryContainer: ColorConst.cardDarkBlueGrey,
+        onSecondaryContainer: ColorConst.darkForeground,
       ),
   primaryColor: ColorConst.mainPrimaryDark,
+  chipTheme: ChipThemeData(
+    color: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return ColorConst.mainPrimaryDark;
+      }
+      return states.contains(WidgetState.selected)
+          ? ColorConst.dividerDarkBlueGrey
+          : ColorConst.cardDarkBlueGrey;
+    }),
+    side: WidgetStateBorderSide.resolveWith(
+      (states) => BorderSide(
+        color:
+            states.contains(WidgetState.selected) &&
+                !states.contains(WidgetState.disabled)
+            ? ColorConst.mainAccentDark
+            : ColorConst.dividerDarkBlueGrey,
+      ),
+    ),
+    labelStyle: TextStyle(
+      color: WidgetStateColor.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? ColorConst.darkMuted
+            : ColorConst.darkForeground,
+      ),
+    ),
+    checkmarkColor: ColorConst.mainAccentDark,
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? ColorConst.mainPrimaryDark
+            : null,
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? ColorConst.darkMuted.withValues(alpha: .65)
+            : null,
+      ),
+    ),
+  ),
   scaffoldBackgroundColor: Colors.transparent,
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: ColorConst.mainPrimaryDark,

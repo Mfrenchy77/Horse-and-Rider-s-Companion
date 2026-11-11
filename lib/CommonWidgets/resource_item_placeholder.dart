@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -12,7 +13,7 @@ class ResourceItemPlaceholder extends StatelessWidget {
     final isDark = SharedPrefs().isDarkMode;
     return MaxWidthBox(
       maxWidth: 600,
-      child: Card(
+      child: GradientCard(
         child: Column(
           children: [
             //Simulate rating bar

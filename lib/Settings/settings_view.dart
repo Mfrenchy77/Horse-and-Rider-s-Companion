@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 
 /// Displays the various settings that can be customized by the user.
@@ -8,10 +9,7 @@ import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 /// When a user changes a setting, the SettingsController is updated and
 /// Widgets that listen to the SettingsController are rebuilt.
 class SettingsView extends StatelessWidget {
-  const SettingsView({
-    super.key,
-    required this.controller,
-  });
+  const SettingsView({super.key, required this.controller});
 
   static const routeName = 'Settings';
   static const name = 'SettingsView';
@@ -36,7 +34,8 @@ class SettingsView extends StatelessWidget {
               maxWidth: 800,
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
+                child: ListView(
+                  shrinkWrap: true,
                   children: [
                     Text(
                       'Theme',
@@ -124,10 +123,7 @@ class SettingsView extends StatelessWidget {
                               value: false,
                               child: Text('Centimeters'),
                             ),
-                            DropdownMenuItem(
-                              value: true,
-                              child: Text('Hands'),
-                            ),
+                            DropdownMenuItem(value: true, child: Text('Hands')),
                           ],
                         ),
                       ],
@@ -158,6 +154,26 @@ class SettingsView extends StatelessWidget {
                       ],
                     ),
                     gap(),
+                    ListTile(
+                      title: const Text('Resources layout'),
+                      subtitle: const Text(
+                        'Horizontal cards stack on narrow screens.',
+                      ),
+                      trailing: DropdownButton<ResourceLayout>(
+                        value: controller.resourceLayout,
+                        onChanged: controller.updateResourceLayout,
+                        items: const [
+                          DropdownMenuItem(
+                            value: ResourceLayout.vertical,
+                            child: Text('Vertical'),
+                          ),
+                          DropdownMenuItem(
+                            value: ResourceLayout.horizontal,
+                            child: Text('Horizontal'),
+                          ),
+                        ],
+                      ),
+                    ),
                     // End of settings
                   ],
                 ),

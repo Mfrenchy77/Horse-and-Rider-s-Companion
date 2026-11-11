@@ -6,13 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' show Document;
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_image.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
+import 'package:horseandriderscompanion/Settings/resource_layout.dart';
+import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
 class ResourceInfoBar extends StatelessWidget {
   const ResourceInfoBar({super.key, required this.resource});
@@ -31,8 +31,8 @@ class ResourceInfoBar extends StatelessWidget {
       return (resource.coverImageUrl?.isNotEmpty ?? false)
           ? resource.coverImageUrl
           : (resource.thumbnail?.isNotEmpty ?? false)
-              ? resource.thumbnail
-              : null;
+          ? resource.thumbnail
+          : null;
     }
     return (resource.thumbnail?.isNotEmpty ?? false)
         ? resource.thumbnail
@@ -74,10 +74,7 @@ class ResourceInfoBar extends StatelessWidget {
   ) {
     final toHero = toContext.widget as Hero;
     // Wrap with transparent Material so text renders correctly while flying.
-    return Material(
-      type: MaterialType.transparency,
-      child: toHero.child,
-    );
+    return Material(type: MaterialType.transparency, child: toHero.child);
   }
 
   void _openLinkOrArticle(BuildContext context) {
@@ -96,7 +93,9 @@ class ResourceInfoBar extends StatelessWidget {
     }
 
     final link = resource.url;
-    if (link != null && link.isNotEmpty) {
+    if (youtubeWatchUri(link) != null || shouldOpenResourceExternally(link)) {
+      cubit.openResource(url: link);
+    } else if (link != null && link.isNotEmpty) {
       context.goNamed(
         ResourceWebPage.name,
         pathParameters: {
@@ -116,153 +115,193 @@ class ResourceInfoBar extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         final imageUrl = _primaryImageUrl();
         final title = _titleOrUntitled();
+        final isVideo = !_isArticle && youtubeWatchUri(resource.url) != null;
 
-        final leftText = _isArticle
+        final description = _isArticle
             ? _articleSnippet()
-            : (resource.description?.trim().isNotEmpty ?? false)
-                ? resource.description!.trim()
-                : (resource.url?.trim().isNotEmpty ?? false)
-                    ? resource.url!.trim()
-                    : '';
+            : resource.description?.trim() ?? '';
+        final source = _isArticle
+            ? resource.authorName?.trim() ?? ''
+            : resourceWebUri(resource.url)?.host ?? '';
+        final skillIds = resource.skillTreeIds.toSet();
+        final skills = state.allSkills.whereType<Skill>().where(
+          (skill) => skillIds.contains(skill.id),
+        );
 
-        return Column(
-          children: [
-            // ── Title + edit menu  ───────────────────────────
-            Row(
-              children: [
-                Flexible(
-                  fit: FlexFit.tight,
-                  flex: 4,
-                  child: Hero(
-                    tag: _heroTagTitle(),
-                    flightShuttleBuilder: _textFlightShuttle,
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+        final image = InkWell(
+          key: const Key('ResourceImage'),
+          onLongPress: () => cubit.openResource(url: resource.url),
+          onTap: () => _openLinkOrArticle(context),
+          child: Tooltip(
+            message: _isArticle
+                ? 'Read article'
+                : isVideo
+                ? 'Watch on YouTube'
+                : (resource.url?.isNotEmpty ?? false)
+                ? 'Open link'
+                : 'No link',
+            child: Hero(
+              tag: _heroTagImage(),
+              child: LayoutBuilder(
+                builder: (context, constraints) => SizedBox(
+                  height: (constraints.maxWidth * 9 / 16).clamp(120.0, 240.0),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    alignment: Alignment.center,
+                    children: [
+                      ResourceImage(
+                        url: imageUrl ?? '',
+                        resourceUrl: resource.url,
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      if (isVideo)
+                        const Center(
+                          child: CircleAvatar(
+                            backgroundColor: Colors.black54,
+                            foregroundColor: Colors.white,
+                            child: Icon(Icons.play_arrow),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-                Visibility(
-                  visible: cubit.canEditResource(resource) && state.isEdit,
-                  child: PopupMenuButton<String>(
-                    itemBuilder: (BuildContext menuContext) => const [
-                      PopupMenuItem<String>(value: 'Edit', child: Text('Edit')),
-                      PopupMenuItem<String>(
-                        value: 'Delete',
-                        child: Text('Delete'),
-                      ),
                     ],
-                    onSelected: (String value) {
-                      switch (value) {
-                        case 'Edit':
-                          if (state.usersProfile != null) {
-                            showModalBottomSheet<CreateResourceDialogCubit>(
-                              isScrollControlled: true,
-                              useSafeArea: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              context: context,
-                              builder: (context) => CreateResourcDialog(
-                                skills: state.allSkills,
-                                userProfile: state.usersProfile!,
-                                resource: resource,
-                              ),
-                            );
-                          } else {
-                            cubit.createError('You are not authorized'
-                                ' to edit until logged in.');
-                          }
-                          break;
-                        case 'Delete':
-                          cubit.deleteResource(resource);
-                          break;
-                      }
-                    },
                   ),
                 ),
-              ],
+              ),
             ),
-            gap(),
-
-            // ── Body + image/cover (Desc + Image each with Hero) ─────────────
-            SizedBox(
-              height: 150,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
+          ),
+        );
+        final details = Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  // Description/snippet side
-                  Flexible(
-                    fit: FlexFit.tight,
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints.loose(const Size.fromHeight(300)),
-                        child: Hero(
-                          tag: _heroTagDesc(),
-                          flightShuttleBuilder: _textFlightShuttle,
-                          child: Material(
-                            type: MaterialType.transparency,
-                            child: Text(
-                              leftText,
-                              maxLines: 7, // keep same maxLines for smoothness
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
+                  Expanded(
+                    child: Hero(
+                      tag: _heroTagTitle(),
+                      flightShuttleBuilder: _textFlightShuttle,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
                     ),
                   ),
-
-                  // Image / Cover
-                  InkWell(
-                    key: const Key('ResourceImage'),
-                    onLongPress: () => cubit.openResource(url: resource.url),
-                    onTap: () => _openLinkOrArticle(context),
-                    child: Tooltip(
-                      message: _isArticle
-                          ? 'Read article'
-                          : (resource.url?.isNotEmpty ?? false)
-                              ? 'Open link'
-                              : 'No link',
-                      child: Hero(
-                        tag: _heroTagImage(),
-                        child: MaxWidthBox(
-                          maxWidth: 200,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Colors.grey,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: ResourceImage(url: imageUrl ?? ''),
-                            ),
-                          ),
+                  Visibility(
+                    visible: cubit.canEditResource(resource) && state.isEdit,
+                    child: PopupMenuButton<String>(
+                      itemBuilder: (BuildContext menuContext) => const [
+                        PopupMenuItem<String>(
+                          value: 'Edit',
+                          child: Text('Edit'),
                         ),
-                      ),
+                        PopupMenuItem<String>(
+                          value: 'Delete',
+                          child: Text('Delete'),
+                        ),
+                      ],
+                      onSelected: (String value) {
+                        switch (value) {
+                          case 'Edit':
+                            if (state.usersProfile != null) {
+                              showModalBottomSheet<CreateResourceDialogCubit>(
+                                isScrollControlled: true,
+                                useSafeArea: true,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20),
+                                  ),
+                                ),
+                                context: context,
+                                builder: (context) => CreateResourcDialog(
+                                  skills: state.allSkills,
+                                  userProfile: state.usersProfile!,
+                                  resource: resource,
+                                ),
+                              );
+                            } else {
+                              cubit.createError(
+                                'You are not authorized'
+                                ' to edit until logged in.',
+                              );
+                            }
+                            break;
+                          case 'Delete':
+                            cubit.deleteResource(resource);
+                            break;
+                        }
+                      },
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+              if (source.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  source,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ],
+              if (skills.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final skill in skills)
+                      Chip(
+                        label: Text(
+                          skill.skillName,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
+              ],
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Hero(
+                  tag: _heroTagDesc(),
+                  flightShuttleBuilder: _textFlightShuttle,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Text(
+                      description,
+                      maxLines: 7,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+
+        final layout = ResourceLayoutScope.of(context);
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            if (layout == ResourceLayout.horizontal &&
+                constraints.maxWidth >= 480) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: constraints.maxWidth * .4, child: image),
+                  Expanded(child: details),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [image, details],
+            );
+          },
         );
       },
     );

@@ -29,8 +29,11 @@ class LogBookButton extends StatelessWidget {
 
         return !cubit.isAuthorized() || state.isGuest
             ? const SizedBox.shrink()
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            : Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   Tooltip(
                     message: 'Open the Log Book',
@@ -46,9 +49,7 @@ class LogBookButton extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(
-                        HorseAndRiderIcons.riderLogIcon,
-                      ),
+                      icon: const Icon(HorseAndRiderIcons.riderLogIcon),
                       label: Text(
                         horseProfile == null
                             ? "Rider's Log Book"
@@ -67,9 +68,7 @@ class LogBookButton extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: const Icon(
-                      Icons.add,
-                    ),
+                    icon: const Icon(Icons.add),
                   ),
                 ],
               );

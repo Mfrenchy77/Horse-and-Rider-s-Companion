@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
 /// A service that stores and retrieves user settings.
 class SettingsService {
   Future<ThemeMode> getSystemThemeMode() async => ThemeMode.system;
+
+  ResourceLayout getResourceLayout() =>
+      SharedPrefs().resourceLayout == ResourceLayout.horizontal.name
+      ? ResourceLayout.horizontal
+      : ResourceLayout.vertical;
+
+  Future<void> updateResourceLayout(ResourceLayout layout) async {
+    await SharedPrefs().setResourceLayout(layout.name);
+  }
 
   /// Loads the User's preferred ThemeMode from local or remote storage.
   ThemeMode getSavedDarkMode() {

@@ -21,6 +21,13 @@ class SharedPrefs {
   static const String PREF_HEIGHT_PREFERENCE = 'HeightPreference';
   static const String PREF_WEIGHT_PREFERENCE = 'WeightPreference';
 
+  static const String _resourceLayoutKey = 'ResourceLayout';
+
+  String? get resourceLayout => _sharedPrefs.getString(_resourceLayoutKey);
+
+  Future<bool> setResourceLayout(String layout) =>
+      _sharedPrefs.setString(_resourceLayoutKey, layout);
+
   /// The instance of [SharedPreferences] used for
   ///  storing and retrieving preferences.
   static late SharedPreferences _sharedPrefs;

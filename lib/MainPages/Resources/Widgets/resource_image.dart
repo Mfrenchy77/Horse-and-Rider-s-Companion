@@ -2,37 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
 
 class ResourceImage extends StatelessWidget {
-  const ResourceImage({super.key, required this.url, this.size = 150});
+  const ResourceImage({
+    super.key,
+    required this.url,
+    this.resourceUrl,
+    this.borderRadius = const BorderRadius.all(Radius.circular(10)),
+  });
+
   final String url;
-  final double size;
+  final String? resourceUrl;
+  final BorderRadius borderRadius;
 
   @override
   Widget build(BuildContext context) {
-    if (url.isEmpty) {
-      return Image.asset(
-        'assets/horse_logo_and_text_dark.png',
-        width: size,
-        height: size,
+    final fallback = ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Image.asset(
+        'assets/horse_logo.png',
         fit: BoxFit.contain,
-      );
-    }
+        semanticLabel: 'Preview unavailable. Horse & Rider logo.',
+      ),
+    );
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SmartImage(
-        url,
-        maxLogicalWidth: 480,
-        config: const SmartImageConfig(
-          forceWebP: true,
-          domainS3Buckets: {
-            // maps WordPress domain -> S3 bucket name
-            'practicalhorsemanmag.com': 'wp-s3-practicalhorsemanmag.com',
-          },
-          // Optional: if you’ve discovered a version segment for some files
-          domainExtraSegmentGuesses: {
-            'practicalhorsemanmag.com': ['14143428'],
-          },
-        ),
+    return SizedBox(
+      width: 200,
+      height: 150,
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: url.trim().isEmpty
+            ? fallback
+            : SmartImage(
+                url,
+                resourceUrl: resourceUrl,
+                fallback: fallback,
+                maxLogicalWidth: 480,
+                config: const SmartImageConfig(forceWebP: true),
+              ),
       ),
     );
   }

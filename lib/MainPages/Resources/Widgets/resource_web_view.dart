@@ -2,16 +2,15 @@
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
+import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
 class ResourceWebView extends StatefulWidget {
-  const ResourceWebView({
-    super.key,
-    required this.url,
-    required this.title,
-  });
+  const ResourceWebView({super.key, required this.url, required this.title});
 
   final String url;
   final String title;
@@ -56,6 +55,10 @@ class _ResourceWebViewState extends State<ResourceWebView> {
 
   @override
   Widget build(BuildContext context) {
+    final isVideo = youtubeWatchUri(widget.url) != null;
+    void openExternally() =>
+        context.read<AppCubit>().openResource(url: widget.url);
+
     return PopScope(
       canPop: false, // we’ll decide what “back” means
       onPopInvokedWithResult: (didPop, _) async {
@@ -74,34 +77,42 @@ class _ResourceWebViewState extends State<ResourceWebView> {
           actions: [
             IconButton(
               icon: const Icon(Icons.open_in_browser),
-              onPressed: () => context.push(widget.url),
+              onPressed: openExternally,
               tooltip: 'Open in Browser',
             ),
           ],
         ),
-        body: Stack(
-          children: [
-            InAppWebView(
-              key: _webViewKey,
-              initialUrlRequest: URLRequest(url: WebUri(widget.url)),
-              initialSettings: _settings,
-              onWebViewCreated: (controller) => _controller = controller,
-              onLoadStart: (_, __) {},
-              onReceivedError: (_, __, error) {
-                debugPrint('Web error: $error');
-              },
-              onProgressChanged: (_, p) {
-                setState(() => _progress = p / 100);
-              },
-              onConsoleMessage: (_, msg) => debugPrint('Console: $msg'),
-            ),
-            if (_progress < 1)
-              LinearProgressIndicator(
-                value: _progress,
-                backgroundColor: Colors.white,
+        body: isVideo
+            ? Center(
+                child: FilledButton.icon(
+                  onPressed: openExternally,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Watch on YouTube'),
+                ),
+              )
+            : Stack(
+                children: [
+                  InAppWebView(
+                    key: _webViewKey,
+                    initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+                    initialSettings: _settings,
+                    onWebViewCreated: (controller) => _controller = controller,
+                    onLoadStart: (_, __) {},
+                    onReceivedError: (_, __, error) {
+                      debugPrint('Web error: $error');
+                    },
+                    onProgressChanged: (_, p) {
+                      setState(() => _progress = p / 100);
+                    },
+                    onConsoleMessage: (_, msg) => debugPrint('Console: $msg'),
+                  ),
+                  if (_progress < 1)
+                    LinearProgressIndicator(
+                      value: _progress,
+                      backgroundColor: Colors.white,
+                    ),
+                ],
               ),
-          ],
-        ),
       ),
     );
   }

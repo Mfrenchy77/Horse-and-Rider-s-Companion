@@ -1,133 +1,51 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 
 class RiderListOfProfiles extends StatelessWidget {
   const RiderListOfProfiles({super.key, required this.profile});
   final RiderProfile profile;
+
   @override
   Widget build(BuildContext context) {
+    final groups = {
+      'Owned horses': profile.ownedHorses,
+      'Students': profile.students,
+      'Student horses': profile.studentHorses,
+      'Instructors': profile.instructors,
+    };
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Visibility(
-          visible: profile.instructors?.isNotEmpty ?? false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Center(
-                child: Text(
-                  'Instructors',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+        for (final group in groups.entries)
+          if (group.value?.isNotEmpty ?? false)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GradientCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        group.key,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final item in group.value!)
+                            ProfileCard(baseItem: item),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-              smallGap(),
-              Wrap(
-                direction: Axis.vertical,
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  Column(
-                    children: profile.instructors
-                            ?.map((e) => ProfileCard(baseItem: e))
-                            .toList() ??
-                        [],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        gap(),
-        Visibility(
-          visible: profile.students?.isNotEmpty ?? false,
-          child: Column(
-            children: [
-              const Text(
-                'Students',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                direction: Axis.vertical,
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  ...profile.students
-                          ?.map(
-                            (e) => ProfileCard(baseItem: e),
-                          )
-                          .toList() ??
-                      [],
-                ],
-              ),
-            ],
-          ),
-        ),
-        gap(),
-        Visibility(
-          visible: profile.ownedHorses?.isNotEmpty ?? false,
-          child: Column(
-            children: [
-              const Text(
-                'Owned Horses',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  ...profile.ownedHorses
-                          ?.map((e) => ProfileCard(baseItem: e))
-                          .toList() ??
-                      [],
-                ],
-              ),
-            ],
-          ),
-        ),
-        //student horses
-        Visibility(
-          visible: profile.studentHorses?.isNotEmpty ?? false,
-          child: Column(
-            children: [
-              const Text(
-                'Student Horses',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              smallGap(),
-              Wrap(
-                spacing: 5,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  ...profile.studentHorses
-                          ?.map(
-                            (e) => ProfileCard(baseItem: e),
-                          )
-                          .toList() ??
-                      [],
-                ],
-              ),
-            ],
-          ),
-        ),
+            ),
       ],
     );
   }

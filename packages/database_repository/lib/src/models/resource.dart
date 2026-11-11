@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 
 /// What kind of resource this is. Optional for legacy docs without `type`.
-enum ResourceType { link, video, pdf, article, other }
+enum ResourceType { link, video, pdf, article, other, externalArticle }
 
 /// Publication state (useful if you add moderation).
 enum ResourceStatus { pending, published, rejected }
@@ -176,6 +176,8 @@ class Resource {
           return ResourceType.pdf;
         case 'article':
           return ResourceType.article;
+        case 'externalarticle':
+          return ResourceType.externalArticle;
         case 'other':
           return ResourceType.other;
         default:

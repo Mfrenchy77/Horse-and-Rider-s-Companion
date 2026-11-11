@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/quick_share_resource_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/resources_sort_dialog.dart';
 
 class ResourcesOverflowMenu extends StatelessWidget {
@@ -12,14 +12,12 @@ class ResourcesOverflowMenu extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        return state.usersProfile?.editor ?? false || !state.isGuest
+        final profile = state.usersProfile;
+        return !state.isGuest && profile != null
             ? PopupMenuButton<String>(
                 tooltip: 'Add, Edit or Sort Resources',
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'Add',
-                    child: Text('Add'),
-                  ),
+                  const PopupMenuItem<String>(value: 'Add', child: Text('Add')),
                   const PopupMenuItem<String>(
                     value: 'Edit',
                     child: Text('Edit'),
@@ -32,20 +30,10 @@ class ResourcesOverflowMenu extends StatelessWidget {
                 onSelected: (value) {
                   switch (value) {
                     case 'Add':
-                      showModalBottomSheet<CreateResourcDialog>(
-                        isScrollControlled: true,
-                        useSafeArea: true,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-                        ),
-                        context: context,
-                        builder: (context) => CreateResourcDialog(
-                          skills: state.allSkills,
-                          userProfile: state.usersProfile!,
-                          resource: null,
-                        ),
+                      QuickShareResourcePage.open(
+                        context,
+                        skills: state.allSkills,
+                        profile: profile,
                       );
                       break;
                     case 'Edit':

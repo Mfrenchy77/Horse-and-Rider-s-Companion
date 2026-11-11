@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
-import 'package:horseandriderscompanion/CommonWidgets/profile_skills_banner.dart';
-import 'package:horseandriderscompanion/CommonWidgets/skills_text_button.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Guest/Widgets/guest_profile_primary_view.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Guest/Widgets/guest_profile_skills.dart';
+import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 
 class GuestProfile extends StatelessWidget {
   const GuestProfile({super.key});
 
-  static const double mediumBreakpoint = 600;
-  static const double largeBreakpoint = 1024;
-
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<AppCubit>().state;
+    final needsProfile = !state.isGuest && state.user.isNotEmpty;
     return Scaffold(
       appBar: AppBar(
-        title: const AppTitle(key: Key('appTitle')),
+        title: const Text('Welcome'),
         actions: [
           const ProfileSearchButton(key: Key('GuestSearchButton')),
           IconButton(
@@ -30,60 +29,155 @@ class GuestProfile extends StatelessWidget {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenWidth = constraints.maxWidth;
-
-          if (screenWidth >= largeBreakpoint) {
-            // Large layout: split view with side column
-            return Row(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1040),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  flex: 3,
-                  child: ListView(
-                    key: const Key('largeProfileBody'),
-                    children: const [
-                      GuestProfilePrimaryView(
-                        key: Key('GuestProfilePrimaryView'),
-                      ),
-                    ],
+                GradientCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          needsProfile
+                              ? 'Set up your rider profile'
+                              : 'Welcome to Horse & Rider’s Companion',
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          needsProfile
+                              ? 'Add your name and tell the community '
+                                    'about yourself.'
+                              : 'Explore skills and resources for you and '
+                                    'your horse. Create an account to track '
+                                    'your progress, '
+                                    'keep a logbook and share what helps.',
+                        ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            if (needsProfile)
+                              FilledButton(
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) => EditRiderProfileDialog(
+                                    user: state.user,
+                                    riderProfile: null,
+                                    onProfileUpdated: () {},
+                                  ),
+                                ),
+                                child: const Text('Set up profile'),
+                              )
+                            else ...[
+                              FilledButton(
+                                key: const Key('guestCreateAccount'),
+                                onPressed: () => context.goNamed(
+                                  AuthPage.name,
+                                  queryParameters: {'mode': 'register'},
+                                ),
+                                child: const Text('Create account'),
+                              ),
+                              OutlinedButton(
+                                key: const Key('guestSignIn'),
+                                onPressed: () => context.goNamed(
+                                  AuthPage.name,
+                                  queryParameters: {'mode': 'login'},
+                                ),
+                                child: const Text('Sign in'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                // const VerticalDivider(width: 1),
-                Expanded(
-                  flex: 2,
-                  child: ListView(
-                    key: const Key('largeProfileSecondaryBody'),
-                    children: [
-                      const ProfileSkillsBanner(
-                        key: Key('ProfileSkillsBanner'),
-                      ),
-                      gap(),
-                      const GuestProfileSkills(key: Key('GuestProfileSkills')),
-                    ],
-                  ),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final skills = _ExploreCard(
+                      icon: Icons.account_tree_outlined,
+                      title: 'Skill Tree',
+                      description:
+                          'Find groundwork and riding skills to practise.',
+                      onTap: () => context.goNamed(SkillTreePage.name),
+                    );
+                    final resources = _ExploreCard(
+                      icon: Icons.auto_stories_outlined,
+                      title: 'Resources',
+                      description:
+                          'Find articles, videos and guides linked to skills.',
+                      onTap: () => context.goNamed(ResourcesPage.name),
+                    );
+                    return constraints.maxWidth >= 640
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: skills),
+                              const SizedBox(width: 12),
+                              Expanded(child: resources),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              skills,
+                              const SizedBox(height: 12),
+                              resources,
+                            ],
+                          );
+                  },
                 ),
               ],
-            );
-          } else {
-            // Small & Medium layout: single column scroll view
-            return SingleChildScrollView(
-              key: const Key('compactProfileBody'),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const GuestProfilePrimaryView(
-                    key: Key('GuestProfilePrimaryView'),
-                  ),
-                  const SkillsTextButton(key: Key('SkillsTextButton')),
-                  gap(),
-                  const GuestProfileSkills(key: Key('GuestProfileSkills')),
-                ],
-              ),
-            );
-          }
-        },
+            ),
+          ),
+        ),
       ),
     );
   }
+}
+
+class _ExploreCard extends StatelessWidget {
+  const _ExploreCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GradientCard(
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
+            const SizedBox(height: 12),
+            Text(
+              'Explore $title',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(description),
+          ],
+        ),
+      ),
+    ),
+  );
 }

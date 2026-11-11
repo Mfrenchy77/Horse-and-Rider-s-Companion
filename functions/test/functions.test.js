@@ -35,7 +35,7 @@ function harness({fetch, conversation, tokens = ['token-1']} = {}) {
     'firebase-functions/v2/firestore': {onDocumentCreated: (_, handler) => handler},
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8'), {
-    exports, URL,
+    exports, URL, AbortSignal,
     fetch: fetch || (async () => { throw new Error('Unexpected network access'); }),
     require: (id) => mocks[id] || require(id),
   }, {filename: 'index.js'});
@@ -146,6 +146,40 @@ test('resolveImage validates HTML image candidates and falls back from HEAD to G
   assert.equal(result.body.resolvedUrl, 'https://stable.example/wp-content/uploads/horse.jpg');
   assert.ok(calls.some(([, method]) => method === 'HEAD'));
   assert.ok(calls.some(([, method]) => method === 'GET'));
+});
+
+test('resolveImage recovers stale thumbnails from current page metadata before media search', async () => {
+  const page = 'https://stable.example/guide';
+  const stale = 'https://stable.example/legacy.jpg';
+  const replacement = 'https://cdn.example/replacement.jpg';
+  const calls = [];
+  const {handlers} = harness({fetch: async (url) => {
+    calls.push(url);
+    if (url === page) {
+      return response({html: `<meta property="og:image" content="${replacement}">`});
+    }
+    return url === replacement ? response({type: 'image/jpeg'}) : response({status: 404});
+  }});
+  const result = await request(handlers.resolveImage, {body: {url: page, hint: stale}});
+  assert.equal(result.body.resolvedUrl, replacement);
+  assert.deepEqual(calls, [page, replacement]);
+});
+
+test('resolveImage bounds probes when page images and the legacy hint return 404', async () => {
+  const page = 'https://stable.example/guide';
+  const probes = [];
+  const images = Array.from({length: 30}, (_, i) => `<img src="/image-${i}.jpg">`).join('');
+  const {handlers} = harness({fetch: async (url) => {
+    if (url === page) return response({html: images});
+    probes.push(url);
+    return response({status: 404});
+  }});
+  const result = await request(handlers.resolveImage, {
+    body: {url: page, hint: 'https://stable.example/stale.jpg'},
+  });
+  assert.equal(result.status, 404);
+  assert.equal(probes.filter((url) => !url.includes('/wp-json/')).length, 12);
+  assert.ok(probes.filter((url) => url.includes('/wp-json/')).length <= 3);
 });
 
 test('resolveImage reports pages with no image', async () => {

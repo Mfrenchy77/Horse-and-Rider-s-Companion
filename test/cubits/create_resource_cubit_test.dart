@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:database_repository/database_repository.dart';
@@ -5,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockResources extends Mock implements ResourcesRepository {}
@@ -87,11 +91,108 @@ void main() {
     expect(saved.lastEditBy, user.email);
     expect(cubit.state.submitStatus, ResourceSubmitStatus.success);
   });
+  test('unwraps resolver hints and saves the original image URL', () async {
+    const page = 'https://example.com/guide';
+    const image = 'https://cdn.example.com/horse.jpg';
+    final legacy = Uri.https('wsrv.nl', '/', {'url': image}).toString();
+    final nested = Uri.https('wsrv.nl', '/', {'url': legacy}).toString();
+
+    await http.runWithClient(
+      () => cubit.getMetadata(page),
+      () => MockClient((request) async {
+        switch (request.url.path) {
+          case '/previewMeta':
+            return http.Response(
+              jsonEncode({'title': 'Guide', 'image': legacy}),
+              200,
+            );
+          case '/fetchReadable':
+            return http.Response('{}', 200);
+          case '/resolveImage':
+            final body = jsonDecode(request.body) as Map<String, dynamic>;
+            expect(body['hint'], image);
+            return http.Response(jsonEncode({'proxiedUrl': nested}), 200);
+          default:
+            fail('Unexpected endpoint: ${request.url}');
+        }
+      }),
+    );
+
+    expect(cubit.state.imageUrl, image);
+    expect(cubit.state.title, 'Guide');
+    cubit
+      ..imageUrlChanged(nested)
+      ..titleChanged('My guide')
+      ..recommendationChanged('  Clear examples  ')
+      ..linkTypeChanged(ResourceType.externalArticle)
+      ..resourceSkillsChanged('s0')
+      ..resourceSkillsChanged('s1');
+    await cubit.submit();
+    final saved =
+        verify(
+              () => repo.createResourceWithServerTimestamps(
+                resource: captureAny(named: 'resource'),
+              ),
+            ).captured.single
+            as Resource;
+    expect(saved.thumbnail, image);
+    expect(saved.name, 'My guide');
+    expect(saved.description, 'Clear examples');
+    expect(saved.skillTreeIds, ['s0', 's1']);
+    expect(
+      Resource.fromJson(saved.toJson()).type,
+      ResourceType.externalArticle,
+    );
+    expect(saved.isArticle, isFalse);
+  });
+
+  test(
+    'requires a valid link, title and a known skill before writing',
+    () async {
+      cubit.emit(
+        cubit.state.copyWith(
+          title: 'Guide',
+          url: const Url.dirty('https://example.com/guide'),
+        ),
+      );
+      cubit.resourceSkillsChanged('unknown');
+      await cubit.submit();
+      expect(cubit.state.error, contains('at least one related skill'));
+
+      cubit
+        ..resourceSkillsChanged('s0')
+        ..urlChanged('not a link');
+      await cubit.submit();
+      expect(cubit.state.error, contains('valid URL'));
+      verifyZeroInteractions(repo);
+    },
+  );
+
+  test(
+    'a response for a previous URL cannot replace the current draft',
+    () async {
+      final response = Completer<http.Response>();
+      await http.runWithClient(() async {
+        final pending = cubit.getMetadata('https://example.com/old');
+        cubit
+          ..urlChanged('https://example.com/new')
+          ..titleChanged('My new title')
+          ..recommendationChanged('My recommendation');
+        response.complete(http.Response('{"title":"Old title"}', 200));
+        await pending;
+      }, () => MockClient((_) => response.future));
+      expect(cubit.state.url.value, 'https://example.com/new');
+      expect(cubit.linkPreview.name, 'My new title');
+      expect(cubit.linkPreview.description, 'My recommendation');
+    },
+  );
+
   test('reports write failures and allows error reset', () async {
     cubit.emit(
       cubit.state.copyWith(
         title: 'Guide',
         url: const Url.dirty('https://example.com'),
+        resourceSkills: [skills.first],
       ),
     );
     when(
@@ -101,6 +202,7 @@ void main() {
     ).thenAnswer((_) async => throw Exception('offline'));
     await cubit.submit();
     expect(cubit.state.isError, isTrue);
+    expect(cubit.state.error, contains('offline'));
     cubit.clearError();
     expect(cubit.state.isError, isFalse);
     expect(cubit.state.error, isEmpty);

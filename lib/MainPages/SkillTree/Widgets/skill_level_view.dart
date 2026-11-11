@@ -2,10 +2,10 @@
 // import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// Prerequisites disabled; import retained for restoration.
-// import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_progress_bar.dart';
 // Prerequisites disabled; import retained for restoration.
 // import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_prerequisite_diagram.dart';
@@ -56,16 +56,15 @@ class SkillLevelView extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 50),
-                  Visibility(
-                    visible: state.isGuest,
-                    child: const Text(
-                      'This is where you will be able to track your '
-                      'progress for this skill. There will be '
-                      'information for each skill that explains '
-                      'what is expected for "Learning" and "Proficient"',
-                      textAlign: TextAlign.center,
+                  if (state.isGuest)
+                    TextButton.icon(
+                      icon: const Icon(Icons.login),
+                      onPressed: () => context.goNamed(
+                        AuthPage.name,
+                        queryParameters: {'mode': 'login'},
+                      ),
+                      label: const Text('Sign in to track progress'),
                     ),
-                  ),
                   Text(
                     skill.skillName,
                     textAlign: TextAlign.center,

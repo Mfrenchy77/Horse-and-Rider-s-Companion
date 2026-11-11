@@ -47,16 +47,18 @@ class SkillLevelCard extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 8),
                     child: _icon(category, difficulty),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 8,
-                      bottom: 8,
-                      left: 16,
-                      right: 16,
-                    ),
-                    child: Text(
-                      skillLevel.skillName,
-                      style: const TextStyle(color: Colors.black87),
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: 8,
+                        bottom: 8,
+                        left: 16,
+                        right: 16,
+                      ),
+                      child: Text(
+                        skillLevel.skillName,
+                        style: const TextStyle(color: Colors.black87),
+                      ),
                     ),
                   ),
                 ],

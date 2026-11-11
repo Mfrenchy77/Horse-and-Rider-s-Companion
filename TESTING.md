@@ -123,6 +123,144 @@ flutter test test/app_auth_session_test.dart test/app_catalogue_loading_test.dar
   test/routes_flow_test.dart test/email_verification_dialog_test.dart
 ```
 
+## Welcome, rider profiles, and card styling
+
+The Profile tab shows a welcome page for guests, with direct links to the
+public Skill Tree and Resources and separate registration and sign-in actions.
+Guests can open skill details, where the progress prompt links to sign-in.
+Resources offers sign-in for guests who want to share. Signed-in riders
+without a profile can open the existing profile setup form from the welcome
+page.
+
+A rider's profile groups identity, About, logbook, horses and rider
+relationships. The rider photo fills a rounded cover with a center crop.
+The cover height follows the profile column width and is bounded between
+220 and 380 logical pixels. Name and location sit over a dark gradient at
+the bottom. Missing or failed photos show `assets/horse_logo.png`. Tapping a
+loaded photo opens the existing zoom viewer. At 1024 logical pixels of available profile width, Skills
+uses the wider of two columns. At narrower widths, it follows the profile
+sections in the same scroll view. Profile search, requests, editing, related
+profiles and logbook actions use the existing routes and permissions.
+
+`CardGradientTheme` is installed with the selected light, dark or seasonal
+theme. Use `GradientCard` for content cards that share this background.
+An explicit color bypasses the gradient for cards whose color carries
+meaning. Skill progress cards retain their progress colors. The Ocean dark
+theme supplies teal chip surfaces and outlines, with a coral outline and
+checkmark for selection. Filled actions use coral when enabled and a muted
+teal surface when disabled. Quick Share inherits these styles.
+
+```sh
+flutter test test/widget/profile_redesign_test.dart \
+  test/widget/quick_share_resource_test.dart test/routes_flow_test.dart
+```
+
+## Add Resource Quick Share
+
+Signed-in riders with a profile can open Quick Share from **Add resource**
+or the Resources overflow menu. Enter or paste an HTTP(S) URL. The existing
+metadata lookup fills the title, thumbnail and summary when available.
+Contributors can edit the title or enter one manually if lookup fails.
+Responses for an earlier URL are ignored after the URL changes.
+
+Choose **Article**, **Video** or **Website**, and search for and select at
+least one skill. Sharing requires a valid URL, a title and a selected skill.
+The optional recommendation accepts up to 280 characters and appears as the
+published description when supplied. Otherwise the description uses the
+fetched summary. The live preview uses the same draft as the Firebase write,
+including the thumbnail and selected skills.
+
+The form and preview sit side by side at widths of 840 logical pixels and
+above. Below that, the preview follows the form. The Paste button moves
+beneath the URL field when the form is narrower than 420 logical pixels.
+The page uses the active app theme, including the ocean and coral colors
+in the default dark theme.
+
+New shares use the existing resource repository and server timestamps.
+Selected skill document IDs are stored in `skillTreeIds`. Linked articles
+use `externalArticle` so they open as links. The existing `article` type is
+used for content authored in the app. Videos use `video` and websites use
+`link`. The form displays write errors and returns to Resources with a
+confirmation after a successful save. PDF upload is available from the
+secondary action.
+
+```sh
+flutter test test/widget/quick_share_resource_test.dart \
+  test/cubits/create_resource_cubit_test.dart \
+  test/widget/resource_youtube_test.dart test/domain/resources_repository_test.dart
+```
+
+## Resources layout preference
+
+Use **Settings → Resources layout** to choose Vertical or Horizontal.
+Vertical is the default. Horizontal puts the image beside the details when
+the card has at least 480 logical pixels of width. Narrower cards stack the
+image above the details while keeping the saved choice. The setting applies
+to the Resources list, skill resources, and the discussion header. It is saved
+locally on the device and restored at startup.
+
+```sh
+flutter test test/settings_test.dart test/widget/resource_layout_preference_test.dart
+```
+
+## Resource previews and video links
+
+Store the original absolute HTTP(S) image URL in `thumbnail` or
+`coverImageUrl`. Protocol-relative image links are resolved to HTTPS. The
+resource editor sends the original image URL as the resolver hint and saves
+the resolved source. It can recover that source from the resolver's
+`proxiedUrl` when needed.
+
+On read, `SmartImage` unwraps saved `wsrv.nl` and `images.weserv.nl` URLs
+before building candidates. This handles nested wrappers and HTML-escaped
+query separators in old records and preserves the original source query.
+On web the origin loads as an HTML image to avoid fetch CORS, followed by
+at most one wsrv request. Stored Photon URLs load directly. On native the
+normal preview path starts with the origin.
+
+If those attempts fail and the resource has a page URL, the app asks
+`resolveImage` once for a different image. The function checks current page
+metadata before the saved hint and only tries WordPress metadata lookups
+if the first checks fail. It probes at most ten image URLs and shares a
+nine-second deadline across its requests. A returned replacement gets one
+render attempt. The app caches the selected URL, pending lookup and terminal
+failure across list and detail views in a 512-entry in-memory cache. A changed
+preview URL starts fresh. Old entries can be retried after eviction or restart.
+Browsing does not write replacement thumbnails back to Firestore.
+
+Missing, invalid and unavailable previews use the bundled horse-in-shield
+mark at `assets/horse_logo.png` and expose an accessible unavailable label.
+The shield scales to fit without clipping. Photos center-crop with
+`BoxFit.cover` to fill their preview area, which is capped at 240 logical pixels tall. Title, source domain
+(or author for in-app articles), linked skill names and description sit
+together in the details area. Skill names use the loaded catalogue. The image keeps its
+link or video action, and the card retains its existing discussion and
+rating controls. Failed candidates no longer
+emit per-request SmartImage log messages. A browser status of 0 gives no
+readable HTTP response. An origin or proxy 404 is an actual response from
+that endpoint.
+
+YouTube watch, short, Shorts, live and embed video links open a standard
+YouTube watch URL with the video's ID and supplied playback parameters.
+Flutter launches it in a new tab on web and hands it to the OS on mobile,
+where the YouTube app or browser handles it. Old in-app YouTube web routes
+show a **Watch on YouTube** button. Video discussions remain available through
+the comments action. Article and ordinary link taps keep their existing
+in-app routes.
+
+Run the focused checks with the following command.
+
+```sh
+flutter test test/widget/resource_preview_test.dart test/widget/resource_youtube_test.dart \
+  test/cubits/create_resource_cubit_test.dart test/routes_flow_test.dart
+```
+
+The Flutter tests check the decoded fallback asset and photo fit at two
+widths, simulate status 0, proxy 404, replacement lookup and cache reuse,
+and intercept the platform URL launcher. The backend tests use fake
+upstream responses to verify replacement discovery and bounded probing.
+Run them with `npm --prefix functions test`.
+
 ## Coverage reports
 
 Each complete check run regenerates:

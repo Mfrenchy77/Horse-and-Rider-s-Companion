@@ -33,36 +33,10 @@ class ProfilePhoto extends StatelessWidget {
         ? Material(
             type: MaterialType.transparency,
             child: InkWell(
-              onTap: () => showDialog<AlertDialog>(
-                context: context,
-                builder: (context) {
-                  return Scaffold(
-                    backgroundColor: Colors.transparent,
-                    appBar: AppBar(
-                      backgroundColor: Colors.black.withValues(alpha: .5),
-                      leading: IconButton(
-                        icon: const Icon(Icons.close),
-                        // Use maybePop to avoid accidentally popping the last
-                        // app route if this dialog is presented as an overlay.
-                        onPressed: () => Navigator.maybePop(context),
-                      ),
-                      elevation: 0,
-                    ),
-                    body: PhotoView(
-                      minScale: PhotoViewComputedScale.contained * 0.8,
-                      heroAttributes: computedHeroTag != null
-                          ? PhotoViewHeroAttributes(
-                              tag: computedHeroTag,
-                              transitionOnUserGestures: true,
-                            )
-                          : null,
-                      backgroundDecoration: const BoxDecoration(
-                        color: Colors.transparent,
-                      ),
-                      imageProvider: NetworkImage(profilePicUrl!),
-                    ),
-                  );
-                },
+              onTap: () => showProfilePhoto(
+                context,
+                profilePicUrl!,
+                heroTag: computedHeroTag,
               ),
               child: CircleAvatar(
                 radius: size / 3,
@@ -82,3 +56,34 @@ class ProfilePhoto extends StatelessWidget {
           );
   }
 }
+
+/// Opens the full photo with pinch-to-zoom.
+Future<void> showProfilePhoto(
+  BuildContext context,
+  String url, {
+  String? heroTag,
+}) => showDialog<void>(
+  context: context,
+  builder: (context) => Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(
+      backgroundColor: Colors.black.withValues(alpha: .5),
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () => Navigator.maybePop(context),
+      ),
+      elevation: 0,
+    ),
+    body: PhotoView(
+      minScale: PhotoViewComputedScale.contained * 0.8,
+      heroAttributes: heroTag == null
+          ? null
+          : PhotoViewHeroAttributes(
+              tag: heroTag,
+              transitionOnUserGestures: true,
+            ),
+      backgroundDecoration: const BoxDecoration(color: Colors.transparent),
+      imageProvider: NetworkImage(url),
+    ),
+  ),
+);

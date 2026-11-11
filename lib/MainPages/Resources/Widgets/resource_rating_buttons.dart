@@ -13,10 +13,7 @@ import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class ResourceRatingButtons extends StatelessWidget {
-  const ResourceRatingButtons({
-    super.key,
-    required this.resource,
-  });
+  const ResourceRatingButtons({super.key, required this.resource});
   final Resource resource;
   @override
   Widget build(BuildContext context) {
@@ -45,8 +42,8 @@ class ResourceRatingButtons extends StatelessWidget {
                 color: cubit.isRatingPositive(resource)
                     ? HorseAndRidersTheme().getTheme().colorScheme.primary
                     : isDark
-                        ? Colors.grey.shade300
-                        : Colors.black54,
+                    ? Colors.grey.shade300
+                    : Colors.black54,
               ),
             ),
             // Save Button
@@ -75,8 +72,8 @@ class ResourceRatingButtons extends StatelessWidget {
                 color: cubit.isRatingNegative(resource)
                     ? HorseAndRidersTheme().getTheme().colorScheme.primary
                     : isDark
-                        ? Colors.grey.shade300
-                        : Colors.black54,
+                    ? Colors.grey.shade300
+                    : Colors.black54,
               ),
             ),
             // Number of Comments Button
@@ -86,8 +83,8 @@ class ResourceRatingButtons extends StatelessWidget {
                 tooltip: resource.comments?.isEmpty ?? true
                     ? 'No Comments Yet'
                     : resource.comments?.length == 1
-                        ? '1 Comment'
-                        : '${resource.comments!.length} Comments',
+                    ? '1 Comment'
+                    : '${resource.comments!.length} Comments',
                 onPressed: () {
                   // Show the comments associated with this resource
                   context.goNamed(
@@ -97,20 +94,23 @@ class ResourceRatingButtons extends StatelessWidget {
                     },
                   );
                 },
-                icon: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.comment),
-                    smallGap(),
-                    Text(
-                      resource.comments == null
-                          ? '0'
-                          : resource.comments!.length.toString(),
-                      style: TextStyle(
-                        color: isDark ? Colors.grey.shade300 : Colors.black54,
+                icon: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.comment),
+                      smallGap(),
+                      Text(
+                        resource.comments == null
+                            ? '0'
+                            : resource.comments!.length.toString(),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey.shade300 : Colors.black54,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 color: isDark ? Colors.grey.shade300 : Colors.black54,
               ),
@@ -125,9 +125,7 @@ class ResourceRatingButtons extends StatelessWidget {
                   showDialog<AlertDialog>(
                     context: context,
                     builder: (context) {
-                      return UpdateResourceSkills(
-                        resource: resource,
-                      );
+                      return UpdateResourceSkills(resource: resource);
                     },
                   );
                 },

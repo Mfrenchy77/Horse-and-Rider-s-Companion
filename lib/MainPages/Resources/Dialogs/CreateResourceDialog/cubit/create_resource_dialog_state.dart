@@ -24,6 +24,8 @@ class CreateResourceDialogState extends Equatable {
     this.filteredSkills,
     this.isError = false,
     this.description = '',
+    this.recommendation = '',
+    this.linkType = ResourceType.link,
     this.skills = const [],
     this.url = const Url.pure(),
     this.status = FormStatus.initial,
@@ -49,6 +51,8 @@ class CreateResourceDialogState extends Equatable {
   final Resource? resource;
   final FormStatus status;
   final String description;
+  final String recommendation;
+  final ResourceType linkType;
 
   final List<Skill?> skills;
   final RiderProfile? usersProfile;
@@ -80,6 +84,8 @@ class CreateResourceDialogState extends Equatable {
     Resource? resource,
     FormStatus? status,
     String? description,
+    String? recommendation,
+    ResourceType? linkType,
     List<Skill?>? skills,
     RiderProfile? usersProfile,
     List<Skill?>? filteredSkills,
@@ -108,6 +114,8 @@ class CreateResourceDialogState extends Equatable {
       resource: resource ?? this.resource,
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
+      recommendation: recommendation ?? this.recommendation,
+      linkType: linkType ?? this.linkType,
       usersProfile: usersProfile ?? this.usersProfile,
       submitStatus: submitStatus ?? this.submitStatus,
       filteredSkills: filteredSkills ?? this.filteredSkills,
@@ -127,28 +135,30 @@ class CreateResourceDialogState extends Equatable {
 
   @override
   List<Object?> get props => [
-        url,
-        title,
-        error,
-        isEdit,
-        skills,
-        status,
-        isError,
-        resource,
-        imageUrl,
-        description,
-        usersProfile,
-        submitStatus,
-        categoryFilter,
-        filteredSkills,
-        resourceSkills,
-        difficultyFilter,
-        urlFetchedStatus,
-        inputType,
-        pdfName,
-        pdfBytes,
-        pdfPicking,
-        pdfUploading,
-        pdfUploadProgress,
-      ];
+    url,
+    title,
+    error,
+    isEdit,
+    skills,
+    status,
+    isError,
+    resource,
+    imageUrl,
+    description,
+    recommendation,
+    linkType,
+    usersProfile,
+    submitStatus,
+    categoryFilter,
+    filteredSkills,
+    resourceSkills,
+    difficultyFilter,
+    urlFetchedStatus,
+    inputType,
+    pdfName,
+    pdfBytes,
+    pdfPicking,
+    pdfUploading,
+    pdfUploadProgress,
+  ];
 }

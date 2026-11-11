@@ -14,6 +14,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/notifications/fcm_service.dart';
+import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -2165,10 +2166,23 @@ class AppCubit extends Cubit<AppState> {
 
   ///   Open Resource in External Browser
   Future<void> openResource({required String? url}) async {
-    final uri = Uri.parse(url!);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could Not Launch: $uri');
+    final uri = youtubeWatchUri(url) ?? resourceWebUri(url);
+    if (uri == null) {
+      createError('No valid resource link');
+      return;
     }
+    try {
+      if (await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      )) {
+        return;
+      }
+    } catch (error) {
+      debugPrint('Unable to open resource: $error');
+    }
+    if (!isClosed) createError('Unable to open resource link');
   }
 
   /// Gets the resources Comments

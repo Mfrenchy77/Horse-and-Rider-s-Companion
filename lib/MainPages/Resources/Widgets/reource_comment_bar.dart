@@ -14,10 +14,13 @@ class ResourceCommentBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        return Wrap(
+          alignment: WrapAlignment.spaceEvenly,
+          spacing: 12,
+          runSpacing: 8,
           children: [
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton.outlined(
                   onPressed: () {},
@@ -27,6 +30,7 @@ class ResourceCommentBar extends StatelessWidget {
               ],
             ),
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton.outlined(
                   onPressed: () {},
@@ -36,6 +40,7 @@ class ResourceCommentBar extends StatelessWidget {
               ],
             ),
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton.outlined(
                   onPressed: state.usersProfile == null
@@ -64,6 +69,7 @@ class ResourceCommentBar extends StatelessWidget {
               ],
             ),
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton.outlined(
                   icon: const Icon(Icons.sort),

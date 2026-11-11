@@ -12,6 +12,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:http/http.dart' as http;
 
@@ -24,14 +25,14 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required List<Skill?>? skills,
     required RiderProfile? usersProfile,
     required this._resourcesRepository,
-    FirebaseStorage? storage,
+    this._storage,
+    ResourceInputType initialInputType = ResourceInputType.link,
 
     /// Optional overrides (handy for emulator/local testing)
     String? previewMetaEndpoint,
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
   }) : _debounce = null,
-       _storage = storage ?? FirebaseStorage.instance,
        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
            ? _kDefaultPreviewMetaUrl
            : previewMetaEndpoint!.trim(),
@@ -39,7 +40,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
            ? _kDefaultFetchReadableUrl
            : fetchReadableEndpoint!.trim(),
        _resolveImageUrl = (resolveImageEndpoint?.trim().isEmpty ?? true)
-           ? _kDefaultResolveImageUrl
+           ? resourceImageResolverEndpoint
            : resolveImageEndpoint!.trim(),
        super(const CreateResourceDialogState()) {
     emit(
@@ -53,9 +54,12 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         imageUrl: resource?.thumbnail ?? '',
         url: Url.dirty(resource?.url ?? ''),
         description: resource?.description ?? '',
+        urlFetchedStatus: isEdit
+            ? UrlFetchedStatus.fetched
+            : UrlFetchedStatus.initial,
         inputType: resource?.type == ResourceType.pdf
             ? ResourceInputType.pdf
-            : ResourceInputType.link,
+            : initialInputType,
       ),
     );
 
@@ -71,12 +75,14 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/previewMeta';
   static const String _kDefaultFetchReadableUrl =
       'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/fetchReadable';
-  static const String _kDefaultResolveImageUrl =
-      'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/resolveImage';
 
   Timer? _debounce;
   final ResourcesRepository _resourcesRepository;
-  final FirebaseStorage _storage;
+  final FirebaseStorage? _storage;
+  int _metadataRequest = 0;
+  String? _metadataTitle;
+  String? _metadataImage;
+  String? _metadataDescription;
 
   final String _previewMetaUrl;
   final String _fetchReadableUrl;
@@ -101,15 +107,19 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   // ----------------- Link mode ------------------
   void urlChanged(String value) {
-    final url = Url.dirty(value);
+    final url = Url.dirty(value.trim());
+    if (url.value == state.url.value) return;
+    _metadataRequest++;
     _d('urlChanged', 'value="${_clipForLog(value)}" valid=${url.isValid}');
     emit(
       state.copyWith(
         url: url,
         urlFetchedStatus: UrlFetchedStatus.initial,
-        title: state.title.isEmpty ? '' : state.title,
-        description: state.description.isEmpty ? '' : state.description,
-        imageUrl: state.imageUrl.isNotEmpty ? state.imageUrl : '',
+        title: state.title == _metadataTitle ? '' : state.title,
+        description: state.description == _metadataDescription
+            ? ''
+            : state.description,
+        imageUrl: state.imageUrl == _metadataImage ? '' : state.imageUrl,
         isError: false,
         error: '',
       ),
@@ -125,24 +135,45 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     });
   }
 
-  void titleChanged(String value) =>
-      emit(state.copyWith(title: value, urlFetchedStatus: _inferLinkStatus()));
-
-  void imageUrlChanged(String value) => emit(
-    state.copyWith(imageUrl: value, urlFetchedStatus: _inferLinkStatus()),
-  );
-
-  void descriptionChanged(String value) => emit(
-    state.copyWith(description: value, urlFetchedStatus: _inferLinkStatus()),
-  );
-
-  UrlFetchedStatus _inferLinkStatus() {
-    final isComplete = state.title.isNotEmpty && state.url.value.isNotEmpty;
-    return isComplete ? UrlFetchedStatus.fetched : UrlFetchedStatus.manual;
+  void titleChanged(String value) {
+    _metadataTitle = null;
+    emit(state.copyWith(title: value));
   }
 
-  bool _checkUrlValid(String url) =>
-      AnyLinkPreview.isValidLink(url, protocols: const ['http', 'https']);
+  void imageUrlChanged(String value) {
+    _metadataImage = null;
+    emit(state.copyWith(imageUrl: value));
+  }
+
+  void descriptionChanged(String value) {
+    _metadataDescription = null;
+    emit(state.copyWith(description: value));
+  }
+
+  void recommendationChanged(String value) =>
+      emit(state.copyWith(recommendation: value));
+
+  void linkTypeChanged(ResourceType type) =>
+      emit(state.copyWith(linkType: type));
+
+  Resource get linkPreview {
+    final note = state.recommendation.trim();
+    return Resource(
+      name: state.title.trim(),
+      url: state.url.value,
+      type: state.linkType,
+      thumbnail: imageSourceUrl(state.imageUrl)?.toString(),
+      description: note.isEmpty ? state.description.trim() : note,
+      skillTreeIds: state.resourceSkills
+          ?.whereType<Skill>()
+          .map((skill) => skill.id)
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList(),
+    );
+  }
+
+  bool _checkUrlValid(String url) => resourceWebUri(url) != null;
 
   // ---------- HTTP helper ----------
   static const _jsonHeaders = {'Content-Type': 'application/json'};
@@ -189,25 +220,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     }
   }
 
-  bool _isLikelyWpUpload(String u) {
-    try {
-      final p = Uri.parse(u).path.toLowerCase();
-      return p.contains('/wp-content/uploads') || p.contains('/uploads/');
-    } catch (_) {
-      return false;
-    }
-  }
-
-  bool _sameOrigin(String a, String b) {
-    try {
-      final ua = Uri.parse(a);
-      final ub = Uri.parse(b);
-      return '${ua.scheme}://${ua.host}' == '${ub.scheme}://${ub.host}';
-    } catch (_) {
-      return false;
-    }
-  }
-
   /// Prefer readable/article metadata; fall back to OG/Twitter tags; then title.
   Map<String, String> _mergeMeta({
     required Map<String, dynamic>? preview,
@@ -247,36 +259,29 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     return {'title': title, 'description': _clip(desc), 'image': img};
   }
 
-  /// Calls resolveImage CF. Returns best URL based on your preferences:
-  /// - Prefer direct WP uploads or same-origin direct images when available
-  /// - Otherwise fall back to proxied URL
+  /// Resolves a preview to its original image URL.
   Future<String?> _resolveImage(
     String pageUrl, {
     String? hint,
     String? trace,
   }) async {
     _d('resolveImage', '→ $pageUrl hint="${_clipForLog(hint)}" trace=$trace');
+    final source = imageSourceUrl(hint);
     final resp = await _postJson(
       _resolveImageUrl,
-      body: {'url': pageUrl, if (hint != null && hint.isNotEmpty) 'hint': hint},
+      body: {'url': pageUrl, if (source != null) 'hint': source.toString()},
       timeout: const Duration(seconds: 25),
       trace: trace,
     );
-    final resolved = (resp?['resolvedUrl'] as String?)?.trim() ?? '';
-    final proxied = (resp?['proxiedUrl'] as String?)?.trim() ?? '';
-
-    // Your preference: if resolved is a same-origin/WP upload, use it, else proxied
-    if (resolved.isNotEmpty) {
-      if (_isLikelyWpUpload(resolved) || _sameOrigin(resolved, pageUrl)) {
-        return resolved;
-      }
-    }
-    return proxied.isNotEmpty
-        ? proxied
-        : (resolved.isNotEmpty ? resolved : null);
+    return (imageSourceUrl(resp?['resolvedUrl'] as String?) ??
+            imageSourceUrl(resp?['proxiedUrl'] as String?))
+        ?.toString();
   }
 
   Future<void> getMetadata(String url) async {
+    _debounce?.cancel();
+    final request = ++_metadataRequest;
+    bool isCurrent() => !isClosed && request == _metadataRequest;
     final trace = _newTrace();
     _d('getMetadata', 'start url=$url trace=$trace');
     emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.fetching));
@@ -300,6 +305,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         body: {'url': url},
         trace: trace,
       );
+      if (!isCurrent()) return;
       final r = await _postJson(
         _fetchReadableUrl,
         body: {'url': url},
@@ -317,6 +323,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
             'img="${_clipForLog(r?['image'] as String?)}" trace=$trace',
       );
 
+      if (!isCurrent()) return;
       if (p != null || r != null) {
         final merged = _mergeMeta(
           preview: p,
@@ -352,17 +359,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
               'finalImg="${_clipForLog(finalImg)}" trace=$trace',
         );
 
-        emit(
-          state.copyWith(
-            url: Url.dirty(url),
-            title: state.title.isNotEmpty ? state.title : merged['title']!,
-            imageUrl: finalImg.trim(),
-            description: state.description.isNotEmpty
-                ? state.description
-                : (merged['description'] ?? ''),
-            urlFetchedStatus: UrlFetchedStatus.fetched,
-          ),
-        );
+        if (!isCurrent()) return;
+        _applyMetadata(url, merged['title']!, merged['description']!, finalImg);
         return;
       }
     } catch (e, st) {
@@ -370,6 +368,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       // fall through to ALP
     }
 
+    if (!isCurrent()) return;
     // Fallback: AnyLinkPreview (with CORS proxy to fetch meta if needed)
     try {
       _d('fallback', 'AnyLinkPreview → $url trace=$trace');
@@ -379,6 +378,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         proxyUrl: 'https://corsproxy.io/?',
       );
 
+      if (!isCurrent()) return;
       if (metadata == null ||
           ((metadata.title?.isEmpty ?? true) && state.title.isEmpty)) {
         _d('fallback', 'ALP returned empty trace=$trace');
@@ -412,26 +412,45 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
               'finalImg="${_clipForLog(finalImg)}" trace=$trace',
         );
 
-        emit(
-          state.copyWith(
-            url: Url.dirty(url),
-            title: state.title.isNotEmpty
-                ? state.title
-                : (metadata.title ?? ''),
-            imageUrl: state.imageUrl.isNotEmpty
-                ? state.imageUrl
-                : (finalImg ?? ''),
-            description: state.description.isNotEmpty
-                ? state.description
-                : _clip(metadata.desc ?? ''),
-            urlFetchedStatus: UrlFetchedStatus.fetched,
-          ),
+        if (!isCurrent()) return;
+        _applyMetadata(
+          url,
+          metadata.title ?? '',
+          _clip(metadata.desc ?? ''),
+          state.imageUrl.isNotEmpty ? state.imageUrl : finalImg,
         );
       }
     } catch (e, st) {
       _d('fallback', 'ALP ERROR trace=$trace $e\n$st');
-      emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.manual));
+      if (isCurrent()) {
+        emit(state.copyWith(urlFetchedStatus: UrlFetchedStatus.manual));
+      }
     }
+  }
+
+  void _applyMetadata(
+    String url,
+    String title,
+    String description,
+    String? image,
+  ) {
+    if (state.title.isEmpty || state.title == _metadataTitle) {
+      _metadataTitle = title;
+    }
+    if (state.description.isEmpty ||
+        state.description == _metadataDescription) {
+      _metadataDescription = description;
+    }
+    _metadataImage = imageSourceUrl(image)?.toString() ?? '';
+    emit(
+      state.copyWith(
+        url: Url.dirty(url),
+        title: _metadataTitle ?? state.title,
+        description: _metadataDescription ?? state.description,
+        imageUrl: _metadataImage,
+        urlFetchedStatus: UrlFetchedStatus.fetched,
+      ),
+    );
   }
 
   // ----------------- Skill picking ------------------
@@ -577,8 +596,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   // ----------------- Edit Resource ------------------
   Future<void> editResource() async {
+    if (state.submitStatus == ResourceSubmitStatus.submitting) return;
     emit(state.copyWith(submitStatus: ResourceSubmitStatus.submitting));
-    if (!state.url.isValid) {
+    if (resourceWebUri(state.url.value) == null) {
       emit(
         state.copyWith(
           isError: true,
@@ -615,9 +635,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
               .whereType<String>()
               .toList() ??
           [],
-      thumbnail: state.imageUrl.isNotEmpty
-          ? state.imageUrl
-          : state.resource?.thumbnail,
+      thumbnail: imageSourceUrl(state.imageUrl)?.toString(),
     );
     try {
       await _resourcesRepository.createOrUpdateResource(
@@ -640,6 +658,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   // ----------------- Submit ------------------
   Future<void> submit() async {
+    if (state.submitStatus == ResourceSubmitStatus.submitting) return;
     emit(
       state.copyWith(
         submitStatus: ResourceSubmitStatus.submitting,
@@ -653,12 +672,17 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           emit(
             state.copyWith(
               submitStatus: ResourceSubmitStatus.error,
-              error: 'Please provide a valid URL and title.',
+              error: hasSelectedSkills
+                  ? 'Please provide a valid URL and title.'
+                  : 'Select at least one related skill and enter '
+                        'a valid URL and title.',
               isError: true,
             ),
           );
           return;
         }
+        _debounce?.cancel();
+        _metadataRequest++;
         await _saveLink();
       } else {
         if (!isFormValidForPdf()) {
@@ -673,8 +697,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         }
         await _savePdf();
       }
-      emit(state.copyWith(submitStatus: ResourceSubmitStatus.success));
+      if (!isClosed) {
+        emit(state.copyWith(submitStatus: ResourceSubmitStatus.success));
+      }
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           submitStatus: ResourceSubmitStatus.error,
@@ -689,11 +716,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
   Future<void> _saveLink() async {
     final id = state.resource?.id ?? _resourcesRepository.newId();
-    final resource = Resource(
+    final resource = linkPreview.copyWith(
       id: id,
-      name: state.title,
-      url: state.url.value,
-      type: ResourceType.link,
       createdAt: DateTime.now(),
       rating: 0,
       numberOfRates: 0,
@@ -705,14 +729,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       lastEditBy: state.usersProfile?.email,
       authorName: state.usersProfile?.name,
       authorPhoto: state.usersProfile?.picUrl,
-      thumbnail: state.imageUrl.isNotEmpty ? state.imageUrl : null,
-      description: state.description.isNotEmpty ? state.description : null,
-      skillTreeIds:
-          state.resourceSkills
-              ?.map((e) => e?.id)
-              .whereType<String>()
-              .toList() ??
-          const [],
     );
     await _resourcesRepository.createResourceWithServerTimestamps(
       resource: resource,
@@ -726,7 +742,9 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
     emit(state.copyWith(pdfUploading: true, pdfUploadProgress: 0));
 
-    final ref = _storage.ref().child('resources/pdfs/$id/$name');
+    final ref = (_storage ?? FirebaseStorage.instance).ref().child(
+      'resources/pdfs/$id/$name',
+    );
     final meta = SettableMetadata(contentType: 'application/pdf');
     final uploadTask = ref.putData(bytes, meta);
 
@@ -767,7 +785,16 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   }
 
   // ------------- Validation helpers -------------
-  bool isFormValidForLink() => state.title.isNotEmpty && state.url.isValid;
+  bool get hasSelectedSkills =>
+      state.resourceSkills?.whereType<Skill>().any(
+        (skill) => skill.id.isNotEmpty,
+      ) ??
+      false;
+
+  bool isFormValidForLink() =>
+      state.title.trim().isNotEmpty &&
+      resourceWebUri(state.url.value) != null &&
+      hasSelectedSkills;
   bool isFormValidForPdf() => state.title.isNotEmpty && state.pdfBytes != null;
 
   void clearMetaDataError() =>
