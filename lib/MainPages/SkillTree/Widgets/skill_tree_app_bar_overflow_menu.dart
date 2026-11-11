@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
+import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 
 class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
   const SkillTreeAppBarOverFlowMenu({super.key});
@@ -11,6 +13,7 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
+        final settings = SettingsControllerScope.maybeOf(context);
         final isEditor = state.usersProfile?.editor ?? false;
 
         final menuItems = <PopupMenuEntry<String>>[];
@@ -18,11 +21,27 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
         // Add sort option only for skill list tab
         if (state.skillTreeTabIndex == 0) {
           menuItems.add(
-            const PopupMenuItem(
-              value: 'Sort',
-              child: Text('Sort'),
-            ),
+            const PopupMenuItem(value: 'Sort', child: Text('Sort')),
           );
+          if (settings != null) {
+            menuItems
+              ..add(const PopupMenuDivider())
+              ..add(
+                const PopupMenuItem(
+                  enabled: false,
+                  child: Text('Skill Tree layout'),
+                ),
+              )
+              ..addAll([
+                for (final layout in SkillTreeLayout.values)
+                  CheckedPopupMenuItem(
+                    key: ValueKey('skillTreeLayout-${layout.name}'),
+                    value: 'Layout-${layout.name}',
+                    checked: settings.skillTreeLayout == layout,
+                    child: Text(layout.label),
+                  ),
+              ]);
+          }
         }
 
         // Add edit toggle if user is editor
@@ -50,6 +69,14 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
                   builder: (_) => const SkillSortDialog(),
                 );
                 break;
+              default:
+                if (value.startsWith('Layout-')) {
+                  final name = value.substring('Layout-'.length);
+                  final layout = SkillTreeLayout.values.firstWhere(
+                    (layout) => layout.name == name,
+                  );
+                  settings?.updateSkillTreeLayout(layout);
+                }
             }
           },
         );

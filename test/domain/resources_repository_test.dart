@@ -38,6 +38,25 @@ void main() {
     expect(await repository.getResourceById('missing'), isNull);
   });
 
+  test('updates only requested skill links on the latest resource', () async {
+    final doc = db.collection('Resources').doc('guide');
+    await doc.set({
+      'name': 'Latest title',
+      'skillTreeIds': ['remove', 'other-editor'],
+      'content': 'Latest content',
+    });
+    await repository.updateSkillLinks(
+      id: 'guide',
+      added: {'leading'},
+      removed: {'remove'},
+    );
+    expect((await doc.get()).data(), {
+      'name': 'Latest title',
+      'skillTreeIds': ['other-editor', 'leading'],
+      'content': 'Latest content',
+    });
+  });
+
   test('loads only resources linked to the selected skill', () async {
     final linked = article(
       'linked',

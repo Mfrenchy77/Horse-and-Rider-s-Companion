@@ -5,6 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
+import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:mocktail/mocktail.dart';
@@ -24,10 +27,13 @@ class MockHorses extends Mock implements HorseProfileRepository {}
 
 void main() {
   late AppCubit cubit;
+  late SettingsController settings;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await SharedPrefs().init();
+    settings = SettingsController(SettingsService());
+    await settings.loadSettings();
     final auth = MockAuth();
     final skills = MockSkills();
     final resources = MockResources();
@@ -46,14 +52,48 @@ void main() {
     );
   });
 
-  tearDown(() => cubit.close());
+  tearDown(() {
+    settings.dispose();
+    return cubit.close();
+  });
 
   Widget app(SkillTreeLayout layout) => MaterialApp(
-    home: SkillTreeLayoutScope(
-      layout: layout,
-      child: BlocProvider.value(value: cubit, child: const SkillTreeView()),
+    home: SettingsControllerScope(
+      controller: settings,
+      child: SkillTreeLayoutScope(
+        layout: layout,
+        child: BlocProvider.value(value: cubit, child: const SkillTreeView()),
+      ),
     ),
   );
+
+  testWidgets('overflow menu changes and persists the Skill Tree layout', (
+    tester,
+  ) async {
+    cubit.emit(cubit.state.copyWith(skillTreeTabIndex: 0));
+    await tester.pumpWidget(app(SkillTreeLayout.library));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    expect(find.text('Skill Tree layout'), findsOneWidget);
+    expect(find.text('Skill library'), findsOneWidget);
+    expect(find.text('Expand in place'), findsOneWidget);
+    expect(find.text('Progress board'), findsOneWidget);
+
+    final progressBoard = find.byKey(
+      const ValueKey('skillTreeLayout-progressBoard'),
+    );
+    await tester.ensureVisible(progressBoard);
+    await tester.tap(progressBoard);
+    await tester.pumpAndSettle();
+    expect(settings.skillTreeLayout, SkillTreeLayout.progressBoard);
+
+    final restored = SettingsController(SettingsService());
+    await restored.loadSettings();
+    expect(restored.skillTreeLayout, SkillTreeLayout.progressBoard);
+    restored.dispose();
+  });
 
   for (final layout in SkillTreeLayout.values) {
     for (final width in [390.0, 1280.0]) {

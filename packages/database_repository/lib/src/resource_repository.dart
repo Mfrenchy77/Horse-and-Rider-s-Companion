@@ -39,6 +39,26 @@ class ResourcesRepository {
     await _ref.doc(resource.id).set(resource, SetOptions(merge: true));
   }
 
+  /// Applies only the chosen link changes to the latest resource document.
+  Future<void> updateSkillLinks({
+    required String id,
+    required Set<String> added,
+    required Set<String> removed,
+  }) async {
+    if (added.isEmpty && removed.isEmpty) return;
+    final doc = _raw.doc(id);
+    await _raw.firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(doc);
+      final data = snapshot.data();
+      if (data == null) throw StateError('This resource no longer exists.');
+      final current = (data['skillTreeIds'] as List? ?? []).whereType<String>();
+      final links = {...current}
+        ..removeAll(removed)
+        ..addAll(added);
+      transaction.update(doc, {'skillTreeIds': links.toList()});
+    });
+  }
+
   /// Create a resource and set server timestamps.
   /// - Sets `createdAt` if missing, always bumps `updatedAt`.
   Future<void> createResourceWithServerTimestamps({

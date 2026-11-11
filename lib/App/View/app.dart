@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
@@ -136,11 +137,14 @@ class AppView extends StatelessWidget {
                       ),
                     )
                   : const BoxDecoration(),
-              child: ResourceLayoutScope(
-                layout: settingsController.resourceLayout,
-                child: SkillTreeLayoutScope(
-                  layout: settingsController.skillTreeLayout,
-                  child: child ?? const SizedBox.shrink(),
+              child: SettingsControllerScope(
+                controller: settingsController,
+                child: ResourceLayoutScope(
+                  layout: settingsController.resourceLayout,
+                  child: SkillTreeLayoutScope(
+                    layout: settingsController.skillTreeLayout,
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
             );

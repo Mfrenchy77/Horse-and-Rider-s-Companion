@@ -119,14 +119,19 @@ class ResourceRatingButtons extends StatelessWidget {
             Expanded(
               flex: 5,
               child: IconButton(
-                tooltip: 'Assosiated Skills',
+                tooltip: 'Associated skills',
                 onPressed: () {
-                  //  Show the skills associated with this resource
-                  showDialog<AlertDialog>(
+                  // Open without the default fade/shadow-heavy dialog route.
+                  // Some WebGL renderers fail compiling those generated Skia
+                  // shaders; the skills panel itself supplies its surface.
+                  showGeneralDialog<void>(
                     context: context,
-                    builder: (context) {
-                      return UpdateResourceSkills(resource: resource);
-                    },
+                    barrierDismissible: true,
+                    barrierLabel: 'Close associated skills',
+                    barrierColor: Colors.transparent,
+                    transitionDuration: Duration.zero,
+                    pageBuilder: (_, _, _) =>
+                        UpdateResourceSkills(resource: resource),
                   );
                 },
                 icon: state.horseProfile == null

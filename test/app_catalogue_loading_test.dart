@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
@@ -77,6 +79,65 @@ void main() {
       verify(() => resources.getResources()).called(1);
       expect(cubit.state.resources, [resource]);
       await cubit.close();
+    },
+  );
+
+  test(
+    'linking a resource updates the catalogue and selected comments view',
+    () async {
+      final snapshots = StreamController<List<Resource>>();
+      when(resources.getResources).thenAnswer((_) => snapshots.stream);
+      final cubit = AppCubit(
+        messagesRepository: messages,
+        skillTreeRepository: skills,
+        resourcesRepository: resources,
+        riderProfileRepository: riders,
+        horseProfileRepository: horses,
+        authenticationRepository: auth,
+      );
+      addTearDown(() async {
+        await cubit.close();
+        await snapshots.close();
+      });
+      Resource resource(List<String> skillIds) => Resource(
+        id: 'guide',
+        name: 'Leading guide',
+        skillTreeIds: skillIds,
+        lastEditDate: DateTime.utc(2025),
+        comments: [
+          Comment(
+            id: 'comment',
+            user: BaseListItem(id: 'rider', name: 'Rider'),
+            date: DateTime.utc(2025),
+            rating: null,
+            comment: 'Helpful guide',
+            parentId: null,
+            editedDate: null,
+            resourceId: 'guide',
+            usersWhoRated: null,
+          ),
+        ],
+      );
+      Future<void> publish(Resource snapshot) async {
+        snapshots.add([snapshot]);
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      cubit.setResource();
+      final original = resource([]);
+      await publish(original);
+      cubit.getResourceById('guide');
+      await publish(resource([]));
+      expect(cubit.state.resources.single, same(original));
+
+      final linked = resource(['leading']);
+      await publish(linked);
+      expect(cubit.state.resources.single.skillTreeIds, ['leading']);
+      expect(cubit.state.resource, same(linked));
+      expect(cubit.state.resourceComments.single.comment, 'Helpful guide');
+
+      await publish(resource([]));
+      expect(cubit.state.resource?.skillTreeIds, isEmpty);
     },
   );
 

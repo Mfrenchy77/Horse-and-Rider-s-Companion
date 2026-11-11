@@ -7,3 +7,15 @@ Welcome to Horse & Rider's Companion, the ultimate tool for the equestrian commu
     Quality Assurance: Rely on a platform where content is constantly refined through community feedback and expert reviews to ensure the highest standards of reliability and relevance.
 
 Whether you’re just starting out or are a seasoned rider, Horse & Rider's Companion is your go-to resource for training, learning, and connecting with fellow equestrians. Join our community today and take the first step towards a more informed and connected equestrian experience. Connect, learn, and grow with Horse & Rider's Companion — where every rider has a place.
+
+## Web builds
+
+Build the web app with WebAssembly support:
+
+```sh
+flutter build web --release --wasm --no-pub
+```
+
+Flutter serves the Skwasm build to browsers that support WebAssembly GC and
+WebGL, then selects the JavaScript/CanvasKit build for older browsers. The
+Firebase Hosting workflows use this same dual-target build.

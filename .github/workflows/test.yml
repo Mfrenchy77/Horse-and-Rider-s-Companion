@@ -30,4 +30,4 @@ jobs:
           name: test-coverage
           path: coverage/
       - name: Compile production web app
-        run: flutter build web --release --no-pub
+        run: flutter build web --release --wasm --no-pub

@@ -1873,10 +1873,33 @@ class AppCubit extends Cubit<AppState> {
   }
 
   bool _sameResources(List<Resource> a, List<Resource> b) {
-    return const DeepCollectionEquality().equals(
-      a.map((resource) => resource.toFirestore()).toList(),
-      b.map((resource) => resource.toFirestore()).toList(),
-    );
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_sameResourceValue(a[i].toFirestore(), b[i].toFirestore())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameResourceValue(Object? a, Object? b) {
+    if (identical(a, b)) return true;
+    if (a is List && b is List) {
+      if (a.length != b.length) return false;
+      for (var i = 0; i < a.length; i++) {
+        if (!_sameResourceValue(a[i], b[i])) return false;
+      }
+      return true;
+    }
+    if (a is Map && b is Map) {
+      return a.length == b.length &&
+          a.entries.every(
+            (entry) =>
+                b.containsKey(entry.key) &&
+                _sameResourceValue(entry.value, b[entry.key]),
+          );
+    }
+    return a == b;
   }
 
   List<Skill?> _sortSkillsByCategory(
