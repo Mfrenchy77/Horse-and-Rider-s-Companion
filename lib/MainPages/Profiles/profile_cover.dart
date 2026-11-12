@@ -10,6 +10,7 @@ class ProfileCover extends StatelessWidget {
     required this.locationName,
     required this.photoKey,
     this.status,
+    this.ribbon,
   });
 
   final String name;
@@ -17,6 +18,7 @@ class ProfileCover extends StatelessWidget {
   final String? locationName;
   final Key photoKey;
   final String? status;
+  final Widget? ribbon;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +83,12 @@ class ProfileCover extends StatelessWidget {
                   ),
                 ),
               ),
+              if (ribbon case final coverRibbon?)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: IgnorePointer(child: coverRibbon),
+                ),
               Positioned(
                 left: 20,
                 right: 20,
@@ -109,13 +117,25 @@ class ProfileCover extends StatelessWidget {
                       ],
                       if (location.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(
-                          location,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                          ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 17,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                location,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],

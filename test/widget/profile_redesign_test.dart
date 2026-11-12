@@ -18,6 +18,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart'
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:super_banners/super_banners.dart';
 
 import '../support/app_test_harness.dart';
 
@@ -71,6 +72,18 @@ void main() {
         email: 'owner@example.com',
         name: 'Morgan',
       );
+      final skill = Skill(
+        id: 'turn',
+        skillName: 'Turn on the haunches (under saddle)',
+        rider: false,
+        position: 0,
+        lastEditBy: null,
+        description: null,
+        lastEditDate: null,
+        learningDescription: null,
+        proficientDescription: null,
+        difficulty: DifficultyState.Intermediate,
+      );
       final horse = HorseProfile(
         id: 'atlas',
         name: 'Atlas',
@@ -79,6 +92,16 @@ void main() {
         currentOwnerId: rider.email,
         currentOwnerName: rider.name,
         archiveStatus: 'deceased',
+        skillLevels: [
+          SkillLevel(
+            skillId: skill.id,
+            skillName: skill.skillName,
+            lastEditBy: null,
+            lastEditDate: null,
+            levelState: LevelState.PROFICIENT,
+            verified: true,
+          ),
+        ],
       );
       harness.cubit.emit(
         harness.cubit.state.copyWith(
@@ -86,6 +109,7 @@ void main() {
           horseProfile: horse,
           isGuest: false,
           isForRider: false,
+          allSkills: [skill],
         ),
       );
       await tester.pumpWidget(
@@ -104,6 +128,8 @@ void main() {
       expect(find.text('Date of birth'), findsNothing);
       expect(find.text('Height'), findsNothing);
       expect(find.text("Horse's Log Book"), findsOneWidget);
+      expect(find.widgetWithText(ListTile, skill.skillName), findsOneWidget);
+      expect(find.text('Intermediate · Proficient · Verified'), findsOneWidget);
       if (width < 1024) {
         expect(skills.top, greaterThan(cover.bottom));
       } else {
@@ -113,6 +139,51 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('horse sale details sit below the cover and above About', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final harness = await AppTestHarness.create();
+    addTearDown(harness.close);
+    final horse = HorseProfile(
+      id: 'atlas',
+      name: 'Atlas',
+      locationName: 'Bend, Oregon',
+      breed: 'Mustang',
+      saleListing: (
+        price: '100000',
+        location: 'Central Oregon',
+        description: 'Experienced school horse.',
+      ),
+    );
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: harness.cubit,
+        child: MaterialApp(home: HorseProfileView(horseProfile: horse)),
+      ),
+    );
+    final cover = tester.getRect(find.byKey(const Key('horseIdentity')));
+    final ribbon = find.ancestor(
+      of: find.text('FOR SALE'),
+      matching: find.byType(CornerBanner),
+    );
+    expect(tester.getTopLeft(ribbon), cover.topLeft);
+    expect(tester.getRect(ribbon).bottom, lessThan(cover.bottom));
+    expect(cover.contains(tester.getCenter(find.text('Bend, Oregon'))), isTrue);
+    expect(
+      tester.getTopLeft(find.text('100,000')).dy,
+      greaterThan(cover.bottom),
+    );
+    expect(
+      tester.getBottomLeft(find.text('Experienced school horse.')).dy,
+      lessThan(tester.getTopLeft(find.text('About')).dy),
+    );
+    expect(find.text('Central Oregon'), findsOneWidget);
+  });
 
   testWidgets('guest can browse and reach the right account action', (
     tester,
@@ -288,6 +359,8 @@ void main() {
         expect(find.text(content), findsOneWidget);
       }
       expect(find.text('Sign in'), findsNothing);
+      expect(find.widgetWithText(ListTile, 'Grooming'), findsOneWidget);
+      expect(find.text('Introductory · Learning'), findsOneWidget);
       final identity = find.byKey(const Key('riderIdentity'));
       final cover = tester.getRect(identity);
       expect(cover.height, greaterThanOrEqualTo(220));

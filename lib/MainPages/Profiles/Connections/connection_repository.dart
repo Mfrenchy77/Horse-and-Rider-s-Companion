@@ -25,6 +25,7 @@ class CoachingConnection {
       coachName = data['coachName'] as String,
       horseId = data['horseId'] as String?,
       horseName = data['horseName'] as String?,
+      ownershipVersion = data['ownershipVersion'] as String?,
       updatedAt = (data['updatedAt'] as Timestamp?)?.toDate();
 
   final String id;
@@ -39,6 +40,7 @@ class CoachingConnection {
   final String coachName;
   final String? horseId;
   final String? horseName;
+  final String? ownershipVersion;
   final DateTime? updatedAt;
 
   String otherName(String viewer) => viewer == coach ? learnerName : coachName;

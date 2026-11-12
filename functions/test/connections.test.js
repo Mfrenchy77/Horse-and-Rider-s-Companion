@@ -250,3 +250,82 @@ test('archive and restore retain ownership and shared history while hiding the h
   await call(coach, training);
   assert.deepEqual((await call(coach, options)).horses, [{id: 'atlas', name: 'Atlas'}]);
 });
+
+test('listing is owner-only and excludes arbitrary fields', async () => {
+  const {call, docs} = fixture();
+  const listing = {price: '$8,000 USD', location: 'Bend, OR', description: 'Schooling at first level.'};
+  const action = {action: 'setSaleListing', horseId: 'atlas', listing: {...listing, currentOwnerId: coach}};
+  await assert.rejects(call(coach, action), {code: 'permission-denied'});
+  await assert.rejects(call(student, {...action, listing: {...listing, location: ''}}), {code: 'invalid-argument'});
+  await call(student, action);
+  assert.deepEqual(docs.get('Horse_Profile/atlas').saleListing, listing);
+  await call(student, {...action, listing: null});
+  assert.equal(docs.get('Horse_Profile/atlas').saleListing, null);
+  await call(student, action);
+  await call(student, {action: 'setHorseArchive', horseId: 'atlas', archiveStatus: 'archived'});
+  assert.equal(docs.get('Horse_Profile/atlas').saleListing, null);
+  await assert.rejects(call(student, action), {code: 'failed-precondition'});
+});
+
+test('transfer needs recipient consent and moves ownership, listing and history atomically', async () => {
+  const {call, docs, getLink, request} = fixture();
+  const ownerRef = 'Rider_Profile/rad1r9991xppl1666l';
+  const buyerRef = 'Rider_Profile/oth1r9991xppl1666l';
+  docs.set(buyerRef, {email: outsider, name: 'Buyer', studentHorses: [{id: 'atlas'}]});
+  await call(student, {action: 'saveJournal', id: 'lesson', type: 'lesson', horseId: 'atlas', notes: 'Transitions'});
+  await call(student, {
+    action: 'setSaleListing', horseId: 'atlas', listing: {location: 'Bend', description: 'School horse'},
+  });
+  const training = await call(coach, request('horse'));
+  const trainingVersion = getLink(training.id).version;
+  await call(student, {action: 'accept', id: training.id, version: trainingVersion});
+  const offer = {action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider};
+  await assert.rejects(call(coach, offer), {code: 'permission-denied'});
+  const pending = await call(student, offer);
+  assert.deepEqual(await call(student, offer), pending);
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
+  assert.deepEqual(docs.get(ownerRef).ownedHorses, [{id: 'atlas'}]);
+  assert.equal(docs.get(buyerRef).ownedHorses, undefined);
+  const action = {action: 'accept', id: pending.id, version: getLink(pending.id).version};
+  await assert.rejects(call(student, action), {code: 'permission-denied'});
+  await assert.rejects(call(coach, action), {code: 'permission-denied'});
+  await assert.rejects(call(outsider, {...action, action: 'record'}), {code: 'permission-denied'});
+  await call(outsider, action);
+  await call(outsider, action);
+  assert.deepEqual(docs.get(ownerRef).ownedHorses, []);
+  assert.deepEqual(docs.get(buyerRef).ownedHorses.map((item) => item.id), ['atlas']);
+  assert.deepEqual(docs.get(buyerRef).studentHorses, []);
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, outsider);
+  assert.equal(docs.get('Horse_Profile/atlas').saleListing, null);
+  assert.equal((await call(outsider, {action: 'horseHistory', horseId: 'atlas'})).entries[0].name, 'Transitions');
+  await assert.rejects(call(coach, {
+    action: 'record', id: training.id, version: trainingVersion, recordId: 'after', notes: 'Old permission',
+  }), {code: 'failed-precondition'});
+
+  const returnOffer = await call(outsider, {...offer, recipientEmail: student});
+  await call(student, {action: 'accept', id: returnOffer.id, version: getLink(returnOffer.id).version});
+  await assert.rejects(call(coach, {
+    action: 'record', id: training.id, version: trainingVersion, recordId: 'return', notes: 'Still old',
+  }), {code: 'failed-precondition'});
+  const newGrant = await call(coach, request('horse'));
+  assert.equal(newGrant.status, 'pending');
+  assert.notEqual(getLink(newGrant.id).version, trainingVersion);
+});
+
+test('decline and cancellation release a pending transfer and stale acceptance is rejected', async () => {
+  const {call, docs, getLink} = fixture();
+  const offer = {action: 'sendTransfer', horseId: 'atlas', recipientEmail: coach};
+  const {id} = await call(student, offer);
+  const first = getLink(id).version;
+  await assert.rejects(call(student, {
+    action: 'setHorseArchive', horseId: 'atlas', archiveStatus: 'archived',
+  }), {code: 'failed-precondition'});
+  await call(coach, {id, version: first, action: 'decline'});
+  assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, null);
+  await call(student, offer);
+  const second = getLink(id).version;
+  await assert.rejects(call(coach, {id, version: first, action: 'accept'}), {code: 'failed-precondition'});
+  await call(student, {id, version: second, action: 'cancel'});
+  assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, null);
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
+});

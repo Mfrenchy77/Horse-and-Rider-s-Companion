@@ -156,9 +156,11 @@ void main() {
     when(
       resources.getResources,
     ).thenAnswer((_) => Stream.value([linked, unrelated]));
+    final linkedResources = StreamController<List<Resource>>();
+    addTearDown(linkedResources.close);
     when(
       () => resources.getResourcesForSkill(skillId: 'first'),
-    ).thenAnswer((_) => Stream.value([linked]));
+    ).thenAnswer((_) => linkedResources.stream);
     final cubit = AppCubit(
       messagesRepository: messages,
       skillTreeRepository: skills,
@@ -175,14 +177,23 @@ void main() {
         child: BlocProvider.value(
           value: cubit,
           child: MaterialApp(
-            home: Scaffold(body: SkillResouresList(skillId: id)),
+            home: Scaffold(
+              body: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [SkillResouresList(skillId: id)],
+              ),
+            ),
           ),
         ),
       ),
     );
 
     await showSkill('first');
+    final indicator = find.byType(CircularProgressIndicator);
+    expect(tester.getSize(indicator), const Size.square(24));
+    linkedResources.add([linked]);
     await tester.pump();
+    expect(indicator, findsNothing);
     verify(() => resources.getResourcesForSkill(skillId: 'first')).called(1);
     verifyNever(resources.getResources);
     expect(

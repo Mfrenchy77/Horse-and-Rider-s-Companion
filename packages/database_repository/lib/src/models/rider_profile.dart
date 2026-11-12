@@ -31,6 +31,7 @@ class RiderProfile {
     this.skillLevels = const [],
     this.ownedHorses = const [],
     this.archivedHorses,
+    this.ownershipRosterVersion,
     this.instructors = const [],
     this.messagesList = const [],
     this.studentHorses = const [],
@@ -119,6 +120,9 @@ class RiderProfile {
   /// Horses archived by this owner.
   final List<BaseListItem>? archivedHorses;
 
+  /// Preserves the latest server version when the profile is saved.
+  final String? ownershipRosterVersion;
+
   /// List of resources the rider has saved
   List<String>? savedResourcesList;
 
@@ -169,6 +173,7 @@ class RiderProfile {
       ownedHorses: data['ownedHorses'] == null
           ? null
           : _convertBaseListItem(data['ownedHorses'] as List),
+      ownershipRosterVersion: data['ownershipRosterVersion'] as String?,
       archivedHorses: data['archivedHorses'] == null
           ? null
           : _convertBaseListItem(data['archivedHorses'] as List),
@@ -232,6 +237,8 @@ class RiderProfile {
         'skillLevels': List<dynamic>.from(skillLevels!.map((e) => e.toJson())),
       if (ownedHorses != null)
         'ownedHorses': List<dynamic>.from(ownedHorses!.map((e) => e.toJson())),
+      if (ownershipRosterVersion != null)
+        'ownershipRosterVersion': ownershipRosterVersion,
       if (archivedHorses != null)
         'archivedHorses': archivedHorses!.map((e) => e.toJson()).toList(),
       if (instructors != null)
@@ -291,6 +298,7 @@ class RiderProfile {
       skillLevels: skillLevels ?? this.skillLevels,
       ownedHorses: ownedHorses ?? this.ownedHorses,
       archivedHorses: archivedHorses,
+      ownershipRosterVersion: ownershipRosterVersion,
       instructors: instructors ?? this.instructors,
       locationName: locationName ?? this.locationName,
       lastEditDate: lastEditDate ?? this.lastEditDate,

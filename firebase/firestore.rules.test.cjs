@@ -56,6 +56,10 @@ test('guest can read profiles while only the verified owner can change them', as
   await assertFails(updateDoc(doc(owner, 'Horse_Profile/atlas'), {currentOwnerId: 'NONE'}));
   await assertFails(deleteDoc(doc(owner, 'Horse_Profile/atlas')));
   await assertFails(updateDoc(doc(owner, 'Horse_Profile/atlas'), {archiveStatus: 'archived'}));
+  for (const field of ['saleListing', 'transferRequestId', 'ownershipVersion']) {
+    await assertFails(updateDoc(doc(owner, 'Horse_Profile/atlas'), {[field]: 'client value'}));
+  }
+  await assertFails(updateDoc(doc(owner, 'Rider_Profile/owner'), {ownershipRosterVersion: 'client value'}));
   await assertFails(updateDoc(doc(owner, 'Rider_Profile/owner'), {archivedHorses: [{id: 'atlas'}]}));
 });
 
@@ -82,7 +86,7 @@ test('coaching and journal queries enforce verified membership and block all cli
 });
 
 
-test('the callable writes the same lesson for the student and horse under the deployed rules', async () => {
+test('the callable preserves shared lessons across archive, restore and transfer', async () => {
   const {initializeApp, deleteApp} = require('firebase-admin/app');
   const {getFirestore} = require('firebase-admin/firestore');
   const {connectionHandler} = require('../functions/connections');
@@ -137,6 +141,38 @@ test('the callable writes the same lesson for the student and horse under the de
     assert.equal((await getDocs(query(
       collection(riderClient, 'SharedRidingEntries'), where('riderUid', '==', 'rider'),
     ))).size, 1);
+    const buyer = 'other@example.com';
+    const buyerRef = db.doc('Rider_Profile/oth1r9991xppl1666l');
+    await buyerRef.set({email: buyer, name: 'Buyer'});
+    await call(rider, {
+      action: 'setSaleListing', horseId: 'lesson-horse',
+      listing: {price: '$5000 USD', location: 'Bend', description: 'School horse'},
+    });
+    const guest = environment.unauthenticatedContext().firestore();
+    assert.equal((await getDoc(doc(guest, horseRef.path))).data().saleListing.price, '$5000 USD');
+    const pending = await call(rider, {
+      action: 'sendTransfer', horseId: 'lesson-horse', recipientEmail: buyer,
+    });
+    const transferRef = db.doc(`CoachingConnections/${pending.id}`);
+    const transfer = (await transferRef.get()).data();
+    const buyerClient = environment.authenticatedContext('other', {
+      email: buyer, email_verified: true,
+    }).firestore();
+    await assertSucceeds(getDoc(doc(buyerClient, transferRef.path)));
+    await assertFails(getDoc(doc(guest, transferRef.path)));
+    await assertFails(updateDoc(doc(buyerClient, transferRef.path), {status: 'accepted'}));
+    const staleRider = (await riderRef.get()).data();
+    await call(buyer, {action: 'accept', id: pending.id, version: transfer.version});
+    const transferred = (await horseRef.get()).data();
+    assert.equal(transferred.currentOwnerId, buyer);
+    assert.equal(transferred.saleListing, null);
+    assert.deepEqual((await riderRef.get()).data().ownedHorses, []);
+    assert.equal((await buyerRef.get()).data().ownedHorses[0].id, 'lesson-horse');
+    assert.equal((await call(buyer, {action: 'horseHistory', horseId: 'lesson-horse'})).entries[0].id,
+      history.entries[0].id);
+    await assertFails(setDoc(doc(riderClient, riderRef.path), staleRider));
+    await assertFails(updateDoc(doc(riderClient, horseRef.path), {name: 'Old owner update'}));
+    await assertSucceeds(updateDoc(doc(buyerClient, horseRef.path), {name: 'New owner update'}));
   } finally {
     await deleteApp(app);
   }

@@ -119,13 +119,15 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
   const id = key([kind, learnerUid, coachUid, horseId]);
   const ref = db.collection(collection).doc(id);
   const existing = (await tx.get(ref)).data();
-  if (existing && !terminal.has(existing.status)) {
+  if (existing && !terminal.has(existing.status) &&
+      (existing.ownershipVersion ?? null) === (targetHorse?.ownershipVersion ?? null)) {
     // A crossed request remains incoming until its recipient explicitly accepts.
     return {id, status: existing.status, incoming: existing.recipient === actor};
   }
   const reason = text(data.reason, 280, 'reason', true);
   tx.set(ref, {
     kind, version, horseId,
+    ownershipVersion: targetHorse?.ownershipVersion ?? null,
     horseName: targetHorse?.name || null,
     learner, coach,
     learnerEmail: learnerRecord.profile.email,
@@ -147,6 +149,135 @@ function isArchived(animal) {
   return ['archived', 'deceased'].includes(animal.archiveStatus);
 }
 
+function horseLink(horseId, animal) {
+  return {
+    id: horseId, name: animal.name || horseId, isCollapsed: false,
+    ...(animal.picUrl ? {imageUrl: animal.picUrl} : {}),
+  };
+}
+
+async function setSaleListing(tx, db, identity, data) {
+  const horseId = documentId(data.horseId, 'horse ID');
+  const animal = await horse(tx, db, horseId);
+  if (emailKey(animal.profile.currentOwnerId) !== emailKey(identity.email)) {
+    throw new HttpsError('permission-denied', 'Only the owner can edit this listing.');
+  }
+  if (data.listing === null) {
+    tx.update(animal.ref, {saleListing: null});
+    return {status: 'unlisted'};
+  }
+  if (isArchived(animal.profile) || !data.listing || typeof data.listing !== 'object') {
+    throw new HttpsError('failed-precondition', 'Choose an active horse to list.');
+  }
+  const listing = {
+    price: text(data.listing.price, 40, 'asking price', true),
+    location: text(data.listing.location, 100, 'sale location'),
+    description: text(data.listing.description, 2500, 'sale description'),
+  };
+  tx.update(animal.ref, {saleListing: listing});
+  return {status: 'listed'};
+}
+
+async function sendTransfer(tx, db, auth, identity, data, now, version) {
+  const horseId = documentId(data.horseId, 'horse ID');
+  const animal = await horse(tx, db, horseId);
+  const ownerEmail = emailKey(identity.email);
+  if (emailKey(animal.profile.currentOwnerId) !== ownerEmail) {
+    throw new HttpsError('permission-denied', 'Only the owner can offer a transfer.');
+  }
+  if (isArchived(animal.profile)) {
+    throw new HttpsError('failed-precondition', 'Restore this horse before transferring it.');
+  }
+  const requestedEmail = documentId(data.recipientEmail, 'recipient email');
+  if (!requestedEmail.includes('@') || emailKey(requestedEmail) === ownerEmail) {
+    throw new HttpsError('invalid-argument', 'Enter another rider’s email.');
+  }
+  let account;
+  try {
+    account = await auth.getUserByEmail(requestedEmail);
+  } catch (error) {
+    if (error.code !== 'auth/user-not-found') throw error;
+    throw new HttpsError('not-found', 'The recipient has no active account.');
+  }
+  if (!account.email || account.disabled || account.uid === identity.uid ||
+      emailKey(account.email) !== emailKey(requestedEmail)) {
+    throw new HttpsError('failed-precondition', 'The recipient is unavailable.');
+  }
+  const [owner, recipient] = await Promise.all([
+    rider(tx, db, identity.email),
+    rider(tx, db, account.email),
+  ]);
+  const id = key(['transfer', horseId, identity.uid, account.uid]);
+  const pendingId = animal.profile.transferRequestId;
+  if (pendingId) {
+    if (pendingId === id) return {id, status: 'pending'};
+    throw new HttpsError('failed-precondition', 'Cancel the existing transfer request first.');
+  }
+  const recipientEmail = emailKey(account.email);
+  tx.set(db.collection(collection).doc(id), {
+    kind: 'transfer', version, horseId,
+    horseName: animal.profile.name || horseId,
+    learner: ownerEmail, coach: recipientEmail,
+    learnerEmail: owner.profile.email, coachEmail: recipient.profile.email,
+    learnerName: owner.profile.name || owner.profile.email,
+    coachName: recipient.profile.name || recipient.profile.email,
+    participantUids: [identity.uid, account.uid],
+    learnerUid: identity.uid, coachUid: account.uid,
+    sender: ownerEmail, recipient: recipientEmail,
+    status: 'pending', updatedAt: now,
+  });
+  tx.update(animal.ref, {transferRequestId: id});
+  return {id, status: 'pending'};
+}
+
+async function resolveTransfer(tx, db, link, ref, id, actor, action, now) {
+  if (!['accept', 'decline', 'cancel'].includes(action)) {
+    throw new HttpsError('permission-denied', 'This action is unavailable for a transfer.');
+  }
+  const status = transition(link, actor, action);
+  if (link.status === status) return {id, status};
+  const animal = await horse(tx, db, link.horseId);
+  if (emailKey(animal.profile.currentOwnerId) !== link.learner || animal.profile.transferRequestId !== id) {
+    throw new HttpsError('failed-precondition', 'This transfer is no longer available.');
+  }
+  if (status === 'accepted') {
+    if (isArchived(animal.profile)) {
+      throw new HttpsError('failed-precondition', 'The horse must be active to transfer.');
+    }
+    const [owner, recipient] = await Promise.all([
+      rider(tx, db, link.learnerEmail),
+      rider(tx, db, link.coachEmail),
+    ]);
+    const withoutHorse = (items) => (items || []).filter((item) => item.id !== link.horseId);
+    tx.update(owner.ref, {
+      ownershipRosterVersion: link.version,
+      ownedHorses: withoutHorse(owner.profile.ownedHorses),
+      archivedHorses: withoutHorse(owner.profile.archivedHorses),
+      studentHorses: withoutHorse(owner.profile.studentHorses),
+    });
+    tx.update(recipient.ref, {
+      ownershipRosterVersion: link.version,
+      ownedHorses: [...withoutHorse(recipient.profile.ownedHorses), horseLink(link.horseId, animal.profile)],
+      archivedHorses: withoutHorse(recipient.profile.archivedHorses),
+      studentHorses: withoutHorse(recipient.profile.studentHorses),
+    });
+    tx.update(animal.ref, {
+      currentOwnerId: recipient.profile.email,
+      currentOwnerName: recipient.profile.name || recipient.profile.email,
+      ownershipVersion: link.version,
+      transferRequestId: null,
+      saleListing: null,
+      instructors: [],
+      lastEditBy: recipient.profile.name || recipient.profile.email,
+      lastEditDate: now,
+    });
+  } else {
+    tx.update(animal.ref, {transferRequestId: null});
+  }
+  tx.update(ref, {status, updatedAt: now});
+  return {id, status};
+}
+
 async function setHorseArchive(tx, db, identity, data, now) {
   const horseId = documentId(data.horseId, 'horse ID');
   const archiveStatus = data.archiveStatus;
@@ -157,6 +288,9 @@ async function setHorseArchive(tx, db, identity, data, now) {
   if (emailKey(animal.profile.currentOwnerId) !== emailKey(identity.email)) {
     throw new HttpsError('permission-denied', 'Only the horse owner can change its archive status.');
   }
+  if (archiveStatus !== 'active' && animal.profile.transferRequestId) {
+    throw new HttpsError('failed-precondition', 'Cancel the pending transfer before archiving this horse.');
+  }
   const owner = await rider(tx, db, identity.email);
   const owned = owner.profile.ownedHorses || [];
   const archived = owner.profile.archivedHorses || [];
@@ -165,16 +299,14 @@ async function setHorseArchive(tx, db, identity, data, now) {
       hasHorse(active ? owned : archived, horseId) && !hasHorse(active ? archived : owned, horseId)) {
     return {status: archiveStatus};
   }
-  const link = {
-    id: horseId, name: animal.profile.name || horseId,
-    ...(animal.profile.picUrl ? {imageUrl: animal.profile.picUrl} : {}), isCollapsed: false,
-  };
+  const link = horseLink(horseId, animal.profile);
   tx.update(owner.ref, {
     ownedHorses: [...owned.filter((item) => item.id !== horseId), ...(active ? [link] : [])],
     archivedHorses: [...archived.filter((item) => item.id !== horseId), ...(active ? [] : [link])],
   });
   tx.update(animal.ref, {
     archiveStatus,
+    ...(!active ? {saleListing: null} : {}),
     lastEditBy: owner.profile.name || owner.profile.email,
     lastEditDate: now,
   });
@@ -184,7 +316,8 @@ async function setHorseArchive(tx, db, identity, data, now) {
 async function target(tx, db, link) {
   if (link.kind === 'rider') return rider(tx, db, link.learnerEmail);
   const record = await horse(tx, db, link.horseId);
-  if (emailKey(record.profile.currentOwnerId) !== link.learner) {
+  if (emailKey(record.profile.currentOwnerId) !== link.learner ||
+      (record.profile.ownershipVersion ?? null) !== (link.ownershipVersion ?? null)) {
     throw new HttpsError('failed-precondition', 'The horse has a different owner.');
   }
   return record;
@@ -202,7 +335,8 @@ async function trainerGrant(tx, db, auth, record, horseId, uid, email) {
   const ref = db.collection(collection).doc(key(['horse', owner.uid, uid, horseId]));
   const link = (await tx.get(ref)).data();
   return link?.status === 'accepted' && link.coach === emailKey(email) &&
-      link.learner === emailKey(record.currentOwnerId);
+      link.learner === emailKey(record.currentOwnerId) &&
+      (record.ownershipVersion ?? null) === (link.ownershipVersion ?? null);
 }
 
 function hasHorse(links, horseId) {
@@ -464,6 +598,8 @@ function connectionHandler(db, auth) {
       }
       if (data.action === 'horseHistory') return horseHistory(tx, db, auth, identity, data);
       if (data.action === 'setHorseArchive') return setHorseArchive(tx, db, identity, data, now);
+      if (data.action === 'setSaleListing') return setSaleListing(tx, db, identity, data);
+      if (data.action === 'sendTransfer') return sendTransfer(tx, db, auth, identity, data, now, nonce);
       if (data.action === 'send') return send(tx, db, auth, data, actor, {email, uid}, now, nonce);
       const id = documentId(data.id, 'connection ID');
       const ref = db.collection(collection).doc(id);
@@ -476,6 +612,7 @@ function connectionHandler(db, auth) {
       if (data.version !== link.version) {
         throw new HttpsError('failed-precondition', 'Refresh this connection and try again.');
       }
+      if (link.kind === 'transfer') return resolveTransfer(tx, db, link, ref, id, actor, data.action, now);
       if (data.action === 'record') return addRecord(tx, db, auth, link, actor, data, now, id);
       if (data.action === 'studentHistory') return studentHistory(tx, db, link, actor);
       if (data.action === 'editLesson' || data.action === 'deleteLesson') {

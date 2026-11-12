@@ -52,7 +52,18 @@ class _SkillResourceQueryState extends State<_SkillResourceQuery> {
           return const Text('Unable to load resources');
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: SizedBox.square(
+                dimension: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  semanticsLabel: 'Loading skill resources',
+                ),
+              ),
+            ),
+          );
         }
 
         return _resourceItems(snapshot.data ?? const <Resource>[]);

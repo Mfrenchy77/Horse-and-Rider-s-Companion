@@ -2,6 +2,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 
+/// Public details supplied by the owner for an active horse listing.
+typedef HorseSaleListing = ({
+  String price,
+  String location,
+  String description,
+});
+
+HorseSaleListing? _saleListing(Object? value) {
+  if (value is! Map ||
+      value['location'] is! String ||
+      value['description'] is! String) {
+    return null;
+  }
+  return (
+    price: value['price'] is String ? value['price'] as String : '',
+    location: value['location'] as String,
+    description: value['description'] as String,
+  );
+}
+
 ///Model of a Horse Profile
 class HorseProfile {
   /// Creates a new instance of [HorseProfile]
@@ -30,6 +50,9 @@ class HorseProfile {
     required this.name,
     this.dateOfPurchase,
     this.archiveStatus = 'active',
+    this.saleListing,
+    this.transferRequestId,
+    this.ownershipVersion,
     this.currentOwnerId = '',
     this.currentOwnerName = '',
   });
@@ -69,6 +92,15 @@ class HorseProfile {
 
   /// Current archive status, managed by the coaching callable.
   final String archiveStatus;
+
+  /// Public sale details, managed by the owner through the callable.
+  final HorseSaleListing? saleListing;
+
+  /// Opaque ID of the current ownership transfer request.
+  final String? transferRequestId;
+
+  /// Changes when ownership changes and invalidates earlier training grants.
+  final String? ownershipVersion;
 
   /// Whether this horse is outside its owner's active roster.
   bool get isArchived =>
@@ -143,6 +175,9 @@ class HorseProfile {
       purchasePrice: data['purchasePrice'] as int?,
       locationName: data['locationName'] as String?,
       archiveStatus: data['archiveStatus'] as String? ?? 'active',
+      saleListing: _saleListing(data['saleListing']),
+      transferRequestId: data['transferRequestId'] as String?,
+      ownershipVersion: data['ownershipVersion'] as String?,
       currentOwnerId: data['currentOwnerId'] as String,
       currentOwnerName: data['currentOwnerName'] as String,
       dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
@@ -246,6 +281,9 @@ class HorseProfile {
       locationName: locationName ?? this.locationName,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       archiveStatus: archiveStatus,
+      saleListing: saleListing,
+      transferRequestId: transferRequestId,
+      ownershipVersion: ownershipVersion,
       currentOwnerId: currentOwnerId ?? this.currentOwnerId,
       dateOfPurchase: dateOfPurchase ?? this.dateOfPurchase,
       currentOwnerName: currentOwnerName ?? this.currentOwnerName,

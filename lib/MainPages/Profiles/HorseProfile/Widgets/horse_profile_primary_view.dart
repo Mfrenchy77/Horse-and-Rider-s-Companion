@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/log_book_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_sale_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_cover.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
+import 'package:super_banners/super_banners.dart';
 
 class HorseProfilePrimaryView extends StatelessWidget {
   const HorseProfilePrimaryView({super.key, required this.horseProfile});
@@ -20,6 +22,8 @@ class HorseProfilePrimaryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final instructors = horseProfile.instructors ?? const <BaseListItem>[];
+    final forSale =
+        !horseProfile.isArchived && horseProfile.saleListing != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 12,
@@ -35,7 +39,26 @@ class HorseProfilePrimaryView extends StatelessWidget {
             'archived' => 'Archived',
             _ => null,
           },
+          ribbon: forSale
+              ? const CornerBanner(
+                  bannerColor: Color(0xFF1565C0),
+                  elevation: 4,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    child: Text(
+                      'FOR SALE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .8,
+                      ),
+                    ),
+                  ),
+                )
+              : null,
         ),
+        if (forSale) HorseSalePanel(horse: horseProfile),
         _HorseDetails(horse: horseProfile),
         Align(
           alignment: Alignment.centerLeft,

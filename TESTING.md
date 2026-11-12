@@ -193,8 +193,10 @@ outside their write scope.
 
 ### Local browser testing
 
-A normal localhost Flutter run uses the live Firebase project. To exercise
-the local archive callable without real user data, run the following from
+A normal localhost Flutter run uses the live Firebase project. If the live
+callable predates sale listings and ownership transfers, it can return
+`Invalid connection ID.` for those actions. To exercise the current local
+callable without real user data, run the following from
 the repository root in two terminals. Use the Firebase CLI and install
 the Functions dependencies first.
 
@@ -221,8 +223,7 @@ the horse status and moves its link from Owned horses to Archived horses
 in one transaction. The owner and full logbook stay with the horse. An
 owner can open an archived horse from their rider profile and restore it.
 Archived horses are unavailable for new linked log entries, and existing
-linked entries can still be corrected. Transfer is hidden until its
-acceptance flow is implemented.
+linked entries can still be corrected.
 
 Messages is disabled in app navigation. Old message URLs return to
 Profile. Existing conversation data stays in Firestore. Coaching requests
@@ -248,17 +249,50 @@ NODE_PATH="$rules_deps/node_modules:$PWD/functions/node_modules" \
 
 The suite covers profile ownership checks, the app's participant and journal
 queries, blocked client writes, and the callable's shared lesson, archive,
-and restore transactions. In a Firebase test project, smoke-test owner
-profile edits, archive and restore, saved contacts, coaching requests,
-and old Messages links. Publish the tested rules with the `coachingConnection`
+restore, sale listing, and ownership transfer transactions. In a Firebase
+test project, smoke-test owner profile edits, archive and restore, saved
+contacts, coaching requests, and old Messages links. Publish the tested rules with the `coachingConnection`
 callable and the corresponding app release. The endpoint uses the current
 Firebase project's us-central1 region.
 
 ```sh
 npm --prefix functions test
 flutter test test/app_authorization_test.dart \
-  test/widget/connection_panel_test.dart test/widget/rider_logbook_test.dart
+  test/widget/connection_panel_test.dart test/widget/rider_logbook_test.dart \
+  test/widget/horse_sale_panel_test.dart
 ```
+
+### Sale listing and ownership transfer
+
+Use two verified accounts with rider profiles in a Firebase test project
+or the Emulator Suite. Create a sample horse and a logbook entry under
+the first account.
+
+1. As the owner, open the horse profile's three-dot menu and select **List
+   for sale** to publish a listing with a general location and description.
+   Add an asking price or leave it blank to display **Contact for price**. The horse's existing
+   profile photo stays in the header. Open the profile while signed out
+   and confirm the listing is visible. Sign back in as the owner and use
+   **Edit listing** and **Remove listing** from the same menu. Republish
+   the listing before testing the transfer.
+2. In the horse profile's three-dot menu, choose **Transfer
+   ownership** and enter the second account's email. Confirm the horse
+   stays on the first account's roster and that the archive action is
+   blocked until the request is resolved. Try canceling, then send again.
+3. As the recipient, open **Connections and requests** on your rider
+   profile. Decline once and confirm ownership stays with the sender.
+   Have the owner send another request, then accept it as the recipient.
+4. Confirm the same horse profile and its logbook remain accessible to the
+   new owner, the horse appears in their Owned horses, the former owner
+   loses editing access, and the public listing disappears. If the horse
+   had an active trainer grant, confirm that grant no longer gives access
+   to its private logbook.
+5. As the new owner, list the horse again, archive it, and restore it.
+   Confirm archiving removes the listing and restoring leaves it unlisted.
+
+The transfer changes ownership inside the app. This release covers the
+public profile listing and ownership handoff. Buyer inquiries, marketplace
+search, and payments are outside this workflow.
 
 ## Welcome, rider profiles, and card styling
 

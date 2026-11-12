@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -61,15 +63,23 @@ class _NavigationViewState extends State<NavigationView> {
         final newIndex = state.index;
         final currentIndex = widget.child.currentIndex;
         if (newIndex != currentIndex) {
-          // A deep link can emit app state before the shell rebuilds with its
-          // new branch. Switching immediately would replace the requested URL.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            final requestedIndex = cubit.state.index;
-            if (widget.child.currentIndex != requestedIndex) {
-              widget.child.goBranch(requestedIndex);
-            }
-          });
+          // If the router has already moved to the requested branch (deep
+          // links, programmatic navigation), don't override the URL by calling
+          // goBranch, which would jump to the branch's last known location.
+          //
+          // If the router is still on the old branch (e.g. back buttons that
+          // only update AppCubit state), goBranch now so the slide starts
+          // immediately.
+          final path = GoRouter.of(context).routeInformationProvider.value.uri;
+          final location = path.path;
+          final routerBranchIndex = location.startsWith(SkillTreePage.path)
+              ? 1
+              : location.startsWith(ResourcesPage.path)
+                  ? 2
+                  : 0;
+          if (routerBranchIndex != newIndex) {
+            widget.child.goBranch(newIndex);
+          }
         }
 
         // Manual onboarding presentation (guest vs signed-in)
@@ -195,7 +205,14 @@ class _NavigationViewState extends State<NavigationView> {
                       : const BoxDecoration(),
                   child: NavigationRail(
                     selectedIndex: widget.child.currentIndex,
-                    onDestinationSelected: context.read<AppCubit>().changeIndex,
+                    onDestinationSelected: (index) {
+                      if (index == widget.child.currentIndex) return;
+                      // Trigger the branch slide immediately on tap.
+                      // The BlocListener below still handles programmatic
+                      // index changes (e.g. deep links) with extra safety.
+                      widget.child.goBranch(index);
+                      context.read<AppCubit>().changeIndex(index);
+                    },
                     extended: isLarge,
                     leading: const Padding(
                       padding: EdgeInsets.all(8),
@@ -227,7 +244,11 @@ class _NavigationViewState extends State<NavigationView> {
                       : const BoxDecoration(),
                   child: BottomNavigationBar(
                     currentIndex: widget.child.currentIndex,
-                    onTap: context.read<AppCubit>().changeIndex,
+                    onTap: (index) {
+                      if (index == widget.child.currentIndex) return;
+                      widget.child.goBranch(index);
+                      context.read<AppCubit>().changeIndex(index);
+                    },
                     items: _buildBottomNavigationBarItems(
                       isForRider: state.isForRider,
                     ),

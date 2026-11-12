@@ -37,6 +37,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
         'send' when result['status'] == 'accepted' =>
           'This connection is already active.',
         'send' => 'Request sent.',
+        'accept' when data['transfer'] == true => 'Ownership transferred.',
         _ => 'Connection updated.',
       };
     } on ConnectionFailure catch (error) {
@@ -61,16 +62,12 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     });
   }
 
-  Future<void> _inviteHorseTrainer() async {
-    final email = await showDialog<String>(
-      context: context,
-      builder: (_) => const _TrainerEmailDialog(),
-    );
-    if (mounted && email != null) _request(coach: email);
-  }
-
-  void _change(CoachingConnection link, String action) =>
-      _submit({'action': action, 'id': link.id, 'version': link.version});
+  void _change(CoachingConnection link, String action) => _submit({
+    'action': action,
+    'id': link.id,
+    'version': link.version,
+    if (link.kind == 'transfer') 'transfer': true,
+  });
 
   void _record(CoachingConnection link) {
     if (link.kind == 'rider') {
@@ -125,9 +122,15 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
             if (link.status != 'pending' && link.status != 'accepted') {
               return false;
             }
+            if (link.kind == 'transfer' && link.status != 'pending') {
+              return false;
+            }
             if (horse != null) {
               return link.horseId == horse.id &&
-                  link.learner == horse.currentOwnerId.toLowerCase();
+                  link.learner == horse.currentOwnerId.toLowerCase() &&
+                  (link.kind == 'transfer'
+                      ? horse.transferRequestId == link.id
+                      : link.ownershipVersion == horse.ownershipVersion);
             }
             if (ownProfile) return true;
             final viewed = rider!.email.toLowerCase();
@@ -138,16 +141,11 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
         .where((link) => link.status == 'pending' && link.recipient == email)
         .length;
     final actions = <Widget>[
-      if (horseOwner && horse?.isArchived == false)
-        OutlinedButton(
-          onPressed: _saving ? null : _inviteHorseTrainer,
-          child: const Text('Invite trainer'),
-        ),
       if (horse != null &&
           !horse.isArchived &&
           !horseOwner &&
           isTrainer &&
-          links.isEmpty)
+          !links.any((link) => link.kind == 'horse'))
         OutlinedButton(
           onPressed: _saving ? null : () => _request(coach: profile.email),
           child: const Text('Request to train horse'),
@@ -225,11 +223,11 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     final horseName = link.horseName ?? 'Horse';
     final other = link.otherName(email);
     final requester = link.requesterName;
-    final relationship = link.kind == 'horse'
-        ? '$horseName training'
-        : email == link.coach
-        ? 'Student'
-        : 'Instructor';
+    final relationship = switch (link.kind) {
+      'transfer' => '$horseName ownership transfer',
+      'horse' => '$horseName training',
+      _ => email == link.coach ? 'Student' : 'Instructor',
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -246,9 +244,11 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
               : 'Awaiting response',
         ),
         if (!active && incoming)
-          const Text(
-            'Accepting lets the instructor or trainer add notes '
-            'and update skill progress.',
+          Text(
+            link.kind == 'transfer'
+                ? 'Accepting moves this horse and its logbook to your profile.'
+                : 'Accepting lets the instructor or trainer add notes '
+                      'and update skill progress.',
           ),
         Wrap(
           spacing: 8,
@@ -259,7 +259,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                 onPressed: _saving || (widget.horse?.isArchived ?? false)
                     ? null
                     : () => _change(link, 'accept'),
-                child: const Text('Accept'),
+                child: Text(
+                  link.kind == 'transfer' ? 'Accept transfer' : 'Accept',
+                ),
               ),
               TextButton(
                 onPressed: _saving ? null : () => _change(link, 'decline'),
@@ -299,39 +301,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
       ],
     );
   }
-}
-
-class _TrainerEmailDialog extends StatefulWidget {
-  const _TrainerEmailDialog();
-
-  @override
-  State<_TrainerEmailDialog> createState() => _TrainerEmailDialogState();
-}
-
-class _TrainerEmailDialogState extends State<_TrainerEmailDialog> {
-  String _email = '';
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Invite a trainer'),
-    content: TextField(
-      keyboardType: TextInputType.emailAddress,
-      decoration: const InputDecoration(labelText: 'Trainer email'),
-      onChanged: (value) => setState(() => _email = value.trim()),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
-      ),
-      FilledButton(
-        onPressed: _email.contains('@')
-            ? () => Navigator.pop(context, _email)
-            : null,
-        child: const Text('Send invitation'),
-      ),
-    ],
-  );
 }
 
 class _TrainingRecordDialog extends StatefulWidget {

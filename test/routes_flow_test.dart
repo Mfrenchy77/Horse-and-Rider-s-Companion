@@ -227,6 +227,88 @@ void main() {
     },
   );
 
+  testWidgets('the rail returns from a profile skill to the same horse', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1400, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final router = Routes().router(
+      settingsContoller: settingsController,
+      appCubit: appCubit,
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(buildApp(router));
+    await tester.pumpAndSettle();
+
+    final skill = Skill(
+      id: 'leading',
+      rider: false,
+      position: 0,
+      skillName: 'Lead politely',
+      lastEditBy: null,
+      description: 'Lead with a slack rope.',
+      lastEditDate: null,
+      learningDescription: null,
+      proficientDescription: null,
+    );
+    final horse = HorseProfile(
+      id: 'atlas',
+      name: 'Atlas',
+      skillLevels: [
+        SkillLevel(
+          skillId: skill.id,
+          skillName: skill.skillName,
+          lastEditBy: null,
+          lastEditDate: null,
+          levelState: LevelState.PROFICIENT,
+        ),
+      ],
+    );
+    appCubit.emit(
+      appCubit.state.copyWith(
+        isGuest: false,
+        horseProfile: horse,
+        allSkills: [skill],
+        sortedSkills: [skill],
+      ),
+    );
+    router.goNamed(
+      HorseProfilePage.name,
+      pathParameters: {HorseProfilePage.pathParams: horse.id},
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Atlas'), findsOneWidget);
+
+    for (var visit = 0; visit < 2; visit++) {
+      await tester.tap(find.widgetWithText(ListTile, skill.skillName));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<NavigationRail>(find.byType(NavigationRail))
+            .selectedIndex,
+        1,
+      );
+      expect(find.text('Lead with a slack rope.'), findsOneWidget);
+
+      await tester.tap(find.text('Horse Profile'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<NavigationRail>(find.byType(NavigationRail))
+            .selectedIndex,
+        0,
+      );
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/Horse_Profile/atlas',
+      );
+      expect(find.text('Atlas'), findsOneWidget);
+      expect(find.text('Lead with a slack rope.'), findsNothing);
+    }
+  });
+
   testWidgets('a linked skill resource opens on the Resources rail', (
     tester,
   ) async {

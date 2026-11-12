@@ -24,10 +24,15 @@ service cloud.firestore {
     match /Horse_Profile/{horseId} {
       allow read: if true;
       allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
-        && request.resource.data.get('archiveStatus', 'active') == 'active';
+        && request.resource.data.get('archiveStatus', 'active') == 'active'
+        && !request.resource.data.keys().hasAny([
+          'saleListing', 'transferRequestId', 'ownershipVersion'
+        ]);
       allow update: if verifiedEmailIs(resource.data.currentOwnerId)
         && request.resource.data.currentOwnerId == resource.data.currentOwnerId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['archiveStatus']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion'
+        ]);
       // Keep the horse ID reserved for its shared history when archived.
       allow delete: if false;
     }
@@ -35,10 +40,12 @@ service cloud.firestore {
     match /Rider_Profile/{riderId} {
       allow read: if true;
       allow create: if verifiedEmailIs(request.resource.data.email)
-        && request.resource.data.get('archivedHorses', []) == [];
+        && request.resource.data.get('archivedHorses', []) == []
+        && !request.resource.data.keys().hasAny(['ownershipRosterVersion']);
       allow update: if verifiedEmailIs(resource.data.email)
         && request.resource.data.email == resource.data.email
-        && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', []);
+        && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', [])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownershipRosterVersion']);
       allow delete: if verifiedEmailIs(resource.data.email);
     }
 

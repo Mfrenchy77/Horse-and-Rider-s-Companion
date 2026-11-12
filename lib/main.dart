@@ -1,5 +1,3 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
