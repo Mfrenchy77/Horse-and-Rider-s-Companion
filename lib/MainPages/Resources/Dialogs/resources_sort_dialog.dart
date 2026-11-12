@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart'; // where AppCubit/AppState/ResourcesSortStatus live
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class ResourcesSortDialog extends StatelessWidget {
   const ResourcesSortDialog({super.key});
@@ -11,26 +12,26 @@ class ResourcesSortDialog extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 
-        return AlertDialog(
+        void submit(ResourcesSortStatus? value) {
+          if (value == null) return;
+          cubit.updateResourceSortStatus(value);
+          Navigator.of(context).pop();
+        }
+
+        return OceanCoralAppDialog(
           title: const Text('Sort Resources'),
-          content: RadioGroup<ResourcesSortStatus>(
-            groupValue: state.resourcesSortStatus,
-            onChanged: (ResourcesSortStatus? newValue) {
-              if (newValue == null) return;
-              cubit.updateResourceSortStatus(newValue);
-              Navigator.of(context).pop();
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: ResourcesSortStatus.values
-                  .map(
-                    (status) => RadioListTile<ResourcesSortStatus>(
-                      title: Text(_getSortOptionLabel(status)),
-                      value: status,
-                    ),
-                  )
-                  .toList(),
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: ResourcesSortStatus.values
+                .map(
+                  (status) => RadioListTile<ResourcesSortStatus>(
+                    title: Text(_getSortOptionLabel(status)),
+                    value: status,
+                    groupValue: state.resourcesSortStatus,
+                    onChanged: submit,
+                  ),
+                )
+                .toList(),
           ),
         );
       },

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class InformationDialog {
-  static void show(
-    BuildContext context,
-    Text contentText,
-    Offset position,
-  ) {
+  static void show(BuildContext context, Text contentText, Offset position) {
     // Removed the fixed dialogHeight
 
     final screenSize = MediaQuery.of(context).size;
@@ -30,26 +27,34 @@ class InformationDialog {
                   overlayEntry.remove();
                 }
               },
-              child: Container(
-                color: Colors.transparent,
-              ),
+              child: Container(color: Colors.transparent),
             ),
           ),
           Positioned(
             top: adjustedY,
             left: adjustedX,
-            child: Card(
-              elevation: 4,
-              child: Container(
-                width: dialogWidth,
-                padding: const EdgeInsets.all(20),
-                // Wrap the contentText in a Wrap widget
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [contentText],
-                ),
-              ),
-            ),
+            child: isOceanCoralDarkTheme(context)
+                ? OceanCoralSurface(
+                    child: Container(
+                      width: dialogWidth,
+                      padding: const EdgeInsets.all(20),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        children: [contentText],
+                      ),
+                    ),
+                  )
+                : Card(
+                    elevation: 4,
+                    child: Container(
+                      width: dialogWidth,
+                      padding: const EdgeInsets.all(20),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        children: [contentText],
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),

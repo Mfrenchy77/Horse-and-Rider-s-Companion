@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class SortCommentsDialog extends StatelessWidget {
   const SortCommentsDialog({super.key});
@@ -11,44 +12,56 @@ class SortCommentsDialog extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 
-        return AlertDialog(
+        return OceanCoralAppDialog(
           title: const Text('Sort Comments'),
-          content: RadioGroup<CommentSortState>(
-            // NEW: manage selection at the group level (Flutter 3.35+)
-            groupValue: state.commentSortState,
-            onChanged: (CommentSortState? value) {
-              if (value == null) return;
-              cubit.sortComments(value);
-              Navigator.of(context).pop();
-            },
-            // Children no longer specify groupValue/onChanged
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<CommentSortState>(
-                  toggleable: true,
-                  selected: state.commentSortState == CommentSortState.Recent,
-                  title: const Text('Newest'),
-                  value: CommentSortState.Recent,
-                ),
-                const RadioListTile<CommentSortState>(
-                  title: Text('Oldest'),
-                  value: CommentSortState.Oldest,
-                ),
-                RadioListTile<CommentSortState>(
-                  toggleable: true,
-                  selected: state.commentSortState == CommentSortState.Best,
-                  title: const Text('Highest Rated'),
-                  value: CommentSortState.Best,
-                ),
-                RadioListTile<CommentSortState>(
-                  toggleable: true,
-                  selected: state.commentSortState == CommentSortState.Worst,
-                  title: const Text('Most Controversial'),
-                  value: CommentSortState.Worst,
-                ),
-              ],
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // NOTE: Avoid RadioGroup here.
+              // In some Flutter/web builds we've seen RadioGroup descendants behave oddly
+              // (especially with toggleable radios). Keeping the classic RadioListTile
+              // wiring is more predictable.
+              RadioListTile<CommentSortState>(
+                title: const Text('Newest'),
+                value: CommentSortState.Recent,
+                groupValue: state.commentSortState,
+                onChanged: (value) {
+                  if (value == null) return;
+                  cubit.sortComments(value);
+                  Navigator.of(context).pop();
+                },
+              ),
+              RadioListTile<CommentSortState>(
+                title: const Text('Oldest'),
+                value: CommentSortState.Oldest,
+                groupValue: state.commentSortState,
+                onChanged: (value) {
+                  if (value == null) return;
+                  cubit.sortComments(value);
+                  Navigator.of(context).pop();
+                },
+              ),
+              RadioListTile<CommentSortState>(
+                title: const Text('Highest Rated'),
+                value: CommentSortState.Best,
+                groupValue: state.commentSortState,
+                onChanged: (value) {
+                  if (value == null) return;
+                  cubit.sortComments(value);
+                  Navigator.of(context).pop();
+                },
+              ),
+              RadioListTile<CommentSortState>(
+                title: const Text('Most Controversial'),
+                value: CommentSortState.Worst,
+                groupValue: state.commentSortState,
+                onChanged: (value) {
+                  if (value == null) return;
+                  cubit.sortComments(value);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
           ),
           actions: [
             TextButton(

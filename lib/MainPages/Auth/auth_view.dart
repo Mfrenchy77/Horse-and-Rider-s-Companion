@@ -9,6 +9,8 @@ import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -25,9 +27,7 @@ class AuthView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     return Scaffold(
-      backgroundColor:
-          Theme.of(context).brightness == Brightness.dark &&
-              Theme.of(context).colorScheme.primary == ColorConst.mainAccentDark
+      backgroundColor: isOceanCoralDarkTheme(context)
           ? Colors.transparent
           : ColorConst.backgroundDark,
       body: BlocListener<LoginCubit, LoginState>(
@@ -99,8 +99,10 @@ class AuthView extends StatelessWidget {
                     child: Center(
                       child: MaxWidthBox(
                         maxWidth: 550,
-                        child: Card(
-                          color: ColorConst.cardDark,
+                        child: GradientCard(
+                          color: isOceanCoralDarkTheme(context)
+                              ? null
+                              : ColorConst.cardDark,
                           margin: const EdgeInsets.only(
                             left: 20,
                             right: 20,
@@ -141,8 +143,10 @@ class AuthView extends StatelessWidget {
                     child: Center(
                       child: MaxWidthBox(
                         maxWidth: 1000,
-                        child: Card(
-                          color: ColorConst.cardDark,
+                        child: GradientCard(
+                          color: isOceanCoralDarkTheme(context)
+                              ? null
+                              : ColorConst.cardDark,
                           margin: const EdgeInsets.only(
                             left: 20,
                             right: 20,

@@ -4,7 +4,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class EmailVerificationDialog extends StatelessWidget {
@@ -21,8 +21,9 @@ class EmailVerificationDialog extends StatelessWidget {
       listener: (context, state) {
         if (ModalRoute.isCurrentOf(context) ?? false) safePop(context);
       },
-      child: AlertDialog(
-        backgroundColor: ColorConst.backgroundDark,
+      child: OceanCoralAppDialog(
+        maxWidth: 560,
+        scrollable: true,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -38,9 +39,9 @@ class EmailVerificationDialog extends StatelessWidget {
             Text(
               email.isEmpty
                   ? 'An email has been sent to your email. '
-                        'Please verify your email to continue.'
+                      'Please verify your email to continue.'
                   : 'An email has been sent to $email. '
-                        'Please verify your email to continue.',
+                      'Please verify your email to continue.',
               style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
             gap(),
@@ -62,13 +63,11 @@ class EmailVerificationDialog extends StatelessWidget {
             onPressed: () => context.read<AppCubit>().resendEmailVerification(),
             child: const Text('Resend Email'),
           ),
-          Visibility(
-            visible: email.isNotEmpty,
-            child: ElevatedButton(
+          if (email.isNotEmpty)
+            ElevatedButton(
               onPressed: () => context.read<AppCubit>().openEmail(email),
               child: const Text('Open Email'),
             ),
-          ),
         ],
       ),
     );

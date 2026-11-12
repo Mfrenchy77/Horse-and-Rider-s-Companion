@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -75,8 +76,8 @@ class _NavigationViewState extends State<NavigationView> {
           final routerBranchIndex = location.startsWith(SkillTreePage.path)
               ? 1
               : location.startsWith(ResourcesPage.path)
-                  ? 2
-                  : 0;
+              ? 2
+              : 0;
           if (routerBranchIndex != newIndex) {
             widget.child.goBranch(newIndex);
           }
@@ -192,15 +193,7 @@ class _NavigationViewState extends State<NavigationView> {
                               color: ColorConst.dividerDarkBlueGrey,
                             ),
                           ),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Color(0xFF365A61),
-                              ColorConst.mainPrimaryDark,
-                              ColorConst.backgroundDark,
-                            ],
-                          ),
+                          gradient: OceanCoralGradients.rail,
                         )
                       : const BoxDecoration(),
                   child: NavigationRail(

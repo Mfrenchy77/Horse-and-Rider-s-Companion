@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class GuestOnboardingDialog extends StatefulWidget {
   const GuestOnboardingDialog({super.key, this.onSkip});
@@ -52,115 +53,123 @@ class _GuestOnboardingDialogState extends State<GuestOnboardingDialog>
 
   void _createAccount() {
     // Navigate to registration page in Auth and close dialog
-    context.goNamed(
-      AuthPage.name,
-      queryParameters: const {'mode': 'register'},
-    );
+    context.goNamed(AuthPage.name, queryParameters: const {'mode': 'register'});
     widget.onSkip?.call();
     Navigator.of(context).pop();
   }
 
   void _logIn() {
     // Navigate to login page in Auth and close dialog
-    context.goNamed(
-      AuthPage.name,
-      queryParameters: const {'mode': 'login'},
-    );
+    context.goNamed(AuthPage.name, queryParameters: const {'mode': 'login'});
     widget.onSkip?.call();
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      key: const Key('guest_onboarding_dialog'),
-      backgroundColor: Colors.blue,
-      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
-      contentTextStyle: const TextStyle(color: Colors.white),
-      title: const Text("Welcome! Explore Horse & Rider's Companion"),
-      content: SizedBox(
-        width: 440,
-        height: 360,
-        child: Column(
-          children: [
-            TabBar(
-              key: const Key('guest_onboarding_tab_bar'),
+    final dialogContent = SizedBox(
+      width: 440,
+      height: 360,
+      child: Column(
+        children: [
+          TabBar(
+            key: const Key('guest_onboarding_tab_bar'),
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: const [
+              Tab(text: 'Profile'),
+              Tab(text: 'Skill Tree'),
+              Tab(text: 'Resources'),
+              Tab(text: 'Why Account?'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: TabBarView(
               controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-              tabs: const [
-                Tab(text: 'Profile'),
-                Tab(text: 'Skill Tree'),
-                Tab(text: 'Resources'),
-                Tab(text: 'Why Account?'),
+              children: const [
+                _InfoPane(
+                  title: 'Profiles',
+                  description:
+                      'Browse rider and horse profiles to see skills, notes,'
+                      ' and progress.',
+                  icon: Icons.person_outline,
+                ),
+                _InfoPane(
+                  title: 'Skill Tree',
+                  description:
+                      'Explore our curated skill tree for riders and horses'
+                      ' to plan training.',
+                  icon: Icons.account_tree_outlined,
+                ),
+                _InfoPane(
+                  title: 'Resources',
+                  description:
+                      'Read community-vetted resources with ratings and'
+                      ' comments.',
+                  icon: Icons.library_books_outlined,
+                ),
+                _InfoPane(
+                  title: 'Create a Free Account',
+                  description:
+                      'Save your progress, manage horses & students, and'
+                      ' sync across devices.',
+                  icon: Icons.lock_open,
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: const [
-                  _InfoPane(
-                    title: 'Profiles',
-                    description:
-                        'Browse rider and horse profiles to see skills, notes,'
-                        ' and progress.',
-                    icon: Icons.person_outline,
-                  ),
-                  _InfoPane(
-                    title: 'Skill Tree',
-                    description:
-                        'Explore our curated skill tree for riders and horses'
-                        ' to plan training.',
-                    icon: Icons.account_tree_outlined,
-                  ),
-                  _InfoPane(
-                    title: 'Resources',
-                    description:
-                        'Read community-vetted resources with ratings and'
-                        ' comments.',
-                    icon: Icons.library_books_outlined,
-                  ),
-                  _InfoPane(
-                    title: 'Create a Free Account',
-                    description:
-                        'Save your progress, manage horses & students, and'
-                        ' sync across devices.',
-                    icon: Icons.lock_open,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          key: const Key('guest_onboarding_close'),
-          onPressed: () {
-            widget.onSkip?.call();
-            Navigator.of(context).pop();
-          },
-          style: TextButton.styleFrom(foregroundColor: Colors.white),
-          child: const Text('Skip'),
-        ),
-        TextButton(
-          key: const Key('guest_login_button'),
-          onPressed: _logIn,
-          style: TextButton.styleFrom(foregroundColor: Colors.white),
-          child: const Text('Log In'),
-        ),
-        ElevatedButton(
-          key: const Key('guest_create_account_button'),
-          onPressed: _createAccount,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.blue,
           ),
-          child: const Text('Create Free Account'),
+        ],
+      ),
+    );
+
+    final dialogActions = <Widget>[
+      TextButton(
+        key: const Key('guest_onboarding_close'),
+        onPressed: () {
+          widget.onSkip?.call();
+          Navigator.of(context).pop();
+        },
+        style: TextButton.styleFrom(foregroundColor: Colors.white),
+        child: const Text('Skip'),
+      ),
+      TextButton(
+        key: const Key('guest_login_button'),
+        onPressed: _logIn,
+        style: TextButton.styleFrom(foregroundColor: Colors.white),
+        child: const Text('Log In'),
+      ),
+      ElevatedButton(
+        key: const Key('guest_create_account_button'),
+        onPressed: _createAccount,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.blue,
         ),
-      ],
+        child: const Text('Create Free Account'),
+      ),
+    ];
+
+    if (!isOceanCoralDarkTheme(context)) {
+      return AlertDialog(
+        key: const Key('guest_onboarding_dialog'),
+        backgroundColor: Colors.blue,
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+        contentTextStyle: const TextStyle(color: Colors.white),
+        title: const Text("Welcome! Explore Horse & Rider's Companion"),
+        content: dialogContent,
+        actions: dialogActions,
+      );
+    }
+
+    return OceanCoralAppDialog(
+      key: const Key('guest_onboarding_dialog'),
+      title: const Text("Welcome! Explore Horse & Rider's Companion"),
+      maxWidth: 640,
+      content: dialogContent,
+      actions: dialogActions,
     );
   }
 }

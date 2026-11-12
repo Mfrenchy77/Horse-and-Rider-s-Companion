@@ -191,8 +191,6 @@ final mainThemeLight = ThemeData(
   ),
 );
 
-// change the floating action button color to match the secondary color
-
 final mainThemeDark = ThemeData(
   brightness: Brightness.dark,
   colorScheme:

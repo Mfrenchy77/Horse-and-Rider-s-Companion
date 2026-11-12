@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 
 /// Widget that displays a resource text with category/difficulty icon and type
 ///  icon(Horse or Rider)
@@ -20,7 +21,7 @@ class ResourceTextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return GradientCard(
       child: Tooltip(
         message: tooltip,
         child: InkWell(
@@ -32,11 +33,7 @@ class ResourceTextButton extends StatelessWidget {
               children: [
                 leadingIcon,
                 smallGap(),
-                Flexible(
-                  child: Text(
-                    text,
-                  ),
-                ),
+                Flexible(child: Text(text)),
                 smallGap(),
                 trailingIcon,
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 /// Simple onboarding dialog with two tabs: Guest and Signed-in user.
 /// Signed-in tab includes a small "Complete Profile" flow.
@@ -15,7 +16,7 @@ class OnboardingDialog extends StatefulWidget {
   /// Called when the profile form is saved.
   ///  Receives a map with keys 'name' and 'email'.
   final void Function(Map<String, String>)? onProfileComplete;
-  
+
   /// Called when the user dismisses/skips onboarding via the close button.
   final VoidCallback? onSkip;
 
@@ -56,9 +57,10 @@ class _OnboardingDialogState extends State<OnboardingDialog>
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return OceanCoralAppDialog(
       key: const Key('onboarding_dialog'),
       title: const Text('Welcome to Horse & Rider Companion'),
+      maxWidth: 560,
       content: SizedBox(
         width: 400,
         height: 320,
@@ -67,7 +69,10 @@ class _OnboardingDialogState extends State<OnboardingDialog>
             TabBar(
               key: const Key('onboarding_tab_bar'),
               controller: _tabController,
-              tabs: const [Tab(text: 'Guest'), Tab(text: 'Signed In')],
+              tabs: const [
+                Tab(text: 'Guest'),
+                Tab(text: 'Signed In'),
+              ],
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -77,7 +82,8 @@ class _OnboardingDialogState extends State<OnboardingDialog>
                   const _OnboardingPage(
                     key: Key('onboarding_guest_page'),
                     title: 'Explore as Guest',
-                    description: 'Browse horses, riders and public training '
+                    description:
+                        'Browse horses, riders and public training '
                         'content. Sign in to save preferences and sync data.',
                     assetName: 'assets/horse_logo_and_text_light.png',
                   ),
@@ -198,16 +204,15 @@ class _CompleteProfileDialogState extends State<_CompleteProfileDialog> {
 
   void _save() {
     if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context).pop({
-        'name': _nameCtl.text.trim(),
-        'email': _emailCtl.text.trim(),
-      });
+      Navigator.of(
+        context,
+      ).pop({'name': _nameCtl.text.trim(), 'email': _emailCtl.text.trim()});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return OceanCoralAppDialog(
       key: const Key('complete_profile_dialog'),
       title: const Text('Complete Your Profile'),
       content: Form(

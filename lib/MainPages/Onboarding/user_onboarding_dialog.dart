@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 /// Onboarding for a newly signed-in user.
 /// Shows overview tabs and returns 'finish' when the user taps Finish.
@@ -50,80 +51,94 @@ class _UserOnboardingDialogState extends State<UserOnboardingDialog>
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      key: const Key('user_onboarding_dialog'),
-      backgroundColor: Colors.blue,
-      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
-      contentTextStyle: const TextStyle(color: Colors.white),
-      title: const Text('Welcome! Let’s set you up'),
-      content: SizedBox(
-        width: 440,
-        height: 360,
-        child: Column(
-          children: [
-            TabBar(
-              key: const Key('user_onboarding_tab_bar'),
+    final dialogContent = SizedBox(
+      width: 440,
+      height: 360,
+      child: Column(
+        children: [
+          TabBar(
+            key: const Key('user_onboarding_tab_bar'),
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: const [
+              Tab(text: 'Profile'),
+              Tab(text: 'Skill Tree'),
+              Tab(text: 'Resources'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: TabBarView(
               controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-              tabs: const [
-                Tab(text: 'Profile'),
-                Tab(text: 'Skill Tree'),
-                Tab(text: 'Resources'),
+              children: const [
+                _Pane(
+                  title: 'Your Profile',
+                  description:
+                      'Add your name, photo, website and bio. Link horses'
+                      ' and manage contacts.',
+                  icon: Icons.person,
+                ),
+                _Pane(
+                  title: 'Skill Tree',
+                  description:
+                      'Track progress, verify levels, and keep notes across rider/horse skills.',
+                  icon: Icons.account_tree,
+                ),
+                _Pane(
+                  title: 'Resources',
+                  description:
+                      'Save, rate and discuss resources. Get session ideas'
+                      ' tailored to you.',
+                  icon: Icons.menu_book,
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: const [
-                  _Pane(
-                    title: 'Your Profile',
-                    description:
-                        'Add your name, photo, website and bio. Link horses'
-                        ' and manage contacts.',
-                    icon: Icons.person,
-                  ),
-                  _Pane(
-                    title: 'Skill Tree',
-                    description:
-                        'Track progress, verify levels, and keep notes across rider/horse skills.',
-                    icon: Icons.account_tree,
-                  ),
-                  _Pane(
-                    title: 'Resources',
-                    description:
-                        'Save, rate and discuss resources. Get session ideas'
-                        ' tailored to you.',
-                    icon: Icons.menu_book,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          key: const Key('user_onboarding_skip'),
-          onPressed: () {
-            widget.onSkip?.call();
-            Navigator.of(context).pop();
-          },
-          style: TextButton.styleFrom(foregroundColor: Colors.white),
-          child: const Text('Skip'),
-        ),
-        ElevatedButton(
-          key: const Key('user_onboarding_finish'),
-          onPressed: _finish,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.blue,
           ),
-          child: const Text('Finish & Edit Profile'),
+        ],
+      ),
+    );
+
+    final dialogActions = <Widget>[
+      TextButton(
+        key: const Key('user_onboarding_skip'),
+        onPressed: () {
+          widget.onSkip?.call();
+          Navigator.of(context).pop();
+        },
+        style: TextButton.styleFrom(foregroundColor: Colors.white),
+        child: const Text('Skip'),
+      ),
+      ElevatedButton(
+        key: const Key('user_onboarding_finish'),
+        onPressed: _finish,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.blue,
         ),
-      ],
+        child: const Text('Finish & Edit Profile'),
+      ),
+    ];
+
+    if (!isOceanCoralDarkTheme(context)) {
+      return AlertDialog(
+        key: const Key('user_onboarding_dialog'),
+        backgroundColor: Colors.blue,
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+        contentTextStyle: const TextStyle(color: Colors.white),
+        title: const Text('Welcome! Let’s set you up'),
+        content: dialogContent,
+        actions: dialogActions,
+      );
+    }
+
+    return OceanCoralAppDialog(
+      key: const Key('user_onboarding_dialog'),
+      title: const Text('Welcome! Let’s set you up'),
+      maxWidth: 640,
+      content: dialogContent,
+      actions: dialogActions,
     );
   }
 }

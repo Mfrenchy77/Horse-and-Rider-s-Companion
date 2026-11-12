@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 ///  This dialog is used to sort the skills in the Skill Tree List
 class SkillSortDialog extends StatelessWidget {
@@ -13,7 +14,7 @@ class SkillSortDialog extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 
-        return AlertDialog(
+        return OceanCoralAppDialog(
           insetPadding: const EdgeInsets.all(8),
           actions: [
             TextButton(
@@ -52,9 +53,7 @@ class SkillSortDialog extends StatelessWidget {
                       value: CategorySortState.Mounted,
                     ),
                   ],
-                  selected: <CategorySortState>{
-                    state.categorySortState,
-                  },
+                  selected: <CategorySortState>{state.categorySortState},
                   onSelectionChanged: (p0) =>
                       cubit.categorySortChanged(p0.first),
                 ),
@@ -62,42 +61,30 @@ class SkillSortDialog extends StatelessWidget {
               gap(),
               const Text(
                 'Select Difficulty:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SegmentedButton<DifficultySortState>(
                   segments: const [
                     ButtonSegment(
-                      label: Text(
-                        'All',
-                      ),
+                      label: Text('All'),
                       value: DifficultySortState.All,
                     ),
                     ButtonSegment(
-                      label: Text(
-                        'Introductory',
-                      ),
+                      label: Text('Introductory'),
                       value: DifficultySortState.Introductory,
                     ),
                     ButtonSegment(
-                      label: Text(
-                        'Intermediate',
-                      ),
+                      label: Text('Intermediate'),
                       value: DifficultySortState.Intermediate,
                     ),
                     ButtonSegment(
-                      label: Text(
-                        'Advanced',
-                      ),
+                      label: Text('Advanced'),
                       value: DifficultySortState.Advanced,
                     ),
                   ],
-                  selected: <DifficultySortState>{
-                    state.difficultySortState,
-                  },
+                  selected: <DifficultySortState>{state.difficultySortState},
                   onSelectionChanged: (p0) =>
                       cubit.difficultySortChanged(p0.first),
                 ),

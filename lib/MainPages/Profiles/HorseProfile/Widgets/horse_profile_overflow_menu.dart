@@ -5,6 +5,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_sale_panel.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class HorseProfileOverFlowMenu extends StatefulWidget {
   const HorseProfileOverFlowMenu({super.key});
@@ -89,7 +90,7 @@ class _HorseProfileOverFlowMenuState extends State<HorseProfileOverFlowMenu> {
       case 'unlist':
         final confirmed = await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => OceanCoralAppDialog(
             title: const Text('Remove sale listing?'),
             actions: [
               TextButton(
@@ -196,7 +197,7 @@ class _HorseProfileOverFlowMenuState extends State<HorseProfileOverFlowMenu> {
             final markDeceased = value == 'deceased';
             final status = await showDialog<String>(
               context: context,
-              builder: (context) => AlertDialog(
+              builder: (context) => OceanCoralAppDialog(
                 title: Text(
                   markDeceased
                       ? 'Mark this horse as deceased?'
@@ -205,9 +206,9 @@ class _HorseProfileOverFlowMenuState extends State<HorseProfileOverFlowMenu> {
                 content: Text(
                   markDeceased
                       ? 'The horse stays in Archived horses '
-                            'with its full logbook.'
+                          'with its full logbook.'
                       : 'The horse will move to Archived horses. '
-                            'You’ll keep ownership and the full logbook.',
+                          'You’ll keep ownership and the full logbook.',
                 ),
                 actions: [
                   TextButton(
@@ -256,7 +257,7 @@ class _TrainerEmailDialogState extends State<_TrainerEmailDialog> {
   String _email = '';
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
+  Widget build(BuildContext context) => OceanCoralAppDialog(
     title: Text(widget.transfer ? 'Transfer ownership' : 'Invite a trainer'),
     content: Column(
       mainAxisSize: MainAxisSize.min,
@@ -280,9 +281,7 @@ class _TrainerEmailDialogState extends State<_TrainerEmailDialog> {
         child: const Text('Cancel'),
       ),
       FilledButton(
-        onPressed: _email.contains('@')
-            ? () => Navigator.pop(context, _email)
-            : null,
+        onPressed: _email.contains('@') ? () => Navigator.pop(context, _email) : null,
         child: Text(
           widget.transfer ? 'Send transfer request' : 'Send invitation',
         ),
