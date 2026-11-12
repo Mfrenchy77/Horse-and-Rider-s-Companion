@@ -14,54 +14,34 @@ class SortCommentsDialog extends StatelessWidget {
 
         return OceanCoralAppDialog(
           title: const Text('Sort Comments'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // NOTE: Avoid RadioGroup here.
-              // In some Flutter/web builds we've seen RadioGroup descendants behave oddly
-              // (especially with toggleable radios). Keeping the classic RadioListTile
-              // wiring is more predictable.
-              RadioListTile<CommentSortState>(
-                title: const Text('Newest'),
-                value: CommentSortState.Recent,
-                groupValue: state.commentSortState,
-                onChanged: (value) {
-                  if (value == null) return;
-                  cubit.sortComments(value);
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile<CommentSortState>(
-                title: const Text('Oldest'),
-                value: CommentSortState.Oldest,
-                groupValue: state.commentSortState,
-                onChanged: (value) {
-                  if (value == null) return;
-                  cubit.sortComments(value);
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile<CommentSortState>(
-                title: const Text('Highest Rated'),
-                value: CommentSortState.Best,
-                groupValue: state.commentSortState,
-                onChanged: (value) {
-                  if (value == null) return;
-                  cubit.sortComments(value);
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile<CommentSortState>(
-                title: const Text('Most Controversial'),
-                value: CommentSortState.Worst,
-                groupValue: state.commentSortState,
-                onChanged: (value) {
-                  if (value == null) return;
-                  cubit.sortComments(value);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
+          content: RadioGroup<CommentSortState>(
+            groupValue: state.commentSortState,
+            onChanged: (value) {
+              if (value == null) return;
+              cubit.sortComments(value);
+              Navigator.of(context).pop();
+            },
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<CommentSortState>(
+                  title: Text('Newest'),
+                  value: CommentSortState.Recent,
+                ),
+                RadioListTile<CommentSortState>(
+                  title: Text('Oldest'),
+                  value: CommentSortState.Oldest,
+                ),
+                RadioListTile<CommentSortState>(
+                  title: Text('Highest Rated'),
+                  value: CommentSortState.Best,
+                ),
+                RadioListTile<CommentSortState>(
+                  title: Text('Most Controversial'),
+                  value: CommentSortState.Worst,
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(

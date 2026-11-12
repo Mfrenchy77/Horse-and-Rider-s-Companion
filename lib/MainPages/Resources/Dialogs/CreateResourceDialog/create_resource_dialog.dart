@@ -144,8 +144,7 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                               autovalidateMode:
                                   AutovalidateMode.onUserInteraction,
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   // 1) Mode toggle
                                   SegmentedButton<ResourceInputType>(
@@ -177,13 +176,13 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                           cubit.getMetadata(state.url.value),
                                       onClear: () => cubit.urlChanged(''),
                                       onPasteFromClipboard: () async {
-                                        final data =
-                                            await Clipboard.getData(
+                                        final data = await Clipboard.getData(
                                           'text/plain',
                                         );
                                         final text = data?.text?.trim() ?? '';
-                                        if (text.isNotEmpty)
+                                        if (text.isNotEmpty) {
                                           cubit.urlChanged(text);
+                                        }
                                       },
                                     ),
                                     smallGap(),
@@ -242,18 +241,16 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                               icon: Icon(Icons.title),
                                             ),
                                             validator: (v) =>
-                                                (v == null ||
-                                                        v.trim().isEmpty)
-                                                    ? 'Title is required'
-                                                    : null,
+                                                (v == null || v.trim().isEmpty)
+                                                ? 'Title is required'
+                                                : null,
                                           ),
                                           gap(),
                                           TextFormField(
                                             controller: descController,
                                             minLines: 1,
                                             maxLines: 5,
-                                            onChanged:
-                                                cubit.descriptionChanged,
+                                            onChanged: cubit.descriptionChanged,
                                             textCapitalization:
                                                 TextCapitalization.sentences,
                                             decoration: const InputDecoration(
@@ -317,18 +314,16 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                               icon: Icon(Icons.title),
                                             ),
                                             validator: (v) =>
-                                                (v == null ||
-                                                        v.trim().isEmpty)
-                                                    ? 'Title is required'
-                                                    : null,
+                                                (v == null || v.trim().isEmpty)
+                                                ? 'Title is required'
+                                                : null,
                                           ),
                                           gap(),
                                           TextFormField(
                                             controller: descController,
                                             minLines: 1,
                                             maxLines: 6,
-                                            onChanged:
-                                                cubit.descriptionChanged,
+                                            onChanged: cubit.descriptionChanged,
                                             textCapitalization:
                                                 TextCapitalization.sentences,
                                             decoration: const InputDecoration(
@@ -392,8 +387,8 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                             smallGap(),
                                             DropdownButton<DifficultyFilter>(
                                               value: state.difficultyFilter,
-                                              onChanged: cubit
-                                                  .difficultyFilterChanged,
+                                              onChanged:
+                                                  cubit.difficultyFilterChanged,
                                               items: DifficultyFilter.values
                                                   .map(
                                                     (d) => DropdownMenuItem(
@@ -424,12 +419,13 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                               textLabel: skill?.skillName ?? '',
                                               isSelected:
                                                   state.resourceSkills?.any(
-                                                        (s) =>
-                                                            s?.id == skill?.id,
-                                                      ) ??
-                                                      false,
+                                                    (s) => s?.id == skill?.id,
+                                                  ) ??
+                                                  false,
                                               onTap: (_) => context
-                                                  .read<CreateResourceDialogCubit>()
+                                                  .read<
+                                                    CreateResourceDialogCubit
+                                                  >()
                                                   .resourceSkillsChanged(
                                                     skill?.id ?? '',
                                                   ),
@@ -464,13 +460,14 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                 else
                                   FilledButton.icon(
                                     icon: const Icon(Icons.check),
-                                    onPressed: state.isEdit &&
+                                    onPressed:
+                                        state.isEdit &&
                                             state.inputType ==
                                                 ResourceInputType.link
                                         ? cubit.editResource
                                         : canSubmit
-                                            ? cubit.submit
-                                            : null,
+                                        ? cubit.submit
+                                        : null,
                                     label: Text(
                                       state.inputType == ResourceInputType.link
                                           ? 'Save link'
@@ -530,11 +527,10 @@ class _UrlField extends StatelessWidget {
         // overriding constraints. The default suffixIcon constraints are sized
         // for *one* icon. On Flutter web this can contribute to broken layout
         // and follow-on "Cannot hit test a render box with no size" errors.
-        suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        suffixIconConstraints: const BoxConstraints(),
         suffixIcon: Padding(
           padding: const EdgeInsetsDirectional.only(end: 4),
           child: Wrap(
-            spacing: 0,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (isBusy)

@@ -22,34 +22,30 @@ class MessagesSortDialog extends StatelessWidget {
 
         return OceanCoralAppDialog(
           title: const Text('Sort Messages By:'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ConversationsSort>(
-                title: const Text('Newest'),
-                value: ConversationsSort.createdDate,
-                groupValue: state.conversationsSort,
-                onChanged: submit,
-              ),
-              RadioListTile<ConversationsSort>(
-                title: const Text('Recently Updated'),
-                value: ConversationsSort.lastupdatedDate,
-                groupValue: state.conversationsSort,
-                onChanged: submit,
-              ),
-              RadioListTile<ConversationsSort>(
-                title: const Text('Unread'),
-                value: ConversationsSort.unread,
-                groupValue: state.conversationsSort,
-                onChanged: submit,
-              ),
-              RadioListTile<ConversationsSort>(
-                title: const Text('Oldest'),
-                value: ConversationsSort.oldest,
-                groupValue: state.conversationsSort,
-                onChanged: submit,
-              ),
-            ],
+          content: RadioGroup<ConversationsSort>(
+            groupValue: state.conversationsSort,
+            onChanged: submit,
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<ConversationsSort>(
+                  title: Text('Newest'),
+                  value: ConversationsSort.createdDate,
+                ),
+                RadioListTile<ConversationsSort>(
+                  title: Text('Recently Updated'),
+                  value: ConversationsSort.lastupdatedDate,
+                ),
+                RadioListTile<ConversationsSort>(
+                  title: Text('Unread'),
+                  value: ConversationsSort.unread,
+                ),
+                RadioListTile<ConversationsSort>(
+                  title: Text('Oldest'),
+                  value: ConversationsSort.oldest,
+                ),
+              ],
+            ),
           ),
         );
       },

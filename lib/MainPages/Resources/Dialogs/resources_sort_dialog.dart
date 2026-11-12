@@ -20,18 +20,20 @@ class ResourcesSortDialog extends StatelessWidget {
 
         return OceanCoralAppDialog(
           title: const Text('Sort Resources'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: ResourcesSortStatus.values
-                .map(
-                  (status) => RadioListTile<ResourcesSortStatus>(
-                    title: Text(_getSortOptionLabel(status)),
-                    value: status,
-                    groupValue: state.resourcesSortStatus,
-                    onChanged: submit,
-                  ),
-                )
-                .toList(),
+          content: RadioGroup<ResourcesSortStatus>(
+            groupValue: state.resourcesSortStatus,
+            onChanged: submit,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: ResourcesSortStatus.values
+                  .map(
+                    (status) => RadioListTile<ResourcesSortStatus>(
+                      title: Text(_getSortOptionLabel(status)),
+                      value: status,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         );
       },

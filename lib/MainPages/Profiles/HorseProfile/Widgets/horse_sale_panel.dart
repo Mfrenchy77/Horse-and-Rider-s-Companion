@@ -216,7 +216,9 @@ class _SaleListingDialogState extends State<HorseSaleListingDialog> {
     // Default look for non-Ocean/Coral themes.
     return AlertDialog(
       scrollable: true,
-      title: Text(widget.listing == null ? 'List for sale' : 'Edit sale listing'),
+      title: Text(
+        widget.listing == null ? 'List for sale' : 'Edit sale listing',
+      ),
       content: SizedBox(
         width: 450,
         child: Form(

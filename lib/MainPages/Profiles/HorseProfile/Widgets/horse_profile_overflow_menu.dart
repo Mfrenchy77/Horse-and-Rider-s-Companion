@@ -206,9 +206,9 @@ class _HorseProfileOverFlowMenuState extends State<HorseProfileOverFlowMenu> {
                 content: Text(
                   markDeceased
                       ? 'The horse stays in Archived horses '
-                          'with its full logbook.'
+                            'with its full logbook.'
                       : 'The horse will move to Archived horses. '
-                          'You’ll keep ownership and the full logbook.',
+                            'You’ll keep ownership and the full logbook.',
                 ),
                 actions: [
                   TextButton(
@@ -281,7 +281,9 @@ class _TrainerEmailDialogState extends State<_TrainerEmailDialog> {
         child: const Text('Cancel'),
       ),
       FilledButton(
-        onPressed: _email.contains('@') ? () => Navigator.pop(context, _email) : null,
+        onPressed: _email.contains('@')
+            ? () => Navigator.pop(context, _email)
+            : null,
         child: Text(
           widget.transfer ? 'Send transfer request' : 'Send invitation',
         ),
