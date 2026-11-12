@@ -1,6 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/sort_comments_dialog.dart';
@@ -46,7 +47,7 @@ class ResourceCommentBar extends StatelessWidget {
                   onPressed: state.usersProfile == null
                       ? null
                       : () {
-                          showDialog<AlertDialog>(
+                          showAppDialog<void>(
                             context: context,
                             builder: (_) => BlocProvider(
                               create: (_) => CommentCubit(
@@ -74,7 +75,7 @@ class ResourceCommentBar extends StatelessWidget {
                 IconButton.outlined(
                   icon: const Icon(Icons.sort),
                   onPressed: () {
-                    showDialog<AlertDialog>(
+                    showAppDialog<void>(
                       context: context,
                       builder: (context) => const SortCommentsDialog(
                         key: Key('SortCommentsDialog'),

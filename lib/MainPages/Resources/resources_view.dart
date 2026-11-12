@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_floating_action_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_list_view.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_overflow_menu.dart';
@@ -18,7 +19,7 @@ class ResourcesView extends StatelessWidget {
       floatingActionButton: const ResourcesFloatingActionButton(
         key: Key('resourcesFloatingActionButton'),
       ),
-      appBar: AppBar(
+      appBar: ThemedAppBar(
         leading: BackButton(
           onPressed: () => context.read<AppCubit>().backPressed(),
         ),

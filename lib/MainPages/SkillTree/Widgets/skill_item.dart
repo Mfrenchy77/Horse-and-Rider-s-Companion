@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class SkillItem extends StatefulWidget {
@@ -52,16 +53,17 @@ class _SkillItemState extends State<SkillItem> {
         // Calculate glow color based on theme brightness
         final glowColor = isSelected
             ? (Theme.of(context).brightness == Brightness.dark
-                ? colorScheme.primary.withValues(alpha: 0.5)
-                : colorScheme.primary.withValues(alpha: 0.7))
+                  ? colorScheme.primary.withValues(alpha: 0.5)
+                  : colorScheme.primary.withValues(alpha: 0.7))
             : Colors.transparent;
 
         final borderRadius = BorderRadius.circular(35);
         final neutralFillColor = theme.brightness == Brightness.dark
             ? colorScheme.surfaceContainerHigh
             : colorScheme.surface;
-        final effectiveFillColor =
-            bgColor == Colors.transparent ? neutralFillColor : bgColor;
+        final effectiveFillColor = bgColor == Colors.transparent
+            ? neutralFillColor
+            : bgColor;
 
         return IntrinsicWidth(
           child: AnimatedContainer(
@@ -90,6 +92,9 @@ class _SkillItemState extends State<SkillItem> {
                     color: gradient == null
                         ? effectiveFillColor
                         : neutralFillColor,
+                    gradient: gradient == null && bgColor == Colors.transparent
+                        ? theme.extension<SurfaceGradients>()?.surface
+                        : null,
                     border: Border.all(
                       color: isSelected
                           ? Colors.white
@@ -178,10 +183,7 @@ class _SkillItemState extends State<SkillItem> {
   }) {
     if (gradient == null) return child;
     return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        gradient: gradient,
-      ),
+      decoration: BoxDecoration(borderRadius: borderRadius, gradient: gradient),
       child: child,
     );
   }

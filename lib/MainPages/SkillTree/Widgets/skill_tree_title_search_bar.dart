@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/search_confimatio_dialog.dart';
@@ -60,7 +61,7 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
             final isLinked =
                 resource?.skillTreeIds.contains(state.skill?.id) ?? false;
 
-            showDialog<AlertDialog>(
+            showAppDialog<void>(
               context: context,
               builder: (ctx) => searchConfirmationDialog(
                 title: isLinked ? 'Remove' : 'Add',

@@ -1,6 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
@@ -52,7 +53,7 @@ class LogBookButton extends StatelessWidget {
                     message: 'Open the Log Book',
                     child: FilledButton.tonalIcon(
                       onPressed: () {
-                        showDialog<Dialog>(
+                        showAppDialog<Dialog>(
                           context: context,
                           builder: (dialogContext) => LogViewDialog(
                             appContext: context,
@@ -72,7 +73,7 @@ class LogBookButton extends StatelessWidget {
                     IconButton(
                       tooltip: 'Add an Entry into the Log',
                       onPressed: () {
-                        showDialog<AddLogEntryDialog>(
+                        showAppDialog<AddLogEntryDialog>(
                           context: context,
                           builder: (context) => AddLogEntryDialog(
                             usersProfile: cubit.state.usersProfile!,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/seasonal_decoration.dart';
@@ -12,6 +13,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_messa
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_list.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -26,8 +28,8 @@ class UserProfileDrawer extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        return Drawer(
-          child: ListView(
+        final email = state.usersProfile?.email ?? '';
+        final content = ListView(
             children: [
               Stack(
                 children: [
@@ -54,23 +56,28 @@ class UserProfileDrawer extends StatelessWidget {
                       ),
                     ),
                     accountEmail: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            state.usersProfile?.email ?? '',
-                            style: TextStyle(
-                              color: SharedPrefs().isDarkMode
-                                  ? Colors.white
-                                  : Colors.black,
+                        Expanded(
+                          child: Tooltip(
+                            message: email,
+                            child: Text(
+                              email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           ),
                         ),
                         if (SharedPrefs().isSeasonalMode())
-                          const SeasonalDecorationWidget()
-                        else
-                          const SizedBox.shrink(),
+                          const Padding(
+                            padding: EdgeInsetsDirectional.only(
+                              start: 8,
+                              end: 12,
+                            ),
+                            child: SeasonalDecorationWidget(),
+                          ),
                       ],
                     ),
                   ),
@@ -114,13 +121,10 @@ class UserProfileDrawer extends StatelessWidget {
                                 iconAnimation ??
                                 const AlwaysStoppedAnimation(1),
                           ),
-                          onPressed: () {
-                            // when using a custom overlay drawer we should not
-                            // call Navigator.pop(context) (that pops the page)
-                            // instead call the provided onClose callback to
-                            // reverse the drawer controller.
-                            onClose?.call();
-                          },
+                          tooltip: 'Close drawer',
+                          onPressed:
+                              onClose ??
+                              () => Scaffold.maybeOf(context)?.closeDrawer(),
                         ),
                       ),
                     ),
@@ -216,7 +220,7 @@ class UserProfileDrawer extends StatelessWidget {
                     leading: const Icon(Icons.person_search),
                     title: const Text('Search Horse/Rider'),
                     onTap: () {
-                      showDialog<AlertDialog>(
+                      showAppDialog<void>(
                         context: context,
                         builder: (dialogContext) => ProfileSearchDialog(
                           homeContext: context,
@@ -274,7 +278,7 @@ class UserProfileDrawer extends StatelessWidget {
                       debugPrint('Send Email to Support');
                       onClose?.call();
 
-                      showDialog<SupportMessageDialog>(
+                      showAppDialog<SupportMessageDialog>(
                         context: context,
                         builder: (dialogContext) => const SupportMessageDialog(
                           key: Key('SupportMessageDialog'),
@@ -303,7 +307,15 @@ class UserProfileDrawer extends StatelessWidget {
                 ],
               ),
             ],
-          ),
+          );
+        final gradients = Theme.of(context).extension<SurfaceGradients>();
+        return Drawer(
+          child: gradients != null
+              ? Ink(
+                  decoration: BoxDecoration(gradient: gradients.surface),
+                  child: content,
+                )
+              : content,
         );
       },
     );

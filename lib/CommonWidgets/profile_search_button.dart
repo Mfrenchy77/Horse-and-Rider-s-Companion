@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
 
@@ -20,7 +21,7 @@ class ProfileSearchButton extends StatelessWidget {
         return IconButton(
           tooltip: 'Search For Horse/Rider Profiles',
           onPressed: () {
-            showDialog<AlertDialog>(
+            showAppDialog<void>(
               context: context,
               builder: (dialogContext) => ProfileSearchDialog(
                 homeContext: context,

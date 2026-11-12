@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
 bool isOceanCoralDarkTheme(BuildContext context) {
@@ -40,7 +41,7 @@ class OceanCoralGradients {
   );
 }
 
-/// Applies the Ocean/Coral gradient surface (only in the Ocean/Coral dark theme).
+/// Applies the gradient surface for the active theme.
 ///
 /// This is intended for "surfaces" like dialogs, cards, and panels.
 class OceanCoralSurface extends StatelessWidget {
@@ -57,25 +58,33 @@ class OceanCoralSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isOceanCoralDarkTheme(context)) return child;
+    final theme = Theme.of(context);
+    final gradients = theme.extension<SurfaceGradients>();
+    if (gradients == null) return child;
+    final isOceanCoral = isOceanCoralDarkTheme(context);
 
-    final radius = borderRadius ?? const BorderRadius.all(Radius.circular(16));
+    final radius = borderRadius ?? const BorderRadius.all(Radius.circular(20));
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: OceanCoralGradients.surface,
+        gradient: gradients.surface,
         borderRadius: radius,
-        border: Border.all(color: ColorConst.dividerDarkBlueGrey),
+        border: Border.all(
+          color: isOceanCoral
+              ? ColorConst.dividerDarkBlueGrey
+              : theme.colorScheme.outlineVariant,
+        ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x66000000),
-            blurRadius: 14,
+            color: Color(0x52000000),
+            blurRadius: 24,
             offset: Offset(0, 8),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: radius,
+        clipBehavior: isOceanCoral ? Clip.antiAlias : Clip.hardEdge,
         child: Padding(
           padding: padding ?? EdgeInsets.zero,
           child: Material(type: MaterialType.transparency, child: child),
@@ -99,9 +108,10 @@ class OceanCoralDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isOceanCoralDarkTheme(context)) return child;
-
     final theme = Theme.of(context);
+    if (theme.extension<SurfaceGradients>() == null) {
+      return child;
+    }
 
     // IMPORTANT:
     // When showDialog() is given a widget that is *not* a Dialog/AlertDialog,
@@ -142,7 +152,7 @@ class OceanCoralDialog extends StatelessWidget {
 /// - centered + inset
 /// - constrained width
 /// - optional scrolling content
-/// - Ocean/Coral gradient surface in the Ocean/Coral dark theme
+/// - Ocean/Coral gradient surface in the active theme
 class OceanCoralAppDialog extends StatelessWidget {
   const OceanCoralAppDialog({
     super.key,
@@ -168,9 +178,10 @@ class OceanCoralAppDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final actionWidgets = actions ?? const <Widget>[];
 
-    if (!isOceanCoralDarkTheme(context)) {
+    if (Theme.of(context).extension<SurfaceGradients>() == null) {
       return AlertDialog(
         scrollable: scrollable,
+        insetPadding: insetPadding,
         title: title,
         content: maxWidth.isFinite
             ? ConstrainedBox(
@@ -182,8 +193,23 @@ class OceanCoralAppDialog extends StatelessWidget {
       );
     }
 
-    final maxContentHeight = MediaQuery.sizeOf(context).height * 0.7;
-    final contentWidget = content;
+    final body = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (title != null)
+          Semantics(
+            namesRoute: true,
+            child: DefaultTextStyle.merge(
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+              child: title!,
+            ),
+          ),
+        if (title != null && content != null) const SizedBox(height: 12),
+        if (content != null) content!,
+      ],
+    );
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -196,34 +222,20 @@ class OceanCoralAppDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (title != null) ...[
-                DefaultTextStyle.merge(
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                  child: title!,
+              if (scrollable)
+                Flexible(child: SingleChildScrollView(child: body))
+              else
+                body,
+              if (actionWidgets.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                OverflowBar(
+                  alignment: MainAxisAlignment.end,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  spacing: 12,
+                  overflowSpacing: 8,
+                  children: actionWidgets,
                 ),
-                const SizedBox(height: 12),
               ],
-              if (contentWidget != null) ...[
-                if (scrollable)
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: maxContentHeight),
-                    child: SingleChildScrollView(child: contentWidget),
-                  )
-                else
-                  contentWidget,
-                if (actionWidgets.isNotEmpty) const SizedBox(height: 16),
-              ],
-              if (actionWidgets.isNotEmpty)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    for (int i = 0; i < actionWidgets.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 12),
-                      actionWidgets[i],
-                    ],
-                  ],
-                ),
             ],
           ),
         ),

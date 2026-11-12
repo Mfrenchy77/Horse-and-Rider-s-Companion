@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_primary_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
@@ -18,7 +19,7 @@ class HorseProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: ThemedAppBar(
       title: const Text('Horse profile'),
       actions: const [
         ProfileSearchButton(key: Key('HorseSearchButton')),

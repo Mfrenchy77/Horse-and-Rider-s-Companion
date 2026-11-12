@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -67,7 +68,7 @@ class CreateTrainingPathDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Scaffold(
-                appBar: AppBar(
+                appBar: ThemedAppBar(
                   actions: [
                     if (state.isSearch) _buildSearch(context),
                     if (!state.isSearch)

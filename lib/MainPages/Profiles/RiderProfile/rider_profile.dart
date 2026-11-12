@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
@@ -52,7 +53,7 @@ class _RiderProfileViewState extends State<RiderProfileView>
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
+          appBar: ThemedAppBar(
             leading: profile.email == state.usersProfile?.email
                 ? Builder(
                     builder: (context) => IconButton(

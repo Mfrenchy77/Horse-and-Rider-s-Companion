@@ -5,9 +5,10 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
-import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
@@ -62,93 +63,94 @@ class AddHorseDialog extends StatelessWidget {
             }
 
             return Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              appBar: ThemedAppBar(
                 title: Text(
                   _editProfile
                       ? 'Edit Horse: ${state.horseProfile?.name}'
                       : 'Create New Horse Profile',
                 ),
               ),
-              body: AlertDialog(
-                insetPadding: const EdgeInsets.all(10),
-                scrollable: true,
-                // titleTextStyle: FONT_CONST.MEDIUM_WHITE,
-                // title: const Text('Create New Horse Profile'),
-                content: MaxWidthBox(
-                  maxWidth: 800,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ///   Horse photo
-                      _horsePhoto(context: context, size: 85, state: state),
-                      gap(),
+              body: FormPageBody(
+                maxWidth: 800,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ///   Horse photo
+                    _horsePhoto(context: context, size: 85, state: state),
+                    gap(),
 
-                      ///   Horse Name
-                      _horseName(context: context, state: state),
-                      gap(),
+                    ///   Horse Name
+                    _horseName(context: context, state: state),
+                    gap(),
 
-                      ///   Horse NickName
-                      _horseNickName(context: context, state: state),
-                      gap(),
+                    ///   Horse NickName
+                    _horseNickName(context: context, state: state),
+                    gap(),
 
-                      ///  Horse Location
-                      _horseLocation(context: context, state: state),
-                      gap(),
+                    ///  Horse Location
+                    _horseLocation(context: context, state: state),
+                    gap(),
 
-                      ///   Horse Gender
-                      _horseGender(state: state, context: context),
+                    ///   Horse Gender
+                    _horseGender(state: state, context: context),
 
-                      ///   Horse Breed
-                      _horseBreed(state: state, context: context),
-                      gap(),
+                    ///   Horse Breed
+                    _horseBreed(state: state, context: context),
+                    gap(),
 
-                      ///   Horse Date of Birth
-                      _horseDateOfBirth(
-                        state: state,
-                        cubit: cubit,
-                        context: context,
-                      ),
-                      gap(),
+                    ///   Horse Date of Birth
+                    _horseDateOfBirth(
+                      state: state,
+                      cubit: cubit,
+                      context: context,
+                    ),
+                    gap(),
 
-                      ///   Horse Color
-                      _horseColor(state: state, context: context),
-                      gap(),
+                    ///   Horse Color
+                    _horseColor(state: state, context: context),
+                    gap(),
 
-                      ///   Horse Height
-                      HorseHeightField(controller: TextEditingController()),
-                      gap(),
-                      _didPurchaseHorse(context: context, state: state),
+                    ///   Horse Height
+                    HorseHeightField(controller: TextEditingController()),
+                    gap(),
+                    _didPurchaseHorse(context: context, state: state),
 
-                      gap(),
+                    gap(),
 
-                      ///   Horse Purchase Date
-                      _horsePurchaseDate(
-                        cubit: cubit,
-                        state: state,
-                        context: context,
-                      ),
+                    ///   Horse Purchase Date
+                    _horsePurchaseDate(
+                      cubit: cubit,
+                      state: state,
+                      context: context,
+                    ),
 
-                      gap(),
+                    gap(),
 
-                      ///   HorsePurchase Price
-                      _horsePurchasePrice(context: context, state: state),
+                    ///   HorsePurchase Price
+                    _horsePurchasePrice(context: context, state: state),
 
-                      errorText(state: state),
-                    ],
-                  ),
+                    errorText(state: state),
+                    const SizedBox(height: 24),
+                    OverflowBar(
+                      alignment: MainAxisAlignment.end,
+                      overflowAlignment: OverflowBarAlignment.end,
+                      spacing: 8,
+                      overflowSpacing: 8,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        _horseSubmitButton(
+                          isEdit: _editProfile,
+                          context: context,
+                          state: state,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  _horseSubmitButton(
-                    isEdit: _editProfile,
-                    context: context,
-                    state: state,
-                  ),
-                ],
               ),
             );
           },

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Article/cubit/create_article_cubit.dart';
 
 class CreateArticleView extends StatefulWidget {
@@ -92,7 +93,7 @@ class _CreateArticleViewState extends State<CreateArticleView> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: ThemedAppBar(
           title: const Text('New Article'),
           actions: [
             // Tiny bloc selectors that won't rebuild the editor:

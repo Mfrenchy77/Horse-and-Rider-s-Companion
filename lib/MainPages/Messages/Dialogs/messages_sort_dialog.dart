@@ -10,45 +10,42 @@ class MessagesSortDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
+    final cubit = context.read<AppCubit>();
+    final selected = context.select((AppCubit c) => c.state.conversationsSort);
 
-        void submit(ConversationsSort? value) {
-          if (value == null) return;
-          cubit.sortConversations(value);
-          Navigator.of(context).pop();
-        }
+    void submit(ConversationsSort? value) {
+      if (value == null) return;
+      cubit.sortConversations(value);
+      Navigator.of(context).pop();
+    }
 
-        return OceanCoralAppDialog(
-          title: const Text('Sort Messages By:'),
-          content: RadioGroup<ConversationsSort>(
-            groupValue: state.conversationsSort,
-            onChanged: submit,
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<ConversationsSort>(
-                  title: Text('Newest'),
-                  value: ConversationsSort.createdDate,
-                ),
-                RadioListTile<ConversationsSort>(
-                  title: Text('Recently Updated'),
-                  value: ConversationsSort.lastupdatedDate,
-                ),
-                RadioListTile<ConversationsSort>(
-                  title: Text('Unread'),
-                  value: ConversationsSort.unread,
-                ),
-                RadioListTile<ConversationsSort>(
-                  title: Text('Oldest'),
-                  value: ConversationsSort.oldest,
-                ),
-              ],
+    return OceanCoralAppDialog(
+      title: const Text('Sort Messages By:'),
+      content: RadioGroup<ConversationsSort>(
+        groupValue: selected,
+        onChanged: submit,
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<ConversationsSort>(
+              title: Text('Newest'),
+              value: ConversationsSort.createdDate,
             ),
-          ),
-        );
-      },
+            RadioListTile<ConversationsSort>(
+              title: Text('Recently Updated'),
+              value: ConversationsSort.lastupdatedDate,
+            ),
+            RadioListTile<ConversationsSort>(
+              title: Text('Unread'),
+              value: ConversationsSort.unread,
+            ),
+            RadioListTile<ConversationsSort>(
+              title: Text('Oldest'),
+              value: ConversationsSort.oldest,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
@@ -212,7 +213,7 @@ class _CommentItemState extends State<CommentItem> {
                                                 state.usersProfile;
                                             if (usersProfile == null) return;
 
-                                            showDialog<AlertDialog>(
+                                            showAppDialog<void>(
                                               context: context,
                                               builder: (_) => BlocProvider(
                                                 create: (_) => CommentCubit(
@@ -251,7 +252,7 @@ class _CommentItemState extends State<CommentItem> {
                                               'Report Comment: '
                                               '${widget.comment.id}',
                                             );
-                                            showDialog<AlertDialog>(
+                                            showAppDialog<void>(
                                               context: context,
                                               builder: (context) =>
                                                   const SupportMessageDialog(),

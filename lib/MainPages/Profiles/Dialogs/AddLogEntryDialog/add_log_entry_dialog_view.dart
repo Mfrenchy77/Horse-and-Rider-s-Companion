@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -39,13 +40,15 @@ class AddLogEntryDialog extends StatelessWidget {
             if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
-            return AlertDialog(
-              titlePadding: const EdgeInsets.all(10),
-              title: Text(
-                horseProfile == null
-                    ? 'Add New Log Entry'
-                    : 'Add New Log Entry For \n${horseProfile?.name}',
-                textAlign: TextAlign.center,
+            return OceanCoralAppDialog(
+              title: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Text(
+                  horseProfile == null
+                      ? 'Add New Log Entry'
+                      : 'Add New Log Entry For \n${horseProfile?.name}',
+                  textAlign: TextAlign.center,
+                ),
               ),
               insetPadding: const EdgeInsets.all(10),
               scrollable: true,

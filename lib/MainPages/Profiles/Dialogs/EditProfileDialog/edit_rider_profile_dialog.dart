@@ -4,7 +4,9 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/bio.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/cancel_button.dart';
@@ -34,15 +36,9 @@ class EditRiderProfileDialog extends StatelessWidget {
     debugPrint('EditRiderProfileDialog');
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider(
-          create: (context) => KeysRepository(),
-        ),
-        RepositoryProvider(
-          create: (context) => CloudRepository(),
-        ),
-        RepositoryProvider(
-          create: (context) => RiderProfileRepository(),
-        ),
+        RepositoryProvider(create: (context) => KeysRepository()),
+        RepositoryProvider(create: (context) => CloudRepository()),
+        RepositoryProvider(create: (context) => RiderProfileRepository()),
       ],
       child: BlocProvider(
         create: (context) => EditRiderProfileCubit(
@@ -70,60 +66,50 @@ class EditRiderProfileDialog extends StatelessWidget {
             }
           },
           child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: AlertDialog(
-              // not dismissible to prevent the user from closing the dialog
-              // before the submission is complete
-
-              scrollable: true,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            appBar: ThemedAppBar(
+              automaticallyImplyLeading: user == null,
               title: Text(
                 user != null
                     ? 'Finish setting up your Profile'
                     : 'Edit Profile',
               ),
-              content: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Form(
-                  child: Column(
-                    children: [
-                      const ProfilePhoto(
-                        key: Key('profilePhoto'),
-                      ),
-                      gap(),
-                      const RiderName(
-                        key: Key('riderName'),
-                      ),
-                      gap(),
-                      const RiderBio(
-                        key: Key('riderBio'),
-                      ),
-                      gap(),
-                      const RiderWebsite(
-                        key: Key('riderWebsite'),
-                      ),
-                      gap(),
-                      // const RiderLocation(
-                      //   key: Key('riderLocation'),
-                      // ),
-                      // gap(),
-                      const TrainerQuestion(
-                        key: Key('trainerQuestion'),
-                      ),
-                    ],
-                  ),
+            ),
+            body: FormPageBody(
+              maxWidth: 640,
+              child: Form(
+                child: Column(
+                  children: [
+                    const ProfilePhoto(key: Key('profilePhoto')),
+                    gap(),
+                    const RiderName(key: Key('riderName')),
+                    gap(),
+                    const RiderBio(key: Key('riderBio')),
+                    gap(),
+                    const RiderWebsite(key: Key('riderWebsite')),
+                    gap(),
+                    // const RiderLocation(
+                    //   key: Key('riderLocation'),
+                    // ),
+                    // gap(),
+                    const TrainerQuestion(key: Key('trainerQuestion')),
+                    const SizedBox(height: 24),
+                    OverflowBar(
+                      alignment: MainAxisAlignment.end,
+                      overflowAlignment: OverflowBarAlignment.end,
+                      spacing: 8,
+                      overflowSpacing: 8,
+                      children: [
+                        Visibility(
+                          visible: user == null,
+                          child: const CancelButton(key: Key('cancelButton')),
+                        ),
+                        const SubmitButton(key: Key('submitButton')),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              actions: [
-                Visibility(
-                  visible: user == null,
-                  child: const CancelButton(
-                    key: Key('cancelButton'),
-                  ),
-                ),
-                const SubmitButton(
-                  key: Key('submitButton'),
-                ),
-              ],
             ),
           ),
         ),

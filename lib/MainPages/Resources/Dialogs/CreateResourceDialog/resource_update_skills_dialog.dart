@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class UpdateResourceSkills extends StatefulWidget {
   const UpdateResourceSkills({super.key, required this.resource});
@@ -55,13 +56,12 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
     }
   }
 
-  void _openSkill(Skill skill) {
+  Future<void> _openSkill(Skill skill) async {
     final router = GoRouter.of(context);
+    final route = ModalRoute.of(context);
     Navigator.of(context).pop();
-    router.goNamed(
-      SkillTreeView.skillLevelName,
-      pathParameters: {SkillTreeView.skillPathParam: skill.id},
-    );
+    await route?.completed;
+    SkillTreeView.openSkill(router, skill.id);
   }
 
   @override
@@ -70,6 +70,9 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
     final canEdit = _canEdit(app) && (widget.resource.id?.isNotEmpty ?? false);
     final skills = app.state.allSkills.whereType<Skill>().toList()
       ..sort((a, b) => a.skillName.compareTo(b.skillName));
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final linked = skills.where((skill) => _original.contains(skill.id));
     final matches = skills.where(
       (skill) =>
           skill.skillName.toLowerCase().contains(_query) &&
@@ -82,171 +85,139 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
 
     return PopScope(
       canPop: !_saving,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480, maxHeight: 640),
-          child: Material(
-            // Deliberately square and flat: this route avoids anti-aliased
-            // corners and elevation shaders on fragile WebGL renderers.
-            color:
-                Theme.of(context).dialogTheme.backgroundColor ??
-                Theme.of(context).colorScheme.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Associated skills',
-                    style: Theme.of(context).textTheme.headlineSmall,
+      child: OceanCoralAppDialog(
+        title: const Text('Associated skills'),
+        scrollable: true,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 12,
+          children: [
+            Text(
+              widget.resource.name ?? 'Resource',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            Text('Linked skills', style: theme.textTheme.titleSmall),
+            if (_original.isEmpty)
+              const Text('No associated skills yet.')
+            else if (linked.isEmpty)
+              const Text('Linked skills are unavailable.')
+            else
+              for (final skill in linked)
+                Material(
+                  color: Color.alphaBlend(
+                    colors.primary.withValues(alpha: .12),
+                    colors.surface,
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: SizedBox(
-                        width: 480,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          spacing: 12,
-                          children: [
-                            Text(widget.resource.name ?? 'Resource'),
-                            if (canEdit) ...[
-                              TextField(
-                                onChanged: (value) => setState(
-                                  () => _query = value.trim().toLowerCase(),
-                                ),
-                                decoration: const InputDecoration(
-                                  prefixIcon: Icon(Icons.search),
-                                  labelText: 'Search skills',
-                                ),
-                              ),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 8,
-                                children: [
-                                  DropdownButton<SkillCategory>(
-                                    value: _category,
-                                    hint: const Text('All categories'),
-                                    items: [
-                                      const DropdownMenuItem(
-                                        child: Text('All categories'),
-                                      ),
-                                      for (final value in SkillCategory.values)
-                                        DropdownMenuItem(
-                                          value: value,
-                                          child: Text(
-                                            value.name.replaceAll('_', ' '),
-                                          ),
-                                        ),
-                                    ],
-                                    onChanged: (value) =>
-                                        setState(() => _category = value),
-                                  ),
-                                  DropdownButton<DifficultyState>(
-                                    value: _difficulty,
-                                    hint: const Text('All difficulties'),
-                                    items: [
-                                      const DropdownMenuItem(
-                                        child: Text('All difficulties'),
-                                      ),
-                                      for (final value
-                                          in DifficultyState.values)
-                                        if (value != DifficultyState.All)
-                                          DropdownMenuItem(
-                                            value: value,
-                                            child: Text(value.name),
-                                          ),
-                                    ],
-                                    onChanged: (value) =>
-                                        setState(() => _difficulty = value),
-                                  ),
-                                ],
-                              ),
-                              if (skills.isEmpty)
-                                const Text(
-                                  'The skill catalogue is unavailable.',
-                                )
-                              else if (matches.isEmpty)
-                                const Text('No skills match these filters.'),
-                              for (final skill in matches)
-                                CheckboxListTile(
-                                  key: ValueKey('resource-skill-${skill.id}'),
-                                  contentPadding: EdgeInsets.zero,
-                                  value: _selected.contains(skill.id),
-                                  title: Text(skill.skillName),
-                                  secondary: _original.contains(skill.id)
-                                      ? IconButton(
-                                          onPressed: _saving
-                                              ? null
-                                              : () => _openSkill(skill),
-                                          icon: const Icon(Icons.open_in_new),
-                                          tooltip: 'Open ${skill.skillName}',
-                                        )
-                                      : null,
-                                  subtitle: Text(_skillDetails(skill)),
-                                  onChanged: _saving
-                                      ? null
-                                      : (selected) {
-                                          setState(() {
-                                            if (selected ?? false) {
-                                              _selected.add(skill.id);
-                                            } else {
-                                              _selected.remove(skill.id);
-                                            }
-                                          });
-                                        },
-                                ),
-                            ] else ...[
-                              if (_original.isEmpty)
-                                const Text('No associated skills yet.'),
-                              for (final skill in skills)
-                                if (_original.contains(skill.id))
-                                  TextButton(
-                                    onPressed: () => _openSkill(skill),
-                                    child: Text(skill.skillName),
-                                  ),
-                              const Text(
-                                'Resource owners and editors can change '
-                                'skill links.',
-                              ),
-                            ],
-                            if (_error != null)
-                              Text(
-                                _error!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: colors.outlineVariant),
+                  ),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    leading: Icon(Icons.link, color: colors.primary),
+                    title: Text(
+                      skill.skillName,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    subtitle: Text(_skillDetails(skill)),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _saving ? null : () => _openSkill(skill),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _saving
-                            ? null
-                            : () => Navigator.of(context).pop(),
-                        child: const Text('Close'),
-                      ),
-                      if (canEdit) ...[
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          onPressed: changed && !_saving ? _save : null,
-                          child: Text(_saving ? 'Saving…' : 'Update'),
+                ),
+            if (canEdit) ...[
+              const Divider(),
+              Text('Manage links', style: theme.textTheme.titleSmall),
+              TextField(
+                onChanged: (value) =>
+                    setState(() => _query = value.trim().toLowerCase()),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  labelText: 'Search skills',
+                ),
+              ),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  DropdownButton<SkillCategory>(
+                    value: _category,
+                    hint: const Text('All categories'),
+                    items: [
+                      const DropdownMenuItem(child: Text('All categories')),
+                      for (final value in SkillCategory.values)
+                        DropdownMenuItem(
+                          value: value,
+                          child: Text(value.name.replaceAll('_', ' ')),
                         ),
-                      ],
                     ],
+                    onChanged: (value) => setState(() => _category = value),
+                  ),
+                  DropdownButton<DifficultyState>(
+                    value: _difficulty,
+                    hint: const Text('All difficulties'),
+                    items: [
+                      const DropdownMenuItem(child: Text('All difficulties')),
+                      for (final value in DifficultyState.values)
+                        if (value != DifficultyState.All)
+                          DropdownMenuItem(
+                            value: value,
+                            child: Text(value.name),
+                          ),
+                    ],
+                    onChanged: (value) => setState(() => _difficulty = value),
                   ),
                 ],
               ),
-            ),
-          ),
+              if (skills.isEmpty)
+                const Text('The skill catalogue is unavailable.')
+              else if (matches.isEmpty)
+                const Text('No skills match these filters.'),
+              for (final skill in matches)
+                CheckboxListTile(
+                  key: ValueKey('resource-skill-${skill.id}'),
+                  contentPadding: EdgeInsets.zero,
+                  value: _selected.contains(skill.id),
+                  title: Text(skill.skillName),
+                  subtitle: Text(_skillDetails(skill)),
+                  onChanged: _saving
+                      ? null
+                      : (selected) {
+                          setState(() {
+                            if (selected ?? false) {
+                              _selected.add(skill.id);
+                            } else {
+                              _selected.remove(skill.id);
+                            }
+                          });
+                        },
+                ),
+            ] else
+              Text(
+                'Resource owners and editors can change skill links.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            if (_error != null)
+              Text(_error!, style: TextStyle(color: colors.error)),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          if (canEdit)
+            FilledButton(
+              onPressed: changed && !_saving ? _save : null,
+              child: Text(_saving ? 'Saving…' : 'Update'),
+            ),
+        ],
       ),
     );
   }

@@ -8,49 +8,46 @@ class SortCommentsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
+    final cubit = context.read<AppCubit>();
+    final selected = context.select((AppCubit c) => c.state.commentSortState);
 
-        return OceanCoralAppDialog(
-          title: const Text('Sort Comments'),
-          content: RadioGroup<CommentSortState>(
-            groupValue: state.commentSortState,
-            onChanged: (value) {
-              if (value == null) return;
-              cubit.sortComments(value);
-              Navigator.of(context).pop();
-            },
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<CommentSortState>(
-                  title: Text('Newest'),
-                  value: CommentSortState.Recent,
-                ),
-                RadioListTile<CommentSortState>(
-                  title: Text('Oldest'),
-                  value: CommentSortState.Oldest,
-                ),
-                RadioListTile<CommentSortState>(
-                  title: Text('Highest Rated'),
-                  value: CommentSortState.Best,
-                ),
-                RadioListTile<CommentSortState>(
-                  title: Text('Most Controversial'),
-                  value: CommentSortState.Worst,
-                ),
-              ],
+    return OceanCoralAppDialog(
+      title: const Text('Sort Comments'),
+      content: RadioGroup<CommentSortState>(
+        groupValue: selected,
+        onChanged: (value) {
+          if (value == null) return;
+          cubit.sortComments(value);
+          Navigator.of(context).pop();
+        },
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<CommentSortState>(
+              title: Text('Newest'),
+              value: CommentSortState.Recent,
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+            RadioListTile<CommentSortState>(
+              title: Text('Oldest'),
+              value: CommentSortState.Oldest,
+            ),
+            RadioListTile<CommentSortState>(
+              title: Text('Highest Rated'),
+              value: CommentSortState.Best,
+            ),
+            RadioListTile<CommentSortState>(
+              title: Text('Most Controversial'),
+              value: CommentSortState.Worst,
             ),
           ],
-        );
-      },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }

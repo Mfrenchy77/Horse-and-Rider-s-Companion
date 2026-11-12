@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Dialogs/mesage_contact_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list_item.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/messages_list_overflow_menu.dart';
@@ -28,7 +29,7 @@ class MessagesList extends StatelessWidget {
               .setConversation(state.conversations!.first.id);
         }
         return Scaffold(
-          appBar: AppBar(
+          appBar: ThemedAppBar(
             title: const Text('Messages'),
             actions: const [
               MessagesSearchButton(

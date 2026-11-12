@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_select_chip.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
@@ -109,7 +110,7 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
 
             return Scaffold(
               backgroundColor: Colors.transparent,
-              appBar: AppBar(
+              appBar: ThemedAppBar(
                 title: Text(state.isEdit ? 'Edit Resource' : 'Add Resource'),
               ),
               // IMPORTANT:

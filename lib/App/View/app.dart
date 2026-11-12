@@ -11,7 +11,7 @@ import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -119,15 +119,9 @@ class AppView extends StatelessWidget {
           darkTheme: settingsController.darkTheme,
           themeMode: settingsController.darkMode,
           builder: (context, child) {
-            final useOceanCoralBackground =
-                !settingsController.seasonalMode &&
-                Theme.of(context).brightness == Brightness.dark;
+            final gradients = Theme.of(context).extension<SurfaceGradients>();
             return DecoratedBox(
-              decoration: useOceanCoralBackground
-                  ? const BoxDecoration(
-                      gradient: OceanCoralGradients.background,
-                    )
-                  : const BoxDecoration(),
+              decoration: BoxDecoration(gradient: gradients?.background),
               child: SettingsControllerScope(
                 controller: settingsController,
                 child: ResourceLayoutScope(

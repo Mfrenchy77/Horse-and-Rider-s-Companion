@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
@@ -98,7 +99,7 @@ class _ResourceWebViewState extends State<ResourceWebView> {
         await _handleBack();
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: ThemedAppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _handleBack,

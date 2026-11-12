@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
@@ -87,7 +88,7 @@ class SkillLevelView extends StatelessWidget {
                               (target == LevelState.PROFICIENT &&
                                   level == LevelState.VERIFIED)
                           ? null
-                          : () => showDialog<AlertDialog>(
+                          : () => showAppDialog<void>(
                               context: context,
                               builder: (_) =>
                                   SkillLevelSelectedConfimationDialog(

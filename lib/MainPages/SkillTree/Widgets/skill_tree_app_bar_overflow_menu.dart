@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
@@ -10,76 +11,71 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        final settings = SettingsControllerScope.maybeOf(context);
-        final isEditor = state.usersProfile?.editor ?? false;
+    final cubit = context.read<AppCubit>();
+    final settings = SettingsControllerScope.maybeOf(context);
+    final tabIndex = context.select((AppCubit c) => c.state.skillTreeTabIndex);
+    final isGuest = context.select((AppCubit c) => c.state.isGuest);
+    final isEditor = context.select(
+      (AppCubit c) => c.state.usersProfile?.editor ?? false,
+    );
 
-        final menuItems = <PopupMenuEntry<String>>[];
+    final menuItems = <PopupMenuEntry<String>>[];
 
-        // Add sort option only for skill list tab
-        if (state.skillTreeTabIndex == 0) {
-          menuItems.add(
-            const PopupMenuItem(value: 'Sort', child: Text('Sort')),
-          );
-          if (settings != null) {
-            menuItems
-              ..add(const PopupMenuDivider())
-              ..add(
-                const PopupMenuItem(
-                  enabled: false,
-                  child: Text('Skill Tree layout'),
-                ),
-              )
-              ..addAll([
-                for (final layout in SkillTreeLayout.values)
-                  CheckedPopupMenuItem(
-                    key: ValueKey('skillTreeLayout-${layout.name}'),
-                    value: 'Layout-${layout.name}',
-                    checked: settings.skillTreeLayout == layout,
-                    child: Text(layout.label),
-                  ),
-              ]);
-          }
-        }
-
-        // Add edit toggle if user is editor
-        if (!state.isGuest && isEditor) {
-          menuItems.add(
+    // Add sort option only for skill list tab
+    if (tabIndex == 0) {
+      menuItems.add(const PopupMenuItem(value: 'Sort', child: Text('Sort')));
+      if (settings != null) {
+        menuItems
+          ..add(const PopupMenuDivider())
+          ..add(
             const PopupMenuItem(
-              value: 'Edit',
-              child: Text('Toggle Edit Controls'),
+              enabled: false,
+              child: Text('Skill Tree layout'),
             ),
-          );
-        }
+          )
+          ..addAll([
+            for (final layout in SkillTreeLayout.values)
+              CheckedPopupMenuItem(
+                key: ValueKey('skillTreeLayout-${layout.name}'),
+                value: 'Layout-${layout.name}',
+                checked: settings.skillTreeLayout == layout,
+                child: Text(layout.label),
+              ),
+          ]);
+      }
+    }
 
-        if (menuItems.isEmpty) return const SizedBox.shrink();
+    // Add edit toggle if user is editor
+    if (!isGuest && isEditor) {
+      menuItems.add(
+        const PopupMenuItem(value: 'Edit', child: Text('Toggle Edit Controls')),
+      );
+    }
 
-        return PopupMenuButton<String>(
-          itemBuilder: (context) => menuItems,
-          onSelected: (value) {
-            switch (value) {
-              case 'Edit':
-                cubit.toggleIsEditState();
-                break;
-              case 'Sort':
-                showDialog<AlertDialog>(
-                  context: context,
-                  builder: (_) => const SkillSortDialog(),
-                );
-                break;
-              default:
-                if (value.startsWith('Layout-')) {
-                  final name = value.substring('Layout-'.length);
-                  final layout = SkillTreeLayout.values.firstWhere(
-                    (layout) => layout.name == name,
-                  );
-                  settings?.updateSkillTreeLayout(layout);
-                }
+    if (menuItems.isEmpty) return const SizedBox.shrink();
+
+    return PopupMenuButton<String>(
+      itemBuilder: (context) => menuItems,
+      onSelected: (value) {
+        switch (value) {
+          case 'Edit':
+            cubit.toggleIsEditState();
+            break;
+          case 'Sort':
+            showAppDialog<void>(
+              context: context,
+              builder: (_) => const SkillSortDialog(),
+            );
+            break;
+          default:
+            if (value.startsWith('Layout-')) {
+              final name = value.substring('Layout-'.length);
+              final layout = SkillTreeLayout.values.firstWhere(
+                (layout) => layout.name == name,
+              );
+              settings?.updateSkillTreeLayout(layout);
             }
-          },
-        );
+        }
       },
     );
   }

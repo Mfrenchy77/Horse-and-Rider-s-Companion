@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
@@ -20,7 +21,7 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: ThemedAppBar(
         // leading: IconButton(
         //   icon: const Icon(Icons.arrow_back),
         //   onPressed: appCubit.resetProfileSetup,

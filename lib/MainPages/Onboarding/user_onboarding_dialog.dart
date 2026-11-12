@@ -51,6 +51,7 @@ class _UserOnboardingDialogState extends State<UserOnboardingDialog>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final dialogContent = SizedBox(
       width: 440,
       height: 360,
@@ -59,9 +60,9 @@ class _UserOnboardingDialogState extends State<UserOnboardingDialog>
           TabBar(
             key: const Key('user_onboarding_tab_bar'),
             controller: _tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+            labelColor: colors.primary,
+            unselectedLabelColor: colors.onSurfaceVariant,
+            indicatorColor: colors.primary,
             tabs: const [
               Tab(text: 'Profile'),
               Tab(text: 'Skill Tree'),
@@ -107,36 +108,20 @@ class _UserOnboardingDialogState extends State<UserOnboardingDialog>
           widget.onSkip?.call();
           Navigator.of(context).pop();
         },
-        style: TextButton.styleFrom(foregroundColor: Colors.white),
         child: const Text('Skip'),
       ),
       ElevatedButton(
         key: const Key('user_onboarding_finish'),
         onPressed: _finish,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.blue,
-        ),
         child: const Text('Finish & Edit Profile'),
       ),
     ];
-
-    if (!isOceanCoralDarkTheme(context)) {
-      return AlertDialog(
-        key: const Key('user_onboarding_dialog'),
-        backgroundColor: Colors.blue,
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
-        contentTextStyle: const TextStyle(color: Colors.white),
-        title: const Text('Welcome! Let’s set you up'),
-        content: dialogContent,
-        actions: dialogActions,
-      );
-    }
 
     return OceanCoralAppDialog(
       key: const Key('user_onboarding_dialog'),
       title: const Text('Welcome! Let’s set you up'),
       maxWidth: 640,
+      scrollable: true,
       content: dialogContent,
       actions: dialogActions,
     );
@@ -160,7 +145,7 @@ class _Pane extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 48, color: Colors.white),
+          Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

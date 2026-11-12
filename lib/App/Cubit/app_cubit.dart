@@ -1235,6 +1235,92 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Performs horse-management side effects (sale listing / transfer / trainer
+  /// invite) via the coaching connection backend.
+  ///
+  /// UI should only collect user input (dialogs) then call this single method.
+  Future<void> submitHorseManageAction({
+    required HorseProfile horse,
+    required String action,
+    Map<String, Object?>? listing,
+    String? recipientEmail,
+  }) async {
+    final email = state.usersProfile?.email;
+    final submit = _submitCoachingAction;
+    if (state.isGuest || email == null) return;
+
+    // Must be current owner.
+    if (horse.currentOwnerId.toLowerCase() != email.toLowerCase()) return;
+    if (submit == null) {
+      createError('This action is unavailable. Try again.');
+      return;
+    }
+    if (state.horseManageInProgress) return;
+
+    emit(
+      state.copyWith(horseManageInProgress: true, horseManageHorseId: horse.id),
+    );
+
+    try {
+      final request = switch (action) {
+        'listing' => {'action': 'setSaleListing', 'listing': listing},
+        'unlist' => {'action': 'setSaleListing', 'listing': null},
+        'transfer' => {
+          'action': 'sendTransfer',
+          'recipientEmail': recipientEmail,
+        },
+        'invite' => {
+          'action': 'send',
+          'kind': 'horse',
+          'coachEmail': recipientEmail,
+        },
+        _ => null,
+      };
+
+      if (request == null) return;
+      if ((action == 'listing') && (listing == null)) return;
+      if ((action == 'transfer' || action == 'invite') &&
+          (recipientEmail == null || recipientEmail.trim().isEmpty)) {
+        return;
+      }
+
+      final result = await submit({'horseId': horse.id, ...request});
+
+      if (isClosed || state.usersProfile?.email != email) return;
+
+      final message = switch (action) {
+        'listing' => 'Sale listing saved.',
+        'unlist' => 'Sale listing removed.',
+        'transfer' => 'Transfer request sent.',
+        _ when result['incoming'] == true =>
+          'Review the existing incoming request.',
+        _ when result['status'] == 'accepted' =>
+          'This connection is already active.',
+        _ => 'Request sent.',
+      };
+
+      createMessage(message);
+    } on ConnectionFailure catch (error) {
+      if (isClosed || state.usersProfile?.email != email) return;
+      final message = switch ((action, error.message)) {
+        ('listing' || 'unlist', 'Invalid connection ID.') =>
+          'Sale listings require an updated Firebase service.',
+        ('transfer', 'Invalid connection ID.') =>
+          'Ownership transfers are unavailable in '
+              'this version of the Firebase service.',
+        _ => error.message,
+      };
+      createError(message);
+    } catch (_) {
+      if (isClosed || state.usersProfile?.email != email) return;
+      createError('The change could not be saved. Try again.');
+    } finally {
+      if (!isClosed && state.usersProfile?.email == email) {
+        emit(state.copyWith(horseManageInProgress: false));
+      }
+    }
+  }
+
   /* **************************************************************************
 
 ******************************* Skill Tree **********************************
@@ -2885,10 +2971,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Reissues a legacy message as a connection requiring fresh consent.
-  Future<void> acceptRequest({
-    required Message message,
-    required BuildContext context,
-  }) async {
+  Future<void> acceptRequest({required Message message}) async {
     if (message.messageType == MessageType.TRANSFER_HORSE_REQUEST) {
       _handleTransferHorseRequest();
       return;
@@ -2958,10 +3041,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Deny/Decline a pending request message and convert it to a chat entry
-  Future<void> denyRequest({
-    required Message message,
-    required BuildContext context,
-  }) async {
+  Future<void> denyRequest({required Message message}) async {
     // No repository side-effects beyond updating the message to a normal chat
     try {
       String denialText;

@@ -79,6 +79,8 @@ class AppState extends Equatable {
     this.conversation,
     this.trainingPath,
     this.horseProfile,
+    this.horseManageInProgress = false,
+    this.horseManageHorseId,
     this.isEdit = true,
     this.conversations,
     this.ownersProfile,
@@ -258,6 +260,15 @@ class AppState extends Equatable {
   /// The HorseProfile being viewed.
   final HorseProfile? horseProfile;
 
+  /// Whether a horse-management action (sale listing / transfer / invite) is
+  /// currently in progress.
+  ///
+  /// This lets UI disable controls without local setState.
+  final bool horseManageInProgress;
+
+  /// The horse ID currently being managed when [horseManageInProgress] is true.
+  final String? horseManageHorseId;
+
   /// The RiderProfile being viewed.
   final RiderProfile? viewingProfile;
 
@@ -338,6 +349,8 @@ class AppState extends Equatable {
     TrainingPath? trainingPath,
     List<Resource>? resources,
     HorseProfile? horseProfile,
+    bool? horseManageInProgress,
+    String? horseManageHorseId,
     RiderProfile? usersProfile,
     AcceptStatus? acceptStatus,
     Conversation? conversation,
@@ -391,6 +404,9 @@ class AppState extends Equatable {
       trainingPath: trainingPath ?? this.trainingPath,
       errorMessage: errorMessage ?? this.errorMessage,
       horseProfile: horseProfile ?? this.horseProfile,
+      horseManageInProgress:
+          horseManageInProgress ?? this.horseManageInProgress,
+      horseManageHorseId: horseManageHorseId ?? this.horseManageHorseId,
       usersProfile: clearUsersProfile
           ? null
           : usersProfile ?? this.usersProfile,
@@ -457,6 +473,8 @@ class AppState extends Equatable {
     trainingPath,
     errorMessage,
     horseProfile,
+    horseManageInProgress,
+    horseManageHorseId,
     usersProfile,
     conversations,
     ownersProfile,

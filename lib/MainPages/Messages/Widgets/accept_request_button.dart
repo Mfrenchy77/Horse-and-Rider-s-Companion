@@ -8,21 +8,17 @@ class AcceptRequestButton extends StatelessWidget {
   final Message message;
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        final isAccepted = message.requestItem?.isSelected ?? false;
-        return FilledButton(
-          onPressed: isAccepted || state.acceptStatus == AcceptStatus.loading
-              ? null
-              : () {
-                  cubit.acceptRequest(message: message, context: context);
-                },
-          child: state.acceptStatus == AcceptStatus.loading
-              ? const CircularProgressIndicator()
-              : Text(isAccepted ? 'Accepted' : 'Send connection request'),
-        );
-      },
+    final cubit = context.read<AppCubit>();
+    final acceptStatus = context.select((AppCubit c) => c.state.acceptStatus);
+    final isAccepted = message.requestItem?.isSelected ?? false;
+
+    return FilledButton(
+      onPressed: isAccepted || acceptStatus == AcceptStatus.loading
+          ? null
+          : () => cubit.acceptRequest(message: message),
+      child: acceptStatus == AcceptStatus.loading
+          ? const CircularProgressIndicator()
+          : Text(isAccepted ? 'Accepted' : 'Send connection request'),
     );
   }
 }

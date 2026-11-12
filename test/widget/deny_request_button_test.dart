@@ -39,7 +39,6 @@ class TestAppCubit extends AppCubit {
   @override
   Future<void> denyRequest({
     required Message message,
-    required BuildContext context,
   }) async {
     lastDenied = message;
     // keep state as waiting; just verify call

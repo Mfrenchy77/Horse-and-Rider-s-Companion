@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
@@ -17,6 +18,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_fl
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/classic_blue_gray.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:super_banners/super_banners.dart';
 
@@ -420,6 +422,27 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('Classic Blue Gray gradient fills the profile app bar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: mainThemeLight,
+        home: Scaffold(appBar: ThemedAppBar(title: const Text('My profile'))),
+      ),
+    );
+
+    final gradient = find.byWidgetPredicate(
+      (widget) =>
+          widget is DecoratedBox &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration as BoxDecoration).gradient ==
+              ClassicBlueGray.appBar,
+    );
+    expect(gradient, findsOneWidget);
+    expect(tester.getSize(gradient), tester.getSize(find.byType(ThemedAppBar)));
+  });
 
   testWidgets(
     'selected theme supplies the card gradient and semantic colors win',

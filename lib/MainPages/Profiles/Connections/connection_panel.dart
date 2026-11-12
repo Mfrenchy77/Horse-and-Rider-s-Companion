@@ -1,13 +1,15 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
-class ConnectionPanel extends StatefulWidget {
+class ConnectionPanel extends StatelessWidget {
   const ConnectionPanel({super.key, this.rider, this.horse})
     : assert((rider == null) != (horse == null), 'Choose one profile.');
 
@@ -15,104 +17,17 @@ class ConnectionPanel extends StatefulWidget {
   final HorseProfile? horse;
 
   @override
-  State<ConnectionPanel> createState() => _ConnectionPanelState();
-}
-
-class _ConnectionPanelState extends State<ConnectionPanel> {
-  bool _saving = false;
-  String? _feedback;
-
-  Future<void> _submit(Map<String, Object?> data) async {
-    if (_saving) return;
-    setState(() {
-      _saving = true;
-      _feedback = null;
-    });
-    String feedback;
-    try {
-      final result = await context.read<ConnectionRepository>().submit(data);
-      feedback = switch (data['action']) {
-        'send' when result['incoming'] == true =>
-          'Review the existing incoming request.',
-        'send' when result['status'] == 'accepted' =>
-          'This connection is already active.',
-        'send' => 'Request sent.',
-        'accept' when data['transfer'] == true => 'Ownership transferred.',
-        _ => 'Connection updated.',
-      };
-    } on ConnectionFailure catch (error) {
-      feedback = error.message;
-    } catch (_) {
-      feedback = 'The request could not be saved. Try again.';
-    }
-    if (!mounted) return;
-    setState(() {
-      _saving = false;
-      _feedback = feedback;
-    });
-  }
-
-  void _request({String? learner, required String coach}) {
-    _submit({
-      'action': 'send',
-      'kind': widget.horse == null ? 'rider' : 'horse',
-      'learnerEmail': learner,
-      'coachEmail': coach,
-      if (widget.horse != null) 'horseId': widget.horse!.id,
-    });
-  }
-
-  void _change(CoachingConnection link, String action) => _submit({
-    'action': action,
-    'id': link.id,
-    'version': link.version,
-    if (link.kind == 'transfer') 'transfer': true,
-  });
-
-  void _record(CoachingConnection link) {
-    if (link.kind == 'rider') {
-      RiderLogbookPage.addLessonFor(context, link);
-      return;
-    }
-    final repository = context.read<ConnectionRepository>();
-    final skills = context
-        .read<AppCubit>()
-        .state
-        .allSkills
-        .whereType<Skill>()
-        .where((skill) => skill.rider == (link.kind == 'rider'))
-        .toList();
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _TrainingRecordDialog(
-        skills: skills,
-        link: link,
-        repository: repository,
-      ),
-    );
-  }
-
-  void _history(CoachingConnection link) {
-    final repository = context.read<ConnectionRepository>();
-    showDialog<void>(
-      context: context,
-      builder: (_) => _ConnectionHistory(link: link, repository: repository),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppCubit>().state;
-    final profile = app.usersProfile;
+    final isGuest = context.select((AppCubit c) => c.state.isGuest);
+    final profile = context.select((AppCubit c) => c.state.usersProfile);
     final cubit = context.watch<ConnectionsCubit?>();
     final state = cubit?.state;
-    if (app.isGuest || profile == null || state == null) {
+    if (isGuest || profile == null || state == null) {
       return const SizedBox.shrink();
     }
     final email = profile.email.toLowerCase();
-    final horse = widget.horse;
-    final rider = widget.rider;
+    final horse = this.horse;
+    final rider = this.rider;
     final ownProfile = rider?.email.toLowerCase() == email;
     final horseOwner = horse?.currentOwnerId.toLowerCase() == email;
     final isTrainer = profile.isTrainer ?? false;
@@ -140,6 +55,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     final pending = links
         .where((link) => link.status == 'pending' && link.recipient == email)
         .length;
+
+    final saving = state.actionInProgress;
+
     final actions = <Widget>[
       if (horse != null &&
           !horse.isArchived &&
@@ -147,7 +65,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
           isTrainer &&
           !links.any((link) => link.kind == 'horse'))
         OutlinedButton(
-          onPressed: _saving ? null : () => _request(coach: profile.email),
+          onPressed: saving
+              ? null
+              : () => cubit?.request(coach: profile.email, horseId: horse.id),
           child: const Text('Request to train horse'),
         ),
       if (rider != null &&
@@ -155,9 +75,10 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
           (rider.isTrainer ?? false) &&
           !links.any((link) => link.learner == email))
         OutlinedButton(
-          onPressed: _saving
+          onPressed: saving
               ? null
-              : () => _request(learner: profile.email, coach: rider.email),
+              : () =>
+                    cubit?.request(learner: profile.email, coach: rider.email),
           child: const Text('Request instructor'),
         ),
       if (rider != null &&
@@ -165,13 +86,17 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
           isTrainer &&
           !links.any((link) => link.coach == email))
         OutlinedButton(
-          onPressed: _saving
+          onPressed: saving
               ? null
-              : () => _request(learner: rider.email, coach: profile.email),
+              : () =>
+                    cubit?.request(learner: rider.email, coach: profile.email),
           child: const Text('Invite as student'),
         ),
     ];
-    if (!ownProfile && actions.isEmpty && links.isEmpty && _feedback == null) {
+    if (!ownProfile &&
+        actions.isEmpty &&
+        links.isEmpty &&
+        state.actionFeedback == null) {
       return const SizedBox.shrink();
     }
 
@@ -204,9 +129,10 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
               ),
             if (ownProfile && !state.loading && !state.error && links.isEmpty)
               const Text('No active connections or pending requests.'),
-            for (final link in links) _connection(context, link, email),
-            if (_feedback != null)
-              Semantics(liveRegion: true, child: Text(_feedback!)),
+            for (final link in links)
+              _connection(context, link, email, saving, cubit!, horse),
+            if (state.actionFeedback != null)
+              Semantics(liveRegion: true, child: Text(state.actionFeedback!)),
           ],
         ),
       ),
@@ -217,6 +143,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     BuildContext context,
     CoachingConnection link,
     String email,
+    bool saving,
+    ConnectionsCubit cubit,
+    HorseProfile? horse,
   ) {
     final incoming = link.recipient == email;
     final active = link.status == 'accepted';
@@ -256,28 +185,40 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
           children: [
             if (!active && incoming) ...[
               FilledButton(
-                onPressed: _saving || (widget.horse?.isArchived ?? false)
+                onPressed: saving || (horse?.isArchived ?? false)
                     ? null
-                    : () => _change(link, 'accept'),
+                    : () => cubit.change(link, 'accept'),
                 child: Text(
                   link.kind == 'transfer' ? 'Accept transfer' : 'Accept',
                 ),
               ),
               TextButton(
-                onPressed: _saving ? null : () => _change(link, 'decline'),
+                onPressed: saving ? null : () => cubit.change(link, 'decline'),
                 child: const Text('Decline'),
               ),
             ],
             if (!active && !incoming)
               TextButton(
-                onPressed: _saving ? null : () => _change(link, 'cancel'),
+                onPressed: saving ? null : () => cubit.change(link, 'cancel'),
                 child: const Text('Cancel request'),
               ),
             if (active && email == link.coach)
               FilledButton(
-                onPressed: _saving || (widget.horse?.isArchived ?? false)
+                onPressed: saving || (horse?.isArchived ?? false)
                     ? null
-                    : () => _record(link),
+                    : () {
+                        if (link.kind == 'rider') {
+                          RiderLogbookPage.addLessonFor(context, link);
+                          return;
+                        }
+                        final skills = cubit.skillsFor(link);
+                        showAppDialog<void>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) =>
+                              _TrainingRecordDialog(skills: skills, link: link),
+                        );
+                      },
                 child: Text(
                   link.kind == 'rider'
                       ? 'Add lesson record'
@@ -286,14 +227,21 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
               ),
             if (active && (email == link.coach || link.kind == 'horse'))
               TextButton(
-                onPressed: _saving ? null : () => _history(link),
+                onPressed: saving
+                    ? null
+                    : () {
+                        showAppDialog<void>(
+                          context: context,
+                          builder: (_) => _ConnectionHistory(link: link),
+                        );
+                      },
                 child: Text(
                   link.kind == 'rider' ? 'Lesson history' : 'Horse history',
                 ),
               ),
             if (active)
               TextButton(
-                onPressed: _saving ? null : () => _change(link, 'revoke'),
+                onPressed: saving ? null : () => cubit.change(link, 'revoke'),
                 child: const Text('End connection'),
               ),
           ],
@@ -304,15 +252,10 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
 }
 
 class _TrainingRecordDialog extends StatefulWidget {
-  const _TrainingRecordDialog({
-    required this.skills,
-    required this.link,
-    required this.repository,
-  });
+  const _TrainingRecordDialog({required this.skills, required this.link});
 
   final List<Skill> skills;
   final CoachingConnection link;
-  final ConnectionRepository repository;
 
   @override
   State<_TrainingRecordDialog> createState() => _TrainingRecordDialogState();
@@ -333,15 +276,13 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
       _error = null;
     });
     try {
-      await widget.repository.submit({
-        'action': 'record',
-        'recordId': _recordId,
-        'id': widget.link.id,
-        'version': widget.link.version,
-        'notes': _notes,
-        if (_skillId != null) 'skillId': _skillId,
-        if (_skillId != null) 'level': _level,
-      });
+      await context.read<ConnectionsCubit>().recordTraining(
+        link: widget.link,
+        recordId: _recordId,
+        notes: _notes,
+        skillId: _skillId,
+        level: _level,
+      );
       if (mounted) Navigator.pop(context);
     } catch (error) {
       if (!mounted) return;
@@ -357,67 +298,63 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
-    child: AlertDialog(
+    child: OceanCoralAppDialog(
       scrollable: true,
       title: Text(
         widget.link.kind == 'rider'
             ? 'Add lesson record'
             : 'Add training record',
       ),
-      content: SizedBox(
-        width: 440,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              enabled: !_saving,
-              decoration: const InputDecoration(labelText: 'Notes'),
-              minLines: 3,
-              maxLines: 6,
-              maxLength: 4000,
-              onChanged: (value) => setState(() => _notes = value.trim()),
-            ),
-            if (widget.skills.isNotEmpty)
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Skill progress (optional)',
-                ),
-                onChanged: _saving
-                    ? null
-                    : (value) => setState(() => _skillId = value),
-                items: [
-                  const DropdownMenuItem<String>(
-                    child: Text('No skill update'),
-                  ),
-                  for (final skill in widget.skills)
-                    DropdownMenuItem(
-                      value: skill.id,
-                      child: Text(
-                        skill.skillName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
+      maxWidth: 520,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            enabled: !_saving,
+            decoration: const InputDecoration(labelText: 'Notes'),
+            minLines: 3,
+            maxLines: 6,
+            maxLength: 4000,
+            onChanged: (value) => setState(() => _notes = value.trim()),
+          ),
+          if (widget.skills.isNotEmpty)
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Skill progress (optional)',
               ),
-            if (_skillId != null)
-              DropdownButtonFormField<String>(
-                initialValue: _level,
-                decoration: const InputDecoration(labelText: 'Progress'),
-                items: const [
-                  DropdownMenuItem(value: 'LEARNING', child: Text('Learning')),
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() => _skillId = value),
+              items: [
+                const DropdownMenuItem<String>(child: Text('No skill update')),
+                for (final skill in widget.skills)
                   DropdownMenuItem(
-                    value: 'PROFICIENT',
-                    child: Text('Proficient'),
+                    value: skill.id,
+                    child: Text(
+                      skill.skillName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ],
-                onChanged: _saving
-                    ? null
-                    : (value) => setState(() => _level = value!),
-              ),
-            if (_error != null) Text(_error!),
-          ],
-        ),
+              ],
+            ),
+          if (_skillId != null)
+            DropdownButtonFormField<String>(
+              initialValue: _level,
+              decoration: const InputDecoration(labelText: 'Progress'),
+              items: const [
+                DropdownMenuItem(value: 'LEARNING', child: Text('Learning')),
+                DropdownMenuItem(
+                  value: 'PROFICIENT',
+                  child: Text('Proficient'),
+                ),
+              ],
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() => _level = value!),
+            ),
+          if (_error != null) Text(_error!),
+        ],
       ),
       actions: [
         TextButton(
@@ -434,10 +371,9 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
 }
 
 class _ConnectionHistory extends StatefulWidget {
-  const _ConnectionHistory({required this.link, required this.repository});
+  const _ConnectionHistory({required this.link});
 
   final CoachingConnection link;
-  final ConnectionRepository repository;
 
   @override
   State<_ConnectionHistory> createState() => _ConnectionHistoryState();
@@ -446,24 +382,13 @@ class _ConnectionHistory extends StatefulWidget {
 class _ConnectionHistoryState extends State<_ConnectionHistory> {
   late Future<List<BaseListItem>> _entries = _load();
 
-  Future<List<BaseListItem>> _load() => widget.repository.history(
-    widget.link.kind == 'rider'
-        ? {
-            'action': 'studentHistory',
-            'id': widget.link.id,
-            'version': widget.link.version,
-          }
-        : {
-            'action': 'horseHistory',
-            'horseId': widget.link.horseId,
-            'includeTrainingNotes': true,
-          },
-  );
+  Future<List<BaseListItem>> _load() =>
+      context.read<ConnectionsCubit>().historyFor(widget.link);
 
   Future<void> _delete(BaseListItem entry) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => OceanCoralAppDialog(
         title: const Text('Delete this lesson?'),
         content: const Text('It will be removed from both logbooks.'),
         actions: [
@@ -480,12 +405,11 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
     );
     if (!mounted || !(confirmed ?? false)) return;
     try {
-      await widget.repository.submit({
-        'action': 'deleteLesson',
-        'id': widget.link.id,
-        'version': widget.link.version,
-        'entryId': entry.id,
-      });
+      final ok = await context.read<ConnectionsCubit>().deleteLesson(
+        link: widget.link,
+        entryId: entry.id ?? '',
+      );
+      if (!ok) throw StateError('delete failed');
       if (mounted) setState(() => _entries = _load());
     } catch (_) {
       if (mounted) {
@@ -497,11 +421,12 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
+  Widget build(BuildContext context) => OceanCoralAppDialog(
     scrollable: true,
     title: Text(
       widget.link.kind == 'rider' ? 'Lesson history' : 'Horse history',
     ),
+    maxWidth: 620,
     content:
         context.watch<ConnectionsCubit?>()?.state.connections.any(
               (link) =>

@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
@@ -121,17 +122,9 @@ class ResourceRatingButtons extends StatelessWidget {
               child: IconButton(
                 tooltip: 'Associated skills',
                 onPressed: () {
-                  // Open without the default fade/shadow-heavy dialog route.
-                  // Some WebGL renderers fail compiling those generated Skia
-                  // shaders; the skills panel itself supplies its surface.
-                  showGeneralDialog<void>(
+                  showAppDialog<void>(
                     context: context,
-                    barrierDismissible: true,
-                    barrierLabel: 'Close associated skills',
-                    barrierColor: Colors.transparent,
-                    transitionDuration: Duration.zero,
-                    pageBuilder: (_, _, _) =>
-                        UpdateResourceSkills(resource: resource),
+                    builder: (_) => UpdateResourceSkills(resource: resource),
                   );
                 },
                 icon: state.horseProfile == null
@@ -152,7 +145,7 @@ class ResourceRatingButtons extends StatelessWidget {
                   switch (value) {
                     case 'Report':
                       debugPrint('Report: ${resource.name}');
-                      showDialog<AlertDialog>(
+                      showAppDialog<void>(
                         context: context,
                         builder: (context) => const SupportMessageDialog(),
                       );

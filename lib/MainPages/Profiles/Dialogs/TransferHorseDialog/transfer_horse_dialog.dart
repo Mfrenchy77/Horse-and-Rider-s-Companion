@@ -6,6 +6,7 @@ import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/TransferHorseDialog/cubit/transfer_horse_cubit.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class TransferHorseDialog extends StatelessWidget {
@@ -87,8 +88,9 @@ class TransferHorseDialog extends StatelessWidget {
                         state.message,
                         style: const TextStyle(color: Colors.white),
                       ),
-                      backgroundColor:
-                          HorseAndRidersTheme().getTheme().primaryColor,
+                      backgroundColor: HorseAndRidersTheme()
+                          .getTheme()
+                          .primaryColor,
                     ),
                   ).closed.then((value) {
                     if (!context.mounted) return;
@@ -100,7 +102,8 @@ class TransferHorseDialog extends StatelessWidget {
           child: BlocBuilder<TransferHorseCubit, TransferHorseState>(
             builder: (context, state) {
               final cubit = context.read<TransferHorseCubit>();
-              return AlertDialog(
+              return OceanCoralAppDialog(
+                scrollable: true,
                 title: Text('Transfer: ${state.horseProfile?.name}'),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -166,8 +169,9 @@ class TransferHorseDialog extends StatelessWidget {
                     child: const Text('Cancel'),
                   ),
                   TextButton(
-                    onPressed:
-                        state.isTransferable ? cubit.sendTransferRequest : null,
+                    onPressed: state.isTransferable
+                        ? cubit.sendTransferRequest
+                        : null,
                     child: state.status == TransferHorseStatus.sending
                         ? const CircularProgressIndicator()
                         : const Text('Transfer'),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/centimeter_picker_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/hands_picker_dialog.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -31,12 +33,12 @@ class HorseHeightField extends StatelessWidget {
         hintText: "Enter Horse's Height",
         icon: Icon(HorseAndRiderIcons.ruler),
       ),
-      onTap: () => showDialog<AlertDialog>(
+      onTap: () => showAppDialog<void>(
         context: context,
         builder: (dialogContext) {
           return BlocProvider.value(
             value: BlocProvider.of<AddHorseDialogCubit>(context),
-            child: AlertDialog(
+            child: OceanCoralAppDialog(
               title: Text('Select Height in '
                   '${isHeightinHands ? 'Hands' : 'Centimeters'}'),
               content: isHeightinHands

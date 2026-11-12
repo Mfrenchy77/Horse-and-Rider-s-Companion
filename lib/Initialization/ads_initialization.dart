@@ -5,10 +5,8 @@ class AdsInitialization {
   static Future<void> initializeAds() async {
     try {
       debugPrint('defaultTargetPlatform: $defaultTargetPlatform');
-      if (kIsWeb) {
-        debugPrint('Launching Ads on WEB');
-        // Implement web-specific ads initialization here
-      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+      if (kIsWeb) return; // AdSense is initialized by the web entry point.
+      if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.android) {
         debugPrint('Launching Ads on Mobile');
         await MobileAds.instance.initialize();

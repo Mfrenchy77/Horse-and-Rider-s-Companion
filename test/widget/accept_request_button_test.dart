@@ -39,7 +39,6 @@ class TestAppCubit extends AppCubit {
   @override
   Future<void> acceptRequest({
     required Message message,
-    required BuildContext context,
   }) async {
     lastAccepted = message;
     emit(state.copyWith(acceptStatus: AcceptStatus.accepted));

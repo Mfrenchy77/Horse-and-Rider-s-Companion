@@ -2,9 +2,13 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:intl/intl.dart';
 
@@ -29,12 +33,23 @@ class RiderLogbookPage extends StatefulWidget {
   }) async {
     final profile = context.read<AppCubit>().state.usersProfile;
     if (profile == null) return;
+
+    // This editor can be opened from outside
+    // RiderLogbookPage (e.g. Connections).
+    // Provide LogbookCubit at the route level so the editor does not depend on
+    // ancestor pages.
     await Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
-        builder: (_) => _LogEntryEditor(
-          email: profile.email,
-          initialStudent: student,
-          entry: entry,
+        builder: (_) => BlocProvider(
+          create: (ctx) => LogbookCubit(
+            connectionRepository: ctx.read<ConnectionRepository?>(),
+            riderProfileRepository: ctx.read<RiderProfileRepository>(),
+          ),
+          child: _LogEntryEditor(
+            email: profile.email,
+            initialStudent: student,
+            entry: entry,
+          ),
         ),
       ),
     );
@@ -108,43 +123,41 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   }
 
   Future<void> _openEntry(BaseListItem entry) async {
-    final action = await showDialog<String>(
+    final action = await showAppDialog<String>(
       context: context,
       builder: (_) => BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
           final rider = _owner(state, widget.email);
           if (rider == null) {
-            return const AlertDialog(content: Text('Logbook unavailable.'));
+            return const OceanCoralAppDialog(
+              content: Text('Logbook unavailable.'),
+            );
           }
           final info = entry.riderLog;
           final attribution = _entryAttribution(entry, rider);
-          return AlertDialog(
+          return OceanCoralAppDialog(
             scrollable: true,
             title: Text(info?.title ?? entry.riderLogType.label),
-            content: SizedBox(
-              width: 480,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${entry.riderLogType.label} · ${_dateLabel(entry.date)}',
-                  ),
-                  if (attribution != null) Text(attribution),
-                  if (info?.instructor != null)
-                    _EntryField(label: 'Instructor', value: info!.instructor!),
-                  if (entry.riderLogType == RiderLogType.show &&
-                      info?.placing != null)
-                    _EntryField(label: 'Placing', value: info!.placing!),
-                  if (info?.horse != null)
-                    _EntryField(label: 'Horse', value: info!.horse!),
-                  if (info?.focus != null)
-                    _EntryField(label: 'Work / focus', value: info!.focus!),
-                  if (entry.name?.trim().isNotEmpty ?? false)
-                    _EntryField(label: 'Notes', value: entry.name!),
-                  if (info?.nextSteps != null)
-                    _EntryField(label: 'Next steps', value: info!.nextSteps!),
-                ],
-              ),
+            maxWidth: 560,
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${entry.riderLogType.label} · ${_dateLabel(entry.date)}'),
+                if (attribution != null) Text(attribution),
+                if (info?.instructor != null)
+                  _EntryField(label: 'Instructor', value: info!.instructor!),
+                if (entry.riderLogType == RiderLogType.show &&
+                    info?.placing != null)
+                  _EntryField(label: 'Placing', value: info!.placing!),
+                if (info?.horse != null)
+                  _EntryField(label: 'Horse', value: info!.horse!),
+                if (info?.focus != null)
+                  _EntryField(label: 'Work / focus', value: info!.focus!),
+                if (entry.name?.trim().isNotEmpty ?? false)
+                  _EntryField(label: 'Notes', value: entry.name!),
+                if (info?.nextSteps != null)
+                  _EntryField(label: 'Next steps', value: info!.nextSteps!),
+              ],
             ),
             actions: [
               TextButton(
@@ -173,9 +186,9 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   }
 
   Future<void> _deleteEntry(BaseListItem entry) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => OceanCoralAppDialog(
         title: const Text('Delete this entry?'),
         content: const Text('A shared entry is removed from both logbooks.'),
         actions: [
@@ -192,11 +205,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
     );
     if (!mounted || !(confirmed ?? false)) return;
     try {
-      await context.read<ConnectionRepository>().submit({
-        'action': 'deleteJournal',
-        'id': entry.id,
-        'shared': entry.riderLog?.shared ?? false,
-      });
+      await context.read<LogbookCubit>().deleteEntry(entry);
     } catch (error) {
       if (!mounted) return;
       final message = error is ConnectionFailure
@@ -210,39 +219,42 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final rider = _owner(state, widget.email);
-        return Scaffold(
-          appBar: AppBar(title: const Text('Rider logbook')),
-          body: SafeArea(
-            child: rider == null
-                ? Center(
-                    child: state.pageStatus == AppPageStatus.loading
-                        ? const CircularProgressIndicator()
-                        : const Text('Your rider logbook is unavailable.'),
-                  )
-                : Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 840),
-                      child: StreamBuilder<List<BaseListItem>>(
-                        key: ValueKey(state.user.id),
-                        stream: _journalFor(context, state.user.id),
-                        builder: (context, snapshot) => _timeline(
-                          context,
-                          rider,
-                          snapshot.data ?? const [],
-                          sharedError: snapshot.hasError,
-                          sharedLoading:
-                              snapshot.connectionState ==
-                              ConnectionState.waiting,
-                        ),
+    final state = context.watch<AppCubit>().state;
+    final rider = _owner(state, widget.email);
+
+    return BlocProvider(
+      create: (context) => LogbookCubit(
+        connectionRepository: context.read<ConnectionRepository?>(),
+        riderProfileRepository: context.read<RiderProfileRepository>(),
+      ),
+      child: Scaffold(
+        appBar: ThemedAppBar(title: const Text('Rider logbook')),
+        body: SafeArea(
+          child: rider == null
+              ? Center(
+                  child: state.pageStatus == AppPageStatus.loading
+                      ? const CircularProgressIndicator()
+                      : const Text('Your rider logbook is unavailable.'),
+                )
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 840),
+                    child: StreamBuilder<List<BaseListItem>>(
+                      key: ValueKey(state.user.id),
+                      stream: _journalFor(context, state.user.id),
+                      builder: (context, snapshot) => _timeline(
+                        context,
+                        rider,
+                        snapshot.data ?? const [],
+                        sharedError: snapshot.hasError,
+                        sharedLoading:
+                            snapshot.connectionState == ConnectionState.waiting,
                       ),
                     ),
                   ),
-          ),
-        );
-      },
+                ),
+        ),
+      ),
     );
   }
 
@@ -532,24 +544,19 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     });
     if (student == null) return;
     try {
-      final result = await context.read<ConnectionRepository>().submit({
-        'action': 'horseOptions',
-        'id': student.id,
-        'version': student.version,
-      });
+      final previous = widget.entry?.riderLog;
+      final horses = await context
+          .read<LogbookCubit>()
+          .fetchStudentHorseOptions(
+            student,
+            preserveHorseId: preserveHorse ? previous?.horseId : null,
+            preserveHorseName: preserveHorse
+                ? (previous?.horse ?? previous?.horseId)
+                : null,
+          );
       if (!mounted || _horseRequest != request) return;
       setState(() {
-        _studentHorses = {
-          for (final horse in result['horses'] as List)
-            'horse:${(horse as Map)['id']}': horse['name'] as String,
-        };
-        final previous = widget.entry?.riderLog;
-        if (preserveHorse && previous?.horseId != null) {
-          _studentHorses.putIfAbsent(
-            'horse:${previous!.horseId}',
-            () => previous.horse ?? previous.horseId!,
-          );
-        }
+        _studentHorses = horses;
         _loadingHorses = false;
       });
     } catch (_) {
@@ -603,26 +610,25 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           : null;
       final student = _type == RiderLogType.lesson ? _student : null;
       if (student != null) {
-        await context.read<ConnectionRepository>().submit({
-          'action': widget.entry == null ? 'record' : 'editLesson',
-          if (widget.entry != null) 'entryId': widget.entry!.id,
-          'id': student.id,
-          'version': student.version,
-          'recordId': _id,
-          'notes': _notes.text.trim(),
-          'horseId': horseId,
-          'horse': _horseChoice == 'other' ? value(_horse) : null,
-          'date': _date?.toUtc().toIso8601String(),
-          'title': value(_title),
-          'focus': value(_focus),
-          'nextSteps': value(_nextSteps),
-          'skillId': _skillId,
-          'level': _level,
-        });
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved to the student’s logbook.')),
+        final message = await context.read<LogbookCubit>().saveStudentLesson(
+          student: student,
+          recordId: _id,
+          notes: _notes.text.trim(),
+          isEdit: widget.entry != null,
+          entryId: widget.entry?.id,
+          horseId: horseId,
+          horse: _horseChoice == 'other' ? value(_horse) : null,
+          date: _date,
+          title: value(_title),
+          focus: value(_focus),
+          nextSteps: value(_nextSteps),
+          skillId: _skillId,
+          level: _level,
         );
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
         Navigator.of(context).pop();
         return;
       }
@@ -640,22 +646,17 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       );
       final shared = widget.entry?.riderLog?.shared ?? false;
       if (horseId != null || shared) {
-        final repository = context.read<ConnectionRepository?>();
-        if (repository == null) {
-          throw const ConnectionFailure('Shared logbook unavailable.');
-        }
-        await repository.submit({
-          'action': 'saveJournal',
-          'id': _id,
-          'isEdit': widget.entry != null,
-          'shared': shared,
-          'date': _date?.toUtc().toIso8601String(),
-          'notes': _notes.text.trim(),
-          ...details.toMap(),
-        });
+        await context.read<LogbookCubit>().saveSharedJournalEntry(
+          id: _id,
+          isEdit: widget.entry != null,
+          shared: shared,
+          date: _date,
+          notes: _notes.text.trim(),
+          details: details,
+        );
       } else {
-        await context.read<RiderProfileRepository>().saveRiderLogEntry(
-          email: rider.email,
+        await context.read<LogbookCubit>().saveLocalEntry(
+          rider: rider,
           isEdit: widget.entry != null,
           entry: BaseListItem(
             id: _id,
@@ -723,7 +724,7 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     return PopScope(
       canPop: !_saving,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: ThemedAppBar(
           title: Text(
             widget.entry == null ? 'Add log entry' : 'Edit log entry',
           ),

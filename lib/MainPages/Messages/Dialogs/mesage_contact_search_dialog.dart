@@ -5,29 +5,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class MesssageContactsSearchDialog extends StatelessWidget {
-  const MesssageContactsSearchDialog({
-    super.key,
-    required this.usersProfile,
-  });
+  const MesssageContactsSearchDialog({super.key, required this.usersProfile});
   final RiderProfile usersProfile;
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider(
-          create: (context) => MessagesRepository(),
-        ),
-        RepositoryProvider(
-          create: (context) => RiderProfileRepository(),
-        ),
+        RepositoryProvider(create: (context) => MessagesRepository()),
+        RepositoryProvider(create: (context) => RiderProfileRepository()),
       ],
       child: BlocProvider(
         create: (context) => NewGroupDialogCubit(
@@ -51,46 +46,37 @@ class MesssageContactsSearchDialog extends StatelessWidget {
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
                   SnackBar(
-                    content: Text(
-                      state.error,
-                      textAlign: TextAlign.center,
-                    ),
+                    content: Text(state.error, textAlign: TextAlign.center),
                     backgroundColor: Colors.red,
                   ),
-                ).closed.then(
-                      (value) => cubit.clearError(),
-                    );
+                ).closed.then((value) => cubit.clearError());
             }
           },
           child: BlocBuilder<NewGroupDialogCubit, NewGroupDialogState>(
             builder: (context, state) {
               return Scaffold(
-                backgroundColor: Colors.transparent,
-                appBar: AppBar(
-                  title: const Text(
-                    'Search for a New Message Recipient',
-                  ),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                appBar: ThemedAppBar(
+                  title: const Text('Search for a New Message Recipient'),
                 ),
-                body: AlertDialog(
-                  actions: [
-                    _cancelButton(context: context),
-                    //  _createMessageButton(state: state, context: context),
-                  ],
-                  insetPadding: const EdgeInsets.all(10),
-                  scrollable: true,
-                  content: state.status == FormStatus.submitting
-                      ? const CircularProgressIndicator()
-                      : Column(
-                          children: [
-                            _searchField(context: context, state: state),
-                            gap(),
-                            Visibility(
-                              visible: state.searchResult.isNotEmpty,
-                              child:
-                                  _resultList(context: context, state: state),
-                            ),
-                          ],
-                        ),
+                body: FormPageBody(
+                  maxWidth: 520,
+                  child: Column(
+                    children: [
+                      if (state.status == FormStatus.submitting)
+                        const Center(child: CircularProgressIndicator())
+                      else ...[
+                        _searchField(context: context, state: state),
+                        gap(),
+                        if (state.searchResult.isNotEmpty)
+                          _resultList(context: context, state: state),
+                      ],
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: _cancelButton(context: context),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -139,10 +125,7 @@ Widget _searchField({
           hintText: state.searchState == SearchState.email
               ? 'Search by email'
               : 'Search by Name',
-          hintStyle: const TextStyle(
-            color: Colors.grey,
-            fontSize: 18,
-          ),
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 18),
           suffixIcon: IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -184,34 +167,24 @@ Widget _resultList({
   required BuildContext context,
   required NewGroupDialogState state,
 }) {
-  // ignore: prefer_final_locals, omit_local_variable_types
-  double height = state.searchResult.length * 60;
-  return state.searchResult.isNotEmpty
-      ? Column(
-          children: [
-            SizedBox(
-              width: 300,
-              height: height,
-              child: ListView.builder(
-                itemCount: state.searchResult.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final searchResult = state.searchResult[index];
-                  return _resultItem(
-                    isSearch: true,
-                    context: context,
-                    profile: searchResult,
-                  );
-                },
-              ),
-            ),
-            TextButton(
-              onPressed: () =>
-                  context.read<NewGroupDialogCubit>().clearResults(),
-              child: const Text('Clear Results'),
-            ),
-          ],
-        )
-      : const Center(child: Text('No results'));
+  return Column(
+    children: [
+      ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: state.searchResult.length,
+        itemBuilder: (context, index) => _resultItem(
+          isSearch: true,
+          context: context,
+          profile: state.searchResult[index],
+        ),
+      ),
+      TextButton(
+        onPressed: context.read<NewGroupDialogCubit>().clearResults,
+        child: const Text('Clear Results'),
+      ),
+    ],
+  );
 }
 
 Widget _resultItem({
@@ -242,9 +215,7 @@ Widget _resultItem({
 //   );
 // }
 
-Widget _cancelButton({
-  required BuildContext context,
-}) {
+Widget _cancelButton({required BuildContext context}) {
   return TextButton(
     onPressed: () => Navigator.pop(context),
     child: const Text('Cancel'),

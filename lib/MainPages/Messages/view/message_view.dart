@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/message_list.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/message_text_field.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
@@ -20,7 +21,7 @@ class MessageView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         return Scaffold(
-          appBar: AppBar(
+          appBar: ThemedAppBar(
             leading: MediaQuery.of(context).size.width > 840
                 ? const SizedBox()
                 : BackButton(

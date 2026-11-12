@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
@@ -182,7 +183,7 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
             child: _loadFailure == null
                 ? const LoadingPage(key: Key('LoadingPage'))
                 : Scaffold(
-                    appBar: AppBar(
+                    appBar: ThemedAppBar(
                       title: const Text('Resource'),
                       leading: BackButton(onPressed: _goBackToResources),
                     ),
@@ -223,7 +224,7 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
           child: Stack(
             children: [
               Scaffold(
-                appBar: AppBar(
+                appBar: ThemedAppBar(
                   title: const Text('Resource Comment Page'),
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back),

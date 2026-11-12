@@ -11,6 +11,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResour
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_image.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
@@ -251,7 +252,13 @@ class ResourceInfoBar extends StatelessWidget {
                       runSpacing: 4,
                       children: [
                         for (final skill in skills)
-                          Chip(
+                          ActionChip(
+                            avatar: const Icon(Icons.link, size: 16),
+                            tooltip: 'Open ${skill.skillName} in Skill Tree',
+                            onPressed: () => SkillTreeView.openSkill(
+                              GoRouter.of(context),
+                              skill.id,
+                            ),
                             label: Text(
                               skill.skillName,
                               overflow: TextOverflow.ellipsis,

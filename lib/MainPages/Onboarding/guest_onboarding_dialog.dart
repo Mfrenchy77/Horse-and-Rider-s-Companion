@@ -67,6 +67,7 @@ class _GuestOnboardingDialogState extends State<GuestOnboardingDialog>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final dialogContent = SizedBox(
       width: 440,
       height: 360,
@@ -75,9 +76,11 @@ class _GuestOnboardingDialogState extends State<GuestOnboardingDialog>
           TabBar(
             key: const Key('guest_onboarding_tab_bar'),
             controller: _tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelColor: colors.primary,
+            unselectedLabelColor: colors.onSurfaceVariant,
+            indicatorColor: colors.primary,
             tabs: const [
               Tab(text: 'Profile'),
               Tab(text: 'Skill Tree'),
@@ -132,42 +135,25 @@ class _GuestOnboardingDialogState extends State<GuestOnboardingDialog>
           widget.onSkip?.call();
           Navigator.of(context).pop();
         },
-        style: TextButton.styleFrom(foregroundColor: Colors.white),
         child: const Text('Skip'),
       ),
       TextButton(
         key: const Key('guest_login_button'),
         onPressed: _logIn,
-        style: TextButton.styleFrom(foregroundColor: Colors.white),
         child: const Text('Log In'),
       ),
       ElevatedButton(
         key: const Key('guest_create_account_button'),
         onPressed: _createAccount,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.blue,
-        ),
         child: const Text('Create Free Account'),
       ),
     ];
-
-    if (!isOceanCoralDarkTheme(context)) {
-      return AlertDialog(
-        key: const Key('guest_onboarding_dialog'),
-        backgroundColor: Colors.blue,
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
-        contentTextStyle: const TextStyle(color: Colors.white),
-        title: const Text("Welcome! Explore Horse & Rider's Companion"),
-        content: dialogContent,
-        actions: dialogActions,
-      );
-    }
 
     return OceanCoralAppDialog(
       key: const Key('guest_onboarding_dialog'),
       title: const Text("Welcome! Explore Horse & Rider's Companion"),
       maxWidth: 640,
+      scrollable: true,
       content: dialogContent,
       actions: dialogActions,
     );
@@ -191,7 +177,7 @@ class _InfoPane extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 48, color: Colors.white),
+          Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

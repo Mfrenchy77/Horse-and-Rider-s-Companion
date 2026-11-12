@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verificatio
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -173,29 +174,31 @@ class _NavigationViewState extends State<NavigationView> {
 
         _showEmailVerificationIfNeeded(cubit);
       },
-      child: BlocBuilder<AppCubit, AppState>(
-        builder: (context, state) {
+      child: Builder(
+        builder: (context) {
+          final isForRider = context.select((AppCubit c) => c.state.isForRider);
           final screenWidth = MediaQuery.of(context).size.width;
 
           final isMedium = screenWidth >= NavigationView.mediumScreenWidth;
           final isLarge = screenWidth >= NavigationView.largeScreenWidth;
 
-          final isOceanCoralDark =
-              Theme.of(context).brightness == Brightness.dark &&
-              Theme.of(context).colorScheme.primary ==
-                  ColorConst.mainAccentDark;
+          final theme = Theme.of(context);
+          final isOceanCoralDark = isOceanCoralDarkTheme(context);
+          final gradients = theme.extension<SurfaceGradients>();
+          final railGradient = gradients?.rail;
+          final chromeGradient = gradients?.chrome;
           final Widget navigation = isMedium
               ? DecoratedBox(
-                  decoration: isOceanCoralDark
-                      ? const BoxDecoration(
-                          border: Border(
+                  decoration: BoxDecoration(
+                    gradient: railGradient,
+                    border: isOceanCoralDark
+                        ? const Border(
                             right: BorderSide(
                               color: ColorConst.dividerDarkBlueGrey,
                             ),
-                          ),
-                          gradient: OceanCoralGradients.rail,
-                        )
-                      : const BoxDecoration(),
+                          )
+                        : null,
+                  ),
                   child: NavigationRail(
                     selectedIndex: widget.child.currentIndex,
                     onDestinationSelected: (index) {
@@ -217,11 +220,11 @@ class _NavigationViewState extends State<NavigationView> {
                       ),
                     ),
                     destinations: _buildNavigationRailDestinations(
-                      isForRider: state.isForRider,
+                      isForRider: isForRider,
                     ),
-                    backgroundColor: isOceanCoralDark
+                    backgroundColor: railGradient != null
                         ? Colors.transparent
-                        : Theme.of(context).appBarTheme.backgroundColor,
+                        : theme.appBarTheme.backgroundColor,
                   ),
                 )
               : DecoratedBox(
@@ -234,7 +237,7 @@ class _NavigationViewState extends State<NavigationView> {
                             ),
                           ),
                         )
-                      : const BoxDecoration(),
+                      : BoxDecoration(gradient: chromeGradient),
                   child: BottomNavigationBar(
                     currentIndex: widget.child.currentIndex,
                     onTap: (index) {
@@ -243,15 +246,18 @@ class _NavigationViewState extends State<NavigationView> {
                       context.read<AppCubit>().changeIndex(index);
                     },
                     items: _buildBottomNavigationBarItems(
-                      isForRider: state.isForRider,
+                      isForRider: isForRider,
                     ),
-                    backgroundColor: isOceanCoralDark
+                    backgroundColor: isOceanCoralDark || chromeGradient != null
                         ? Colors.transparent
-                        : Theme.of(context).appBarTheme.backgroundColor,
-                    selectedItemColor: Colors.white,
+                        : theme.appBarTheme.backgroundColor,
+                    selectedItemColor:
+                        theme.bottomNavigationBarTheme.selectedItemColor ??
+                        Colors.white,
                     unselectedItemColor: isOceanCoralDark
                         ? ColorConst.darkMuted
-                        : Colors.grey,
+                        : theme.bottomNavigationBarTheme.unselectedItemColor ??
+                              Colors.grey,
                     elevation: 0,
                   ),
                 );

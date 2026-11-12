@@ -14,22 +14,18 @@ class DenyRequestButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        final isAccepted = message.requestItem?.isSelected ?? false;
+    final cubit = context.read<AppCubit>();
+    final isAccepted = message.requestItem?.isSelected ?? false;
 
-        return OutlinedButton(
-          key: const Key('DenyRequestButton'),
-          onPressed: isAccepted
-              ? null
-              : () {
-                  onBeforeDeny?.call();
-                  cubit.denyRequest(message: message, context: context);
-                },
-          child: const Text('Deny Request'),
-        );
-      },
+    return OutlinedButton(
+      key: const Key('DenyRequestButton'),
+      onPressed: isAccepted
+          ? null
+          : () {
+              onBeforeDeny?.call();
+              cubit.denyRequest(message: message);
+            },
+      child: const Text('Deny Request'),
     );
   }
 }

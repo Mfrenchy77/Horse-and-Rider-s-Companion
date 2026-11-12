@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_app_bar_overflow_menu.dart';
@@ -25,6 +26,9 @@ class SkillTreeView extends StatefulWidget {
   static const trainingPathViewPath = 'TrainingPath::$trainingPathPathParam';
   static const skillPathParam = 'skillId';
   static const trainingPathPathParam = 'trainingPathId';
+
+  static void openSkill(GoRouter router, String id) =>
+      router.goNamed(skillLevelName, pathParameters: {skillPathParam: id});
 
   final String? skillId;
   final String? trainingPathId;
@@ -160,7 +164,7 @@ class _SkillTreeViewState extends State<SkillTreeView> {
         );
 
         return Scaffold(
-          appBar: AppBar(
+          appBar: ThemedAppBar(
             leading: BackButton(
               onPressed: showsDetail
                   ? _closeDetail

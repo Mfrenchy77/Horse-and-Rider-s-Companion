@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_item_placeholder.dart';
@@ -20,7 +21,7 @@ class ResourcesListView extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: InkWell(
-                  onTap: () => showDialog<AlertDialog>(
+                  onTap: () => showAppDialog<void>(
                     context: context,
                     builder: (context) => const ResourcesSortDialog(
                       key: Key('resources_sort_dialog'),

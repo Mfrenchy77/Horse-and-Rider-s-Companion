@@ -2,10 +2,12 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_image.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
 class QuickShareResourcePage extends StatefulWidget {
@@ -93,12 +95,15 @@ class _QuickShareResourcePageState extends State<QuickShareResourcePage> {
         }
       },
       builder: (context, state) {
+        final theme = Theme.of(context);
         final saving = state.submitStatus == ResourceSubmitStatus.submitting;
         return PopScope(
           canPop: !saving,
           child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            appBar: AppBar(title: const Text('Add resource')),
+            backgroundColor: theme.extension<SurfaceGradients>()?.chrome != null
+                ? Colors.transparent
+                : theme.colorScheme.surface,
+            appBar: ThemedAppBar(title: const Text('Add resource')),
             body: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 /// Simple onboarding dialog with two tabs: Guest and Signed-in user.
@@ -45,7 +46,7 @@ class _OnboardingDialogState extends State<OnboardingDialog>
   }
 
   Future<void> _showCompleteProfile() async {
-    final result = await showDialog<Map<String, String>?>(
+    final result = await showAppDialog<Map<String, String>?>(
       context: context,
       builder: (context) => const _CompleteProfileDialog(),
     );

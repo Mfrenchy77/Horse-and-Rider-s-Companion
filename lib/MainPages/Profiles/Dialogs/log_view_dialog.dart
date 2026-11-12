@@ -3,6 +3,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
@@ -350,7 +351,7 @@ class AddLogEntry extends StatelessWidget {
         return FilledButton.icon(
           label: const Text('Add Log Entry'),
           onPressed: () {
-            showDialog<AddLogEntryDialog>(
+            showAppDialog<AddLogEntryDialog>(
               context: context,
               builder: (context) => AddLogEntryDialog(
                 usersProfile: state.usersProfile!,

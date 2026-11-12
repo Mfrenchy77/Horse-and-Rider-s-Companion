@@ -1,6 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/information_dialog.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
@@ -26,7 +27,7 @@ class SkillLevelProgressBar extends StatelessWidget {
                     onTap: !cubit.canWriteProfileRecords()
                         ? null
                         : () {
-                            showDialog<AlertDialog>(
+                            showAppDialog<void>(
                               context: context,
                               builder: (context) =>
                                   const SkillLevelSelectedConfimationDialog(
@@ -90,7 +91,7 @@ class SkillLevelProgressBar extends StatelessWidget {
                     onTap: !cubit.canWriteProfileRecords()
                         ? null
                         : () {
-                            showDialog<AlertDialog>(
+                            showAppDialog<void>(
                               context: context,
                               builder: (context) =>
                                   const SkillLevelSelectedConfimationDialog(

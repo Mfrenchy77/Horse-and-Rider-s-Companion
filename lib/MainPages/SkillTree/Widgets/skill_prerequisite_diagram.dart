@@ -5,6 +5,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 
 Future<void> showSkillPrerequisiteDiagramDialog({
   required BuildContext context,
@@ -17,7 +18,7 @@ Future<void> showSkillPrerequisiteDiagramDialog({
     builder: (ctx) {
       return Dialog.fullscreen(
         child: Scaffold(
-          appBar: AppBar(
+          appBar: ThemedAppBar(
             title: Text('Prerequisite Map • ${skill.skillName}'),
             actions: [
               IconButton(

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillsListView extends StatelessWidget {
@@ -34,6 +35,7 @@ class SkillsListView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final skills = state.sortedSkills;
+        final theme = Theme.of(context);
 
         return Scaffold(
           floatingActionButton: Visibility(
@@ -66,12 +68,11 @@ class SkillsListView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ColoredBox(
-                  color: HorseAndRidersTheme()
-                          .getTheme()
-                          .appBarTheme
-                          .backgroundColor ??
-                      Colors.white,
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.appBarTheme.backgroundColor ?? Colors.white,
+                    gradient: theme.extension<SurfaceGradients>()?.chrome,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -79,7 +80,7 @@ class SkillsListView extends StatelessWidget {
                         padding: const EdgeInsets.all(3),
                         child: InkWell(
                           onTap: () {
-                            showDialog<AlertDialog>(
+                            showAppDialog<void>(
                               context: context,
                               builder: (_) => const SkillSortDialog(),
                             );

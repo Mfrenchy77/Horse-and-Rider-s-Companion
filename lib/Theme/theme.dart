@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/classic_blue_gray.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 
@@ -15,74 +18,36 @@ enum ThemeSeasons {
 }
 
 class HorseAndRidersTheme {
-  ThemeData getLightTheme() => _withCardGradient(_lightTheme());
-  ThemeData getDarkTheme() => _withCardGradient(_darkTheme());
+  ThemeData getLightTheme() => _theme(isDark: false);
+  ThemeData getDarkTheme() => _theme(isDark: true);
 
   static final _gradientThemes = Expando<ThemeData>();
 
-  ThemeData _withCardGradient(ThemeData theme) =>
-      _gradientThemes[theme] ??= theme.copyWith(
-        extensions: [
-          ...theme.extensions.values,
-          CardGradientTheme.fromTheme(theme),
-        ],
-      );
-
-  ThemeData _lightTheme() {
-    // Use cached season (computed once per day) to avoid repeatedly
-    // computing the season on every rebuild.
-    final themeSeasons = getThemeSeason();
-
-    if (SharedPrefs().isSeasonalMode()) {
-      switch (themeSeasons) {
-        case ThemeSeasons.main:
-          return mainThemeLight;
-        case ThemeSeasons.halloween:
-          return halloweenTheme;
-        case ThemeSeasons.christmas:
-          return christmasTheme;
-        case ThemeSeasons.easter:
-          return easterTheme;
-        case ThemeSeasons.spring:
-          return springTheme;
-        case ThemeSeasons.summer:
-          return summerTheme;
-        case ThemeSeasons.autumn:
-          return autumnTheme;
-        case ThemeSeasons.winter:
-          return winterTheme;
-      }
-    } else {
-      return mainThemeLight;
-    }
+  ThemeData _withCardGradient(ThemeData theme) {
+    if (theme.extension<CardGradientTheme>() != null) return theme;
+    return _gradientThemes[theme] ??= theme.copyWith(
+      extensions: [
+        ...theme.extensions.values,
+        CardGradientTheme.fromTheme(theme),
+      ],
+    );
   }
 
-  ThemeData _darkTheme() {
-    // Use cached season (computed once per day) to avoid repeatedly
-    // computing the season on every rebuild.
-    final themeSeasons = getThemeSeason();
-    if (SharedPrefs().isSeasonalMode()) {
-      switch (themeSeasons) {
-        case ThemeSeasons.main:
-          return mainThemeDark;
-        case ThemeSeasons.halloween:
-          return halloweenThemeDark;
-        case ThemeSeasons.christmas:
-          return christmasThemeDark;
-        case ThemeSeasons.easter:
-          return easterThemeDark;
-        case ThemeSeasons.spring:
-          return springThemeDark;
-        case ThemeSeasons.summer:
-          return summerThemeDark;
-        case ThemeSeasons.autumn:
-          return autumnThemeDark;
-        case ThemeSeasons.winter:
-          return winterThemeDark;
-      }
-    } else {
-      return mainThemeDark;
-    }
+  ThemeData _theme({required bool isDark}) {
+    final season = SharedPrefs().isSeasonalMode()
+        ? getThemeSeason()
+        : ThemeSeasons.main;
+    final (light, dark) = switch (season) {
+      ThemeSeasons.main => (mainThemeLight, mainThemeDark),
+      ThemeSeasons.halloween => (halloweenTheme, halloweenThemeDark),
+      ThemeSeasons.christmas => (christmasTheme, christmasThemeDark),
+      ThemeSeasons.easter => (easterTheme, easterThemeDark),
+      ThemeSeasons.spring => (springTheme, springThemeDark),
+      ThemeSeasons.summer => (summerTheme, summerThemeDark),
+      ThemeSeasons.autumn => (autumnTheme, autumnThemeDark),
+      ThemeSeasons.winter => (winterTheme, winterThemeDark),
+    };
+    return _withCardGradient(isDark ? dark : light);
   }
 
   /// returns true if the theme is dark
@@ -153,46 +118,112 @@ ThemeSeasons? _cachedSeason;
 ///   Main Theme
 
 final mainThemeLight = ThemeData(
-  colorSchemeSeed: Colors.blueGrey,
+  colorScheme: ColorScheme.fromSeed(seedColor: ClassicBlueGray.coral).copyWith(
+    primary: ClassicBlueGray.coral,
+    onPrimary: Colors.white,
+    primaryContainer: ClassicBlueGray.selected,
+    onPrimaryContainer: ClassicBlueGray.selectedInk,
+    secondary: ClassicBlueGray.goldInk,
+    onSecondary: Colors.white,
+    secondaryContainer: ClassicBlueGray.gold,
+    onSecondaryContainer: ClassicBlueGray.goldInk,
+    surface: ClassicBlueGray.surface,
+    surfaceDim: ClassicBlueGray.surfaceHighest,
+    surfaceBright: ClassicBlueGray.surface,
+    surfaceContainerLowest: ClassicBlueGray.surface,
+    surfaceContainerLow: ClassicBlueGray.surfaceLow,
+    surfaceContainer: ClassicBlueGray.canvas,
+    surfaceContainerHigh: ClassicBlueGray.surfaceHigh,
+    surfaceContainerHighest: ClassicBlueGray.surfaceHighest,
+    onSurface: ClassicBlueGray.ink,
+    onSurfaceVariant: ClassicBlueGray.muted,
+    outline: ClassicBlueGray.muted,
+    outlineVariant: ClassicBlueGray.outline,
+  ),
+  primaryColor: ClassicBlueGray.chromeStart,
+  extensions: const [
+    CardGradientTheme(gradient: ClassicBlueGray.card),
+    SurfaceGradients(
+      background: ClassicBlueGray.background,
+      chrome: ClassicBlueGray.appBar,
+      rail: ClassicBlueGray.rail,
+      surface: ClassicBlueGray.card,
+    ),
+  ],
   navigationBarTheme: NavigationBarThemeData(
-    backgroundColor: ColorConst.mainPrimaryLight,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
+    backgroundColor: ClassicBlueGray.chromeStart,
+    indicatorColor: ClassicBlueGray.selected,
+    iconTheme: WidgetStateProperty.resolveWith(
+      (states) => IconThemeData(
+        color: states.contains(WidgetState.selected)
+            ? ClassicBlueGray.selectedInk
+            : Colors.white,
+      ),
     ),
     labelTextStyle: WidgetStateProperty.all(
       const TextStyle(color: Colors.white),
     ),
   ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: ColorConst.mainPrimaryLight,
-    selectedItemColor: Colors.white,
-    unselectedItemColor: Colors.grey,
+    backgroundColor: ClassicBlueGray.chromeStart,
+    selectedItemColor: ClassicBlueGray.selected,
+    unselectedItemColor: Colors.white,
   ),
-  navigationRailTheme: NavigationRailThemeData(
-    backgroundColor: ColorConst.mainPrimaryLight,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
+  navigationRailTheme: const NavigationRailThemeData(
+    backgroundColor: ClassicBlueGray.chromeStart,
+    indicatorColor: ClassicBlueGray.selected,
+    unselectedIconTheme: IconThemeData(color: Colors.white),
+    selectedLabelTextStyle: TextStyle(color: Colors.white),
+    unselectedLabelTextStyle: TextStyle(color: Colors.white),
+    selectedIconTheme: IconThemeData(
+      color: ClassicBlueGray.selectedInk,
+      size: 30,
+    ),
   ),
-  scaffoldBackgroundColor: const Color.fromARGB(255, 224, 228, 226),
+  scaffoldBackgroundColor: Colors.transparent,
   appBarTheme: const AppBarTheme(
     titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     iconTheme: IconThemeData(color: Colors.white),
+    actionsIconTheme: IconThemeData(color: Colors.white),
     toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.mainPrimaryLight,
+    backgroundColor: ClassicBlueGray.chromeStart,
+    surfaceTintColor: Colors.transparent,
+    scrolledUnderElevation: 0,
   ),
-  cardColor: const Color.fromARGB(255, 186, 200, 197),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.mainBackgroundLight,
+  chipTheme: ChipThemeData(
+    backgroundColor: ClassicBlueGray.surface,
+    selectedColor: ClassicBlueGray.selected,
+    side: const BorderSide(color: ClassicBlueGray.outline),
+    checkmarkColor: ClassicBlueGray.selectedInk,
+    labelStyle: TextStyle(
+      color: WidgetStateColor.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? ClassicBlueGray.muted
+            : states.contains(WidgetState.selected)
+            ? ClassicBlueGray.selectedInk
+            : ClassicBlueGray.ink,
+      ),
+    ),
   ),
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.mainBackgroundLight,
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: ClassicBlueGray.coral,
+    foregroundColor: Colors.white,
   ),
+  cardColor: ClassicBlueGray.surface,
+  cardTheme: const CardThemeData(color: ClassicBlueGray.surface),
+  dialogTheme: const DialogThemeData(backgroundColor: ClassicBlueGray.surface),
+  drawerTheme: const DrawerThemeData(backgroundColor: ClassicBlueGray.surface),
 );
 
 final mainThemeDark = ThemeData(
   brightness: Brightness.dark,
+  extensions: const [
+    SurfaceGradients(
+      background: OceanCoralGradients.background,
+      rail: OceanCoralGradients.rail,
+      surface: OceanCoralGradients.surface,
+    ),
+  ],
   colorScheme:
       ColorScheme.fromSeed(
         seedColor: ColorConst.mainAccentDark,
@@ -304,480 +335,230 @@ final mainThemeDark = ThemeData(
   ),
 );
 
-///     Spring Theme
-
-final springTheme = ThemeData(
-  colorSchemeSeed: ColorConst.springPrimaryLight,
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.springAccentLight,
-    backgroundColor: ColorConst.springPrimaryLight,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.springAccentLight,
-    backgroundColor: ColorConst.springPrimaryLight,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-  ),
-  scaffoldBackgroundColor: ColorConst.springBackgroundLight,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.springPrimaryLight,
-  ),
-  cardColor: ColorConst.springBackgroundLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.springBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.springBackgroundLight,
-  ),
+final springTheme = _seasonalTheme(
+  primary: ColorConst.springPrimaryLight,
+  accent: ColorConst.springAccentLight,
+  base: ColorConst.springBackgroundLight,
 );
 
-final springThemeDark = ThemeData(
-  colorSchemeSeed: ColorConst.springPrimaryDark,
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.springAccentDark,
-    backgroundColor: ColorConst.springPrimaryDark,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.springAccentDark,
-    backgroundColor: ColorConst.springPrimaryDark,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-  ),
+final springThemeDark = _seasonalTheme(
+  primary: ColorConst.springPrimaryDark,
+  accent: ColorConst.springAccentDark,
+  base: ColorConst.springBackgroundDark,
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: ColorConst.springBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.springPrimaryDark,
-  ),
-  cardColor: ColorConst.springBackgroundDark,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.springBackgroundDark,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.springBackgroundDark,
-  ),
 );
 
-///   Summer Theme
-
-final summerTheme = ThemeData(
-  colorSchemeSeed: ColorConst.summerPrimaryLight,
-  navigationBarTheme: NavigationBarThemeData(
-    backgroundColor: ColorConst.summerPrimaryLight,
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    indicatorColor: ColorConst.summerAccentLight,
-  ),
-  navigationRailTheme: const NavigationRailThemeData(
-    indicatorColor: ColorConst.summerAccentLight,
-    backgroundColor: ColorConst.summerPrimaryLight,
-    unselectedIconTheme: IconThemeData(color: Colors.white),
-    selectedLabelTextStyle: TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.white),
-    selectedIconTheme: IconThemeData(color: Colors.white, size: 30),
-  ),
-  scaffoldBackgroundColor: ColorConst.summerBackgroundLight,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.summerPrimaryLight,
-  ),
-  cardColor: ColorConst.summerBackgroundLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.summerBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.summerBackgroundLight,
-  ),
+final summerTheme = _seasonalTheme(
+  primary: ColorConst.summerPrimaryLight,
+  accent: ColorConst.summerAccentLight,
+  base: ColorConst.summerBackgroundLight,
 );
 
-final summerThemeDark = ThemeData(
+final summerThemeDark = _seasonalTheme(
+  primary: ColorConst.summerPrimaryDark,
+  accent: ColorConst.summerAccentDark,
+  base: ColorConst.summerBackgroundDark,
   brightness: Brightness.dark,
-  colorSchemeSeed: ColorConst.summerPrimaryDark,
-  navigationBarTheme: NavigationBarThemeData(
-    backgroundColor: ColorConst.summerPrimaryDark,
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-  ),
-  navigationRailTheme: const NavigationRailThemeData(),
-  scaffoldBackgroundColor: ColorConst.summerBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.summerPrimaryDark,
-  ),
-  cardColor: ColorConst.summerBackgroundDark,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.summerBackgroundDark,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.summerBackgroundDark,
-  ),
 );
 
-///   Autumn Theme
-final autumnTheme = ThemeData(
-  colorSchemeSeed: ColorConst.fallPrimaryLight,
-  navigationBarTheme: NavigationBarThemeData(
-    backgroundColor: ColorConst.fallPrimaryLight,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    indicatorColor: ColorConst.fallAccentLight,
-  ),
-  navigationRailTheme: const NavigationRailThemeData(
-    indicatorColor: ColorConst.fallAccentLight,
-    backgroundColor: ColorConst.fallPrimaryLight,
-    unselectedIconTheme: IconThemeData(color: Colors.white),
-    selectedLabelTextStyle: TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.white),
-    selectedIconTheme: IconThemeData(color: Colors.white, size: 30),
-  ),
-  scaffoldBackgroundColor: ColorConst.fallBackgroundLight,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.fallPrimaryLight,
-  ),
-  cardColor: ColorConst.fallBackgroundLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.fallBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.fallBackgroundLight,
-  ),
+final autumnTheme = _seasonalTheme(
+  primary: ColorConst.fallPrimaryLight,
+  accent: ColorConst.fallAccentLight,
+  base: ColorConst.fallBackgroundLight,
 );
 
-final autumnThemeDark = ThemeData(
-  colorSchemeSeed: ColorConst.fallPrimaryDark,
+final autumnThemeDark = _seasonalTheme(
+  primary: ColorConst.fallPrimaryDark,
+  accent: ColorConst.fallAccentDark,
+  base: ColorConst.fallBackgroundDark,
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: ColorConst.fallBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.fallPrimaryLight,
-  ),
-  cardColor: ColorConst.fallPrimaryDark,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.fallPrimaryDark,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.fallPrimaryDark,
-  ),
 );
 
-///   Winter Theme
-final winterTheme = ThemeData(
-  colorSchemeSeed: ColorConst.winterPrimaryDark,
-  scaffoldBackgroundColor: ColorConst.winterBackgroundLight,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.winterPrimaryLight,
-  ),
-  navigationRailTheme: const NavigationRailThemeData(
-    backgroundColor: ColorConst.winterPrimaryLight,
-    selectedIconTheme: IconThemeData(color: Colors.white),
-    unselectedIconTheme: IconThemeData(color: Colors.white),
-    selectedLabelTextStyle: TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.white),
-  ),
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.cardDark,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.winterPrimaryLight,
-  ),
-  cardColor: ColorConst.winterPrimaryLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.winterBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.winterBackgroundLight,
-  ),
+final winterTheme = _seasonalTheme(
+  primary: ColorConst.winterPrimaryLight,
+  accent: ColorConst.winterAccentLight,
+  base: ColorConst.winterBackgroundLight,
 );
 
-final winterThemeDark = ThemeData(
+final winterThemeDark = _seasonalTheme(
+  primary: ColorConst.winterPrimaryDark,
+  accent: ColorConst.winterAccentDark,
+  base: ColorConst.winterBackgroundDark,
   brightness: Brightness.dark,
-  navigationBarTheme: NavigationBarThemeData(
-    backgroundColor: ColorConst.winterPrimaryDark,
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-  ),
-  navigationRailTheme: const NavigationRailThemeData(),
-  colorSchemeSeed: ColorConst.winterPrimaryLight,
-  scaffoldBackgroundColor: ColorConst.winterBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.winterPrimaryDark,
-  ),
-  cardColor: ColorConst.winterBackgroundDark,
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.winterBackgroundDark,
-  ),
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.winterBackgroundDark,
-  ),
 );
 
-///   Halloween Theme
-
-final halloweenTheme = ThemeData(
-  colorSchemeSeed: ColorConst.halloweenPrimaryLight,
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.halloweenAccentLight,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.halloweenPrimaryLight,
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.halloweenAccentLight,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-    backgroundColor: ColorConst.halloweenPrimaryLight,
-  ),
-  scaffoldBackgroundColor: ColorConst.halloweenBackgroundLight,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.halloweenPrimaryLight,
-  ),
-  cardColor: ColorConst.halloweenBackgroundLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.halloweenBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.halloweenBackgroundLight,
-  ),
+final halloweenTheme = _seasonalTheme(
+  primary: ColorConst.halloweenPrimaryLight,
+  accent: ColorConst.halloweenAccentLight,
+  base: ColorConst.halloweenBackgroundLight,
 );
 
-final halloweenThemeDark = ThemeData(
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.halloweenAccentDark,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.halloweenPrimaryDark,
-  ),
-  colorSchemeSeed: ColorConst.halloweenPrimaryDark,
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.halloweenAccentDark,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-    backgroundColor: ColorConst.halloweenPrimaryDark,
-  ),
+final halloweenThemeDark = _seasonalTheme(
+  primary: ColorConst.halloweenPrimaryDark,
+  accent: ColorConst.halloweenAccentDark,
+  base: ColorConst.halloweenBackgroundDark,
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: ColorConst.halloweenBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.halloweenPrimaryDark,
-  ),
-  cardColor: ColorConst.halloweenBackgroundDark,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.halloweenBackgroundDark,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.halloweenBackgroundDark,
-  ),
 );
 
-///   Christmas Theme
-
-final christmasTheme = ThemeData(
-  colorSchemeSeed: ColorConst.christmasPrimaryLight,
-  scaffoldBackgroundColor: const Color.fromARGB(255, 219, 216, 216),
-  navigationDrawerTheme: const NavigationDrawerThemeData(
-    backgroundColor: ColorConst.christmasBackgroundLight,
-  ),
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.christmasAccentLight,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.christmasPrimaryLight,
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.christmasAccentLight,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-    backgroundColor: ColorConst.christmasPrimaryLight,
-  ),
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.christmasPrimaryLight,
-  ),
-  cardColor: ColorConst.christmasBackgroundLight,
-  secondaryHeaderColor: ColorConst.christmasPrimaryLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.christmasBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.christmasBackgroundLight,
-  ),
+final christmasTheme = _seasonalTheme(
+  primary: ColorConst.christmasPrimaryLight,
+  accent: ColorConst.christmasAccentLight,
+  base: ColorConst.christmasBackgroundLight,
 );
 
-final christmasThemeDark = ThemeData(
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.christmasAccentDark,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.christmasPrimaryDark,
-  ),
-  colorSchemeSeed: ColorConst.christmasPrimaryDark,
+final christmasThemeDark = _seasonalTheme(
+  primary: ColorConst.christmasPrimaryDark,
+  accent: ColorConst.christmasAccentDark,
+  base: ColorConst.christmasBackgroundDark,
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: ColorConst.christmasBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.christmasPrimaryDark,
-  ),
-  cardColor: ColorConst.christmasBackgroundDark,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.christmasBackgroundDark,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.christmasBackgroundDark,
-  ),
 );
 
-///   Easter Theme
-
-final easterTheme = ThemeData(
-  colorSchemeSeed: Colors.blue,
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.easterAccentLight,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.easterPrimaryLight,
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.easterAccentLight,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-    backgroundColor: ColorConst.easterPrimaryLight,
-  ),
-  scaffoldBackgroundColor: ColorConst.easterBackgroundLight,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.easterPrimaryLight,
-  ),
-  cardColor: ColorConst.easterBackgroundLight,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.easterBackgroundLight,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.easterBackgroundLight,
-  ),
+final easterTheme = _seasonalTheme(
+  primary: ColorConst.easterPrimaryLight,
+  accent: ColorConst.easterAccentLight,
+  base: ColorConst.easterBackgroundLight,
 );
 
-final easterThemeDark = ThemeData(
-  colorSchemeSeed: Colors.yellow,
-  navigationBarTheme: NavigationBarThemeData(
-    indicatorColor: ColorConst.easterAccentDark,
-    iconTheme: WidgetStateProperty.all(
-      const IconThemeData(color: Colors.white),
-    ),
-    labelTextStyle: WidgetStateProperty.all(
-      const TextStyle(color: Colors.white),
-    ),
-    backgroundColor: ColorConst.easterPrimaryDark,
-  ),
-  navigationRailTheme: NavigationRailThemeData(
-    indicatorColor: ColorConst.easterAccentDark,
-    unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
-    selectedLabelTextStyle: const TextStyle(color: Colors.white),
-    unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
-    selectedIconTheme: const IconThemeData(color: Colors.white, size: 30),
-    backgroundColor: ColorConst.easterPrimaryDark,
-  ),
+final easterThemeDark = _seasonalTheme(
+  primary: ColorConst.easterPrimaryDark,
+  accent: ColorConst.easterAccentDark,
+  base: ColorConst.easterBackgroundDark,
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: ColorConst.easterBackgroundDark,
-  appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-    iconTheme: IconThemeData(color: Colors.white),
-    toolbarTextStyle: TextStyle(color: Colors.white),
-    backgroundColor: ColorConst.easterPrimaryDark,
-  ),
-  cardColor: ColorConst.easterBackgroundDark,
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.easterBackgroundDark,
-  ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.easterBackgroundDark,
-  ),
 );
+
+ThemeData _seasonalTheme({
+  required Color primary,
+  required Color accent,
+  required Color base,
+  Brightness brightness = Brightness.light,
+}) {
+  final isDark = brightness == Brightness.dark;
+  Color tint(Color color, double amount) =>
+      Color.alphaBlend(primary.withValues(alpha: amount), color);
+
+  final chromeBase = Color.lerp(primary, const Color(0xFF16242D), .38)!;
+  final chrome = chromeBase.computeLuminance() <= .18
+      ? chromeBase
+      : Color.lerp(chromeBase, Colors.black, .25)!;
+  final chromeEnd = Color.lerp(chrome, Colors.black, .23)!;
+  final surface = tint(base, isDark ? .18 : .08);
+  final canvas = tint(base, isDark ? .12 : .15);
+  final shade = tint(base, isDark ? .25 : .27);
+  final card = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [surface, tint(base, isDark ? .28 : .19)],
+  );
+  final gradients = SurfaceGradients(
+    background: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [canvas, shade, tint(base, isDark ? .07 : .32)],
+      stops: const [0, .56, 1],
+    ),
+    chrome: LinearGradient(colors: [chrome, chromeEnd]),
+    rail: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [chrome, chromeEnd],
+    ),
+    surface: card,
+  );
+
+  final seed = ColorScheme.fromSeed(seedColor: primary, brightness: brightness);
+  final accentScheme = ColorScheme.fromSeed(
+    seedColor: Color.alphaBlend(accent, primary),
+    brightness: brightness,
+  );
+  final selected = Color.lerp(Colors.white, accent, .32)!;
+  const selectedInk = Color(0xFF16242D);
+  final ink = isDark ? const Color(0xFFF4F2F0) : selectedInk;
+  final muted = isDark ? const Color(0xFFCCC8C4) : const Color(0xFF3C464B);
+  final outline = Color.lerp(surface, ink, .3)!;
+
+  return ThemeData(
+    colorScheme: seed.copyWith(
+      primaryContainer: selected,
+      onPrimaryContainer: selectedInk,
+      secondary: accentScheme.primary,
+      onSecondary: accentScheme.onPrimary,
+      secondaryContainer: accentScheme.primaryContainer,
+      onSecondaryContainer: accentScheme.onPrimaryContainer,
+      surface: surface,
+      onSurface: ink,
+      onSurfaceVariant: muted,
+      surfaceDim: shade,
+      surfaceBright: surface,
+      surfaceContainerLowest: surface,
+      surfaceContainerLow: tint(base, isDark ? .20 : .11),
+      surfaceContainer: canvas,
+      surfaceContainerHigh: tint(base, isDark ? .23 : .21),
+      surfaceContainerHighest: shade,
+      outline: muted,
+      outlineVariant: outline,
+    ),
+    extensions: [
+      gradients,
+      CardGradientTheme(gradient: card),
+    ],
+    primaryColor: chrome,
+    scaffoldBackgroundColor: Colors.transparent,
+    cardColor: surface,
+    cardTheme: CardThemeData(color: surface),
+    dialogTheme: DialogThemeData(backgroundColor: surface),
+    drawerTheme: DrawerThemeData(backgroundColor: surface),
+    navigationDrawerTheme: NavigationDrawerThemeData(
+      backgroundColor: surface,
+      indicatorColor: selected,
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: chrome,
+      foregroundColor: Colors.white,
+      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+    ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: chrome,
+      indicatorColor: selected,
+      selectedIconTheme: const IconThemeData(color: selectedInk, size: 30),
+      unselectedIconTheme: const IconThemeData(color: Colors.white),
+      selectedLabelTextStyle: const TextStyle(color: Colors.white),
+      unselectedLabelTextStyle: const TextStyle(color: Colors.white),
+    ),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: chrome,
+      selectedItemColor: selected,
+      unselectedItemColor: Colors.white,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: chrome,
+      indicatorColor: selected,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? selectedInk
+              : Colors.white,
+        ),
+      ),
+      labelTextStyle: const WidgetStatePropertyAll(
+        TextStyle(color: Colors.white),
+      ),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: surface,
+      selectedColor: selected,
+      side: BorderSide(color: outline),
+      checkmarkColor: selectedInk,
+      labelStyle: TextStyle(
+        color: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? selectedInk : ink,
+        ),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: seed.primary,
+      foregroundColor: seed.onPrimary,
+    ),
+  );
+}

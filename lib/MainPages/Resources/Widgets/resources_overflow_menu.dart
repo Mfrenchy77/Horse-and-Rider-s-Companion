@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/quick_share_resource_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/resources_sort_dialog.dart';
@@ -40,7 +41,7 @@ class ResourcesOverflowMenu extends StatelessWidget {
                       cubit.toggleIsEditState();
                       break;
                     case 'Sort':
-                      showDialog<AlertDialog>(
+                      showAppDialog<void>(
                         context: context,
                         builder: (context) => const ResourcesSortDialog(
                           key: Key('resources_sort_dialog'),
@@ -61,7 +62,7 @@ class ResourcesOverflowMenu extends StatelessWidget {
                   ];
                 },
                 onSelected: (value) {
-                  showDialog<AlertDialog>(
+                  showAppDialog<void>(
                     context: context,
                     builder: (context) => const ResourcesSortDialog(
                       key: Key('resources_sort_dialog'),

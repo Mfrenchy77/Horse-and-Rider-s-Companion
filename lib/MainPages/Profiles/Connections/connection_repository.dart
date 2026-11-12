@@ -158,22 +158,56 @@ class ConnectionsState {
     this.connections = const [],
     this.loading = false,
     this.error = false,
+    this.actionInProgress = false,
+    this.actionFeedback,
   });
 
   final String? email;
   final List<CoachingConnection> connections;
   final bool loading;
   final bool error;
+
+  /// Whether a submit action (send/accept/decline/cancel/revoke/record/delete)
+  /// is currently in progress.
+  final bool actionInProgress;
+
+  /// A one-line feedback message describing the last action result.
+  /// This is intended for inline UI (Semantics live region) and lightweight
+  /// confirmation text.
+  final String? actionFeedback;
+
+  ConnectionsState copyWith({
+    String? email,
+    List<CoachingConnection>? connections,
+    bool? loading,
+    bool? error,
+    bool? actionInProgress,
+    String? actionFeedback,
+    bool clearActionFeedback = false,
+  }) {
+    return ConnectionsState(
+      email: email ?? this.email,
+      connections: connections ?? this.connections,
+      loading: loading ?? this.loading,
+      error: error ?? this.error,
+      actionInProgress: actionInProgress ?? this.actionInProgress,
+      actionFeedback: clearActionFeedback
+          ? null
+          : actionFeedback ?? this.actionFeedback,
+    );
+  }
 }
 
 class ConnectionsCubit extends Cubit<ConnectionsState> {
   ConnectionsCubit(this._repository, AppCubit app)
-    : super(const ConnectionsState()) {
+    : _app = app,
+      super(const ConnectionsState()) {
     _profile = app.stream.listen(_onProfile);
     _onProfile(app.state);
   }
 
   final ConnectionRepository _repository;
+  final AppCubit _app;
   late final StreamSubscription<AppState> _profile;
   StreamSubscription<List<CoachingConnection>>? _connections;
 
@@ -201,11 +235,131 @@ class ConnectionsCubit extends Cubit<ConnectionsState> {
     _connections = _repository
         .watch(uid)
         .listen(
-          (connections) =>
-              emit(ConnectionsState(email: email, connections: connections)),
+          (connections) => emit(
+            state.copyWith(
+              email: email,
+              connections: connections,
+              loading: false,
+              error: false,
+            ),
+          ),
           onError: (Object _) =>
-              emit(ConnectionsState(email: email, error: true)),
+              emit(state.copyWith(email: email, loading: false, error: true)),
         );
+  }
+
+  Future<Map<String, dynamic>?> submit(Map<String, Object?> data) async {
+    if (state.actionInProgress) return null;
+    emit(state.copyWith(actionInProgress: true, clearActionFeedback: true));
+    try {
+      final result = await _repository.submit(data);
+      if (isClosed) return null;
+      final feedback = switch (data['action']) {
+        'send' when result['incoming'] == true =>
+          'Review the existing incoming request.',
+        'send' when result['status'] == 'accepted' =>
+          'This connection is already active.',
+        'send' => 'Request sent.',
+        'accept' when data['transfer'] == true => 'Ownership transferred.',
+        _ => 'Connection updated.',
+      };
+      emit(state.copyWith(actionInProgress: false, actionFeedback: feedback));
+      return result;
+    } on ConnectionFailure catch (error) {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            actionInProgress: false,
+            actionFeedback: error.message,
+          ),
+        );
+      }
+      return null;
+    } catch (_) {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            actionInProgress: false,
+            actionFeedback: 'The request could not be saved. Try again.',
+          ),
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<void> request({
+    String? learner,
+    required String coach,
+    String? horseId,
+  }) async {
+    await submit({
+      'action': 'send',
+      'kind': horseId == null ? 'rider' : 'horse',
+      'learnerEmail': learner,
+      'coachEmail': coach,
+      if (horseId != null) 'horseId': horseId,
+    });
+  }
+
+  Future<void> change(CoachingConnection link, String action) async {
+    await submit({
+      'action': action,
+      'id': link.id,
+      'version': link.version,
+      if (link.kind == 'transfer') 'transfer': true,
+    });
+  }
+
+  Future<void> recordTraining({
+    required CoachingConnection link,
+    required String recordId,
+    required String notes,
+    String? skillId,
+    String level = 'LEARNING',
+  }) async {
+    await submit({
+      'action': 'record',
+      'recordId': recordId,
+      'id': link.id,
+      'version': link.version,
+      'notes': notes,
+      if (skillId != null) 'skillId': skillId,
+      if (skillId != null) 'level': level,
+    });
+  }
+
+  Future<List<BaseListItem>> historyFor(CoachingConnection link) {
+    return _repository.history(
+      link.kind == 'rider'
+          ? {'action': 'studentHistory', 'id': link.id, 'version': link.version}
+          : {
+              'action': 'horseHistory',
+              'horseId': link.horseId,
+              'includeTrainingNotes': true,
+            },
+    );
+  }
+
+  Future<bool> deleteLesson({
+    required CoachingConnection link,
+    required String entryId,
+  }) async {
+    final result = await submit({
+      'action': 'deleteLesson',
+      'id': link.id,
+      'version': link.version,
+      'entryId': entryId,
+    });
+    return result != null;
+  }
+
+  List<Skill> skillsFor(CoachingConnection link) {
+    final rider = link.kind == 'rider';
+    return _app.state.allSkills
+        .whereType<Skill>()
+        .where((skill) => skill.rider == rider)
+        .toList();
   }
 
   @override

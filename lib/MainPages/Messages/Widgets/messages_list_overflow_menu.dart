@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Dialogs/messages_sort_dialog.dart';
 
 class MessagesListOverflowMenu extends StatelessWidget {
@@ -19,7 +20,7 @@ class MessagesListOverflowMenu extends StatelessWidget {
         switch (value) {
           case 0:
             // Sort the messages
-            showDialog<AlertDialog>(
+            showAppDialog<void>(
               context: context,
               builder: (context) => const MessagesSortDialog(
                 key: Key('messagesSortDialog'),

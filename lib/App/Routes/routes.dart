@@ -242,7 +242,10 @@ class Routes {
                           pageBuilder: (context, state) {
                             final id = state
                                 .pathParameters[SkillTreeView.skillPathParam]!;
+                            // A cached Skill Tree branch does not push its
+                            // root route again when opened from Resources.
                             final cubit = context.read<AppCubit>()
+                              ..setSkillTree()
                               ..setSkill(id);
                             cubit.navigateToSkillLevel(
                               skill: cubit.state.skill,

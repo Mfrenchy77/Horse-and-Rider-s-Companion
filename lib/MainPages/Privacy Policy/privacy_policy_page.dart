@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -77,6 +78,20 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               child: const Text('AdMob Privacy Policy'),
             ),
+            if (kIsWeb) ...[
+              const Text(
+                'The web app uses Google AdSense to show ads. Google may use '
+                'cookies and information such as your IP address and the URL '
+                'you visit to deliver and measure ads. Your settings and '
+                'consent choices can affect whether ads are personalized.',
+              ),
+              TextButton(
+                onPressed: () => cubit.openResource(
+                  url: 'https://policies.google.com/technologies/partner-sites',
+                ),
+                child: const Text('How Google uses information from this site'),
+              ),
+            ],
             TextButton(
               onPressed: () => cubit.openResource(
                 url: 'https://firebase.google.com/support/privacy',

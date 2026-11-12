@@ -1,12 +1,9 @@
 import 'package:database_repository/database_repository.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'support/app_test_harness.dart';
-
-class FakeContext extends Fake implements BuildContext {}
 
 void main() {
   late AppTestHarness harness;
@@ -28,7 +25,6 @@ void main() {
     'unfinished transfer acceptance reports an error without fetching a rider by horse ID',
     () async {
       await harness.cubit.acceptRequest(
-        context: FakeContext(),
         message: Message(
           id: 'conversation',
           messageId: 'message',
@@ -58,7 +54,6 @@ void main() {
         harness.cubit.state.copyWith(usersProfile: rider, isGuest: false),
       );
       await harness.cubit.acceptRequest(
-        context: FakeContext(),
         message: Message(
           id: 'conversation',
           messageId: 'message',

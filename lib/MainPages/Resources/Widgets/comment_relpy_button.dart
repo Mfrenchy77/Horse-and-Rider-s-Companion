@@ -2,6 +2,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/create_comment_dialog.dart';
 
@@ -28,7 +29,7 @@ class CommentReplyButton extends StatelessWidget {
           ? null
           : () {
               onTap?.call();
-              showDialog<AlertDialog>(
+              showAppDialog<void>(
                 context: context,
                 builder: (_) => BlocProvider(
                   create: (_) => CommentCubit(

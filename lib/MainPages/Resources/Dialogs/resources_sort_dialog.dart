@@ -8,35 +8,33 @@ class ResourcesSortDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
+    final cubit = context.read<AppCubit>();
+    final selected =
+        context.select((AppCubit c) => c.state.resourcesSortStatus);
 
-        void submit(ResourcesSortStatus? value) {
-          if (value == null) return;
-          cubit.updateResourceSortStatus(value);
-          Navigator.of(context).pop();
-        }
+    void submit(ResourcesSortStatus? value) {
+      if (value == null) return;
+      cubit.updateResourceSortStatus(value);
+      Navigator.of(context).pop();
+    }
 
-        return OceanCoralAppDialog(
-          title: const Text('Sort Resources'),
-          content: RadioGroup<ResourcesSortStatus>(
-            groupValue: state.resourcesSortStatus,
-            onChanged: submit,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: ResourcesSortStatus.values
-                  .map(
-                    (status) => RadioListTile<ResourcesSortStatus>(
-                      title: Text(_getSortOptionLabel(status)),
-                      value: status,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        );
-      },
+    return OceanCoralAppDialog(
+      title: const Text('Sort Resources'),
+      content: RadioGroup<ResourcesSortStatus>(
+        groupValue: selected,
+        onChanged: submit,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: ResourcesSortStatus.values
+              .map(
+                (status) => RadioListTile<ResourcesSortStatus>(
+                  title: Text(_getSortOptionLabel(status)),
+                  value: status,
+                ),
+              )
+              .toList(),
+        ),
+      ),
     );
   }
 
