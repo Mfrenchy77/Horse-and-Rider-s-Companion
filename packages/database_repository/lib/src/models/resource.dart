@@ -1,8 +1,8 @@
 // ignore: lines_longer_than_80_chars
 // ignore_for_file: public_member_api_docs, sort_constructors_first, no_leading_underscores_for_local_identifiers
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:database_repository/database_repository.dart';
+import 'package:database_repository/src/models/base_list_item.dart';
+import 'package:database_repository/src/models/comment.dart';
 
 /// What kind of resource this is. Optional for legacy docs without `type`.
 enum ResourceType { link, video, pdf, article, other, externalArticle }
@@ -104,18 +104,10 @@ class Resource {
   /// Simple tags for filtering
   final List<String>? tags;
 
-  // ------------------ Firestore converter entrypoints ------------------
+  // ------------------ Map/JSON helpers (no sealed types) ------------------
 
-  factory Resource.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    SnapshotOptions? _,
-  ) {
-    final map = snapshot.data() ?? const <String, dynamic>{};
-    return Resource.fromMap(map, idFromDoc: snapshot.id);
-  }
-
-  Map<String, Object?> toFirestore() {
-    Timestamp? _ts(DateTime? d) => d == null ? null : Timestamp.fromDate(d);
+  /// Converts this [Resource] to a backend-neutral map.
+  Map<String, Object?> toMap() {
     return {
       // Keep 'id' for backward-compat with docs that stored it.
       'id': id,
@@ -129,35 +121,34 @@ class Resource {
       if (thumbnail != null) 'thumbnail': thumbnail,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (authorName != null) 'authorName': authorName,
-      if (createdAt != null) 'createdAt': _ts(createdAt),
-      if (tags != null) 'tags': tags,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (tags != null) 'tags': List<String>.from(tags!),
       if (authorPhoto != null) 'authorPhoto': authorPhoto,
       if (description != null) 'description': description,
       if (numberOfRates != null) 'numberOfRates': numberOfRates,
       if (coverImageUrl != null) 'coverImageUrl': coverImageUrl,
-      'skillTreeIds': skillTreeIds,
+      'skillTreeIds': List<String>.from(skillTreeIds),
       'blocksEmbedding': blocksEmbedding,
-      if (lastEditDate != null) 'lastEditDate': _ts(lastEditDate),
+      if (lastEditDate != null)
+        'lastEditDate': lastEditDate!.toIso8601String(),
       if (usersWhoRated != null)
         'usersWhoRated': List<dynamic>.from(
-          usersWhoRated!.map((e) => e.toJson()),
+          usersWhoRated!.map((e) => e.toMap()),
         ),
       if (comments != null)
         'comments': List<dynamic>.from(
-          comments!.map(CommentFirestoreMapper.toJson),
+          comments!.map((c) => c.toMap()),
         ),
     };
   }
-
-  // ------------------ Map/JSON helpers (no sealed types) ------------------
 
   /// Parse from a plain map (works for JSON, local cache, tests).
   factory Resource.fromMap(Map<String, dynamic> data, {String? idFromDoc}) {
     DateTime? _asDate(dynamic v) {
       if (v == null) return null;
-      if (v is Timestamp) return v.toDate();
       if (v is DateTime) return v;
       if (v is String) return DateTime.tryParse(v);
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
       return null;
     }
 
@@ -240,7 +231,7 @@ class Resource {
     );
   }
 
-  Map<String, Object?> toJson() => toFirestore();
+  Map<String, Object?> toJson() => toMap();
 
   factory Resource.fromJson(Map<String, dynamic> json) =>
       Resource.fromMap(json, idFromDoc: json['id'] as String?);
@@ -309,7 +300,9 @@ List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {
   if (itemMap != null) {
     for (final item in itemMap) {
       if (item is Map<String, dynamic>) {
-        out.add(BaseListItemFirestoreMapper.fromMap(item));
+        out.add(BaseListItem.fromMap(item));
+      } else if (item is Map) {
+        out.add(BaseListItem.fromMap(Map<String, dynamic>.from(item)));
       }
     }
   }
@@ -321,7 +314,9 @@ List<Comment> _convertComments(List<dynamic>? itemMap) {
   if (itemMap != null) {
     for (final item in itemMap) {
       if (item is Map<String, dynamic>) {
-        out.add(CommentFirestoreMapper.fromMap(item));
+        out.add(Comment.fromMap(item));
+      } else if (item is Map) {
+        out.add(Comment.fromMap(Map<String, dynamic>.from(item)));
       }
     }
   }

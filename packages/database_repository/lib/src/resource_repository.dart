@@ -13,9 +13,8 @@ class ResourcesRepository implements ResourcesStore {
     : _ref = (firestore ?? FirebaseFirestore.instance)
           .collection(RESOURCES)
           .withConverter<Resource>(
-            fromFirestore: Resource.fromFirestore,
-            toFirestore: (Resource resource, SetOptions? _) =>
-                resource.toFirestore(),
+            fromFirestore: ResourceFirestoreMapper.fromFirestore,
+            toFirestore: ResourceFirestoreMapper.toFirestore,
           ),
       _raw = (firestore ?? FirebaseFirestore.instance).collection(RESOURCES);
 
@@ -73,7 +72,7 @@ class ResourcesRepository implements ResourcesStore {
     if (resource.id == null) {
       throw ArgumentError('Resource.id must not be null');
     }
-    final data = resource.toFirestore();
+    final data = ResourceFirestoreMapper.toFirestore(resource);
     await guardFirebase(
       () => _raw.doc(resource.id).set({
         ...data,

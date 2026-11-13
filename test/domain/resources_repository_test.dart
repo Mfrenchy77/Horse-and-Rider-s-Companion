@@ -274,7 +274,7 @@ void main() {
         date.toIso8601String(),
       ]) {
         expect(
-          Resource.fromMap({
+          ResourceFirestoreMapper.fromMap({
             'createdAt': input,
           }).createdAt?.isAtSameMomentAs(date),
           isTrue,

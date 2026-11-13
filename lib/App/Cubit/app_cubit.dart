@@ -1993,7 +1993,7 @@ class AppCubit extends Cubit<AppState> {
   bool _sameResources(List<Resource> a, List<Resource> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
-      if (!_sameResourceValue(a[i].toFirestore(), b[i].toFirestore())) {
+      if (!_sameResourceValue(a[i].toMap(), b[i].toMap())) {
         return false;
       }
     }
