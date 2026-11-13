@@ -24,9 +24,13 @@ class AddLogEntryDialog extends StatelessWidget {
       create: (context) => AddLogEntryCubit(
         usersProfile: usersProfile,
         riderProfileRepository:
-            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+            context.read<RiderProfileStore?>() ??
+            context.read<RiderProfileRepository?>() ??
+            RiderProfileRepository(),
         horseProfileRepository:
-            context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
+            context.read<HorseProfileStore?>() ??
+            context.read<HorseProfileRepository?>() ??
+            HorseProfileRepository(),
       ),
         child: BlocBuilder<AddLogEntryCubit, AddLogEntryState>(
           builder: (context, state) {

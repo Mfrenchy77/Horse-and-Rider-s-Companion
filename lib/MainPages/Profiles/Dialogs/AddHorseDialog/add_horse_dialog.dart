@@ -71,15 +71,22 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
       create: (context) => AddHorseDialogCubit(
         usersProfile: widget._usersProfile,
         horseProfile: widget._horseProfile,
-        keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
+        keysRepository:
+            context.read<ApiKeyProvider?>() ??
+            context.read<KeysRepository?>() ??
+            KeysRepository(),
         cloudRepository:
             context.read<MediaStorageRepository?>() ??
             context.read<CloudRepository?>() ??
             CloudRepository(),
         horseProfileRepository:
-            context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
+            context.read<HorseProfileStore?>() ??
+            context.read<HorseProfileRepository?>() ??
+            HorseProfileRepository(),
         riderProfileRepository:
-            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+            context.read<RiderProfileStore?>() ??
+            context.read<RiderProfileRepository?>() ??
+            RiderProfileRepository(),
       ),
         child: BlocBuilder<AddHorseDialogCubit, AddHorseDialogState>(
           builder: (context, state) {

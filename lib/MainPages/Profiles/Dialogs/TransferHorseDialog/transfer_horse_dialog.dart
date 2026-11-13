@@ -25,9 +25,13 @@ class TransferHorseDialog extends StatelessWidget {
         userProfile: userProfile,
         horseProfile: horseProfile,
         messagesRepository:
-            context.read<MessagesRepository?>() ?? MessagesRepository(),
+            context.read<MessagesStore?>() ??
+            context.read<MessagesRepository?>() ??
+            MessagesRepository(),
         riderProfileRepository:
-            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+            context.read<RiderProfileStore?>() ??
+            context.read<RiderProfileRepository?>() ??
+            RiderProfileRepository(),
       ),
         child: BlocListener<TransferHorseCubit, TransferHorseState>(
           listener: (context, state) {

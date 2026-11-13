@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/cubit/horse_profile_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -496,6 +497,46 @@ void main() {
 
         expect(skillStore.trainingPaths, hasLength(1));
         expect(cubit.state.status, FormStatus.success);
+      },
+    );
+
+    test(
+      'HorseProfileCubit loads horse and owner using injected '
+      'HorseProfileStore and RiderProfileStore',
+      () async {
+        final horseStore = _InMemoryHorseProfileStore();
+        await horseStore.createOrUpdateHorseProfile(
+          horseProfile: HorseProfile(
+            id: 'h1',
+            name: 'Star',
+            currentOwnerId: 'owner@example.com',
+          ),
+        );
+        final riderStore = _InMemoryRiderProfileStore({
+          'owner@example.com': RiderProfile(
+            id: 'u2',
+            name: 'Owner',
+            email: 'owner@example.com',
+          ),
+        });
+
+        final cubit = HorseProfileCubit(
+          horseId: 'h1',
+          isGuest: false,
+          usersProfile: RiderProfile(
+            id: 'u1',
+            name: 'Viewer',
+            email: 'viewer@example.com',
+          ),
+          horseProfileRepository: horseStore,
+          riderProfileRepository: riderStore,
+        );
+        addTearDown(cubit.close);
+
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(cubit.state.horseProfile?.name, 'Star');
+        expect(cubit.state.ownersProfile?.name, 'Owner');
       },
     );
   });

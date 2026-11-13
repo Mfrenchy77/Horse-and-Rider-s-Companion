@@ -38,7 +38,9 @@ class CreateSkillDialog extends StatelessWidget {
         isForRider: isForRider,
         usersProfile: _usersProfile,
         skillsRepository:
-            context.read<SkillTreeRepository?>() ?? SkillTreeRepository(),
+            context.read<SkillTreeStore?>() ??
+            context.read<SkillTreeRepository?>() ??
+            SkillTreeRepository(),
       ),
         child: BlocListener<CreateSkillDialogCubit, CreateSkillDialogState>(
           listener: (context, state) {

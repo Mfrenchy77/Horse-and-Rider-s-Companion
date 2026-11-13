@@ -43,7 +43,9 @@ class _CommentRatingButtonsState extends State<CommentRatingButtons> {
             comment: widget.comment,
             resource: widget.resource,
             usersProfile: profile,
-            resourcesRepository: context.read<ResourcesRepository>(),
+            resourcesRepository:
+                context.read<ResourcesStore?>() ??
+                context.read<ResourcesRepository>(),
           );
   }
 

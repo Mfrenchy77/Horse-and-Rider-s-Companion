@@ -17,7 +17,10 @@ class CreateArticlePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<CreateArticleCubit>(
       create: (_) => CreateArticleCubit(
-        resourcesRepository: ResourcesRepository(),
+        resourcesRepository:
+            context.read<ResourcesStore?>() ??
+            context.read<ResourcesRepository?>() ??
+            ResourcesRepository(),
         mediaStorage:
             context.read<MediaStorageRepository?>() ??
             context.read<CloudRepository?>() ??

@@ -12,6 +12,8 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
     required String horseId,
     required bool? isGuest,
     required RiderProfile? usersProfile,
+    this._horseProfileRepository,
+    this._riderProfileRepository,
   }) : super(const HorseProfileState()) {
     emit(
       state.copyWith(
@@ -22,6 +24,8 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
     );
     getHorseProfile(horseId);
   }
+  final HorseProfileStore? _horseProfileRepository;
+  final RiderProfileStore? _riderProfileRepository;
   StreamSubscription<HorseProfile?>? _horseProfileSubscription;
 
   Future<void> getHorseProfile(String id) async {
@@ -34,7 +38,11 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
         debugPrint('Horse Profile not retrieved, getting now');
         try {
           await _horseProfileSubscription?.cancel();
-          _horseProfileSubscription = HorseProfileRepository()
+          final horseRepo =
+              _horseProfileRepository ?? HorseProfileRepository();
+          final riderRepo =
+              _riderProfileRepository ?? RiderProfileRepository();
+          _horseProfileSubscription = horseRepo
               .getHorseProfile(id: id)
               .listen((horseProfile) {
             if (isClosed) return;
@@ -42,7 +50,7 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
             if (horseProfile != null) {
               if (!_isOwner()) {
                 debugPrint('Not Owner');
-                RiderProfileRepository()
+                riderRepo
                     .getRiderProfile(email: horseProfile.currentOwnerId)
                     .first
                     .then((ownerProfile) {

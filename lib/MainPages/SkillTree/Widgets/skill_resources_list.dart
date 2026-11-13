@@ -39,9 +39,9 @@ class _SkillResourceQuery extends StatefulWidget {
 }
 
 class _SkillResourceQueryState extends State<_SkillResourceQuery> {
-  late final Stream<List<Resource>> _resources = context
-      .read<ResourcesRepository>()
-      .getResourcesForSkill(skillId: widget.skillId);
+  late final Stream<List<Resource>> _resources =
+      (context.read<ResourcesStore?>() ?? context.read<ResourcesRepository>())
+          .getResourcesForSkill(skillId: widget.skillId);
 
   @override
   Widget build(BuildContext context) {

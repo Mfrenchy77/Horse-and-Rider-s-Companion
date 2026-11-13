@@ -24,15 +24,19 @@ class App extends StatefulWidget {
     required this._riderProfileRepository,
     required this._horseProfileRepository,
     required this._authenticationRepository,
+    this._mediaStorageRepository,
+    this._keysRepository,
   });
 
   final SettingsController settingsController;
-  final MessagesRepository _messagesRepository;
-  final SkillTreeRepository _skillTreeRepository;
-  final ResourcesRepository _resourcesRepository;
-  final RiderProfileRepository _riderProfileRepository;
-  final HorseProfileRepository _horseProfileRepository;
+  final MessagesStore _messagesRepository;
+  final SkillTreeStore _skillTreeRepository;
+  final ResourcesStore _resourcesRepository;
+  final RiderProfileStore _riderProfileRepository;
+  final HorseProfileStore _horseProfileRepository;
   final AuthenticationRepository _authenticationRepository;
+  final MediaStorageRepository? _mediaStorageRepository;
+  final ApiKeyProvider? _keysRepository;
 
   @override
   State<App> createState() => _AppState();
@@ -78,16 +82,41 @@ class _AppState extends State<App> {
           value: _connections,
         ),
         RepositoryProvider<MediaStorageRepository>(
-          create: (_) => CloudRepository(),
+          create: (_) => widget._mediaStorageRepository ?? CloudRepository(),
         ),
-        RepositoryProvider.value(value: widget._messagesRepository),
-        RepositoryProvider.value(value: widget._skillTreeRepository),
-        RepositoryProvider.value(value: widget._resourcesRepository),
-        RepositoryProvider.value(value: widget._riderProfileRepository),
+        RepositoryProvider<ApiKeyProvider>(
+          create: (_) => widget._keysRepository ?? KeysRepository(),
+        ),
+        RepositoryProvider<MessagesStore>.value(
+          value: widget._messagesRepository,
+        ),
+        if (widget._messagesRepository case final MessagesRepository repo)
+          RepositoryProvider<MessagesRepository>.value(value: repo),
+        RepositoryProvider<SkillTreeStore>.value(
+          value: widget._skillTreeRepository,
+        ),
+        if (widget._skillTreeRepository case final SkillTreeRepository repo)
+          RepositoryProvider<SkillTreeRepository>.value(value: repo),
+        RepositoryProvider<ResourcesStore>.value(
+          value: widget._resourcesRepository,
+        ),
+        if (widget._resourcesRepository case final ResourcesRepository repo)
+          RepositoryProvider<ResourcesRepository>.value(value: repo),
+        RepositoryProvider<RiderProfileStore>.value(
+          value: widget._riderProfileRepository,
+        ),
+        if (widget._riderProfileRepository
+            case final RiderProfileRepository repo)
+          RepositoryProvider<RiderProfileRepository>.value(value: repo),
         RepositoryProvider<LogbookRiderProfileRepository>.value(
           value: widget._riderProfileRepository,
         ),
-        RepositoryProvider.value(value: widget._horseProfileRepository),
+        RepositoryProvider<HorseProfileStore>.value(
+          value: widget._horseProfileRepository,
+        ),
+        if (widget._horseProfileRepository
+            case final HorseProfileRepository repo)
+          RepositoryProvider<HorseProfileRepository>.value(value: repo),
         RepositoryProvider.value(value: widget._authenticationRepository),
       ],
       child: BlocProvider.value(

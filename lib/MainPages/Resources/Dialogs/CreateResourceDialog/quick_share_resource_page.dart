@@ -18,7 +18,8 @@ class QuickShareResourcePage extends StatefulWidget {
     required List<Skill?> skills,
     required RiderProfile profile,
   }) async {
-    final repository = context.read<ResourcesRepository>();
+    final repository =
+        context.read<ResourcesStore?>() ?? context.read<ResourcesRepository>();
     final mediaStorage =
         context.read<MediaStorageRepository?>() ??
         context.read<CloudRepository?>();

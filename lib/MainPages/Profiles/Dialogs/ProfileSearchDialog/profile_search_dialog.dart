@@ -23,10 +23,17 @@ class ProfileSearchDialog extends StatelessWidget {
     return BlocProvider(
       create: (context) => ProfileSearchCubit(
         horseProfileRepository:
-            context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
+            context.read<HorseProfileStore?>() ??
+            context.read<HorseProfileRepository?>() ??
+            HorseProfileRepository(),
         riderProfileRepository:
-            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
-        keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
+            context.read<RiderProfileStore?>() ??
+            context.read<RiderProfileRepository?>() ??
+            RiderProfileRepository(),
+        keysRepository:
+            context.read<ApiKeyProvider?>() ??
+            context.read<KeysRepository?>() ??
+            KeysRepository(),
       ),
         child: BlocListener<ProfileSearchCubit, ProfileSearchState>(
           listener: (context, state) {

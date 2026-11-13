@@ -37,14 +37,19 @@ class EditRiderProfileDialog extends StatelessWidget {
     return BlocProvider(
       create: (context) => EditRiderProfileCubit(
         user: user,
-        keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
+        keysRepository:
+            context.read<ApiKeyProvider?>() ??
+            context.read<KeysRepository?>() ??
+            KeysRepository(),
         cloudRepository:
             context.read<MediaStorageRepository?>() ??
             context.read<CloudRepository?>() ??
             CloudRepository(),
         riderProfile: riderProfile,
         riderProfileRepository:
-            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+            context.read<RiderProfileStore?>() ??
+            context.read<RiderProfileRepository?>() ??
+            RiderProfileRepository(),
       ),
         child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
           listener: (context, state) {

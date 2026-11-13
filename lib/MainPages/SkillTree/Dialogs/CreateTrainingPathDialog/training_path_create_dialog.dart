@@ -31,7 +31,9 @@ class CreateTrainingPathDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => CreateTrainingPathCubit(
-        trainingPathRepository: context.read<SkillTreeRepository>(),
+        trainingPathRepository:
+            context.read<SkillTreeStore?>() ??
+            context.read<SkillTreeRepository>(),
         allSkills: allSkills,
         editing: trainingPath,
         isForRider: isForRider,

@@ -22,9 +22,13 @@ class MesssageContactsSearchDialog extends StatelessWidget {
     return BlocProvider(
       create: (context) => NewGroupDialogCubit(
         messagesRepository:
-            context.read<MessagesRepository?>() ?? MessagesRepository(),
+            context.read<MessagesStore?>() ??
+            context.read<MessagesRepository?>() ??
+            MessagesRepository(),
         riderProfileRepository:
-            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+            context.read<RiderProfileStore?>() ??
+            context.read<RiderProfileRepository?>() ??
+            RiderProfileRepository(),
         usersProfile: usersProfile,
       ),
         child: BlocListener<NewGroupDialogCubit, NewGroupDialogState>(

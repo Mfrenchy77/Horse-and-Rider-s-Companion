@@ -41,7 +41,9 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
       _error = null;
     });
     try {
-      await context.read<ResourcesRepository>().updateSkillLinks(
+      await (context.read<ResourcesStore?>() ??
+              context.read<ResourcesRepository>())
+          .updateSkillLinks(
         id: id,
         added: _selected.difference(_original),
         removed: _original.difference(_selected),
