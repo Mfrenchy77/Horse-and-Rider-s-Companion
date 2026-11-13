@@ -17,20 +17,22 @@ Future<void> _captureBoundary(
   GlobalKey key,
   String outPath,
 ) async {
-  final boundary =
-      key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-  final image = await boundary.toImage(pixelRatio: 2.0);
-  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-  if (byteData != null) {
-    final file = File(outPath);
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(byteData.buffer.asUint8List());
-  }
+  await tester.runAsync(() async {
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: 2);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData != null) {
+      final file = File(outPath);
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(byteData.buffer.asUint8List());
+    }
+  });
 }
 
 void main() {
   testWidgets(
-    'RiderProfileView renders Markdown bio, horse cards, students, and screenshots',
+    'RiderProfileView renders Markdown bio, horses, students, and shots',
     (tester) async {
       final harness = await AppTestHarness.create();
       addTearDown(harness.close);

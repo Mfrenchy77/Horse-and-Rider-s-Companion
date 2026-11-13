@@ -166,40 +166,45 @@ class ProfileSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = ProfileTokens.accentColor(context);
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 4,
+    return Row(
       children: [
-        Text(title, style: ProfileTokens.sectionTitleStyle(context)),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ProfileTokens.sectionTitleStyle(context),
+          ),
+        ),
         if (actionLabel != null && onAction != null)
-          TextButton(
-            onPressed: onAction,
-            style: TextButton.styleFrom(
-              foregroundColor: accent,
-              minimumSize: const Size(48, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    actionLabel!,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+          Flexible(
+            child: TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                foregroundColor: accent,
+                minimumSize: const Size(48, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      actionLabel!,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                ),
-                if (showArrow) ...[
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward, size: 16, color: accent),
+                  if (showArrow) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.arrow_forward, size: 16, color: accent),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
       ],
@@ -255,7 +260,9 @@ class MarkdownBioText extends StatelessWidget {
     var cursor = 0;
     for (final match in pattern.allMatches(text)) {
       if (match.start > cursor) {
-        spans.add(TextSpan(text: text.substring(cursor, match.start), style: base));
+        spans.add(
+          TextSpan(text: text.substring(cursor, match.start), style: base),
+        );
       }
       final token = match.group(0)!;
       if ((token.startsWith('**') && token.endsWith('**')) ||

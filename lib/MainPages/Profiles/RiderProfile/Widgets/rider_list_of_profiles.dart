@@ -15,7 +15,8 @@ class RiderListOfProfiles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppCubit>().state;
-    final isOwnProfile = !app.isGuest && app.usersProfile?.email == profile.email;
+    final isOwnProfile =
+        !app.isGuest && app.usersProfile?.email == profile.email;
     final ownedHorses = profile.ownedHorses ?? const <BaseListItem>[];
     final archivedHorses = isOwnProfile
         ? (profile.archivedHorses ?? const <BaseListItem>[])
@@ -27,40 +28,37 @@ class RiderListOfProfiles extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (ownedHorses.isNotEmpty || isOwnProfile) ...[
+        if (ownedHorses.isNotEmpty) ...[
           _HorsePhotoSection(
-            title: ownedHorses.isEmpty
-                ? 'Owned Horses'
-                : 'Owned Horses (${ownedHorses.length})',
+            title: 'Owned horses',
             horses: ownedHorses,
-            emptyMessage: 'No owned horses added yet.',
           ),
           const SizedBox(height: 16),
         ],
         if (students.isNotEmpty) ...[
           _PersonListSection(
-            title: 'Students (${students.length})',
+            title: 'Students',
             people: students,
           ),
           const SizedBox(height: 16),
         ],
         if (studentHorses.isNotEmpty) ...[
           _HorsePhotoSection(
-            title: 'Student Horses (${studentHorses.length})',
+            title: 'Student horses',
             horses: studentHorses,
           ),
           const SizedBox(height: 16),
         ],
         if (instructors.isNotEmpty) ...[
           _PersonListSection(
-            title: 'Instructors (${instructors.length})',
+            title: 'Instructors',
             people: instructors,
           ),
           const SizedBox(height: 16),
         ],
         if (archivedHorses.isNotEmpty) ...[
           _HorsePhotoSection(
-            title: 'Archived Horses (${archivedHorses.length})',
+            title: 'Archived horses',
             horses: archivedHorses,
           ),
           const SizedBox(height: 16),
@@ -74,12 +72,10 @@ class _HorsePhotoSection extends StatelessWidget {
   const _HorsePhotoSection({
     required this.title,
     required this.horses,
-    this.emptyMessage,
   });
 
   final String title;
   final List<BaseListItem> horses;
-  final String? emptyMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -107,8 +103,10 @@ class _HorsePhotoSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                emptyMessage ?? 'No horses.',
-                style: TextStyle(color: ProfileTokens.secondaryTextColor(context)),
+                'No horses.',
+                style: TextStyle(
+                  color: ProfileTokens.secondaryTextColor(context),
+                ),
               ),
             )
           else
@@ -164,7 +162,9 @@ class _HorsePhotoCard extends StatelessWidget {
     final radius = BorderRadius.circular(ProfileTokens.horseCardRadius);
 
     final placeholder = ColoredBox(
-      color: isDark ? const Color(0xFF153137) : theme.colorScheme.surfaceContainerHighest,
+      color: isDark
+          ? const Color(0xFF153137)
+          : theme.colorScheme.surfaceContainerHighest,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 18),
@@ -321,7 +321,8 @@ class _PersonRow extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(10),
-      onTap: () => _openItem(context, item, isHorse: !(item.isCollapsed ?? true)),
+      onTap: () =>
+          _openItem(context, item, isHorse: !(item.isCollapsed ?? true)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 54),
         child: Padding(
@@ -400,7 +401,8 @@ Future<void> _showAllDialog(
                   crossAxisSpacing: 12,
                   childAspectRatio: 0.86,
                 ),
-                itemBuilder: (ctx, index) => _HorsePhotoCard(item: items[index]),
+                itemBuilder: (ctx, index) =>
+                    _HorsePhotoCard(item: items[index]),
               )
             : ListView.separated(
                 shrinkWrap: true,

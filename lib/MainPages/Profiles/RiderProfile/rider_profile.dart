@@ -56,7 +56,9 @@ class _RiderProfileViewState extends State<RiderProfileView>
     final instructor = connections?.instructorFor(profile.email);
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
+          backgroundColor: isDarkTheme ? ProfileTokens.midnightBase : null,
           appBar: ThemedAppBar(
             leading: profile.email == state.usersProfile?.email
                 ? Builder(
@@ -146,7 +148,6 @@ class _RiderProfileViewState extends State<RiderProfileView>
                                 child: PrimaryRiderView(
                                   profile: profile,
                                   key: const Key('ProfileView'),
-                                  edgeToEdgeCover: false,
                                   includeLists: false,
                                 ),
                               ),
@@ -183,7 +184,6 @@ class _RiderProfileViewState extends State<RiderProfileView>
                           profile: profile,
                           key: const Key('ProfileView'),
                           edgeToEdgeCover: true,
-                          includeLists: true,
                         ),
                         const SizedBox(height: 16),
                         Padding(

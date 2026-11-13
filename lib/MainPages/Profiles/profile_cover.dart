@@ -181,7 +181,6 @@ class ProfileCover extends StatelessWidget {
                       if (roleText.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.workspace_premium_outlined,
