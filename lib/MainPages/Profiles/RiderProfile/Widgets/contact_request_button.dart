@@ -17,7 +17,8 @@ class ContactRequestButton extends StatelessWidget {
         final cubit = context.read<AppCubit>();
 
         // Conditions to not show the button at all
-        final shouldNotShowButton = state.usersProfile == null ||
+        final shouldNotShowButton =
+            state.usersProfile == null ||
             state.viewingProfile == null ||
             state.isGuest ||
             state.usersProfile?.email == profile.email;
@@ -27,20 +28,26 @@ class ContactRequestButton extends StatelessWidget {
         }
 
         // Determine if the profile is already a contact
-        final isAlreadyContact = profile.savedProfilesList
-                ?.any((element) => element.id == state.usersProfile!.email) ??
+        final isAlreadyContact =
+            profile.savedProfilesList?.any(
+              (element) => element.id == state.usersProfile!.email,
+            ) ??
             false;
 
         return Tooltip(
-          message:
-              isAlreadyContact ? 'Remove from Contacts' : 'Add to Contacts',
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.person_add),
+          message: isAlreadyContact
+              ? 'Remove from Contacts'
+              : 'Add to Contacts',
+          child: OutlinedButton.icon(
+            icon: Icon(
+              isAlreadyContact ? Icons.person_remove : Icons.person_add,
+            ),
             onPressed: () => isAlreadyContact
                 ? cubit.removeFromContacts(riderProfile: profile)
                 : cubit.addToContact(riderProfile: profile),
-            label:
-                Text(isAlreadyContact ? 'Remove Contact' : 'Add to Contacts'),
+            label: Text(
+              isAlreadyContact ? 'Remove Contact' : 'Add to Contacts',
+            ),
           ),
         );
       },

@@ -10,11 +10,16 @@ import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class ConnectionPanel extends StatelessWidget {
-  const ConnectionPanel({super.key, this.rider, this.horse})
-    : assert((rider == null) != (horse == null), 'Choose one profile.');
+  const ConnectionPanel({
+    super.key,
+    this.rider,
+    this.horse,
+    this.showRecordActions = true,
+  }) : assert((rider == null) != (horse == null), 'Choose one profile.');
 
   final RiderProfile? rider;
   final HorseProfile? horse;
+  final bool showRecordActions;
 
   static Future<void> openHistory(
     BuildContext context,
@@ -167,6 +172,7 @@ class ConnectionPanel extends StatelessWidget {
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 4,
       children: [
         const Divider(),
         Text(
@@ -210,7 +216,7 @@ class ConnectionPanel extends StatelessWidget {
                 onPressed: saving ? null : () => cubit.change(link, 'cancel'),
                 child: const Text('Cancel request'),
               ),
-            if (active && email == link.coach)
+            if (showRecordActions && active && email == link.coach)
               FilledButton(
                 onPressed: saving || (horse?.isArchived ?? false)
                     ? null
@@ -238,7 +244,9 @@ class ConnectionPanel extends StatelessWidget {
                       : 'Add training record',
                 ),
               ),
-            if (active && (email == link.coach || link.kind == 'horse'))
+            if (showRecordActions &&
+                active &&
+                (email == link.coach || link.kind == 'horse'))
               TextButton(
                 onPressed: saving
                     ? null

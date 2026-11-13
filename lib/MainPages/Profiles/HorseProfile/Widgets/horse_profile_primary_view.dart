@@ -58,8 +58,6 @@ class HorseProfilePrimaryView extends StatelessWidget {
                 )
               : null,
         ),
-        if (forSale) HorseSalePanel(horse: horseProfile),
-        _HorseDetails(horse: horseProfile),
         Align(
           alignment: Alignment.centerLeft,
           child: LogBookButton(
@@ -68,7 +66,8 @@ class HorseProfilePrimaryView extends StatelessWidget {
             key: const Key('logBookButton'),
           ),
         ),
-        ConnectionPanel(horse: horseProfile),
+        if (forSale) HorseSalePanel(horse: horseProfile),
+        _HorseDetails(key: ValueKey(horseProfile.id), horse: horseProfile),
         if (instructors.isNotEmpty)
           GradientCard(
             child: Padding(
@@ -93,41 +92,61 @@ class HorseProfilePrimaryView extends StatelessWidget {
               ),
             ),
           ),
+        ConnectionPanel(horse: horseProfile),
       ],
     );
   }
 }
 
-class _HorseDetails extends StatelessWidget {
-  const _HorseDetails({required this.horse});
+class _HorseDetails extends StatefulWidget {
+  const _HorseDetails({required this.horse, super.key});
 
   final HorseProfile horse;
 
   @override
+  State<_HorseDetails> createState() => _HorseDetailsState();
+}
+
+class _HorseDetailsState extends State<_HorseDetails> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final horse = widget.horse;
     final theme = Theme.of(context);
     final birth = horse.dateOfBirth;
     final height = horse.height;
     final ownerId = horse.currentOwnerId.trim();
     final owner = horse.currentOwnerName?.trim() ?? '';
-    final details = <String, String?>{
-      'Nickname': horse.nickname,
+    final summary = <String, String?>{
       'Breed': horse.breed,
-      'Color': horse.color,
       'Gender': horse.gender,
+      'Age': birth == null ? null : '${DateTime.now().year - birth.year} years',
+    };
+    final additional = <String, String?>{
+      'Nickname': horse.nickname,
+      'Color': horse.color,
       if (height != null && height > 0)
         'Height': SharedPrefs().isHeightInHands
             ? '${cmToHands(height)}.${cmToHandsRemainder(height)} hands'
             : '$height cm',
       if (birth != null) ...{
-        'Age': '${DateTime.now().year - birth.year} years',
         'Date of birth': MaterialLocalizations.of(
           context,
         ).formatMediumDate(birth),
       },
     };
+    final hasSummary = summary.values.any(
+      (value) => value?.trim().isNotEmpty ?? false,
+    );
+    final canExpand =
+        hasSummary &&
+        additional.values.any((value) => value?.trim().isNotEmpty ?? false);
     final fields = [
-      for (final field in details.entries)
+      for (final field in [
+        ...summary.entries,
+        if (!hasSummary || _expanded) ...additional.entries,
+      ])
         if (field.value?.trim().isNotEmpty ?? false)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,6 +219,15 @@ class _HorseDetails extends StatelessWidget {
                     ],
                   );
                 },
+              ),
+            if (canExpand)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                  label: Text(_expanded ? 'Show less' : 'Show more details'),
+                ),
               ),
           ],
         ),

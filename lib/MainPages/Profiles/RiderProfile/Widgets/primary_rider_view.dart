@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/log_book_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/contact_request_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_list_of_profiles.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_website_link.dart';
@@ -16,11 +17,16 @@ class PrimaryRiderView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showLogbook = context.select(
-      (AppCubit cubit) =>
-          !cubit.state.isGuest &&
-          cubit.state.usersProfile?.email == profile.email,
-    );
+    final app = context.watch<AppCubit>().state;
+    final connections = context.watch<ConnectionsCubit?>()?.state;
+    final instructor = connections?.instructorFor(profile.email);
+    final viewer = app.usersProfile?.email;
+    final showStudentLogbook =
+        !app.isGuest &&
+        instructor != null &&
+        instructor.coach == viewer?.toLowerCase();
+    final showLogbook =
+        !app.isGuest && (viewer == profile.email || showStudentLogbook);
     final showWebsite = profile.homeUrl?.trim().isNotEmpty ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,6 +49,10 @@ class PrimaryRiderView extends StatelessWidget {
                 LogBookButton(
                   profile: profile,
                   horseProfile: null,
+                  studentConnection: showStudentLogbook ? instructor : null,
+                  saving:
+                      showStudentLogbook &&
+                      (connections?.actionInProgress ?? false),
                   key: const Key('LogBookButton'),
                 ),
               if (showWebsite) RiderWebsiteLink(homeUrl: profile.homeUrl),
@@ -56,7 +66,8 @@ class PrimaryRiderView extends StatelessWidget {
           profile: profile,
           key: const Key('RiderListOfProfiles'),
         ),
-        ConnectionPanel(rider: profile),
+        ConnectionPanel(rider: profile, showRecordActions: !showStudentLogbook),
+        const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
           child: ContactRequestButton(profile: profile),

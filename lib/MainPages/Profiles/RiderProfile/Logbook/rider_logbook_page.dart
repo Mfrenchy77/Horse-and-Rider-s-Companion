@@ -40,16 +40,32 @@ class RiderLogbookPage extends StatefulWidget {
     );
   }
 
+  static Future<void> addEntry(BuildContext context) => _addEntry(context);
+
   static Future<void> addLessonFor(
     BuildContext context,
     CoachingConnection student, {
     BaseListItem? entry,
     Skill? initialSkill,
     LevelState? initialLevel,
+  }) => _addEntry(
+    context,
+    student: student,
+    entry: entry,
+    initialSkill: initialSkill,
+    initialLevel: initialLevel,
+  );
+
+  static Future<void> _addEntry(
+    BuildContext context, {
+    CoachingConnection? student,
+    BaseListItem? entry,
+    Skill? initialSkill,
+    LevelState? initialLevel,
   }) async {
     final app = context.read<AppCubit>();
     final profile = app.state.usersProfile;
-    if (profile == null) return;
+    if (app.state.isGuest || profile == null) return;
 
     // This editor can be opened from outside
     // RiderLogbookPage (e.g. Connections).
@@ -75,6 +91,7 @@ class RiderLogbookPage extends StatefulWidget {
     final viewed = app.state.viewingProfile;
     if ((saved ?? false) &&
         context.mounted &&
+        student != null &&
         app.state.isViewing &&
         viewed != null &&
         viewed.email.toLowerCase() == student.learner) {

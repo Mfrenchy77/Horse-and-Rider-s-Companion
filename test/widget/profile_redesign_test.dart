@@ -130,6 +130,20 @@ void main() {
       expect(find.text('Date of birth'), findsNothing);
       expect(find.text('Height'), findsNothing);
       expect(find.text("Horse's Log Book"), findsOneWidget);
+      final logbook = find.text("Horse's Log Book");
+      final about = find.text('About');
+      expect(tester.getRect(logbook).top, greaterThan(cover.bottom));
+      expect(
+        tester.getRect(logbook).bottom,
+        lessThan(tester.getRect(about).top),
+      );
+      expect(find.text('Al'), findsNothing);
+      await tester.tap(find.text('Show more details'));
+      await tester.pumpAndSettle();
+      expect(find.text('Al'), findsOneWidget);
+      await tester.tap(find.text('Show less'));
+      await tester.pumpAndSettle();
+      expect(find.text('Al'), findsNothing);
       expect(find.widgetWithText(ListTile, skill.skillName), findsOneWidget);
       expect(find.text('Verified'), findsOneWidget);
       expect(find.text('Proficient'), findsOneWidget);
@@ -356,6 +370,7 @@ void main() {
         bio,
         'Website',
         "Rider's Log Book",
+        'Add entry',
         'Atlas',
         'Casey',
         'Sage',
