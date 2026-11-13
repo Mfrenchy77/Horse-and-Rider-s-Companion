@@ -38,6 +38,25 @@ class _NavigationViewState extends State<NavigationView> {
     _showEmailVerificationIfNeeded(context.read<AppCubit>());
   }
 
+  @override
+  void didUpdateWidget(covariant NavigationView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final index = widget.child.currentIndex;
+    if (index != oldWidget.child.currentIndex) {
+      final cubit = context.read<AppCubit>();
+      if (cubit.state.index != index) {
+        switch (index) {
+          case 0:
+            cubit.setProfile();
+          case 1:
+            cubit.setSkillTree();
+          case 2:
+            cubit.setResourcesList();
+        }
+      }
+    }
+  }
+
   void _showEmailVerificationIfNeeded(AppCubit cubit) {
     final state = cubit.state;
     if (!state.showEmailVerification) {

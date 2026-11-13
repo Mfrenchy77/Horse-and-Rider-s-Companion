@@ -103,8 +103,11 @@ class Routes {
           appCubit.setSkillTree();
         } else if (route.settings.name == SkillTreeView.skillsListName) {
           appCubit
+            ..setSkillTree()
             ..navigateToSkillsList()
             ..setSkillTreeTabIndex(0);
+        } else if (route.settings.name == SkillTreeView.skillLevelName) {
+          appCubit.setSkillTree();
         }
       },
       onPop: (route, previousRoute) {
