@@ -26,3 +26,6 @@ export 'src/rider_profile_repository.dart';
 export 'src/horse_profile_store.dart';
 export 'src/horse_profile_repository.dart';
 export 'src/account_deletion_repository.dart';
+export 'src/connection_request.dart';
+export 'src/connection_request_store.dart';
+export 'src/firebase_connection_request_store.dart';
