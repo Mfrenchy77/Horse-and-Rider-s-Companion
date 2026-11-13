@@ -14,6 +14,7 @@ export 'src/mappers/comment_firestore_mapper.dart';
 export 'src/mappers/horse_profile_firestore_mapper.dart';
 export 'src/mappers/level_firestore_mapper.dart';
 export 'src/mappers/resource_firestore_mapper.dart';
+export 'src/mappers/rider_profile_firestore_mapper.dart';
 export 'src/mappers/skill_firestore_mapper.dart';
 export 'src/mappers/skill_level_firestore_mapper.dart';
 export 'src/mappers/skill_node_firestore_mapper.dart';

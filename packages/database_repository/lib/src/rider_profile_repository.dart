@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
+import 'package:database_repository/src/mappers/rider_profile_firestore_mapper.dart';
 import 'package:database_repository/src/models/models.dart';
 import 'package:database_repository/src/repository_exception.dart';
 import 'package:database_repository/src/rider_profile_store.dart';
@@ -13,8 +14,8 @@ class RiderProfileRepository implements RiderProfileStore {
     : _riderProfileDatabaseReference = (firestore ?? FirebaseFirestore.instance)
           .collection(RIDER_PROFILE)
           .withConverter<RiderProfile>(
-            fromFirestore: RiderProfile.fromFirestore,
-            toFirestore: (riderProfile, options) => riderProfile.toFirestore(),
+            fromFirestore: RiderProfileFirestoreMapper.fromFirestore,
+            toFirestore: RiderProfileFirestoreMapper.toFirestore,
           );
 
   static const String RIDER_PROFILE = 'Rider_Profile';

@@ -167,11 +167,14 @@ void main() {
         ]);
 
         final riderSnap = await fake.collection('Riders').doc('r1').get();
-        final rider = RiderProfile.fromFirestore(riderSnap, null);
+        final rider = RiderProfileFirestoreMapper.fromFirestore(
+          riderSnap,
+          null,
+        );
         expect(rider.skillLevels, hasLength(1));
         expect(rider.skillLevels!.first.lastEditDate, editDate);
         expect(rider.skillLevels!.first.levelState, LevelState.PROFICIENT);
-        expect(rider.toFirestore()['skillLevels'], [
+        expect(RiderProfileFirestoreMapper.toFirestore(rider)['skillLevels'], [
           {
             'skillId': 's1',
             'verified': true,

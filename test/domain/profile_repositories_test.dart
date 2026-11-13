@@ -147,7 +147,7 @@ void main() {
         'subscriptionEndDate': Timestamp.fromDate(end),
       });
 
-      final loadedFromTimestamp = RiderProfile.fromFirestore(
+      final loadedFromTimestamp = RiderProfileFirestoreMapper.fromFirestore(
         await rawDoc.get(),
         null,
       );

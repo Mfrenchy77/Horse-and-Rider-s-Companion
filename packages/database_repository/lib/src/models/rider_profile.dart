@@ -1,6 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
-import 'package:database_repository/src/mappers/skill_level_firestore_mapper.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 
@@ -142,16 +139,11 @@ class RiderProfile {
   /// List of profiles the rider has saved
   List<BaseListItem>? savedProfilesList;
 
-  /// Creates a new instance of [RiderProfile] from a [DocumentSnapshot]
+  /// Creates a new instance of [RiderProfile] from a backend-neutral map.
   // ignore: sort_constructors_first
-  factory RiderProfile.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
+  factory RiderProfile.fromMap(Map<String, dynamic> data) {
     return RiderProfile(
-      id: data!['id'] as String,
+      id: data['id'] as String,
       bio: data['bio'] as String?,
       name: data['name'] as String,
       email: data['email'] as String,
@@ -205,8 +197,8 @@ class RiderProfile {
     );
   }
 
-  /// Converts the [RiderProfile] to a [Map]
-  Map<String, dynamic> toFirestore() {
+  /// Converts the [RiderProfile] to a backend-neutral [Map].
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
@@ -224,47 +216,37 @@ class RiderProfile {
       if (subscribed != null) 'subscribed': subscribed,
       if (countryName != null) 'countryName': countryName,
       if (locationName != null) 'locationName': locationName,
-      if (lastEditDate != null) 'lastEditDate': lastEditDate,
-      if (messagesList != null) 'messagesList': messagesList,
+      if (lastEditDate != null)
+        'lastEditDate': lastEditDate!.toIso8601String(),
+      if (messagesList != null)
+        'messagesList': List<String>.from(messagesList!),
       if (homeUrl != null) 'homeUrl': homeUrl?.toLowerCase(),
-      if (subscriptionDate != null) 'subscriptionDate': subscriptionDate,
-      if (savedResourcesList != null) 'savedResourcesList': savedResourcesList,
+      if (subscriptionDate != null)
+        'subscriptionDate': subscriptionDate!.toIso8601String(),
+      if (savedResourcesList != null)
+        'savedResourcesList': List<String>.from(savedResourcesList!),
       if (notes != null)
-        'notes': List<dynamic>.from(
-          notes!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'notes': List<dynamic>.from(notes!.map((e) => e.toMap())),
       if (subscriptionEndDate != null)
-        'subscriptionEndDate': subscriptionEndDate,
+        'subscriptionEndDate': subscriptionEndDate!.toIso8601String(),
       if (studentHorses != null)
-        'studentHorses': List<dynamic>.from(
-          studentHorses!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'studentHorses':
+            List<dynamic>.from(studentHorses!.map((e) => e.toMap())),
       if (students != null)
-        'students': List<dynamic>.from(
-          students!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'students': List<dynamic>.from(students!.map((e) => e.toMap())),
       if (savedProfilesList != null)
-        'savedProfilesList': List<dynamic>.from(
-          savedProfilesList!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'savedProfilesList':
+            List<dynamic>.from(savedProfilesList!.map((e) => e.toMap())),
       if (skillLevels != null)
-        'skillLevels': List<dynamic>.from(
-          skillLevels!.map(SkillLevelFirestoreMapper.toJson),
-        ),
+        'skillLevels': List<dynamic>.from(skillLevels!.map((e) => e.toMap())),
       if (ownedHorses != null)
-        'ownedHorses': List<dynamic>.from(
-          ownedHorses!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'ownedHorses': List<dynamic>.from(ownedHorses!.map((e) => e.toMap())),
       if (ownershipRosterVersion != null)
         'ownershipRosterVersion': ownershipRosterVersion,
       if (archivedHorses != null)
-        'archivedHorses': archivedHorses!
-            .map(BaseListItemFirestoreMapper.toFirestore)
-            .toList(),
+        'archivedHorses': archivedHorses!.map((e) => e.toMap()).toList(),
       if (instructors != null)
-        'instructors': List<dynamic>.from(
-          instructors!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'instructors': List<dynamic>.from(instructors!.map((e) => e.toMap())),
     };
   }
 
@@ -339,9 +321,13 @@ List<SkillLevel> _convertSkillLevel(List<dynamic>? skillLevelMap) {
 
   if (skillLevelMap != null) {
     for (final skillLevel in skillLevelMap) {
-      skillLevels.add(
-        SkillLevelFirestoreMapper.fromMap(skillLevel as Map<String, dynamic>),
-      );
+      if (skillLevel is Map<String, dynamic>) {
+        skillLevels.add(SkillLevel.fromMap(skillLevel));
+      } else if (skillLevel is Map) {
+        skillLevels.add(
+          SkillLevel.fromMap(Map<String, dynamic>.from(skillLevel)),
+        );
+      }
     }
   }
 
@@ -352,9 +338,13 @@ List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
   final baseListItem = <BaseListItem>[];
   if (itemMap != null) {
     for (final item in itemMap) {
-      baseListItem.add(
-        BaseListItemFirestoreMapper.fromMap(item as Map<String, dynamic>),
-      );
+      if (item is Map<String, dynamic>) {
+        baseListItem.add(BaseListItem.fromMap(item));
+      } else if (item is Map) {
+        baseListItem.add(
+          BaseListItem.fromMap(Map<String, dynamic>.from(item)),
+        );
+      }
     }
   }
 
@@ -362,7 +352,8 @@ List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
 }
 
 DateTime? _parseNullableDateTime(Object? value) {
-  if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
   return null;
 }
