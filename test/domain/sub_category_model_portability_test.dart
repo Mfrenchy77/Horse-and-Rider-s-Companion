@@ -36,7 +36,9 @@ void main() {
       expect(decoded.lastEditDate, original.lastEditDate);
     });
 
-    test('fromMap supports DateTime, ISO string, epoch ms, and null parentId', () {
+    test(
+      'fromMap supports DateTime, ISO string, epoch ms, and null parentId',
+      () {
       final base = {
         'id': 'sub-2',
         'name': 'Seat',
@@ -160,7 +162,8 @@ void main() {
         expect(horseList.map((s) => s.id), ['h-sub']);
 
         repo.deleteSubCategory(subCategory: horseSub);
-        final afterDelete = await repo.getSubCategoriesForHorseSkillTree().first;
+        final afterDelete =
+            await repo.getSubCategoriesForHorseSkillTree().first;
         expect(afterDelete, isEmpty);
       },
     );
