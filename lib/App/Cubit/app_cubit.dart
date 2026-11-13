@@ -2252,10 +2252,7 @@ class AppCubit extends Cubit<AppState> {
         break;
     }
     emit(
-      state.copyWith(
-        commentSortState: sortState,
-        resourceComments: sortedList,
-      ),
+      state.copyWith(commentSortState: sortState, resourceComments: sortedList),
     );
   }
 

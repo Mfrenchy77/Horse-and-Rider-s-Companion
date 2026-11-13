@@ -7,11 +7,11 @@ import 'package:database_repository/database_repository.dart';
 class SkillTreeRepository implements SkillTreeStore {
   /// Constructor for SkillTreeRepository
   SkillTreeRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
-/* ****
+  /* ****
                   ****   Skills   ****
 
 **** */
@@ -19,11 +19,12 @@ class SkillTreeRepository implements SkillTreeStore {
   /// Constant for Accessing the Skills on the Skill Tree
   static const String SKILLS = 'Skills';
 
-  CollectionReference<Skill> _skills() =>
-      _firestore.collection(SKILLS).withConverter<Skill>(
-            fromFirestore: SkillFirestoreMapper.fromFirestore,
-            toFirestore: SkillFirestoreMapper.toFirestore,
-          );
+  CollectionReference<Skill> _skills() => _firestore
+      .collection(SKILLS)
+      .withConverter<Skill>(
+        fromFirestore: SkillFirestoreMapper.fromFirestore,
+        toFirestore: SkillFirestoreMapper.toFirestore,
+      );
 
   /// create or update [skill]
   @override
@@ -44,9 +45,9 @@ class SkillTreeRepository implements SkillTreeStore {
   /// Retreive all Skills
   @override
   Stream<List<Skill>> getSkills() {
-    return _skills()
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
+    return _skills().snapshots().map(
+      (snap) => snap.docs.map((d) => d.data()).toList(),
+    );
   }
 
   ///  Retreives all Skills for Rider SKill Tree
