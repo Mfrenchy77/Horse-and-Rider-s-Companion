@@ -1,6 +1,5 @@
 // lib/Resources/articles/create_article_page.dart
 import 'package:database_repository/database_repository.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
@@ -19,7 +18,10 @@ class CreateArticlePage extends StatelessWidget {
     return BlocProvider<CreateArticleCubit>(
       create: (_) => CreateArticleCubit(
         resourcesRepository: ResourcesRepository(),
-        storage: FirebaseStorage.instance,
+        mediaStorage:
+            context.read<MediaStorageRepository?>() ??
+            context.read<CloudRepository?>() ??
+            CloudRepository(),
         user: context.read<AppCubit>().state.usersProfile,
       ),
       child: CreateArticleView(onCreated: onCreated),

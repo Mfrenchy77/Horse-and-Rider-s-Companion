@@ -48,7 +48,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
   final User? _user;
   final RiderProfile? _riderProfile;
-  final CloudRepository _cloudRepository;
+  final MediaStorageRepository _cloudRepository;
   final RiderProfileRepository _riderProfileRepository;
   final LocationLookupService _locationLookupService;
 

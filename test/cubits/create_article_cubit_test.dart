@@ -20,7 +20,7 @@ void main() {
         .thenAnswer((_) async {});
     cubit = CreateArticleCubit(
       resourcesRepository: repo,
-      storage: MockStorage(),
+      mediaStorage: CloudRepository(storage: MockStorage()),
       user: user,
     );
   });
@@ -89,8 +89,10 @@ void main() {
   }
   test('guests cannot submit', () async {
     await cubit.close();
-    cubit =
-        CreateArticleCubit(resourcesRepository: repo, storage: MockStorage());
+    cubit = CreateArticleCubit(
+      resourcesRepository: repo,
+      mediaStorage: CloudRepository(storage: MockStorage()),
+    );
     validForm();
     await cubit.submit();
     expect(cubit.state.errorMessage, contains('signed in'));

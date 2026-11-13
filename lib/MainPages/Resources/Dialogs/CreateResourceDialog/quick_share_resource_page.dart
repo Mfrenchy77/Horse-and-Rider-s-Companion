@@ -19,6 +19,9 @@ class QuickShareResourcePage extends StatefulWidget {
     required RiderProfile profile,
   }) async {
     final repository = context.read<ResourcesRepository>();
+    final mediaStorage =
+        context.read<MediaStorageRepository?>() ??
+        context.read<CloudRepository?>();
     final shared = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider(
@@ -28,6 +31,7 @@ class QuickShareResourcePage extends StatefulWidget {
             skills: skills,
             usersProfile: profile,
             resourcesRepository: repository,
+            mediaStorage: mediaStorage,
           ),
           child: const QuickShareResourcePage(),
         ),

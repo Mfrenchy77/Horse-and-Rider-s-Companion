@@ -99,7 +99,7 @@ void main() {
     when(repository.newId).thenReturn('article-id');
     article = CreateArticleCubit(
       resourcesRepository: repository,
-      storage: storage,
+      mediaStorage: CloudRepository(storage: storage),
       user: RiderProfile(id: 'r', name: 'Rider', email: 'r@example.com'),
     );
     resource = CreateResourceDialogCubit(
@@ -108,7 +108,7 @@ void main() {
       skills: const [],
       usersProfile: null,
       resourcesRepository: repository,
-      storage: storage,
+      mediaStorage: CloudRepository(storage: storage),
     );
   });
   tearDown(() async {

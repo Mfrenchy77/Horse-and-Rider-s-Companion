@@ -72,7 +72,10 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
         usersProfile: widget._usersProfile,
         horseProfile: widget._horseProfile,
         keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
-        cloudRepository: context.read<CloudRepository?>() ?? CloudRepository(),
+        cloudRepository:
+            context.read<MediaStorageRepository?>() ??
+            context.read<CloudRepository?>() ??
+            CloudRepository(),
         horseProfileRepository:
             context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
         riderProfileRepository:

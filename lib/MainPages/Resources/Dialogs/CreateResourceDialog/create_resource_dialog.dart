@@ -61,6 +61,9 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
         initialInputType: widget.initialInputType,
         usersProfile: widget.userProfile,
         resourcesRepository: context.read<ResourcesRepository>(),
+        mediaStorage:
+            context.read<MediaStorageRepository?>() ??
+            context.read<CloudRepository?>(),
       ),
       child: BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
         listenWhen: (p, c) =>

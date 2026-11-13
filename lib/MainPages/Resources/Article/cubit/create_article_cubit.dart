@@ -5,21 +5,20 @@ import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 part 'create_article_state.dart';
 
 class CreateArticleCubit extends Cubit<ArticleCreateState> {
   CreateArticleCubit({
     ResourcesRepository? resourcesRepository,
-    FirebaseStorage? storage,
+    MediaStorageRepository? mediaStorage,
     this._user,
   }) : _repo = resourcesRepository ?? ResourcesRepository(),
-       _storage = storage ?? FirebaseStorage.instance,
+       _storage = mediaStorage ?? CloudRepository(),
        super(const ArticleCreateState());
 
   final ResourcesRepository _repo;
-  final FirebaseStorage _storage;
+  final MediaStorageRepository _storage;
   final RiderProfile? _user;
 
   // ------------------ Field updates ------------------
@@ -77,12 +76,11 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
 
       emit(state.copyWith(status: ArticleCreateStatus.uploadingCover));
 
-      final ref = _storage.ref().child(
-        'covers/${_user.email}/$tempId/$filename',
+      final downloadUrl = await _storage.uploadBytes(
+        path: 'covers/${_user.email}/$tempId/$filename',
+        bytes: bytes,
+        contentType: _guessContentType(filename),
       );
-      final meta = SettableMetadata(contentType: _guessContentType(filename));
-      final task = await ref.putData(bytes, meta);
-      final downloadUrl = await task.ref.getDownloadURL();
 
       emit(
         state.copyWith(

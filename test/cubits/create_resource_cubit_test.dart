@@ -55,7 +55,7 @@ void main() {
       skills: skills,
       usersProfile: user,
       resourcesRepository: repo,
-      storage: MockStorage(),
+      mediaStorage: CloudRepository(storage: MockStorage()),
     );
   });
   tearDown(() => cubit.close());
@@ -248,7 +248,7 @@ void main() {
         skills: skills,
         usersProfile: user,
         resourcesRepository: repo,
-        storage: MockStorage(),
+        mediaStorage: CloudRepository(storage: MockStorage()),
       )..titleChanged('Updated');
       await cubit.editResource();
       final saved =

@@ -38,7 +38,10 @@ class EditRiderProfileDialog extends StatelessWidget {
       create: (context) => EditRiderProfileCubit(
         user: user,
         keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
-        cloudRepository: context.read<CloudRepository?>() ?? CloudRepository(),
+        cloudRepository:
+            context.read<MediaStorageRepository?>() ??
+            context.read<CloudRepository?>() ??
+            CloudRepository(),
         riderProfile: riderProfile,
         riderProfileRepository:
             context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),

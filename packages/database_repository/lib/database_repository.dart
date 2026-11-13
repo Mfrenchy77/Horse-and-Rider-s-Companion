@@ -4,6 +4,7 @@ library database_repository;
 
 export 'src/models/models.dart';
 export 'src/keys_repository.dart';
+export 'src/media_storage_repository.dart';
 export 'src/cloud_repository.dart';
 export 'src/levels_repository.dart';
 export 'src/location_repository.dart';

@@ -77,6 +77,9 @@ class _AppState extends State<App> {
         RepositoryProvider<LogbookConnectionRepository>.value(
           value: _connections,
         ),
+        RepositoryProvider<MediaStorageRepository>(
+          create: (_) => CloudRepository(),
+        ),
         RepositoryProvider.value(value: widget._messagesRepository),
         RepositoryProvider.value(value: widget._skillTreeRepository),
         RepositoryProvider.value(value: widget._resourcesRepository),

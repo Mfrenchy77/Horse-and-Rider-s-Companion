@@ -8,7 +8,6 @@ import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -25,7 +24,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required List<Skill?>? skills,
     required RiderProfile? usersProfile,
     required this._resourcesRepository,
-    this._storage,
+    MediaStorageRepository? mediaStorage,
     ResourceInputType initialInputType = ResourceInputType.link,
 
     /// Optional overrides (handy for emulator/local testing)
@@ -33,6 +32,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
   }) : _debounce = null,
+       _storage = mediaStorage,
        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
            ? _kDefaultPreviewMetaUrl
            : previewMetaEndpoint!.trim(),
@@ -77,9 +77,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/fetchReadable';
 
   Timer? _debounce;
-  StreamSubscription<TaskSnapshot>? _uploadSubscription;
   final ResourcesRepository _resourcesRepository;
-  final FirebaseStorage? _storage;
+  final MediaStorageRepository? _storage;
   int _metadataRequest = 0;
   String? _metadataTitle;
   String? _metadataImage;
@@ -661,9 +660,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       );
       emit(state.copyWith(submitStatus: ResourceSubmitStatus.success));
     } catch (e) {
-      final msg = (e is FirebaseException)
-          ? (e.message ?? 'Firebase Error')
-          : 'Error';
+      final msg = e is MediaStorageException ? e.message : 'Error';
       emit(
         state.copyWith(
           isError: true,
@@ -724,9 +721,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         state.copyWith(
           submitStatus: ResourceSubmitStatus.error,
           isError: true,
-          error: e is FirebaseException
-              ? (e.message ?? 'Firebase error')
-              : '$e',
+          error: e is MediaStorageException ? e.message : '$e',
         ),
       );
     }
@@ -760,29 +755,16 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
 
     emit(state.copyWith(pdfUploading: true, pdfUploadProgress: 0));
 
-    final ref = (_storage ?? FirebaseStorage.instance).ref().child(
-      'resources/pdfs/$id/$name',
+    final url = await (_storage ?? CloudRepository()).uploadBytes(
+      path: 'resources/pdfs/$id/$name',
+      bytes: bytes,
+      contentType: 'application/pdf',
+      onProgress: (p) {
+        if (!isClosed) {
+          emit(state.copyWith(pdfUploadProgress: p));
+        }
+      },
     );
-    final meta = SettableMetadata(contentType: 'application/pdf');
-    final uploadTask = ref.putData(bytes, meta);
-
-    await _uploadSubscription?.cancel();
-    _uploadSubscription = uploadTask.snapshotEvents.listen((snap) {
-      if (isClosed) return;
-      final p = snap.totalBytes == 0
-          ? 0.0
-          : snap.bytesTransferred / snap.totalBytes;
-      emit(state.copyWith(pdfUploadProgress: p));
-    });
-
-    final TaskSnapshot snapshot;
-    try {
-      snapshot = await uploadTask;
-    } finally {
-      await _uploadSubscription?.cancel();
-      _uploadSubscription = null;
-    }
-    final url = await snapshot.ref.getDownloadURL();
 
     emit(state.copyWith(pdfUploading: false));
 
@@ -837,7 +819,6 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   @override
   Future<void> close() {
     _debounce?.cancel();
-    _uploadSubscription?.cancel();
     return super.close();
   }
 }
