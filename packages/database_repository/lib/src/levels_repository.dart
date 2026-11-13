@@ -6,14 +6,19 @@ import 'package:database_repository/database_repository.dart';
 ///   Crud interface for FireBase and Levels
 ///
 class LevelsRepository {
+  /// Creates a [LevelsRepository] backed by [firestore].
+  LevelsRepository({FirebaseFirestore? firestore})
+    : _levelsDatabaseReference = (firestore ?? FirebaseFirestore.instance)
+          .collection(LEVELS)
+          .withConverter<Level>(
+            fromFirestore: LevelFirestoreMapper.fromFirestore,
+            toFirestore: LevelFirestoreMapper.toFirestore,
+          );
+
   ///constant to reuse
   static const String LEVELS = 'Levels';
 
-  final _levelsDatabaseReference =
-      FirebaseFirestore.instance.collection(LEVELS).withConverter<Level>(
-            fromFirestore: Level.fromFirestore,
-            toFirestore: (Level level, options) => level.toFirestore(),
-          );
+  final CollectionReference<Level> _levelsDatabaseReference;
 
   ///   Create or update [level]
   Future<void> createOrUpdateLevel({required Level level}) {

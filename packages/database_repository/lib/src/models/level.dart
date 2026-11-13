@@ -1,15 +1,5 @@
 // ignore_for_file: constant_identifier_names, public_member_api_docs, sort_constructors_first, lines_longer_than_80_chars
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-///  Possibe Level States
-// enum LevelStates {
-//   NO_PROGRESS,
-//   LEARNING,
-//   COMPLETE,
-//   VERIFIED,
-// }
-
 /// Model representing a Level in the Skill Tree
 class Level implements Comparable<Level> {
   Level({
@@ -20,7 +10,6 @@ class Level implements Comparable<Level> {
     required this.levelName,
     required this.position,
     required this.lastEditBy,
-   // required this.levelState,
     required this.description,
     required this.lastEditDate,
     required this.learningDescription,
@@ -38,16 +27,10 @@ class Level implements Comparable<Level> {
   final DateTime? lastEditDate;
   final String? learningDescription;
   final String? completeDescription;
-  //LevelStates? levelState = LevelStates.NO_PROGRESS;
 
-  factory Level.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
+  factory Level.fromMap(Map<String, dynamic> data) {
     return Level(
-      id: data!['id'] as String?,
+      id: data['id'] as String?,
       level: data['level'] as int?,
       rider: data['rider'] as bool?,
       position: data['position'] as int,
@@ -55,14 +38,13 @@ class Level implements Comparable<Level> {
       levelName: data['levelName'] as String?,
       lastEditBy: data['lastEditBy'] as String?,
       description: data['description'] as String?,
-      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
-     // levelState: LevelStates.values[(data['levelState'] as int)],
+      lastEditDate: _parseDateTime(data['lastEditDate']),
       learningDescription: data['learningDescription'] as String?,
       completeDescription: data['completeDescription'] as String?,
     );
   }
 
-  Map<String, Object?> toFirestore() {
+  Map<String, Object?> toMap() {
     return {
       'position': position,
       if (id != null) 'id': id,
@@ -76,9 +58,17 @@ class Level implements Comparable<Level> {
       if (levelName != null) 'levelName': levelName,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (description != null) 'description': description,
-      if (lastEditDate != null) 'lastEditDate': lastEditDate,
-     // if (levelState != null) 'levelState': levelState?.index,
+      if (lastEditDate != null)
+        'lastEditDate': lastEditDate!.toIso8601String(),
     };
+  }
+
+  static DateTime? _parseDateTime(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return null;
   }
 
   @override

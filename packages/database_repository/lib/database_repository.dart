@@ -8,6 +8,7 @@ export 'src/repository_exception.dart';
 export 'src/media_storage_repository.dart';
 export 'src/cloud_repository.dart';
 export 'src/levels_repository.dart';
+export 'src/mappers/level_firestore_mapper.dart';
 export 'src/location_repository.dart';
 export 'src/zip_code_repository.dart';
 export 'src/messages_store.dart';
