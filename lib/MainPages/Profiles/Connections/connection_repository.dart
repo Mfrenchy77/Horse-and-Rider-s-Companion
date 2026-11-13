@@ -7,46 +7,13 @@ import 'package:database_repository/database_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/coaching_connection.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_failure.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:http/http.dart' as http;
 
+export 'coaching_connection.dart';
 export 'connection_failure.dart';
-
-class CoachingConnection {
-  CoachingConnection(this.id, Map<String, dynamic> data)
-    : version = data['version'] as String,
-      kind = data['kind'] as String,
-      status = data['status'] as String,
-      sender = data['sender'] as String,
-      recipient = data['recipient'] as String,
-      learner = data['learner'] as String,
-      coach = data['coach'] as String,
-      learnerName = data['learnerName'] as String,
-      coachName = data['coachName'] as String,
-      horseId = data['horseId'] as String?,
-      horseName = data['horseName'] as String?,
-      ownershipVersion = data['ownershipVersion'] as String?,
-      updatedAt = (data['updatedAt'] as Timestamp?)?.toDate();
-
-  final String id;
-  final String version;
-  final String kind;
-  final String status;
-  final String sender;
-  final String recipient;
-  final String learner;
-  final String coach;
-  final String learnerName;
-  final String coachName;
-  final String? horseId;
-  final String? horseName;
-  final String? ownershipVersion;
-  final DateTime? updatedAt;
-
-  String otherName(String viewer) => viewer == coach ? learnerName : coachName;
-  String get requesterName => sender == coach ? coachName : learnerName;
-}
 
 class ConnectionRepository implements LogbookConnectionRepository {
   Stream<List<CoachingConnection>> watch(String uid) => FirebaseFirestore
@@ -58,7 +25,11 @@ class ConnectionRepository implements LogbookConnectionRepository {
         (snapshot) =>
             [
               for (final doc in snapshot.docs)
-                CoachingConnection(doc.id, doc.data()),
+                CoachingConnection(
+                  doc.id,
+                  doc.data(),
+                  updatedAt: (doc.data()['updatedAt'] as Timestamp?)?.toDate(),
+                ),
             ]..sort(
               (a, b) => (b.updatedAt ?? DateTime(0)).compareTo(
                 a.updatedAt ?? DateTime(0),

@@ -1,7 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/coaching_connection.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_failure.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 
 /// Side-effects for the Rider Logbook feature.
