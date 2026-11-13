@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/comment_sorting.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -242,7 +243,10 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
           );
         }
 
-        final baseComments = cubit.getBaseComments(resource);
+        final baseComments = sortCommentsBy(
+          cubit.getBaseComments(resource),
+          state.commentSortState,
+        );
         _buildListItems(baseComments);
 
         final isAtFirstParent = _currentParentIndex <= 0;

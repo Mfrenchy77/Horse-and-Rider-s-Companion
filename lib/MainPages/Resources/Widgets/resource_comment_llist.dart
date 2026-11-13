@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/comment_sorting.dart';
 
 class ResourceCommentList extends StatelessWidget {
   const ResourceCommentList({
@@ -25,7 +26,7 @@ class ResourceCommentList extends StatelessWidget {
         if (activeResource == null) {
           return const Text('No Comments, Yet');
         }
-        final baseComments = _sortedComments(
+        final baseComments = sortCommentsBy(
           cubit.getBaseComments(activeResource),
           state.commentSortState,
         );
@@ -47,22 +48,4 @@ class ResourceCommentList extends StatelessWidget {
       },
     );
   }
-}
-
-List<Comment> _sortedComments(
-  List<Comment> comments,
-  CommentSortState sortState,
-) {
-  final sorted = List<Comment>.of(comments);
-  switch (sortState) {
-    case CommentSortState.Recent:
-      sorted.sort((a, b) => b.date.compareTo(a.date));
-    case CommentSortState.Oldest:
-      sorted.sort((a, b) => a.date.compareTo(b.date));
-    case CommentSortState.Best:
-      sorted.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
-    case CommentSortState.Worst:
-      sorted.sort((a, b) => (a.rating ?? 0).compareTo(b.rating ?? 0));
-  }
-  return sorted;
 }

@@ -192,6 +192,49 @@ void main() {
     expect(tester.widget<CommentItem>(row('other')).comment.rating, 0);
   });
 
+  testWidgets('comment page applies the selected sort order', (tester) async {
+    final low = comment('low').copyWith(
+      date: DateTime.utc(2025, 1, 2),
+      rating: 1,
+    );
+    final high = comment('high').copyWith(
+      date: DateTime.utc(2025),
+      rating: 5,
+    );
+    final value = resource([low, high]);
+    await pumpPage(tester, value);
+
+    List<String?> order() {
+      final ids = ['low', 'high']..sort(
+        (a, b) => tester
+            .getTopLeft(row(a))
+            .dy
+            .compareTo(tester.getTopLeft(row(b)).dy),
+      );
+      return ids;
+    }
+
+    harness.cubit.sortComments(CommentSortState.Best);
+    await tester.pumpAndSettle();
+    expect(order(), ['high', 'low']);
+
+    harness.cubit.sortComments(CommentSortState.Worst);
+    await tester.pumpAndSettle();
+    expect(order(), ['low', 'high']);
+
+    harness.cubit.sortComments(CommentSortState.Recent);
+    await tester.pumpAndSettle();
+    expect(order(), ['low', 'high']);
+
+    harness.cubit.sortComments(CommentSortState.Oldest);
+    await tester.pumpAndSettle();
+    expect(order(), ['high', 'low']);
+    expect(harness.cubit.state.resource?.comments?.map((c) => c.id), [
+      'low',
+      'high',
+    ]);
+  });
+
   testWidgets(
     'ResourceCommentList uses ListView.builder and sorts without mutating',
     (tester) async {
