@@ -6,16 +6,23 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 class DenyRequestButton extends StatelessWidget {
   const DenyRequestButton({
     super.key,
-    required this.message,
+    this.request,
+    this.message,
     this.onBeforeDeny,
-  });
-  final Message message;
+  }) : assert(
+         request != null || message != null,
+         'Either request or message must be provided',
+       );
+
+  final ConnectionRequest? request;
+  final Message? message;
   final VoidCallback? onBeforeDeny;
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
-    final isAccepted = message.requestItem?.isSelected ?? false;
+    final isAccepted =
+        request?.isAccepted ?? (message?.requestItem?.isSelected ?? false);
 
     return OutlinedButton(
       key: const Key('DenyRequestButton'),
@@ -23,7 +30,12 @@ class DenyRequestButton extends StatelessWidget {
           ? null
           : () {
               onBeforeDeny?.call();
-              cubit.denyRequest(message: message);
+              final req = request;
+              if (req != null) {
+                cubit.denyConnectionRequest(req);
+              } else {
+                cubit.denyRequest(message: message!);
+              }
             },
       child: const Text('Deny Request'),
     );

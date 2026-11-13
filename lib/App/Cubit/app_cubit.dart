@@ -23,7 +23,8 @@ part 'app_state.dart';
 
 class AppCubit extends Cubit<AppState> {
   AppCubit({
-    required this._messagesRepository,
+    required MessagesStore messagesRepository,
+    ConnectionRequestStore? connectionRequestRepository,
     required this._skillTreeRepository,
     required this._resourcesRepository,
     required this._riderProfileRepository,
@@ -32,7 +33,11 @@ class AppCubit extends Cubit<AppState> {
     this._accountDeletionRepository,
     PushNotificationService? pushNotificationService,
     this._submitCoachingAction,
-  }) : _authenticationRepository = authenticationRepository,
+  }) : _messagesRepository = messagesRepository,
+       _connectionRequestRepository =
+           connectionRequestRepository ??
+           FirebaseConnectionRequestStore(messagesStore: messagesRepository),
+       _authenticationRepository = authenticationRepository,
        _pushNotificationService = pushNotificationService ?? const FcmService(),
        super(
          authenticationRepository.currentUser.isNotEmpty
@@ -44,6 +49,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Repositories
   final MessagesStore _messagesRepository;
+  final ConnectionRequestStore _connectionRequestRepository;
   final SkillTreeStore _skillTreeRepository;
   final ResourcesStore _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;
@@ -58,7 +64,7 @@ class AppCubit extends Cubit<AppState> {
   late final StreamSubscription<User?> _userSubscription;
   StreamSubscription<List<Resource>>? _resourcesStream;
   StreamSubscription<List<Skill>>? _skillsSubscription;
-  StreamSubscription<List<Conversation>>? _conversationsStream;
+  StreamSubscription<List<ConnectionRequest>>? _conversationsStream;
   // Training paths disabled; subscription retained for restoration.
   // StreamSubscription<List<TrainingPath>>? _trainingPathsStream;
   StreamSubscription<RiderProfile?>? _usersProfileSubscription;
@@ -573,57 +579,37 @@ class AppCubit extends Cubit<AppState> {
     required RiderProfile instructorProfile,
   }) async {
     final user = state.usersProfile!;
-    final messageId = DateTime.now().millisecondsSinceEpoch.toString();
-    final requestItem = BaseListItem(
-      name: user.name,
-      imageUrl: user.picUrl,
-      isCollapsed: true,
-      isSelected: false,
-      id: user.email.toLowerCase(),
-    );
+    final now = DateTime.now();
+    final messageId = now.millisecondsSinceEpoch.toString();
     final sortedEmails = <String>[
       user.email.toLowerCase(),
       instructorProfile.email.toLowerCase(),
     ]..sort();
 
-    final idbuff = sortedEmails.join('_');
-    final conversationId = convertEmailToPath(idbuff);
-
-    final message = Message(
-      date: DateTime.now(),
+    final conversationId = convertEmailToPath(sortedEmails.join('_'));
+    final request = ConnectionRequest(
       id: conversationId,
-      senderId: user.email.toLowerCase(),
-      sender: user.name,
       messageId: messageId,
-      requestItem: requestItem,
-      subject: 'Instructor Request',
-      senderProfilePicUrl: user.picUrl,
-      messageType: MessageType.INSTRUCTOR_REQUEST,
-      recipients: [user.name, instructorProfile.name],
-      message:
+      kind: ConnectionRequestKind.instructor,
+      senderEmail: user.email.toLowerCase(),
+      senderName: user.name,
+      senderPicUrl: user.picUrl,
+      recipientEmail: instructorProfile.email.toLowerCase(),
+      recipientName: instructorProfile.name,
+      title: 'Instructor Request',
+      summary:
           '${user.name} has requested '
           '${instructorProfile.name} to be their Instructor',
-    );
-
-    final conversation = Conversation(
-      id: conversationId,
-      createdBy: user.name,
-      lastEditBy: user.name,
-      recentMessage: message,
-      createdOn: DateTime.now(),
-      lastEditDate: DateTime.now(),
       parties: [user.name, instructorProfile.name],
       partiesIds: [
         user.email.toLowerCase(),
         instructorProfile.email.toLowerCase(),
       ],
+      createdAt: now,
     );
 
     try {
-      await _messagesRepository.createOrUpdateConversation(
-        conversation: conversation,
-      );
-      await _messagesRepository.createOrUpdateMessage(message: message);
+      await _connectionRequestRepository.sendRequest(request);
       emit(
         state.copyWith(
           isMessage: true,
@@ -644,57 +630,36 @@ class AppCubit extends Cubit<AppState> {
     required RiderProfile studentProfile,
   }) async {
     final user = state.usersProfile!;
-    final requestItem = BaseListItem(
-      name: user.name,
-      isCollapsed: true,
-      isSelected: false,
-      imageUrl: user.picUrl,
-      id: user.email.toLowerCase(),
-    );
-
+    final now = DateTime.now();
     final emails = <String>[
       user.email.toLowerCase(),
       studentProfile.email.toLowerCase(),
     ]..sort();
 
-    final idbuff = emails.join('_');
-    final conversationId = convertEmailToPath(idbuff);
-
-    final message = Message(
+    final conversationId = convertEmailToPath(emails.join('_'));
+    final request = ConnectionRequest(
       id: conversationId,
-      sender: user.name,
-      senderId: user.email.toLowerCase(),
-      date: DateTime.now(),
-      requestItem: requestItem,
-      subject: 'Student Request',
-      senderProfilePicUrl: user.picUrl,
-      messageType: MessageType.STUDENT_REQUEST,
-      recipients: [user.name, studentProfile.name],
-      message:
+      messageId: now.millisecondsSinceEpoch.toString(),
+      kind: ConnectionRequestKind.student,
+      senderEmail: user.email.toLowerCase(),
+      senderName: user.name,
+      senderPicUrl: user.picUrl,
+      recipientEmail: studentProfile.email.toLowerCase(),
+      recipientName: studentProfile.name,
+      title: 'Student Request',
+      summary:
           '${user.name} has requested '
           '${studentProfile.name} to be their Student',
-      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-    );
-
-    final conversation = Conversation(
-      id: conversationId,
-      createdBy: user.name,
-      lastEditBy: user.name,
-      recentMessage: message,
-      createdOn: DateTime.now(),
-      lastEditDate: DateTime.now(),
       parties: [user.name, studentProfile.name],
       partiesIds: [
         user.email.toLowerCase(),
         studentProfile.email.toLowerCase(),
       ],
+      createdAt: now,
     );
 
     try {
-      await _messagesRepository.createOrUpdateConversation(
-        conversation: conversation,
-      );
-      await _messagesRepository.createOrUpdateMessage(message: message);
+      await _connectionRequestRepository.sendRequest(request);
       emit(
         state.copyWith(
           isMessage: true,
@@ -1259,18 +1224,35 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Something went Wrong, No owner profile found');
       return;
     } else {
-      final requestHorse = _createRequestHorse();
-      final conversation = _createStudentHorseRequestConnversation(
-        requestHorse,
-      );
-      final message = _createStudentHorseRequestMessage(
-        requestHorse,
-        conversation.id,
+      final user = state.usersProfile!;
+      final owner = state.ownersProfile!;
+      final horse = state.horseProfile;
+      final now = DateTime.now();
+      final id = _createHorseConversationId();
+      final request = ConnectionRequest(
+        id: id,
+        messageId: now.millisecondsSinceEpoch.toString(),
+        kind: ConnectionRequestKind.studentHorse,
+        senderEmail: user.email.toLowerCase(),
+        senderName: user.name,
+        senderPicUrl: user.picUrl,
+        recipientEmail: owner.email.toLowerCase(),
+        recipientName: owner.name,
+        title: 'Student Horse Request',
+        summary:
+            '${user.name} has requested to add '
+            '${horse?.name} as a student horse.',
+        parties: [user.name, owner.name],
+        partiesIds: [user.email.toLowerCase(), owner.email.toLowerCase()],
+        createdAt: now,
+        horseId: horse?.id,
+        horseName: horse?.name,
+        horsePicUrl: horse?.picUrl,
+        horseOwnerId: horse?.currentOwnerId,
+        horseOwnerName: horse?.currentOwnerName,
       );
 
-      _messagesRepository
-        ..createOrUpdateConversation(conversation: conversation)
-        ..createOrUpdateMessage(message: message);
+      unawaited(_connectionRequestRepository.sendRequest(request));
       debugPrint('Success');
       emit(
         state.copyWith(
@@ -1284,68 +1266,6 @@ class AppCubit extends Cubit<AppState> {
 
       // navigateToMessagesPage(context, group);
     }
-  }
-
-  BaseListItem _createRequestHorse() {
-    return BaseListItem(
-      id: state.horseProfile?.id,
-      name: state.horseProfile?.name,
-      extra: state.usersProfile?.email,
-      imageUrl: state.horseProfile?.picUrl,
-      parentId: state.horseProfile?.currentOwnerId,
-      message: state.horseProfile?.currentOwnerName,
-      isCollapsed: false,
-      isSelected: false,
-    );
-  }
-
-  Conversation _createStudentHorseRequestConnversation(
-    BaseListItem requestHorse,
-  ) {
-    final id = _createHorseConversationId();
-    final memberNames = [
-      state.usersProfile?.name,
-      state.ownersProfile?.name,
-    ].map((e) => e!).toList();
-    final memberIds = [
-      state.usersProfile?.email,
-      state.ownersProfile?.email,
-    ].map((e) => e!.toLowerCase()).toList();
-
-    return Conversation(
-      id: id,
-      parties: memberNames,
-      partiesIds: memberIds,
-      createdOn: DateTime.now(),
-      lastEditDate: DateTime.now(),
-      createdBy: state.usersProfile!.name,
-      lastEditBy: state.usersProfile?.name,
-      recentMessage: _createStudentHorseRequestMessage(requestHorse, id),
-    );
-  }
-
-  Message _createStudentHorseRequestMessage(
-    BaseListItem requestHorse,
-    String groupId,
-  ) {
-    return Message(
-      id: groupId,
-      date: DateTime.now(),
-      senderId: state.usersProfile?.email.toLowerCase(),
-      requestItem: requestHorse,
-      subject: 'Student Horse Request',
-      sender: state.usersProfile!.name,
-      messageType: MessageType.STUDENT_HORSE_REQUEST,
-      senderProfilePicUrl: state.usersProfile?.picUrl,
-      message:
-          '${state.usersProfile?.name} has requested to add '
-          '${state.horseProfile?.name} as a student horse.',
-      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-      recipients: [
-        state.usersProfile?.name,
-        state.ownersProfile?.name,
-      ].map((e) => e!).toList(),
-    );
   }
 
   /// Creates a unique group id for the message
@@ -2959,20 +2879,20 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// Loads the Groups/Conversations for the user
+  /// Loads the connection/transfer requests for the user
   void getConversations() {
-    if (state.conversations == null && _conversationsStream == null) {
+    if (state.connectionRequests == null && _conversationsStream == null) {
       emit(state.copyWith(conversationsState: ConversationsState.loading));
       debugPrint('getConversations');
       if (state.usersProfile != null) {
-        _conversationsStream = _messagesRepository
-            .getConversations(userEmail: state.usersProfile!.email)
-            .listen((conversationsList) {
-              final conversations = conversationsList.toList()
-                ..sort((a, b) => b.createdOn.compareTo(a.createdOn));
+        _conversationsStream = _connectionRequestRepository
+            .watchRequests(userEmail: state.usersProfile!.email)
+            .listen((requestsList) {
+              final requests = requestsList.toList()
+                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
               emit(
                 state.copyWith(
-                  conversations: conversations,
+                  connectionRequests: requests,
                   conversationsState: ConversationsState.loaded,
                 ),
               );
@@ -2987,49 +2907,52 @@ class AppCubit extends Cubit<AppState> {
 
   /// Reissues a legacy message as a connection requiring fresh consent.
   Future<void> acceptRequest({required Message message}) async {
-    if (message.messageType == MessageType.TRANSFER_HORSE_REQUEST) {
+    final request = ConnectionRequest.fromLegacyMessage(message);
+    if (request == null) return;
+    await acceptConnectionRequest(request);
+  }
+
+  /// Accepts or reissues a [ConnectionRequest] via CoachingConnections.
+  Future<void> acceptConnectionRequest(ConnectionRequest request) async {
+    if (request.kind == ConnectionRequestKind.transferHorse) {
       _handleTransferHorseRequest();
       return;
     }
     final email = state.usersProfile?.email;
-    final sender =
-        message.senderId ??
-        (message.messageType == MessageType.STUDENT_HORSE_REQUEST
-            ? message.requestItem?.extra
-            : message.requestItem?.id);
+    final sender = request.senderEmail;
     final submit = _submitCoachingAction;
     if (state.isGuest ||
         email == null ||
-        sender == null ||
+        sender.isEmpty ||
         submit == null ||
         sender.toLowerCase() == email.toLowerCase() ||
         state.acceptStatus == AcceptStatus.loading) {
       return;
     }
 
-    final request = switch (message.messageType) {
-      MessageType.INSTRUCTOR_REQUEST => {
+    final payload = switch (request.kind) {
+      ConnectionRequestKind.instructor => {
         'kind': 'rider',
         'learnerEmail': sender,
         'coachEmail': email,
       },
-      MessageType.STUDENT_REQUEST => {
+      ConnectionRequestKind.student => {
         'kind': 'rider',
         'learnerEmail': email,
         'coachEmail': sender,
       },
-      MessageType.STUDENT_HORSE_REQUEST => {
+      ConnectionRequestKind.studentHorse => {
         'kind': 'horse',
         'learnerEmail': email,
         'coachEmail': sender,
-        'horseId': message.requestItem?.id,
+        'horseId': request.horseId,
       },
-      _ => null,
+      ConnectionRequestKind.transferHorse => null,
     };
-    if (request == null) return;
+    if (payload == null) return;
     emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     try {
-      final result = await submit({'action': 'send', ...request});
+      final result = await submit({'action': 'send', ...payload});
       if (isClosed || state.usersProfile?.email != email) return;
       emit(
         state.copyWith(
@@ -3057,37 +2980,51 @@ class AppCubit extends Cubit<AppState> {
 
   /// Deny/Decline a pending request message and convert it to a chat entry
   Future<void> denyRequest({required Message message}) async {
-    // No repository side-effects beyond updating the message to a normal chat
+    final request = ConnectionRequest.fromLegacyMessage(message);
+    if (request != null) {
+      await denyConnectionRequest(request);
+      return;
+    }
     try {
-      String denialText;
-      switch (message.messageType) {
-        case MessageType.INSTRUCTOR_REQUEST:
-          denialText = 'Denied instructor request from ${message.sender}';
-          break;
-        case MessageType.STUDENT_REQUEST:
-          denialText = 'Denied student request from ${message.sender}';
-          break;
-        case MessageType.STUDENT_HORSE_REQUEST:
-          final horseName = message.requestItem?.name ?? 'horse';
-          denialText =
-              'Denied student horse request for '
-              '$horseName from ${message.sender}';
-          break;
-        case MessageType.TRANSFER_HORSE_REQUEST:
-          denialText = 'Denied horse transfer request';
-          break;
-        case MessageType.EDIT_REQUEST:
-        case MessageType.CHAT:
-        case MessageType.SUPPORT:
-          denialText = 'Request dismissed';
-          break;
-      }
-
       message
-        ..message = denialText
+        ..message = 'Request dismissed'
         ..messageType = MessageType.CHAT;
-
       await _persistMessage(message);
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage: 'Request denied',
+          acceptStatus: AcceptStatus.waiting,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isError: true,
+          errorMessage: 'Failed to deny request: $e',
+        ),
+      );
+    }
+  }
+
+  /// Denies/dismisses a pending [ConnectionRequest].
+  Future<void> denyConnectionRequest(ConnectionRequest request) async {
+    try {
+      final denialText = switch (request.kind) {
+        ConnectionRequestKind.instructor =>
+          'Denied instructor request from ${request.senderName}',
+        ConnectionRequestKind.student =>
+          'Denied student request from ${request.senderName}',
+        ConnectionRequestKind.studentHorse =>
+          'Denied student horse request for '
+              '${request.horseName ?? 'horse'} from ${request.senderName}',
+        ConnectionRequestKind.transferHorse => 'Denied horse transfer request',
+      };
+
+      await _connectionRequestRepository.dismissRequest(
+        request: request,
+        dismissalNote: denialText,
+      );
       emit(
         state.copyWith(
           isMessage: true,
@@ -3141,6 +3078,27 @@ class AppCubit extends Cubit<AppState> {
     return !isFromCurrentUser && isRequestType && notAccepted;
   }
 
+  /// Pending connection requests for the current user.
+  List<ConnectionRequest> pendingConnectionRequests() {
+    final requests = state.connectionRequests;
+    if (requests != null) {
+      return requests
+          .where(
+            (r) => r.senderName != state.usersProfile?.name && !r.isAccepted,
+          )
+          .toList();
+    }
+    return [
+      for (final conversation in pendingRequestConversations())
+        if (ConnectionRequest.fromLegacyMessage(
+              conversation.recentMessage,
+              conversation: conversation,
+            )
+            case final request?)
+          request,
+    ];
+  }
+
   /// Pending request conversations derived from recentMessage only
   List<Conversation> pendingRequestConversations() {
     final cons = state.conversations ?? const <Conversation>[];
@@ -3149,8 +3107,8 @@ class AppCubit extends Cubit<AppState> {
         .toList();
   }
 
-  /// Count of pending requests (recent-only heuristic)
-  int pendingRequestCount() => pendingRequestConversations().length;
+  /// Count of pending requests
+  int pendingRequestCount() => pendingConnectionRequests().length;
 
   /// Save a messaged to the database
   Future<void> _persistMessage(Message message) async {

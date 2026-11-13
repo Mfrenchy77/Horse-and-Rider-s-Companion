@@ -93,6 +93,7 @@ class AppState extends Equatable {
     this.horseManageHorseId,
     this.isEdit = true,
     this.conversations,
+    this.connectionRequests,
     this.ownersProfile,
     this.isGuest = true,
     this.viewingProfile,
@@ -311,6 +312,9 @@ class AppState extends Equatable {
   /// The state of the conversations
   final ConversationsState conversationsState;
 
+  /// The list of connection/transfer requests for the current user.
+  final List<ConnectionRequest>? connectionRequests;
+
   /// The Difficulty Sort State of the Skills
   final DifficultySortState difficultySortState;
 
@@ -385,6 +389,7 @@ class AppState extends Equatable {
     List<Comment>? resourceComments,
     List<Resource?>? savedResources,
     List<Conversation>? conversations,
+    List<ConnectionRequest>? connectionRequests,
     CommentSortState? commentSortState,
     List<TrainingPath?>? trainingPaths,
     ConversationState? conversationState,
@@ -440,6 +445,7 @@ class AppState extends Equatable {
           ? null
           : usersProfile ?? this.usersProfile,
       conversations: conversations ?? this.conversations,
+      connectionRequests: connectionRequests ?? this.connectionRequests,
       trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: clearOwnersProfile
           ? null
@@ -513,6 +519,7 @@ class AppState extends Equatable {
     horseManageHorseId,
     usersProfile,
     conversations,
+    connectionRequests,
     ownersProfile,
     isFromProfile,
     trainingPaths,

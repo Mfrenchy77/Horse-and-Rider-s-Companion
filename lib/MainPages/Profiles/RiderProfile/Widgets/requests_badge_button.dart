@@ -11,6 +11,7 @@ class RequestsBadgeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       buildWhen: (previous, current) =>
+          previous.connectionRequests != current.connectionRequests ||
           previous.conversations != current.conversations ||
           previous.usersProfile != current.usersProfile,
       builder: (context, state) {
@@ -55,7 +56,11 @@ class RequestsBadgeButton extends StatelessWidget {
 
   void _showRequestsSheet(BuildContext context) {
     final cubit = context.read<AppCubit>();
-    final list = cubit.pendingRequestConversations();
+    final useConnectionRequests = cubit.state.connectionRequests != null;
+    final requestsList = cubit.pendingConnectionRequests();
+    final legacyList = useConnectionRequests
+        ? null
+        : cubit.pendingRequestConversations();
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -97,27 +102,47 @@ class RequestsBadgeButton extends StatelessWidget {
                   Flexible(
                     child: ListView.builder(
                       shrinkWrap: true,
-                      itemCount: list.length,
+                      itemCount: requestsList.length,
                       itemBuilder: (context, index) {
-                        final c = list[index];
-                        final otherNames = List<String>.from(c.parties)
+                        if (!useConnectionRequests && legacyList != null) {
+                          final c = legacyList[index];
+                          final otherNames = List<String>.from(c.parties)
+                            ..remove(cubit.state.usersProfile?.name);
+                          final m = c.recentMessage;
+                          return ListTile(
+                            title: Text(otherNames.join(', ')),
+                            subtitle: Text(
+                              m?.message ?? '',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: m == null
+                                ? null
+                                : AcceptRequestButton(
+                                    key: Key(
+                                      'Accept_${m.messageId ?? m.id ?? index}',
+                                    ),
+                                    message: m,
+                                  ),
+                          );
+                        }
+                        final req = requestsList[index];
+                        final otherNames = List<String>.from(req.parties)
                           ..remove(cubit.state.usersProfile?.name);
-                        final m = c.recentMessage;
+                        final title = otherNames.isNotEmpty
+                            ? otherNames.join(', ')
+                            : req.senderName;
                         return ListTile(
-                          title: Text(otherNames.join(', ')),
+                          title: Text(title),
                           subtitle: Text(
-                            m?.message ?? '',
+                            req.summary,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          trailing: m == null
-                              ? null
-                              : AcceptRequestButton(
-                                  key: Key(
-                                    'Accept_${m.messageId ?? m.id ?? index}',
-                                  ),
-                                  message: m,
-                                ),
+                          trailing: AcceptRequestButton(
+                            key: Key('Accept_${req.messageId}'),
+                            request: req,
+                          ),
                         );
                       },
                     ),

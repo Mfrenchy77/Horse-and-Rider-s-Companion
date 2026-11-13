@@ -14,14 +14,18 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
   TransferHorseCubit({
     required RiderProfile userProfile,
     required HorseProfile horseProfile,
-    required this._messagesRepository,
+    ConnectionRequestStore? requestRepository,
+    MessagesStore? messagesRepository,
     required this._riderProfileRepository,
-  }) : super(const TransferHorseState()) {
+  }) : _requestRepository =
+           requestRepository ??
+           FirebaseConnectionRequestStore(messagesStore: messagesRepository),
+       super(const TransferHorseState()) {
     emit(state.copyWith(userProfile: userProfile, horseProfile: horseProfile));
   }
 
   Timer? _debounce;
-  final MessagesStore _messagesRepository;
+  final ConnectionRequestStore _requestRepository;
   final RiderProfileStore _riderProfileRepository;
 
   int _lookupVersion = 0;
@@ -132,43 +136,27 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
       final emails = [sender.email.toLowerCase(), recipient.email.toLowerCase()]
         ..sort();
       final conversationId = convertEmailToPath(emails.join('_'));
-      final request = BaseListItem(
-        id: horse.id,
-        name: horse.name,
-        extra: sender.email,
-        imageUrl: horse.picUrl,
-        parentId: horse.currentOwnerId,
-        message: horse.currentOwnerName,
-        isCollapsed: false,
-        isSelected: false,
-      );
-      final message = Message(
+      final request = ConnectionRequest(
         id: conversationId,
-        date: DateTime.now(),
-        requestItem: request,
-        subject: 'Transfer Horse',
-        sender: sender.name,
-        senderId: sender.email.toLowerCase(),
-        messageType: MessageType.TRANSFER_HORSE_REQUEST,
-        senderProfilePicUrl: sender.picUrl,
-        message: '${sender.name} wants to transfer ${horse.name} to you',
         messageId: ViewUtils.createId(),
-        recipients: [sender.name, recipient.name],
-      );
-      final conversation = Conversation(
-        id: conversationId,
+        kind: ConnectionRequestKind.transferHorse,
+        senderEmail: sender.email.toLowerCase(),
+        senderName: sender.name,
+        senderPicUrl: sender.picUrl,
+        recipientEmail: recipient.email.toLowerCase(),
+        recipientName: recipient.name,
+        title: 'Transfer Horse',
+        summary: '${sender.name} wants to transfer ${horse.name} to you',
         parties: [sender.name, recipient.name],
         partiesIds: [sender.email.toLowerCase(), recipient.email.toLowerCase()],
-        createdOn: DateTime.now(),
-        lastEditDate: DateTime.now(),
-        createdBy: sender.name,
-        lastEditBy: sender.name,
-        recentMessage: message,
+        createdAt: DateTime.now(),
+        horseId: horse.id,
+        horseName: horse.name,
+        horsePicUrl: horse.picUrl,
+        horseOwnerId: horse.currentOwnerId,
+        horseOwnerName: horse.currentOwnerName,
       );
-      await _messagesRepository.createOrUpdateConversation(
-        conversation: conversation,
-      );
-      await _messagesRepository.createOrUpdateMessage(message: message);
+      await _requestRepository.sendRequest(request);
       if (!isClosed) {
         emit(
           state.copyWith(

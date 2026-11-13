@@ -200,6 +200,7 @@ void main() {
       ).thenAnswer((_) async {});
 
       cubit.requestToBeStudentHorse();
+      await Future<void>.delayed(Duration.zero);
 
       verify(
         () => messagesRepo.createOrUpdateConversation(
@@ -254,6 +255,7 @@ void main() {
       ).thenAnswer((_) async {});
 
       cubit.requestToBeStudentHorse();
+      await Future<void>.delayed(Duration.zero);
 
       verify(
         () => horseRepo.createOrUpdateHorseProfile(

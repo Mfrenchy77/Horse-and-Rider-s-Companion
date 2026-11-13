@@ -57,20 +57,7 @@ void main() {
       const meEmail = 'me@example.com';
       const otherEmail = 'other@example.com';
 
-      // Seed conversation
-      final conv = Conversation(
-        id: convId,
-        parties: const ['Me', 'Other'],
-        partiesIds: [meEmail, otherEmail],
-        createdBy: 'Me',
-        createdOn: DateTime.now(),
-        lastEditBy: 'Me',
-        lastEditDate: DateTime.now(),
-        recentMessage: null,
-      );
-      await messagesRepo.createOrUpdateConversation(conversation: conv);
-
-      // Seed two messages
+      // Seed two messages (including a pending instructor request)
       final m1 = Message(
         id: convId,
         date: DateTime.now().subtract(const Duration(minutes: 2)),
@@ -87,12 +74,27 @@ void main() {
         date: DateTime.now().subtract(const Duration(minutes: 1)),
         sender: 'Other',
         senderId: otherEmail,
-        subject: 'Chat',
-        message: 'Hi back',
+        subject: 'Instructor Request',
+        message: 'Other requested Me as Instructor',
         messageId: 'm2',
         recipients: const ['Me', 'Other'],
         senderProfilePicUrl: 'u/other.png',
+        messageType: MessageType.INSTRUCTOR_REQUEST,
+        requestItem: BaseListItem(id: otherEmail, isSelected: false),
       );
+
+      // Seed conversation with recentMessage
+      final conv = Conversation(
+        id: convId,
+        parties: const ['Me', 'Other'],
+        partiesIds: [meEmail, otherEmail],
+        createdBy: 'Me',
+        createdOn: DateTime.now(),
+        lastEditBy: 'Me',
+        lastEditDate: DateTime.now(),
+        recentMessage: m2,
+      );
+      await messagesRepo.createOrUpdateConversation(conversation: conv);
 
       await messagesRepo.createOrUpdateMessage(message: m1);
       await messagesRepo.createOrUpdateMessage(message: m2);
@@ -112,12 +114,12 @@ void main() {
       cubit
         ..emit(cubit.state.copyWith(usersProfile: me))
 
-      // Load conversations (retained for pending request processing)
+      // Load connection requests backed by legacy Conversations/Messages
         ..getConversations();
-      // wait until conversations are fetched
-      await cubit.stream.firstWhere((s) => s.conversations != null);
-      expect(cubit.state.conversations?.length, 1);
-      expect(cubit.state.conversations?.first.id, convId);
+      // wait until requests are fetched
+      await cubit.stream.firstWhere((s) => s.connectionRequests != null);
+      expect(cubit.state.connectionRequests?.length, 1);
+      expect(cubit.state.connectionRequests?.first.id, convId);
     });
   });
 }

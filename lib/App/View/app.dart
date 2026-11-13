@@ -52,6 +52,10 @@ class _AppState extends State<App> {
       FirebaseAccountDeletionRepository(
         authGateway: widget._authenticationRepository,
       );
+  late final ConnectionRequestStore _connectionRequestStore =
+      FirebaseConnectionRequestStore(
+        messagesStore: widget._messagesRepository,
+      );
   late final GoRouter _router;
 
   @override
@@ -60,6 +64,7 @@ class _AppState extends State<App> {
 
     _appCubit = AppCubit(
       messagesRepository: widget._messagesRepository,
+      connectionRequestRepository: _connectionRequestStore,
       skillTreeRepository: widget._skillTreeRepository,
       resourcesRepository: widget._resourcesRepository,
       horseProfileRepository: widget._horseProfileRepository,
@@ -97,6 +102,9 @@ class _AppState extends State<App> {
         ),
         RepositoryProvider<MessagesStore>.value(
           value: widget._messagesRepository,
+        ),
+        RepositoryProvider<ConnectionRequestStore>.value(
+          value: _connectionRequestStore,
         ),
         if (widget._messagesRepository case final MessagesRepository repo)
           RepositoryProvider<MessagesRepository>.value(value: repo),

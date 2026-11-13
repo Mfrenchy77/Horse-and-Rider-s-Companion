@@ -24,10 +24,13 @@ class TransferHorseDialog extends StatelessWidget {
       create: (context) => TransferHorseCubit(
         userProfile: userProfile,
         horseProfile: horseProfile,
-        messagesRepository:
-            context.read<MessagesStore?>() ??
-            context.read<MessagesRepository?>() ??
-            MessagesRepository(),
+        requestRepository:
+            context.read<ConnectionRequestStore?>() ??
+            FirebaseConnectionRequestStore(
+              messagesStore:
+                  context.read<MessagesStore?>() ??
+                  context.read<MessagesRepository?>(),
+            ),
         riderProfileRepository:
             context.read<RiderProfileStore?>() ??
             context.read<RiderProfileRepository?>() ??
