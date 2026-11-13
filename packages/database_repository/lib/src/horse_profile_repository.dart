@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/horse_profile_store.dart';
+import 'package:database_repository/src/mappers/horse_profile_firestore_mapper.dart';
 import 'package:database_repository/src/models/horse_profile.dart';
 import 'package:database_repository/src/repository_exception.dart';
 
@@ -12,9 +13,8 @@ class HorseProfileRepository implements HorseProfileStore {
             (firestore ?? FirebaseFirestore.instance)
                 .collection(HORSE_PROFILE)
                 .withConverter<HorseProfile>(
-                  fromFirestore: HorseProfile.fromFirestore,
-                  toFirestore: (horseProfile, options) =>
-                      horseProfile.toFirestore(),
+                  fromFirestore: HorseProfileFirestoreMapper.fromFirestore,
+                  toFirestore: HorseProfileFirestoreMapper.toFirestore,
                 );
 
   static const String HORSE_PROFILE = 'Horse_Profile';

@@ -1,6 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
-import 'package:database_repository/src/mappers/skill_level_firestore_mapper.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 
@@ -152,16 +149,11 @@ class HorseProfile {
   /// List of instructors the horse has
   List<BaseListItem>? instructors = [];
 
-  ///Converts a [DocumentSnapshot] to a [HorseProfile]
+  /// Converts a backend-neutral map to a [HorseProfile].
   // ignore: sort_constructors_first
-  factory HorseProfile.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
+  factory HorseProfile.fromMap(Map<String, dynamic> data) {
     return HorseProfile(
-      id: data!['id'] as String,
+      id: data['id'] as String,
       name: data['name'] as String,
       height: data['height'] as int?,
       breed: data['breed'] as String?,
@@ -182,11 +174,11 @@ class HorseProfile {
       saleListing: _saleListing(data['saleListing']),
       transferRequestId: data['transferRequestId'] as String?,
       ownershipVersion: data['ownershipVersion'] as String?,
-      currentOwnerId: data['currentOwnerId'] as String,
-      currentOwnerName: data['currentOwnerName'] as String,
-      dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
-      lastEditDate: (data['lastEditDate'] as Timestamp?)?.toDate(),
-      dateOfPurchase: (data['dateOfPurchase'] as Timestamp?)?.toDate(),
+      currentOwnerId: data['currentOwnerId'] as String? ?? '',
+      currentOwnerName: data['currentOwnerName'] as String? ?? '',
+      dateOfBirth: _parseNullableDateTime(data['dateOfBirth']),
+      lastEditDate: _parseNullableDateTime(data['lastEditDate']),
+      dateOfPurchase: _parseNullableDateTime(data['dateOfPurchase']),
       skillLevels: data['skillLevels'] == null
           ? null
           : _convertSkillLevel(data['skillLevels'] as List),
@@ -199,12 +191,21 @@ class HorseProfile {
     );
   }
 
-  /// Serializes editable fields. The archive status is written by the server.
-  Map<String, Object?> toFirestore() {
+  /// Serializes this [HorseProfile] to a backend-neutral map.
+  Map<String, Object?> toMap() {
     return {
       'id': id,
       'name': name,
       'currentOwnerId': currentOwnerId,
+      'archiveStatus': archiveStatus,
+      if (saleListing != null)
+        'saleListing': {
+          'price': saleListing!.price,
+          'location': saleListing!.location,
+          'description': saleListing!.description,
+        },
+      if (transferRequestId != null) 'transferRequestId': transferRequestId,
+      if (ownershipVersion != null) 'ownershipVersion': ownershipVersion,
       if (color != null) 'color': color,
       if (breed != null) 'breed': breed,
       if (picUrl != null) 'picUrl': picUrl,
@@ -218,24 +219,29 @@ class HorseProfile {
       if (countryIso != null) 'countryIso': countryIso,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (countryName != null) 'countryName': countryName,
-      if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
+      if (dateOfBirth != null) 'dateOfBirth': dateOfBirth!.toIso8601String(),
       if (locationName != null) 'locationName': locationName,
-      if (lastEditDate != null) 'lastEditDate': lastEditDate,
+      if (lastEditDate != null)
+        'lastEditDate': lastEditDate!.toIso8601String(),
       if (purchasePrice != null) 'purchasePrice': purchasePrice,
-      if (dateOfPurchase != null) 'dateOfPurchase': dateOfPurchase,
+      if (dateOfPurchase != null)
+        'dateOfPurchase': dateOfPurchase!.toIso8601String(),
       if (currentOwnerName != null) 'currentOwnerName': currentOwnerName,
       if (notes != null)
-        'notes': List<dynamic>.from(
-          notes!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'notes': List<dynamic>.from(notes!.map((e) => e.toMap())),
       if (instructors != null)
-        'instructors': List<dynamic>.from(
-          instructors!.map(BaseListItemFirestoreMapper.toFirestore),
-        ),
+        'instructors': List<dynamic>.from(instructors!.map((e) => e.toMap())),
       if (skillLevels != null)
-        'skillLevels':
-            skillLevels?.map(SkillLevelFirestoreMapper.toFirestore).toList(),
+        'skillLevels': skillLevels!.map((e) => e.toMap()).toList(),
     };
+  }
+
+  static DateTime? _parseNullableDateTime(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return null;
   }
 
   ///Creates a copy of the [HorseProfile] with the specified fields replaced
@@ -305,9 +311,13 @@ List<SkillLevel> _convertSkillLevel(List<dynamic>? skillLevelMap) {
 
   if (skillLevelMap != null) {
     for (final skillLevel in skillLevelMap) {
-      skillLevels.add(
-        SkillLevelFirestoreMapper.fromMap(skillLevel as Map<String, dynamic>),
-      );
+      if (skillLevel is Map<String, dynamic>) {
+        skillLevels.add(SkillLevel.fromMap(skillLevel));
+      } else if (skillLevel is Map) {
+        skillLevels.add(
+          SkillLevel.fromMap(Map<String, dynamic>.from(skillLevel)),
+        );
+      }
     }
   }
   return skillLevels;
@@ -318,9 +328,11 @@ List<BaseListItem> _baseListItem(List<dynamic>? itemMap) {
 
   if (itemMap != null) {
     for (final note in itemMap) {
-      baseListItem.add(
-        BaseListItemFirestoreMapper.fromMap(note as Map<String, dynamic>),
-      );
+      if (note is Map<String, dynamic>) {
+        baseListItem.add(BaseListItem.fromMap(note));
+      } else if (note is Map) {
+        baseListItem.add(BaseListItem.fromMap(Map<String, dynamic>.from(note)));
+      }
     }
   }
   return baseListItem;

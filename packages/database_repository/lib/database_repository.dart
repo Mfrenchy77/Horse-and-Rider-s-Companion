@@ -11,6 +11,7 @@ export 'src/levels_repository.dart';
 export 'src/mappers/base_list_item_firestore_mapper.dart';
 export 'src/mappers/catagorry_firestore_mapper.dart';
 export 'src/mappers/comment_firestore_mapper.dart';
+export 'src/mappers/horse_profile_firestore_mapper.dart';
 export 'src/mappers/level_firestore_mapper.dart';
 export 'src/mappers/resource_firestore_mapper.dart';
 export 'src/mappers/skill_firestore_mapper.dart';

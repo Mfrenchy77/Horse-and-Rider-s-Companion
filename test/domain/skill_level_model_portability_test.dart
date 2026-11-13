@@ -148,11 +148,14 @@ void main() {
         });
 
         final horseSnap = await fake.collection('Horses').doc('h1').get();
-        final horse = HorseProfile.fromFirestore(horseSnap, null);
+        final horse = HorseProfileFirestoreMapper.fromFirestore(
+          horseSnap,
+          null,
+        );
         expect(horse.skillLevels, hasLength(1));
         expect(horse.skillLevels!.first.lastEditDate, editDate);
         expect(horse.skillLevels!.first.levelState, LevelState.PROFICIENT);
-        expect(horse.toFirestore()['skillLevels'], [
+        expect(HorseProfileFirestoreMapper.toFirestore(horse)['skillLevels'], [
           {
             'skillId': 's1',
             'verified': true,
