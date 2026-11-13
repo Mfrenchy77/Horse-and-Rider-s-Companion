@@ -46,8 +46,6 @@ void main() {
       when(() => authRepo.user).thenAnswer((_) => const Stream<User?>.empty());
       when(() => skillRepo.getSkills())
           .thenAnswer((_) => const Stream<List<Skill>>.empty());
-      when(() => skillRepo.getAllTrainingPaths())
-          .thenAnswer((_) => const Stream<List<TrainingPath>>.empty());
       when(() => resourcesRepo.getResources())
           .thenAnswer((_) => const Stream<List<Resource>>.empty());
     });

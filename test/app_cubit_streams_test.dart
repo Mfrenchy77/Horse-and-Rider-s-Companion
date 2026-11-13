@@ -52,8 +52,6 @@ void main() {
       // Skill/resources fetches run on init; return empty streams to avoid noise
       when(() => skillRepo.getSkills())
           .thenAnswer((_) => const Stream<List<Skill>>.empty());
-      when(() => skillRepo.getAllTrainingPaths())
-          .thenAnswer((_) => const Stream<List<TrainingPath>>.empty());
       when(() => resourcesRepo.getResources())
           .thenAnswer((_) => const Stream<List<Resource>>.empty());
     });

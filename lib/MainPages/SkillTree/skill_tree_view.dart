@@ -15,24 +15,18 @@ import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillTreeView extends StatefulWidget {
-  const SkillTreeView({super.key, this.skillId, this.trainingPathId});
+  const SkillTreeView({super.key, this.skillId});
 
   static const skillsListName = 'SkillsList';
   static const skillLevelName = 'SkillLevel';
-  static const trainingPathListName = 'TrainingPathList';
-  static const trainingPathViewName = 'TrainingPathView';
   static const skillsListPath = '/Skills';
   static const skillLevelPath = 'Skill::$skillPathParam';
-  static const trainingPathListPath = '/TrainingPaths';
-  static const trainingPathViewPath = 'TrainingPath::$trainingPathPathParam';
   static const skillPathParam = 'skillId';
-  static const trainingPathPathParam = 'trainingPathId';
 
   static void openSkill(GoRouter router, String id) =>
       router.goNamed(skillLevelName, pathParameters: {skillPathParam: id});
 
   final String? skillId;
-  final String? trainingPathId;
 
   @override
   State<SkillTreeView> createState() => _SkillTreeViewState();

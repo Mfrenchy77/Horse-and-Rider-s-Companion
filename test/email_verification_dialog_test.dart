@@ -51,9 +51,6 @@ void main() {
       when(() => authRepo.user).thenAnswer((_) => ctrl.stream);
       when(skillRepo.getSkills).thenAnswer((_) => Stream.value(<Skill>[]));
       when(
-        skillRepo.getAllTrainingPaths,
-      ).thenAnswer((_) => Stream.value(<TrainingPath>[]));
-      when(
         resourcesRepo.getResources,
       ).thenAnswer((_) => Stream.value(<Resource>[]));
 

@@ -10,45 +10,6 @@ class SkillTreeRepository implements SkillTreeStore {
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
-/* ****
-                  ****   TrainingPaths   ****
-
-**** */
-
-  /// Constant for Accessing the Training Paths in the Database
-  static const String TRAINING_PATHS = 'TrainingPaths';
-
-  CollectionReference<TrainingPath> _trainingPaths() =>
-      _firestore.collection(TRAINING_PATHS).withConverter<TrainingPath>(
-            fromFirestore: (snap, options) => TrainingPath.fromFirestore(snap),
-            toFirestore: (tp, options) => tp.toFirestore(),
-          );
-
-  /// Create or update a TrainingPath
-  @override
-  Future<void> createOrEditTrainingPath({required TrainingPath trainingPath}) {
-    return _trainingPaths().doc(trainingPath.id).set(trainingPath);
-  }
-
-  /// Retrieve a TrainingPath by its ID
-  @override
-  Stream<TrainingPath?> getTrainingPathById({required String id}) {
-    return _trainingPaths().doc(id).snapshots().map((snap) => snap.data());
-  }
-
-  /// Retrieve all TrainingPaths
-  @override
-  Stream<List<TrainingPath>> getAllTrainingPaths() {
-    return _trainingPaths()
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
-  }
-
-  /// Delete a TrainingPath
-  @override
-  void deleteTrainingPath({required TrainingPath? trainingPath}) {
-    _trainingPaths().doc(trainingPath?.id).delete();
-  }
 
 /* ****
                   ****   Skills   ****

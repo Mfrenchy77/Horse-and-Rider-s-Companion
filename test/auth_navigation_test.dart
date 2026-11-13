@@ -50,8 +50,6 @@ void main() {
     when(() => authRepo.currentUser).thenReturn(auth.User.empty);
     when(() => authRepo.user).thenAnswer((_) => Stream<auth.User?>.value(null));
     when(skillRepo.getSkills).thenAnswer((_) => Stream.value(<Skill>[]));
-    when(skillRepo.getAllTrainingPaths)
-        .thenAnswer((_) => Stream.value(<TrainingPath>[]));
     when(resRepo.getResources).thenAnswer((_) => Stream.value(<Resource>[]));
 
     final testCubit = LoginCubit(authRepo);

@@ -172,18 +172,7 @@ class _StubSkillTreeStore implements SkillTreeStore {
   Future<void> createOrEditSkill({required Skill skill}) async {}
 
   @override
-  Future<void> createOrEditTrainingPath({
-    required TrainingPath trainingPath,
-  }) async {}
-
-  @override
   void deleteSkill({required Skill? skill}) {}
-
-  @override
-  void deleteTrainingPath({required TrainingPath? trainingPath}) {}
-
-  @override
-  Stream<List<TrainingPath>> getAllTrainingPaths() => const Stream.empty();
 
   @override
   Stream<List<Skill>> getSkills() => const Stream.empty();
@@ -196,10 +185,6 @@ class _StubSkillTreeStore implements SkillTreeStore {
 
   @override
   Stream<List<Skill>> getSkillsFromCategory({required String id}) =>
-      const Stream.empty();
-
-  @override
-  Stream<TrainingPath?> getTrainingPathById({required String id}) =>
       const Stream.empty();
 }
 

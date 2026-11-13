@@ -279,47 +279,6 @@ class Routes {
                         ),
                       ],
                     ),
-                    // Training paths disabled; route definitions retained.
-                    //                  GoRoute(
-                    //                       path: 'TrainingPaths',
-                    //                 name: SkillTreeView.trainingPathListName,
-                    //                       pageBuilder: (context, state) {
-                    //                         if (state.pathParameters[
-                    //                  SkillTreeView.trainingPathPathParam] ==
-                    //                            null) {
-                    //      final isLarge = MediaQuery.of(context).size.width >=
-                    //                StringConstants.splitScreenBreakpoint;
-                    //                           context
-                    //                               .read<AppCubit>()
-                    //                .setSkillTreeTabIndex(isLarge ? 1 : 2);
-                    //                         }
-                    //                         return _horizontalSlidePage(
-                    //                           key: state.pageKey,
-                    //                           child: const SkillTreeView(),
-                    //                         );
-                    //                       },
-                    //                       routes: [
-                    //                         GoRoute(
-                    //            path: SkillTreeView.trainingPathViewPath,
-                    //           name: SkillTreeView.trainingPathViewName,
-                    //                 pageBuilder: (context, state) {
-                    //                  final id = state.pathParameters[
-                    //                 SkillTreeView.trainingPathPathParam]!;
-                    //  final isLarge = MediaQuery.of(context).size.width >=
-                    //                 StringConstants.splitScreenBreakpoint;
-                    //
-                    //                             context.read<AppCubit>()
-                    //                               ..setTrainingPath(id)
-                    //                ..setSkillTreeTabIndex(isLarge ? 1 : 3);
-                    //
-                    //                             return _horizontalSlidePage(
-                    //                               key: state.pageKey,
-                    //                 child: SkillTreeView(trainingPathId: id),
-                    //                             );
-                    //                           },
-                    //                         ),
-                    //                       ],
-                    //                     ),
                   ],
                 ),
               ],

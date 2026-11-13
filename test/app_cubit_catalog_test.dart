@@ -26,7 +26,6 @@ void main() {
   late MockSkills skills;
   late MockRiders riders;
   late StreamController<List<Resource>> resources;
-  late StreamController<List<TrainingPath>> paths;
   final date = DateTime.utc(2025);
   Skill skill(
     String id,
@@ -44,19 +43,6 @@ void main() {
     lastEditDate: date,
     prerequisites: prerequisites,
   );
-  TrainingPath path(String name) => TrainingPath(
-    id: 'path',
-    name: name,
-    description: '',
-    skills: [],
-    skillNodes: [],
-    isForRider: true,
-    createdBy: 'Rider',
-    createdById: 'r@example.com',
-    createdAt: date,
-    lastEditBy: 'Rider',
-    lastEditDate: date,
-  );
   final rider = RiderProfile(id: 'r', name: 'Rider', email: 'r@example.com');
 
   setUpAll(() => registerFallbackValue(rider));
@@ -68,11 +54,9 @@ void main() {
     final repo = MockResources();
     riders = MockRiders();
     resources = StreamController<List<Resource>>.broadcast();
-    paths = StreamController<List<TrainingPath>>.broadcast();
     when(() => auth.currentUser).thenReturn(User.empty);
     when(() => auth.user).thenAnswer((_) => const Stream.empty());
     when(skills.getSkills).thenAnswer((_) => const Stream.empty());
-    when(skills.getAllTrainingPaths).thenAnswer((_) => paths.stream);
     when(repo.getResources).thenAnswer((_) => resources.stream);
     when(
       () => riders.createOrUpdateRiderProfile(
@@ -91,7 +75,6 @@ void main() {
   tearDown(() async {
     await cubit.close();
     await resources.close();
-    await paths.close();
   });
 
   test(
@@ -127,13 +110,11 @@ void main() {
   test('guest cannot edit absent or unauthored catalog records', () {
     expect(cubit.canEditSkill(null), isFalse);
     expect(cubit.canEditResource(Resource(id: 'r')), isFalse);
-    expect(cubit.canEditTrainingPath(path('Path')), isFalse);
   });
   test(
-    'training path creator can edit even when last editor is a display name',
+    'skill and resource creator can edit even when last editor is a name',
     () {
       cubit.emit(cubit.state.copyWith(usersProfile: rider));
-      expect(cubit.canEditTrainingPath(path('Path')), isTrue);
       expect(cubit.canEditSkill(skill('s', 'Skill')), isTrue);
       expect(
         cubit.canEditResource(Resource(id: 'r', authorId: rider.email)),
@@ -179,19 +160,6 @@ void main() {
     expect(cubit.getResourceById('resource')?.comments?.single.rating, 1);
     expect(cubit.state.resourceComments.single.rating, 1);
   });
-  test('does not subscribe to disabled training paths at startup', () {
-    verifyNever(skills.getAllTrainingPaths);
-    expect(cubit.state.trainingPaths, isEmpty);
-  });
-
-  // Retained for when training-path loading is restored.
-  //   test('training path stream applies edits to existing IDs', () async {
-  //     paths.add([path('Original')]);
-  //     await Future<void>.delayed(Duration.zero);
-  //     paths.add([path('Updated')]);
-  //     await Future<void>.delayed(Duration.zero);
-  //     expect(cubit.state.trainingPaths.single?.name, 'Updated');
-  //   });
   for (final sort in ResourcesSortStatus.values) {
     test(
       // ignore: lines_longer_than_80_chars

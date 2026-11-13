@@ -3,60 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/cubit/horse_profile_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-
-class _InMemorySkillTreeStore implements SkillTreeStore {
-  final Map<String, TrainingPath> trainingPaths = {};
-  final Map<String, Skill> skills = {};
-
-  @override
-  Future<void> createOrEditTrainingPath({
-    required TrainingPath trainingPath,
-  }) async {
-    trainingPaths[trainingPath.id] = trainingPath;
-  }
-
-  @override
-  Stream<TrainingPath?> getTrainingPathById({required String id}) =>
-      Stream.value(trainingPaths[id]);
-
-  @override
-  Stream<List<TrainingPath>> getAllTrainingPaths() =>
-      Stream.value(trainingPaths.values.toList());
-
-  @override
-  void deleteTrainingPath({required TrainingPath? trainingPath}) {
-    if (trainingPath != null) trainingPaths.remove(trainingPath.id);
-  }
-
-  @override
-  Future<void> createOrEditSkill({required Skill skill}) async {
-    skills[skill.id] = skill;
-  }
-
-  @override
-  Stream<List<Skill>> getSkillsFromCategory({required String id}) =>
-      Stream.value(
-        skills.values.where((s) => s.category.name == id).toList(),
-      );
-
-  @override
-  Stream<List<Skill>> getSkills() => Stream.value(skills.values.toList());
-
-  @override
-  Stream<List<Skill>> getSkillsForRiderSkillTree() =>
-      Stream.value(skills.values.where((s) => s.rider).toList());
-
-  @override
-  Stream<List<Skill>> getSkillsForHorseSkillTree() =>
-      Stream.value(skills.values.where((s) => !s.rider).toList());
-
-  @override
-  void deleteSkill({required Skill? skill}) {
-    if (skill != null) skills.remove(skill.id);
-  }
-}
 
 class _InMemoryApiKeyProvider implements ApiKeyProvider {
   @override
@@ -360,35 +307,6 @@ void main() {
           resourcesStore.resources['r1']?.comments?.first.comment,
           'Great drill!',
         );
-      },
-    );
-
-    test(
-      'CreateTrainingPathCubit saves training paths via an in-memory '
-      'SkillTreeStore',
-      () async {
-        final skillStore = _InMemorySkillTreeStore();
-        final cubit = CreateTrainingPathCubit(
-          trainingPathRepository: skillStore,
-          allSkills: const [],
-          isForRider: true,
-          user: RiderProfile(
-            id: 'u1',
-            name: 'Alex',
-            email: 'alex@example.com',
-          ),
-        );
-        addTearDown(cubit.close);
-
-        cubit
-          ..trainingPathNameChanged(name: 'Groundwork Basics')
-          ..trainingPathDescriptionChanged(
-            description: 'Foundational leading and yielding skills',
-          );
-        await cubit.createOrEditTrainingPath();
-
-        expect(skillStore.trainingPaths, hasLength(1));
-        expect(cubit.state.status, FormStatus.success);
       },
     );
 

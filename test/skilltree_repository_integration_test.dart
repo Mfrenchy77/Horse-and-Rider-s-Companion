@@ -64,50 +64,6 @@ void main() {
       expect(afterDelete.length, 1);
     });
 
-    test('create/read/delete TrainingPaths and get by id', () async {
-      final now = DateTime.now();
-      final tp = TrainingPath(
-        id: 'tp1',
-        name: 'Starter Path',
-        description: 'Basics',
-        createdBy: 'Tester',
-        createdById: 'tester@example.com',
-        isForRider: true,
-        createdAt: now,
-        lastEditBy: 'Tester',
-        lastEditDate: now,
-        skills: const ['s1', 's2'],
-        skillNodes: [
-          SkillNode(
-            id: 'n1',
-            name: 'Mounted Balance',
-            skillId: 's1',
-            position: 1,
-            parentId: null,
-          ),
-          SkillNode(
-            id: 'n2',
-            name: 'Grooming',
-            skillId: 's2',
-            position: 2,
-            parentId: null,
-          ),
-        ],
-      );
-
-      await repo.createOrEditTrainingPath(trainingPath: tp);
-      final byId = await repo.getTrainingPathById(id: 'tp1').first;
-      expect(byId?.name, 'Starter Path');
-
-      final all = await repo.getAllTrainingPaths().first;
-      expect(all.length, 1);
-      expect(all.first.id, 'tp1');
-
-      repo.deleteTrainingPath(trainingPath: tp);
-      final afterDelete = await repo.getAllTrainingPaths().first;
-      expect(afterDelete, isEmpty);
-    });
-
     test('repository uses provided Firestore instance (isolation)', () async {
       final other = FakeFirebaseFirestore();
       final repoA = SkillTreeRepository(firestore: fake);

@@ -65,8 +65,6 @@ class AppCubit extends Cubit<AppState> {
   StreamSubscription<List<Resource>>? _resourcesStream;
   StreamSubscription<List<Skill>>? _skillsSubscription;
   StreamSubscription<List<ConnectionRequest>>? _conversationsStream;
-  // Training paths disabled; subscription retained for restoration.
-  // StreamSubscription<List<TrainingPath>>? _trainingPathsStream;
   StreamSubscription<RiderProfile?>? _usersProfileSubscription;
   StreamSubscription<HorseProfile?>? _horseProfileSubscription;
 
@@ -1429,8 +1427,6 @@ class AppCubit extends Cubit<AppState> {
 
     _getSkills();
     // Skills are shared by the rider profile and Skill Tree.
-    // Training paths disabled: do not subscribe to Firestore at startup.
-    // _getTrainingPaths();
   }
 
   void _getSkills() {
@@ -1448,33 +1444,6 @@ class AppCubit extends Cubit<AppState> {
         debugPrint('Failed to listen for skill catalogue: $error');
       },
     );
-  }
-
-  // Training-path subscription retained for possible restoration.
-  //   void _getTrainingPaths() {
-  //     debugPrint('Get TrainingPaths Called');
-  //     if (_trainingPathsStream != null) return;
-  //     _trainingPathsStream =
-  //         _skillTreeRepository.getAllTrainingPaths().listen((trainingPaths) {
-  //       debugPrint('Training Paths Retrieved: ${trainingPaths.length}');
-  //       final curr = state.trainingPaths;
-  //       if (const DeepCollectionEquality().equals(
-  //         curr.map((path) => path?.toFirestore()).toList(),
-  //         trainingPaths.map((path) => path.toFirestore()).toList(),
-  //       )) {
-  //         return;
-  //       }
-  //       emit(state.copyWith(trainingPaths: trainingPaths));
-  //     });
-  //   }
-
-  /// Whether or not a user can edit a training path or not.
-  ///  Based on whether they have created it or their email
-  ///  is in the admin list
-  bool canEditTrainingPath(TrainingPath trainingPath) {
-    return state.usersProfile != null &&
-        (state.usersProfile?.email == trainingPath.createdById ||
-            AuthorizedEmails.emails.contains(state.usersProfile?.email));
   }
 
   void loadResourcesIfNeeded() {
@@ -1512,11 +1481,6 @@ class AppCubit extends Cubit<AppState> {
   /// get the selected Skill id
   String? getSelectedSkillId() {
     return state.skill?.id;
-  }
-
-  /// get the selected Training Path id
-  String? getSelectedTrainingPathId() {
-    return state.trainingPath?.id;
   }
 
   /// Whether or not a user can edit a skill or not. Based on whether they
@@ -1571,29 +1535,6 @@ class AppCubit extends Cubit<AppState> {
     } else {
       debugPrint('Skill not found for id: $id');
       emit(state.copyWith(clearSkill: true));
-    }
-  }
-
-  /// Returns the full Training Path object from the id
-  TrainingPath? getTrainingPathFromId(String id) {
-    final trainingPath = state.trainingPaths.firstWhereOrNull(
-      (element) => element?.id == id,
-    );
-    return trainingPath;
-  }
-
-  /// Set the selected Training Path from the id
-  void setTrainingPath(String? id) {
-    if (id == null || id.isEmpty) {
-      debugPrint('Training Path id is null or empty');
-      return;
-    }
-    final trainingPath = getTrainingPathFromId(id);
-    if (trainingPath != null) {
-      debugPrint('Setting Training Path: ${trainingPath.name}');
-      emit(state.copyWith(trainingPath: trainingPath));
-    } else {
-      debugPrint('Training Path not found for id: $id');
     }
   }
 
@@ -1679,13 +1620,6 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('Difficulty Filter Changed to: $difficultySortState.name');
     emit(state.copyWith(difficultySortState: difficultySortState));
     _sortSkills(state.categorySortState, difficultySortState);
-  }
-
-  /// Set the from Skills state
-  void setFromSkills() {
-    emit(
-      state.copyWith(isFromTrainingPath: false, isFromTrainingPathList: false),
-    );
   }
 
   ///    Called when a [level] is selected and we
@@ -2162,12 +2096,8 @@ class AppCubit extends Cubit<AppState> {
     switch (state.skillTreeNavigation) {
       case SkillTreeNavigation.SkillList:
         return state.sortedSkills.map((e) => e?.skillName).toList();
-      case SkillTreeNavigation.TrainingPathList:
-        return state.trainingPaths.map((e) => e?.name).toList();
       case SkillTreeNavigation.SkillLevel:
         return state.resources.map((e) => e.name).toList();
-      case SkillTreeNavigation.TrainingPath:
-        return state.sortedSkills.map((e) => e?.skillName).toList();
     }
   }
 
@@ -2235,20 +2165,6 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(searchList: searchList));
   }
 
-  /// Search for Training Paths query
-  void trainingPathSearchQueryChanged({required String searchQuery}) {
-    final searchList = state.trainingPaths
-        .map((e) => e?.name)
-        .toList()
-        .where(
-          (element) =>
-              element?.toLowerCase().contains(searchQuery.toLowerCase()) ??
-              false,
-        )
-        .toList();
-    emit(state.copyWith(searchList: searchList));
-  }
-
   /// Toggle the search state
   void toggleSearch() {
     if (!state.isSearch &&
@@ -2256,22 +2172,6 @@ class AppCubit extends Cubit<AppState> {
       loadResourcesIfNeeded();
     }
     emit(state.copyWith(isSearch: !state.isSearch));
-  }
-
-  /// Children of the [skillNode] sorted by position
-  List<SkillNode> childrenNodes({required SkillNode skillNode}) {
-    final children = <SkillNode>[];
-    for (final child in state.trainingPath!.skillNodes) {
-      if (child != null && child.parentId == skillNode.id) {
-        // Check if the child node has a corresponding skill
-        final skill = getSkillFromId(child.skillId);
-        if (skill != null) {
-          children.add(child);
-        }
-      }
-    }
-    children.sort((a, b) => a.position.compareTo(b.position));
-    return children;
   }
 
   /* **************************************************************************
@@ -3315,8 +3215,6 @@ class AppCubit extends Cubit<AppState> {
       state.copyWith(
         pageStatus: AppPageStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillList,
-        isFromTrainingPath: false,
-        isFromTrainingPathList: false,
         isFromProfile: state.index == 0,
       ),
     );
@@ -3334,40 +3232,6 @@ class AppCubit extends Cubit<AppState> {
         isFromProfile: state.index == 0,
         pageStatus: AppPageStatus.skillTree,
         skillTreeNavigation: SkillTreeNavigation.SkillLevel,
-      ),
-    );
-  }
-
-  /// Set the flag of from Training Path for when the user clicks a skill
-  /// from the Training Path View so when they click back we know to return
-  /// to the Training Path View
-  void setIsFromTrainingPath({required bool isFromTrainingPath}) {
-    debugPrint('setIsFromTrainingPath: $isFromTrainingPath');
-    emit(state.copyWith(isFromTrainingPath: isFromTrainingPath));
-  }
-
-  /// Navigates to the List of Training Paths
-  void navigateToTrainingPathList() {
-    debugPrint('navigateToTrainingPathList');
-    emit(
-      state.copyWith(
-        pageStatus: AppPageStatus.skillTree,
-        skillTreeNavigation: SkillTreeNavigation.TrainingPathList,
-        isFromProfile: state.index == 0,
-      ),
-    );
-  }
-
-  /// Navigates to a  Training Path
-  void navigateToTrainingPath({required TrainingPath? trainingPath}) {
-    debugPrint('navigateToTrainingPath for ${trainingPath?.name}');
-    emit(
-      state.copyWith(
-        isFromTrainingPathList: true,
-        pageStatus: AppPageStatus.skillTree,
-        trainingPath: trainingPath,
-        isFromProfile: state.index == 0,
-        skillTreeNavigation: SkillTreeNavigation.TrainingPath,
       ),
     );
   }
@@ -3427,7 +3291,6 @@ class AppCubit extends Cubit<AppState> {
     _conversationsStream?.cancel();
     _resourcesStream?.cancel();
     _skillsSubscription?.cancel();
-    // _trainingPathsStream?.cancel(); // Training paths disabled.
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();
     return super.close();

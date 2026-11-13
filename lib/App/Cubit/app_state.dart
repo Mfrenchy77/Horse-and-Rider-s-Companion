@@ -46,8 +46,6 @@ enum AcceptStatus { loading, waiting, accepted, submitted }
 enum SkillTreeNavigation {
   SkillList,
   SkillLevel,
-  TrainingPath,
-  TrainingPathList,
 }
 
 /// The Sort State of the Skills
@@ -87,7 +85,6 @@ class AppState extends Equatable {
     this.horseId = '',
     this.usersProfile,
     this.conversation,
-    this.trainingPath,
     this.horseProfile,
     this.horseManageInProgress = false,
     this.horseManageHorseId,
@@ -117,13 +114,10 @@ class AppState extends Equatable {
     this.sortedSkills = const [],
     this.showFirstLaunch = false,
     this.isBannerAdReady = false,
-    this.trainingPaths = const [],
     this.viewingProfielEmail = '',
     this.savedResources = const [],
-    this.isFromTrainingPath = false,
     this.resourceComments = const [],
     this.showEmailVerification = false,
-    this.isFromTrainingPathList = false,
     this.deleteEmail = const Email.pure(),
     this.pageStatus = AppPageStatus.loading,
     this.acceptStatus = AcceptStatus.waiting,
@@ -224,9 +218,6 @@ class AppState extends Equatable {
   /// The Unsorted list of Skills from the database
   final List<Skill?> allSkills;
 
-  /// Whether Navigation is coming from the TrainingPath section.
-  final bool isFromTrainingPath;
-
   /// The list of messages in a conversation
   final List<Message>? messages;
 
@@ -256,12 +247,6 @@ class AppState extends Equatable {
 
   /// The email of the profile to be viewed.
   final String viewingProfielEmail;
-
-  /// The current Training Path being viewed.
-  final TrainingPath? trainingPath;
-
-  /// Whether Navigation is coming from the TrainingPathList section.
-  final bool isFromTrainingPathList;
 
   /// The current user's RiderProfile.
   final RiderProfile? usersProfile;
@@ -296,9 +281,6 @@ class AppState extends Equatable {
 
   /// The list of conversations for the user
   final List<Conversation>? conversations;
-
-  /// The database training paths
-  final List<TrainingPath?> trainingPaths;
 
   /// The state of the conversation
   final ConversationState conversationState;
@@ -369,11 +351,9 @@ class AppState extends Equatable {
     int? skillTreeTabIndex,
     List<Message>? messages,
     List<Skill?>? allSkills,
-    bool? isFromTrainingPath,
     List<String?>? searchList,
     AppPageStatus? pageStatus,
     List<Skill?>? sortedSkills,
-    TrainingPath? trainingPath,
     List<Resource>? resources,
     HorseProfile? horseProfile,
     bool? horseManageInProgress,
@@ -384,14 +364,12 @@ class AppState extends Equatable {
     bool? showEmailVerification,
     RiderProfile? ownersProfile,
     String? viewingProfielEmail,
-    bool? isFromTrainingPathList,
     RiderProfile? viewingProfile,
     List<Comment>? resourceComments,
     List<Resource?>? savedResources,
     List<Conversation>? conversations,
     List<ConnectionRequest>? connectionRequests,
     CommentSortState? commentSortState,
-    List<TrainingPath?>? trainingPaths,
     ConversationState? conversationState,
     ConversationsSort? conversationsSort,
     CategorySortState? categorySortState,
@@ -431,7 +409,6 @@ class AppState extends Equatable {
       conversation: conversation ?? this.conversation,
       acceptStatus: acceptStatus ?? this.acceptStatus,
       sortedSkills: sortedSkills ?? this.sortedSkills,
-      trainingPath: trainingPath ?? this.trainingPath,
       errorMessage: errorMessage ?? this.errorMessage,
       horseProfile: clearHorseProfile
           ? null
@@ -446,7 +423,6 @@ class AppState extends Equatable {
           : usersProfile ?? this.usersProfile,
       conversations: conversations ?? this.conversations,
       connectionRequests: connectionRequests ?? this.connectionRequests,
-      trainingPaths: trainingPaths ?? this.trainingPaths,
       ownersProfile: clearOwnersProfile
           ? null
           : ownersProfile ?? this.ownersProfile,
@@ -466,15 +442,12 @@ class AppState extends Equatable {
       conversationsSort: conversationsSort ?? this.conversationsSort,
       categorySortState: categorySortState ?? this.categorySortState,
       conversationsState: conversationsState ?? this.conversationsState,
-      isFromTrainingPath: isFromTrainingPath ?? this.isFromTrainingPath,
       difficultySortState: difficultySortState ?? this.difficultySortState,
       viewingProfielEmail: viewingProfielEmail ?? this.viewingProfielEmail,
       skillTreeNavigation: skillTreeNavigation ?? this.skillTreeNavigation,
       resourcesSortStatus: resourcesSortStatus ?? this.resourcesSortStatus,
       showEmailVerification:
           showEmailVerification ?? this.showEmailVerification,
-      isFromTrainingPathList:
-          isFromTrainingPathList ?? this.isFromTrainingPathList,
       messageToSupportStatus:
           messageToSupportStatus ?? this.messageToSupportStatus,
       accountDeletionStatus:
@@ -512,7 +485,6 @@ class AppState extends Equatable {
     conversation,
     acceptStatus,
     sortedSkills,
-    trainingPath,
     errorMessage,
     horseProfile,
     horseManageInProgress,
@@ -522,7 +494,6 @@ class AppState extends Equatable {
     connectionRequests,
     ownersProfile,
     isFromProfile,
-    trainingPaths,
     savedResources,
     showOnboarding,
     viewingProfile,
@@ -535,14 +506,12 @@ class AppState extends Equatable {
     conversationState,
     conversationsSort,
     conversationsState,
-    isFromTrainingPath,
     categorySortState,
     skillTreeNavigation,
     resourcesSortStatus,
     viewingProfielEmail,
     difficultySortState,
     showEmailVerification,
-    isFromTrainingPathList,
     messageToSupportStatus,
     accountDeletionStatus,
     accountDeletionError,

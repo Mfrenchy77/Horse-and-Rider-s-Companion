@@ -34,8 +34,5 @@ String _searchText(AppState state) {
       ? 'Search Resources'
       : state.skillTreeNavigation == SkillTreeNavigation.SkillList
       ? 'Search Skills'
-      // Training paths disabled; tooltip branch retained.
-      // : state.skillTreeNavigation == SkillTreeNavigation.TrainingPathList
-      //     ? 'Search Training Paths'
       : 'Search Resources';
 }

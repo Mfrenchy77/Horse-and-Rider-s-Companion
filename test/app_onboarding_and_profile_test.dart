@@ -51,8 +51,6 @@ void main() {
     // AppCubit can listen without error
     when(skillRepo.getSkills)
         .thenAnswer((_) => const Stream<List<Skill>>.empty());
-    when(skillRepo.getAllTrainingPaths)
-        .thenAnswer((_) => const Stream<List<TrainingPath>>.empty());
     when(resourcesRepo.getResources)
         .thenAnswer((_) => const Stream<List<Resource>>.empty());
 
