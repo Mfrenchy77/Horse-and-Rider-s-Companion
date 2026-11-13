@@ -9,7 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_messa
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/save_resource_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
-import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class ResourceRatingButtons extends StatelessWidget {
@@ -17,7 +17,8 @@ class ResourceRatingButtons extends StatelessWidget {
   final Resource resource;
   @override
   Widget build(BuildContext context) {
-    final isDark = SharedPrefs().isDarkMode;
+    final accent = AppTokens.accentColor(context);
+    final muted = AppTokens.secondaryTextColor(context);
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
@@ -39,11 +40,7 @@ class ResourceRatingButtons extends StatelessWidget {
                       ? Icons.thumb_up
                       : Icons.thumb_up_outlined,
                 ),
-                color: cubit.isRatingPositive(resource)
-                    ? Theme.of(context).colorScheme.primary
-                    : isDark
-                    ? Colors.grey.shade300
-                    : Colors.black54,
+                color: cubit.isRatingPositive(resource) ? accent : muted,
               ),
             ),
             // Save Button
@@ -69,11 +66,7 @@ class ResourceRatingButtons extends StatelessWidget {
                       ? Icons.thumb_down
                       : Icons.thumb_down_outlined,
                 ),
-                color: cubit.isRatingNegative(resource)
-                    ? Theme.of(context).colorScheme.primary
-                    : isDark
-                    ? Colors.grey.shade300
-                    : Colors.black54,
+                color: cubit.isRatingNegative(resource) ? accent : muted,
               ),
             ),
             // Number of Comments Button
@@ -105,14 +98,12 @@ class ResourceRatingButtons extends StatelessWidget {
                         resource.comments == null
                             ? '0'
                             : resource.comments!.length.toString(),
-                        style: TextStyle(
-                          color: isDark ? Colors.grey.shade300 : Colors.black54,
-                        ),
+                        style: TextStyle(color: muted),
                       ),
                     ],
                   ),
                 ),
-                color: isDark ? Colors.grey.shade300 : Colors.black54,
+                color: muted,
               ),
             ),
             // Assosiated Skills Button
@@ -129,17 +120,14 @@ class ResourceRatingButtons extends StatelessWidget {
                 icon: state.horseProfile == null
                     ? const Icon(HorseAndRiderIcons.riderSkillIcon)
                     : const Icon(HorseAndRiderIcons.horseSkillIcon),
-                color: isDark ? Colors.grey.shade300 : Colors.black54,
+                color: muted,
               ),
             ),
             // pop up overflow menu with the option to report the resource
             Visibility(
               visible: !state.isGuest,
               child: PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: isDark ? Colors.grey.shade300 : Colors.black54,
-                ),
+                icon: Icon(Icons.more_vert, color: muted),
                 onSelected: (value) {
                   switch (value) {
                     case 'Report':

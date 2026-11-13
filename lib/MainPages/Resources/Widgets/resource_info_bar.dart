@@ -13,6 +13,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_pag
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
 /// A stable tag for the single shared resource-summary transition.
@@ -111,6 +112,20 @@ class ResourceInfoBar extends StatelessWidget {
       // A linear rectangle tween prevents the Hero from arcing away from the
       // card when it returns from the comments page.
       createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+      flightShuttleBuilder:
+          (
+            flightContext,
+            animation,
+            flightDirection,
+            fromHeroContext,
+            toHeroContext,
+          ) => Material(
+            type: MaterialType.transparency,
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: (toHeroContext.widget as Hero).child,
+            ),
+          ),
       child: Material(
         type: MaterialType.transparency,
         child: BlocBuilder<AppCubit, AppState>(
@@ -156,6 +171,10 @@ class ResourceInfoBar extends StatelessWidget {
                           resourceUrl: resource.url,
                           borderRadius: BorderRadius.zero,
                         ),
+                        if (Theme.of(context).brightness == Brightness.dark)
+                          const AppImageVignette(
+                            bottomColor: AppTokens.midnightCardTop,
+                          ),
                         if (isVideo)
                           const Center(
                             child: CircleAvatar(
@@ -170,19 +189,23 @@ class ResourceInfoBar extends StatelessWidget {
                 ),
               ),
             );
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             final details = Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
                           title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: AppTokens.sectionTitleStyle(
+                            context,
+                          ).copyWith(fontSize: 18, height: 1.25),
                         ),
                       ),
                       Visibility(
@@ -238,11 +261,28 @@ class ResourceInfoBar extends StatelessWidget {
                   ),
                   if (source.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      source,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium,
+                    Row(
+                      children: [
+                        Icon(
+                          _isArticle
+                              ? Icons.article_outlined
+                              : Icons.language_rounded,
+                          size: 13,
+                          color: AppTokens.secondaryTextColor(context),
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            source,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: AppTokens.secondaryTextColor(context),
+                                ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   if (skills.isNotEmpty) ...[
@@ -253,8 +293,20 @@ class ResourceInfoBar extends StatelessWidget {
                       children: [
                         for (final skill in skills)
                           ActionChip(
-                            avatar: const Icon(Icons.link, size: 16),
+                            avatar: Icon(
+                              Icons.link,
+                              size: 15,
+                              color: AppTokens.accentColor(context),
+                            ),
                             tooltip: 'Open ${skill.skillName} in Skill Tree',
+                            backgroundColor: isDark
+                                ? AppTokens.midnightButtonFill
+                                : null,
+                            side: isDark
+                                ? const BorderSide(
+                                    color: AppTokens.midnightButtonBorder,
+                                  )
+                                : null,
                             onPressed: () => SkillTreeView.openSkill(
                               GoRouter.of(context),
                               skill.id,
@@ -262,6 +314,10 @@ class ResourceInfoBar extends StatelessWidget {
                             label: Text(
                               skill.skillName,
                               overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: AppTokens.primaryTextColor(context),
+                                  ),
                             ),
                             visualDensity: VisualDensity.compact,
                           ),
@@ -272,8 +328,12 @@ class ResourceInfoBar extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       description,
-                      maxLines: 7,
+                      maxLines: 4,
                       overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ],

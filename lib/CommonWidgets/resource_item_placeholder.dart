@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
-import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Item placeholder for resources, with a shimmer effect.
@@ -10,125 +8,49 @@ class ResourceItemPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = SharedPrefs().isDarkMode;
-    return MaxWidthBox(
-      maxWidth: 600,
-      child: GradientCard(
-        child: Column(
-          children: [
-            //Simulate rating bar
-            Padding(
-              padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
-              child: Shimmer.fromColors(
-                baseColor: Colors.grey.shade300,
-                highlightColor: Colors.grey.shade100,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey,
-                  ),
-                  height: 25,
-                  width: double.infinity,
-                ),
-              ),
-            ),
-            //Divider
-            Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
-              child: Divider(
-                color: isDark ? Colors.white : Colors.black,
-                endIndent: 5,
-                indent: 5,
-              ),
-            ),
-            // Simulated resource title
-            Padding(
-              padding: const EdgeInsets.only(left: 8, right: 8),
-              child: Shimmer.fromColors(
-                baseColor: Colors.grey.shade300,
-                highlightColor: Colors.grey.shade100,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: Colors.grey,
-                  ),
-                  height: 50,
-                  width: double.infinity,
-                ),
-              ),
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? AppTokens.midnightCardTop : Colors.grey.shade300;
+    final highlightColor = isDark
+        ? AppTokens.midnightButtonFill
+        : Colors.grey.shade100;
+    final boxColor = isDark ? AppTokens.midnightCardTop : Colors.grey;
 
-            // Simulated description and image
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    Widget shimmerBox({double? height, double radius = 10}) =>
+        Shimmer.fromColors(
+          baseColor: baseColor,
+          highlightColor: highlightColor,
+          child: Container(
+            height: height,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              color: boxColor,
+            ),
+          ),
+        );
+
+    return AppSurfaceCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          shimmerBox(height: 168, radius: 0),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Placeholder for description
-                Flexible(
-                  fit: FlexFit.tight,
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8, right: 4),
-                    child: Shimmer.fromColors(
-                      baseColor: Colors.grey.shade300,
-                      highlightColor: Colors.grey.shade100,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.grey,
-                        ),
-                        height: 220,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Placeholder for the image
-                Shimmer.fromColors(
-                  baseColor: Colors.grey.shade300,
-                  highlightColor: Colors.grey.shade100,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 4, right: 8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.grey,
-                      ),
-                      height: 150,
-                      width: 200,
-                    ),
-                  ),
-                ),
+                shimmerBox(height: 22),
+                const SizedBox(height: 10),
+                shimmerBox(height: 14),
+                const SizedBox(height: 8),
+                shimmerBox(height: 48),
+                const SizedBox(height: 14),
+                shimmerBox(height: 28),
               ],
             ),
-            //divider
-            Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
-              child: Divider(
-                color: isDark ? Colors.white : Colors.black,
-                endIndent: 5,
-                indent: 5,
-              ),
-            ),
-            // Simulated rating buttons
-            Padding(
-              padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-              child: Shimmer.fromColors(
-                baseColor: Colors.grey.shade300,
-                highlightColor: Colors.grey.shade100,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey,
-                  ),
-                  height: 30,
-                  width: double.infinity,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

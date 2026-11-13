@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_fl
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_list_view.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_search_title.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class ResourcesView extends StatelessWidget {
   const ResourcesView({super.key});
@@ -24,20 +25,14 @@ class ResourcesView extends StatelessWidget {
           onPressed: () => context.read<AppCubit>().backPressed(),
         ),
         centerTitle: true,
-        title: const ResourcesSearchTitle(
-          key: Key('resourcesSearchTitle'),
-        ),
+        title: const ResourcesSearchTitle(key: Key('resourcesSearchTitle')),
         actions: const [
-          AppBarSearchButton(
-            key: Key('appBarSearchButton'),
-          ),
-          ResourcesOverflowMenu(
-            key: Key('resourcesOverflowMenu'),
-          ),
+          AppBarSearchButton(key: Key('appBarSearchButton')),
+          ResourcesOverflowMenu(key: Key('resourcesOverflowMenu')),
         ],
       ),
-      body: const ResourcesListView(
-        key: Key('resourcesListView'),
+      body: const AppScaffoldBackdrop(
+        child: ResourcesListView(key: Key('resourcesListView')),
       ),
     );
   }

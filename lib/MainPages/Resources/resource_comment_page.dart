@@ -12,6 +12,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/comment_sorting.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class ResourceCommentPage extends StatefulWidget {
@@ -271,56 +272,66 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                     onPressed: _goBackToResources,
                   ),
                 ),
-                body: _listItems.isEmpty
-                    ? Column(
-                        children: [
-                          CommentPageHeader(
-                            resource: resource,
-                            key: const Key('CommentPageHeader'),
-                          ),
-                          gap(),
-                          const Center(
-                            child: Text(
-                              'No Comments Yet, Start the Conversation',
-                            ),
-                          ),
-                        ],
-                      )
-                    : ScrollablePositionedList.builder(
-                        itemScrollController: _itemScrollController,
-                        itemPositionsListener: _itemPositionsListener,
-                        shrinkWrap: true,
-                        itemCount: _listItems.length,
-                        itemBuilder: (context, index) {
-                          final item = _listItems[index];
-                          switch (item.type) {
-                            case _ListItemType.header:
-                              return CommentPageHeader(
+                body: AppScaffoldBackdrop(
+                  child: _listItems.isEmpty
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 88),
+                          child: Column(
+                            children: [
+                              CommentPageHeader(
                                 resource: resource,
                                 key: const Key('CommentPageHeader'),
-                              );
-                            case _ListItemType.parentComment:
-                              final isCurrent =
-                                  _parentCommentIndexes.isNotEmpty &&
-                                  _currentParentIndex >= 0 &&
-                                  _currentParentIndex <
-                                      _parentCommentIndexes.length &&
-                                  _parentCommentIndexes[_currentParentIndex] ==
-                                      index;
-                              return ColoredBox(
-                                color: isCurrent
-                                    ? Colors.blue.withValues(alpha: .1)
-                                    : Colors.transparent,
-                                child: CommentItem(
-                                  key: Key(item.comment!.id!),
-                                  comment: item.comment!,
+                              ),
+                              gap(),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: AppEmptyState(
+                                  icon: Icons.chat_bubble_outline_rounded,
+                                  title: 'No Comments Yet',
+                                  description: 'Start the Conversation',
                                 ),
-                              );
-                            case _ListItemType.padding:
-                              return const SizedBox(height: 500);
-                          }
-                        },
-                      ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ScrollablePositionedList.builder(
+                          itemScrollController: _itemScrollController,
+                          itemPositionsListener: _itemPositionsListener,
+                          shrinkWrap: true,
+                          itemCount: _listItems.length,
+                          itemBuilder: (context, index) {
+                            final item = _listItems[index];
+                            switch (item.type) {
+                              case _ListItemType.header:
+                                return CommentPageHeader(
+                                  resource: resource,
+                                  key: const Key('CommentPageHeader'),
+                                );
+                              case _ListItemType.parentComment:
+                                final activeIndex =
+                                    _currentParentIndex >= 0 &&
+                                        _currentParentIndex <
+                                            _parentCommentIndexes.length
+                                    ? _parentCommentIndexes[_currentParentIndex]
+                                    : -1;
+                                final isCurrent = activeIndex == index;
+                                return ColoredBox(
+                                  color: isCurrent
+                                      ? AppTokens.coralAccent.withValues(
+                                          alpha: 0.1,
+                                        )
+                                      : Colors.transparent,
+                                  child: CommentItem(
+                                    key: Key(item.comment!.id!),
+                                    comment: item.comment!,
+                                  ),
+                                );
+                              case _ListItemType.padding:
+                                return const SizedBox(height: 500);
+                            }
+                          },
+                        ),
+                ),
               ),
               Positioned(
                 bottom: 20,
