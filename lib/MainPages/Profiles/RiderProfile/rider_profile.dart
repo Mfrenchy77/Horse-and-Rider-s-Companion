@@ -9,10 +9,11 @@ import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_list_of_profiles.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/profile_design_tokens.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 
 class RiderProfileView extends StatefulWidget {
@@ -101,50 +102,108 @@ class _RiderProfileViewState extends State<RiderProfileView>
               : null,
           body: Builder(
             builder: (context) {
-              final skills = GradientCard(
+              final theme = Theme.of(context);
+              final isDark = theme.brightness == Brightness.dark;
+              final skills = ProfileSurfaceCard(
                 key: const Key('riderSkills'),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            'Skills',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                context.goNamed(SkillTreePage.name),
-                            child: Text(
-                              instructor == null
-                                  ? 'Explore Skill Tree'
-                                  : 'Open student Skill Tree',
-                            ),
-                          ),
-                        ],
-                      ),
-                      _DeprecatedSkillsCleanupCard(profile: profile),
-                      ProfileSkills(
-                        skillLevels: profile.skillLevels,
-                        key: const Key('ProfileSkills'),
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ProfileSectionHeader(
+                      title: 'Skills',
+                      actionLabel: instructor == null
+                          ? 'Explore Skill Tree'
+                          : 'Open student Skill Tree',
+                      showArrow: true,
+                      onAction: () => context.goNamed(SkillTreePage.name),
+                    ),
+                    const SizedBox(height: 8),
+                    _DeprecatedSkillsCleanupCard(profile: profile),
+                    ProfileSkills(
+                      skillLevels: profile.skillLevels,
+                      key: const Key('ProfileSkills'),
+                    ),
+                  ],
                 ),
               );
-              final identity = PrimaryRiderView(
-                profile: profile,
-                key: const Key('ProfileView'),
+
+              final content = LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide =
+                      constraints.maxWidth >= RiderProfileView.largeBreakpoint;
+                  if (isWide) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1320),
+                          child: Row(
+                            key: const Key('riderProfileWide'),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: PrimaryRiderView(
+                                  profile: profile,
+                                  key: const Key('ProfileView'),
+                                  edgeToEdgeCover: false,
+                                  includeLists: false,
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    skills,
+                                    const SizedBox(height: 16),
+                                    RiderListOfProfiles(
+                                      profile: profile,
+                                      key: const Key('RiderListOfProfiles'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      key: const Key('riderProfileCompact'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        PrimaryRiderView(
+                          profile: profile,
+                          key: const Key('ProfileView'),
+                          edgeToEdgeCover: true,
+                          includeLists: true,
+                        ),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: skills,
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
-              return ProfileLayout(
-                identity: identity,
-                skills: skills,
-                wideKey: const Key('riderProfileWide'),
-                compactKey: const Key('riderProfileCompact'),
+
+              if (!isDark) return content;
+
+              return DecoratedBox(
+                decoration: ProfileTokens.midnightBackdrop,
+                child: DecoratedBox(
+                  decoration: ProfileTokens.atmosphericOverlay(context),
+                  child: content,
+                ),
               );
             },
           ),

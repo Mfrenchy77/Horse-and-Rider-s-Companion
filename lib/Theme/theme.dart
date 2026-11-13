@@ -321,6 +321,11 @@ final mainThemeDark = ThemeData(
       size: 30,
     ),
   ),
+  bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    backgroundColor: ColorConst.mainPrimaryDark,
+    selectedItemColor: ColorConst.mainAccentDark,
+    unselectedItemColor: ColorConst.darkMuted,
+  ),
   appBarTheme: const AppBarTheme(
     titleTextStyle: TextStyle(color: ColorConst.darkForeground, fontSize: 20),
     iconTheme: IconThemeData(color: ColorConst.darkForeground),

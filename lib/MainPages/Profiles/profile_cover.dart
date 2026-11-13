@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/profile_design_tokens.dart';
 
 class ProfileCover extends StatelessWidget {
   const ProfileCover({
@@ -10,7 +11,9 @@ class ProfileCover extends StatelessWidget {
     required this.locationName,
     required this.photoKey,
     this.status,
+    this.subtitle,
     this.ribbon,
+    this.edgeToEdge = false,
   });
 
   final String name;
@@ -18,35 +21,50 @@ class ProfileCover extends StatelessWidget {
   final String? locationName;
   final Key photoKey;
   final String? status;
+  final String? subtitle;
   final Widget? ribbon;
+  final bool edgeToEdge;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final photo = photoUrl?.trim() ?? '';
     final location = locationName?.trim() ?? '';
-    final scrim = Color.alphaBlend(
-      theme.colorScheme.surface.withValues(alpha: .15),
-      Colors.black,
-    );
-    final fallback = Align(
-      alignment: const Alignment(0, -.45),
-      child: FractionallySizedBox(
-        widthFactor: .5,
-        heightFactor: .62,
-        child: Image.asset(
-          'assets/horse_logo.png',
-          fit: BoxFit.contain,
-          excludeFromSemantics: true,
+    final roleText = subtitle?.trim() ?? '';
+    final fadeTarget = isDark
+        ? ProfileTokens.midnightBase
+        : Color.alphaBlend(
+            theme.colorScheme.surface.withValues(alpha: .85),
+            Colors.black,
+          );
+
+    final fallback = ColoredBox(
+      color: isDark ? ProfileTokens.midnightMid : theme.colorScheme.surface,
+      child: Align(
+        alignment: const Alignment(0, -.38),
+        child: FractionallySizedBox(
+          widthFactor: .46,
+          heightFactor: .58,
+          child: Image.asset(
+            'assets/horse_logo.png',
+            fit: BoxFit.contain,
+            color: isDark ? Colors.white.withValues(alpha: .72) : null,
+            excludeFromSemantics: true,
+          ),
         ),
       ),
     );
 
-    return GradientCard(
-      margin: EdgeInsets.zero,
-      child: LayoutBuilder(
-        builder: (context, constraints) => SizedBox(
-          height: (constraints.maxWidth * .63).clamp(220.0, 380.0),
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final height = edgeToEdge
+            ? (photo.isEmpty
+                  ? (constraints.maxWidth * .61).clamp(220.0, 380.0)
+                  : (constraints.maxWidth * .78).clamp(260.0, 380.0))
+            : (constraints.maxWidth * .64).clamp(240.0, 370.0);
+        return SizedBox(
+          height: height,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -57,6 +75,7 @@ class ProfileCover extends StatelessWidget {
                   photo,
                   key: photoKey,
                   fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.2),
                   semanticLabel: 'Photo of $name',
                   webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
                   frameBuilder: (context, child, frame, synchronouslyLoaded) {
@@ -71,14 +90,33 @@ class ProfileCover extends StatelessWidget {
                   },
                   errorBuilder: (_, _, _) => fallback,
                 ),
+              // Subtle edge-darkening vignette for atmospheric depth.
+              const IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(0, -0.15),
+                      radius: 1.05,
+                      colors: [Colors.transparent, Color(0x73051013)],
+                      stops: [0.45, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              // Smooth bottom gradient melting into the page background.
               IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, scrim],
-                      stops: const [.26, 1],
+                      colors: [
+                        const Color(0x28051013),
+                        Colors.transparent,
+                        fadeTarget.withValues(alpha: 0.72),
+                        fadeTarget,
+                      ],
+                      stops: const [0.0, 0.28, 0.74, 1.0],
                     ),
                   ),
                 ),
@@ -101,9 +139,9 @@ class ProfileCover extends StatelessWidget {
                         name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        style: ProfileTokens.heroNameStyle(
+                          context,
+                          compact: edgeToEdge,
                         ),
                       ),
                       if (status != null) ...[
@@ -111,18 +149,19 @@ class ProfileCover extends StatelessWidget {
                         Text(
                           status!,
                           style: theme.textTheme.labelLarge?.copyWith(
-                            color: Colors.white,
+                            color: ProfileTokens.coralAccent,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                       if (location.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
                             const Icon(
                               Icons.location_on_outlined,
                               size: 17,
-                              color: Colors.white,
+                              color: ProfileTokens.primaryTextDark,
                             ),
                             const SizedBox(width: 5),
                             Flexible(
@@ -131,7 +170,36 @@ class ProfileCover extends StatelessWidget {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white,
+                                  color: ProfileTokens.primaryTextDark
+                                      .withValues(alpha: 0.92),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (roleText.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.workspace_premium_outlined,
+                              size: 18,
+                              color: ProfileTokens.coralAccent.withValues(
+                                alpha: 0.92,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Flexible(
+                              child: Text(
+                                roleText,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: ProfileTokens.primaryTextDark
+                                      .withValues(alpha: 0.88),
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -144,8 +212,34 @@ class ProfileCover extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
+
+    if (edgeToEdge) {
+      return content;
+    }
+
+    if (isDark) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: ProfileTokens.cardBorderDark),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x4D000000),
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: content,
+        ),
+      );
+    }
+
+    return GradientCard(margin: EdgeInsets.zero, child: content);
   }
 }
