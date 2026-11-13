@@ -25,6 +25,15 @@ class SkillCategoryGraphSection extends StatefulWidget {
 class _SkillCategoryGraphSectionState extends State<SkillCategoryGraphSection> {
   late final TransformationController _controller;
 
+  // Graph data is derived from the skills only, so it is memoized against a
+  // snapshot of them and not recomputed on unrelated rebuilds.
+  SkillGraphData? _data;
+  List<Skill>? _dataSkills;
+
+  /// Number of times the graph data was recomputed (test hook).
+  @visibleForTesting
+  int dataBuildCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -37,9 +46,29 @@ class _SkillCategoryGraphSectionState extends State<SkillCategoryGraphSection> {
     super.dispose();
   }
 
+  SkillGraphData _obtainData() {
+    final cachedSkills = _dataSkills;
+    final skills = widget.skills;
+    var same = _data != null &&
+        cachedSkills != null &&
+        cachedSkills.length == skills.length;
+    if (same) {
+      for (var i = 0; i < skills.length; i++) {
+        if (!identical(cachedSkills[i], skills[i])) {
+          same = false;
+          break;
+        }
+      }
+    }
+    if (same) return _data!;
+    dataBuildCount++;
+    _dataSkills = List<Skill>.of(skills);
+    return _data = SkillCategoryGraphBuilder(skills: skills).build();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final data = SkillCategoryGraphBuilder(skills: widget.skills).build();
+    final data = _obtainData();
     final categoryLabel = _categoryLabel(widget.category);
     final icon = _categoryIcon(widget.category);
 
@@ -88,7 +117,7 @@ class _SkillCategoryGraphSectionState extends State<SkillCategoryGraphSection> {
   }
 }
 
-class _SkillGraphCard extends StatelessWidget {
+class _SkillGraphCard extends StatefulWidget {
   const _SkillGraphCard({
     required this.data,
     required this.controller,
@@ -100,7 +129,38 @@ class _SkillGraphCard extends StatelessWidget {
   final ValueChanged<Skill> onSkillSelected;
 
   @override
-  Widget build(BuildContext context) {
+  State<_SkillGraphCard> createState() => _SkillGraphCardState();
+}
+
+class _SkillGraphCardState extends State<_SkillGraphCard> {
+  // GraphView re-runs the full Sugiyama layout whenever a new GraphView widget
+  // is supplied, so the graph, algorithm and widget are memoized and only
+  // rebuilt when the data or edge colour changes.
+  late Graph _graph;
+  late SugiyamaAlgorithm _algorithm;
+  GraphView? _graphView;
+  Color? _graphViewEdgeColor;
+
+  /// Number of times the GraphView widget was recreated (test hook).
+  @visibleForTesting
+  int graphViewBuildCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _rebuildGraph();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SkillGraphCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.data, widget.data)) {
+      _rebuildGraph();
+    }
+  }
+
+  void _rebuildGraph() {
+    final data = widget.data;
     final graph = Graph()..isTree = false;
     final nodes = <String, Node>{};
 
@@ -123,6 +183,45 @@ class _SkillGraphCard extends StatelessWidget {
       ..levelSeparation = 170
       ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
 
+    _graph = graph;
+    _algorithm = SugiyamaAlgorithm(config);
+    _graphView = null;
+  }
+
+  GraphView _obtainGraphView(BuildContext context) {
+    final edgeColor = Theme.of(context).dividerColor.withValues(alpha: 0.4);
+    final cached = _graphView;
+    if (cached != null && _graphViewEdgeColor == edgeColor) return cached;
+    graphViewBuildCount++;
+    final data = widget.data;
+    final view = GraphView(
+      graph: _graph,
+      algorithm: _algorithm,
+      paint: Paint()
+        ..color = edgeColor
+        ..strokeWidth = 1.4
+        ..style = PaintingStyle.stroke,
+      builder: (node) {
+        final skillId = node.key?.value as String;
+        final skill = data.skillById[skillId]!;
+        final isBase = data.baseSkillIds.contains(skillId);
+        final depth = data.depthBySkillId[skillId] ?? 0;
+        return _SkillGraphNode(
+          skill: skill,
+          isBase: isBase,
+          depth: depth,
+          onTap: () => widget.onSkillSelected(skill),
+        );
+      },
+    );
+    _graphView = view;
+    _graphViewEdgeColor = edgeColor;
+    return view;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.data;
     final estimatedHeight = data.estimatedHeight;
     final estimatedWidth = data.estimatedWidth;
 
@@ -135,7 +234,7 @@ class _SkillGraphCard extends StatelessWidget {
           return SizedBox(
             height: estimatedHeight,
             child: InteractiveViewer(
-              transformationController: controller,
+              transformationController: widget.controller,
               constrained: false,
               boundaryMargin: const EdgeInsets.all(120),
               minScale: 0.5,
@@ -148,27 +247,10 @@ class _SkillGraphCard extends StatelessWidget {
                     const Positioned.fill(
                       child: _DifficultyLaneOverlay(),
                     ),
-                    GraphView(
-                      graph: graph,
-                      algorithm: SugiyamaAlgorithm(config),
-                      paint: Paint()
-                        ..color = Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.4)
-                        ..strokeWidth = 1.4
-                        ..style = PaintingStyle.stroke,
-                      builder: (node) {
-                        final skillId = node.key?.value as String;
-                        final skill = data.skillById[skillId]!;
-                        final isBase = data.baseSkillIds.contains(skillId);
-                        final depth = data.depthBySkillId[skillId] ?? 0;
-                        return _SkillGraphNode(
-                          skill: skill,
-                          isBase: isBase,
-                          depth: depth,
-                          onTap: () => onSkillSelected(skill),
-                        );
-                      },
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      child: _obtainGraphView(context),
                     ),
                   ],
                 ),
@@ -334,12 +416,15 @@ class _SkillGraphNode extends StatelessWidget {
                       color: difficultyColor.withValues(alpha: 0.8),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Foundation Skill',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: difficultyColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    Flexible(
+                      child: Text(
+                        'Foundation Skill',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: difficultyColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
                     ),
                   ],
                 ),

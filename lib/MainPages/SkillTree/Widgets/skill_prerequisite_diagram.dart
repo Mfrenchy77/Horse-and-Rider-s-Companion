@@ -91,41 +91,133 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
   Offset _currentPan = Offset.zero;
   bool _hasAutoCentered = false;
 
+  // Layout inputs are cached. GraphView re-runs the full Sugiyama layout every
+  // time a *new* GraphView widget is handed to it (even with an identical
+  // Graph/algorithm), so the widget itself is memoized and only recreated when
+  // its inputs change (skill, skill list, progress levels or edge colour) -
+  // not on zoom/reset/pan.
+  late SkillPrerequisiteGraphData _diagramData;
+  late Graph _graph;
+  late SugiyamaAlgorithm _algorithm;
+  GraphView? _graphView;
+  Map<String, (LevelState, bool)>? _graphViewLevels;
+  Color? _graphViewEdgeColor;
+
+  /// Number of times the graph data/layout inputs were rebuilt (test hook).
+  @visibleForTesting
+  int graphBuildCount = 0;
+
+  /// Number of times the GraphView widget was recreated (test hook).
+  @visibleForTesting
+  int graphViewBuildCount = 0;
+
   @override
   void initState() {
     super.initState();
     _controller = TransformationController();
+    _rebuildGraph();
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void didUpdateWidget(covariant SkillPrerequisiteDiagram oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.skill, widget.skill) ||
+        !_sameSkills(oldWidget.allSkills, widget.allSkills)) {
+      _rebuildGraph();
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final diagramData = SkillPrerequisiteGraphBuilder(
+  static bool _sameSkills(List<Skill?> a, List<Skill?> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  /// SkillLevel is mutable, so progress is compared by the values the nodes
+  /// actually display rather than by identity.
+  static Map<String, (LevelState, bool)> _levelSnapshot(
+    Map<String, SkillLevel> levels,
+  ) => {
+    for (final entry in levels.entries)
+      entry.key: (entry.value.levelState, entry.value.verified),
+  };
+
+  static bool _sameLevels(
+    Map<String, (LevelState, bool)>? a,
+    Map<String, (LevelState, bool)> b,
+  ) {
+    if (a == null || a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (b[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  GraphView _obtainGraphView(BuildContext context) {
+    final edgeColor = Theme.of(context).dividerColor.withValues(alpha: 0.6);
+    final levelSnapshot = _levelSnapshot(widget.skillLevelsById);
+    final cached = _graphView;
+    if (cached != null &&
+        _graphViewEdgeColor == edgeColor &&
+        _sameLevels(_graphViewLevels, levelSnapshot)) {
+      return cached;
+    }
+    graphViewBuildCount++;
+    final diagramData = _diagramData;
+    final skillLevelsById = widget.skillLevelsById;
+    final selectedSkillId = widget.skill.id;
+    final view = GraphView(
+      graph: _graph,
+      algorithm: _algorithm,
+      paint: Paint()
+        ..color = edgeColor
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke,
+      builder: (node) {
+        final skillId = node.key!.value as String;
+        final nodeSkill = diagramData.skillById[skillId]!;
+        return _SkillDiagramNode(
+          skill: nodeSkill,
+          depth: diagramData.depthBySkillId[skillId] ?? 0,
+          isBase: diagramData.baseSkillIds.contains(skillId),
+          isSelected: skillId == selectedSkillId,
+          isDirectPrerequisite:
+              diagramData.directPrerequisiteIds.contains(skillId),
+          isDescendant: diagramData.descendantSkillIds.contains(skillId),
+          descendantDepth: diagramData.downstreamDepthBySkillId[skillId],
+          skillLevel: skillLevelsById[skillId],
+          onTap: () => widget.onSkillSelected(nodeSkill),
+        );
+      },
+    );
+    _graphView = view;
+    _graphViewEdgeColor = edgeColor;
+    _graphViewLevels = levelSnapshot;
+    return view;
+  }
+
+  void _rebuildGraph() {
+    graphBuildCount++;
+    _graphView = null;
+    _diagramData = SkillPrerequisiteGraphBuilder(
       skill: widget.skill,
       allSkills: widget.allSkills,
       includeDependents: true,
     ).build();
-    final skillLevelsById = widget.skillLevelsById;
-
-    if (!diagramData.hasDiagram) {
-      return const _DiagramPlaceholder();
-    }
 
     final graph = Graph()..isTree = false;
     final nodes = <String, Node>{};
 
-    diagramData.skillById.forEach((id, value) {
+    _diagramData.skillById.forEach((id, value) {
       final node = Node.Id(id);
       nodes[id] = node;
       graph.addNode(node);
     });
 
-    for (final edge in diagramData.edges) {
+    for (final edge in _diagramData.edges) {
       final parent = nodes[edge.parentId];
       final child = nodes[edge.childId];
       if (parent != null && child != null) {
@@ -137,6 +229,22 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
       ..nodeSeparation = 48
       ..levelSeparation = 140
       ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
+
+    _graph = graph;
+    _algorithm = SugiyamaAlgorithm(config);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_diagramData.hasDiagram) {
+      return const _DiagramPlaceholder();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,44 +281,7 @@ class _SkillPrerequisiteDiagramState extends State<SkillPrerequisiteDiagram> {
                         maxScale: 2.4,
                         scaleEnabled: false,
                         onInteractionEnd: (_) => _captureCurrentTransform(),
-                        child: GraphView(
-                          graph: graph,
-                          algorithm: SugiyamaAlgorithm(config),
-                          paint: Paint()
-                            ..color = Theme.of(context)
-                                .dividerColor
-                                .withValues(alpha: 0.6)
-                            ..strokeWidth = 1.2
-                            ..style = PaintingStyle.stroke,
-                          builder: (node) {
-                            final skillId = node.key!.value as String;
-                            final nodeSkill = diagramData.skillById[skillId]!;
-                            final isBase =
-                                diagramData.baseSkillIds.contains(skillId);
-                            final isSelected = skillId == widget.skill.id;
-                            final isDirectPrerequisite = diagramData
-                                .directPrerequisiteIds
-                                .contains(skillId);
-                            final isDescendant = diagramData.descendantSkillIds
-                                .contains(skillId);
-                            final descendantDepth =
-                                diagramData.downstreamDepthBySkillId[skillId];
-                            final depth =
-                                diagramData.depthBySkillId[skillId] ?? 0;
-                            final skillLevel = skillLevelsById[skillId];
-                            return _SkillDiagramNode(
-                              skill: nodeSkill,
-                              depth: depth,
-                              isBase: isBase,
-                              isSelected: isSelected,
-                              isDirectPrerequisite: isDirectPrerequisite,
-                              isDescendant: isDescendant,
-                              descendantDepth: descendantDepth,
-                              skillLevel: skillLevel,
-                              onTap: () => widget.onSkillSelected(nodeSkill),
-                            );
-                          },
-                        ),
+                        child: _obtainGraphView(context),
                       );
                     },
                   ),
