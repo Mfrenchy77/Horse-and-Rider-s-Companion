@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/Widgets/accept_request_button.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/messages_list_page.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/accept_request_button.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
 class RequestsBadgeButton extends StatelessWidget {
@@ -92,7 +89,8 @@ class RequestsBadgeButton extends StatelessWidget {
                   const ListTile(
                     title: Text('Requests'),
                     subtitle: Text(
-                      'Send a new connection request from an older message.',
+                      'Review and respond to pending connection and transfer '
+                      'requests.',
                     ),
                   ),
                   const Divider(height: 1),
@@ -106,14 +104,6 @@ class RequestsBadgeButton extends StatelessWidget {
                           ..remove(cubit.state.usersProfile?.name);
                         final m = c.recentMessage;
                         return ListTile(
-                          onTap: () {
-                            // Open the conversation
-                            cubit.setConversation(c.id);
-                            context.goNamed(
-                              MessagePage.name,
-                              pathParameters: {MessagePage.pathParams: c.id},
-                            );
-                          },
                           title: Text(otherNames.join(', ')),
                           subtitle: Text(
                             m?.message ?? '',
@@ -146,23 +136,9 @@ class RequestsBadgeButton extends StatelessWidget {
                             color: Colors.grey,
                           ),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton(
-                              key: const Key('ViewAllRequestsButton'),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                context.pushNamed(MessagesPage.name);
-                              },
-                              child: const Text('View All'),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Close'),
-                            ),
-                          ],
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
                         ),
                       ],
                     ),

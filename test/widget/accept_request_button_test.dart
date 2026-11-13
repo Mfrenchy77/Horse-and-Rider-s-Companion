@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/Widgets/accept_request_button.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/accept_request_button.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockMessagesRepository extends Mock implements MessagesRepository {}

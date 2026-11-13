@@ -1,55 +1,10 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/cubit/horse_profile_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTrainingPathDialog/Cubit/create_training_path_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-
-class _InMemoryMessagesStore implements MessagesStore {
-  final Map<String, Conversation> conversations = {};
-  final Map<String, List<Message>> messages = {};
-
-  @override
-  Future<void> createOrUpdateMessage({required Message message}) async {
-    messages.putIfAbsent(message.id ?? '', () => []).add(message);
-  }
-
-  @override
-  Stream<List<Message>> getMessages({required String conversationId}) =>
-      Stream.value(messages[conversationId] ?? const []);
-
-  @override
-  void deleteMessage({
-    required Message messageToDelete,
-    required String conversationId,
-  }) {
-    messages[conversationId]?.removeWhere(
-      (m) => m.messageId == messageToDelete.messageId,
-    );
-  }
-
-  @override
-  Future<void> createOrUpdateConversation({
-    required Conversation conversation,
-  }) async {
-    conversations[conversation.id] = conversation;
-  }
-
-  @override
-  Stream<List<Conversation>> getConversations({required String userEmail}) =>
-      Stream.value(
-        conversations.values
-            .where((c) => c.partiesIds.contains(userEmail))
-            .toList(),
-      );
-
-  @override
-  void deleteConversation({required Conversation conversation}) {
-    conversations.remove(conversation.id);
-  }
-}
 
 class _InMemorySkillTreeStore implements SkillTreeStore {
   final Map<String, TrainingPath> trainingPaths = {};
@@ -344,43 +299,6 @@ class _InMemoryRiderProfileStore implements RiderProfileStore {
 void main() {
   group('Core repository interfaces', () {
     test(
-      'NewGroupDialogCubit works with an in-memory RiderProfileStore',
-      () async {
-        final store = _InMemoryRiderProfileStore({
-          'alex@example.com': RiderProfile(
-            id: 'u1',
-            name: 'Alex',
-            email: 'alex@example.com',
-          ),
-          'sam@example.com': RiderProfile(
-            id: 'u2',
-            name: 'Sam',
-            email: 'sam@example.com',
-          ),
-        });
-        final cubit = NewGroupDialogCubit(
-          messagesRepository: _InMemoryMessagesStore(),
-          riderProfileRepository: store,
-          usersProfile: RiderProfile(
-            id: 'u1',
-            name: 'Alex',
-            email: 'alex@example.com',
-          ),
-        );
-        addTearDown(cubit.close);
-
-        cubit
-          ..nameChanged('Sam')
-          ..searchProfilesByName();
-        await Future<void>.delayed(Duration.zero);
-
-        expect(cubit.state.searchResult.map((r) => r?.email), [
-          'sam@example.com',
-        ]);
-      },
-    );
-
-    test(
       'AddHorseDialogCubit works with in-memory HorseProfileStore and '
       'RiderProfileStore',
       () async {
@@ -442,32 +360,6 @@ void main() {
           resourcesStore.resources['r1']?.comments?.first.comment,
           'Great drill!',
         );
-      },
-    );
-
-    test(
-      'NewGroupDialogCubit creates conversations via an in-memory '
-      'MessagesStore',
-      () async {
-        final messagesStore = _InMemoryMessagesStore();
-        final riderStore = _InMemoryRiderProfileStore();
-        final cubit = NewGroupDialogCubit(
-          messagesRepository: messagesStore,
-          riderProfileRepository: riderStore,
-          usersProfile: RiderProfile(
-            id: 'u1',
-            name: 'Alex',
-            email: 'alex@example.com',
-          ),
-        );
-        addTearDown(cubit.close);
-
-        await cubit.createConversation(
-          RiderProfile(id: 'u2', name: 'Sam', email: 'sam@example.com'),
-        );
-
-        expect(messagesStore.conversations, hasLength(1));
-        expect(cubit.state.status, FormStatus.success);
       },
     );
 

@@ -112,25 +112,12 @@ void main() {
       cubit
         ..emit(cubit.state.copyWith(usersProfile: me))
 
-        // Load conversations
+      // Load conversations (retained for pending request processing)
         ..getConversations();
       // wait until conversations are fetched
       await cubit.stream.firstWhere((s) => s.conversations != null);
       expect(cubit.state.conversations?.length, 1);
       expect(cubit.state.conversations?.first.id, convId);
-
-      // Select conversation -> should start listening to messages
-      cubit.setConversation(convId);
-      await cubit.stream.firstWhere(
-        (s) => s.messages != null && (s.messages?.isNotEmpty ?? false),
-      );
-
-      final msgs = cubit.state.messages!;
-      expect(msgs.length, 2);
-      // Should be ordered oldest->newest then
-      //reversed in cubit (so latest first)
-      expect(msgs.first.message, 'Hi back');
-      expect(msgs.last.message, 'Hello');
     });
   });
 }

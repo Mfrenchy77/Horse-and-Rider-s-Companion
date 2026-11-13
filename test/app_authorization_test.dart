@@ -477,7 +477,7 @@ void main() {
   );
 
   test(
-    'sortComments and sortConversations do not mutate state lists in place '
+    'sortComments does not mutate state lists in place '
     'and safely handle null comment ratings',
     () {
       final c1 = Comment(
@@ -504,33 +504,8 @@ void main() {
       );
       final originalComments = <Comment>[c1, c2];
 
-      final conv1 = Conversation(
-        id: 'conv1',
-        parties: const ['A', 'B'],
-        partiesIds: const ['a@x.com', 'b@x.com'],
-        createdBy: 'A',
-        lastEditBy: 'A',
-        recentMessage: null,
-        createdOn: DateTime.utc(2025),
-        lastEditDate: DateTime.utc(2025, 1, 2),
-      );
-      final conv2 = Conversation(
-        id: 'conv2',
-        parties: const ['A', 'C'],
-        partiesIds: const ['a@x.com', 'c@x.com'],
-        createdBy: 'A',
-        lastEditBy: 'A',
-        recentMessage: null,
-        createdOn: DateTime.utc(2025, 1, 3),
-        lastEditDate: DateTime.utc(2025),
-      );
-      final originalConversations = <Conversation>[conv1, conv2];
-
       harness.cubit.emit(
-        harness.cubit.state.copyWith(
-          resourceComments: originalComments,
-          conversations: originalConversations,
-        ),
+        harness.cubit.state.copyWith(resourceComments: originalComments),
       );
 
       // Sorting comments by Best handles null rating as 0 without crashing
@@ -550,21 +525,6 @@ void main() {
       expect(
         harness.cubit.state.resourceComments.map((c) => c.id).toList(),
         ['c1', 'c2'],
-      );
-
-      // Sorting conversations creates a new list rather than mutating in place
-      harness.cubit.sortConversations(ConversationsSort.createdDate);
-      expect(
-        harness.cubit.state.conversations!.map((c) => c.id).toList(),
-        ['conv2', 'conv1'],
-      );
-      expect(
-        originalConversations.map((c) => c.id).toList(),
-        ['conv1', 'conv2'],
-      );
-      expect(
-        identical(harness.cubit.state.conversations, originalConversations),
-        isFalse,
       );
     },
   );

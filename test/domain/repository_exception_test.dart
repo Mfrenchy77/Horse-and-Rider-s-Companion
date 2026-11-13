@@ -1,12 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:mocktail/mocktail.dart';
-
-class _MockMessagesRepository extends Mock implements MessagesRepository {}
 
 class _MockHorseProfileRepository extends Mock
     implements HorseProfileRepository {}
@@ -108,39 +105,6 @@ void main() {
   });
 
   group('Cubit RepositoryException handling', () {
-    test('NewGroupDialogCubit handles RepositoryException', () async {
-      final messagesRepo = _MockMessagesRepository();
-      when(
-        () => messagesRepo.createOrUpdateConversation(
-          conversation: any(named: 'conversation'),
-        ),
-      ).thenThrow(
-        const RepositoryException(
-          kind: RepositoryFailureKind.permissionDenied,
-          message: 'Permission denied',
-          code: 'permission-denied',
-        ),
-      );
-      final cubit = NewGroupDialogCubit(
-        messagesRepository: messagesRepo,
-        riderProfileRepository: _MockRiderProfileRepository(),
-        usersProfile: RiderProfile(
-          id: 'u1',
-          name: 'Alex',
-          email: 'alex@example.com',
-        ),
-      );
-      addTearDown(cubit.close);
-
-      await cubit.createConversation(
-        RiderProfile(id: 'u2', name: 'Sam', email: 'sam@example.com'),
-      );
-
-      expect(cubit.state.status, FormStatus.failure);
-      expect(cubit.state.isError, isTrue);
-      expect(cubit.state.error, contains('Permission denied'));
-    });
-
     test('AddHorseDialogCubit handles RepositoryException on delete', () async {
       final horseRepo = _MockHorseProfileRepository();
       final riderRepo = _MockRiderProfileRepository();

@@ -56,7 +56,6 @@ class AppCubit extends Cubit<AppState> {
 
   ///Streams
   late final StreamSubscription<User?> _userSubscription;
-  StreamSubscription<List<Message>>? _messagesStream;
   StreamSubscription<List<Resource>>? _resourcesStream;
   StreamSubscription<List<Skill>>? _skillsSubscription;
   StreamSubscription<List<Conversation>>? _conversationsStream;
@@ -115,11 +114,9 @@ class AppCubit extends Cubit<AppState> {
     _emailVerificationTimer?.cancel();
     unawaited(_usersProfileSubscription?.cancel());
     unawaited(_conversationsStream?.cancel());
-    unawaited(_messagesStream?.cancel());
     unawaited(_horseProfileSubscription?.cancel());
     _usersProfileSubscription = null;
     _conversationsStream = null;
-    _messagesStream = null;
     _horseProfileSubscription = null;
     emit(
       const AppState.unauthenticated().copyWith(
@@ -2988,152 +2985,6 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// User selected a conversation to view
-  void setConversation(String conversationsId) {
-    debugPrint('setConversation: $conversationsId');
-    final conversation = getConversationById(conversationsId);
-    if (conversation != null) {
-      emit(
-        state.copyWith(
-          conversationState: ConversationState.loading,
-          conversation: conversation,
-          messageId: conversationsId,
-        ),
-      );
-      if (conversation.messageState == MessageState.UNREAD) {
-        conversation.messageState = MessageState.READ;
-        _messagesRepository.createOrUpdateConversation(
-          conversation: conversation,
-        );
-      }
-      debugPrint('Conversation: ${conversation.parties}');
-      // Cancel any existing message listener before opening a new conversation
-      _messagesStream?.cancel();
-      _messagesStream = _messagesRepository
-          .getMessages(conversationId: conversation.id)
-          .listen((messagesList) {
-            final messages = messagesList.toList()
-              ..sort(
-                (a, b) => (a.date as DateTime).compareTo(b.date as DateTime),
-              );
-            debugPrint('Messages Retrieved: ${messages.length}');
-            emit(
-              state.copyWith(
-                messages: messages.reversed.toList(),
-                conversationState: ConversationState.loaded,
-              ),
-            );
-          });
-    } else {
-      debugPrint('Conversation is null');
-      emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Error Retrieveing Conversation',
-        ),
-      );
-    }
-  }
-
-  /// Returns a conversation by its [id]
-  Conversation? getConversationById(String id) {
-    debugPrint('Getting Conversation by Id: $id');
-    if (state.conversations == null || state.conversations!.isEmpty) {
-      debugPrint('Conversations is null');
-      return null;
-    } else {
-      final conversation = state.conversations!.firstWhereOrNull(
-        (element) => element.id == id,
-      );
-      debugPrint('Got Conversation: ${conversation?.parties}');
-      return conversation;
-    }
-  }
-
-  /// AppBar title for a conversation showing the other parties name
-  String conversationTitle() {
-    final conversation = state.conversation;
-    // Copy list to avoid mutating the conversation parties
-    final names =
-        conversation == null
-              ? <String>[]
-              : List<String>.from(conversation.parties)
-          ..remove(state.usersProfile?.name);
-    return names.join(', ');
-  }
-
-  /// Message text changed
-  void messageTextChanged(String value) {
-    final text = value;
-    emit(state.copyWith(messageText: text));
-  }
-
-  /// User Submits a message
-  void sendMessage() {
-    if (state.messageText.isNotEmpty && state.conversation != null) {
-      final message = Message(
-        subject: 'Chat',
-        date: DateTime.now(),
-        id: state.conversation!.id,
-        message: state.messageText,
-        sender: state.usersProfile!.name,
-        senderId: state.usersProfile?.email.toLowerCase(),
-        recipients: state.conversation!.parties,
-        senderProfilePicUrl: state.usersProfile?.picUrl,
-        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-      );
-      if (state.conversation != null) {
-        final updatedconversation = state.conversation!
-          ..lastEditDate = DateTime.now()
-          ..recentMessage = message
-          ..lastEditBy = state.usersProfile?.name
-          ..messageState = MessageState.UNREAD;
-        _messagesRepository
-          ..createOrUpdateMessage(message: message)
-          ..createOrUpdateConversation(conversation: updatedconversation);
-      } else {
-        debugPrint('Conversation is null');
-      }
-    }
-    emit(state.copyWith(messageText: ''));
-  }
-
-  /// Sort the Conversations by messageState, creadtedDate, and lastEditDate
-  void sortConversations(ConversationsSort value) {
-    final sortedConversations = state.conversations == null
-        ? null
-        : List<Conversation>.of(state.conversations!);
-
-    switch (value) {
-      case ConversationsSort.createdDate:
-        sortedConversations?.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-        break;
-      case ConversationsSort.lastupdatedDate:
-        sortedConversations?.sort(
-          (a, b) => b.lastEditDate.compareTo(a.lastEditDate),
-        );
-        break;
-      case ConversationsSort.unread:
-        sortedConversations?.sort(
-          (a, b) => a.messageState.index.compareTo(b.messageState.index),
-        );
-        break;
-      case ConversationsSort.oldest:
-        sortedConversations?.sort((a, b) => a.createdOn.compareTo(b.createdOn));
-    }
-    emit(
-      state.copyWith(
-        conversationsSort: value,
-        conversations: sortedConversations,
-      ),
-    );
-  }
-
-  /// Returns if the [message] is from the current user
-  bool isCurrentUser(Message message) {
-    return message.sender == state.usersProfile?.name;
-  }
-
   /// Reissues a legacy message as a connection requiring fresh consent.
   Future<void> acceptRequest({required Message message}) async {
     if (message.messageType == MessageType.TRANSFER_HORSE_REQUEST) {
@@ -3569,12 +3420,6 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(pageStatus: AppPageStatus.settings));
   }
 
-  /// Navigates to the Messages Page
-  void navigateToMessages() {
-    debugPrint('navigateToMessages');
-    emit(state.copyWith(pageStatus: AppPageStatus.messages));
-  }
-
   /// Navigates to the Resources Page
   void navigateToResources(Resource resource) {
     debugPrint('navigateToResources');
@@ -3620,7 +3465,6 @@ class AppCubit extends Cubit<AppState> {
   @override
   Future<void> close() {
     _emailVerificationTimer?.cancel();
-    _messagesStream?.cancel();
     _userSubscription.cancel();
     _conversationsStream?.cancel();
     _resourcesStream?.cancel();
