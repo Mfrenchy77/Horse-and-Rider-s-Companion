@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Theme/classic_blue_gray.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
@@ -41,10 +42,8 @@ class HorseAndRidersTheme {
     return _cachedThemes[(season, isDark)] ??= _withCardGradient(
       switch (season) {
         ThemeSeasons.main => isDark ? mainThemeDark : mainThemeLight,
-        ThemeSeasons.halloween =>
-          isDark ? halloweenThemeDark : halloweenTheme,
-        ThemeSeasons.christmas =>
-          isDark ? christmasThemeDark : christmasTheme,
+        ThemeSeasons.halloween => isDark ? halloweenThemeDark : halloweenTheme,
+        ThemeSeasons.christmas => isDark ? christmasThemeDark : christmasTheme,
         ThemeSeasons.easter => isDark ? easterThemeDark : easterTheme,
         ThemeSeasons.spring => isDark ? springThemeDark : springTheme,
         ThemeSeasons.summer => isDark ? summerThemeDark : summerTheme,
@@ -239,6 +238,8 @@ final mainThemeDark = ThemeData(
         onSecondary: ColorConst.mainPrimaryDark,
         surface: ColorConst.mainBackgroundDark,
         onSurface: ColorConst.darkForeground,
+        error: ColorConst.errorDarkBlueGrey,
+        onError: Colors.white,
         outline: ColorConst.dividerDarkBlueGrey,
         outlineVariant: ColorConst.dividerDarkBlueGrey,
         secondaryContainer: ColorConst.cardDarkBlueGrey,
@@ -336,11 +337,140 @@ final mainThemeDark = ThemeData(
   ),
   cardColor: ColorConst.cardDark,
   cardTheme: const CardThemeData(color: ColorConst.cardDark),
-  drawerTheme: const DrawerThemeData(
-    backgroundColor: ColorConst.mainBackgroundDark,
+  drawerTheme: const DrawerThemeData(backgroundColor: AppTokens.midnightMid),
+  dialogTheme: DialogThemeData(
+    backgroundColor: AppTokens.midnightMid,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusXl),
+      side: const BorderSide(color: AppTokens.cardBorderDark),
+    ),
   ),
-  dialogTheme: const DialogThemeData(
-    backgroundColor: ColorConst.mainBackgroundDark,
+  bottomSheetTheme: const BottomSheetThemeData(
+    backgroundColor: AppTokens.midnightMid,
+    surfaceTintColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTokens.radiusXl),
+      ),
+    ),
+  ),
+  popupMenuTheme: PopupMenuThemeData(
+    color: AppTokens.midnightCardTop,
+    surfaceTintColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      side: const BorderSide(color: AppTokens.cardBorderDark),
+    ),
+  ),
+  snackBarTheme: SnackBarThemeData(
+    backgroundColor: AppTokens.midnightCardTop,
+    contentTextStyle: const TextStyle(color: AppTokens.primaryTextDark),
+    actionTextColor: AppTokens.coralAccent,
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      side: const BorderSide(color: AppTokens.cardBorderDark),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: AppTokens.midnightInputFill,
+    labelStyle: const TextStyle(color: AppTokens.secondaryTextDark),
+    hintStyle: TextStyle(
+      color: AppTokens.secondaryTextDark.withValues(alpha: 0.7),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      borderSide: const BorderSide(color: AppTokens.cardBorderDark),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      borderSide: const BorderSide(color: AppTokens.cardBorderDark),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      borderSide: const BorderSide(color: AppTokens.coralAccent, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      borderSide: const BorderSide(color: ColorConst.errorDarkBlueGrey),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: AppTokens.primaryTextDark,
+      side: const BorderSide(color: AppTokens.midnightButtonBorder),
+      minimumSize: const Size(
+        AppTokens.minTouchTarget,
+        AppTokens.minTouchTarget,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      ),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: AppTokens.coralAccent,
+      minimumSize: const Size(
+        AppTokens.minTouchTarget,
+        AppTokens.minTouchTarget,
+      ),
+    ),
+  ),
+  tabBarTheme: const TabBarThemeData(
+    indicatorColor: AppTokens.coralAccent,
+    labelColor: AppTokens.primaryTextDark,
+    unselectedLabelColor: AppTokens.secondaryTextDark,
+  ),
+  dividerTheme: const DividerThemeData(
+    color: AppTokens.cardBorderDark,
+    thickness: 1,
+  ),
+  checkboxTheme: CheckboxThemeData(
+    fillColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.selected)
+          ? AppTokens.coralAccent
+          : Colors.transparent,
+    ),
+    checkColor: WidgetStateProperty.all(AppTokens.coralText),
+    side: const BorderSide(color: AppTokens.midnightButtonBorder, width: 1.5),
+  ),
+  radioTheme: RadioThemeData(
+    fillColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.selected)
+          ? AppTokens.coralAccent
+          : AppTokens.secondaryTextDark,
+    ),
+  ),
+  switchTheme: SwitchThemeData(
+    thumbColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.selected)
+          ? AppTokens.coralText
+          : AppTokens.secondaryTextDark,
+    ),
+    trackColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.selected)
+          ? AppTokens.coralAccent
+          : AppTokens.midnightCardTop,
+    ),
+  ),
+  sliderTheme: const SliderThemeData(
+    activeTrackColor: AppTokens.coralAccent,
+    thumbColor: AppTokens.coralAccent,
+    inactiveTrackColor: AppTokens.cardBorderDark,
+  ),
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
+    color: AppTokens.coralAccent,
+    linearTrackColor: AppTokens.cardBorderDark,
+  ),
+  tooltipTheme: TooltipThemeData(
+    decoration: BoxDecoration(
+      color: AppTokens.midnightCardTop,
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      border: Border.all(color: AppTokens.cardBorderDark),
+    ),
+    textStyle: const TextStyle(color: AppTokens.primaryTextDark),
   ),
 );
 

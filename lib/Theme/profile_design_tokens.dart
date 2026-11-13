@@ -1,215 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
-import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
-/// Design tokens for the Rider Profile visual language.
+/// Profile-scoped aliases backed by the centralized [AppTokens] design system.
 class ProfileTokens {
   const ProfileTokens._();
 
-  static const String serifFont = 'Georgia';
-  static const List<String> serifFallback = ['Times New Roman', 'serif'];
+  static const String serifFont = AppTokens.serifFont;
+  static const List<String> serifFallback = AppTokens.serifFallback;
 
-  static const Color midnightBase = Color(0xFF0A1D21);
-  static const Color midnightMid = Color(0xFF0F262B);
-  static const Color midnightCardTop = Color(0xFF173339);
-  static const Color midnightCardBottom = Color(0xFF0F2429);
-  static const Color midnightButtonFill = Color(0xCC163137);
-  static const Color midnightButtonBorder = Color(0x4D7EA1A5);
-  static const Color cardBorderDark = Color(0x3D628388);
-  static const Color coralAccent = ColorConst.mainAccentDark;
-  static const Color coralText = Color(0xFF102429);
-  static const Color primaryTextDark = ColorConst.darkForeground;
-  static const Color secondaryTextDark = ColorConst.darkMuted;
+  static const Color midnightBase = AppTokens.midnightBase;
+  static const Color midnightMid = AppTokens.midnightMid;
+  static const Color midnightCardTop = AppTokens.midnightCardTop;
+  static const Color midnightCardBottom = AppTokens.midnightCardBottom;
+  static const Color midnightButtonFill = AppTokens.midnightButtonFill;
+  static const Color midnightButtonBorder = AppTokens.midnightButtonBorder;
+  static const Color cardBorderDark = AppTokens.cardBorderDark;
+  static const Color coralAccent = AppTokens.coralAccent;
+  static const Color coralText = AppTokens.coralText;
+  static const Color primaryTextDark = AppTokens.primaryTextDark;
+  static const Color secondaryTextDark = AppTokens.secondaryTextDark;
 
-  static const double cardRadius = 16;
-  static const double buttonRadius = 14;
-  static const double horseCardRadius = 14;
+  static const double cardRadius = AppTokens.radiusLg;
+  static const double buttonRadius = AppTokens.radiusMd;
+  static const double horseCardRadius = AppTokens.radiusMd;
 
-  static const BoxDecoration midnightBackdrop = BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [midnightMid, midnightBase, Color(0xFF071518)],
-      stops: [0.0, 0.45, 1.0],
-    ),
-  );
+  static const BoxDecoration midnightBackdrop = AppTokens.midnightBackdrop;
 
-  static BoxDecoration atmosphericOverlay(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (!isDark) {
-      return BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor);
-    }
-    return const BoxDecoration(
-      gradient: RadialGradient(
-        center: Alignment(0.75, -0.85),
-        radius: 1.15,
-        colors: [Color(0x2E2A5961), Colors.transparent],
-      ),
-    );
-  }
+  static BoxDecoration atmosphericOverlay(BuildContext context) =>
+      AppTokens.atmosphericOverlay(context);
 
-  static TextStyle heroNameStyle(BuildContext context, {bool compact = false}) {
-    final base = Theme.of(context).textTheme.headlineMedium;
-    return (base ?? const TextStyle()).copyWith(
-      fontFamily: serifFont,
-      fontFamilyFallback: serifFallback,
-      fontSize: compact ? 26 : 32,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.2,
-      height: 1.12,
-      color: primaryTextDark,
-      shadows: const [
-        Shadow(color: Color(0x99000000), blurRadius: 12, offset: Offset(0, 2)),
-      ],
-    );
-  }
+  static TextStyle heroNameStyle(
+    BuildContext context, {
+    bool compact = false,
+  }) => AppTokens.heroTitleStyle(context, compact: compact);
 
-  static TextStyle sectionTitleStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return (theme.textTheme.titleLarge ?? const TextStyle()).copyWith(
-      fontFamily: serifFont,
-      fontFamilyFallback: serifFallback,
-      fontSize: 22,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.15,
-      color: isDark ? primaryTextDark : theme.colorScheme.onSurface,
-    );
-  }
+  static TextStyle sectionTitleStyle(BuildContext context) =>
+      AppTokens.sectionTitleStyle(context);
 
-  static Color secondaryTextColor(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? secondaryTextDark
-        : theme.colorScheme.onSurfaceVariant;
-  }
+  static Color secondaryTextColor(BuildContext context) =>
+      AppTokens.secondaryTextColor(context);
 
-  static Color accentColor(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? coralAccent
-        : theme.colorScheme.primary;
-  }
+  static Color accentColor(BuildContext context) =>
+      AppTokens.accentColor(context);
 }
 
-/// Reusable dark-teal translucent surface card with subtle border and gradient.
-class ProfileSurfaceCard extends StatelessWidget {
+/// Alias for [AppSurfaceCard] used across Rider Profile widgets.
+class ProfileSurfaceCard extends AppSurfaceCard {
   const ProfileSurfaceCard({
     super.key,
-    required this.child,
-    this.padding = const EdgeInsets.all(20),
-    this.borderRadius = ProfileTokens.cardRadius,
+    required super.child,
+    super.padding,
+    super.borderRadius,
   });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double borderRadius;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    if (!isDark) {
-      return GradientCard(
-        margin: EdgeInsets.zero,
-        child: Padding(padding: padding, child: child),
-      );
-    }
-
-    final radius = BorderRadius.circular(borderRadius);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            ProfileTokens.midnightCardTop,
-            ProfileTokens.midnightCardBottom,
-          ],
-        ),
-        border: Border.all(color: ProfileTokens.cardBorderDark),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x40000000),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: Material(
-          type: MaterialType.transparency,
-          child: Padding(padding: padding, child: child),
-        ),
-      ),
-    );
-  }
 }
 
-/// Section header with a serif title and optional coral "View All" action.
-class ProfileSectionHeader extends StatelessWidget {
+/// Alias for [AppSectionHeader] used across Rider Profile widgets.
+class ProfileSectionHeader extends AppSectionHeader {
   const ProfileSectionHeader({
     super.key,
-    required this.title,
-    this.actionLabel,
-    this.onAction,
-    this.showArrow = false,
+    required super.title,
+    super.actionLabel,
+    super.onAction,
+    super.showArrow,
   });
-
-  final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-  final bool showArrow;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = ProfileTokens.accentColor(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: ProfileTokens.sectionTitleStyle(context),
-          ),
-        ),
-        if (actionLabel != null && onAction != null)
-          Flexible(
-            child: TextButton(
-              onPressed: onAction,
-              style: TextButton.styleFrom(
-                foregroundColor: accent,
-                minimumSize: const Size(48, 48),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      actionLabel!,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: accent,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  if (showArrow) ...[
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward, size: 16, color: accent),
-                  ],
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 /// Renders basic Markdown (`**bold**`, `*italic*`, `` `code` ``, `# headings`,
@@ -293,7 +146,7 @@ class MarkdownBioText extends StatelessWidget {
           TextSpan(
             text: match.group(2),
             style: base.copyWith(
-              color: ProfileTokens.coralAccent,
+              color: AppTokens.coralAccent,
               decoration: TextDecoration.underline,
             ),
           ),
@@ -313,7 +166,7 @@ class MarkdownBioText extends StatelessWidget {
         style ??
         Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).brightness == Brightness.dark
-              ? ProfileTokens.primaryTextDark.withValues(alpha: 0.92)
+              ? AppTokens.primaryTextDark.withValues(alpha: 0.92)
               : null,
           height: 1.5,
         ) ??
