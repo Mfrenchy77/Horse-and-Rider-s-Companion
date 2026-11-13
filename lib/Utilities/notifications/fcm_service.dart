@@ -3,9 +3,17 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:horseandriderscompanion/Utilities/notifications/push_notification_service.dart';
 
-class FcmService {
+class FcmService implements PushNotificationService {
+  const FcmService();
+
   static StreamSubscription<String>? _onRegisteredSubscription;
+
+  @override
+  Future<void> ensureRegistered(String userEmail) {
+    return FcmService.registerDevice(userEmail);
+  }
 
   /// Returns the normalized platform identifier for FCM token records.
   @visibleForTesting
@@ -20,7 +28,7 @@ class FcmService {
 
   /// Request permission, get token, and store it under
   /// `RiderProfiles/<email>/tokens/<token>`.
-  static Future<void> ensureRegistered(String email) async {
+  static Future<void> registerDevice(String email) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
       if (kIsWeb || normalizedEmail.isEmpty) return;

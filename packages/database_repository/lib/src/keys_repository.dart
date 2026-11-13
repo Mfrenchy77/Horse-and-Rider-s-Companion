@@ -2,8 +2,23 @@
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
+/// Backend-neutral interface for retrieving application API keys.
+abstract interface class ApiKeyProvider {
+  /// Returns the API key for Google Maps.
+  Future<String> getMapsApiKey();
+
+  /// Returns the API key for the ZipCode API.
+  Future<String> getZipCodeApiKey();
+
+  /// Returns the API key for the Location API.
+  Future<String> getLocationApiKey();
+
+  /// Returns the API key for the Json Link API.
+  Future<String> getJsonLinkApiKey();
+}
+
 ///This class is responsible for managing the keys of the application
-class KeysRepository {
+class KeysRepository implements ApiKeyProvider {
   /// Constructs a [KeysRepository] with an optional [FirebaseRemoteConfig].
   KeysRepository([this._remoteConfig]);
 
@@ -49,14 +64,18 @@ class KeysRepository {
   static const String JSON_LINK_API_KEY_CONSTANT = 'JsonLinkApiKey';
 
   /// returns the API key for the Google Maps
+  @override
   Future<String> getMapsApiKey() => _getKey(MAPS_CONSTANT);
 
   /// returns the API key for the ZipCode API
+  @override
   Future<String> getZipCodeApiKey() => _getKey(ZIP_CODE_CONSTANT);
 
   /// returns the API key for the Location API
+  @override
   Future<String> getLocationApiKey() => _getKey(LOCATION_KEY_CONSTANT);
 
   /// returns the API key for the Json Link API
+  @override
   Future<String> getJsonLinkApiKey() => _getKey(JSON_LINK_API_KEY_CONSTANT);
 }

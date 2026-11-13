@@ -19,7 +19,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   AddHorseDialogCubit({
     required RiderProfile usersProfile,
     required HorseProfile? horseProfile,
-    required KeysRepository keysRepository,
+    required ApiKeyProvider keysRepository,
     required this._horseProfileRepository,
     required this._riderProfileRepository,
     this._cloudRepository,

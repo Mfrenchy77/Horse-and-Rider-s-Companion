@@ -16,7 +16,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   EditRiderProfileCubit({
     required User? user,
     required this._riderProfile,
-    required KeysRepository keysRepository,
+    required ApiKeyProvider keysRepository,
     required this._cloudRepository,
     required this._riderProfileRepository,
     LocationLookupService? locationLookupService,

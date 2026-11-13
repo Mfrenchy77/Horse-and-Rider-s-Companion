@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connectio
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/notifications/fcm_service.dart';
+import 'package:horseandriderscompanion/Utilities/notifications/push_notification_service.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,8 +29,10 @@ class AppCubit extends Cubit<AppState> {
     required this._riderProfileRepository,
     required this._horseProfileRepository,
     required AuthenticationRepository authenticationRepository,
+    PushNotificationService? pushNotificationService,
     this._submitCoachingAction,
   }) : _authenticationRepository = authenticationRepository,
+       _pushNotificationService = pushNotificationService ?? const FcmService(),
        super(
          authenticationRepository.currentUser.isNotEmpty
              ? AppState.authenticated(authenticationRepository.currentUser)
@@ -45,6 +48,7 @@ class AppCubit extends Cubit<AppState> {
   final RiderProfileRepository _riderProfileRepository;
   final HorseProfileRepository _horseProfileRepository;
   final AuthenticationRepository _authenticationRepository;
+  final PushNotificationService _pushNotificationService;
   final Future<Map<String, dynamic>> Function(Map<String, Object?>)?
   _submitCoachingAction;
 
@@ -231,7 +235,9 @@ class AppCubit extends Cubit<AppState> {
           .listen((profile) {
             if (profile != null && !registeredForNotifications) {
               registeredForNotifications = true;
-              unawaited(FcmService.ensureRegistered(profile.email));
+              unawaited(
+                _pushNotificationService.ensureRegistered(profile.email),
+              );
             }
             emit(
               state.copyWith(

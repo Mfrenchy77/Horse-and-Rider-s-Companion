@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/link_metadata_service.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:http/http.dart' as http;
@@ -25,6 +26,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required RiderProfile? usersProfile,
     required this._resourcesRepository,
     MediaStorageRepository? mediaStorage,
+    LinkMetadataService? linkMetadataService,
     ResourceInputType initialInputType = ResourceInputType.link,
 
     /// Optional overrides (handy for emulator/local testing)
@@ -33,6 +35,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? resolveImageEndpoint,
   }) : _debounce = null,
        _storage = mediaStorage,
+       // ignore: prefer_initializing_formals
+       _linkMetadataService = linkMetadataService,
        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
            ? _kDefaultPreviewMetaUrl
            : previewMetaEndpoint!.trim(),
@@ -87,6 +91,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   final String _previewMetaUrl;
   final String _fetchReadableUrl;
   final String _resolveImageUrl;
+  final LinkMetadataService? _linkMetadataService;
 
   // ----------------- tiny logger -----------------
   static int _seq = 0;
@@ -309,73 +314,114 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       return;
     }
 
-    // Try Cloud Functions first
+    // Try injected LinkMetadataService or Cloud Functions first
     try {
-      final p = await _postJson(
-        _previewMetaUrl,
-        body: {'url': url},
-        trace: trace,
-      );
-      if (!isCurrent()) return;
-      if (p?['blocksEmbedding'] == true) {
-        _restrictedPage = resourceWebUri(url);
-      }
-      final r = await _postJson(
-        _fetchReadableUrl,
-        body: {'url': url},
-        trace: trace,
-      );
-
-      _d(
-        'getMetadata',
-        'previewMeta: title="${_clipForLog(p?['title'] as String?)}" '
-            'img="${_clipForLog(p?['image'] as String?)}" trace=$trace',
-      );
-      _d(
-        'getMetadata',
-        'fetchReadable: title="${_clipForLog(r?['title'] as String?)}" '
-            'img="${_clipForLog(r?['image'] as String?)}" trace=$trace',
-      );
-
-      if (!isCurrent()) return;
-      if (p != null || r != null) {
-        final merged = _mergeMeta(
-          preview: p,
-          readable: r,
-          fallbackTitle: state.title,
-          pageUrl: url,
-        );
-
-        // ALWAYS run the resolver (even if meta image looks direct).
-        final candidateImg = state.imageUrl.isNotEmpty
-            ? state.imageUrl
-            : (merged['image'] ?? '');
-        String? finalImg;
-        try {
-          final resolved = await _resolveImage(
-            url,
-            hint: candidateImg,
-            trace: trace,
-          );
-          if (resolved != null && resolved.isNotEmpty) {
-            finalImg = resolved;
-          } else {
+      final metadataService = _linkMetadataService;
+      if (metadataService != null) {
+        final result = await metadataService.fetchMetadata(url);
+        if (!isCurrent()) return;
+        if (result != null) {
+          if (result.blocksEmbedding) {
+            _restrictedPage = resourceWebUri(url);
+          }
+          final title = state.title.isNotEmpty
+              ? state.title
+              : (result.title ?? '').trim();
+          final description = state.description.isNotEmpty
+              ? state.description
+              : (result.description ?? '').trim();
+          final candidateImg = state.imageUrl.isNotEmpty
+              ? state.imageUrl
+              : (result.imageUrl ?? '').trim();
+          String? finalImg;
+          try {
+            final resolved = await metadataService.resolveImage(
+              url,
+              imageHint: candidateImg,
+            );
+            finalImg = (resolved != null && resolved.isNotEmpty)
+                ? resolved
+                : candidateImg;
+          } catch (e, st) {
+            _d('resolveImage', 'ERROR trace=$trace $e\n$st');
             finalImg = candidateImg;
           }
-        } catch (e, st) {
-          _d('resolveImage', 'ERROR trace=$trace $e\n$st');
-          finalImg = candidateImg;
+          if (!isCurrent()) return;
+          _applyMetadata(url, title, description, finalImg);
+          return;
         }
+      } else {
+        final p = await _postJson(
+          _previewMetaUrl,
+          body: {'url': url},
+          trace: trace,
+        );
+        if (!isCurrent()) return;
+        if (p?['blocksEmbedding'] == true) {
+          _restrictedPage = resourceWebUri(url);
+        }
+        final r = await _postJson(
+          _fetchReadableUrl,
+          body: {'url': url},
+          trace: trace,
+        );
 
         _d(
           'getMetadata',
-          'done (CF path) title="${_clipForLog(merged['title'])}" '
-              'finalImg="${_clipForLog(finalImg)}" trace=$trace',
+          'previewMeta: title="${_clipForLog(p?['title'] as String?)}" '
+              'img="${_clipForLog(p?['image'] as String?)}" trace=$trace',
+        );
+        _d(
+          'getMetadata',
+          'fetchReadable: title="${_clipForLog(r?['title'] as String?)}" '
+              'img="${_clipForLog(r?['image'] as String?)}" trace=$trace',
         );
 
         if (!isCurrent()) return;
-        _applyMetadata(url, merged['title']!, merged['description']!, finalImg);
-        return;
+        if (p != null || r != null) {
+          final merged = _mergeMeta(
+            preview: p,
+            readable: r,
+            fallbackTitle: state.title,
+            pageUrl: url,
+          );
+
+          // ALWAYS run the resolver (even if meta image looks direct).
+          final candidateImg = state.imageUrl.isNotEmpty
+              ? state.imageUrl
+              : (merged['image'] ?? '');
+          String? finalImg;
+          try {
+            final resolved = await _resolveImage(
+              url,
+              hint: candidateImg,
+              trace: trace,
+            );
+            if (resolved != null && resolved.isNotEmpty) {
+              finalImg = resolved;
+            } else {
+              finalImg = candidateImg;
+            }
+          } catch (e, st) {
+            _d('resolveImage', 'ERROR trace=$trace $e\n$st');
+            finalImg = candidateImg;
+          }
+
+          _d(
+            'getMetadata',
+            'done (CF path) title="${_clipForLog(merged['title'])}" '
+                'finalImg="${_clipForLog(finalImg)}" trace=$trace',
+          );
+
+          if (!isCurrent()) return;
+          _applyMetadata(
+            url,
+            merged['title']!,
+            merged['description']!,
+            finalImg,
+          );
+          return;
+        }
       }
     } catch (e, st) {
       _d('getMetadata', 'CF ERROR trace=$trace $e\n$st');

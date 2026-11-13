@@ -12,15 +12,17 @@ part 'profile_search_state.dart';
 
 class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   ProfileSearchCubit({
-    required this._keysRepository,
+    required ApiKeyProvider keysRepository,
     required this._riderProfileRepository,
     required this._horseProfileRepository,
-  }) : super(const ProfileSearchState());
+    // ignore: prefer_initializing_formals
+  }) : _keysRepository = keysRepository,
+       super(const ProfileSearchState());
 
   ///Repositories
   final RiderProfileRepository _riderProfileRepository;
   final HorseProfileRepository _horseProfileRepository;
-  final KeysRepository _keysRepository;
+  final ApiKeyProvider _keysRepository;
 
   StreamSubscription<dynamic>? _searchSubscription;
   final List<StreamSubscription<dynamic>> _locationSearchSubscriptions = [];

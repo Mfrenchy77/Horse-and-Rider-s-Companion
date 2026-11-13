@@ -11,7 +11,7 @@ class LocationLookupService {
        _zipcodeRepositoryBuilder =
            zipcodeRepositoryBuilder ?? _defaultZipcodeRepository;
 
-  final KeysRepository keysRepository;
+  final ApiKeyProvider keysRepository;
   final LocationRepository Function(String apiKey) _locationRepositoryBuilder;
   final ZipcodeRepository Function(String apiKey) _zipcodeRepositoryBuilder;
 
