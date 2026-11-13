@@ -360,3 +360,39 @@ test('decline and cancellation release a pending transfer and stale acceptance i
   assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, null);
   assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
 });
+
+test('expired transfer request is rejected on acceptance', async () => {
+  const {call, docs, getLink} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+  const offer = {action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider};
+  const {id} = await call(student, offer);
+  const link = getLink(id);
+  docs.set(`CoachingConnections/${id}`, {
+    ...link,
+    expiresAt: new Date(Date.now() - 60_000).toISOString(),
+  });
+  await assert.rejects(
+      call(outsider, {action: 'accept', id, version: link.version}),
+      {code: 'failed-precondition'},
+  );
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
+});
+
+test('concurrent transfer acceptance only transfers ownership once', async () => {
+  const {call, docs, getLink} = fixture();
+  const buyerRef = 'Rider_Profile/oth1r9991xppl1666l';
+  docs.set(buyerRef, {email: outsider, name: 'Buyer'});
+  const {id} = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider,
+  });
+  const version = getLink(id).version;
+  const results = await Promise.allSettled([
+    call(outsider, {action: 'accept', id, version}),
+    call(outsider, {action: 'accept', id, version}),
+  ]);
+  const fulfilled = results.filter((r) => r.status === 'fulfilled');
+  assert.equal(fulfilled.length >= 1, true);
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, outsider);
+  assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, null);
+  assert.deepEqual(docs.get(buyerRef).ownedHorses.map((item) => item.id), ['atlas']);
+});

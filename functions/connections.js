@@ -241,6 +241,12 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now) {
     throw new HttpsError('failed-precondition', 'This transfer is no longer available.');
   }
   if (status === 'accepted') {
+    const exp = link.expiresAt?.toDate ?
+      link.expiresAt.toDate() :
+      (link.expiresAt ? new Date(link.expiresAt) : null);
+    if (exp && !Number.isNaN(exp.getTime()) && now.getTime() > exp.getTime()) {
+      throw new HttpsError('failed-precondition', 'This transfer request has expired.');
+    }
     if (isArchived(animal.profile)) {
       throw new HttpsError('failed-precondition', 'The horse must be active to transfer.');
     }
