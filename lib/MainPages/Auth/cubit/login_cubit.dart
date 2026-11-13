@@ -21,7 +21,7 @@ class LoginCubit extends Cubit<LoginState> {
   /// {@macro login_cubit}
   LoginCubit(this._authenticationRepository) : super(const LoginState());
 
-  final AuthenticationRepository _authenticationRepository;
+  final AuthGateway _authenticationRepository;
   bool _submitting = false;
 
   /// Toggles the visibility of the password field.

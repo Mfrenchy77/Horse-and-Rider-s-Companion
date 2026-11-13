@@ -28,7 +28,7 @@ class AppCubit extends Cubit<AppState> {
     required this._resourcesRepository,
     required this._riderProfileRepository,
     required this._horseProfileRepository,
-    required AuthenticationRepository authenticationRepository,
+    required AuthGateway authenticationRepository,
     PushNotificationService? pushNotificationService,
     this._submitCoachingAction,
   }) : _authenticationRepository = authenticationRepository,
@@ -47,7 +47,7 @@ class AppCubit extends Cubit<AppState> {
   final ResourcesStore _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;
   final HorseProfileStore _horseProfileRepository;
-  final AuthenticationRepository _authenticationRepository;
+  final AuthGateway _authenticationRepository;
   final PushNotificationService _pushNotificationService;
   final Future<Map<String, dynamic>> Function(Map<String, Object?>)?
   _submitCoachingAction;

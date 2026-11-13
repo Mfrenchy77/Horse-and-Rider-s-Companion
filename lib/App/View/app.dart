@@ -34,7 +34,7 @@ class App extends StatefulWidget {
   final ResourcesStore _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;
   final HorseProfileStore _horseProfileRepository;
-  final AuthenticationRepository _authenticationRepository;
+  final AuthGateway _authenticationRepository;
   final MediaStorageRepository? _mediaStorageRepository;
   final ApiKeyProvider? _keysRepository;
 
@@ -44,7 +44,9 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final AppCubit _appCubit;
-  final _connections = ConnectionRepository();
+  late final ConnectionRepository _connections = ConnectionRepository(
+    authGateway: widget._authenticationRepository,
+  );
   late final GoRouter _router;
 
   @override
@@ -117,7 +119,12 @@ class _AppState extends State<App> {
         if (widget._horseProfileRepository
             case final HorseProfileRepository repo)
           RepositoryProvider<HorseProfileRepository>.value(value: repo),
-        RepositoryProvider.value(value: widget._authenticationRepository),
+        RepositoryProvider<AuthGateway>.value(
+          value: widget._authenticationRepository,
+        ),
+        if (widget._authenticationRepository
+            case final AuthenticationRepository repo)
+          RepositoryProvider<AuthenticationRepository>.value(value: repo),
       ],
       child: BlocProvider.value(
         value: _appCubit,

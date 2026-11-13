@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
@@ -16,6 +17,15 @@ export 'coaching_connection.dart';
 export 'connection_failure.dart';
 
 class ConnectionRepository implements LogbookConnectionRepository {
+  ConnectionRepository({AuthGateway? authGateway, String? projectId})
+    // ignore: prefer_initializing_formals
+    : _authGateway = authGateway,
+      // ignore: prefer_initializing_formals
+      _projectId = projectId;
+
+  final AuthGateway? _authGateway;
+  final String? _projectId;
+
   Stream<List<CoachingConnection>> watch(String uid) => FirebaseFirestore
       .instance
       .collection('CoachingConnections')
@@ -74,10 +84,11 @@ class ConnectionRepository implements LogbookConnectionRepository {
 
   @override
   Future<Map<String, dynamic>> submit(Map<String, Object?> data) async {
-    final auth = FirebaseAuth.instance;
-    final token = await auth.currentUser?.getIdToken();
+    final token = _authGateway != null
+        ? await _authGateway.getAccessToken()
+        : await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw const ConnectionFailure('Sign in to continue.');
-    final project = auth.app.options.projectId;
+    final project = _projectId ?? FirebaseAuth.instance.app.options.projectId;
     final endpoint = FirebaseEmulators.enabled
         ? FirebaseEmulators.coachingEndpoint()
         : Uri.https(

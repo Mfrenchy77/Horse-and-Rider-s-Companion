@@ -20,7 +20,10 @@ class AuthPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => LoginCubit(context.read<AuthenticationRepository>()),
+      create: (_) => LoginCubit(
+        context.read<AuthGateway?>() ??
+            context.read<AuthenticationRepository>(),
+      ),
       child: Builder(
         builder: (context) {
           // Check for optional query parameter to pick initial screen

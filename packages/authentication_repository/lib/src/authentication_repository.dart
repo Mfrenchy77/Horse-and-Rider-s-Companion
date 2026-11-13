@@ -175,7 +175,7 @@ class LogOutFailure implements Exception {}
 
 /// -------------------- Authentication Repository --------------------
 
-class AuthenticationRepository {
+class AuthenticationRepository implements AuthGateway {
   AuthenticationRepository({
     CacheClient? cache,
     firebase_auth.FirebaseAuth? firebaseAuth,
@@ -217,6 +217,7 @@ class AuthenticationRepository {
     _cache.remove(key: userCacheKey);
   }
 
+  @override
   Stream<User?> get user {
     return _firebaseAuth.userChanges().map((firebaseUser) {
       final user = firebaseUser == null ? User.empty : firebaseUser.toAppUser();
@@ -225,10 +226,12 @@ class AuthenticationRepository {
     });
   }
 
+  @override
   User get currentUser {
     return _cache.read<User>(key: userCacheKey) ?? User.empty;
   }
 
+  @override
   Future<User?> signUp({
     required String name,
     required String email,
@@ -254,6 +257,7 @@ class AuthenticationRepository {
     }
   }
 
+  @override
   Future<User?> signInAsGuest() async {
     const guestUser = User(
       id: 'guest',
@@ -268,6 +272,7 @@ class AuthenticationRepository {
   /// Google sign-in across platforms.
   /// - Web: Firebase popup
   /// - Android/iOS/macOS: google_sign_in v7 authenticate() -> idToken -> Firebase credential
+  @override
   Future<User?> logInWithGoogle() async {
     try {
       if (isWeb) {
@@ -309,6 +314,7 @@ class AuthenticationRepository {
     }
   }
 
+  @override
   Future<User?> logInWithEmailAndPassword({
     required String email,
     required String password,
@@ -327,6 +333,7 @@ class AuthenticationRepository {
     }
   }
 
+  @override
   Future<void> forgotPassword({required String email}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
@@ -337,16 +344,19 @@ class AuthenticationRepository {
     }
   }
 
+  @override
   Stream<bool> getEmailVerificationStatus() async* {
     final user = _firebaseAuth.currentUser;
     yield user?.emailVerified ?? false;
   }
 
+  @override
   Future<void> resendEmailVerification() async {
     final user = _firebaseAuth.currentUser;
     if (user != null) await user.sendEmailVerification();
   }
 
+  @override
   Future<void> logOut() async {
     debugPrint('Logging out');
     try {
@@ -365,14 +375,21 @@ class AuthenticationRepository {
     }
   }
 
+  @override
   Future<void> reloadCurrentUser() async {
     final user = _firebaseAuth.currentUser;
     if (user != null) await user.reload();
   }
 
+  @override
   bool isEmailVerified() {
     final user = _firebaseAuth.currentUser;
     return user?.emailVerified ?? false;
+  }
+
+  @override
+  Future<String?> getAccessToken() async {
+    return _firebaseAuth.currentUser?.getIdToken();
   }
 }
 
