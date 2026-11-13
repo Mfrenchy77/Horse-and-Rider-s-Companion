@@ -103,6 +103,37 @@ test('rider grant writes only lesson notes and matching skills until revoked', a
   await assert.rejects(call(coach, {id, version, action: 'studentHistory'}), {code: 'permission-denied'});
 });
 
+test('standalone verification records an attributed activity exactly once', async () => {
+  const {call, getLink, request, docs} = fixture();
+  const {id} = await call(coach, request('rider'));
+  const version = getLink(id).version;
+  const verify = {id, version, action: 'verifySkill', recordId: 'verify-one',
+    skillId: 'rider-skill', level: 'PROFICIENT', notes: 'Client text'};
+  await assert.rejects(call(coach, verify), {code: 'permission-denied'});
+  await call(student, {id, version, action: 'accept'});
+  await assert.rejects(call(student, verify), {code: 'permission-denied'});
+  assert.equal((await call(coach, verify)).verified, true);
+  assert.equal((await call(coach, verify)).verified, true);
+  const profile = docs.get('Rider_Profile/rad1r9991xppl1666l');
+  assert.equal(profile.skillLevels[0].verified, true);
+  const {entries} = await call(coach, {id, version, action: 'studentHistory'});
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].riderLog.title, 'Skill verification');
+  assert.equal(entries[0].riderLog.type, 'activity');
+  assert.equal(entries[0].editable, false);
+  assert.match(entries[0].name, /verified .* as Proficient\./);
+  const remove = {...verify, action: 'removeSkillVerification', recordId: 'remove-one'};
+  await assert.rejects(call(student, remove), {code: 'permission-denied'});
+  assert.equal((await call(coach, remove)).verified, false);
+  assert.equal((await call(coach, remove)).verified, false);
+  const levels = docs.get('Rider_Profile/rad1r9991xppl1666l').skillLevels;
+  assert.equal(levels[0].verified, false);
+  assert.equal(levels[0].levelState, 'PROFICIENT');
+  const history = await call(coach, {id, version, action: 'studentHistory'});
+  assert.equal(history.entries.length, 2);
+  assert.ok(history.entries.some((entry) => entry.riderLog.title === 'Verification removed'));
+});
+
 test('horse invitation grants training writes and a changed owner cuts off the grant', async () => {
   const {call, getLink, request, docs} = fixture();
   const {id} = await call(student, {...request('horse'), coachEmail: coach.toUpperCase()});

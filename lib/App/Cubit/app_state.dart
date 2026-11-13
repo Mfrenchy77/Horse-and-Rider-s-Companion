@@ -313,6 +313,12 @@ class AppState extends Equatable {
 
   AppState copyWith({
     bool clearSkill = false,
+    bool clearResource = false,
+    bool clearHorseProfile = false,
+    bool clearUsersProfile = false,
+    bool clearOwnersProfile = false,
+    bool clearViewingProfile = false,
+    bool clearHorseManageHorseId = false,
     int? index,
     User? user,
     Skill? skill,
@@ -329,7 +335,6 @@ class AppState extends Equatable {
     AppStatus? status,
     Resource? resource,
     bool? hasResourceCatalogue,
-    bool clearUsersProfile = false,
     Email? deleteEmail,
     BannerAd? bannerAd,
     String? messageText,
@@ -384,7 +389,7 @@ class AppState extends Equatable {
       isGuest: isGuest ?? this.isGuest,
       message: message ?? this.message,
       messages: messages ?? this.messages,
-      resource: resource ?? this.resource,
+      resource: clearResource ? null : resource ?? this.resource,
       isSearch: isSearch ?? this.isSearch,
       bannerAd: bannerAd ?? this.bannerAd,
       messageId: messageId ?? this.messageId,
@@ -403,21 +408,29 @@ class AppState extends Equatable {
       sortedSkills: sortedSkills ?? this.sortedSkills,
       trainingPath: trainingPath ?? this.trainingPath,
       errorMessage: errorMessage ?? this.errorMessage,
-      horseProfile: horseProfile ?? this.horseProfile,
+      horseProfile: clearHorseProfile
+          ? null
+          : horseProfile ?? this.horseProfile,
       horseManageInProgress:
           horseManageInProgress ?? this.horseManageInProgress,
-      horseManageHorseId: horseManageHorseId ?? this.horseManageHorseId,
+      horseManageHorseId: clearHorseManageHorseId
+          ? null
+          : horseManageHorseId ?? this.horseManageHorseId,
       usersProfile: clearUsersProfile
           ? null
           : usersProfile ?? this.usersProfile,
       conversations: conversations ?? this.conversations,
       trainingPaths: trainingPaths ?? this.trainingPaths,
-      ownersProfile: ownersProfile ?? this.ownersProfile,
+      ownersProfile: clearOwnersProfile
+          ? null
+          : ownersProfile ?? this.ownersProfile,
       isFromProfile: isFromProfile ?? this.isFromProfile,
       showOnboarding: showOnboarding ?? this.showOnboarding,
       isProfileSetup: isProfileSetup ?? this.isProfileSetup,
       savedResources: savedResources ?? this.savedResources,
-      viewingProfile: viewingProfile ?? this.viewingProfile,
+      viewingProfile: clearViewingProfile
+          ? null
+          : viewingProfile ?? this.viewingProfile,
       showFirstLaunch: showFirstLaunch ?? this.showFirstLaunch,
       isBannerAdReady: isBannerAdReady ?? this.isBannerAdReady,
       resourceComments: resourceComments ?? this.resourceComments,

@@ -219,4 +219,177 @@ void main() {
       expect(harness.cubit.isAuthorized(), isTrue);
     },
   );
+
+  test(
+    'AppState.copyWith clears nullable fields only when clear flags are set',
+    () {
+      final horse = HorseProfile(id: 'h', name: 'Horse');
+      final viewed = RiderProfile(
+        id: 'v',
+        name: 'Viewed',
+        email: 'v@example.com',
+      );
+      final owner = RiderProfile(
+        id: 'o',
+        name: 'Owner',
+        email: 'o@example.com',
+      );
+      final resource = Resource(id: 'res', name: 'Resource');
+
+      final populated = harness.cubit.state.copyWith(
+        horseProfile: horse,
+        viewingProfile: viewed,
+        ownersProfile: owner,
+        resource: resource,
+        horseManageHorseId: 'h',
+      );
+      expect(populated.horseProfile, horse);
+      expect(populated.viewingProfile, viewed);
+      expect(populated.ownersProfile, owner);
+      expect(populated.resource, resource);
+      expect(populated.horseManageHorseId, 'h');
+
+      // Omitting clear flags preserves existing values
+      final unchanged = populated.copyWith();
+      expect(unchanged.horseProfile, horse);
+      expect(unchanged.viewingProfile, viewed);
+      expect(unchanged.ownersProfile, owner);
+      expect(unchanged.resource, resource);
+      expect(unchanged.horseManageHorseId, 'h');
+
+      // Setting clear flags clears the fields to null
+      final cleared = populated.copyWith(
+        clearHorseProfile: true,
+        clearViewingProfile: true,
+        clearOwnersProfile: true,
+        clearResource: true,
+        clearHorseManageHorseId: true,
+      );
+      expect(cleared.horseProfile, isNull);
+      expect(cleared.viewingProfile, isNull);
+      expect(cleared.ownersProfile, isNull);
+      expect(cleared.resource, isNull);
+      expect(cleared.horseManageHorseId, isNull);
+    },
+  );
+
+  test(
+    'resetFromHorseProfile, resetFromViewingProfile, and resetFromResource '
+    'clear only their target state and preserve parent state',
+    () {
+      final horse = HorseProfile(id: 'h', name: 'Horse');
+      final viewed = RiderProfile(
+        id: 'v',
+        name: 'Viewed',
+        email: 'v@example.com',
+      );
+      final owner = RiderProfile(
+        id: 'o',
+        name: 'Owner',
+        email: 'o@example.com',
+      );
+      final resource = Resource(id: 'res', name: 'Resource');
+      final comment = Comment(
+        id: 'c1',
+        comment: 'Great',
+        rating: 5,
+        date: DateTime.utc(2025),
+        user: BaseListItem(id: 'u1', name: 'User'),
+        parentId: null,
+        editedDate: null,
+        resourceId: 'res',
+        usersWhoRated: const [],
+      );
+
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          usersProfile: rider,
+          viewingProfile: viewed,
+          viewingProfielEmail: viewed.email,
+          horseProfile: horse,
+          horseId: horse.id,
+          ownersProfile: owner,
+          isViewing: false,
+          isForRider: false,
+          resource: resource,
+          resourceComments: [comment],
+        ),
+      );
+
+      // While isViewing is false (viewing a horse), determineCurrentProfile
+      // returns usersProfile rather than the cached parent viewingProfile.
+      expect(harness.cubit.determineCurrentProfile(), rider);
+
+      // Resetting from horse profile clears horse state but preserves
+      // viewingProfile and restores isViewing: true.
+      harness.cubit.resetFromHorseProfile();
+      expect(harness.cubit.state.horseProfile, isNull);
+      expect(harness.cubit.state.ownersProfile, isNull);
+      expect(harness.cubit.state.horseId, isEmpty);
+      expect(harness.cubit.state.isForRider, isTrue);
+      expect(harness.cubit.state.isViewing, isTrue);
+      expect(harness.cubit.state.viewingProfile, viewed);
+      expect(harness.cubit.determineCurrentProfile(), viewed);
+
+      // Resetting from viewing profile clears viewingProfile and restores
+      // determineCurrentProfile() to usersProfile.
+      harness.cubit.resetFromViewingProfile();
+      expect(harness.cubit.state.viewingProfile, isNull);
+      expect(harness.cubit.state.viewingProfielEmail, isEmpty);
+      expect(harness.cubit.state.isViewing, isFalse);
+      expect(harness.cubit.state.isForRider, isTrue);
+      expect(harness.cubit.determineCurrentProfile(), rider);
+
+      // Resetting from resource clears resource and resourceComments.
+      harness.cubit.resetFromResource();
+      expect(harness.cubit.state.resource, isNull);
+      expect(harness.cubit.state.resourceComments, isEmpty);
+    },
+  );
+
+  test('deleteAccount clears sensitive profile state', () async {
+    when(
+      () => harness.riders.deleteRiderProfile(email: rider.email),
+    ).thenAnswer((_) async {});
+
+    final horse = HorseProfile(id: 'h', name: 'Horse');
+    final viewed = RiderProfile(
+      id: 'v',
+      name: 'Viewed',
+      email: 'v@example.com',
+    );
+    final owner = RiderProfile(
+      id: 'o',
+      name: 'Owner',
+      email: 'o@example.com',
+    );
+
+    harness.cubit
+      ..emit(
+        harness.cubit.state.copyWith(
+          isGuest: false,
+          usersProfile: rider,
+          horseProfile: horse,
+          horseId: horse.id,
+          viewingProfile: viewed,
+          viewingProfielEmail: viewed.email,
+          ownersProfile: owner,
+          isViewing: true,
+          isForRider: false,
+        ),
+      )
+      ..emailChanged(rider.email);
+
+    await harness.cubit.deleteAccount();
+
+    expect(harness.cubit.state.usersProfile, isNull);
+    expect(harness.cubit.state.horseProfile, isNull);
+    expect(harness.cubit.state.viewingProfile, isNull);
+    expect(harness.cubit.state.ownersProfile, isNull);
+    expect(harness.cubit.state.horseId, isEmpty);
+    expect(harness.cubit.state.viewingProfielEmail, isEmpty);
+    expect(harness.cubit.state.isViewing, isFalse);
+    expect(harness.cubit.state.isForRider, isTrue);
+    expect(harness.cubit.state.isGuest, isTrue);
+  });
 }

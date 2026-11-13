@@ -7,16 +7,82 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillLevelView extends StatelessWidget {
   const SkillLevelView({super.key, required this.skillId});
 
   final String? skillId;
+
+  Future<void> _verify(
+    BuildContext context,
+    CoachingConnection link,
+    Skill skill,
+    LevelState? level,
+    String subject,
+  ) async {
+    final removing = level == null;
+    final label = level == LevelState.LEARNING ? 'Learning' : 'Proficient';
+    final confirmed = await showAppDialog<bool>(
+      context: context,
+      builder: (context) => OceanCoralAppDialog(
+        title: Text(removing ? 'Remove verification?' : 'Verify skill'),
+        content: Text(
+          removing
+              ? 'Remove your verification for ${skill.skillName}? '
+                    'The recorded skill level will stay the same.'
+              : 'Verify ${skill.skillName} as $label for $subject? '
+                    'This will add a verification to the logbook.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              removing ? 'Remove verification' : 'Confirm verification',
+            ),
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !context.mounted) return;
+    final connections = context.read<ConnectionsCubit>();
+    final app = context.read<AppCubit>();
+    final result = await connections.submit({
+      'action': removing ? 'removeSkillVerification' : 'verifySkill',
+      'id': link.id,
+      'version': link.version,
+      'recordId': ViewUtils.createId(),
+      'skillId': skill.id,
+      if (level != null) 'level': level.name,
+    });
+    if (!context.mounted) return;
+    final saved = result?['verified'] == !removing;
+    if (saved && link.kind == 'rider') {
+      final viewed = app.state.viewingProfile;
+      if (viewed?.email.toLowerCase() == link.learner) {
+        await app.refreshViewedRider(viewed!.email);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          saved
+              ? (removing ? 'Verification removed.' : 'Skill verified.')
+              : connections.state.actionFeedback ??
+                    'Could not update verification. Try again.',
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,15 +105,35 @@ class SkillLevelView extends StatelessWidget {
       horseProfile: horse,
     );
     final connectionState = context.watch<ConnectionsCubit?>()?.state;
-    final instructor =
-        !state.isGuest &&
-            skill.rider &&
-            state.isForRider &&
-            state.isViewing &&
-            rider != null &&
-            connectionState?.email == state.usersProfile?.email.toLowerCase()
-        ? connectionState?.instructorFor(rider.email)
-        : null;
+    final coachingLink =
+        state.isGuest ||
+            connectionState?.email != state.usersProfile?.email.toLowerCase()
+        ? null
+        : switch ((state.isForRider, skill.rider)) {
+            (true, true) when state.isViewing && rider != null =>
+              connectionState?.instructorFor(rider.email),
+            (false, false) when horse != null && !horse.isArchived =>
+              connectionState?.connections
+                  .where(
+                    (link) =>
+                        link.kind == 'horse' &&
+                        link.status == 'accepted' &&
+                        link.coach == connectionState.email &&
+                        link.horseId == horse.id &&
+                        link.learner == horse.currentOwnerId.toLowerCase() &&
+                        link.ownershipVersion == horse.ownershipVersion,
+                  )
+                  .firstOrNull,
+            _ => null,
+          };
+    final levels = state.isForRider ? rider?.skillLevels : horse?.skillLevels;
+    final recorded = levels
+        ?.where((entry) => entry.skillId == skill.id)
+        .firstOrNull;
+    final canRemove =
+        coachingLink != null &&
+        ((verified ?? false) || level == LevelState.VERIFIED) &&
+        recorded?.lastEditBy?.toLowerCase() == coachingLink.coach;
     final subject = state.isForRider ? rider?.name : horse?.name;
     final canWrite = context.read<AppCubit>().canWriteProfileRecords();
     final difficulty = skill.difficulty == DifficultyState.All
@@ -71,22 +157,39 @@ class SkillLevelView extends StatelessWidget {
               style: theme.textTheme.titleSmall,
             ),
             SkillProgressBadge(level: level, verified: verified ?? false),
-            if (instructor != null)
+            if (coachingLink != null && subject != null)
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
                 children: [
+                  if (canRemove)
+                    OutlinedButton.icon(
+                      onPressed: (connectionState?.actionInProgress ?? false)
+                          ? null
+                          : () => _verify(
+                              context,
+                              coachingLink,
+                              skill,
+                              null,
+                              subject,
+                            ),
+                      icon: const Icon(Icons.remove_circle_outline),
+                      label: const Text('Remove verification'),
+                    ),
                   for (final (label, target) in [
                     ('Verify as learning', LevelState.LEARNING),
                     ('Verify as proficient', LevelState.PROFICIENT),
                   ])
                     FilledButton.tonalIcon(
-                      onPressed: () => RiderLogbookPage.addLessonFor(
-                        context,
-                        instructor,
-                        initialSkill: skill,
-                        initialLevel: target,
-                      ),
+                      onPressed: (connectionState?.actionInProgress ?? false)
+                          ? null
+                          : () => _verify(
+                              context,
+                              coachingLink,
+                              skill,
+                              target,
+                              subject,
+                            ),
                       icon: const Icon(Icons.verified_outlined),
                       label: Text(label),
                     ),

@@ -4,7 +4,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile.dart';
 
-class HorseProfilePage extends StatelessWidget {
+class HorseProfilePage extends StatefulWidget {
   const HorseProfilePage({super.key, required this.horseId});
 
   static const pathParams = 'horseId';
@@ -14,24 +14,34 @@ class HorseProfilePage extends StatelessWidget {
   final String horseId;
 
   @override
+  State<HorseProfilePage> createState() => _HorseProfilePageState();
+}
+
+class _HorseProfilePageState extends State<HorseProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AppCubit>().getHorseProfile(id: widget.horseId);
+  }
+
+  @override
+  void didUpdateWidget(covariant HorseProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.horseId != widget.horseId) {
+      context.read<AppCubit>().getHorseProfile(id: widget.horseId);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final cubit = context.read<AppCubit>()..getHorseProfile(id: horseId);
-
-        return state.horseProfile == null || state.horseProfile?.id != horseId
+        return state.horseProfile == null ||
+                state.horseProfile?.id != widget.horseId
             ? const LoadingPage()
-            : PopScope(
-                onPopInvokedWithResult: (didPop, result) {
-                  debugPrint(
-                    'Horse Profile Page Pop Invoked: $didPop result: $result',
-                  );
-                  cubit.resetFromHorseProfile();
-                },
-                child: HorseProfileView(
-                  horseProfile: state.horseProfile!,
-                  key: const Key('horseProfileView'),
-                ),
+            : HorseProfileView(
+                horseProfile: state.horseProfile!,
+                key: const Key('horseProfileView'),
               );
       },
     );

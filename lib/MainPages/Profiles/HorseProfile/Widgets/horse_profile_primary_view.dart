@@ -169,7 +169,7 @@ class _HorseDetails extends StatelessWidget {
                     if (cubit.state.usersProfile?.email == ownerId) {
                       cubit.createMessage('You are the owner of this horse.');
                     } else {
-                      context.goNamed(
+                      context.pushNamed(
                         ViewingProfilePage.name,
                         pathParameters: {
                           ViewingProfilePage.pathParams: ownerId,

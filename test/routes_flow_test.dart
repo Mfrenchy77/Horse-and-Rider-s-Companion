@@ -524,4 +524,227 @@ void main() {
     // Let any branch slide timers complete to avoid pending timers
     await tester.pump(const Duration(milliseconds: 400));
   });
+
+  testWidgets(
+    'nested navigation from a viewed rider to their horse and back '
+    'preserves the viewed rider before returning to the user profile',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1400, 900);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final signedInRider = RiderProfile(
+        id: 'me',
+        name: 'Signed In Rider',
+        email: 'me@example.com',
+        students: [
+          BaseListItem(
+            id: 'student@example.com',
+            name: 'Alex Student',
+            isCollapsed: true,
+          ),
+        ],
+      );
+      final viewedRider = RiderProfile(
+        id: 'student@example.com',
+        name: 'Alex Student',
+        email: 'student@example.com',
+        ownedHorses: [
+          BaseListItem(
+            id: 'starlight',
+            name: 'Starlight',
+            isCollapsed: false,
+          ),
+        ],
+      );
+      final horse = HorseProfile(
+        id: 'starlight',
+        name: 'Starlight',
+        currentOwnerId: viewedRider.email,
+        currentOwnerName: viewedRider.name,
+      );
+
+      when(
+        () => riderRepo.getRiderProfile(email: viewedRider.email),
+      ).thenAnswer((_) => Stream.value(viewedRider));
+      when(
+        () => horseRepo.getHorseProfileById(id: horse.id),
+      ).thenAnswer((_) => Stream.value(horse));
+
+      final router = Routes().router(
+        settingsContoller: settingsController,
+        appCubit: appCubit,
+      );
+      addTearDown(router.dispose);
+
+      appCubit.emit(
+        appCubit.state.copyWith(
+          isGuest: false,
+          usersProfile: signedInRider,
+          isForRider: true,
+          isViewing: false,
+        ),
+      );
+
+      await tester.pumpWidget(buildApp(router));
+      await tester.pumpAndSettle();
+
+      // 1. Start on the user's own profile page.
+      expect(find.text('Signed In Rider'), findsOneWidget);
+      expect(appCubit.state.viewingProfile, isNull);
+      expect(appCubit.state.horseProfile, isNull);
+
+      // 2. Tap the student ProfileCard to open ViewingProfilePage.
+      await tester.tap(find.text('Alex Student'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('ViewingProfileView')), findsOneWidget);
+      expect(appCubit.state.isViewing, isTrue);
+      expect(appCubit.state.isForRider, isTrue);
+      expect(appCubit.state.viewingProfile?.email, viewedRider.email);
+      expect(appCubit.state.horseProfile, isNull);
+      expect(appCubit.determineCurrentProfile()?.email, viewedRider.email);
+
+      // 3. Tap the student's horse ProfileCard to open HorseProfilePage.
+      await tester.tap(find.text('Starlight'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('horseProfileView')), findsOneWidget);
+      expect(appCubit.state.isForRider, isFalse);
+      expect(appCubit.state.isViewing, isFalse);
+      expect(appCubit.state.horseProfile?.id, horse.id);
+      // Parent viewingProfile remains cached while viewing the horse.
+      expect(appCubit.state.viewingProfile?.email, viewedRider.email);
+
+      // 4. Press Back from HorseProfilePage -> returns to ViewingProfilePage.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('ViewingProfileView')), findsOneWidget);
+      expect(find.text('Alex Student'), findsOneWidget);
+      expect(appCubit.state.horseProfile, isNull);
+      expect(appCubit.state.horseId, isEmpty);
+      expect(appCubit.state.isViewing, isTrue);
+      expect(appCubit.state.isForRider, isTrue);
+      expect(appCubit.state.viewingProfile?.email, viewedRider.email);
+      expect(appCubit.determineCurrentProfile()?.email, viewedRider.email);
+
+      // 5. Press Back from ViewingProfilePage -> returns to user's ProfilePage.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Signed In Rider'), findsOneWidget);
+      expect(appCubit.state.viewingProfile, isNull);
+      expect(appCubit.state.horseProfile, isNull);
+      expect(appCubit.state.isViewing, isFalse);
+      expect(appCubit.state.isForRider, isTrue);
+      expect(appCubit.determineCurrentProfile()?.email, signedInRider.email);
+    },
+  );
+
+  testWidgets(
+    'nested navigation from a horse profile to its owner and back '
+    'preserves the horse before returning to the user profile',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1400, 900);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final signedInRider = RiderProfile(
+        id: 'me',
+        name: 'Signed In Rider',
+        email: 'me@example.com',
+        studentHorses: [
+          BaseListItem(
+            id: 'starlight',
+            name: 'Starlight',
+            isCollapsed: false,
+          ),
+        ],
+      );
+      final ownerRider = RiderProfile(
+        id: 'owner@example.com',
+        name: 'Owner Rider',
+        email: 'owner@example.com',
+      );
+      final horse = HorseProfile(
+        id: 'starlight',
+        name: 'Starlight',
+        currentOwnerId: ownerRider.email,
+        currentOwnerName: ownerRider.name,
+      );
+
+      when(
+        () => riderRepo.getRiderProfile(email: ownerRider.email),
+      ).thenAnswer((_) => Stream.value(ownerRider));
+      when(
+        () => horseRepo.getHorseProfileById(id: horse.id),
+      ).thenAnswer((_) => Stream.value(horse));
+
+      final router = Routes().router(
+        settingsContoller: settingsController,
+        appCubit: appCubit,
+      );
+      addTearDown(router.dispose);
+
+      appCubit.emit(
+        appCubit.state.copyWith(
+          isGuest: false,
+          usersProfile: signedInRider,
+          isForRider: true,
+          isViewing: false,
+        ),
+      );
+
+      await tester.pumpWidget(buildApp(router));
+      await tester.pumpAndSettle();
+
+      // 1. Tap the student horse ProfileCard to open HorseProfilePage.
+      await tester.tap(find.text('Starlight'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('horseProfileView')), findsOneWidget);
+      expect(appCubit.state.isForRider, isFalse);
+      expect(appCubit.state.isViewing, isFalse);
+      expect(appCubit.state.horseProfile?.id, horse.id);
+      expect(appCubit.state.viewingProfile, isNull);
+
+      // 2. Tap the horse's owner button to open ViewingProfilePage.
+      await tester.tap(find.byKey(const Key('currentOwner')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('ViewingProfileView')), findsOneWidget);
+      expect(find.text('Owner Rider'), findsOneWidget);
+      expect(appCubit.state.isViewing, isTrue);
+      expect(appCubit.state.isForRider, isTrue);
+      expect(appCubit.state.viewingProfile?.email, ownerRider.email);
+      // Parent horseProfile remains cached while viewing the owner.
+      expect(appCubit.state.horseProfile?.id, horse.id);
+
+      // 3. Press Back from ViewingProfilePage -> returns to HorseProfilePage.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('horseProfileView')), findsOneWidget);
+      expect(find.text('Starlight'), findsOneWidget);
+      expect(appCubit.state.viewingProfile, isNull);
+      expect(appCubit.state.viewingProfielEmail, isEmpty);
+      expect(appCubit.state.isViewing, isFalse);
+      expect(appCubit.state.isForRider, isFalse);
+      expect(appCubit.state.horseProfile?.id, horse.id);
+
+      // 4. Press Back from HorseProfilePage -> returns to user's ProfilePage.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Signed In Rider'), findsOneWidget);
+      expect(appCubit.state.horseProfile, isNull);
+      expect(appCubit.state.viewingProfile, isNull);
+      expect(appCubit.state.horseId, isEmpty);
+      expect(appCubit.state.isViewing, isFalse);
+      expect(appCubit.state.isForRider, isTrue);
+    },
+  );
 }

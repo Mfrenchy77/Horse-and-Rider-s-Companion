@@ -53,23 +53,47 @@ class Routes {
 
     final routeObserverProfile = RouteObserverWithCallback(
       onPop: (route, previousRoute) {
-        if (route.settings.name == HorseProfilePage.name &&
-            previousRoute?.settings.name == ProfilePage.name) {
-          appCubit
-            ..resetFromHorseProfile()
-            ..sortForHorse();
-        } else if (route.settings.name == ViewingProfilePage.name &&
-            previousRoute?.settings.name == ProfilePage.name) {
-          appCubit.resetFromViewingProfile();
+        if (route.settings.name == HorseProfilePage.name) {
+          if (previousRoute?.settings.name == ViewingProfilePage.name) {
+            appCubit
+              ..resetFromHorseProfile()
+              ..setViewingProfile()
+              ..sortForHorse();
+          } else if (previousRoute?.settings.name == ProfilePage.name) {
+            appCubit
+              ..resetFromHorseProfile()
+              ..resetFromViewingProfile()
+              ..sortForHorse();
+          }
+        } else if (route.settings.name == ViewingProfilePage.name) {
+          if (previousRoute?.settings.name == HorseProfilePage.name) {
+            appCubit
+              ..resetFromViewingProfile()
+              ..setHorseProfile()
+              ..sortForHorse();
+          } else if (previousRoute?.settings.name == ProfilePage.name) {
+            appCubit
+              ..resetFromViewingProfile()
+              ..resetFromHorseProfile()
+              ..sortForHorse();
+          }
         }
       },
       onPush: (route, previousRoute) {
         if (route.settings.name == HorseProfilePage.name) {
+          if (previousRoute?.settings.name == ProfilePage.name) {
+            appCubit.resetFromViewingProfile();
+          }
           appCubit
             ..setHorseProfile()
             ..sortForHorse();
         } else if (route.settings.name == ViewingProfilePage.name) {
-          appCubit.setViewingProfile();
+          if (previousRoute?.settings.name == ProfilePage.name) {
+            appCubit.resetFromHorseProfile();
+          }
+          appCubit
+            ..setViewingProfile()
+            ..sortForHorse();
         }
       },
     );

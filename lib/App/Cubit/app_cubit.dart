@@ -410,28 +410,27 @@ class AppCubit extends Cubit<AppState> {
 
   /// Opens a Rider Profile Page for  [email]
   void getProfileToBeViewed({required String email}) {
+    final isSameViewingProfile = state.viewingProfile?.email == email;
     emit(
       state.copyWith(
-        horseId: '',
         isViewing: true,
         isForRider: true,
-        // ignore: avoid_redundant_argument_values
-        horseProfile: null,
+        viewingProfielEmail: email,
+        clearViewingProfile: !isSameViewingProfile,
       ),
     );
     if (state.usersProfile?.email != email) {
       _fetchRiderProfile(email).then((value) {
+        if (isClosed) return;
         if (value != null) {
           final viewingProfile = value;
           debugPrint('Viewing Profile Retrieved: ${viewingProfile.name}');
 
           emit(
             state.copyWith(
-              horseId: '',
               isViewing: true,
               isForRider: true,
-              // ignore: avoid_redundant_argument_values
-              horseProfile: null,
+              viewingProfielEmail: email,
               viewingProfile: viewingProfile,
               pageStatus: AppPageStatus.loaded,
             ),
@@ -453,24 +452,9 @@ class AppCubit extends Cubit<AppState> {
     debugPrint('Back to Users Profile/Guest Profile');
 
     if (!state.isForRider) {
-      emit(
-        state.copyWith(
-          horseId: '',
-          isForRider: true,
-          // ignore: avoid_redundant_argument_values
-          horseProfile: null,
-        ),
-      );
-    }
-    if (state.isViewing) {
-      emit(
-        state.copyWith(
-          isViewing: false,
-          // ignore: avoid_redundant_argument_values
-          viewingProfile: null,
-          viewingProfielEmail: '',
-        ),
-      );
+      resetFromHorseProfile();
+    } else if (state.isViewing) {
+      resetFromViewingProfile();
     }
   }
 
@@ -553,7 +537,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Returns the current profile being viewed
   RiderProfile? determineCurrentProfile() {
-    if (state.viewingProfile != null) {
+    if (state.isViewing && state.viewingProfile != null) {
       return state.viewingProfile!;
     } else if (state.usersProfile != null) {
       return state.usersProfile!;
@@ -898,16 +882,24 @@ class AppCubit extends Cubit<AppState> {
     if (user != null && email.isValid && email.value == user.email) {
       try {
         await _riderProfileRepository.deleteRiderProfile(email: user.email);
+        unawaited(_usersProfileSubscription?.cancel());
+        unawaited(_horseProfileSubscription?.cancel());
+        _usersProfileSubscription = null;
+        _horseProfileSubscription = null;
         emit(
           state.copyWith(
             status: AppStatus.unauthenticated,
             user: User.empty,
-            // ignore: avoid_redundant_argument_values
-            usersProfile: null,
-            // ignore: avoid_redundant_argument_values
-            horseProfile: null,
-            // ignore: avoid_redundant_argument_values
-            viewingProfile: null,
+            clearUsersProfile: true,
+            clearHorseProfile: true,
+            clearViewingProfile: true,
+            clearOwnersProfile: true,
+            horseId: '',
+            viewingProfielEmail: '',
+            isViewing: false,
+            isForRider: true,
+            isProfileSetup: false,
+            deleteEmail: const Email.pure(),
             isGuest: true,
             isMessage: true,
             errorMessage: 'Account Deleted',
@@ -1341,7 +1333,12 @@ class AppCubit extends Cubit<AppState> {
       createError('The change could not be saved. Try again.');
     } finally {
       if (!isClosed && state.usersProfile?.email == email) {
-        emit(state.copyWith(horseManageInProgress: false));
+        emit(
+          state.copyWith(
+            horseManageInProgress: false,
+            clearHorseManageHorseId: true,
+          ),
+        );
       }
     }
   }
@@ -3271,8 +3268,6 @@ class AppCubit extends Cubit<AppState> {
         index: 0,
         isViewing: false,
         isForRider: false,
-        // ignore: avoid_redundant_argument_values
-        viewingProfile: null,
         pageStatus: AppPageStatus.profile,
       ),
     );
@@ -3281,17 +3276,16 @@ class AppCubit extends Cubit<AppState> {
   /// Resets from Horse Profile to the Rider Profile
   void resetFromHorseProfile() {
     debugPrint('resetFromHorseProfile');
+    unawaited(_horseProfileSubscription?.cancel());
+    _horseProfileSubscription = null;
     emit(
       state.copyWith(
         index: 0,
-        isViewing: false,
-        // ignore: avoid_redundant_argument_values
-        viewingProfile: null,
-        // ignore: avoid_redundant_argument_values
-        horseId: null,
+        horseId: '',
         isForRider: true,
-        // ignore: avoid_redundant_argument_values
-        horseProfile: null,
+        isViewing: state.viewingProfile != null,
+        clearHorseProfile: true,
+        clearOwnersProfile: true,
         pageStatus: AppPageStatus.profile,
       ),
     );
@@ -3314,10 +3308,10 @@ class AppCubit extends Cubit<AppState> {
     emit(
       state.copyWith(
         index: 0,
-        isForRider: true,
+        isForRider: state.horseProfile == null,
         isViewing: false,
-        // ignore: avoid_redundant_argument_values
-        viewingProfile: null,
+        clearViewingProfile: true,
+        viewingProfielEmail: '',
         pageStatus: AppPageStatus.profile,
       ),
     );
@@ -3346,10 +3340,8 @@ class AppCubit extends Cubit<AppState> {
       state.copyWith(
         index: 2,
         pageStatus: AppPageStatus.resourceList,
-        // ignore: avoid_redundant_argument_values
-        resourceComments: null,
-        // ignore: avoid_redundant_argument_values
-        resource: null,
+        resourceComments: const [],
+        clearResource: true,
       ),
     );
   }

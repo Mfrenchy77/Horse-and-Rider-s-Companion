@@ -50,7 +50,7 @@ class ProfileTile extends StatelessWidget {
               onTap: () {
                 if (baseItem.isCollapsed!) {
                   // cubit.setLoading();
-                  context.goNamed(
+                  context.pushNamed(
                     ViewingProfilePage.name,
                     pathParameters: {
                       ViewingProfilePage.pathParams: baseItem.id!,
@@ -59,7 +59,7 @@ class ProfileTile extends StatelessWidget {
                 } else {
                   // cubit.setLoading();
                   debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
-                  context.goNamed(
+                  context.pushNamed(
                     HorseProfilePage.name,
                     pathParameters: {
                       HorseProfilePage.pathParams: baseItem.id!,

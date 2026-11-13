@@ -455,7 +455,9 @@ async function horseHistory(tx, db, auth, identity, data) {
   });
   if (data.includeTrainingNotes === true && (owner || trainer)) {
     for (const note of animal.notes || []) {
-      if (note.imageUrl === 'LogTag.Training') entries.push(wireNote(note, null));
+      if (note.imageUrl === 'LogTag.Training' || note.riderLog?.authorRole === 'verifier') {
+        entries.push(wireNote(note, null));
+      }
     }
   }
   return {entries};
@@ -474,7 +476,8 @@ async function studentHistory(tx, db, link, actor) {
       return {note, editable: authorUid === link.coachUid && note.riderLog?.type === 'lesson'};
     }),
   ].filter(({note}) => note.riderLog ?
-    ['lesson', 'training'].includes(note.riderLog.type) : note.imageUrl === 'LogTag.Training');
+    (['lesson', 'training'].includes(note.riderLog.type) ||
+      note.riderLog.authorRole === 'verifier') : note.imageUrl === 'LogTag.Training');
   return {entries: entries.map(({note, editable}) => ({...wireNote(note, profile.name), editable}))};
 }
 
@@ -527,16 +530,42 @@ async function addRecord(tx, db, auth, link, actor, data, now, connectionId) {
   if (link.status !== 'accepted' || actor !== link.coach) {
     throw new HttpsError('permission-denied', 'An active coaching connection is required.');
   }
+  const removal = data.action === 'removeSkillVerification';
+  const verification = removal || data.action === 'verifySkill';
   const record = await target(tx, db, link);
   if (link.kind === 'horse' && isArchived(record.profile)) {
     throw new HttpsError('failed-precondition', 'This horse is archived.');
   }
   const clientId = documentId(data.recordId, 'record ID');
-  const recordId = `coaching-${connectionId}-${clientId}`;
+  const prefix = removal ? 'unverify' : verification ? 'verification' : 'coaching';
+  const recordId = `${prefix}-${connectionId}-${clientId}`;
   if ((record.profile.notes || []).some((note) => note.id === recordId)) {
-    return {status: link.status};
+    return {status: link.status, ...(verification ? {verified: !removal} : {})};
   }
-  const name = text(data.notes, 4000, 'notes');
+  const sharedRef = link.kind === 'rider' ? journalRef(db, link.learnerUid, recordId) : null;
+  if (sharedRef && (await tx.get(sharedRef)).data()) {
+    return {status: link.status, ...(verification ? {verified: !removal} : {})};
+  }
+  let skillId;
+  let skill;
+  if (verification || data.skillId != null) {
+    skillId = documentId(data.skillId, 'skill ID');
+    skill = (await tx.get(db.collection('Skills').doc(skillId))).data();
+    if (!skill || skill.rider !== (link.kind === 'rider') ||
+        (!removal && !['LEARNING', 'PROFICIENT'].includes(data.level))) {
+      throw new HttpsError('invalid-argument', 'Choose a matching skill and progress level.');
+    }
+  }
+  const previous = removal ? (record.profile.skillLevels || []).find((item) => item.skillId === skillId) : null;
+  if (removal && (!(previous?.verified || previous?.levelState === 'VERIFIED') ||
+      typeof previous.lastEditBy !== 'string' || emailKey(previous.lastEditBy) !== actor)) {
+    throw new HttpsError('permission-denied', 'Only the coach who verified this skill can remove it.');
+  }
+  const levelLabel = data.level === 'LEARNING' ? 'Learning' : 'Proficient';
+  const name = removal ?
+    `${link.coachName} removed verification for ${skill.skillName}.` : verification ?
+    `${link.coachName} verified ${skill.skillName} as ${levelLabel}.` :
+    text(data.notes, 4000, 'notes');
   const entry = {
     id: recordId,
     date: entryDate(data.date, now),
@@ -545,7 +574,11 @@ async function addRecord(tx, db, auth, link, actor, data, now, connectionId) {
     message: link.coachName,
     imageUrl: 'LogTag.Training',
   };
-  if (link.kind === 'rider') {
+  if (verification) {
+    entry.imageUrl = 'LogTag.Other';
+    entry.riderLog = {type: 'activity', title: removal ? 'Verification removed' : 'Skill verification',
+      authorRole: 'verifier'};
+  } else if (link.kind === 'rider') {
     entry.riderLog = lessonDetails(data, link.coachName);
   } else {
     entry.riderLog = {type: 'training', authorRole: 'trainer'};
@@ -555,18 +588,12 @@ async function addRecord(tx, db, auth, link, actor, data, now, connectionId) {
     throw new HttpsError('invalid-argument', 'Choose the horse from its training connection.');
   }
   const animal = horseId ? await linkedHorse(tx, db, auth, record.profile, link.learnerUid, horseId) : null;
-  const sharedRef = link.kind === 'rider' ? journalRef(db, link.learnerUid, recordId) : null;
-  if (sharedRef && (await tx.get(sharedRef)).data()) return {status: link.status};
   const changes = sharedRef ? {} : {notes: [...(record.profile.notes || []), entry]};
-  if (data.skillId != null) {
-    const skillId = documentId(data.skillId, 'skill ID');
-    const skill = (await tx.get(db.collection('Skills').doc(skillId))).data();
-    if (!skill || skill.rider !== (link.kind === 'rider') ||
-        !['LEARNING', 'PROFICIENT'].includes(data.level)) {
-      throw new HttpsError('invalid-argument', 'Choose a matching skill and progress level.');
-    }
+  if (skillId != null) {
     changes.skillLevels = [
       ...(record.profile.skillLevels || []).filter((item) => item.skillId !== skillId),
+      removal ? {...previous, verified: false,
+        levelState: previous.levelState === 'VERIFIED' ? 'PROFICIENT' : previous.levelState} :
       {skillId, skillName: skill.skillName, verified: true,
         lastEditBy: link.coachEmail, lastEditDate: now, levelState: data.level},
     ];
@@ -576,7 +603,7 @@ async function addRecord(tx, db, auth, link, actor, data, now, connectionId) {
     storeJournal(tx, sharedRef, record.profile, link.learnerUid, link.coachUid, entry, animal, horseId);
   }
   if (Object.keys(changes).length) tx.update(record.ref, changes);
-  return {status: link.status};
+  return {status: link.status, ...(verification ? {verified: !removal} : {})};
 }
 
 function connectionHandler(db, auth) {
@@ -613,7 +640,9 @@ function connectionHandler(db, auth) {
         throw new HttpsError('failed-precondition', 'Refresh this connection and try again.');
       }
       if (link.kind === 'transfer') return resolveTransfer(tx, db, link, ref, id, actor, data.action, now);
-      if (data.action === 'record') return addRecord(tx, db, auth, link, actor, data, now, id);
+      if (['record', 'verifySkill', 'removeSkillVerification'].includes(data.action)) {
+        return addRecord(tx, db, auth, link, actor, data, now, id);
+      }
       if (data.action === 'studentHistory') return studentHistory(tx, db, link, actor);
       if (data.action === 'editLesson' || data.action === 'deleteLesson') {
         return changeLesson(tx, db, auth, link, actor, data);
