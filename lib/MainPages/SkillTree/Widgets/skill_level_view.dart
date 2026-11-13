@@ -9,7 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
@@ -139,127 +139,132 @@ class SkillLevelView extends StatelessWidget {
     final difficulty = skill.difficulty == DifficultyState.All
         ? 'All levels'
         : skill.difficulty.name;
-    return GradientCard(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 14,
-          children: [
-            Text(
-              '${skill.category.name.replaceAll('_', ' ')} · $difficulty',
-              style: theme.textTheme.labelLarge,
+    return AppSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 14,
+        children: [
+          Text(
+            '${skill.category.name.replaceAll('_', ' ')} · $difficulty',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppTokens.accentColor(context),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
             ),
-            Text(skill.skillName, style: theme.textTheme.headlineSmall),
-            Text(
-              subject == null ? 'Progress' : 'Progress · $subject',
-              style: theme.textTheme.titleSmall,
+          ),
+          Text(
+            skill.skillName,
+            style: AppTokens.sectionTitleStyle(context).copyWith(fontSize: 24),
+          ),
+          Text(
+            subject == null ? 'Progress' : 'Progress · $subject',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: AppTokens.secondaryTextColor(context),
             ),
-            SkillProgressBadge(level: level, verified: verified ?? false),
-            if (coachingLink != null && subject != null)
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  if (canRemove)
-                    OutlinedButton.icon(
-                      onPressed: (connectionState?.actionInProgress ?? false)
-                          ? null
-                          : () => _verify(
-                              context,
-                              coachingLink,
-                              skill,
-                              null,
-                              subject,
-                            ),
-                      icon: const Icon(Icons.remove_circle_outline),
-                      label: const Text('Remove verification'),
-                    ),
-                  for (final (label, target) in [
-                    ('Verify as learning', LevelState.LEARNING),
-                    ('Verify as proficient', LevelState.PROFICIENT),
-                  ])
-                    FilledButton.tonalIcon(
-                      onPressed: (connectionState?.actionInProgress ?? false)
-                          ? null
-                          : () => _verify(
-                              context,
-                              coachingLink,
-                              skill,
-                              target,
-                              subject,
-                            ),
-                      icon: const Icon(Icons.verified_outlined),
-                      label: Text(label),
-                    ),
-                ],
-              ),
-            if (skill.description?.trim().isNotEmpty ?? false)
-              Text(skill.description!),
-            for (final (label, description) in [
-              ('Learning', skill.learningDescription),
-              ('Proficient', skill.proficientDescription),
-            ])
-              if (description?.trim().isNotEmpty ?? false)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
-                  children: [
-                    Text(label, style: theme.textTheme.titleMedium),
-                    Text(description!),
-                  ],
-                ),
-            if (state.isGuest)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.login),
-                  onPressed: () => context.goNamed(
-                    AuthPage.name,
-                    queryParameters: {'mode': 'login'},
+          ),
+          SkillProgressBadge(level: level, verified: verified ?? false),
+          if (coachingLink != null && subject != null)
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                if (canRemove)
+                  OutlinedButton.icon(
+                    onPressed: (connectionState?.actionInProgress ?? false)
+                        ? null
+                        : () => _verify(
+                            context,
+                            coachingLink,
+                            skill,
+                            null,
+                            subject,
+                          ),
+                    icon: const Icon(Icons.remove_circle_outline),
+                    label: const Text('Remove verification'),
                   ),
-                  label: const Text('Sign in to track progress'),
-                ),
-              )
-            else if (canWrite)
-              Wrap(
-                key: const Key('skillLevelProgressBar'),
-                spacing: 8,
-                runSpacing: 6,
+                for (final (label, target) in [
+                  ('Verify as learning', LevelState.LEARNING),
+                  ('Verify as proficient', LevelState.PROFICIENT),
+                ])
+                  FilledButton.tonalIcon(
+                    onPressed: (connectionState?.actionInProgress ?? false)
+                        ? null
+                        : () => _verify(
+                            context,
+                            coachingLink,
+                            skill,
+                            target,
+                            subject,
+                          ),
+                    icon: const Icon(Icons.verified_outlined),
+                    label: Text(label),
+                  ),
+              ],
+            ),
+          if (skill.description?.trim().isNotEmpty ?? false)
+            Text(skill.description!),
+          for (final (label, description) in [
+            ('Learning', skill.learningDescription),
+            ('Proficient', skill.proficientDescription),
+          ])
+            if (description?.trim().isNotEmpty ?? false)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 4,
                 children: [
-                  for (final (label, target) in [
-                    ('Mark as learning', LevelState.LEARNING),
-                    ('Mark as proficient', LevelState.PROFICIENT),
-                  ])
-                    OutlinedButton(
-                      onPressed:
-                          level == target ||
-                              (target == LevelState.PROFICIENT &&
-                                  level == LevelState.VERIFIED)
-                          ? null
-                          : () => showAppDialog<void>(
-                              context: context,
-                              builder: (_) =>
-                                  SkillLevelSelectedConfimationDialog(
-                                    key: const Key(
-                                      'levelSelectedConfirmationDialog',
-                                    ),
-                                    levelState: target,
-                                  ),
-                            ),
-                      child: Text(label),
-                    ),
+                  Text(label, style: theme.textTheme.titleMedium),
+                  Text(description!),
                 ],
               ),
-            const Divider(),
-            Text('Resources', style: theme.textTheme.titleLarge),
-            SkillResouresList(
-              key: const Key('skillResourcesList'),
-              skillId: skill.id,
+          if (state.isGuest)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.login),
+                onPressed: () => context.goNamed(
+                  AuthPage.name,
+                  queryParameters: {'mode': 'login'},
+                ),
+                label: const Text('Sign in to track progress'),
+              ),
+            )
+          else if (canWrite)
+            Wrap(
+              key: const Key('skillLevelProgressBar'),
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final (label, target) in [
+                  ('Mark as learning', LevelState.LEARNING),
+                  ('Mark as proficient', LevelState.PROFICIENT),
+                ])
+                  OutlinedButton(
+                    onPressed:
+                        level == target ||
+                            (target == LevelState.PROFICIENT &&
+                                level == LevelState.VERIFIED)
+                        ? null
+                        : () => showAppDialog<void>(
+                            context: context,
+                            builder: (_) => SkillLevelSelectedConfimationDialog(
+                              key: const Key('levelSelectedConfirmationDialog'),
+                              levelState: target,
+                            ),
+                          ),
+                    child: Text(label),
+                  ),
+              ],
             ),
-          ],
-        ),
+          const Divider(),
+          Text(
+            'Resources',
+            style: AppTokens.sectionTitleStyle(context).copyWith(fontSize: 20),
+          ),
+          SkillResouresList(
+            key: const Key('skillResourcesList'),
+            skillId: skill.id,
+          ),
+        ],
       ),
     );
   }

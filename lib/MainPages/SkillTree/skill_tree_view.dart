@@ -11,7 +11,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_app_bar_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_title_search_bar.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillTreeView extends StatefulWidget {
@@ -223,191 +223,258 @@ class _SkillTreeViewState extends State<SkillTreeView> {
                   child: const Icon(Icons.add),
                 )
               : null,
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final wideLibrary =
-                  layout == SkillTreeLayout.library &&
-                  constraints.maxWidth >= 740;
-              final header = Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 14,
-                children: [
-                  Text(
-                    state.isForRider ? 'Rider Skills' : 'Horse Skills',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      for (final category in CategorySortState.values)
-                        ChoiceChip(
-                          label: Text(
-                            category == CategorySortState.In_Hand
-                                ? 'In hand'
-                                : category.name,
+          body: AppScaffoldBackdrop(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final wideLibrary =
+                    layout == SkillTreeLayout.library &&
+                    constraints.maxWidth >= 740;
+                final completedCount = skills.where((skill) {
+                  final level = levelFor(skill);
+                  return level == LevelState.PROFICIENT ||
+                      level == LevelState.VERIFIED;
+                }).length;
+                final progressRatio = skills.isEmpty
+                    ? 0.0
+                    : completedCount / skills.length;
+                final header = Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 14,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            state.isForRider ? 'Rider Skills' : 'Horse Skills',
+                            style: AppTokens.sectionTitleStyle(
+                              context,
+                            ).copyWith(fontSize: 26),
                           ),
-                          selected: category == state.categorySortState,
-                          onSelected: (_) =>
-                              cubit.categorySortChanged(category),
                         ),
-                      SizedBox(
-                        width: 196,
-                        child: DropdownButtonFormField<DifficultySortState>(
-                          key: ValueKey(state.difficultySortState),
-                          initialValue: state.difficultySortState,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Difficulty',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          items: [
-                            for (final difficulty in DifficultySortState.values)
-                              DropdownMenuItem(
-                                value: difficulty,
-                                child: Text(
-                                  difficulty == DifficultySortState.All
-                                      ? 'All levels'
-                                      : difficulty.name,
-                                ),
-                              ),
-                          ],
-                          onChanged: (difficulty) {
-                            if (difficulty != null) {
-                              cubit.difficultySortChanged(difficulty);
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-              final selectedIsVisible = skills.any(
-                (skill) => skill.id == selectedId,
-              );
-              return Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: layout == SkillTreeLayout.expandInPlace
-                        ? 850
-                        : 1320,
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      16,
-                      16,
-                      wideLibrary ? 0 : 16,
+                        if (skills.isNotEmpty)
+                          _SkillProgressSummary(progress: progressRatio),
+                      ],
                     ),
-                    child: wideLibrary
-                        ? Column(
-                            key: const Key('skillLibraryWide'),
-                            spacing: 16,
-                            children: [
-                              header,
-                              Expanded(
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  spacing: 20,
-                                  children: [
-                                    Expanded(
-                                      flex: 4,
-                                      child: skills.isEmpty
-                                          ? const Text(
-                                              'No skills match these filters.',
-                                            )
-                                          : ListView.separated(
-                                              primary: false,
-                                              padding: const EdgeInsets.only(
-                                                bottom: 88,
-                                              ),
-                                              itemCount: skills.length,
-                                              separatorBuilder: (_, _) =>
-                                                  const SizedBox(height: 8),
-                                              itemBuilder: (_, index) =>
-                                                  row(skills[index]),
-                                            ),
-                                    ),
-                                    Expanded(
-                                      flex: 6,
-                                      child: SingleChildScrollView(
-                                        key: ValueKey(selectedId),
-                                        primary: false,
-                                        padding: const EdgeInsets.only(
-                                          bottom: 88,
-                                        ),
-                                        child:
-                                            details ??
-                                            const GradientCard(
-                                              margin: EdgeInsets.zero,
-                                              child: Padding(
-                                                padding: EdgeInsets.all(20),
-                                                child: Text(
-                                                  'Select a skill to view its '
-                                                  'details and resources.',
-                                                ),
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                                  ],
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        for (final category in CategorySortState.values)
+                          ChoiceChip(
+                            label: Text(
+                              category == CategorySortState.In_Hand
+                                  ? 'In hand'
+                                  : category.name,
+                            ),
+                            selected: category == state.categorySortState,
+                            selectedColor: isDark
+                                ? AppTokens.coralAccent
+                                : null,
+                            backgroundColor: isDark
+                                ? AppTokens.midnightButtonFill
+                                : null,
+                            side: isDark
+                                ? BorderSide(
+                                    color: category == state.categorySortState
+                                        ? AppTokens.coralAccent
+                                        : AppTokens.cardBorderDark,
+                                  )
+                                : null,
+                            labelStyle: isDark
+                                ? TextStyle(
+                                    color: category == state.categorySortState
+                                        ? AppTokens.coralText
+                                        : AppTokens.primaryTextDark,
+                                    fontWeight: FontWeight.w600,
+                                  )
+                                : null,
+                            checkmarkColor: isDark ? AppTokens.coralText : null,
+                            onSelected: (_) =>
+                                cubit.categorySortChanged(category),
+                          ),
+                        SizedBox(
+                          width: 196,
+                          child: DropdownButtonFormField<DifficultySortState>(
+                            key: ValueKey(state.difficultySortState),
+                            initialValue: state.difficultySortState,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Difficulty',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            items: [
+                              for (final difficulty
+                                  in DifficultySortState.values)
+                                DropdownMenuItem(
+                                  value: difficulty,
+                                  child: Text(
+                                    difficulty == DifficultySortState.All
+                                        ? 'All levels'
+                                        : difficulty.name,
+                                  ),
                                 ),
-                              ),
                             ],
-                          )
-                        : SingleChildScrollView(
-                            key: ValueKey(switch (layout) {
-                              SkillTreeLayout.library => 'skillLibraryCompact',
-                              SkillTreeLayout.expandInPlace =>
-                                'skillExpandInPlace',
-                              SkillTreeLayout.progressBoard =>
-                                'skillProgressBoard',
-                            }),
-                            controller: _scroll,
-                            padding: const EdgeInsets.only(bottom: 88),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              spacing: 8,
+                            onChanged: (difficulty) {
+                              if (difficulty != null) {
+                                cubit.difficultySortChanged(difficulty);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+                final selectedIsVisible = skills.any(
+                  (skill) => skill.id == selectedId,
+                );
+                const emptySkills = AppEmptyState(
+                  icon: Icons.account_tree_outlined,
+                  title: 'No skills match these filters.',
+                  description:
+                      'Try choosing a different category or difficulty level.',
+                );
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: layout == SkillTreeLayout.expandInPlace
+                          ? 850
+                          : 1320,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        wideLibrary ? 0 : 16,
+                      ),
+                      child: wideLibrary
+                          ? Column(
+                              key: const Key('skillLibraryWide'),
+                              spacing: 16,
                               children: [
                                 header,
-                                const SizedBox(height: 4),
-                                if (layout ==
-                                    SkillTreeLayout.progressBoard) ...[
-                                  _SkillProgressBoard(
-                                    skills: skills,
-                                    levelFor: levelFor,
-                                    row: (skill) =>
-                                        row(skill, showStatus: false),
+                                Expanded(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    spacing: 20,
+                                    children: [
+                                      Expanded(
+                                        flex: 4,
+                                        child: skills.isEmpty
+                                            ? emptySkills
+                                            : ListView.separated(
+                                                primary: false,
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 88,
+                                                ),
+                                                itemCount: skills.length,
+                                                separatorBuilder: (_, _) =>
+                                                    const SizedBox(height: 8),
+                                                itemBuilder: (_, index) =>
+                                                    row(skills[index]),
+                                              ),
+                                      ),
+                                      Expanded(
+                                        flex: 6,
+                                        child: SingleChildScrollView(
+                                          key: ValueKey(selectedId),
+                                          primary: false,
+                                          padding: const EdgeInsets.only(
+                                            bottom: 88,
+                                          ),
+                                          child:
+                                              details ??
+                                              AppSurfaceCard(
+                                                padding: const EdgeInsets.all(
+                                                  24,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.touch_app_outlined,
+                                                      color:
+                                                          AppTokens.accentColor(
+                                                            context,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    const Expanded(
+                                                      child: Text(
+                                                        'Select a skill to '
+                                                        'view its details and '
+                                                        'resources.',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  if (details != null)
-                                    KeyedSubtree(key: _detail, child: details),
-                                ] else ...[
-                                  if (details != null && !selectedIsVisible)
-                                    KeyedSubtree(key: _detail, child: details),
-                                  if (skills.isEmpty)
-                                    const Text(
-                                      'No skills match these filters.',
+                                ),
+                              ],
+                            )
+                          : SingleChildScrollView(
+                              key: ValueKey(switch (layout) {
+                                SkillTreeLayout.library =>
+                                  'skillLibraryCompact',
+                                SkillTreeLayout.expandInPlace =>
+                                  'skillExpandInPlace',
+                                SkillTreeLayout.progressBoard =>
+                                  'skillProgressBoard',
+                              }),
+                              controller: _scroll,
+                              padding: const EdgeInsets.only(bottom: 88),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: 8,
+                                children: [
+                                  header,
+                                  const SizedBox(height: 4),
+                                  if (layout ==
+                                      SkillTreeLayout.progressBoard) ...[
+                                    _SkillProgressBoard(
+                                      skills: skills,
+                                      levelFor: levelFor,
+                                      row: (skill) =>
+                                          row(skill, showStatus: false),
                                     ),
-                                  for (final skill in skills) ...[
-                                    row(skill),
-                                    if (details != null &&
-                                        selectedId == skill.id)
+                                    if (details != null)
                                       KeyedSubtree(
                                         key: _detail,
                                         child: details,
                                       ),
+                                  ] else ...[
+                                    if (details != null && !selectedIsVisible)
+                                      KeyedSubtree(
+                                        key: _detail,
+                                        child: details,
+                                      ),
+                                    if (skills.isEmpty) emptySkills,
+                                    for (final skill in skills) ...[
+                                      row(skill),
+                                      if (details != null &&
+                                          selectedId == skill.id)
+                                        KeyedSubtree(
+                                          key: _detail,
+                                          child: details,
+                                        ),
+                                    ],
                                   ],
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },
@@ -431,6 +498,64 @@ class _SkillTreeViewState extends State<SkillTreeView> {
   );
 }
 
+class _SkillProgressSummary extends StatelessWidget {
+  const _SkillProgressSummary({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (progress * 100).round();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return SizedBox(
+      width: 192,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  'My Progress',
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppTokens.secondaryTextColor(context),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$percent%',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTokens.primaryTextColor(context),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: isDark
+                  ? AppTokens.cardBorderDark
+                  : theme.colorScheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppTokens.accentColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SkillLibraryRow extends StatelessWidget {
   const _SkillLibraryRow({
     required this.skill,
@@ -452,32 +577,54 @@ class _SkillLibraryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Material(
-      color: selected ? colors.secondaryContainer : colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: selected ? colors.primary : colors.outlineVariant,
-        ),
-      ),
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(AppTokens.radiusMd);
+
+    final tile = Material(
+      type: isDark ? MaterialType.transparency : MaterialType.canvas,
+      color: isDark
+          ? null
+          : (selected ? colors.secondaryContainer : colors.surface),
+      shape: isDark
+          ? null
+          : RoundedRectangleBorder(
+              borderRadius: radius,
+              side: BorderSide(
+                color: selected ? colors.primary : colors.outlineVariant,
+              ),
+            ),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         selected: selected,
         key: ValueKey('library-skill-${skill.id}'),
-        title: Text(skill.skillName),
-        subtitle: Wrap(
-          spacing: 8,
-          runSpacing: 3,
-          children: [
-            Text(
-              skill.difficulty == DifficultyState.All
-                  ? 'All levels'
-                  : skill.difficulty.name,
-            ),
-            if (showStatus || verified || level == LevelState.VERIFIED)
-              SkillProgressBadge(level: level, verified: verified),
-          ],
+        title: Text(
+          skill.skillName,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppTokens.primaryTextColor(context),
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                skill.difficulty == DifficultyState.All
+                    ? 'All levels'
+                    : skill.difficulty.name,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
+                ),
+              ),
+              if (showStatus || verified || level == LevelState.VERIFIED)
+                SkillProgressBadge(level: level, verified: verified),
+            ],
+          ),
         ),
         onTap: onSelect,
         trailing: onEdit == null
@@ -488,6 +635,29 @@ class _SkillLibraryRow extends StatelessWidget {
                 onPressed: onEdit,
               ),
       ),
+    );
+
+    if (!isDark) return tile;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        gradient: selected
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTokens.coralAccent.withValues(alpha: 0.16),
+                  AppTokens.midnightCardBottom,
+                ],
+              )
+            : AppTokens.cardSurfaceGradient,
+        border: Border.all(
+          color: selected ? AppTokens.coralAccent : AppTokens.cardBorderDark,
+          width: selected ? 1.4 : 1,
+        ),
+      ),
+      child: ClipRRect(borderRadius: radius, child: tile),
     );
   }
 }
@@ -520,35 +690,46 @@ class _SkillProgressBoard extends StatelessWidget {
     final theme = Theme.of(context);
     final columns = [
       for (final entry in lanes.entries)
-        GradientCard(
+        AppSurfaceCard(
           key: ValueKey(entry.key),
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 8,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(switch (entry.key) {
+          padding: const EdgeInsets.all(AppTokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 8,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      switch (entry.key) {
                         LevelState.LEARNING => 'Learning',
                         LevelState.PROFICIENT => 'Proficient',
                         _ => 'Not started',
-                      }, style: theme.textTheme.titleMedium),
+                      },
+                      style: AppTokens.sectionTitleStyle(
+                        context,
+                      ).copyWith(fontSize: 18),
                     ),
-                    Text(
-                      '${entry.value.length}',
-                      style: theme.textTheme.labelLarge,
-                    ),
-                  ],
+                  ),
+                  AppStatusBadge(
+                    label: '${entry.value.length}',
+                    tone: switch (entry.key) {
+                      LevelState.LEARNING => AppStatusTone.coral,
+                      LevelState.PROFICIENT => AppStatusTone.success,
+                      _ => AppStatusTone.neutral,
+                    },
+                  ),
+                ],
+              ),
+              if (entry.value.isEmpty)
+                Text(
+                  'No skills',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppTokens.secondaryTextColor(context),
+                  ),
                 ),
-                if (entry.value.isEmpty)
-                  Text('No skills', style: theme.textTheme.bodySmall),
-                for (final skill in entry.value) row(skill),
-              ],
-            ),
+              for (final skill in entry.value) row(skill),
+            ],
           ),
         ),
     ];

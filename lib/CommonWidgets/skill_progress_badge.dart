@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class SkillProgressBadge extends StatelessWidget {
   const SkillProgressBadge({
@@ -14,6 +15,39 @@ class SkillProgressBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (theme.brightness == Brightness.dark) {
+      final (label, icon, tone) = switch (level) {
+        LevelState.NO_PROGRESS => (
+          'Not started',
+          Icons.circle_outlined,
+          AppStatusTone.neutral,
+        ),
+        LevelState.LEARNING => (
+          'Learning',
+          Icons.school_outlined,
+          AppStatusTone.coral,
+        ),
+        LevelState.PROFICIENT || LevelState.VERIFIED => (
+          'Proficient',
+          Icons.check_circle_outline,
+          AppStatusTone.success,
+        ),
+      };
+      return Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: [
+          AppStatusBadge(label: label, icon: icon, tone: tone),
+          if (verified || level == LevelState.VERIFIED)
+            const AppStatusBadge(
+              label: 'Verified',
+              icon: Icons.verified,
+              tone: AppStatusTone.warning,
+            ),
+        ],
+      );
+    }
+
     final colors = theme.colorScheme;
     final (label, icon, background, foreground) = switch (level) {
       LevelState.NO_PROGRESS => (
