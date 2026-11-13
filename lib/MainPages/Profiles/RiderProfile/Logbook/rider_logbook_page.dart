@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
@@ -410,28 +411,29 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                 final entry = entries[index];
                 final attribution = _entryAttribution(entry, rider);
                 final horse = entry.riderLog?.horse;
-                return GradientCard(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    title: Text(
-                      _entryTitle(entry),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      [
-                        _entryMetadata(entry),
-                        if (horse != null) horse,
-                        if (attribution != null) attribution,
-                      ].join('\n'),
-                    ),
-                    trailing:
-                        entry.riderLogType == RiderLogType.show &&
-                            entry.riderLog?.placing != null
-                        ? _PlacingBadge(placing: entry.riderLog!.placing!)
-                        : const Icon(Icons.chevron_right),
-                    onTap: () => _openEntry(entry),
-                  ),
+                final title = _entryTitle(entry);
+                return LogbookEntryCard(
+                  title: title,
+                  metadata: [
+                    _entryMetadata(entry),
+                    if (horse != null) horse,
+                    if (attribution != null) attribution,
+                  ].join('\n'),
+                  preview: entry.name != title ? entry.name : null,
+                  icon: switch (entry.riderLogType) {
+                    RiderLogType.lesson => Icons.school_outlined,
+                    RiderLogType.training => Icons.directions_run,
+                    RiderLogType.show => Icons.emoji_events_outlined,
+                    RiderLogType.care => Icons.health_and_safety_outlined,
+                    RiderLogType.reflection => Icons.notes,
+                    RiderLogType.activity => Icons.history,
+                  },
+                  trailing:
+                      entry.riderLogType == RiderLogType.show &&
+                          entry.riderLog?.placing != null
+                      ? _PlacingBadge(placing: entry.riderLog!.placing!)
+                      : null,
+                  onTap: () => _openEntry(entry),
                 );
               },
             ),

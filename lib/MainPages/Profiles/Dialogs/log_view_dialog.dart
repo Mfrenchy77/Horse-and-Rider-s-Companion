@@ -5,25 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
+import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
+import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 
-/// Enum representing the different sorting options
-enum LogSort {
-  dateNewest,
-  dateOldest,
-  tagEdit,
-  tagShow,
-  tagHealth,
-  tagTraining,
-  tagOther,
-}
-
-/// Dialog to view the log of a rider or horse with sorting functionality
+/// Horse logbook, including notes and shared entries for this horse.
 class LogViewDialog extends StatefulWidget {
   const LogViewDialog({
     super.key,
@@ -32,11 +25,13 @@ class LogViewDialog extends StatefulWidget {
     required this.isRider,
     required this.appContext,
     this.horseId,
+    this.horseProfile,
   });
 
   final String name;
   final bool isRider;
   final String? horseId;
+  final HorseProfile? horseProfile;
   final BuildContext appContext;
   final List<BaseListItem>? notes;
 
@@ -45,8 +40,9 @@ class LogViewDialog extends StatefulWidget {
 }
 
 class LogViewDialogState extends State<LogViewDialog> {
-  // Initial sort option
-  LogSort _selectedSortOption = LogSort.dateNewest;
+  LogTag? _category;
+  bool _newestFirst = true;
+  String _query = '';
 
   String? _historyUid;
   Future<List<BaseListItem>>? _history;
@@ -97,53 +93,87 @@ class LogViewDialogState extends State<LogViewDialog> {
             ? snapshot.data ?? const <BaseListItem>[]
             : const <BaseListItem>[];
         final ids = shared.map((note) => note.id).toSet();
-        return Dialog(
-          insetPadding: const EdgeInsets.all(16),
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _logEntryTitle(
-                    isRider: widget.isRider,
-                    name: widget.name,
+        final entries = [
+          ...notes.where((note) => !ids.contains(note.id)),
+          ...shared,
+        ].where(_matches).toList()..sort(_compareDates);
+        final shownHorse = currentHorse ?? widget.horseProfile;
+        final canAdd =
+            rider != null &&
+            !state.isGuest &&
+            shownHorse != null &&
+            !shownHorse.isArchived &&
+            rider.email.toLowerCase() ==
+                shownHorse.currentOwnerId.toLowerCase();
+        return Scaffold(
+          appBar: ThemedAppBar(title: const Text('Horse logbook')),
+          floatingActionButton: canAdd
+              ? FloatingActionButton(
+                  tooltip: 'Add entry',
+                  onPressed: () => showAppDialog<void>(
                     context: context,
-                  ),
-                  if (_history != null)
-                    TextButton.icon(
-                      onPressed: () => setState(() => _historyUid = null),
-                      icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Refresh shared history'),
-                    ),
-                  gap(),
-                  _buildSortOption(),
-                  gap(),
-                  if (snapshot.connectionState == ConnectionState.waiting)
-                    const LinearProgressIndicator(),
-                  if (snapshot.hasError)
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _historyUid = null;
-                      }),
-                      child: const Text('Shared history unavailable. Retry'),
-                    ),
-                  Expanded(
-                    child: _logBookList(
-                      notes: [
-                        ...notes.where((note) => !ids.contains(note.id)),
-                        ...shared,
-                      ],
-                      isRider: widget.isRider,
-                      sortOption: _selectedSortOption,
+                    builder: (_) => AddLogEntryDialog(
+                      usersProfile: rider,
+                      horseProfile: shownHorse,
                     ),
                   ),
-                ],
+                  child: const Icon(Icons.add),
+                )
+              : null,
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 840),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverToBoxAdapter(
+                        child: _header(context, shownHorse),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      sliver: SliverToBoxAdapter(child: _filters()),
+                    ),
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      const SliverToBoxAdapter(
+                        child: LinearProgressIndicator(),
+                      ),
+                    if (_history != null)
+                      SliverToBoxAdapter(
+                        child: TextButton.icon(
+                          onPressed: () => setState(() => _historyUid = null),
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: Text(
+                            snapshot.hasError
+                                ? 'Shared history unavailable. Retry'
+                                : 'Refresh shared history',
+                          ),
+                        ),
+                      ),
+                    if (entries.isEmpty &&
+                        snapshot.connectionState != ConnectionState.waiting)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            _query.isEmpty && _category == null
+                                ? 'No Entries in the Log'
+                                : 'No matching entries.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                      sliver: SliverList.builder(
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) => _entry(entries[index]),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -152,262 +182,205 @@ class LogViewDialogState extends State<LogViewDialog> {
     );
   }
 
-  Widget _logEntryTitle({
-    required bool isRider,
-    required String name,
-    required BuildContext context,
-  }) {
-    final screenWidth = MediaQuery.of(context).size.width;
+  bool _matches(BaseListItem note) {
+    final category = _entryCategory(note);
+    return (_category == null || category == _category) &&
+        [
+          note.name,
+          note.message,
+          note.extra,
+          note.riderLog?.title,
+          _categoryLabel(category),
+        ].whereType<String>().any(
+          (value) => value.toLowerCase().contains(_query),
+        );
+  }
 
-    final isSmallScreen = screenWidth <= 600;
+  int _compareDates(BaseListItem a, BaseListItem b) {
+    final first = a.date;
+    final second = b.date;
+    if (first == null) return second == null ? 0 : 1;
+    if (second == null) return -1;
+    return _newestFirst ? second.compareTo(first) : first.compareTo(second);
+  }
 
-    if (isSmallScreen) {
-      // Layout for smaller screens - using Column
-      return Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                tooltip: 'Close LogBook',
-                onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Theme.of(context).textTheme.labelLarge?.color,
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    "$name's Log",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
+  Widget _header(BuildContext context, HorseProfile? horse) {
+    final theme = Theme.of(context);
+    final details =
+        [
+              horse?.breed,
+              horse?.gender,
+              if (horse?.isArchived ?? false) 'Archived',
+            ]
+            .whereType<String>()
+            .map((value) => value.trim())
+            .where((value) => value.isNotEmpty)
+            .join(' · ');
+    return GradientCard(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox.square(
+                dimension: 64,
+                child: SmartImage(
+                  horse?.picUrl,
+                  width: 64,
+                  height: 64,
+                  fallback: ColoredBox(
+                    color: theme.colorScheme.secondaryContainer,
+                    child: Icon(
+                      HorseAndRiderIcons.horseIcon,
+                      color: theme.colorScheme.onSecondaryContainer,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const AddLogEntry(key: Key('AddLogEntry')),
-        ],
-      );
-    } else {
-      // Layout for larger screens - using Row
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            tooltip: 'Close LogBook',
-            onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: Theme.of(context).textTheme.labelLarge?.color,
             ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                "$name's Log",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    horse?.name ?? widget.name,
+                    style: theme.textTheme.headlineSmall,
+                  ),
+                  if (details.isNotEmpty) Text(details),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          const AddLogEntry(key: Key('AddLogEntry')),
-        ],
-      );
-    }
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget _buildSortOption() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+  Widget _filters() {
+    final search = TextField(
+      onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.search),
+        labelText: 'Search entries',
+        border: OutlineInputBorder(),
+      ),
+    );
+    final sort = DropdownButton<bool>(
+      value: _newestFirst,
+      onChanged: (value) {
+        if (value != null) setState(() => _newestFirst = value);
+      },
+      items: const [
+        DropdownMenuItem(value: true, child: Text('Newest first')),
+        DropdownMenuItem(value: false, child: Text('Oldest first')),
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 12,
       children: [
-        const Text('Sort by:'),
-        gap(),
-        DropdownButton<LogSort>(
-          value: _selectedSortOption,
-          onChanged: (LogSort? newValue) {
-            setState(() {
-              _selectedSortOption = newValue!;
-            });
-          },
-          items: LogSort.values.map((LogSort option) {
-            return DropdownMenuItem<LogSort>(
-              value: option,
-              child: Text(_logSortToString(option)),
-            );
-          }).toList(),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            for (final category in [null, ...LogTag.values])
+              ChoiceChip(
+                label: Text(
+                  category == null ? 'All entries' : _categoryLabel(category),
+                ),
+                selected: _category == category,
+                onSelected: (_) => setState(() => _category = category),
+              ),
+          ],
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) => constraints.maxWidth >= 420
+              ? Row(
+                  children: [
+                    Expanded(child: search),
+                    const SizedBox(width: 12),
+                    sort,
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [search, sort],
+                ),
         ),
       ],
     );
   }
 
-  String _logSortToString(LogSort sortOption) {
-    switch (sortOption) {
-      case LogSort.dateNewest:
-        return 'Date (Newest)';
-      case LogSort.dateOldest:
-        return 'Date (Oldest)';
-      case LogSort.tagShow:
-        return 'Tag (Show)';
-      case LogSort.tagTraining:
-        return 'Tag (Training)';
-      case LogSort.tagHealth:
-        return 'Tag (Health)';
-      case LogSort.tagOther:
-        return 'Tag (Other)';
-      case LogSort.tagEdit:
-        return 'Tag (Edit)';
-    }
-  }
-}
-
-Widget _logBookList({
-  required bool isRider,
-  required List<BaseListItem> notes,
-  required LogSort sortOption,
-}) {
-  if (notes.isEmpty) {
-    return const Center(child: Text('No Entries in the Log'));
-  } else {
-    var sortedNotes = List<BaseListItem>.from(notes);
-
-    // Implement sorting based on selected sort option
-    switch (sortOption) {
-      case LogSort.dateNewest:
-        sortedNotes.sort(
-          (a, b) => (b.date ?? DateTime(0)).compareTo(a.date ?? DateTime(0)),
-        );
-        break;
-      case LogSort.dateOldest:
-        sortedNotes.sort(
-          (a, b) => (a.date ?? DateTime(0)).compareTo(b.date ?? DateTime(0)),
-        );
-        break;
-      case LogSort.tagShow:
-        sortedNotes = sortedNotes
-            .where(
-              (note) => convertStringToLogTag(note.imageUrl) == LogTag.Show,
-            )
-            .toList();
-        break;
-      case LogSort.tagTraining:
-        sortedNotes = sortedNotes
-            .where(
-              (note) => convertStringToLogTag(note.imageUrl) == LogTag.Training,
-            )
-            .toList();
-        break;
-      case LogSort.tagHealth:
-        sortedNotes = sortedNotes
-            .where(
-              (note) => convertStringToLogTag(note.imageUrl) == LogTag.Health,
-            )
-            .toList();
-        break;
-      case LogSort.tagOther:
-        sortedNotes = sortedNotes
-            .where(
-              (note) => convertStringToLogTag(note.imageUrl) == LogTag.Other,
-            )
-            .toList();
-        break;
-      case LogSort.tagEdit:
-        sortedNotes = sortedNotes
-            .where(
-              (note) => convertStringToLogTag(note.imageUrl) == LogTag.Edit,
-            )
-            .toList();
-    }
-
-    if (sortedNotes.isNotEmpty) {
-      return ListView.builder(
-        itemCount: sortedNotes.length,
-        itemBuilder: (context, index) {
-          return _noteItem(note: sortedNotes[index]);
-        },
-      );
-    } else {
-      return const Center(child: Text('No Entries in the Log for this filter'));
-    }
-  }
-}
-
-class AddLogEntry extends StatelessWidget {
-  const AddLogEntry({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        if (!context.read<AppCubit>().canWriteProfileRecords() ||
-            (!state.isForRider && (state.horseProfile?.isArchived ?? false))) {
-          return const SizedBox.shrink();
-        }
-        return FilledButton.icon(
-          label: const Text('Add Log Entry'),
-          onPressed: () {
-            showAppDialog<AddLogEntryDialog>(
-              context: context,
-              builder: (context) => AddLogEntryDialog(
-                usersProfile: state.usersProfile!,
-                horseProfile: state.isForRider ? null : state.horseProfile,
-              ),
-            );
-          },
-          icon: const Icon(Icons.add),
-        );
+  Widget _entry(BaseListItem note) {
+    final category = _entryCategory(note);
+    final title = note.riderLog?.title?.trim();
+    final text = note.name?.trim() ?? '';
+    final heading = (title?.isNotEmpty ?? false)
+        ? title!
+        : text.isEmpty
+        ? _categoryLabel(category)
+        : text;
+    final author = note.message ?? note.parentId ?? '';
+    final metadata = [
+      _categoryLabel(category),
+      if (note.date case final date?) DateFormat.yMMMd().format(date),
+      if (note.extra?.isNotEmpty ?? false) 'Rider: ${note.extra}',
+      if (note.riderLog?.authorRole case 'instructor' || 'trainer')
+        'Added by ${note.riderLog!.authorRole} $author',
+    ].join(' · ');
+    return LogbookEntryCard(
+      title: heading,
+      metadata: metadata,
+      preview: heading != text && text.isNotEmpty ? text : null,
+      icon: switch (category) {
+        LogTag.Show => Icons.emoji_events_outlined,
+        LogTag.Training => Icons.school_outlined,
+        LogTag.Health => Icons.health_and_safety_outlined,
+        LogTag.Edit => Icons.history,
+        LogTag.Other => Icons.notes,
       },
+      onTap: () => showAppDialog<void>(
+        context: context,
+        builder: (context) => OceanCoralAppDialog(
+          title: Text(heading),
+          scrollable: true,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Text(metadata),
+              if (text.isNotEmpty && text != heading) Text(text),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-Widget _noteItem({required BaseListItem note}) {
-  final tag = convertStringToLogTag(note.imageUrl);
+LogTag _entryCategory(BaseListItem note) => switch (note.riderLog?.type) {
+  RiderLogType.lesson || RiderLogType.training => LogTag.Training,
+  RiderLogType.care => LogTag.Health,
+  RiderLogType.show => LogTag.Show,
+  _ => convertStringToLogTag(note.imageUrl),
+};
 
-  return ColoredBox(
-    color: _logTagColor(tag: tag),
-    child: ColoredBox(
-      color: HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
-      child: ListTile(
-        title: Text(note.name ?? '', style: const TextStyle(fontSize: 16)),
-        subtitle: Text(
-          [
-            DateFormat('MMM dd, yyyy').format(note.date ?? DateTime.now()),
-            if (note.extra?.isNotEmpty ?? false) 'Rider: ${note.extra}',
-            if (note.riderLog?.authorRole == 'instructor')
-              'Added by instructor ${note.message ?? note.parentId ?? ''}',
-            if (note.riderLog?.authorRole == 'trainer')
-              'Added by trainer ${note.message ?? note.parentId ?? ''}',
-          ].join('\n'),
-          style: const TextStyle(color: Colors.grey),
-        ),
-        leading: _logTag(tag: tag),
-      ),
-    ),
-  );
-}
-
-Widget _logTag({required LogTag? tag}) {
-  return Container(
-    width: 60, // Adjust the width as needed
-    height: double.infinity,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: _logTagColor(tag: tag)),
-    child: Text(
-      _logTagText(tag: tag),
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      textAlign: TextAlign.center,
-    ),
-  );
-}
+String _categoryLabel(LogTag tag) => switch (tag) {
+  LogTag.Show => 'Show',
+  LogTag.Training => 'Training',
+  LogTag.Health => 'Health',
+  LogTag.Other => 'Other',
+  LogTag.Edit => 'Activity',
+};
 
 /// Enum representing the different log tags
 enum LogTag { Show, Training, Health, Other, Edit }
@@ -426,41 +399,5 @@ LogTag convertStringToLogTag(String? tag) {
       return LogTag.Edit;
     default:
       return LogTag.Other;
-  }
-}
-
-/// Returns text based on Log Tag
-String _logTagText({required LogTag? tag}) {
-  switch (tag) {
-    case LogTag.Show:
-      return 'Show';
-    case LogTag.Edit:
-      return 'Edit';
-    case LogTag.Training:
-      return 'Training';
-    case LogTag.Health:
-      return 'Health';
-    case LogTag.Other:
-      return 'Other';
-    case null:
-      return 'Other';
-  }
-}
-
-/// Returns a color based on the Log Tag
-Color _logTagColor({required LogTag? tag}) {
-  switch (tag) {
-    case LogTag.Show:
-      return Colors.blue;
-    case LogTag.Edit:
-      return Colors.green;
-    case LogTag.Training:
-      return Colors.orange;
-    case LogTag.Health:
-      return Colors.red;
-    case LogTag.Other:
-      return Colors.grey;
-    case null:
-      return Colors.grey;
   }
 }

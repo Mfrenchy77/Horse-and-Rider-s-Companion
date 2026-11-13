@@ -281,12 +281,15 @@ void main() {
           );
         });
       }
+      final longBio = width < RiderProfileView.largeBreakpoint;
+      const intro = 'I teach groundwork and trail riding.';
+      final bio = longBio ? List.filled(12, intro).join(' ') : intro;
       final rider = RiderProfile(
         id: 'rider',
         email: 'rider@example.com',
         name: 'Morgan Rider',
         picUrl: hasPhoto ? photoUrl : null,
-        bio: 'I teach groundwork and trail riding.',
+        bio: bio,
         locationName: 'Bend, Oregon',
         homeUrl: 'https://example.com',
         students: [
@@ -350,8 +353,8 @@ void main() {
         'Morgan Rider',
         'Bend, Oregon',
         'About',
-        'I teach groundwork and trail riding.',
-        'Website Link',
+        bio,
+        'Website',
         "Rider's Log Book",
         'Atlas',
         'Casey',
@@ -360,6 +363,23 @@ void main() {
         'Grooming',
       ]) {
         expect(find.text(content), findsOneWidget);
+      }
+      expect(
+        tester.getRect(find.text("Rider's Log Book")).bottom,
+        lessThan(tester.getRect(find.text('About')).top),
+      );
+      final bioText = find.text(bio);
+      if (longBio) {
+        expect(tester.widget<Text>(bioText).maxLines, 5);
+        await tester.tap(find.text('Read full bio'));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Text>(bioText).maxLines, isNull);
+        await tester.ensureVisible(find.text('Show less'));
+        await tester.tap(find.text('Show less'));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Text>(bioText).maxLines, 5);
+      } else {
+        expect(find.text('Read full bio'), findsNothing);
       }
       expect(find.text('Sign in'), findsNothing);
       expect(find.widgetWithText(ListTile, 'Grooming'), findsOneWidget);

@@ -60,14 +60,16 @@ class LogBookButton extends StatelessWidget {
                     message: 'Open the Log Book',
                     child: FilledButton.tonalIcon(
                       onPressed: () {
-                        showAppDialog<Dialog>(
-                          context: context,
-                          builder: (dialogContext) => LogViewDialog(
-                            appContext: context,
-                            name: horseProfile!.name,
-                            horseId: horseProfile!.id,
-                            notes: horseProfile!.notes,
-                            isRider: false,
+                        Navigator.of(context, rootNavigator: true).push<void>(
+                          MaterialPageRoute(
+                            builder: (_) => LogViewDialog(
+                              name: horseProfile!.name,
+                              horseId: horseProfile!.id,
+                              horseProfile: horseProfile,
+                              notes: horseProfile!.notes,
+                              isRider: false,
+                              appContext: context,
+                            ),
                           ),
                         );
                       },

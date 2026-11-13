@@ -8,20 +8,12 @@ class RiderWebsiteLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return Visibility(
       visible: homeUrl != null && homeUrl!.isNotEmpty,
-      child: Tooltip(
-        message: 'Open website: $homeUrl',
-        child: InkWell(
-          onTap: homeUrl == null
-              ? null
-              : () => launchUrl(Uri.parse(homeUrl ?? '')),
-          child: const Text(
-            'Website Link',
-            style: TextStyle(
-              color: Colors.blue,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
+      child: OutlinedButton.icon(
+        onPressed: homeUrl == null
+            ? null
+            : () => launchUrl(Uri.parse(homeUrl!.trim())),
+        icon: const Icon(Icons.open_in_new),
+        label: const Text('Website'),
       ),
     );
   }

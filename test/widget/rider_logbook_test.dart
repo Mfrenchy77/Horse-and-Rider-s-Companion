@@ -71,6 +71,18 @@ void main() {
     expect(find.text('Shared training note'), findsOneWidget);
     expect(horse.notes!.single.id, 'legacy');
 
+    final search = find.widgetWithText(TextField, 'Search entries');
+    await tester.enterText(search, 'legacy');
+    await tester.pumpAndSettle();
+    expect(find.text('Legacy horse note'), findsOneWidget);
+    expect(find.text('Shared training note'), findsNothing);
+    await tester.tap(find.text('Legacy horse note'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    await tester.enterText(search, '');
+    await tester.pumpAndSettle();
+
     cubit.emit(
       cubit.state.copyWith(
         usersProfile: rider.copyWith(
