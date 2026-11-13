@@ -22,7 +22,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
   }
 
   final MessagesRepository _messagesRepository;
-  final RiderProfileRepository _riderProfileRepository;
+  final RiderProfileStore _riderProfileRepository;
   StreamSubscription<List<RiderProfile>>? _nameSearchSubscription;
   StreamSubscription<RiderProfile?>? _emailSearchSubscription;
 

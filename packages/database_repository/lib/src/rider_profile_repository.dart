@@ -1,13 +1,13 @@
 // ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:database_repository/src/logbook_rider_profile_repository.dart';
 import 'package:database_repository/src/models/models.dart';
 import 'package:database_repository/src/repository_exception.dart';
+import 'package:database_repository/src/rider_profile_store.dart';
 import 'package:flutter/foundation.dart';
 
 ///Interface for Firebase and Rider's Profile
-class RiderProfileRepository implements LogbookRiderProfileRepository {
+class RiderProfileRepository implements RiderProfileStore {
   RiderProfileRepository({FirebaseFirestore? firestore})
     : _riderProfileDatabaseReference = (firestore ?? FirebaseFirestore.instance)
           .collection(RIDER_PROFILE)
@@ -22,6 +22,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
 
   ///create or update [riderProfile] for user
 
+  @override
   Future<void> createOrUpdateRiderProfile({
     required RiderProfile riderProfile,
   }) async {
@@ -35,6 +36,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
     }
   }
 
+  @override
   Future<void> addOrUpdateOwnedHorse({
     required RiderProfile? riderProfile,
     required String? horseId,
@@ -54,6 +56,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
   }
 
   /// Updates the signed-in rider's saved contacts without rewriting their profile.
+  @override
   Future<void> saveContact({
     required String email,
     required BaseListItem contact,
@@ -117,6 +120,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
   }
 
   /// Retrieve the user's profile using [email]
+  @override
   Stream<RiderProfile?> getRiderProfile({required String email}) {
     return _riderProfileDatabaseReference
         .doc(_convertEmailToPath(email: email))
@@ -143,6 +147,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
   }
 
   ///Retrive a single profile by [name]
+  @override
   Stream<RiderProfile?> getProfileByName({required String name}) {
     return _riderProfileDatabaseReference
         .where('name', isEqualTo: name)
@@ -159,6 +164,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
   }
 
   /// Retrieve all profile for [name]
+  @override
   Stream<List<RiderProfile>> getProfilesByName({required String name}) {
     return _riderProfileDatabaseReference
         .where('name', isGreaterThanOrEqualTo: name)
@@ -177,6 +183,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
   }
 
   /// Retrieve all profiles for zipcode
+  @override
   Stream<List<RiderProfile>> getProfilesByZipcode({required String zipcode}) {
     return _riderProfileDatabaseReference
         .where('zipCode', isEqualTo: zipcode)
@@ -194,6 +201,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
   }
 
   /// Delete user's RiderProfile at [email]
+  @override
   Future<void> deleteRiderProfile({required String email}) async {
     try {
       await _riderProfileDatabaseReference

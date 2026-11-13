@@ -54,7 +54,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     );
   }
   final HorseProfileRepository _horseProfileRepository;
-  final RiderProfileRepository _riderProfileRepository;
+  final RiderProfileStore _riderProfileRepository;
   final MediaStorageRepository? _cloudRepository;
   final ImagePicker? _imagePicker;
   final LocationLookupService _locationLookupService;

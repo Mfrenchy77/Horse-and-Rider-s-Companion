@@ -22,7 +22,7 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
 
   Timer? _debounce;
   final MessagesRepository _messagesRepository;
-  final RiderProfileRepository _riderProfileRepository;
+  final RiderProfileStore _riderProfileRepository;
 
   int _lookupVersion = 0;
   bool _sending = false;

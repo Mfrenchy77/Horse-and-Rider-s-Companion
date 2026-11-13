@@ -20,7 +20,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
        super(const ProfileSearchState());
 
   ///Repositories
-  final RiderProfileRepository _riderProfileRepository;
+  final RiderProfileStore _riderProfileRepository;
   final HorseProfileRepository _horseProfileRepository;
   final ApiKeyProvider _keysRepository;
 
