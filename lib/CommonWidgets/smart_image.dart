@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Utilities/link_metadata_service.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
-import 'package:http/http.dart' as http;
 
 /// When to use the image proxy.
 enum SmartImageProxyMode { none, webOnly, always }
@@ -35,6 +34,7 @@ class SmartImage extends StatelessWidget {
     this.fallback,
     this.maxLogicalWidth = 600,
     this.config = const SmartImageConfig(),
+    this.linkMetadataService,
   });
 
   final String? url;
@@ -45,10 +45,12 @@ class SmartImage extends StatelessWidget {
   final Widget? fallback;
   final double maxLogicalWidth;
   final SmartImageConfig config;
+  final LinkMetadataService? linkMetadataService;
 
   // Share the current candidate, resolver request and terminal outcome across
   // resource cards and detail pages. Flutter's ImageCache shares image loads.
-  static final _previews = <(Uri, Uri?, Uri?, bool), _Preview>{};
+  static final _previews =
+      <(Uri, Uri?, Uri?, bool, LinkMetadataService?), _Preview>{};
   static const _cacheLimit = 512;
 
   @override
@@ -77,7 +79,15 @@ class SmartImage extends StatelessWidget {
     );
 
     final proxy = proxyEnabled && !isPhoton ? proxyFor(source) : null;
-    final key = (source, page, proxy, config.preferDirectFirst);
+    final key = (
+      source,
+      page,
+      proxy,
+      config.preferDirectFirst,
+      linkMetadataService,
+    );
+    final resolver =
+        linkMetadataService ?? const CloudFunctionsLinkMetadataService();
     final preview =
         _previews.remove(key) ??
         _Preview(
@@ -89,7 +99,11 @@ class SmartImage extends StatelessWidget {
           page == null || page == source
               ? null
               : () async {
-                  final replacement = await _resolveReplacement(page, source);
+                  final replacement = await _resolveReplacement(
+                    resolver,
+                    page,
+                    source,
+                  );
                   if (replacement == null || replacement == source) return null;
                   return proxyEnabled && replacement.scheme == 'http'
                       ? proxyFor(replacement)
@@ -163,21 +177,17 @@ class SmartImage extends StatelessWidget {
     return uri;
   }
 
-  static Future<Uri?> _resolveReplacement(Uri page, Uri source) async {
+  static Future<Uri?> _resolveReplacement(
+    LinkMetadataService resolver,
+    Uri page,
+    Uri source,
+  ) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse(resourceImageResolverEndpoint),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'url': page.toString(),
-              'hint': source.toString(),
-            }),
-          )
-          .timeout(const Duration(seconds: 12));
-      if (response.statusCode != 200) return null;
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
-      return imageSourceUrl(result['resolvedUrl'] as String?);
+      final resolved = await resolver.resolveImage(
+        page.toString(),
+        imageHint: source.toString(),
+      );
+      return imageSourceUrl(resolved);
     } catch (_) {
       return null;
     }

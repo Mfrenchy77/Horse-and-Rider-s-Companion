@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/link_metadata_service.dart';
@@ -41,12 +43,14 @@ class _FakeLinkMetadataService implements LinkMetadataService {
 
   final LinkMetadataResult? result;
   final String? resolvedImage;
+  final List<(String, String?)> resolveCalls = [];
 
   @override
   Future<LinkMetadataResult?> fetchMetadata(String url) async => result;
 
   @override
   Future<String?> resolveImage(String pageUrl, {String? imageHint}) async {
+    resolveCalls.add((pageUrl, imageHint));
     return resolvedImage ?? imageHint;
   }
 }
@@ -179,6 +183,33 @@ void main() {
 
         expect(await service.getLocationApiKey(), 'custom-loc-key');
         expect(await service.getZipCodeApiKey(), 'custom-zip-key');
+      },
+    );
+
+    testWidgets(
+      'SmartImage delegates image recovery to injected LinkMetadataService',
+      (tester) async {
+        final service = _FakeLinkMetadataService();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: SmartImage(
+              'https://broken.example.com/missing.jpg',
+              resourceUrl: 'https://example.com/article',
+              config: const SmartImageConfig(
+                proxyMode: SmartImageProxyMode.none,
+              ),
+              linkMetadataService: service,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(service.resolveCalls, [
+          (
+            'https://example.com/article',
+            'https://broken.example.com/missing.jpg',
+          ),
+        ]);
       },
     );
   });
