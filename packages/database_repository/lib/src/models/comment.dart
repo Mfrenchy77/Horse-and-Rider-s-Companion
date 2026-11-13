@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:database_repository/database_repository.dart';
+import 'package:database_repository/src/models/base_list_item.dart';
 
 /// Model that represents a comment on a resource
 class Comment {
@@ -15,6 +14,31 @@ class Comment {
     required this.resourceId,
     required List<BaseListItem>? usersWhoRated,
   }) : usersWhoRated = usersWhoRated?.toList();
+
+  /// Constructs a [Comment] instance from a backend-neutral map.
+  // ignore: sort_constructors_first
+  factory Comment.fromMap(Map<String, dynamic> data) {
+    final rawUsers = data['usersWhoRated'] as List?;
+    return Comment(
+      id: data['id'] as String?,
+      rating: data['rating'] as int?,
+      comment: data['comment'] as String?,
+      parentId: data['parentId'] as String?,
+      resourceId: data['resourceId'] as String?,
+      date: _parseDateTime(data['date']),
+      editedDate: _parseNullableDateTime(data['editedDate']),
+      usersWhoRated: rawUsers == null ? null : _convertUsersWhoRated(rawUsers),
+      user: data['user'] == null
+          ? null
+          : BaseListItem.fromMap(
+              Map<String, dynamic>.from(data['user'] as Map),
+            ),
+    );
+  }
+
+  /// Constructs a [Comment] instance from a JSON map.
+  // ignore: sort_constructors_first
+  factory Comment.fromJson(Map<String, dynamic> json) => Comment.fromMap(json);
 
   /// Id of the comment
   final String? id;
@@ -43,82 +67,23 @@ class Comment {
   /// List of users who rated this comment
   List<BaseListItem>? usersWhoRated;
 
-  /// Converts a comment to a map for Firestore
-  // ignore: sort_constructors_first
-  factory Comment.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
-    return Comment(
-      id: data!['id'] as String?,
-      rating: data['rating'] as int?,
-      comment: data['comment'] as String?,
-      parentId: data['parentId'] as String?,
-      resourceId: data['resourceId'] as String?,
-      date: _parseDateTime(data['date']),
-      editedDate: _parseNullableDateTime(data['editedDate']),
-      usersWhoRated: data['usersWhoRated'] == null
-          ? null
-          : _convertUsersWhoRated(data['usersWhoRated'] as List),
-      user: data['user'] == null
-          ? null
-          : BaseListItemFirestoreMapper.fromMap(
-              data['user'] as Map<String, dynamic>,
-            ),
-    );
-  }
-
-  /// Constructs an [Comment] instance from a JSON map.
-  // ignore: sort_constructors_first
-  factory Comment.fromJson(Map<String, dynamic> json) {
-    return Comment(
-      id: json['id'] as String?,
-      rating: json['rating'] as int?,
-      comment: json['comment'] as String?,
-      parentId: json['parentId'] as String?,
-      resourceId: json['resourceId'] as String?,
-      date: _parseDateTime(json['date']),
-      editedDate: _parseNullableDateTime(json['editedDate']),
-      usersWhoRated: _convertUsersWhoRated(json['usersWhoRated'] as List?),
-      user: json['user'] == null
-          ? null
-          : BaseListItem.fromJson(json['user'] as Map<String, dynamic>),
-    );
-  }
-
-  /// Converts a comment to a map for Firestore
-  Map<String, Object?> toFirestore() {
-    return {
-      if (id != null) 'id': id,
-      'date': date,
-      if (user != null) 'user': user!.toJson(),
-      if (rating != null) 'rating': rating,
-      if (comment != null) 'comment': comment,
-      if (parentId != null) 'parentId': parentId,
-      if (editedDate != null) 'editedDate': editedDate,
-      if (resourceId != null) 'resourceId': resourceId,
-      if (usersWhoRated != null)
-        'usersWhoRated':
-            List<dynamic>.from(usersWhoRated!.map((e) => e.toJson())),
-    };
-  }
-
-  /// Converts a comment to a json map
-  Map<String, dynamic> toJson() {
+  /// Converts a comment to a backend-neutral map.
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'date': date,
+      'date': date.toIso8601String(),
       'rating': rating,
       'comment': comment,
       'parentId': parentId,
-      'user': user?.toJson(),
-      'editedDate': editedDate,
+      'user': user?.toMap(),
+      'editedDate': editedDate?.toIso8601String(),
       'resourceId': resourceId,
-      'usersWhoRated': usersWhoRated?.map((e) => e.toJson()).toList(),
+      'usersWhoRated': usersWhoRated?.map((e) => e.toMap()).toList(),
     };
   }
+
+  /// Converts a comment to a json map.
+  Map<String, dynamic> toJson() => toMap();
 
   /// Copies a comment with new values
   Comment copyWith({
@@ -146,23 +111,21 @@ class Comment {
   }
 }
 
-List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {
+List<BaseListItem> _convertUsersWhoRated(List<dynamic> itemMap) {
   final usersWhoRated = <BaseListItem>[];
-  if (itemMap != null) {
-    for (final item in itemMap) {
-      usersWhoRated.add(
-        BaseListItemFirestoreMapper.fromMap(item as Map<String, dynamic>),
-      );
-    }
+  for (final item in itemMap) {
+    usersWhoRated.add(
+      BaseListItem.fromMap(Map<String, dynamic>.from(item as Map)),
+    );
   }
-
   return usersWhoRated;
 }
 
 DateTime _parseDateTime(Object? value) {
-  if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;
-  throw ArgumentError('Expected Timestamp or DateTime, got $value');
+  if (value is String) return DateTime.parse(value);
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+  throw ArgumentError('Expected DateTime, String, or int, got $value');
 }
 
 DateTime? _parseNullableDateTime(Object? value) {

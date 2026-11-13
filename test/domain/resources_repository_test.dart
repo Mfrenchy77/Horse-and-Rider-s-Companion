@@ -312,7 +312,7 @@ void main() {
           ],
         );
 
-        final firestoreMap = comment.toFirestore();
+        final firestoreMap = CommentFirestoreMapper.toFirestore(comment);
         expect(firestoreMap['user'], isA<Map<String, dynamic>>());
         expect(
           (firestoreMap['user']! as Map<String, dynamic>)['id'],
@@ -322,8 +322,8 @@ void main() {
         final commentsRef = db
             .collection('Comments')
             .withConverter<Comment>(
-              fromFirestore: Comment.fromFirestore,
-              toFirestore: (c, _) => c.toFirestore(),
+              fromFirestore: CommentFirestoreMapper.fromFirestore,
+              toFirestore: CommentFirestoreMapper.toFirestore,
             );
         await commentsRef.doc('c1').set(comment);
         final loaded = (await commentsRef.doc('c1').get()).data();

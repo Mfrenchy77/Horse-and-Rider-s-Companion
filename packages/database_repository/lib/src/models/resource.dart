@@ -143,7 +143,9 @@ class Resource {
           usersWhoRated!.map((e) => e.toJson()),
         ),
       if (comments != null)
-        'comments': List<dynamic>.from(comments!.map((e) => e.toJson())),
+        'comments': List<dynamic>.from(
+          comments!.map(CommentFirestoreMapper.toJson),
+        ),
     };
   }
 
@@ -319,7 +321,7 @@ List<Comment> _convertComments(List<dynamic>? itemMap) {
   if (itemMap != null) {
     for (final item in itemMap) {
       if (item is Map<String, dynamic>) {
-        out.add(Comment.fromJson(item));
+        out.add(CommentFirestoreMapper.fromMap(item));
       }
     }
   }

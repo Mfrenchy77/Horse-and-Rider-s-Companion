@@ -203,7 +203,7 @@ class ResourcesRepository implements ResourcesStore {
       };
       comments[index] = updated;
       transaction.update(ref, {'comments': comments});
-      return Comment.fromJson(updated);
+      return CommentFirestoreMapper.fromMap(updated);
     });
   }
 

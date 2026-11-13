@@ -10,6 +10,7 @@ export 'src/cloud_repository.dart';
 export 'src/levels_repository.dart';
 export 'src/mappers/base_list_item_firestore_mapper.dart';
 export 'src/mappers/catagorry_firestore_mapper.dart';
+export 'src/mappers/comment_firestore_mapper.dart';
 export 'src/mappers/level_firestore_mapper.dart';
 export 'src/mappers/skill_level_firestore_mapper.dart';
 export 'src/mappers/skill_node_firestore_mapper.dart';
