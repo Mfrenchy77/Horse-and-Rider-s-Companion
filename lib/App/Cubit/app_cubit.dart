@@ -29,6 +29,7 @@ class AppCubit extends Cubit<AppState> {
     required this._riderProfileRepository,
     required this._horseProfileRepository,
     required AuthGateway authenticationRepository,
+    this._accountDeletionRepository,
     PushNotificationService? pushNotificationService,
     this._submitCoachingAction,
   }) : _authenticationRepository = authenticationRepository,
@@ -48,6 +49,7 @@ class AppCubit extends Cubit<AppState> {
   final RiderProfileStore _riderProfileRepository;
   final HorseProfileStore _horseProfileRepository;
   final AuthGateway _authenticationRepository;
+  final AccountDeletionRepository? _accountDeletionRepository;
   final PushNotificationService _pushNotificationService;
   final Future<Map<String, dynamic>> Function(Map<String, Object?>)?
   _submitCoachingAction;
@@ -890,47 +892,182 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(deleteEmail: Email.dirty(email)));
   }
 
-  /// Deletes the user's account
+  /// Resets transient account deletion status when opening/closing the dialog.
+  void resetAccountDeletionStatus() {
+    emit(
+      state.copyWith(
+        deleteEmail: const Email.pure(),
+        accountDeletionStatus: AccountDeletionUiStatus.initial,
+        accountDeletionError: '',
+      ),
+    );
+  }
+
+  /// Reauthenticates with [password] and retries account deletion.
+  Future<void> reauthenticateForDeletionWithPassword(String password) async {
+    emit(
+      state.copyWith(
+        accountDeletionStatus: AccountDeletionUiStatus.inProgress,
+        accountDeletionError: '',
+      ),
+    );
+    try {
+      await _authenticationRepository.reauthenticateWithPassword(
+        password: password,
+      );
+      await deleteAccount();
+    } on ReauthenticationFailure catch (e) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.requiresRecentLogin,
+          accountDeletionError: e.message,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.requiresRecentLogin,
+          accountDeletionError: 'Reauthentication failed: $e',
+        ),
+      );
+    }
+  }
+
+  /// Reauthenticates with Google and retries account deletion.
+  Future<void> reauthenticateForDeletionWithGoogle() async {
+    emit(
+      state.copyWith(
+        accountDeletionStatus: AccountDeletionUiStatus.inProgress,
+        accountDeletionError: '',
+      ),
+    );
+    try {
+      await _authenticationRepository.reauthenticateWithGoogle();
+      await deleteAccount();
+    } on ReauthenticationFailure catch (e) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.requiresRecentLogin,
+          accountDeletionError: e.message,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.requiresRecentLogin,
+          accountDeletionError: 'Reauthentication failed: $e',
+        ),
+      );
+    }
+  }
+
+  /// Deletes the user's account via the backend-authorized deletion pipeline.
   Future<void> deleteAccount() async {
     final user = state.usersProfile;
+    final authEmail = state.user.email;
+    final expectedEmail = user != null ? user.email : authEmail;
     final email = state.deleteEmail;
-    if (user != null && email.isValid && email.value == user.email) {
-      try {
-        await _riderProfileRepository.deleteRiderProfile(email: user.email);
-        unawaited(_usersProfileSubscription?.cancel());
-        unawaited(_horseProfileSubscription?.cancel());
-        _usersProfileSubscription = null;
-        _horseProfileSubscription = null;
-        emit(
-          state.copyWith(
-            status: AppStatus.unauthenticated,
-            user: User.empty,
-            clearUsersProfile: true,
-            clearHorseProfile: true,
-            clearViewingProfile: true,
-            clearOwnersProfile: true,
-            horseId: '',
-            viewingProfielEmail: '',
-            isViewing: false,
-            isForRider: true,
-            isProfileSetup: false,
-            deleteEmail: const Email.pure(),
-            isGuest: true,
-            isMessage: true,
-            errorMessage: 'Account Deleted',
-          ),
-        );
-      } catch (e) {
-        emit(
-          state.copyWith(
-            isError: true,
-            errorMessage: 'Failed to delete account: $e',
-          ),
-        );
-      }
-    } else {
+    final normalizedInput = email.value.trim().toLowerCase();
+    final normalizedExpected = expectedEmail.trim().toLowerCase();
+    if (expectedEmail.isEmpty ||
+        !email.isValid ||
+        normalizedInput != normalizedExpected) {
       emit(
-        state.copyWith(isError: true, errorMessage: 'Failed to delete account'),
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.failure,
+          accountDeletionError:
+              'Confirmation email does not match your signed-in account.',
+          isError: true,
+          errorMessage: 'Failed to delete account',
+        ),
+      );
+      return;
+    }
+
+    final deletionRepo = _accountDeletionRepository;
+    if (deletionRepo == null) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.failure,
+          accountDeletionError: 'Account deletion service is not configured.',
+          isError: true,
+          errorMessage: 'Account deletion service is not configured.',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        accountDeletionStatus: AccountDeletionUiStatus.inProgress,
+        accountDeletionError: '',
+      ),
+    );
+
+    try {
+      final result = await deletionRepo.deleteCurrentAccount();
+      if (result.status == AccountDeletionStatus.requiresRecentLogin) {
+        emit(
+          state.copyWith(
+            accountDeletionStatus: AccountDeletionUiStatus.requiresRecentLogin,
+            accountDeletionError:
+                result.message ??
+                'Please reauthenticate before deleting your account.',
+          ),
+        );
+        return;
+      }
+
+      unawaited(_usersProfileSubscription?.cancel());
+      unawaited(_horseProfileSubscription?.cancel());
+      _usersProfileSubscription = null;
+      _horseProfileSubscription = null;
+      try {
+        await _authenticationRepository.logOut();
+      } catch (_) {
+        // Backend already deleted/revoked the identity; clear local session.
+      }
+      final uiStatus = result.status == AccountDeletionStatus.scheduled
+          ? AccountDeletionUiStatus.scheduled
+          : AccountDeletionUiStatus.completed;
+      emit(
+        state.copyWith(
+          status: AppStatus.unauthenticated,
+          user: User.empty,
+          clearUsersProfile: true,
+          clearHorseProfile: true,
+          clearViewingProfile: true,
+          clearOwnersProfile: true,
+          horseId: '',
+          viewingProfielEmail: '',
+          isViewing: false,
+          isForRider: true,
+          isProfileSetup: false,
+          deleteEmail: const Email.pure(),
+          isGuest: true,
+          accountDeletionStatus: uiStatus,
+          accountDeletionError: '',
+          isMessage: true,
+          errorMessage: result.message ?? 'Account Deleted',
+        ),
+      );
+    } on AccountDeletionFailure catch (e) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.failure,
+          accountDeletionError: e.message,
+          isError: true,
+          errorMessage: e.message,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          accountDeletionStatus: AccountDeletionUiStatus.failure,
+          accountDeletionError: 'Failed to delete account: $e',
+          isError: true,
+          errorMessage: 'Failed to delete account: $e',
+        ),
       );
     }
   }

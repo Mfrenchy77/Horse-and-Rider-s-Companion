@@ -13,10 +13,21 @@ const admin = require('firebase-admin');
 try { admin.app(); } catch { admin.initializeApp(); }
 const logger = require('firebase-functions/logger');
 const {connectionHandler} = require('./connections');
+const {accountDeletionHandler} = require('./account_deletion');
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},
     (request) => connectionHandler(admin.firestore(), admin.auth())(request),
+);
+
+exports.requestAccountDeletion = onCall(
+    {region: 'us-central1'},
+    (request) => accountDeletionHandler(
+        admin.firestore(),
+        admin.auth(),
+        admin.storage().bucket(),
+        {adminEmail: process.env.ADMIN_ACCOUNT_EMAIL},
+    )(request),
 );
 
 /** ------------------------------------------------------------------------ */

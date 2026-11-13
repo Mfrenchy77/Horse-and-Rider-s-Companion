@@ -49,4 +49,10 @@ abstract interface class AuthGateway {
   /// Returns a bearer access token for authenticated backend requests, or
   /// `null` if no user is signed in.
   Future<String?> getAccessToken();
+
+  /// Reauthenticates the current email/password user before sensitive actions.
+  Future<void> reauthenticateWithPassword({required String password});
+
+  /// Reauthenticates the current Google user before sensitive actions.
+  Future<void> reauthenticateWithGoogle();
 }

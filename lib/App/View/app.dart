@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/Delete/firebase_account_deletion_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
@@ -47,6 +48,10 @@ class _AppState extends State<App> {
   late final ConnectionRepository _connections = ConnectionRepository(
     authGateway: widget._authenticationRepository,
   );
+  late final AccountDeletionRepository _accountDeletionRepository =
+      FirebaseAccountDeletionRepository(
+        authGateway: widget._authenticationRepository,
+      );
   late final GoRouter _router;
 
   @override
@@ -60,6 +65,7 @@ class _AppState extends State<App> {
       horseProfileRepository: widget._horseProfileRepository,
       riderProfileRepository: widget._riderProfileRepository,
       authenticationRepository: widget._authenticationRepository,
+      accountDeletionRepository: _accountDeletionRepository,
       submitCoachingAction: _connections.submit,
     );
 
@@ -121,6 +127,9 @@ class _AppState extends State<App> {
           RepositoryProvider<HorseProfileRepository>.value(value: repo),
         RepositoryProvider<AuthGateway>.value(
           value: widget._authenticationRepository,
+        ),
+        RepositoryProvider<AccountDeletionRepository>.value(
+          value: _accountDeletionRepository,
         ),
         if (widget._authenticationRepository
             case final AuthenticationRepository repo)

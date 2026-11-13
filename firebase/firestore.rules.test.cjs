@@ -177,3 +177,11 @@ test('the callable preserves shared lessons across archive, restore and transfer
     await deleteApp(app);
   }
 });
+
+test('DeletionJobs cannot be read or written by clients', async () => {
+  const owner = environment.authenticatedContext('owner', verified).firestore();
+  const guest = environment.unauthenticatedContext().firestore();
+  await assertFails(getDoc(doc(owner, 'DeletionJobs/owner')));
+  await assertFails(setDoc(doc(owner, 'DeletionJobs/owner'), {status: 'pending'}));
+  await assertFails(getDoc(doc(guest, 'DeletionJobs/owner')));
+});

@@ -21,6 +21,9 @@ class MockHorseProfileRepository extends Mock
 
 class MockMessagesRepository extends Mock implements MessagesRepository {}
 
+class MockAccountDeletionRepository extends Mock
+    implements AccountDeletionRepository {}
+
 /// An offline harness for app-state tests.
 ///  Each instance owns its subscriptions.
 class AppTestHarness {
@@ -32,6 +35,7 @@ class AppTestHarness {
   final riders = MockRiderProfileRepository();
   final horses = MockHorseProfileRepository();
   final messages = MockMessagesRepository();
+  final accountDeletion = MockAccountDeletionRepository();
   late final AppCubit cubit;
 
   static Future<AppTestHarness> create({
@@ -47,6 +51,12 @@ class AppTestHarness {
     final harness = AppTestHarness._();
     when(() => harness.auth.currentUser).thenReturn(User.empty);
     when(() => harness.auth.user).thenAnswer((_) => const Stream.empty());
+    when(harness.auth.logOut).thenAnswer((_) async {});
+    when(harness.accountDeletion.deleteCurrentAccount).thenAnswer(
+      (_) async => const AccountDeletionResult(
+        status: AccountDeletionStatus.completed,
+      ),
+    );
     when(harness.skills.getSkills).thenAnswer((_) => const Stream.empty());
     when(
       harness.resources.getResources,
@@ -58,6 +68,7 @@ class AppTestHarness {
       riderProfileRepository: harness.riders,
       horseProfileRepository: harness.horses,
       messagesRepository: harness.messages,
+      accountDeletionRepository: harness.accountDeletion,
       submitCoachingAction: submitCoachingAction,
     );
     return harness;

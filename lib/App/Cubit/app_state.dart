@@ -8,6 +8,16 @@ enum AppStatus { authenticated, unauthenticated }
 /// The Status of the Message to Support
 enum MessageToSupportStatus { initial, sending, success }
 
+/// The UI status for account deletion requests.
+enum AccountDeletionUiStatus {
+  initial,
+  inProgress,
+  requiresRecentLogin,
+  completed,
+  scheduled,
+  failure,
+}
+
 /// The Sort State of the Resources
 enum ResourcesSortStatus {
   saved,
@@ -125,6 +135,8 @@ class AppState extends Equatable {
     this.resourcesSortStatus = ResourcesSortStatus.recent,
     this.skillTreeNavigation = SkillTreeNavigation.SkillList,
     this.messageToSupportStatus = MessageToSupportStatus.initial,
+    this.accountDeletionStatus = AccountDeletionUiStatus.initial,
+    this.accountDeletionError = '',
   });
 
   const AppState.authenticated(User user)
@@ -311,6 +323,12 @@ class AppState extends Equatable {
   /// The Status of the messages to support
   final MessageToSupportStatus messageToSupportStatus;
 
+  /// Current account deletion workflow status.
+  final AccountDeletionUiStatus accountDeletionStatus;
+
+  /// Actionable error or guidance message for account deletion.
+  final String accountDeletionError;
+
   AppState copyWith({
     bool clearSkill = false,
     bool clearResource = false,
@@ -377,6 +395,8 @@ class AppState extends Equatable {
     SkillTreeNavigation? skillTreeNavigation,
     DifficultySortState? difficultySortState,
     MessageToSupportStatus? messageToSupportStatus,
+    AccountDeletionUiStatus? accountDeletionStatus,
+    String? accountDeletionError,
   }) {
     return AppState._(
       user: user ?? this.user,
@@ -451,6 +471,9 @@ class AppState extends Equatable {
           isFromTrainingPathList ?? this.isFromTrainingPathList,
       messageToSupportStatus:
           messageToSupportStatus ?? this.messageToSupportStatus,
+      accountDeletionStatus:
+          accountDeletionStatus ?? this.accountDeletionStatus,
+      accountDeletionError: accountDeletionError ?? this.accountDeletionError,
     );
   }
 
@@ -514,5 +537,7 @@ class AppState extends Equatable {
     showEmailVerification,
     isFromTrainingPathList,
     messageToSupportStatus,
+    accountDeletionStatus,
+    accountDeletionError,
   ];
 }

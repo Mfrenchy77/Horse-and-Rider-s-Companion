@@ -25,4 +25,7 @@ class FirebaseEmulators {
 
   static Uri coachingEndpoint() =>
       Uri.http('$_host:5001', '/$projectId/us-central1/coachingConnection');
+
+  static Uri accountDeletionEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/requestAccountDeletion');
 }

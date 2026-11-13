@@ -37,7 +37,9 @@ function harness({fetch, conversation, tokens = ['token-1']} = {}) {
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8'), {
     exports, URL, AbortSignal,
     fetch: fetch || (async () => { throw new Error('Unexpected network access'); }),
-    require: (id) => mocks[id] || (id === './connections' ? require('../connections') : require(id)),
+    require: (id) => mocks[id] ||
+      (id === './connections' ? require('../connections') :
+      id === './account_deletion' ? require('../account_deletion') : require(id)),
   }, {filename: 'index.js'});
   return {handlers: exports, pushes, errors, tokenOwners};
 }

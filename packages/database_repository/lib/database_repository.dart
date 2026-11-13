@@ -25,3 +25,4 @@ export 'src/rider_profile_store.dart';
 export 'src/rider_profile_repository.dart';
 export 'src/horse_profile_store.dart';
 export 'src/horse_profile_repository.dart';
+export 'src/account_deletion_repository.dart';

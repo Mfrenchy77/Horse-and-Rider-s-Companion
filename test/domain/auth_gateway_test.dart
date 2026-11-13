@@ -126,6 +126,12 @@ class _InMemoryAuthGateway implements AuthGateway {
   Future<String?> getAccessToken() async =>
       _current.isEmpty ? null : accessToken;
 
+  @override
+  Future<void> reauthenticateWithPassword({required String password}) async {}
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {}
+
   Future<void> dispose() => _controller.close();
 }
 

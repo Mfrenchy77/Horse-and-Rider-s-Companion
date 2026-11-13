@@ -391,6 +391,100 @@ class AuthenticationRepository implements AuthGateway {
   Future<String?> getAccessToken() async {
     return _firebaseAuth.currentUser?.getIdToken();
   }
+
+  @override
+  Future<void> reauthenticateWithPassword({required String password}) async {
+    final user = _firebaseAuth.currentUser;
+    final email = user?.email;
+    if (user == null || email == null || email.isEmpty) {
+      throw const ReauthenticationFailure(
+        'No signed-in email account found for reauthentication.',
+      );
+    }
+    try {
+      final credential = firebase_auth.EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw ReauthenticationFailure.fromCode(e.code);
+    } catch (_) {
+      throw const ReauthenticationFailure();
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw const ReauthenticationFailure(
+        'No signed-in account found for reauthentication.',
+      );
+    }
+    try {
+      if (isWeb) {
+        final provider = firebase_auth.GoogleAuthProvider();
+        await user.reauthenticateWithPopup(provider);
+      } else {
+        if (!_googleSignIn.supportsAuthenticate()) {
+          throw const ReauthenticationFailure(
+            'Google sign-in is unavailable on this platform.',
+          );
+        }
+        final account = await _googleSignIn.authenticate();
+        final idToken = account.authentication.idToken;
+        if (idToken == null || idToken.isEmpty) {
+          throw const ReauthenticationFailure(
+            'Google sign-in returned no token.',
+          );
+        }
+        final credential = firebase_auth.GoogleAuthProvider.credential(
+          idToken: idToken,
+        );
+        await user.reauthenticateWithCredential(credential);
+      }
+    } on ReauthenticationFailure {
+      rethrow;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw ReauthenticationFailure.fromCode(e.code);
+    } catch (_) {
+      throw const ReauthenticationFailure();
+    }
+  }
+}
+
+/// Thrown during reauthentication when sensitive actions require a fresh login.
+class ReauthenticationFailure implements Exception {
+  const ReauthenticationFailure([
+    this.message = 'Could not verify your credentials. Please try again.',
+  ]);
+
+  factory ReauthenticationFailure.fromCode(String code) {
+    switch (code) {
+      case 'wrong-password':
+      case 'invalid-credential':
+        return const ReauthenticationFailure(
+          'Incorrect password. Please try again.',
+        );
+      case 'user-mismatch':
+        return const ReauthenticationFailure(
+          'The selected credentials do not match the signed-in account.',
+        );
+      case 'too-many-requests':
+        return const ReauthenticationFailure(
+          'Too many attempts. Please wait and try again.',
+        );
+      case 'network-request-failed':
+        return const ReauthenticationFailure(
+          'Network error during verification. Please try again.',
+        );
+      default:
+        return const ReauthenticationFailure();
+    }
+  }
+
+  final String message;
 }
 
 /// Converts a [firebase_auth.User] to your app's [User] model.
