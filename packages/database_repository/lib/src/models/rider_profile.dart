@@ -166,9 +166,9 @@ class RiderProfile {
       lastEditBy: data['lastEditBy'] as String?,
       countryName: data['countryName'] as String?,
       locationName: data['locationName'] as String?,
-      subscriptionDate: data['subscriptionDate'] as DateTime?,
-      lastEditDate: (data['lastEditDate'] as Timestamp?)?.toDate(),
-      subscriptionEndDate: data['subscriptionEndDate'] as DateTime?,
+      subscriptionDate: _parseNullableDateTime(data['subscriptionDate']),
+      lastEditDate: _parseNullableDateTime(data['lastEditDate']),
+      subscriptionEndDate: _parseNullableDateTime(data['subscriptionEndDate']),
       notes: data['notes'] == null
           ? null
           : _convertBaseListItem(data['notes'] as List),
@@ -341,4 +341,10 @@ List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
   }
 
   return baseListItem;
+}
+
+DateTime? _parseNullableDateTime(Object? value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  return null;
 }

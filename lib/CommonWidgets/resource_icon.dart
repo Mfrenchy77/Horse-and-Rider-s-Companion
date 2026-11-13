@@ -27,6 +27,7 @@ class ResourceIcon extends StatelessWidget {
         iconData = HorseAndRiderIcons.riding;
         break;
       case SkillCategory.Other:
+        iconData = Icons.school_outlined;
         break;
       case null:
         break;

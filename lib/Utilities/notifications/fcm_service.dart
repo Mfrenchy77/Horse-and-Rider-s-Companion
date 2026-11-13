@@ -1,46 +1,57 @@
-import 'dart:io' show Platform;
+import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
 class FcmService {
-  static final _messaging = FirebaseMessaging.instance;
-  static final _db = FirebaseFirestore.instance;
+  static StreamSubscription<String>? _onRegisteredSubscription;
 
-  /// Request permission, get token, and store it under RiderProfiles/<email>/tokens/<token>
+  /// Returns the normalized platform identifier for FCM token records.
+  @visibleForTesting
+  static String platformName([TargetPlatform? platform]) {
+    final target = platform ?? defaultTargetPlatform;
+    return switch (target) {
+      TargetPlatform.android => 'android',
+      TargetPlatform.iOS => 'ios',
+      _ => 'other',
+    };
+  }
+
+  /// Request permission, get token, and store it under
+  /// `RiderProfiles/<email>/tokens/<token>`.
   static Future<void> ensureRegistered(String email) async {
     try {
-      // Web support for FCM requires additional setup; skip by default
-      if (kIsWeb) return;
+      final normalizedEmail = email.trim().toLowerCase();
+      if (kIsWeb || normalizedEmail.isEmpty) return;
+
+      final messaging = FirebaseMessaging.instance;
+      final db = FirebaseFirestore.instance;
 
       // Request permissions on iOS
-      await _messaging.requestPermission();
+      await messaging.requestPermission();
 
-      _messaging.onRegistered.listen((token) async {
+      await _onRegisteredSubscription?.cancel();
+      _onRegisteredSubscription = messaging.onRegistered.listen((token) async {
         if (token.isEmpty) return;
 
-        final doc = _db
+        final doc = db
             .collection('RiderProfiles')
-            .doc(email.toLowerCase())
+            .doc(normalizedEmail)
             .collection('tokens')
             .doc(token);
 
         await doc.set(
           {
             'token': token,
-            'platform': Platform.isAndroid
-                ? 'android'
-                : Platform.isIOS
-                    ? 'ios'
-                    : 'other',
+            'platform': platformName(),
             'updatedAt': FieldValue.serverTimestamp(),
           },
           SetOptions(merge: true),
         );
       });
 
-      await _messaging.register();
+      await messaging.register();
     } catch (_) {
       // Silently ignore; notifications are best-effort
     }

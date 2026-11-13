@@ -223,8 +223,13 @@ class ConnectionPanel extends StatelessWidget {
                         showAppDialog<void>(
                           context: context,
                           barrierDismissible: false,
-                          builder: (_) =>
-                              _TrainingRecordDialog(skills: skills, link: link),
+                          builder: (_) => BlocProvider.value(
+                            value: cubit,
+                            child: _TrainingRecordDialog(
+                              skills: skills,
+                              link: link,
+                            ),
+                          ),
                         );
                       },
                 child: Text(
@@ -279,14 +284,23 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
       _error = null;
     });
     try {
-      await context.read<ConnectionsCubit>().recordTraining(
+      final cubit = context.read<ConnectionsCubit>();
+      final saved = await cubit.recordTraining(
         link: widget.link,
         recordId: _recordId,
         notes: _notes,
         skillId: _skillId,
         level: _level,
       );
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      if (saved) {
+        Navigator.pop(context);
+      } else {
+        setState(() {
+          _saving = false;
+          _error = cubit.state.actionFeedback ?? 'Could not save. Try again.';
+        });
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {

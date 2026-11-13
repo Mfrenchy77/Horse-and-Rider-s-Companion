@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
@@ -74,19 +75,32 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
   Widget build(BuildContext context) {
     // if horseProfile is null then we are creating a new horse profile
     // and editProfile should be false
+    final existingKeysRepo = context.read<KeysRepository?>();
+    final existingCloudRepo = context.read<CloudRepository?>();
+    final existingRiderRepo = context.read<RiderProfileRepository?>();
+    final existingHorseRepo = context.read<HorseProfileRepository?>();
 
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider(create: (context) => KeysRepository()),
-        RepositoryProvider(create: (context) => CloudRepository()),
-        RepositoryProvider(create: (context) => RiderProfileRepository()),
-        RepositoryProvider(create: (context) => HorseProfileRepository()),
+        RepositoryProvider<KeysRepository>(
+          create: (_) => existingKeysRepo ?? KeysRepository(),
+        ),
+        RepositoryProvider<CloudRepository>(
+          create: (_) => existingCloudRepo ?? CloudRepository(),
+        ),
+        RepositoryProvider<RiderProfileRepository>(
+          create: (_) => existingRiderRepo ?? RiderProfileRepository(),
+        ),
+        RepositoryProvider<HorseProfileRepository>(
+          create: (_) => existingHorseRepo ?? HorseProfileRepository(),
+        ),
       ],
       child: BlocProvider(
         create: (context) => AddHorseDialogCubit(
           usersProfile: widget._usersProfile,
           horseProfile: widget._horseProfile,
           keysRepository: context.read<KeysRepository>(),
+          cloudRepository: context.read<CloudRepository>(),
           horseProfileRepository: context.read<HorseProfileRepository>(),
           riderProfileRepository: context.read<RiderProfileRepository>(),
         ),
@@ -255,16 +269,19 @@ Widget _didPurchaseHorse({
   state.isPurchacedStatus == IsPurchacedStatus.isPurchased
       ? isPurchaced = true
       : isPurchaced = false;
-  return CheckboxListTile(
-    title: const Text('Did you purchse this horse?'),
-    value: isPurchaced,
-    onChanged: (value) {
-      if (value != null) {
-        context.read<AddHorseDialogCubit>().toogleIsPurchased(
-          isPurchaced: value,
-        );
-      }
-    },
+  return Material(
+    color: Colors.transparent,
+    child: CheckboxListTile(
+      title: const Text('Did you purchse this horse?'),
+      value: isPurchaced,
+      onChanged: (value) {
+        if (value != null) {
+          context.read<AddHorseDialogCubit>().toogleIsPurchased(
+            isPurchaced: value,
+          );
+        }
+      },
+    ),
   );
 }
 
@@ -811,10 +828,11 @@ Widget _horsePurchasePrice({
     child: TextFormField(
       initialValue: state.horseProfile?.purchasePrice.toString(),
       onChanged: (value) {
-        final price = int.parse(value);
+        final price = int.tryParse(value.trim()) ?? 0;
         context.read<AddHorseDialogCubit>().horsePurchasePriceChanged(price);
       },
       keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       textInputAction: TextInputAction.next,
       decoration: const InputDecoration(
         labelText: 'Purchase Price',

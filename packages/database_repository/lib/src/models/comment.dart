@@ -13,8 +13,8 @@ class Comment {
     required this.parentId,
     required this.editedDate,
     required this.resourceId,
-    required this.usersWhoRated,
-  });
+    required List<BaseListItem>? usersWhoRated,
+  }) : usersWhoRated = usersWhoRated?.toList();
 
   /// Id of the comment
   final String? id;
@@ -57,8 +57,8 @@ class Comment {
       comment: data['comment'] as String?,
       parentId: data['parentId'] as String?,
       resourceId: data['resourceId'] as String?,
-      date: (data['date'] as Timestamp).toDate(),
-      editedDate: (data['editedDate'] as Timestamp?)?.toDate(),
+      date: _parseDateTime(data['date']),
+      editedDate: _parseNullableDateTime(data['editedDate']),
       usersWhoRated: data['usersWhoRated'] == null
           ? null
           : _convertUsersWhoRated(data['usersWhoRated'] as List),
@@ -77,8 +77,8 @@ class Comment {
       comment: json['comment'] as String?,
       parentId: json['parentId'] as String?,
       resourceId: json['resourceId'] as String?,
-      date: (json['date'] as Timestamp).toDate(),
-      editedDate: (json['editedDate'] as Timestamp?)?.toDate(),
+      date: _parseDateTime(json['date']),
+      editedDate: _parseNullableDateTime(json['editedDate']),
       usersWhoRated: _convertUsersWhoRated(json['usersWhoRated'] as List?),
       user: json['user'] == null
           ? null
@@ -91,7 +91,7 @@ class Comment {
     return {
       if (id != null) 'id': id,
       'date': date,
-      if (user != null) 'user': user,
+      if (user != null) 'user': user!.toJson(),
       if (rating != null) 'rating': rating,
       if (comment != null) 'comment': comment,
       if (parentId != null) 'parentId': parentId,
@@ -153,4 +153,15 @@ List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {
   }
 
   return usersWhoRated;
+}
+
+DateTime _parseDateTime(Object? value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  throw ArgumentError('Expected Timestamp or DateTime, got $value');
+}
+
+DateTime? _parseNullableDateTime(Object? value) {
+  if (value == null) return null;
+  return _parseDateTime(value);
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -129,6 +130,55 @@ void main() {
       await riders.addOrUpdateOwnedHorse(riderProfile: rider, horseId: 'h');
       final saved = await riders.getRiderProfileByEmail(email: rider.email);
       expect(saved?.ownedHorses?.map((horse) => horse.id), ['h']);
+    },
+  );
+  test(
+    'RiderProfile.fromFirestore converts Timestamp and DateTime '
+    'subscription dates',
+    () async {
+      final start = DateTime.utc(2026, 1, 15, 12);
+      final end = DateTime.utc(2027, 1, 15, 12);
+      final rawDoc = db.collection('Rider_Profile').doc('raw-doc');
+      await rawDoc.set({
+        'id': 'r',
+        'name': 'Rider',
+        'email': 'r@example.com',
+        'subscriptionDate': Timestamp.fromDate(start),
+        'subscriptionEndDate': Timestamp.fromDate(end),
+      });
+
+      final loadedFromTimestamp = RiderProfile.fromFirestore(
+        await rawDoc.get(),
+        null,
+      );
+      expect(
+        loadedFromTimestamp.subscriptionDate?.isAtSameMomentAs(start),
+        isTrue,
+      );
+      expect(
+        loadedFromTimestamp.subscriptionEndDate?.isAtSameMomentAs(end),
+        isTrue,
+      );
+
+      final riderWithDates = RiderProfile(
+        id: 'r2',
+        name: 'Rider Two',
+        email: 'r2@example.com',
+        subscriptionDate: start,
+        subscriptionEndDate: end,
+      );
+      await riders.createOrUpdateRiderProfile(riderProfile: riderWithDates);
+      final loadedRoundTrip = await riders.getRiderProfileByEmail(
+        email: 'r2@example.com',
+      );
+      expect(
+        loadedRoundTrip?.subscriptionDate?.isAtSameMomentAs(start),
+        isTrue,
+      );
+      expect(
+        loadedRoundTrip?.subscriptionEndDate?.isAtSameMomentAs(end),
+        isTrue,
+      );
     },
   );
 }

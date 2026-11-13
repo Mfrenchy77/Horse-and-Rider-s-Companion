@@ -290,5 +290,49 @@ void main() {
       copy.skillTreeIds.add('s3');
       expect(value.skillTreeIds, ['s1']);
     });
+    test(
+      'Comment.toFirestore serializes user as JSON map and round-trips '
+      'through Firestore',
+      () async {
+        final comment = Comment(
+          id: 'c1',
+          user: BaseListItem(
+            id: 'rider@example.com',
+            name: 'Rider One',
+            imageUrl: 'https://example.com/pic.png',
+          ),
+          date: date,
+          editedDate: date.add(const Duration(hours: 1)),
+          rating: 4,
+          comment: 'Great resource',
+          parentId: null,
+          resourceId: 'r1',
+          usersWhoRated: [
+            BaseListItem(id: 'other@example.com', isSelected: true),
+          ],
+        );
+
+        final firestoreMap = comment.toFirestore();
+        expect(firestoreMap['user'], isA<Map<String, dynamic>>());
+        expect(
+          (firestoreMap['user']! as Map<String, dynamic>)['id'],
+          'rider@example.com',
+        );
+
+        final commentsRef = db
+            .collection('Comments')
+            .withConverter<Comment>(
+              fromFirestore: Comment.fromFirestore,
+              toFirestore: (c, _) => c.toFirestore(),
+            );
+        await commentsRef.doc('c1').set(comment);
+        final loaded = (await commentsRef.doc('c1').get()).data();
+        expect(loaded, isNotNull);
+        expect(loaded?.id, 'c1');
+        expect(loaded?.user?.id, 'rider@example.com');
+        expect(loaded?.user?.name, 'Rider One');
+        expect(loaded?.rating, 4);
+      },
+    );
   });
 }

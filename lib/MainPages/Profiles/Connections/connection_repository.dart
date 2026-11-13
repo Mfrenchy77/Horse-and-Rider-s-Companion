@@ -321,14 +321,14 @@ class ConnectionsCubit extends Cubit<ConnectionsState> {
     });
   }
 
-  Future<void> recordTraining({
+  Future<bool> recordTraining({
     required CoachingConnection link,
     required String recordId,
     required String notes,
     String? skillId,
     String level = 'LEARNING',
   }) async {
-    await submit({
+    final result = await submit({
       'action': 'record',
       'recordId': recordId,
       'id': link.id,
@@ -337,6 +337,7 @@ class ConnectionsCubit extends Cubit<ConnectionsState> {
       if (skillId != null) 'skillId': skillId,
       if (skillId != null) 'level': level,
     });
+    return result != null;
   }
 
   Future<List<BaseListItem>> historyFor(CoachingConnection link) {

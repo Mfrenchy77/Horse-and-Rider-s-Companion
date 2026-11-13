@@ -225,7 +225,16 @@ Widget _icon(SkillCategory category, DifficultyState difficulty) {
         ],
       );
     case SkillCategory.Other:
-      return const Placeholder();
+      return Icon(
+        Icons.school_outlined,
+        color: _color(difficulty),
+        shadows: [
+          Shadow(
+            color: Colors.black.withValues(alpha: .5),
+            offset: const Offset(1, 1),
+          ),
+        ],
+      );
   }
 }
 
