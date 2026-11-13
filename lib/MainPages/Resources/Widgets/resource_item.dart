@@ -10,7 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/Widgets/ratings_bar.
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_info_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_rating_buttons.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 import 'package:super_banners/super_banners.dart';
 
@@ -74,63 +74,67 @@ class ResourcesItem extends StatelessWidget {
 
         return MaxWidthBox(
           maxWidth: 600,
-          child: Stack(
-            children: [
-              InkWell(
-                onTap: isVideo
-                    ? () => cubit.openResource(url: resource.url)
-                    : openComments,
-                child: GradientCard(
-                  elevation: 8,
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: AppSurfaceCard(
+              padding: EdgeInsets.zero,
+              child: Stack(
+                children: [
+                  InkWell(
+                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                    onTap: isVideo
+                        ? () => cubit.openResource(url: resource.url)
+                        : openComments,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ResourceInfoBar(
+                          key: const Key('ResourceInfoBar'),
+                          resource: resourceForUi,
+                        ),
+                        if (isResourceList)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                            child: Column(
+                              children: [
+                                const Divider(),
+                                RatingsBar(
+                                  isNew: isNew,
+                                  resource: resourceForUi,
+                                ),
+                                ResourceRatingButtons(
+                                  key: const Key('ResourceRatingButtons'),
+                                  resource: resourceForUi,
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (isVideo && !isResourceList && resource.id != null)
+                          Center(
+                            child: TextButton(
+                              onPressed: openComments,
+                              child: const Text('Comments'),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ResourceInfoBar(
-                        key: const Key('ResourceInfoBar'),
-                        resource: resourceForUi,
+                  if (isNew)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      child: IgnorePointer(
+                        child: CornerBanner(
+                          bannerColor: Colors.blue,
+                          elevation: 4,
+                          child: Text('New'),
+                        ),
                       ),
-                      if (isResourceList)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                          child: Column(
-                            children: [
-                              const Divider(),
-                              RatingsBar(isNew: isNew, resource: resourceForUi),
-                              ResourceRatingButtons(
-                                key: const Key('ResourceRatingButtons'),
-                                resource: resourceForUi,
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (isVideo && !isResourceList && resource.id != null)
-                        Center(
-                          child: TextButton(
-                            onPressed: openComments,
-                            child: const Text('Comments'),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
               ),
-              Visibility(
-                visible: isNew,
-                child: const Padding(
-                  padding: EdgeInsets.only(left: 8, top: 4),
-                  child: CornerBanner(
-                    bannerColor: Colors.blue,
-                    elevation: 4,
-                    child: Text('New'),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },

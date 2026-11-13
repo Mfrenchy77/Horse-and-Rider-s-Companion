@@ -172,7 +172,10 @@ class AppSurfaceCard extends StatelessWidget {
     if (theme.brightness != Brightness.dark) {
       return GradientCard(
         margin: EdgeInsets.zero,
-        child: Padding(padding: padding, child: child),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(padding: padding, child: child),
+        ),
       );
     }
 

@@ -4,7 +4,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/reource_comment_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_info_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_rating_buttons.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class CommentPageHeader extends StatelessWidget {
   const CommentPageHeader({super.key, required this.resource});
@@ -15,7 +15,8 @@ class CommentPageHeader extends StatelessWidget {
       children: [
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: GradientCard(
+          child: AppSurfaceCard(
+            padding: EdgeInsets.zero,
             child: ResourceInfoBar(
               resource: resource,
               key: const Key('ResourceInfoBar'),
