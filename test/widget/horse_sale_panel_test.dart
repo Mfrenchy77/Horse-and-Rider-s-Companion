@@ -15,14 +15,16 @@ void main() {
   testWidgets('owner publishes sale details that are visible to visitors', (
     tester,
   ) async {
-    final harness = await AppTestHarness.create();
+    final repo = _Repository();
+    final harness = await AppTestHarness.create(
+      submitCoachingAction: repo.submit,
+    );
     addTearDown(harness.close);
     const email = 'owner@example.com';
     final owner = RiderProfile(id: 'owner', email: email, name: 'Owner');
     harness.cubit.emit(
       harness.cubit.state.copyWith(isGuest: false, usersProfile: owner),
     );
-    final repo = _Repository();
     Future<void> show(HorseProfile horse) async {
       harness.cubit.emit(harness.cubit.state.copyWith(horseProfile: horse));
       await tester.pumpWidget(
