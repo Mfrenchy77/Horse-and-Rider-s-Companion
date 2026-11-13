@@ -10,14 +10,14 @@ part 'create_article_state.dart';
 
 class CreateArticleCubit extends Cubit<ArticleCreateState> {
   CreateArticleCubit({
-    ResourcesRepository? resourcesRepository,
+    ResourcesStore? resourcesRepository,
     MediaStorageRepository? mediaStorage,
     this._user,
   }) : _repo = resourcesRepository ?? ResourcesRepository(),
        _storage = mediaStorage ?? CloudRepository(),
        super(const ArticleCreateState());
 
-  final ResourcesRepository _repo;
+  final ResourcesStore _repo;
   final MediaStorageRepository _storage;
   final RiderProfile? _user;
 

@@ -8,7 +8,7 @@ import 'package:database_repository/database_repository.dart'; // exports Resour
 /// - Collection: "Resources"
 /// - Uses Firestore's withConverter to (de)serialize the refined Resource model
 /// - Keeps repository slim: Cubits/UseCases build the Resource instance.
-class ResourcesRepository {
+class ResourcesRepository implements ResourcesStore {
   ResourcesRepository({FirebaseFirestore? firestore})
     : _ref = (firestore ?? FirebaseFirestore.instance)
           .collection(RESOURCES)
@@ -25,6 +25,7 @@ class ResourcesRepository {
   final CollectionReference<Map<String, dynamic>> _raw;
 
   /// Mint a new random document id (avoids key hotspotting).
+  @override
   String newId() => _raw.doc().id;
 
   // ---------------------------------------------------------------------------
@@ -32,6 +33,7 @@ class ResourcesRepository {
   // ---------------------------------------------------------------------------
 
   /// Create or update a resource document (no server timestamps).
+  @override
   Future<void> createOrUpdateResource({required Resource resource}) async {
     if (resource.id == null) {
       throw ArgumentError('Resource.id must not be null');
@@ -42,6 +44,7 @@ class ResourcesRepository {
   }
 
   /// Applies only the chosen link changes to the latest resource document.
+  @override
   Future<void> updateSkillLinks({
     required String id,
     required Set<String> added,
@@ -63,6 +66,7 @@ class ResourcesRepository {
 
   /// Create a resource and set server timestamps.
   /// - Sets `createdAt` if missing, always bumps `updatedAt`.
+  @override
   Future<void> createResourceWithServerTimestamps({
     required Resource resource,
   }) async {
@@ -81,6 +85,7 @@ class ResourcesRepository {
   }
 
   /// Convenience for articles.
+  @override
   Future<void> createArticle({required Resource resource}) async {
     if (resource.type != ResourceType.article) {
       // Safety: ensure we don't accidentally store wrong type.
@@ -93,6 +98,7 @@ class ResourcesRepository {
   }
 
   /// Stream all resources mapped to domain models.
+  @override
   Stream<List<Resource>> getResources() {
     return _ref.snapshots().map(
       (snap) => snap.docs.map((d) => d.data()).toList(),
@@ -100,6 +106,7 @@ class ResourcesRepository {
   }
 
   /// Listen only to resources linked to a particular skill.
+  @override
   Stream<List<Resource>> getResourcesForSkill({required String skillId}) {
     return _ref
         .where('skillTreeIds', arrayContains: skillId)
@@ -108,6 +115,7 @@ class ResourcesRepository {
   }
 
   /// Optionally, a convenience stream ordered by `updatedAt` desc (if present).
+  @override
   Stream<List<Resource>> getResourcesOrderedByUpdatedAt() {
     return _ref
         .orderBy('updatedAt', descending: true)
@@ -116,12 +124,14 @@ class ResourcesRepository {
   }
 
   /// Fetch a single resource by id (returns null if not found).
+  @override
   Future<Resource?> getResourceById(String id) async {
     final snap = await _ref.doc(id).get();
     return snap.data();
   }
 
   /// Delete resource.
+  @override
   Future<void> deleteResource({required Resource resource}) async {
     await _ref.doc(resource.id).delete();
   }
@@ -133,6 +143,7 @@ class ResourcesRepository {
 
   /// Toggle a comment vote against the latest saved comment, atomically.
   /// Only comments are written, preserving newer resource edits.
+  @override
   Future<Comment> rateComment({
     required String resourceId,
     required String commentId,
@@ -196,6 +207,7 @@ class ResourcesRepository {
     });
   }
 
+  @override
   Future<void> editResourceRating({
     required Resource resource,
     required BaseListItem userWhoRated,
@@ -217,6 +229,7 @@ class ResourcesRepository {
 
   /// Stream of **published** articles, newest first.
   /// Optional tag filter via `arrayContainsAny` (up to 10 values).
+  @override
   Stream<List<Resource>> getPublishedArticles({
     List<String> tagsFilter = const [],
   }) {
@@ -232,6 +245,7 @@ class ResourcesRepository {
   }
 
   /// Fetch a single **article** by id (null if not found or not an article).
+  @override
   Future<Resource?> getArticleById(String id) async {
     final r = await getResourceById(id);
     if (r == null || r.type != ResourceType.article) return null;
@@ -240,6 +254,7 @@ class ResourcesRepository {
 
   /// Update mutable article fields (owner edits).
   /// Sets `updatedAt` server-side.
+  @override
   Future<void> updateArticleContent({
     required String id,
     String? title,
@@ -260,6 +275,7 @@ class ResourcesRepository {
   }
 
   /// Admin-only: set article status (also bumps updatedAt).
+  @override
   Future<void> setArticleStatus({
     required String id,
     required ResourceStatus status,

@@ -44,7 +44,7 @@ class AppCubit extends Cubit<AppState> {
   /// Repositories
   final MessagesRepository _messagesRepository;
   final SkillTreeRepository _skillTreeRepository;
-  final ResourcesRepository _resourcesRepository;
+  final ResourcesStore _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;
   final HorseProfileStore _horseProfileRepository;
   final AuthenticationRepository _authenticationRepository;

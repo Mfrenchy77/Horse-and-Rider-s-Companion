@@ -11,6 +11,7 @@ export 'src/levels_repository.dart';
 export 'src/location_repository.dart';
 export 'src/zip_code_repository.dart';
 export 'src/messages_repository.dart';
+export 'src/resources_store.dart';
 export 'src/resource_repository.dart';
 export 'src/skilltree_repository.dart';
 export 'src/categoryy_repository.dart';

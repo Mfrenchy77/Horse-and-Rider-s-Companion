@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -76,6 +77,101 @@ class _InMemoryHorseProfileStore implements HorseProfileStore {
   Future<void> deleteHorseProfile({required String id}) async {
     horses.remove(id);
   }
+}
+
+class _InMemoryResourcesStore implements ResourcesStore {
+  final Map<String, Resource> resources = {};
+  int _nextId = 1;
+
+  @override
+  String newId() => 'res-${_nextId++}';
+
+  @override
+  Future<void> createOrUpdateResource({required Resource resource}) async {
+    resources[resource.id!] = resource;
+  }
+
+  @override
+  Future<void> updateSkillLinks({
+    required String id,
+    required Set<String> added,
+    required Set<String> removed,
+  }) async {}
+
+  @override
+  Future<void> createResourceWithServerTimestamps({
+    required Resource resource,
+  }) async {
+    resources[resource.id!] = resource;
+  }
+
+  @override
+  Future<void> createArticle({required Resource resource}) async {
+    resources[resource.id!] = resource;
+  }
+
+  @override
+  Stream<List<Resource>> getResources() =>
+      Stream.value(resources.values.toList());
+
+  @override
+  Stream<List<Resource>> getResourcesForSkill({required String skillId}) =>
+      Stream.value(
+        resources.values
+            .where((r) => r.skillTreeIds.contains(skillId))
+            .toList(),
+      );
+
+  @override
+  Stream<List<Resource>> getResourcesOrderedByUpdatedAt() => getResources();
+
+  @override
+  Future<Resource?> getResourceById(String id) async => resources[id];
+
+  @override
+  Future<void> deleteResource({required Resource resource}) async {
+    resources.remove(resource.id);
+  }
+
+  @override
+  Future<Comment> rateComment({
+    required String resourceId,
+    required String commentId,
+    required String userEmail,
+    required int vote,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> editResourceRating({
+    required Resource resource,
+    required BaseListItem userWhoRated,
+  }) async {}
+
+  @override
+  Stream<List<Resource>> getPublishedArticles({
+    List<String> tagsFilter = const [],
+  }) => Stream.value(const []);
+
+  @override
+  Future<Resource?> getArticleById(String id) async => resources[id];
+
+  @override
+  Future<void> updateArticleContent({
+    required String id,
+    String? title,
+    String? description,
+    String? content,
+    List<String>? tags,
+    String? coverImageUrl,
+  }) async {}
+
+  @override
+  Future<void> setArticleStatus({
+    required String id,
+    required ResourceStatus status,
+  }) async {}
 }
 
 class _InMemoryRiderProfileStore implements RiderProfileStore {
@@ -218,6 +314,39 @@ void main() {
 
         expect(horseStore.horses, isEmpty);
         expect(cubit.state.status, FormStatus.success);
+      },
+    );
+
+    test(
+      'CommentCubit saves comments using an in-memory ResourcesStore',
+      () async {
+        final resource = Resource(
+          id: 'r1',
+          name: 'Balance Drill',
+          url: 'https://example.com',
+        );
+        final resourcesStore = _InMemoryResourcesStore()
+          ..resources['r1'] = resource;
+        final cubit = CommentCubit(
+          comment: null,
+          resource: resource,
+          usersProfile: RiderProfile(
+            id: 'u1',
+            name: 'Alex',
+            email: 'alex@example.com',
+          ),
+          resourcesRepository: resourcesStore,
+        );
+        addTearDown(cubit.close);
+
+        cubit.updateCommentMessage('Great drill!');
+        await cubit.sendComment();
+
+        expect(resourcesStore.resources['r1']?.comments, hasLength(1));
+        expect(
+          resourcesStore.resources['r1']?.comments?.first.comment,
+          'Great drill!',
+        );
       },
     );
   });

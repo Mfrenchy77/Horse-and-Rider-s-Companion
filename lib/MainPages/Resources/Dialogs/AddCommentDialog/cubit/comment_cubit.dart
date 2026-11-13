@@ -13,7 +13,7 @@ class CommentCubit extends Cubit<CommentState> {
     required Comment? comment,
     required Resource resource,
     required RiderProfile usersProfile,
-    ResourcesRepository? resourcesRepository,
+    ResourcesStore? resourcesRepository,
   }) : _resourceRepository = resourcesRepository ?? ResourcesRepository(),
        super(const CommentState()) {
     emit(
@@ -25,7 +25,7 @@ class CommentCubit extends Cubit<CommentState> {
     );
   }
 
-  final ResourcesRepository _resourceRepository;
+  final ResourcesStore _resourceRepository;
 
   void setEdit({required bool isEdit}) => emit(state.copyWith(isEdit: isEdit));
 

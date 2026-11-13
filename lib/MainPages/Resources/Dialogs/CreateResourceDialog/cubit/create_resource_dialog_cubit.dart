@@ -81,7 +81,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/fetchReadable';
 
   Timer? _debounce;
-  final ResourcesRepository _resourcesRepository;
+  final ResourcesStore _resourcesRepository;
   final MediaStorageRepository? _storage;
   int _metadataRequest = 0;
   String? _metadataTitle;
