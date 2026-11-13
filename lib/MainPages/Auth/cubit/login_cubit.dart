@@ -190,9 +190,9 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (_) {
+    } catch (e) {
       if (isClosed) return;
-      debugPrint('Submission Failure');
+      debugPrint('Submission Failure: $e');
       emit(
         state.copyWith(
           isError: true,
@@ -249,9 +249,9 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (_) {
+    } catch (e) {
       if (isClosed) return;
-      debugPrint('Submission Failure');
+      debugPrint('Submission Failure: $e');
       emit(
         state.copyWith(
           isError: true,
@@ -305,9 +305,9 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (_) {
+    } catch (e) {
       if (isClosed) return;
-      debugPrint('Submission Failure');
+      debugPrint('Submission Failure: $e');
       emit(
         state.copyWith(
           isError: true,
@@ -351,9 +351,9 @@ class LoginCubit extends Cubit<LoginState> {
         );
         clearError();
       }
-    } catch (_) {
+    } catch (e) {
       if (isClosed) return;
-      debugPrint('Submission Failure');
+      debugPrint('Submission Failure: $e');
       emit(
         state.copyWith(
           isError: true,
@@ -397,9 +397,9 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (_) {
+    } catch (e) {
       if (isClosed) return;
-      debugPrint('Submission Failure');
+      debugPrint('Submission Failure: $e');
       emit(
         state.copyWith(
           isError: true,

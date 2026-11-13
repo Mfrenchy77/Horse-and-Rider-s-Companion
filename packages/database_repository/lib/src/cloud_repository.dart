@@ -17,28 +17,22 @@ class CloudRepository {
 
   final _storageReference = FirebaseStorage.instance.ref();
 
-  /// Method to add Riders Photo to Cloud Firestore
-  Future<String?> addRiderPhoto({
+  Future<String?> _uploadPhoto({
+    required Reference ref,
     required XFile? file,
-    required String riderId,
   }) async {
-    final riderRef = _storageReference.child(RIDERS_PHOTO).child(riderId);
-
     try {
-      if (file != null) {
-        if (kIsWeb) {
-          // Web upload logic
-          final data = await file.readAsBytes();
-          await riderRef.putData(data);
-        } else {
-          // Mobile upload logic
-          final mobileFile = File(file.path);
-          await riderRef.putFile(mobileFile);
-        }
-        return await riderRef.getDownloadURL();
-      } else {
+      if (file == null) {
         throw Exception('No file provided for upload');
       }
+      if (kIsWeb) {
+        final data = await file.readAsBytes();
+        await ref.putData(data);
+      } else {
+        final mobileFile = File(file.path);
+        await ref.putFile(mobileFile);
+      }
+      return await ref.getDownloadURL();
     } on FirebaseException catch (e) {
       debugPrint(e.toString());
     } catch (e) {
@@ -47,33 +41,21 @@ class CloudRepository {
     return null;
   }
 
+  /// Method to add Riders Photo to Cloud Firestore
+  Future<String?> addRiderPhoto({
+    required XFile? file,
+    required String riderId,
+  }) {
+    final riderRef = _storageReference.child(RIDERS_PHOTO).child(riderId);
+    return _uploadPhoto(ref: riderRef, file: file);
+  }
+
   /// Method to add Horse photo to Cloud Firestore
   Future<String?> addHorsePhoto({
     required XFile? file,
     required String horseId,
-  }) async {
+  }) {
     final horseRef = _storageReference.child(HORSES_PHOTO).child(horseId);
-
-    try {
-      if (file != null) {
-        if (kIsWeb) {
-          // Web upload logic
-          final data = await file.readAsBytes();
-          await horseRef.putData(data);
-        } else {
-          // Mobile upload logic
-          final mobileFile = File(file.path);
-          await horseRef.putFile(mobileFile);
-        }
-        return await horseRef.getDownloadURL();
-      } else {
-        throw Exception('No file provided for upload');
-      }
-    } on FirebaseException catch (e) {
-      debugPrint(e.toString());
-    } catch (e) {
-      debugPrint('Error: $e');
-    }
-    return null;
+    return _uploadPhoto(ref: horseRef, file: file);
   }
 }

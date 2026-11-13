@@ -86,6 +86,36 @@ class ZipcodeRepository {
   /// The API key for accessing the Zipcodebase API.
   final String apiKey;
 
+  Future<Map<String, dynamic>> _getJson(Uri url) async {
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        try {
+          return jsonDecode(response.body) as Map<String, dynamic>;
+        } catch (e) {
+          throw ZipcodeApiResponseParsingException(e.toString());
+        }
+      } else if (response.statusCode == 403) {
+        throw ZipCodeForbidenException(response.body);
+      } else if (response.statusCode == 401) {
+        throw ZipCodeApiUnauthorizedException(response.body);
+      } else {
+        throw ZipcodeApiRequestException(response.statusCode);
+      }
+    } on ZipcodeApiResponseParsingException {
+      rethrow;
+    } on ZipCodeForbidenException {
+      rethrow;
+    } on ZipCodeApiUnauthorizedException {
+      rethrow;
+    } on ZipcodeApiRequestException {
+      rethrow;
+    } catch (e) {
+      throw ZipcodeApiException(e.toString());
+    }
+  }
+
   /// Queries the Zipcodebase API for information
   ///  about the specified postal code.
   ///
@@ -100,31 +130,11 @@ class ZipcodeRepository {
     required String country,
     required String state,
   }) async {
-    var url = Uri.parse('${_baseUrl}coe/city?apikey=$apiKey&city=$city');
-    url = Uri.parse(
+    final url = Uri.parse(
       '${_baseUrl}code/city?apikey=$apiKey&city=$city&state_name=$state&country=$country',
     );
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        try {
-          final json = jsonDecode(response.body) as Map<String, dynamic>;
-          return ZipcodeApiResponse.fromJson(json);
-        } catch (e) {
-          throw ZipcodeApiResponseParsingException(e.toString());
-        }
-      } else if (response.statusCode == 403) {
-        throw ZipCodeForbidenException(response.body);
-      } else if (response.statusCode == 401) {
-        throw ZipCodeApiUnauthorizedException(response.body);
-      } else {
-        throw ZipcodeApiRequestException(response.statusCode);
-      }
-    } catch (e) {
-      throw ZipcodeApiException(e.toString());
-    }
+    final json = await _getJson(url);
+    return ZipcodeApiResponse.fromJson(json);
   }
 
   /// Queries the Zipcodebase API for postal codes within a specified radius of
@@ -145,31 +155,10 @@ class ZipcodeRepository {
     // required String? country,
     String unit = 'miles',
   }) async {
-    // Construct the request URL with the provided parameters.
     final url = Uri.parse(
       '${_baseUrl}radius?apikey=$apiKey&code=$postalCode&radius=$radius&country=us&unit=miles',
     );
-
-    try {
-      // Perform the HTTP GET request.
-      final response = await http.get(url);
-      // Check if the response status code is 200 (OK).
-      if (response.statusCode == 200) {
-        // Parse the JSON response body.
-        final json = jsonDecode(response.body) as Map<String, dynamic>;
-        // Create and return the RadiusSearchResponse from the parsed JSON.
-        return RadiusSearchResponse.fromJson(json);
-      } else if (response.statusCode == 403) {
-        throw ZipCodeForbidenException(response.body);
-      } else if (response.statusCode == 401) {
-        throw ZipCodeApiUnauthorizedException(response.body);
-      } else {
-        // Throw an exception for non-200 response codes.
-        throw ZipcodeApiRequestException(response.statusCode);
-      }
-    } catch (e) {
-      // Catch and rethrow any exceptions as a ZipcodeApiException.
-      throw ZipcodeApiException(e.toString());
-    }
+    final json = await _getJson(url);
+    return RadiusSearchResponse.fromJson(json);
   }
 }
