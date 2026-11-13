@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 
 @immutable
 class CardGradientTheme extends ThemeExtension<CardGradientTheme> {
@@ -64,7 +63,15 @@ class GradientCard extends StatelessWidget {
     final style =
         theme.extension<CardGradientTheme>() ??
         CardGradientTheme.fromTheme(theme);
+    const radius = BorderRadius.all(Radius.circular(16));
+    final shape = RoundedRectangleBorder(
+      borderRadius: radius,
+      side: BorderSide(
+        color: theme.colorScheme.outlineVariant.withValues(alpha: .45),
+      ),
+    );
     return Card(
+      shape: shape,
       margin: margin,
       elevation: elevation,
       color: color,
@@ -77,10 +84,7 @@ class GradientCard extends StatelessWidget {
           : Ink(
               decoration: BoxDecoration(
                 gradient: style.gradient,
-                borderRadius:
-                    theme.extension<SurfaceGradients>()?.chrome != null
-                    ? const BorderRadius.all(Radius.circular(12))
-                    : null,
+                borderRadius: radius,
               ),
               child: child,
             ),
