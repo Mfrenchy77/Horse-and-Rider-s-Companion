@@ -634,3 +634,43 @@ exports.onMessageCreated = onDocumentCreated(
       }
     },
 );
+
+exports.onRequestCreated = onDocumentCreated(
+    'Requests/{requestId}',
+    async (event) => {
+      try {
+        const snap = event.data;
+        if (!snap) return;
+        const req = snap.data() || {};
+        const requestId = event.params.requestId;
+
+        if (req.status !== 'pending') return;
+        if (req.migratedFromLegacy === true) return;
+
+        const partiesIds = Array.isArray(req.partiesIds) ? req.partiesIds : [];
+        const senderEmail = String(req.senderEmail || req.senderId || '').trim().toLowerCase();
+
+        const recipients = partiesIds
+            .map((e) => String(e).trim().toLowerCase())
+            .filter((e) => e && e !== senderEmail);
+        if (recipients.length === 0) return;
+
+        const tokenFetches = recipients.map(async (email) => {
+          const col = admin.firestore()
+              .collection('RiderProfiles')
+              .doc(email)
+              .collection('tokens');
+          const qs = await col.get();
+          return qs.docs.map((d) => (d.data() && d.data().token) || d.id).filter(Boolean);
+        });
+        const tokens = (await Promise.all(tokenFetches)).flat();
+
+        const title = req.title || req.subject || 'New Request';
+        const body = req.summary || req.message || `${req.senderName || req.sender || 'Someone'} sent you a request`;
+        await sendPush(tokens, {title, body, data: {requestId}});
+        await sendEmail(recipients, {subject: title, text: body});
+      } catch (e) {
+        logger.error('onRequestCreated error', e);
+      }
+    },
+);

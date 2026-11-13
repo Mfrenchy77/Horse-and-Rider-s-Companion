@@ -222,3 +222,47 @@ test('notification trigger excludes sender case-insensitively and deduplicates t
   assert.equal(h.pushes[0].data.convId, 'c');
   assert.equal(h.errors.length, 0);
 });
+
+test('onRequestCreated ignores missing events, non-pending, and migrated legacy requests', async () => {
+  const h = harness({tokens: ['token-1']});
+  await h.handlers.onRequestCreated({});
+  await h.handlers.onRequestCreated({
+    params: {requestId: 'r1'},
+    data: {data: () => ({
+      status: 'dismissed',
+      partiesIds: ['rider@example.com', 'trainer@example.com'],
+      senderEmail: 'rider@example.com',
+    })},
+  });
+  await h.handlers.onRequestCreated({
+    params: {requestId: 'r2'},
+    data: {data: () => ({
+      status: 'pending',
+      migratedFromLegacy: true,
+      partiesIds: ['rider@example.com', 'trainer@example.com'],
+      senderEmail: 'rider@example.com',
+    })},
+  });
+  assert.equal(h.pushes.length, 0);
+  assert.equal(h.errors.length, 0);
+});
+
+test('onRequestCreated notifies recipients, excludes sender case-insensitively, and deduplicates tokens', async () => {
+  const h = harness({tokens: ['token-1', 'token-1']});
+  await h.handlers.onRequestCreated({
+    params: {requestId: 'req-42'},
+    data: {data: () => ({
+      status: 'pending',
+      partiesIds: ['rider@example.com', 'trainer@example.com'],
+      senderEmail: 'Rider@Example.com',
+      senderName: 'Rider',
+      title: 'Horse transfer',
+      summary: 'Please accept Apollo',
+    })},
+  });
+  assert.deepEqual(h.tokenOwners, ['trainer@example.com']);
+  assert.equal(h.pushes.length, 1);
+  assert.deepEqual(Array.from(h.pushes[0].tokens), ['token-1']);
+  assert.equal(h.pushes[0].data.requestId, 'req-42');
+  assert.equal(h.errors.length, 0);
+});

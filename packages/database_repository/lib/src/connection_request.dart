@@ -41,6 +41,53 @@ class ConnectionRequest extends Equatable {
     this.horseOwnerName,
   });
 
+  /// Creates a [ConnectionRequest] from a backend-neutral map.
+  factory ConnectionRequest.fromMap(
+    Map<String, dynamic> data, {
+    String? idFromDoc,
+  }) {
+    final rawKind = data['kind'] as String?;
+    final kind = ConnectionRequestKind.values.firstWhere(
+      (k) => k.name == rawKind,
+      orElse: () => ConnectionRequestKind.instructor,
+    );
+    final rawCreatedAt = data['createdAt'];
+    final createdAt = switch (rawCreatedAt) {
+      final DateTime d => d,
+      final String s => DateTime.tryParse(s) ?? DateTime.now(),
+      final int ms => DateTime.fromMillisecondsSinceEpoch(ms),
+      _ => DateTime.now(),
+    };
+    return ConnectionRequest(
+      id: (data['id'] as String?) ?? idFromDoc ?? '',
+      messageId: data['messageId'] as String? ?? '',
+      kind: kind,
+      senderEmail: (data['senderEmail'] as String? ?? '').toLowerCase(),
+      senderName: data['senderName'] as String? ?? '',
+      senderPicUrl: data['senderPicUrl'] as String?,
+      recipientEmail: (data['recipientEmail'] as String? ?? '').toLowerCase(),
+      recipientName: data['recipientName'] as String? ?? '',
+      title: data['title'] as String? ?? '',
+      summary: data['summary'] as String? ?? '',
+      parties:
+          (data['parties'] as List?)?.whereType<String>().toList() ??
+          const <String>[],
+      partiesIds:
+          (data['partiesIds'] as List?)
+              ?.whereType<String>()
+              .map((e) => e.toLowerCase())
+              .toList() ??
+          const <String>[],
+      createdAt: createdAt,
+      isAccepted: data['isAccepted'] == true || data['status'] == 'accepted',
+      horseId: data['horseId'] as String?,
+      horseName: data['horseName'] as String?,
+      horsePicUrl: data['horsePicUrl'] as String?,
+      horseOwnerId: data['horseOwnerId'] as String?,
+      horseOwnerName: data['horseOwnerName'] as String?,
+    );
+  }
+
   /// Stable thread/conversation identifier for this pair of users.
   final String id;
 
@@ -212,6 +259,44 @@ class ConnectionRequest extends Equatable {
           ? parties
           : [senderName, recipientName].where((e) => e.isNotEmpty).toList(),
     );
+  }
+
+  /// Converts this [ConnectionRequest] into a backend-neutral map.
+  Map<String, Object?> toMap() {
+    final normalizedPartiesIds = partiesIds.isNotEmpty
+        ? partiesIds.map((e) => e.toLowerCase()).toList()
+        : [
+            if (senderEmail.isNotEmpty) senderEmail.toLowerCase(),
+            if (recipientEmail.isNotEmpty) recipientEmail.toLowerCase(),
+          ];
+    final normalizedParties = parties.isNotEmpty
+        ? parties
+        : [
+            if (senderName.isNotEmpty) senderName,
+            if (recipientName.isNotEmpty) recipientName,
+          ];
+    return {
+      'id': id,
+      'messageId': messageId,
+      'kind': kind.name,
+      'senderEmail': senderEmail.toLowerCase(),
+      'senderName': senderName,
+      if (senderPicUrl != null) 'senderPicUrl': senderPicUrl,
+      'recipientEmail': recipientEmail.toLowerCase(),
+      'recipientName': recipientName,
+      'title': title,
+      'summary': summary,
+      'parties': normalizedParties,
+      'partiesIds': normalizedPartiesIds,
+      'createdAt': createdAt.toIso8601String(),
+      'isAccepted': isAccepted,
+      'status': isAccepted ? 'accepted' : 'pending',
+      if (horseId != null) 'horseId': horseId,
+      if (horseName != null) 'horseName': horseName,
+      if (horsePicUrl != null) 'horsePicUrl': horsePicUrl,
+      if (horseOwnerId != null) 'horseOwnerId': horseOwnerId,
+      if (horseOwnerName != null) 'horseOwnerName': horseOwnerName,
+    };
   }
 
   @override
