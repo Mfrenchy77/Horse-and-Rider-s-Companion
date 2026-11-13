@@ -4,22 +4,47 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 
-class RiderLocation extends StatelessWidget {
+class RiderLocation extends StatefulWidget {
   const RiderLocation({super.key});
+
+  @override
+  State<RiderLocation> createState() => _RiderLocationState();
+}
+
+class _RiderLocationState extends State<RiderLocation> {
+  final _countryController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _zipController = TextEditingController();
+
+  void _syncController(TextEditingController controller, String value) {
+    if (controller.text != value) {
+      controller.text = value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
+    _zipController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<EditRiderProfileCubit, EditRiderProfileState>(
       builder: (context, state) {
         final cubit = context.read<EditRiderProfileCubit>();
-        final countryController = TextEditingController()
-          ..text = state.selectedCountry ?? '';
-        final stateController = TextEditingController()
-          ..text = state.selectedState ?? '';
-        final cityController = TextEditingController()
-          ..text = state.selectedCity ?? '';
-        final zipController = TextEditingController()
-          ..text = state.zipCode.value;
+        _syncController(_countryController, state.selectedCountry ?? '');
+        _syncController(_stateController, state.selectedState ?? '');
+        _syncController(_cityController, state.selectedCity ?? '');
+        _syncController(_zipController, state.zipCode.value);
+        final countryController = _countryController;
+        final stateController = _stateController;
+        final cityController = _cityController;
+        final zipController = _zipController;
         return Column(
           children: [
             // Country selection

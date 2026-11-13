@@ -23,7 +23,17 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   final HorseProfileRepository _horseProfileRepository;
   final KeysRepository _keysRepository;
 
-  StreamSubscription<List<RiderProfile>>? _searchSubscription;
+  StreamSubscription<dynamic>? _searchSubscription;
+  final List<StreamSubscription<dynamic>> _locationSearchSubscriptions = [];
+
+  void _cancelSearchSubscriptions() {
+    _searchSubscription?.cancel();
+    _searchSubscription = null;
+    for (final sub in _locationSearchSubscriptions) {
+      sub.cancel();
+    }
+    _locationSearchSubscriptions.clear();
+  }
 
   /// Monitors the default Field's [value] in the Search Dialog for
   /// Riders and Horses
@@ -97,13 +107,14 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       'getProfile by Name for ${capitalizeWords(state.searchValue.value)}',
     );
     // Cancel the previous subscription if there was one
-    _searchSubscription?.cancel();
+    _cancelSearchSubscriptions();
     try {
       _searchSubscription = _riderProfileRepository
           .getProfilesByName(
             name: capitalizeWords(state.searchValue.value).trim(),
           )
           .listen((results) {
+            if (isClosed) return;
             debugPrint('Results: ${results.length}');
             if (results.isNotEmpty) {
               emit(
@@ -162,10 +173,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchProfileByEmail() {
     emit(state.copyWith(status: FormStatus.submitting));
     final profileResults = <RiderProfile>[];
+    _cancelSearchSubscriptions();
     try {
-      _riderProfileRepository
+      _searchSubscription = _riderProfileRepository
           .getRiderProfile(email: state.email.value.trim().toLowerCase())
           .listen((profile) {
+            if (isClosed) return;
             if (profile != null) {
               profileResults.add(profile);
               if (profileResults.isNotEmpty) {
@@ -200,11 +213,13 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchRiderByZipCode() {
     debugPrint('Search by Zip Code ${state.searchValue}');
     emit(state.copyWith(status: FormStatus.submitting));
+    _cancelSearchSubscriptions();
 
     try {
-      _riderProfileRepository
+      _searchSubscription = _riderProfileRepository
           .getProfilesByZipcode(zipcode: state.zipCode.value.trim())
           .listen((profiles) {
+            if (isClosed) return;
             debugPrint('Results: ${profiles.length}');
             if (profiles.isNotEmpty) {
               debugPrint('Results: ${profiles.length}');
@@ -233,10 +248,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchForHorseByName() {
     debugPrint('Search for horse ${state.searchValue}');
     emit(state.copyWith(status: FormStatus.submitting));
+    _cancelSearchSubscriptions();
     try {
-      _horseProfileRepository
+      _searchSubscription = _horseProfileRepository
           .getHorseByName(name: state.searchValue.value.trim())
           .listen((results) {
+            if (isClosed) return;
             if (results.isNotEmpty) {
               emit(
                 state.copyWith(
@@ -260,10 +277,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   ///  Search results for a horseProfile by Nick Name
   void searchForHorseByNickName() {
     emit(state.copyWith(status: FormStatus.submitting));
+    _cancelSearchSubscriptions();
     try {
-      _horseProfileRepository
+      _searchSubscription = _horseProfileRepository
           .getHorseByNickName(nickName: state.searchValue.value.trim())
           .listen((results) {
+            if (isClosed) return;
             if (results.isNotEmpty) {
               emit(
                 state.copyWith(
@@ -288,13 +307,15 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   void searchForHorseById() {
     emit(state.copyWith(status: FormStatus.submitting));
     final horseProfileResults = <HorseProfile>[];
+    _cancelSearchSubscriptions();
     if (state.searchValue.value.isNotEmpty) {
       try {
-        _horseProfileRepository
+        _searchSubscription = _horseProfileRepository
             .getHorseProfileById(
               id: state.searchValue.value.toLowerCase().trim(),
             )
             .listen((horseProfile) {
+              if (isClosed) return;
               if (horseProfile != null) {
                 horseProfileResults.add(horseProfile);
               }
@@ -333,7 +354,9 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Search for Horse by Location.
   void searchForHorseByLocation() {
     emit(state.copyWith(status: FormStatus.submitting));
+    _cancelSearchSubscriptions();
     _keysRepository.getLocationApiKey().then((value) {
+      if (isClosed) return;
       final zipcodeRepository = ZipcodeRepository(apiKey: value);
       zipcodeRepository
           .queryRadius(
@@ -341,6 +364,9 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
             radius: state.locationRange.value,
           )
           .then((event) {
+            if (isClosed) return;
+            _cancelSearchSubscriptions();
+
             /// results are a list of zip codes
             /// we want to get all the profiles that have the
             /// zip codes in their profile for each zip code
@@ -348,9 +374,10 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
             if (results != null) {
               final horseProfileResults = <HorseProfile>[];
               for (final zipCode in results) {
-                _horseProfileRepository
+                final sub = _horseProfileRepository
                     .getHorseByZipCode(zipCode: zipCode)
                     .listen((profiles) {
+                      if (isClosed) return;
                       horseProfileResults.addAll(profiles);
                       if (horseProfileResults.isNotEmpty) {
                         emit(
@@ -368,6 +395,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
                         );
                       }
                     });
+                _locationSearchSubscriptions.add(sub);
               }
             } else {
               emit(
@@ -392,7 +420,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   @override
   Future<void> close() {
-    _searchSubscription?.cancel();
+    _cancelSearchSubscriptions();
     return super.close();
   }
 }

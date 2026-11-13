@@ -7,6 +7,7 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/Cubit/profile_search_cubit.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockMessagesRepository extends Mock implements MessagesRepository {}
@@ -23,6 +24,8 @@ class MockHorseProfileRepository extends Mock
 
 class MockAuthenticationRepository extends Mock
     implements AuthenticationRepository {}
+
+class MockKeysRepository extends Mock implements KeysRepository {}
 
 void main() {
   group('AppCubit stream management', () {
@@ -102,11 +105,67 @@ void main() {
               ' be canceled when switching IDs',
         );
 
-        // Cleanup controllers
+        // Cleanup controllers and cubit
+        await cubit.close();
         await controllerA.close();
         await controllerB.close();
-        // Intentionally not closing cubit
-        //here due to unrelated late subscription
+      },
+    );
+
+    test(
+      'ProfileSearchCubit cancels previous search subscriptions '
+      'on subsequent searches and close',
+      () async {
+        final keysRepo = MockKeysRepository();
+        var emailCanceled = 0;
+        var horseNameCanceled = 0;
+
+        final emailController = StreamController<RiderProfile?>();
+        emailController.onCancel = () {
+          emailCanceled++;
+          return Future.value();
+        };
+
+        final horseNameController = StreamController<List<HorseProfile>>();
+        horseNameController.onCancel = () {
+          horseNameCanceled++;
+          return Future.value();
+        };
+
+        when(
+          () => riderRepo.getRiderProfile(email: any(named: 'email')),
+        ).thenAnswer((_) => emailController.stream);
+        when(
+          () => horseRepo.getHorseByName(name: any(named: 'name')),
+        ).thenAnswer((_) => horseNameController.stream);
+
+        final searchCubit = ProfileSearchCubit(
+          keysRepository: keysRepo,
+          riderProfileRepository: riderRepo,
+          horseProfileRepository: horseRepo,
+        );
+
+        searchCubit
+          ..emailChanged('rider@example.com')
+          ..searchProfileByEmail();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(emailCanceled, 0);
+
+        // Switching to horse name search cancels the previous email stream
+        searchCubit
+          ..nameChanged('Star')
+          ..searchForHorseByName();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(emailCanceled, 1);
+        expect(horseNameCanceled, 0);
+
+        // Closing the cubit cancels the active horse name search stream
+        await searchCubit.close();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(horseNameCanceled, 1);
+
+        await emailController.close();
+        await horseNameController.close();
       },
     );
   });

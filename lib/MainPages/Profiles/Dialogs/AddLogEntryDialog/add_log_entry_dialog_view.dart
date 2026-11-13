@@ -149,7 +149,7 @@ class EventDateState extends State<EventDate> {
           keyboardType: TextInputType.datetime,
           textInputAction: TextInputAction.next,
           onTap: () async {
-            FocusScope.of(context).requestFocus(FocusNode());
+            FocusScope.of(context).unfocus();
             final pickedDate = await showDatePicker(
               context: context,
               helpText: 'Select the date the Event Happened',

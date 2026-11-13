@@ -77,6 +77,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       'https://us-central1-horse-and-riders-compani-d2bd4.cloudfunctions.net/fetchReadable';
 
   Timer? _debounce;
+  StreamSubscription<TaskSnapshot>? _uploadSubscription;
   final ResourcesRepository _resourcesRepository;
   final FirebaseStorage? _storage;
   int _metadataRequest = 0;
@@ -765,14 +766,22 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     final meta = SettableMetadata(contentType: 'application/pdf');
     final uploadTask = ref.putData(bytes, meta);
 
-    uploadTask.snapshotEvents.listen((snap) {
+    await _uploadSubscription?.cancel();
+    _uploadSubscription = uploadTask.snapshotEvents.listen((snap) {
+      if (isClosed) return;
       final p = snap.totalBytes == 0
           ? 0.0
           : snap.bytesTransferred / snap.totalBytes;
       emit(state.copyWith(pdfUploadProgress: p));
     });
 
-    final snapshot = await uploadTask;
+    final TaskSnapshot snapshot;
+    try {
+      snapshot = await uploadTask;
+    } finally {
+      await _uploadSubscription?.cancel();
+      _uploadSubscription = null;
+    }
     final url = await snapshot.ref.getDownloadURL();
 
     emit(state.copyWith(pdfUploading: false));
@@ -828,6 +837,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   @override
   Future<void> close() {
     _debounce?.cancel();
+    _uploadSubscription?.cancel();
     return super.close();
   }
 }

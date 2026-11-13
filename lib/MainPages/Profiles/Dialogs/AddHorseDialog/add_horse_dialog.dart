@@ -18,7 +18,7 @@ import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 
 /// Dialog for adding a new horse profile or editing an existing one
-class AddHorseDialog extends StatelessWidget {
+class AddHorseDialog extends StatefulWidget {
   const AddHorseDialog({
     super.key,
     required this._editProfile,
@@ -36,6 +36,41 @@ class AddHorseDialog extends StatelessWidget {
   final HorseProfile? _horseProfile;
 
   @override
+  State<AddHorseDialog> createState() => _AddHorseDialogState();
+}
+
+class _AddHorseDialogState extends State<AddHorseDialog> {
+  final _heightController = TextEditingController();
+  final _breedController = TextEditingController();
+  final _dobController = TextEditingController();
+  final _colorController = TextEditingController();
+  final _purchaseDateController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _zipController = TextEditingController();
+
+  void _syncController(TextEditingController controller, String value) {
+    if (controller.text != value) {
+      controller.text = value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _heightController.dispose();
+    _breedController.dispose();
+    _dobController.dispose();
+    _colorController.dispose();
+    _purchaseDateController.dispose();
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
+    _zipController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // if horseProfile is null then we are creating a new horse profile
     // and editProfile should be false
@@ -49,8 +84,8 @@ class AddHorseDialog extends StatelessWidget {
       ],
       child: BlocProvider(
         create: (context) => AddHorseDialogCubit(
-          usersProfile: _usersProfile,
-          horseProfile: _horseProfile,
+          usersProfile: widget._usersProfile,
+          horseProfile: widget._horseProfile,
           keysRepository: context.read<KeysRepository>(),
           horseProfileRepository: context.read<HorseProfileRepository>(),
           riderProfileRepository: context.read<RiderProfileRepository>(),
@@ -62,11 +97,34 @@ class AddHorseDialog extends StatelessWidget {
               Navigator.of(context).pop();
             }
 
+            _syncController(_breedController, state.breed.value);
+            _syncController(
+              _dobController,
+              state.dateOfBirth != null
+                  ? DateFormat('MMMM dd yyyy').format(state.dateOfBirth!)
+                  : '',
+            );
+            _syncController(_colorController, state.color.value);
+            _syncController(
+              _purchaseDateController,
+              state.dateOfPurchase != null
+                  ? DateFormat('MMMM dd yyyy').format(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        state.dateOfPurchase as int,
+                      ),
+                    )
+                  : '',
+            );
+            _syncController(_countryController, state.selectedCountry ?? '');
+            _syncController(_stateController, state.selectedState ?? '');
+            _syncController(_cityController, state.selectedCity ?? '');
+            _syncController(_zipController, state.zipCode.value);
+
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: ThemedAppBar(
                 title: Text(
-                  _editProfile
+                  widget._editProfile
                       ? 'Edit Horse: ${state.horseProfile?.name}'
                       : 'Create New Horse Profile',
                 ),
@@ -89,14 +147,25 @@ class AddHorseDialog extends StatelessWidget {
                     gap(),
 
                     ///  Horse Location
-                    _horseLocation(context: context, state: state),
+                    _horseLocation(
+                      context: context,
+                      state: state,
+                      countryController: _countryController,
+                      stateController: _stateController,
+                      cityController: _cityController,
+                      zipController: _zipController,
+                    ),
                     gap(),
 
                     ///   Horse Gender
                     _horseGender(state: state, context: context),
 
                     ///   Horse Breed
-                    _horseBreed(state: state, context: context),
+                    _horseBreed(
+                      state: state,
+                      context: context,
+                      breedController: _breedController,
+                    ),
                     gap(),
 
                     ///   Horse Date of Birth
@@ -104,15 +173,20 @@ class AddHorseDialog extends StatelessWidget {
                       state: state,
                       cubit: cubit,
                       context: context,
+                      dateText: _dobController,
                     ),
                     gap(),
 
                     ///   Horse Color
-                    _horseColor(state: state, context: context),
+                    _horseColor(
+                      state: state,
+                      context: context,
+                      controller: _colorController,
+                    ),
                     gap(),
 
                     ///   Horse Height
-                    HorseHeightField(controller: TextEditingController()),
+                    HorseHeightField(controller: _heightController),
                     gap(),
                     _didPurchaseHorse(context: context, state: state),
 
@@ -123,6 +197,7 @@ class AddHorseDialog extends StatelessWidget {
                       cubit: cubit,
                       state: state,
                       context: context,
+                      dateText: _purchaseDateController,
                     ),
 
                     gap(),
@@ -143,7 +218,7 @@ class AddHorseDialog extends StatelessWidget {
                           child: const Text('Cancel'),
                         ),
                         _horseSubmitButton(
-                          isEdit: _editProfile,
+                          isEdit: widget._editProfile,
                           context: context,
                           state: state,
                         ),
@@ -305,8 +380,8 @@ Widget _horseNickName({
 Widget _horseBreed({
   required AddHorseDialogState state,
   required BuildContext context,
+  required TextEditingController breedController,
 }) {
-  final breedController = TextEditingController()..text = state.breed.value;
   return TypeAheadField<String>(
     hideOnEmpty: true,
     controller: breedController,
@@ -344,21 +419,16 @@ Widget _horseDateOfBirth({
   required BuildContext context,
   required AddHorseDialogCubit cubit,
   required AddHorseDialogState state,
+  required TextEditingController dateText,
 }) {
   final initialDate = state.dateOfBirth ?? DateTime.now();
-
-  final dateText = TextEditingController(
-    text: state.dateOfBirth != null
-        ? DateFormat('MMMM dd yyyy').format(state.dateOfBirth!)
-        : null,
-  );
 
   return TextFormField(
     controller: dateText,
     keyboardType: TextInputType.datetime,
     textInputAction: TextInputAction.next,
     onTap: () async {
-      FocusScope.of(context).requestFocus(FocusNode());
+      FocusScope.of(context).unfocus();
       await showDatePicker(
         context: context,
         helpText: "Select Horse's Date of Birth",
@@ -387,8 +457,8 @@ Widget _horseDateOfBirth({
 Widget _horseColor({
   required BuildContext context,
   required AddHorseDialogState state,
+  required TextEditingController controller,
 }) {
-  final controller = TextEditingController()..text = state.color.value;
   return TypeAheadField<String>(
     controller: controller,
     constraints: const BoxConstraints(maxHeight: 200),
@@ -446,23 +516,11 @@ Widget _horsePurchaseDate({
   required BuildContext context,
   required AddHorseDialogCubit cubit,
   required AddHorseDialogState state,
+  required TextEditingController dateText,
 }) {
   final initialDate = state.dateOfPurchase != null
       ? DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int)
       : DateTime.now();
-  if (state.horseProfile != null) {
-    context.read<AddHorseDialogCubit>().horseDateOfPurchaseChanged(
-      state.horseProfile?.dateOfPurchase,
-    );
-  }
-
-  final dateOfPurchase = state.dateOfPurchase != null
-      ? DateFormat('MMMM dd yyyy').format(
-          DateTime.fromMillisecondsSinceEpoch(state.dateOfPurchase as int),
-        )
-      : '';
-
-  final dateText = TextEditingController(text: dateOfPurchase);
 
   return Visibility(
     visible: state.isPurchacedStatus == IsPurchacedStatus.isPurchased,
@@ -471,7 +529,7 @@ Widget _horsePurchaseDate({
       keyboardType: TextInputType.datetime,
       textInputAction: TextInputAction.next,
       onTap: () async {
-        FocusScope.of(context).requestFocus(FocusNode());
+        FocusScope.of(context).unfocus();
         await showDatePicker(
           context: context,
           helpText: 'Select when you purchased horse',
@@ -500,14 +558,11 @@ Widget _horsePurchaseDate({
 Widget _horseLocation({
   required BuildContext context,
   required AddHorseDialogState state,
+  required TextEditingController countryController,
+  required TextEditingController stateController,
+  required TextEditingController cityController,
+  required TextEditingController zipController,
 }) {
-  final countryController = TextEditingController()
-    ..text = state.selectedCountry ?? '';
-  final stateController = TextEditingController()
-    ..text = state.selectedState ?? '';
-  final cityController = TextEditingController()
-    ..text = state.selectedCity ?? '';
-  final zipController = TextEditingController()..text = state.zipCode.value;
   return Column(
     children: [
       // Country selection

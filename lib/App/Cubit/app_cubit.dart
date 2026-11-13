@@ -59,7 +59,6 @@ class AppCubit extends Cubit<AppState> {
   // StreamSubscription<List<TrainingPath>>? _trainingPathsStream;
   StreamSubscription<RiderProfile?>? _usersProfileSubscription;
   StreamSubscription<HorseProfile?>? _horseProfileSubscription;
-  late final StreamSubscription<RiderProfile?> _viewingProfileSubscription;
 
   Timer? _emailVerificationTimer;
 
@@ -108,9 +107,12 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void _clearAccountState() {
+    _emailVerificationTimer?.cancel();
+    unawaited(_usersProfileSubscription?.cancel());
     unawaited(_conversationsStream?.cancel());
     unawaited(_messagesStream?.cancel());
     unawaited(_horseProfileSubscription?.cancel());
+    _usersProfileSubscription = null;
     _conversationsStream = null;
     _messagesStream = null;
     _horseProfileSubscription = null;
@@ -224,6 +226,7 @@ class AppCubit extends Cubit<AppState> {
         ),
       );
       var registeredForNotifications = false;
+      unawaited(_usersProfileSubscription?.cancel());
       _usersProfileSubscription = _riderProfileRepository
           .getRiderProfile(email: user.email)
           .listen((profile) {
@@ -3486,11 +3489,6 @@ class AppCubit extends Cubit<AppState> {
     // _trainingPathsStream?.cancel(); // Training paths disabled.
     _horseProfileSubscription?.cancel();
     _usersProfileSubscription?.cancel();
-    try {
-      _viewingProfileSubscription.cancel();
-    } catch (_) {
-      // ignore: empty_catches
-    }
     return super.close();
   }
 }

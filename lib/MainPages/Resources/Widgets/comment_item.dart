@@ -30,6 +30,56 @@ class CommentItem extends StatefulWidget {
 
 class _CommentItemState extends State<CommentItem> {
   bool _isActionsVisible = false;
+  quill.QuillController? _quillController;
+  String? _lastRawComment;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncQuillController(widget.comment.comment);
+  }
+
+  @override
+  void didUpdateWidget(covariant CommentItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.comment.comment != widget.comment.comment) {
+      _syncQuillController(widget.comment.comment);
+    }
+  }
+
+  @override
+  void dispose() {
+    _quillController?.dispose();
+    super.dispose();
+  }
+
+  void _syncQuillController(String? raw) {
+    if (raw == _lastRawComment) return;
+    _lastRawComment = raw;
+    _quillController?.dispose();
+    _quillController = null;
+
+    if (raw == null || raw.trim().isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(raw);
+      final looksLikeDelta =
+          decoded is List &&
+          decoded.isNotEmpty &&
+          decoded.first is Map &&
+          (decoded.first as Map).containsKey('insert');
+
+      if (looksLikeDelta) {
+        final doc = quill.Document.fromJson(decoded);
+        _quillController = quill.QuillController(
+          document: doc,
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+      }
+    } catch (_) {
+      // Not JSON or not a Delta — fall through to plain text
+    }
+  }
 
   void _toggleActionsVisibility() {
     setState(() {
@@ -298,27 +348,11 @@ class _CommentItemState extends State<CommentItem> {
       return const SizedBox.shrink();
     }
 
-    // Try to parse Quill Delta JSON (list of ops like [{"insert":"Hello\n"}, ...])
-    try {
-      final decoded = jsonDecode(raw);
-      final looksLikeDelta =
-          decoded is List &&
-          decoded.isNotEmpty &&
-          decoded.first is Map &&
-          (decoded.first as Map).containsKey('insert');
-
-      if (looksLikeDelta) {
-        final doc = quill.Document.fromJson(decoded);
-        final controller = quill.QuillController(
-          document: doc,
-          selection: const TextSelection.collapsed(offset: 0),
-        );
-
-        // Read-only Quill view (no focus, no editor chrome)
-        return quill.QuillEditor.basic(controller: controller);
-      }
-    } catch (_) {
-      // Not JSON or not a Delta — fall through to plain text
+    _syncQuillController(raw);
+    final controller = _quillController;
+    if (controller != null) {
+      // Read-only Quill view (no focus, no editor chrome)
+      return quill.QuillEditor.basic(controller: controller);
     }
 
     // Plain text fallback

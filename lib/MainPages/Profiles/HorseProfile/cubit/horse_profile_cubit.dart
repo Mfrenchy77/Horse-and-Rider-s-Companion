@@ -34,9 +34,11 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
       } else {
         debugPrint('Horse Profile not retrieved, getting now');
         try {
+          await _horseProfileSubscription?.cancel();
           _horseProfileSubscription = HorseProfileRepository()
               .getHorseProfile(id: id)
               .listen((horseProfile) {
+            if (isClosed) return;
             debugPrint('Horse Profile Retrieved: ${horseProfile?.name}');
             if (horseProfile != null) {
               if (!_isOwner()) {
@@ -45,6 +47,7 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
                     .getRiderProfile(email: horseProfile.currentOwnerId)
                     .first
                     .then((ownerProfile) {
+                  if (isClosed) return;
                   debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
                   emit(
                     state.copyWith(

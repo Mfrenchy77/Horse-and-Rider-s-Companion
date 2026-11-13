@@ -102,6 +102,61 @@ void main() {
       await controller.close();
     });
 
+    test(
+      'cancels previous name and email search subscriptions '
+      'on re-search and close',
+      () async {
+        var nameCanceled = 0;
+        var emailCanceled = 0;
+
+        final nameController1 = StreamController<List<RiderProfile>>()
+          ..onCancel = () {
+            nameCanceled++;
+            return Future.value();
+          };
+        final nameController2 = StreamController<List<RiderProfile>>();
+
+        final emailController = StreamController<RiderProfile?>()
+          ..onCancel = () {
+            emailCanceled++;
+            return Future.value();
+          };
+
+        when(() => riderRepo.getProfilesByName(name: 'First'))
+            .thenAnswer((_) => nameController1.stream);
+        when(() => riderRepo.getProfilesByName(name: 'Second'))
+            .thenAnswer((_) => nameController2.stream);
+        when(() => riderRepo.getRiderProfile(email: 'test@example.com'))
+            .thenAnswer((_) => emailController.stream);
+
+        cubit
+          ..nameChanged('First')
+          ..searchProfilesByName();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(nameCanceled, 0);
+
+        cubit
+          ..nameChanged('Second')
+          ..searchProfilesByName();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(nameCanceled, 1);
+
+        cubit
+          ..emailChanged('test@example.com')
+          ..getProfileByEmail();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(emailCanceled, 0);
+
+        await cubit.close();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(emailCanceled, 1);
+
+        await nameController1.close();
+        await nameController2.close();
+        await emailController.close();
+      },
+    );
+
     blocTest<NewGroupDialogCubit, NewGroupDialogState>(
       'createConversation success emits submitting then success with id',
       build: () {

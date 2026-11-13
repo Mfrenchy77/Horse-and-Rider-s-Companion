@@ -1,5 +1,7 @@
 // ignore_for_file: cast_nullable_to_non_nullable
 
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
@@ -22,6 +24,8 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
 
   final MessagesRepository _messagesRepository;
   final RiderProfileRepository _riderProfileRepository;
+  StreamSubscription<List<RiderProfile>>? _nameSearchSubscription;
+  StreamSubscription<RiderProfile?>? _emailSearchSubscription;
 
   void nameChanged(String value) {
     final name = Name.dirty(value);
@@ -35,12 +39,14 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
 
   void searchProfilesByName() {
     debugPrint('getProfile by Name for ${state.name.value}');
-    _riderProfileRepository.getProfilesByName(name: state.name.value).listen((
-      results,
-    ) {
-      debugPrint('Search results for ${state.name.value}: $results');
-      emit(state.copyWith(searchResult: _removeUsersProfile(results)));
-    });
+    _nameSearchSubscription?.cancel();
+    _nameSearchSubscription = _riderProfileRepository
+        .getProfilesByName(name: state.name.value)
+        .listen((results) {
+          if (isClosed) return;
+          debugPrint('Search results for ${state.name.value}: $results');
+          emit(state.copyWith(searchResult: _removeUsersProfile(results)));
+        });
   }
 
   /// This method removes the user's profile from the list of search results
@@ -69,10 +75,11 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
   void getProfileByEmail() {
     debugPrint('getProfile by Email for ${state.email.value}');
     final profileResults = <RiderProfile>[];
-    _riderProfileRepository
+    _emailSearchSubscription?.cancel();
+    _emailSearchSubscription = _riderProfileRepository
         .getRiderProfile(email: state.email.value.toLowerCase())
         .listen((profile) {
-          if (profile == null) return;
+          if (isClosed || profile == null) return;
           profileResults.add(profile);
           debugPrint('Result Name: ${profile.name}');
           emit(
@@ -156,5 +163,12 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
 
   void clearError() {
     emit(state.copyWith(error: '', isError: false));
+  }
+
+  @override
+  Future<void> close() {
+    _nameSearchSubscription?.cancel();
+    _emailSearchSubscription?.cancel();
+    return super.close();
   }
 }

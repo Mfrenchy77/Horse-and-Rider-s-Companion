@@ -7,7 +7,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateTraini
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_node_card.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
-class TrainingPathView extends StatelessWidget {
+class TrainingPathView extends StatefulWidget {
   const TrainingPathView({super.key, required this.trainingPathId});
 
   static const String name = 'TrainingPathView';
@@ -17,10 +17,22 @@ class TrainingPathView extends StatelessWidget {
   final String? trainingPathId;
 
   @override
+  State<TrainingPathView> createState() => _TrainingPathViewState();
+}
+
+class _TrainingPathViewState extends State<TrainingPathView> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        final scrollController = ScrollController();
         debugPrint('Training Path View: ${state.trainingPath?.name}');
 
         final cubit = context.read<AppCubit>();
@@ -88,11 +100,11 @@ class TrainingPathView extends StatelessWidget {
                   trackVisibility: true,
                   thickness: 6,
                   thumbVisibility: true,
-                  controller: scrollController,
+                  controller: _scrollController,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 15),
                     child: SingleChildScrollView(
-                      controller: scrollController,
+                      controller: _scrollController,
                       scrollDirection: Axis.horizontal,
                       child: Wrap(
                         children: state.trainingPath?.skillNodes
