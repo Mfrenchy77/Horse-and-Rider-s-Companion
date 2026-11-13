@@ -9,10 +9,10 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
+import 'package:horseandriderscompanion/CommonWidgets/location_picker.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -46,10 +46,6 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
   final _dobController = TextEditingController();
   final _colorController = TextEditingController();
   final _purchaseDateController = TextEditingController();
-  final _countryController = TextEditingController();
-  final _stateController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _zipController = TextEditingController();
 
   void _syncController(TextEditingController controller, String value) {
     if (controller.text != value) {
@@ -64,10 +60,6 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
     _dobController.dispose();
     _colorController.dispose();
     _purchaseDateController.dispose();
-    _countryController.dispose();
-    _stateController.dispose();
-    _cityController.dispose();
-    _zipController.dispose();
     super.dispose();
   }
 
@@ -129,10 +121,6 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
                     )
                   : '',
             );
-            _syncController(_countryController, state.selectedCountry ?? '');
-            _syncController(_stateController, state.selectedState ?? '');
-            _syncController(_cityController, state.selectedCity ?? '');
-            _syncController(_zipController, state.zipCode.value);
 
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
@@ -161,14 +149,7 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
                     gap(),
 
                     ///  Horse Location
-                    _horseLocation(
-                      context: context,
-                      state: state,
-                      countryController: _countryController,
-                      stateController: _stateController,
-                      cityController: _cityController,
-                      zipController: _zipController,
-                    ),
+                    _horseLocation(context: context, state: state),
                     gap(),
 
                     ///   Horse Gender
@@ -575,247 +556,41 @@ Widget _horsePurchaseDate({
 Widget _horseLocation({
   required BuildContext context,
   required AddHorseDialogState state,
-  required TextEditingController countryController,
-  required TextEditingController stateController,
-  required TextEditingController cityController,
-  required TextEditingController zipController,
 }) {
-  return Column(
-    children: [
-      // Country selection
-      TypeAheadField<Country>(
-        controller: countryController,
-        constraints: const BoxConstraints(maxHeight: 200),
-        suggestionsCallback: (pattern) async {
-          final countries = await context
-              .read<AddHorseDialogCubit>()
-              .getCountries();
-          // Filter the country names based on the pattern
-          return countries
-              .where(
-                (country) => country.name.toLowerCase().startsWith(
-                  pattern.toLowerCase(),
-                ),
-              )
-              .toList();
-        },
-        builder: (context, controller, focusNode) {
-          return TextField(
-            controller: controller,
-            focusNode: focusNode,
-            decoration: InputDecoration(
-              icon: const Icon(Icons.public),
-              border: const UnderlineInputBorder(),
-              labelText: state.horseProfile?.countryName ?? 'Select Country',
-            ),
-          );
-        },
-        itemBuilder: (context, Country country) {
-          return ListTile(
-            title: Text(country.name),
-            subtitle: Text(country.iso2),
-          );
-        },
-        onSelected: (country) {
-          countryController.text = country.name;
-          context.read<AddHorseDialogCubit>().countryChanged(
-            countryIso: country.iso2,
-            countryName: country.name,
-          );
-        },
-      ),
-
-      // State selection (visible if a country is selected)
-      if (state.selectedCountry != null)
-        TypeAheadField<StateLocation>(
-          controller: stateController,
-          constraints: const BoxConstraints(maxHeight: 200),
-          suggestionsCallback: (pattern) async {
-            final states = await context.read<AddHorseDialogCubit>().getStates(
-              countryIso: state.countryIso!,
-            );
-            // Filter the state names based on the pattern
-            return states
-                .where(
-                  (state) => state.name.toLowerCase().startsWith(
-                    pattern.toLowerCase(),
-                  ),
-                )
-                .toList();
-          },
-          builder: (context, controller, focusNode) {
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              autofocus: true,
-              decoration: const InputDecoration(
-                icon: Icon(Icons.flag),
-                border: UnderlineInputBorder(),
-                labelText: 'State',
-              ),
-            );
-          },
-          itemBuilder: (context, state) {
-            return ListTile(
-              title: Text(state.name),
-              subtitle: Text(state.iso2 ?? ''),
-            );
-          },
-          onSelected: (state) {
-            stateController.text = state.name;
-            context.read<AddHorseDialogCubit>().stateChanged(
-              stateName: state.name,
-              stateId: state.iso2!,
-            );
-          },
-        ),
-
-      // City selection (visible if a state is selected)
-      if (state.selectedState != null)
-        Column(
-          children: [
-            TypeAheadField<City>(
-              controller: cityController,
-              constraints: const BoxConstraints(maxHeight: 200),
-              suggestionsCallback: (pattern) async {
-                final cities = await context
-                    .read<AddHorseDialogCubit>()
-                    .getCities(
-                      countryIso: state.countryIso!,
-                      stateIso: state.stateId!,
-                    );
-                // Filter the city names based on the pattern
-                return cities
-                    .where(
-                      (city) => city.name.toLowerCase().startsWith(
-                        pattern.toLowerCase(),
-                      ),
-                    )
-                    .toList();
-              },
-              builder: (context, controller, focusNode) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    icon: Icon(Icons.location_city),
-                    border: UnderlineInputBorder(),
-                    labelText: 'City',
-                  ),
-                );
-              },
-              itemBuilder: (context, city) {
-                return ListTile(
-                  title: Text(city.name),
-                  subtitle: Text(city.id.toString()),
-                );
-              },
-              onSelected: (city) {
-                cityController.text = city.name;
-                context.read<AddHorseDialogCubit>().cityChanged(
-                  city: city.name,
-                );
-              },
-            ),
-            if (state.prediction != null)
-              TypeAheadField<String>(
-                controller: zipController,
-                constraints: const BoxConstraints(maxHeight: 200),
-                suggestionsCallback: (pattern) async {
-                  final zipcodes = state.prediction!.results.keys.toList();
-
-                  return zipcodes
-                      .where(
-                        (zip) =>
-                            zip.toLowerCase().startsWith(pattern.toLowerCase()),
-                      )
-                      .toList();
-                },
-                builder: (context, controller, focusNode) {
-                  return TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      icon: Icon(Icons.location_city),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Zip Code',
-                    ),
-                  );
-                },
-                itemBuilder: (context, zip) {
-                  return ListTile(title: Text(zip));
-                },
-                onSelected: (zip) {
-                  zipController.text = zip;
-                  context.read<AddHorseDialogCubit>().zipCodeChanged(zip);
-                },
-              ),
-            if (state.autoCompleteStatus == AutoCompleteStatus.loading)
-              const CircularProgressIndicator()
-            else if (state.autoCompleteStatus == AutoCompleteStatus.success)
-              SizedBox(
-                width: double.maxFinite,
-                height: 200,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: state.prediction?.results.length ?? 0,
-                  itemBuilder: (context, index) {
-                    final postalCode =
-                        state.prediction?.results.keys.elementAt(index) ?? '';
-                    final locations = state.prediction?.results[postalCode];
-                    final controller = ExpansibleController();
-                    return ExpansionTile(
-                      controller: controller,
-                      initiallyExpanded: true,
-                      title: Text('Postal Code: $postalCode'),
-                      children:
-                          locations
-                              ?.map(
-                                (location) => ListTile(
-                                  title: Text(location.city),
-                                  subtitle: Text(
-                                    '${location.city}, ${location.state}',
-                                  ),
-                                  onTap: () {
-                                    context
-                                        .read<AddHorseDialogCubit>()
-                                        .toggleLocationSearch();
-                                    controller.collapse();
-                                    debugPrint(
-                                      'Location Selected ${location.city}',
-                                    );
-                                    context
-                                        .read<AddHorseDialogCubit>()
-                                        .locationSelected(
-                                          locationName:
-                                              '${location.city}, ${location.state}',
-                                          selectedZipCode: postalCode,
-                                        );
-                                  },
-                                ),
-                              )
-                              .toList() ??
-                          [const Text('No locations found')],
-                    );
-                  },
-                ),
-              )
-            else if (state.autoCompleteStatus == AutoCompleteStatus.error)
-              ColoredBox(
-                color: Colors.red,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    state.error,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-          ],
-        ),
-    ],
+  final cubit = context.read<AddHorseDialogCubit>();
+  return LocationPicker(
+    countryLabel: state.horseProfile?.countryName ?? 'Select Country',
+    selectedCountry: state.selectedCountry,
+    selectedState: state.selectedState,
+    countryIso: state.countryIso,
+    stateId: state.stateId,
+    selectedCity: state.selectedCity,
+    zipCode: state.zipCode.value,
+    prediction: state.prediction,
+    autoCompleteStatus: state.autoCompleteStatus,
+    error: state.error,
+    getCountries: cubit.getCountries,
+    getStates: (countryIso) => cubit.getStates(countryIso: countryIso),
+    getCities: (countryIso, stateIso) =>
+        cubit.getCities(countryIso: countryIso, stateIso: stateIso),
+    onCountrySelected: (country) => cubit.countryChanged(
+      countryIso: country.iso2,
+      countryName: country.name,
+    ),
+    onStateSelected: (selectedState) => cubit.stateChanged(
+      stateName: selectedState.name,
+      stateId: selectedState.iso2!,
+    ),
+    onCitySelected: (city) => cubit.cityChanged(city: city.name),
+    onZipCodeChanged: cubit.zipCodeChanged,
+    onLocationSelected: (locationName, postalCode) {
+      cubit
+        ..toggleLocationSearch()
+        ..locationSelected(
+          locationName: locationName,
+          selectedZipCode: postalCode,
+        );
+    },
   );
 }
 

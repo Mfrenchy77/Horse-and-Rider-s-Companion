@@ -4,8 +4,37 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 ///This class is responsible for managing the keys of the application
 class KeysRepository {
+  /// Constructs a [KeysRepository] with an optional [FirebaseRemoteConfig].
+  KeysRepository([this._remoteConfig]);
+
+  final FirebaseRemoteConfig? _remoteConfig;
+
   ///Instance of the Firebase Remote Config
-  final FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.instance;
+  FirebaseRemoteConfig get remoteConfig =>
+      _remoteConfig ?? FirebaseRemoteConfig.instance;
+
+  final Map<String, String> _cachedKeys = {};
+  Future<void>? _fetchFuture;
+
+  Future<String> _getKey(String constant) async {
+    final cached = _cachedKeys[constant];
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    try {
+      await (_fetchFuture ??= remoteConfig.fetchAndActivate());
+    } catch (_) {
+      _fetchFuture = null;
+      rethrow;
+    }
+
+    final value = remoteConfig.getString(constant);
+    if (value.isNotEmpty) {
+      _cachedKeys[constant] = value;
+    }
+    return value;
+  }
 
   ///Constant to refer to the API key for the Google Maps
   static const String MAPS_CONSTANT = 'MapsApiKey';
@@ -20,26 +49,14 @@ class KeysRepository {
   static const String JSON_LINK_API_KEY_CONSTANT = 'JsonLinkApiKey';
 
   /// returns the API key for the Google Maps
-  Future<String> getMapsApiKey() async {
-    await remoteConfig.fetchAndActivate();
-    return remoteConfig.getString(MAPS_CONSTANT);
-  }
+  Future<String> getMapsApiKey() => _getKey(MAPS_CONSTANT);
 
   /// returns the API key for the ZipCode API
-  Future<String> getZipCodeApiKey() async {
-    await remoteConfig.fetchAndActivate();
-    return remoteConfig.getString(ZIP_CODE_CONSTANT);
-  }
+  Future<String> getZipCodeApiKey() => _getKey(ZIP_CODE_CONSTANT);
 
   /// returns the API key for the Location API
-  Future<String> getLocationApiKey() async {
-    await remoteConfig.fetchAndActivate();
-    return remoteConfig.getString(LOCATION_KEY_CONSTANT);
-  }
+  Future<String> getLocationApiKey() => _getKey(LOCATION_KEY_CONSTANT);
 
   /// returns the API key for the Json Link API
-  Future<String> getJsonLinkApiKey() async {
-    await remoteConfig.fetchAndActivate();
-    return remoteConfig.getString(JSON_LINK_API_KEY_CONSTANT);
-  }
+  Future<String> getJsonLinkApiKey() => _getKey(JSON_LINK_API_KEY_CONSTANT);
 }

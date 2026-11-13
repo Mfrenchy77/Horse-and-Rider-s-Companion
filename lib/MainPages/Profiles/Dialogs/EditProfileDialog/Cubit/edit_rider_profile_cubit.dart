@@ -8,6 +8,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/location_lookup_service.dart';
 import 'package:image_picker/image_picker.dart';
 
 part 'edit_rider_profile_state.dart';
@@ -16,15 +17,16 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   EditRiderProfileCubit({
     required User? user,
     required this._riderProfile,
-    required this._keysRepository,
+    required KeysRepository keysRepository,
     required this._cloudRepository,
     required this._riderProfileRepository,
+    LocationLookupService? locationLookupService,
   }) : _user = user,
+       _locationLookupService =
+           locationLookupService ??
+           LocationLookupService(keysRepository: keysRepository),
        super(const EditRiderProfileState()) {
-    _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
-    _keysRepository.getLocationApiKey().then(
-      (value) => _locationApiKey = value,
-    );
+    _locationLookupService.warmUp();
     emit(
       state.copyWith(
         user: _user,
@@ -45,12 +47,10 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   }
 
   final User? _user;
-  late String _zipApi = '';
-  String _locationApiKey = '';
   final RiderProfile? _riderProfile;
-  final KeysRepository _keysRepository;
   final CloudRepository _cloudRepository;
   final RiderProfileRepository _riderProfileRepository;
+  final LocationLookupService _locationLookupService;
 
   void riderNameChanged({required String value}) {
     emit(state.copyWith(riderName: value));
@@ -114,16 +114,14 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   }
 
   /// Get the list of countries from the location api
-  Future<List<Country>> getCountries() async {
-    final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    return locationRepository.getCountries();
+  Future<List<Country>> getCountries() {
+    return _locationLookupService.getCountries();
   }
 
   /// Get the list of states from the location api
   /// [countryIso] is the iso code for the country
-  Future<List<StateLocation>> getStates({required String countryIso}) async {
-    final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    return locationRepository.getStates(countryIso: countryIso);
+  Future<List<StateLocation>> getStates({required String countryIso}) {
+    return _locationLookupService.getStates(countryIso: countryIso);
   }
 
   /// Get the list of cities from the location api
@@ -132,12 +130,11 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   Future<List<City>> getCities({
     required String stateIso,
     required String countryIso,
-  }) async {
+  }) {
     debugPrint('Getting Cities for $stateIso, $countryIso');
-    final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    return locationRepository.getCities(
+    return _locationLookupService.getCities(
       stateIso: stateIso,
-      countryCode: countryIso,
+      countryIso: countryIso,
     );
   }
 
@@ -173,7 +170,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
 
   Future<void> _searchForZip() async {
     debugPrint('Searching by Zip Code');
-    final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
 
     emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
 
@@ -181,7 +177,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         state.selectedCity != null &&
         state.selectedState != null) {
       try {
-        final zipResponse = await zipcodeRepo.queryZipcode(
+        final zipResponse = await _locationLookupService.queryZipcode(
           city: state.selectedCity!,
           country: state.countryIso!,
           state: state.selectedState!,

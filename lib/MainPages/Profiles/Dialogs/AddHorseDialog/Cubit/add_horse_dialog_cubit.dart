@@ -9,6 +9,7 @@ import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/location_lookup_service.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,16 +20,17 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   AddHorseDialogCubit({
     required RiderProfile usersProfile,
     required HorseProfile? horseProfile,
-    required this._keysRepository,
+    required KeysRepository keysRepository,
     required this._horseProfileRepository,
     required this._riderProfileRepository,
     this._cloudRepository,
     this._imagePicker,
-  }) : super(const AddHorseDialogState()) {
-    _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
-    _keysRepository.getLocationApiKey().then(
-      (value) => _locationApiKey = value,
-    );
+    LocationLookupService? locationLookupService,
+  }) : _locationLookupService =
+           locationLookupService ??
+           LocationLookupService(keysRepository: keysRepository),
+       super(const AddHorseDialogState()) {
+    _locationLookupService.warmUp();
     emit(
       state.copyWith(
         id: horseProfile?.id ?? DateTime.now().toString(),
@@ -52,14 +54,11 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       ),
     );
   }
-  String _zipApi = '';
-  String _locationApiKey = '';
-
-  final KeysRepository _keysRepository;
   final HorseProfileRepository _horseProfileRepository;
   final RiderProfileRepository _riderProfileRepository;
   final CloudRepository? _cloudRepository;
   final ImagePicker? _imagePicker;
+  final LocationLookupService _locationLookupService;
 
   void horseNameChanged(String value) {
     final horseName = SingleWord.dirty(value);
@@ -163,16 +162,14 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   }
 
   /// Get the list of countries from the location api
-  Future<List<Country>> getCountries() async {
-    final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    return locationRepository.getCountries();
+  Future<List<Country>> getCountries() {
+    return _locationLookupService.getCountries();
   }
 
   /// Get the list of states from the location api
   /// [countryIso] is the iso code for the country
-  Future<List<StateLocation>> getStates({required String countryIso}) async {
-    final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    return locationRepository.getStates(countryIso: countryIso);
+  Future<List<StateLocation>> getStates({required String countryIso}) {
+    return _locationLookupService.getStates(countryIso: countryIso);
   }
 
   /// Get the list of cities from the location api
@@ -181,12 +178,11 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   Future<List<City>> getCities({
     required String stateIso,
     required String countryIso,
-  }) async {
+  }) {
     debugPrint('Getting Cities for $stateIso, $countryIso');
-    final locationRepository = LocationRepository(apiKey: _locationApiKey);
-    return locationRepository.getCities(
+    return _locationLookupService.getCities(
       stateIso: stateIso,
-      countryCode: countryIso,
+      countryIso: countryIso,
     );
   }
 
@@ -211,8 +207,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   }
 
   Future<void> _searchForZip() async {
-    final zipcodeRepo = ZipcodeRepository(apiKey: _zipApi);
-
     emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
 
     if (state.countryIso != null &&
@@ -220,7 +214,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         state.selectedState != null) {
       try {
         debugPrint('Searching by Zip Code');
-        final zipResponse = await zipcodeRepo.queryZipcode(
+        final zipResponse = await _locationLookupService.queryZipcode(
           city: state.selectedCity!,
           country: state.countryIso!,
           state: state.selectedState!,
