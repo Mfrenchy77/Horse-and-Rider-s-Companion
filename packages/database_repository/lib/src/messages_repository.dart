@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 
 ///  Interface for Firebase and Message and Groups
-class MessagesRepository {
+class MessagesRepository implements MessagesStore {
   /// Constructor
   MessagesRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
@@ -15,6 +15,7 @@ class MessagesRepository {
   static const String MESSAGES = 'Messages';
 
   ///  create or update [message]
+  @override
   Future<void> createOrUpdateMessage({required Message message}) {
     return guardFirebase(
       () => _firestore
@@ -31,6 +32,7 @@ class MessagesRepository {
   }
 
   /// retrieve Messages for User using their [conversationId]
+  @override
   Stream<List<Message>> getMessages({required String conversationId}) {
     return _firestore
         .collection(CONVERSATIONS)
@@ -46,6 +48,7 @@ class MessagesRepository {
   }
 
   /// delete message [messageToDelete]
+  @override
   void deleteMessage({
     required Message messageToDelete,
     required String conversationId,
@@ -77,6 +80,7 @@ class MessagesRepository {
           );
 
   ///   create or update [conversation]
+  @override
   Future<void> createOrUpdateConversation({
     required Conversation conversation,
   }) {
@@ -86,6 +90,7 @@ class MessagesRepository {
   }
 
   ///   Retrieves a List of Groups for a User
+  @override
   Stream<List<Conversation>> getConversations({required String userEmail}) {
     return _conversations()
         .where('partiesIds', arrayContains: userEmail)
@@ -94,6 +99,7 @@ class MessagesRepository {
   }
 
   ///   Delete a group
+  @override
   void deleteConversation({required Conversation conversation}) {
     _conversations().doc(conversation.id).delete();
   }

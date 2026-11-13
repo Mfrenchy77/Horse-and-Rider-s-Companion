@@ -21,7 +21,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
     emit(state.copyWith(usersProfile: usersProfile));
   }
 
-  final MessagesRepository _messagesRepository;
+  final MessagesStore _messagesRepository;
   final RiderProfileStore _riderProfileRepository;
   StreamSubscription<List<RiderProfile>>? _nameSearchSubscription;
   StreamSubscription<RiderProfile?>? _emailSearchSubscription;

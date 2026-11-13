@@ -42,7 +42,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Repositories
-  final MessagesRepository _messagesRepository;
+  final MessagesStore _messagesRepository;
   final SkillTreeRepository _skillTreeRepository;
   final ResourcesStore _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;

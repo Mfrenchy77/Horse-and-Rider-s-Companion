@@ -4,9 +4,50 @@ import 'package:horseandriderscompanion/MainPages/Messages/cubit/new_group_dialo
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:mocktail/mocktail.dart';
 
-class _MockMessagesRepository extends Mock implements MessagesRepository {}
+class _InMemoryMessagesStore implements MessagesStore {
+  final Map<String, Conversation> conversations = {};
+  final Map<String, List<Message>> messages = {};
+
+  @override
+  Future<void> createOrUpdateMessage({required Message message}) async {
+    messages.putIfAbsent(message.id ?? '', () => []).add(message);
+  }
+
+  @override
+  Stream<List<Message>> getMessages({required String conversationId}) =>
+      Stream.value(messages[conversationId] ?? const []);
+
+  @override
+  void deleteMessage({
+    required Message messageToDelete,
+    required String conversationId,
+  }) {
+    messages[conversationId]?.removeWhere(
+      (m) => m.messageId == messageToDelete.messageId,
+    );
+  }
+
+  @override
+  Future<void> createOrUpdateConversation({
+    required Conversation conversation,
+  }) async {
+    conversations[conversation.id] = conversation;
+  }
+
+  @override
+  Stream<List<Conversation>> getConversations({required String userEmail}) =>
+      Stream.value(
+        conversations.values
+            .where((c) => c.partiesIds.contains(userEmail))
+            .toList(),
+      );
+
+  @override
+  void deleteConversation({required Conversation conversation}) {
+    conversations.remove(conversation.id);
+  }
+}
 
 class _InMemoryApiKeyProvider implements ApiKeyProvider {
   @override
@@ -264,7 +305,7 @@ void main() {
           ),
         });
         final cubit = NewGroupDialogCubit(
-          messagesRepository: _MockMessagesRepository(),
+          messagesRepository: _InMemoryMessagesStore(),
           riderProfileRepository: store,
           usersProfile: RiderProfile(
             id: 'u1',
@@ -347,6 +388,32 @@ void main() {
           resourcesStore.resources['r1']?.comments?.first.comment,
           'Great drill!',
         );
+      },
+    );
+
+    test(
+      'NewGroupDialogCubit creates conversations via an in-memory '
+      'MessagesStore',
+      () async {
+        final messagesStore = _InMemoryMessagesStore();
+        final riderStore = _InMemoryRiderProfileStore();
+        final cubit = NewGroupDialogCubit(
+          messagesRepository: messagesStore,
+          riderProfileRepository: riderStore,
+          usersProfile: RiderProfile(
+            id: 'u1',
+            name: 'Alex',
+            email: 'alex@example.com',
+          ),
+        );
+        addTearDown(cubit.close);
+
+        await cubit.createConversation(
+          RiderProfile(id: 'u2', name: 'Sam', email: 'sam@example.com'),
+        );
+
+        expect(messagesStore.conversations, hasLength(1));
+        expect(cubit.state.status, FormStatus.success);
       },
     );
   });

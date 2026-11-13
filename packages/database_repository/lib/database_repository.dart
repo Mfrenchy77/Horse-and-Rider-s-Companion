@@ -10,6 +10,7 @@ export 'src/cloud_repository.dart';
 export 'src/levels_repository.dart';
 export 'src/location_repository.dart';
 export 'src/zip_code_repository.dart';
+export 'src/messages_store.dart';
 export 'src/messages_repository.dart';
 export 'src/resources_store.dart';
 export 'src/resource_repository.dart';
