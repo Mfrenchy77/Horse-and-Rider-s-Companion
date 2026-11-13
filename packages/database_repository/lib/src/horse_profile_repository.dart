@@ -1,11 +1,12 @@
 // ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/horse_profile_store.dart';
 import 'package:database_repository/src/models/horse_profile.dart';
 import 'package:database_repository/src/repository_exception.dart';
 
 ///Interface between Horse and Riders and Firebase
-class HorseProfileRepository {
+class HorseProfileRepository implements HorseProfileStore {
   HorseProfileRepository({FirebaseFirestore? firestore})
       : _horseProfiledatabaseReference =
             (firestore ?? FirebaseFirestore.instance)
@@ -21,6 +22,7 @@ class HorseProfileRepository {
   final CollectionReference<HorseProfile> _horseProfiledatabaseReference;
 
   ///create or update [horseProfile]
+  @override
   Future<void> createOrUpdateHorseProfile({
     required HorseProfile horseProfile,
   }) {
@@ -32,6 +34,7 @@ class HorseProfileRepository {
   }
 
   ///retrieve all horse profiles for user [ids]
+  @override
   Stream<List<HorseProfile>> getAllUsersHorses({required List<String>? ids}) {
     if (ids == null || ids.isEmpty) {
       return Stream.value(<HorseProfile>[]);
@@ -44,6 +47,7 @@ class HorseProfileRepository {
   }
 
   /// retrieve a horse profile by its [id]
+  @override
   Stream<HorseProfile?> getHorseProfileById({required String id}) {
     return _horseProfiledatabaseReference
         .doc(id)
@@ -52,6 +56,7 @@ class HorseProfileRepository {
   }
 
   ///retrieve all horse profiles for  [name]
+  @override
   Stream<List<HorseProfile>> getHorseByName({required String name}) {
     //retrieve horse with name from database
 
@@ -66,6 +71,7 @@ class HorseProfileRepository {
   }
 
   ///retrieve all horse profiles for  [nickName]
+  @override
   Stream<List<HorseProfile>> getHorseByNickName({required String nickName}) {
     //retrieve horse with name from database
 
@@ -80,6 +86,7 @@ class HorseProfileRepository {
   }
 
   ///Retrieve Horse Profile using it's[id]
+  @override
   Stream<HorseProfile?> getHorseProfile({required String? id}) {
     return _horseProfiledatabaseReference
         .doc(id)
@@ -88,6 +95,7 @@ class HorseProfileRepository {
   }
 
   /// Retrieve all horse profiles for a zip code
+  @override
   Stream<List<HorseProfile>> getHorseByZipCode({required String zipCode}) {
     return _horseProfiledatabaseReference
         .where('zipCode', isEqualTo: zipCode)
@@ -96,6 +104,7 @@ class HorseProfileRepository {
   }
 
   ///Delete Horse Profile at [id]
+  @override
   Future<void> deleteHorseProfile({required String id}) {
     return guardFirebase(() => _horseProfiledatabaseReference.doc(id).delete());
   }

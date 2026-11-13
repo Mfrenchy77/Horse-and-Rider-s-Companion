@@ -588,7 +588,9 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   }
 
   Widget _horseAndDateFields(RiderProfile rider) {
-    final repository = context.read<HorseProfileRepository?>();
+    final repository =
+        context.read<HorseProfileStore?>() ??
+        context.read<HorseProfileRepository?>();
     if (_student != null || repository == null) return _dateAndHorse(rider);
     final ids =
         (rider.studentHorses ?? <BaseListItem>[])
@@ -613,7 +615,7 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   }
 
   Future<Set<String>> _loadActiveHorseIds(
-    HorseProfileRepository repository,
+    HorseProfileStore repository,
     List<String> ids,
   ) async {
     final batches = await Future.wait([

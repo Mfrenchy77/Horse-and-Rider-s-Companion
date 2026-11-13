@@ -15,7 +15,7 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
     required this.usersProfile,
   }) : super(AddLogEntryState(date: DateTime.now()));
 
-  final HorseProfileRepository _horseProfileRepository;
+  final HorseProfileStore _horseProfileRepository;
   final RiderProfileStore _riderProfileRepository;
   final RiderProfile usersProfile;
 

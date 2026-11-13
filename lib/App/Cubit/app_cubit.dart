@@ -46,7 +46,7 @@ class AppCubit extends Cubit<AppState> {
   final SkillTreeRepository _skillTreeRepository;
   final ResourcesRepository _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;
-  final HorseProfileRepository _horseProfileRepository;
+  final HorseProfileStore _horseProfileRepository;
   final AuthenticationRepository _authenticationRepository;
   final PushNotificationService _pushNotificationService;
   final Future<Map<String, dynamic>> Function(Map<String, Object?>)?

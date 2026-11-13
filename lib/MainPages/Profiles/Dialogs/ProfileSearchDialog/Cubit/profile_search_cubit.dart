@@ -21,7 +21,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   ///Repositories
   final RiderProfileStore _riderProfileRepository;
-  final HorseProfileRepository _horseProfileRepository;
+  final HorseProfileStore _horseProfileRepository;
   final ApiKeyProvider _keysRepository;
 
   StreamSubscription<dynamic>? _searchSubscription;

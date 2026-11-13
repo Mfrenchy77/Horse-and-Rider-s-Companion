@@ -20,4 +20,5 @@ export 'src/sub_category_repository.dart';
 export 'src/logbook_rider_profile_repository.dart';
 export 'src/rider_profile_store.dart';
 export 'src/rider_profile_repository.dart';
+export 'src/horse_profile_store.dart';
 export 'src/horse_profile_repository.dart';
