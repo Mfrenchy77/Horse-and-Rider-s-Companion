@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/accept_request_button.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/Widgets/deny_request_button.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
@@ -39,9 +38,9 @@ class MessageItem extends StatelessWidget {
               // chat bubble decoration
               decoration: BoxDecoration(
                 color: isCurrentUser
-                    ? HorseAndRidersTheme().getTheme().primaryColor
+                    ? Theme.of(context).primaryColor
                     : isDark
-                        ? HorseAndRidersTheme().getTheme().colorScheme.secondary
+                        ? Theme.of(context).colorScheme.secondary
                         : Colors.grey[300],
                 borderRadius: BorderRadius.circular(16),
               ),

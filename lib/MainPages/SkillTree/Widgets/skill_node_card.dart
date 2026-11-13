@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillNodeCard extends StatelessWidget {
@@ -77,8 +76,7 @@ class SkillNodeCard extends StatelessWidget {
                 Container(
                   height: 10,
                   width: 2,
-                  color: HorseAndRidersTheme().getTheme().brightness ==
-                          Brightness.light
+                  color: Theme.of(context).brightness == Brightness.light
                       ? Colors.black
                       : Colors.white,
                 ),
@@ -86,6 +84,10 @@ class SkillNodeCard extends StatelessWidget {
                 children: childrenNodes.asMap().entries.map(
                   (entry) {
                     final e = entry.value;
+                    final lineColor =
+                        Theme.of(context).brightness == Brightness.light
+                            ? Colors.black
+                            : Colors.white;
 
                     return Column(
                       children: [
@@ -97,42 +99,25 @@ class SkillNodeCard extends StatelessWidget {
                               width: 99,
                               color: e.position == 0
                                   ? Colors.transparent
-                                  : HorseAndRidersTheme()
-                                              .getTheme()
-                                              .brightness ==
-                                          Brightness.light
-                                      ? Colors.black
-                                      : Colors.white,
+                                  : lineColor,
                             ),
                             Container(
                               height: 2,
                               width: 2,
-                              color:
-                                  HorseAndRidersTheme().getTheme().brightness ==
-                                          Brightness.light
-                                      ? Colors.black
-                                      : Colors.white,
+                              color: lineColor,
                             ),
                             Container(
                               width: 99,
                               height: 2,
                               color: e.position == childrenNodes.length - 1
                                   ? Colors.transparent
-                                  : HorseAndRidersTheme()
-                                              .getTheme()
-                                              .brightness ==
-                                          Brightness.light
-                                      ? Colors.black
-                                      : Colors.white,
+                                  : lineColor,
                             ),
                           ],
                         ),
                         Container(
                           height: 10,
-                          color: HorseAndRidersTheme().getTheme().brightness ==
-                                  Brightness.light
-                              ? Colors.black
-                              : Colors.white,
+                          color: lineColor,
                           width: 2,
                         ),
                         SkillNodeCard(

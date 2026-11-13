@@ -9,7 +9,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_messa
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/save_resource_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -41,7 +40,7 @@ class ResourceRatingButtons extends StatelessWidget {
                       : Icons.thumb_up_outlined,
                 ),
                 color: cubit.isRatingPositive(resource)
-                    ? HorseAndRidersTheme().getTheme().colorScheme.primary
+                    ? Theme.of(context).colorScheme.primary
                     : isDark
                     ? Colors.grey.shade300
                     : Colors.black54,
@@ -71,7 +70,7 @@ class ResourceRatingButtons extends StatelessWidget {
                       : Icons.thumb_down_outlined,
                 ),
                 color: cubit.isRatingNegative(resource)
-                    ? HorseAndRidersTheme().getTheme().colorScheme.primary
+                    ? Theme.of(context).colorScheme.primary
                     : isDark
                     ? Colors.grey.shade300
                     : Colors.black54,

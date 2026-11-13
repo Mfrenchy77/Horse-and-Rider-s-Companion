@@ -9,7 +9,6 @@ import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart'
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -197,9 +196,7 @@ class _NavigationViewState extends State<NavigationView> {
                     state.errorMessage,
                     style: const TextStyle(color: Colors.white),
                   ),
-                  backgroundColor: HorseAndRidersTheme()
-                      .getTheme()
-                      .primaryColor,
+                  backgroundColor: Theme.of(context).primaryColor,
                 ),
               ).closed.then((_) => cubit.clearErrorMessage());
           });

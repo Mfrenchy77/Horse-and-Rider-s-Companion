@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final seasons = {
@@ -49,4 +51,23 @@ void main() {
       }
     });
   }
+
+  test('caches ThemeData instances across repeated theme lookups', () async {
+    SharedPreferences.setMockInitialValues({});
+    await SharedPrefs().init();
+    final themeProvider = HorseAndRidersTheme();
+
+    expect(
+      identical(themeProvider.getTheme(), themeProvider.getTheme()),
+      isTrue,
+    );
+    expect(
+      identical(themeProvider.getLightTheme(), themeProvider.getLightTheme()),
+      isTrue,
+    );
+    expect(
+      identical(themeProvider.getDarkTheme(), themeProvider.getDarkTheme()),
+      isTrue,
+    );
+  });
 }

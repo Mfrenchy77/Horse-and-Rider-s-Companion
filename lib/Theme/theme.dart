@@ -22,6 +22,7 @@ class HorseAndRidersTheme {
   ThemeData getDarkTheme() => _theme(isDark: true);
 
   static final _gradientThemes = Expando<ThemeData>();
+  static final _cachedThemes = <(ThemeSeasons, bool), ThemeData>{};
 
   ThemeData _withCardGradient(ThemeData theme) {
     if (theme.extension<CardGradientTheme>() != null) return theme;
@@ -37,17 +38,20 @@ class HorseAndRidersTheme {
     final season = SharedPrefs().isSeasonalMode()
         ? getThemeSeason()
         : ThemeSeasons.main;
-    final (light, dark) = switch (season) {
-      ThemeSeasons.main => (mainThemeLight, mainThemeDark),
-      ThemeSeasons.halloween => (halloweenTheme, halloweenThemeDark),
-      ThemeSeasons.christmas => (christmasTheme, christmasThemeDark),
-      ThemeSeasons.easter => (easterTheme, easterThemeDark),
-      ThemeSeasons.spring => (springTheme, springThemeDark),
-      ThemeSeasons.summer => (summerTheme, summerThemeDark),
-      ThemeSeasons.autumn => (autumnTheme, autumnThemeDark),
-      ThemeSeasons.winter => (winterTheme, winterThemeDark),
-    };
-    return _withCardGradient(isDark ? dark : light);
+    return _cachedThemes[(season, isDark)] ??= _withCardGradient(
+      switch (season) {
+        ThemeSeasons.main => isDark ? mainThemeDark : mainThemeLight,
+        ThemeSeasons.halloween =>
+          isDark ? halloweenThemeDark : halloweenTheme,
+        ThemeSeasons.christmas =>
+          isDark ? christmasThemeDark : christmasTheme,
+        ThemeSeasons.easter => isDark ? easterThemeDark : easterTheme,
+        ThemeSeasons.spring => isDark ? springThemeDark : springTheme,
+        ThemeSeasons.summer => isDark ? summerThemeDark : summerTheme,
+        ThemeSeasons.autumn => isDark ? autumnThemeDark : autumnTheme,
+        ThemeSeasons.winter => isDark ? winterThemeDark : winterTheme,
+      },
+    );
   }
 
   /// returns true if the theme is dark

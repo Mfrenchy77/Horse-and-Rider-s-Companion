@@ -15,7 +15,6 @@ import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDi
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_rating_buttons.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_relpy_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/create_comment_dialog.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 
@@ -135,9 +134,7 @@ class _CommentItemState extends State<CommentItem> {
                   child: Column(
                     children: [
                       ColoredBox(
-                        color: HorseAndRidersTheme()
-                            .getTheme()
-                            .scaffoldBackgroundColor,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -153,10 +150,9 @@ class _CommentItemState extends State<CommentItem> {
                                     style: TextStyle(
                                       color: hasUserRated
                                           ? isPositiveSelected
-                                                ? HorseAndRidersTheme()
-                                                      .getTheme()
-                                                      .colorScheme
-                                                      .primary
+                                                ? Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary
                                                 : Colors.red
                                           : isDark
                                           ? Colors.grey.shade300

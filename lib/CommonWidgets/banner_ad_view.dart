@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' as google_mobile_ads;
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class BannerAdView extends StatelessWidget {
   const BannerAdView({super.key});
@@ -21,7 +20,7 @@ class BannerAdView extends StatelessWidget {
           return Visibility(
             visible: state.isBannerAdReady,
             child: Container(
-              color: HorseAndRidersTheme().getTheme().primaryColor,
+              color: Theme.of(context).primaryColor,
               width: double.infinity,
               height: state.bannerAd?.size.height.toDouble(),
               alignment: Alignment.center,

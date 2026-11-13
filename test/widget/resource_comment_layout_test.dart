@@ -2,7 +2,9 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_comment_llist.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:mocktail/mocktail.dart';
@@ -189,4 +191,55 @@ void main() {
     expect(tester.widget<CommentItem>(row('parent')).comment.rating, 0);
     expect(tester.widget<CommentItem>(row('other')).comment.rating, 0);
   });
+
+  testWidgets(
+    'ResourceCommentList uses ListView.builder and sorts without mutating',
+    (tester) async {
+      final older = comment('older').copyWith(
+        date: DateTime.utc(2025),
+        rating: 1,
+      );
+      final higherRated = comment('higher').copyWith(
+        date: DateTime.utc(2025, 1, 2),
+        rating: 5,
+      );
+      final value = resource([older, higherRated]);
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          resource: value,
+          resources: [value],
+          resourceComments: value.comments,
+        ),
+      );
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        BlocProvider<AppCubit>.value(
+          value: harness.cubit,
+          child: MaterialApp(
+            home: Scaffold(
+              body: ResourceCommentList(
+                resource: value,
+                scrollController: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.childrenDelegate, isA<SliverChildBuilderDelegate>());
+
+      final items = tester
+          .widgetList<CommentItem>(find.byType(CommentItem))
+          .toList();
+      expect(items.map((item) => item.comment.id), ['higher', 'older']);
+      expect(harness.cubit.state.resourceComments.map((c) => c.id), [
+        'older',
+        'higher',
+      ]);
+    },
+  );
 }

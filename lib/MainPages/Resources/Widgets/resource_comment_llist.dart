@@ -15,29 +15,54 @@ class ResourceCommentList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.resource != current.resource ||
+          previous.commentSortState != current.commentSortState ||
+          previous.resourceComments != current.resourceComments,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        if (state.resource == null) {
+        final activeResource = state.resource;
+        if (activeResource == null) {
           return const Text('No Comments, Yet');
-        } else {
-          final baseComments = cubit.getBaseComments(state.resource!);
-          cubit.sortComments(state.commentSortState);
-          return baseComments.isEmpty
-              ? const Text('No Comments, Yet')
-              : ListView(
-                  controller: scrollController,
-                  shrinkWrap: true,
-                  children: baseComments
-                      .map(
-                        (comment) => CommentItem(
-                          key: Key(comment.id!),
-                          comment: comment,
-                        ),
-                      )
-                      .toList(),
-                );
         }
+        final baseComments = _sortedComments(
+          cubit.getBaseComments(activeResource),
+          state.commentSortState,
+        );
+        if (baseComments.isEmpty) {
+          return const Text('No Comments, Yet');
+        }
+        return ListView.builder(
+          controller: scrollController,
+          shrinkWrap: true,
+          itemCount: baseComments.length,
+          itemBuilder: (context, index) {
+            final comment = baseComments[index];
+            return CommentItem(
+              key: comment.id != null ? Key(comment.id!) : null,
+              comment: comment,
+            );
+          },
+        );
       },
     );
   }
+}
+
+List<Comment> _sortedComments(
+  List<Comment> comments,
+  CommentSortState sortState,
+) {
+  final sorted = List<Comment>.of(comments);
+  switch (sortState) {
+    case CommentSortState.Recent:
+      sorted.sort((a, b) => b.date.compareTo(a.date));
+    case CommentSortState.Oldest:
+      sorted.sort((a, b) => a.date.compareTo(b.date));
+    case CommentSortState.Best:
+      sorted.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+    case CommentSortState.Worst:
+      sorted.sort((a, b) => (a.rating ?? 0).compareTo(b.rating ?? 0));
+  }
+  return sorted;
 }
