@@ -16,6 +16,14 @@ class ConnectionPanel extends StatelessWidget {
   final RiderProfile? rider;
   final HorseProfile? horse;
 
+  static Future<void> openHistory(
+    BuildContext context,
+    CoachingConnection link,
+  ) => showAppDialog<void>(
+    context: context,
+    builder: (_) => _ConnectionHistory(link: link),
+  );
+
   @override
   Widget build(BuildContext context) {
     final isGuest = context.select((AppCubit c) => c.state.isGuest);
@@ -229,14 +237,9 @@ class ConnectionPanel extends StatelessWidget {
               TextButton(
                 onPressed: saving
                     ? null
-                    : () {
-                        showAppDialog<void>(
-                          context: context,
-                          builder: (_) => _ConnectionHistory(link: link),
-                        );
-                      },
+                    : () => ConnectionPanel.openHistory(context, link),
                 child: Text(
-                  link.kind == 'rider' ? 'Lesson history' : 'Horse history',
+                  link.kind == 'rider' ? 'Student logbook' : 'Horse history',
                 ),
               ),
             if (active)
@@ -305,7 +308,6 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
             ? 'Add lesson record'
             : 'Add training record',
       ),
-      maxWidth: 520,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -424,7 +426,7 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
   Widget build(BuildContext context) => OceanCoralAppDialog(
     scrollable: true,
     title: Text(
-      widget.link.kind == 'rider' ? 'Lesson history' : 'Horse history',
+      widget.link.kind == 'rider' ? 'Student logbook' : 'Horse history',
     ),
     maxWidth: 620,
     content:

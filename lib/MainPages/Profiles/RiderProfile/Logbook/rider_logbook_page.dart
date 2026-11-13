@@ -30,15 +30,18 @@ class RiderLogbookPage extends StatefulWidget {
     BuildContext context,
     CoachingConnection student, {
     BaseListItem? entry,
+    Skill? initialSkill,
+    LevelState? initialLevel,
   }) async {
-    final profile = context.read<AppCubit>().state.usersProfile;
+    final app = context.read<AppCubit>();
+    final profile = app.state.usersProfile;
     if (profile == null) return;
 
     // This editor can be opened from outside
     // RiderLogbookPage (e.g. Connections).
     // Provide LogbookCubit at the route level so the editor does not depend on
     // ancestor pages.
-    await Navigator.of(context, rootNavigator: true).push<void>(
+    final saved = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider(
           create: (ctx) => LogbookCubit(
@@ -48,11 +51,21 @@ class RiderLogbookPage extends StatefulWidget {
           child: _LogEntryEditor(
             email: profile.email,
             initialStudent: student,
+            initialSkill: initialSkill,
+            initialLevel: initialLevel,
             entry: entry,
           ),
         ),
       ),
     );
+    final viewed = app.state.viewingProfile;
+    if ((saved ?? false) &&
+        context.mounted &&
+        app.state.isViewing &&
+        viewed != null &&
+        viewed.email.toLowerCase() == student.learner) {
+      await app.refreshViewedRider(viewed.email);
+    }
   }
 
   @override
@@ -465,11 +478,19 @@ class _EntryField extends StatelessWidget {
 }
 
 class _LogEntryEditor extends StatefulWidget {
-  const _LogEntryEditor({required this.email, this.entry, this.initialStudent});
+  const _LogEntryEditor({
+    required this.email,
+    this.entry,
+    this.initialStudent,
+    this.initialSkill,
+    this.initialLevel,
+  });
 
   final String email;
   final BaseListItem? entry;
   final CoachingConnection? initialStudent;
+  final Skill? initialSkill;
+  final LevelState? initialLevel;
 
   @override
   State<_LogEntryEditor> createState() => _LogEntryEditorState();
@@ -513,8 +534,11 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   Future<Set<String>>? _activeStudentHorseIds;
   bool _loadingHorses = false;
   int _horseRequest = 0;
-  String? _skillId;
-  String _level = 'LEARNING';
+  late String? _skillId = widget.initialSkill?.id;
+  late String _level = switch (widget.initialLevel) {
+    LevelState.PROFICIENT || LevelState.VERIFIED => 'PROFICIENT',
+    _ => 'LEARNING',
+  };
 
   @override
   void initState() {
@@ -622,14 +646,14 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           title: value(_title),
           focus: value(_focus),
           nextSteps: value(_nextSteps),
-          skillId: _skillId,
+          skillId: widget.initialSkill?.id ?? _skillId,
           level: _level,
         );
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
         return;
       }
       final details = RiderLogDetails(
@@ -726,7 +750,11 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       child: Scaffold(
         appBar: ThemedAppBar(
           title: Text(
-            widget.entry == null ? 'Add log entry' : 'Edit log entry',
+            widget.initialSkill != null
+                ? 'Verify skill'
+                : widget.entry == null
+                ? 'Add log entry'
+                : 'Edit log entry',
           ),
         ),
         bottomNavigationBar: allowed
@@ -825,7 +853,8 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                                         child: Text(_student!.learnerName),
                                       ),
                                   ],
-                                  onChanged: _saving
+                                  onChanged:
+                                      _saving || widget.initialSkill != null
                                       ? null
                                       : (id) => _chooseStudent(
                                           students
@@ -1153,8 +1182,10 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     return [
       DropdownButtonFormField<String>(
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Skill progress (optional)',
+        decoration: InputDecoration(
+          labelText: widget.initialSkill == null
+              ? 'Skill progress (optional)'
+              : 'Skill to verify',
         ),
         initialValue: _skillId,
         items: [
@@ -1165,9 +1196,11 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
               child: Text(skill.skillName, overflow: TextOverflow.ellipsis),
             ),
         ],
-        onChanged: _saving ? null : (value) => setState(() => _skillId = value),
+        onChanged: _saving || widget.initialSkill != null
+            ? null
+            : (value) => setState(() => _skillId = value),
       ),
-      if (_skillId != null)
+      if (_skillId != null || widget.initialSkill != null)
         DropdownButtonFormField<String>(
           initialValue: _level,
           decoration: const InputDecoration(labelText: 'Progress'),

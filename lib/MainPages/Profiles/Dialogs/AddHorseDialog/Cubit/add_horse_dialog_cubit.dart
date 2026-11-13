@@ -22,6 +22,8 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     required this._keysRepository,
     required this._horseProfileRepository,
     required this._riderProfileRepository,
+    this._cloudRepository,
+    this._imagePicker,
   }) : super(const AddHorseDialogState()) {
     _keysRepository.getZipCodeApiKey().then((value) => _zipApi = value);
     _keysRepository.getLocationApiKey().then(
@@ -56,6 +58,8 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
   final KeysRepository _keysRepository;
   final HorseProfileRepository _horseProfileRepository;
   final RiderProfileRepository _riderProfileRepository;
+  final CloudRepository? _cloudRepository;
+  final ImagePicker? _imagePicker;
 
   void horseNameChanged(String value) {
     final horseName = SingleWord.dirty(value);
@@ -101,11 +105,11 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   Future<void> horsePicButtonClicked() async {
     String? picUrl;
-    final cloudRepository = CloudRepository();
+    final cloudRepository = _cloudRepository ?? CloudRepository();
 
     emit(state.copyWith(picStatus: PictureGetterStatus.picking));
 
-    final picker = ImagePicker();
+    final picker = _imagePicker ?? ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 20,
@@ -119,7 +123,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
       if (picUrl != null) {
         emit(
           state.copyWith(
-            horseProfile: state.horseProfile?.copyWith(id: picUrl),
+            horseProfile: state.horseProfile?.copyWith(picUrl: picUrl),
             picUrl: picUrl,
             picStatus: PictureGetterStatus.nothing,
           ),
@@ -134,6 +138,8 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
         );
         debugPrint('Pic Url is null');
       }
+    } else {
+      emit(state.copyWith(picStatus: PictureGetterStatus.nothing));
     }
   }
 

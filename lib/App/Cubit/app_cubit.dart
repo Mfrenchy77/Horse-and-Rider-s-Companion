@@ -383,6 +383,31 @@ class AppCubit extends Cubit<AppState> {
     return false;
   }
 
+  /// Reloads the viewed rider without changing the current screen or skill.
+  Future<void> refreshViewedRider(String email) async {
+    final session = state.user;
+    RiderProfile? profile;
+    try {
+      profile = await _riderProfileRepository.getRiderProfileByEmail(
+        email: email,
+        serverOnly: true,
+      );
+    } catch (error) {
+      debugPrint('Could not refresh viewed rider: $error');
+    }
+    if (isClosed ||
+        state.user != session ||
+        !state.isViewing ||
+        state.viewingProfile?.email != email) {
+      return;
+    }
+    if (profile == null) {
+      createError('Saved, but the student’s progress could not be refreshed.');
+      return;
+    }
+    emit(state.copyWith(viewingProfile: profile));
+  }
+
   /// Opens a Rider Profile Page for  [email]
   void getProfileToBeViewed({required String email}) {
     emit(

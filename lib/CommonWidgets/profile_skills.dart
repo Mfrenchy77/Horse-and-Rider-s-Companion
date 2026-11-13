@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -93,11 +94,6 @@ class _ProfileSkillRow extends StatelessWidget {
       SkillCategory.Husbandry => HorseAndRiderIcons.husbandry,
       SkillCategory.Other => Icons.school_outlined,
     };
-    final progress = switch (level.levelState) {
-      LevelState.NO_PROGRESS => 'Not started',
-      LevelState.LEARNING => 'Learning',
-      LevelState.PROFICIENT || LevelState.VERIFIED => 'Proficient',
-    };
     final verified = level.verified || level.levelState == LevelState.VERIFIED;
 
     return Material(
@@ -129,16 +125,15 @@ class _ProfileSkillRow extends StatelessWidget {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            [
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
               if (skill.difficulty != DifficultyState.All)
-                skill.difficulty.name,
-              progress,
-              if (verified) 'Verified',
-            ].join(' · '),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurfaceVariant,
-            ),
+                Text(skill.difficulty.name),
+              SkillProgressBadge(level: level.levelState, verified: verified),
+            ],
           ),
         ),
         trailing: onTap == null

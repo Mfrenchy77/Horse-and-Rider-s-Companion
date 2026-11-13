@@ -128,7 +128,28 @@ class LogbookCubit extends Cubit<LogbookState> {
         'skillId': skillId,
         'level': level,
       });
-      const msg = 'Saved to the student’s logbook.';
+      if (!isEdit && skillId != null) {
+        final profile = await _riderProfileRepository.getRiderProfileByEmail(
+          email: student.learner,
+          serverOnly: true,
+        );
+        final confirmed = profile?.skillLevels?.any(
+          (entry) =>
+              entry.skillId == skillId &&
+              entry.verified &&
+              entry.levelState.name == level &&
+              entry.lastEditBy?.toLowerCase() == student.coach,
+        );
+        if (!(confirmed ?? false)) {
+          throw const ConnectionFailure(
+            'The lesson was saved, but Firebase did not confirm the skill '
+            'verification. Check the coaching service before retrying.',
+          );
+        }
+      }
+      final msg = !isEdit && skillId != null
+          ? 'Skill verified and saved to the student’s logbook.'
+          : 'Saved to the student’s logbook.';
       emit(state.copyWith(actionInProgress: false, feedback: msg));
       return msg;
     } on ConnectionFailure catch (e) {

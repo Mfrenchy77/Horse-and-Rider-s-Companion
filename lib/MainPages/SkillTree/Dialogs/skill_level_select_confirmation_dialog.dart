@@ -36,9 +36,9 @@ class SkillLevelSelectedConfimationDialog extends StatelessWidget {
               child: const Text('No'),
             ),
             FilledButton(
-              onPressed: () {
-                cubit.levelSelected(levelState: levelState);
+              onPressed: () async {
                 Navigator.of(context).pop();
+                cubit.levelSelected(levelState: levelState);
               },
               child: const Text('Yes'),
             ),

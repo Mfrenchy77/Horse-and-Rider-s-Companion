@@ -131,7 +131,8 @@ void main() {
       expect(find.text('Height'), findsNothing);
       expect(find.text("Horse's Log Book"), findsOneWidget);
       expect(find.widgetWithText(ListTile, skill.skillName), findsOneWidget);
-      expect(find.text('Intermediate · Proficient · Verified'), findsOneWidget);
+      expect(find.text('Verified'), findsOneWidget);
+      expect(find.text('Proficient'), findsOneWidget);
       if (width < 1024) {
         expect(skills.top, greaterThan(cover.bottom));
       } else {
@@ -362,7 +363,7 @@ void main() {
       }
       expect(find.text('Sign in'), findsNothing);
       expect(find.widgetWithText(ListTile, 'Grooming'), findsOneWidget);
-      expect(find.text('Introductory · Learning'), findsOneWidget);
+      expect(find.text('Learning'), findsOneWidget);
       final identity = find.byKey(const Key('riderIdentity'));
       final cover = tester.getRect(identity);
       expect(cover.height, greaterThanOrEqualTo(220));

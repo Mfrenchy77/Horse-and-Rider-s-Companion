@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/skill_create_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_view.dart';
@@ -139,13 +140,22 @@ class _SkillTreeViewState extends State<SkillTreeView> {
 
         LevelState levelFor(Skill skill) => getLevelState(
           skill: skill,
-          profile: state.viewingProfile ?? state.usersProfile,
+          profile: state.isViewing ? state.viewingProfile : state.usersProfile,
           horseProfile: state.isForRider ? null : state.horseProfile,
         );
 
         Widget row(Skill skill, {bool showStatus = true}) => _SkillLibraryRow(
           skill: skill,
           level: levelFor(skill),
+          verified:
+              isVerified(
+                skill: skill,
+                profile: state.isViewing
+                    ? state.viewingProfile
+                    : state.usersProfile,
+                horseProfile: state.isForRider ? null : state.horseProfile,
+              ) ??
+              false,
           showStatus: showStatus,
           selected: selectedId == skill.id,
           onSelect: () {
@@ -400,6 +410,7 @@ class _SkillLibraryRow extends StatelessWidget {
     required this.level,
     required this.selected,
     required this.showStatus,
+    required this.verified,
     required this.onSelect,
     this.onEdit,
   });
@@ -408,17 +419,13 @@ class _SkillLibraryRow extends StatelessWidget {
   final LevelState level;
   final bool selected;
   final bool showStatus;
+  final bool verified;
   final VoidCallback onSelect;
   final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final status = switch (level) {
-      LevelState.LEARNING => 'Learning',
-      LevelState.PROFICIENT || LevelState.VERIFIED => 'Proficient',
-      LevelState.NO_PROGRESS => 'Not started',
-    };
     return Material(
       color: selected ? colors.secondaryContainer : colors.surface,
       shape: RoundedRectangleBorder(
@@ -441,15 +448,8 @@ class _SkillLibraryRow extends StatelessWidget {
                   ? 'All levels'
                   : skill.difficulty.name,
             ),
-            if (showStatus)
-              Text(
-                status,
-                style: TextStyle(
-                  color: level == LevelState.NO_PROGRESS
-                      ? colors.onSurfaceVariant
-                      : colors.primary,
-                ),
-              ),
+            if (showStatus || verified || level == LevelState.VERIFIED)
+              SkillProgressBadge(level: level, verified: verified),
           ],
         ),
         onTap: onSelect,

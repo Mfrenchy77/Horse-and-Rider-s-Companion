@@ -8,6 +8,7 @@ analyzer:
     undefined_prefixed_name: ignore
   exclude:
     - build/**
+    - lib/generated/**
     - android/**
     - ios/**
     - web/**

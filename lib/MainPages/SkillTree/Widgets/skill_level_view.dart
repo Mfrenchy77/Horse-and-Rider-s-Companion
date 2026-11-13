@@ -4,7 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
@@ -23,11 +26,29 @@ class SkillLevelView extends StatelessWidget {
       return const Center(child: Text('Skill Not Found'));
     }
     final theme = Theme.of(context);
+    final rider = state.isViewing ? state.viewingProfile : state.usersProfile;
+    final horse = state.isForRider ? null : state.horseProfile;
     final level = getLevelState(
       skill: skill,
-      profile: state.viewingProfile ?? state.usersProfile,
-      horseProfile: state.isForRider ? null : state.horseProfile,
+      profile: rider,
+      horseProfile: horse,
     );
+    final verified = isVerified(
+      skill: skill,
+      profile: rider,
+      horseProfile: horse,
+    );
+    final connectionState = context.watch<ConnectionsCubit?>()?.state;
+    final instructor =
+        !state.isGuest &&
+            skill.rider &&
+            state.isForRider &&
+            state.isViewing &&
+            rider != null &&
+            connectionState?.email == state.usersProfile?.email.toLowerCase()
+        ? connectionState?.instructorFor(rider.email)
+        : null;
+    final subject = state.isForRider ? rider?.name : horse?.name;
     final canWrite = context.read<AppCubit>().canWriteProfileRecords();
     final difficulty = skill.difficulty == DifficultyState.All
         ? 'All levels'
@@ -45,6 +66,32 @@ class SkillLevelView extends StatelessWidget {
               style: theme.textTheme.labelLarge,
             ),
             Text(skill.skillName, style: theme.textTheme.headlineSmall),
+            Text(
+              subject == null ? 'Progress' : 'Progress · $subject',
+              style: theme.textTheme.titleSmall,
+            ),
+            SkillProgressBadge(level: level, verified: verified ?? false),
+            if (instructor != null)
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  for (final (label, target) in [
+                    ('Verify as learning', LevelState.LEARNING),
+                    ('Verify as proficient', LevelState.PROFICIENT),
+                  ])
+                    FilledButton.tonalIcon(
+                      onPressed: () => RiderLogbookPage.addLessonFor(
+                        context,
+                        instructor,
+                        initialSkill: skill,
+                        initialLevel: target,
+                      ),
+                      icon: const Icon(Icons.verified_outlined),
+                      label: Text(label),
+                    ),
+                ],
+              ),
             if (skill.description?.trim().isNotEmpty ?? false)
               Text(skill.description!),
             for (final (label, description) in [

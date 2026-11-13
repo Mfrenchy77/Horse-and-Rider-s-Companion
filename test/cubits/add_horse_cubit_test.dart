@@ -4,6 +4,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockKeys extends Mock implements KeysRepository {}
@@ -11,6 +12,10 @@ class MockKeys extends Mock implements KeysRepository {}
 class MockHorses extends Mock implements HorseProfileRepository {}
 
 class MockRiders extends Mock implements RiderProfileRepository {}
+
+class MockCloud extends Mock implements CloudRepository {}
+
+class MockImagePicker extends Mock implements ImagePicker {}
 
 void main() {
   late MockKeys keys;
@@ -23,6 +28,7 @@ void main() {
     registerFallbackValue(
       RiderProfile(id: 'r', name: 'Rider', email: 'r@example.com'),
     );
+    registerFallbackValue(XFile('test.jpg'));
   });
   setUp(() {
     keys = MockKeys();
@@ -140,5 +146,135 @@ void main() {
     expect(cubit.state.height, 150);
     cubit.horsePurchasePriceChanged(1000);
     expect(cubit.state.purchasePrice.isValid, isTrue);
+  });
+  test(
+      'uploading a horse photo preserves horse ID and saves the new picUrl',
+      () async {
+    await cubit.close();
+    final cloud = MockCloud();
+    final picker = MockImagePicker();
+    const horseId = 'horse-123';
+    const uploadedUrl = 'https://example.com/horses/horse-123/photo.jpg';
+    final pickedFile = XFile('horse.jpg');
+
+    when(
+      () => picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 20,
+      ),
+    ).thenAnswer((_) async => pickedFile);
+    when(
+      () => cloud.addHorsePhoto(
+        file: any(named: 'file'),
+        horseId: any(named: 'horseId'),
+      ),
+    ).thenAnswer((_) async => uploadedUrl);
+
+    final horse = HorseProfile(
+      id: horseId,
+      name: 'Star',
+      picUrl: 'https://example.com/old.jpg',
+      notes: const [],
+      currentOwnerId: user.email,
+      currentOwnerName: user.name,
+    );
+    final ownerWithHorse = user.copyWith(
+      ownedHorses: [
+        BaseListItem(
+          id: horseId,
+          name: 'Star',
+          imageUrl: 'https://example.com/old.jpg',
+        ),
+      ],
+    );
+
+    cubit = AddHorseDialogCubit(
+      usersProfile: ownerWithHorse,
+      horseProfile: horse,
+      keysRepository: keys,
+      horseProfileRepository: horses,
+      riderProfileRepository: riders,
+      cloudRepository: cloud,
+      imagePicker: picker,
+    );
+
+    await cubit.horsePicButtonClicked();
+
+    verify(
+      () => cloud.addHorsePhoto(
+        file: pickedFile,
+        horseId: horseId,
+      ),
+    ).called(1);
+    expect(cubit.state.horseProfile?.id, horseId);
+    expect(cubit.state.horseProfile?.picUrl, uploadedUrl);
+    expect(cubit.state.picUrl, uploadedUrl);
+
+    await cubit.editHorseProfile();
+
+    final savedHorse = verify(
+      () => horses.createOrUpdateHorseProfile(
+        horseProfile: captureAny(named: 'horseProfile'),
+      ),
+    ).captured.single as HorseProfile;
+    expect(savedHorse.id, horseId);
+    expect(savedHorse.picUrl, uploadedUrl);
+
+    final savedOwner = verify(
+      () => riders.createOrUpdateRiderProfile(
+        riderProfile: captureAny(named: 'riderProfile'),
+      ),
+    ).captured.single as RiderProfile;
+    expect(savedOwner.ownedHorses, hasLength(1));
+    expect(savedOwner.ownedHorses?.single.id, horseId);
+    expect(savedOwner.ownedHorses?.single.imageUrl, uploadedUrl);
+  });
+  test(
+      'cancelling the horse photo picker restores picStatus to nothing without uploading',
+      () async {
+    await cubit.close();
+    final cloud = MockCloud();
+    final picker = MockImagePicker();
+    const horseId = 'horse-123';
+    const existingUrl = 'https://example.com/old.jpg';
+
+    when(
+      () => picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 20,
+      ),
+    ).thenAnswer((_) async => null);
+
+    final horse = HorseProfile(
+      id: horseId,
+      name: 'Star',
+      picUrl: existingUrl,
+      notes: const [],
+      currentOwnerId: user.email,
+      currentOwnerName: user.name,
+    );
+
+    cubit = AddHorseDialogCubit(
+      usersProfile: user,
+      horseProfile: horse,
+      keysRepository: keys,
+      horseProfileRepository: horses,
+      riderProfileRepository: riders,
+      cloudRepository: cloud,
+      imagePicker: picker,
+    );
+
+    await cubit.horsePicButtonClicked();
+
+    expect(cubit.state.picStatus, PictureGetterStatus.nothing);
+    expect(cubit.state.horseProfile?.id, horseId);
+    expect(cubit.state.horseProfile?.picUrl, existingUrl);
+    expect(cubit.state.picUrl, existingUrl);
+    verifyNever(
+      () => cloud.addHorsePhoto(
+        file: any(named: 'file'),
+        horseId: any(named: 'horseId'),
+      ),
+    );
   });
 }

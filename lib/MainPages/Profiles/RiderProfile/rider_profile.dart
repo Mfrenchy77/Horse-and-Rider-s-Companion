@@ -6,6 +6,8 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
@@ -50,6 +52,8 @@ class _RiderProfileViewState extends State<RiderProfileView>
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
+    final connections = context.watch<ConnectionsCubit?>()?.state;
+    final instructor = connections?.instructorFor(profile.email);
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return Scaffold(
@@ -116,10 +120,29 @@ class _RiderProfileViewState extends State<RiderProfileView>
                           TextButton(
                             onPressed: () =>
                                 context.goNamed(SkillTreePage.name),
-                            child: const Text('Explore Skill Tree'),
+                            child: Text(
+                              instructor == null
+                                  ? 'Explore Skill Tree'
+                                  : 'Open student Skill Tree',
+                            ),
                           ),
                         ],
                       ),
+                      if (instructor != null &&
+                          !state.isGuest &&
+                          instructor.coach ==
+                              state.usersProfile?.email.toLowerCase())
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: OutlinedButton.icon(
+                            onPressed: () => ConnectionPanel.openHistory(
+                              context,
+                              instructor,
+                            ),
+                            icon: const Icon(Icons.menu_book_outlined),
+                            label: const Text('Open student logbook'),
+                          ),
+                        ),
                       _DeprecatedSkillsCleanupCard(profile: profile),
                       ProfileSkills(
                         skillLevels: profile.skillLevels,

@@ -128,10 +128,13 @@ class RiderProfileRepository {
         });
   }
 
-  Future<RiderProfile?> getRiderProfileByEmail({required String email}) async {
+  Future<RiderProfile?> getRiderProfileByEmail({
+    required String email,
+    bool serverOnly = false,
+  }) async {
     final snap = await _riderProfileDatabaseReference
         .doc(_convertEmailToPath(email: email))
-        .get();
+        .get(serverOnly ? const GetOptions(source: Source.server) : null);
     return snap.data();
   }
 

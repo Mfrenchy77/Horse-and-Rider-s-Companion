@@ -176,6 +176,16 @@ class ConnectionsState {
   /// confirmation text.
   final String? actionFeedback;
 
+  CoachingConnection? instructorFor(String studentEmail) => connections
+      .where(
+        (link) =>
+            link.kind == 'rider' &&
+            link.status == 'accepted' &&
+            link.coach == email &&
+            link.learner == studentEmail.toLowerCase(),
+      )
+      .firstOrNull;
+
   ConnectionsState copyWith({
     String? email,
     List<CoachingConnection>? connections,
