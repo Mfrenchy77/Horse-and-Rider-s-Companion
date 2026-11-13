@@ -7,12 +7,23 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:intl/intl.dart';
 
 part 'log_entry_editor.dart';
+
+LogbookConnectionRepository? _readLogbookConnections(BuildContext context) =>
+    context.read<LogbookConnectionRepository?>() ??
+    context.read<ConnectionRepository?>();
+
+LogbookRiderProfileRepository? _readLogbookRiderProfiles(
+  BuildContext context,
+) =>
+    context.read<LogbookRiderProfileRepository?>() ??
+    context.read<RiderProfileRepository?>();
 
 class RiderLogbookPage extends StatefulWidget {
   const RiderLogbookPage({super.key, required this.email});
@@ -47,8 +58,8 @@ class RiderLogbookPage extends StatefulWidget {
       MaterialPageRoute(
         builder: (_) => BlocProvider(
           create: (ctx) => LogbookCubit(
-            connectionRepository: ctx.read<ConnectionRepository?>(),
-            riderProfileRepository: ctx.read<RiderProfileRepository?>(),
+            connectionRepository: _readLogbookConnections(ctx),
+            riderProfileRepository: _readLogbookRiderProfiles(ctx),
           ),
           child: _LogEntryEditor(
             email: profile.email,
@@ -124,8 +135,8 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   void initState() {
     super.initState();
     _logbookCubit = LogbookCubit(
-      connectionRepository: context.read<ConnectionRepository?>(),
-      riderProfileRepository: context.read<RiderProfileRepository?>(),
+      connectionRepository: _readLogbookConnections(context),
+      riderProfileRepository: _readLogbookRiderProfiles(context),
     );
   }
 
@@ -140,7 +151,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
       _journalUid = uid;
       _journal = uid.isEmpty
           ? null
-          : context.read<ConnectionRepository?>()?.watchJournal(uid);
+          : _readLogbookConnections(context)?.watchJournal(uid);
     }
     return _journal;
   }
@@ -204,7 +215,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                   child: const Text('Edit entry'),
                 ),
               if (entry.canEditRiderLog(rider.email) &&
-                  context.read<ConnectionRepository?>() != null)
+                  _readLogbookConnections(context) != null)
                 TextButton(
                   onPressed: () => Navigator.pop(context, 'delete'),
                   child: const Text('Delete entry'),

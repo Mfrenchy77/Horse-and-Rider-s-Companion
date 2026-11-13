@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:intl/intl.dart';
 
@@ -59,10 +60,12 @@ class LogViewDialogState extends State<LogViewDialog> {
       _historyUid = uid;
       _history = uid == null || uid.isEmpty || widget.horseId == null
           ? null
-          : context.read<ConnectionRepository?>()?.history({
-              'action': 'horseHistory',
-              'horseId': widget.horseId,
-            });
+          : (context.read<LogbookConnectionRepository?>() ??
+                    context.read<ConnectionRepository?>())
+                ?.history({
+                  'action': 'horseHistory',
+                  'horseId': widget.horseId,
+                });
     }
     return _history;
   }

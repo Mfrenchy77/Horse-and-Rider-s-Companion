@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_failure.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:http/http.dart' as http;
 
 export 'connection_failure.dart';
@@ -47,7 +48,7 @@ class CoachingConnection {
   String get requesterName => sender == coach ? coachName : learnerName;
 }
 
-class ConnectionRepository {
+class ConnectionRepository implements LogbookConnectionRepository {
   Stream<List<CoachingConnection>> watch(String uid) => FirebaseFirestore
       .instance
       .collection('CoachingConnections')
@@ -65,6 +66,7 @@ class ConnectionRepository {
             ),
       );
 
+  @override
   Stream<List<BaseListItem>> watchJournal(String uid) => FirebaseFirestore
       .instance
       .collection('SharedRidingEntries')
@@ -79,6 +81,7 @@ class ConnectionRepository {
         ],
       );
 
+  @override
   Future<List<BaseListItem>> history(Map<String, Object?> data) async {
     final result = await submit(data);
     return [
@@ -98,6 +101,7 @@ class ConnectionRepository {
     });
   }
 
+  @override
   Future<Map<String, dynamic>> submit(Map<String, Object?> data) async {
     final auth = FirebaseAuth.instance;
     final token = await auth.currentUser?.getIdToken();

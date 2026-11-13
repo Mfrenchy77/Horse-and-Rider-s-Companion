@@ -1,11 +1,12 @@
 // ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/logbook_rider_profile_repository.dart';
 import 'package:database_repository/src/models/models.dart';
 import 'package:flutter/foundation.dart';
 
 ///Interface for Firebase and Rider's Profile
-class RiderProfileRepository {
+class RiderProfileRepository implements LogbookRiderProfileRepository {
   RiderProfileRepository({FirebaseFirestore? firestore})
     : _riderProfileDatabaseReference = (firestore ?? FirebaseFirestore.instance)
           .collection(RIDER_PROFILE)
@@ -74,6 +75,7 @@ class RiderProfileRepository {
   }
 
   /// Writes only the rider's notes, preserving other profile fields.
+  @override
   Future<void> saveRiderLogEntry({
     required String email,
     required BaseListItem entry,
@@ -128,6 +130,7 @@ class RiderProfileRepository {
         });
   }
 
+  @override
   Future<RiderProfile?> getRiderProfileByEmail({
     required String email,
     bool serverOnly = false,

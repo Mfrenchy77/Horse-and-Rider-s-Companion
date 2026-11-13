@@ -15,5 +15,6 @@ export 'src/categoryy_repository.dart';
 export 'src/open_maps_repository.dart';
 export 'src/url_metadata_repository.dart';
 export 'src/sub_category_repository.dart';
+export 'src/logbook_rider_profile_repository.dart';
 export 'src/rider_profile_repository.dart';
 export 'src/horse_profile_repository.dart';

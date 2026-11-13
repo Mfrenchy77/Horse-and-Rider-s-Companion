@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 
 /// Side-effects for the Rider Logbook feature.
 ///
@@ -14,8 +15,8 @@ class LogbookCubit extends Cubit<LogbookState> {
     required this._riderProfileRepository,
   }) : super(const LogbookState());
 
-  final ConnectionRepository? _connectionRepository;
-  final RiderProfileRepository? _riderProfileRepository;
+  final LogbookConnectionRepository? _connectionRepository;
+  final LogbookRiderProfileRepository? _riderProfileRepository;
 
   bool get _busy => state.actionInProgress;
 

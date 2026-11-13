@@ -7,6 +7,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
@@ -73,10 +74,16 @@ class _AppState extends State<App> {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: _connections),
+        RepositoryProvider<LogbookConnectionRepository>.value(
+          value: _connections,
+        ),
         RepositoryProvider.value(value: widget._messagesRepository),
         RepositoryProvider.value(value: widget._skillTreeRepository),
         RepositoryProvider.value(value: widget._resourcesRepository),
         RepositoryProvider.value(value: widget._riderProfileRepository),
+        RepositoryProvider<LogbookRiderProfileRepository>.value(
+          value: widget._riderProfileRepository,
+        ),
         RepositoryProvider.value(value: widget._horseProfileRepository),
         RepositoryProvider.value(value: widget._authenticationRepository),
       ],
