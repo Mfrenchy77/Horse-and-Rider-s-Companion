@@ -128,6 +128,21 @@ async function readRequestRecord(tx, db, requestDocId, actor, fallbackDocIds = [
     }
     return {ref: reqRef, data};
   }
+  if (candidates.length === 0 && expected?.allowFallbackQuery === true) {
+    const col = db.collection('Requests');
+    if (typeof col.where === 'function') {
+      const query = col.where('partiesIds', 'array-contains', actor);
+      const snap = await tx.get(query);
+      const docs = Array.isArray(snap?.docs) ? snap.docs : [];
+      const matched = docs.filter((doc) => {
+        const d = doc.data() || {};
+        return (d.status || 'pending') === 'pending' && matchesExpectedRequest(d, actor, expected);
+      });
+      if (matched.length === 1 && matched[0].ref) {
+        return {ref: matched[0].ref, data: matched[0].data()};
+      }
+    }
+  }
   return null;
 }
 
@@ -381,6 +396,7 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
     recipient: link.coach,
     actorMustBeRecipient: action === 'accept' || action === 'decline',
     actorMustBeSender: action === 'cancel',
+    allowFallbackQuery: true,
   });
   if (link.status === status) {
     writeRequestResolution(tx, reqRecord, status, id, now);
@@ -835,6 +851,7 @@ function connectionHandler(db, auth) {
             kinds: link.kind === 'horse' ? ['studentHorse'] : ['instructor', 'student'],
             horseId: link.horseId || null,
             participants: [link.learner, link.coach],
+            allowFallbackQuery: true,
           },
       );
       if (status === 'accepted' && status !== link.status) {

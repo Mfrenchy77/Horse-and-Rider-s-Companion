@@ -588,7 +588,9 @@ exports.onMessageCreated = onDocumentCreated(
       if (!snap) return;
       const message = snap.data();
       const convId = event.params.convId;
+      const msgId = (event.params && event.params.messageId) || message.messageId || '';
       try {
+        if (message.mirroredFromRequests === true) return;
         const reqTypes = new Set([
           'INSTRUCTOR_REQUEST',
           'STUDENT_REQUEST',
@@ -596,6 +598,13 @@ exports.onMessageCreated = onDocumentCreated(
           'TRANSFER_HORSE_REQUEST',
         ]);
         if (!reqTypes.has(message.messageType)) return;
+        if (msgId) {
+          const [directReq, legacyReq] = await Promise.all([
+            admin.firestore().collection('Requests').doc(`${convId}_${msgId}`).get(),
+            admin.firestore().collection('Requests').doc(`legacy_${convId}_${msgId}`).get(),
+          ]);
+          if (directReq.exists || legacyReq.exists) return;
+        }
 
         const convRef = admin.firestore().collection('Conversations').doc(convId);
         const convSnap = await convRef.get();

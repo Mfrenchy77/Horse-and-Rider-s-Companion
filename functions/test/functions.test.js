@@ -9,17 +9,20 @@ const vm = require('node:vm');
 
 // Exercise public handlers with the real HTML parsers. Only Firebase, CORS,
 // logging and external HTTP are replaced; no credentials or live data are used.
-function harness({fetch, conversation, tokens = ['token-1']} = {}) {
+function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds = []} = {}) {
   const pushes = [];
   const errors = [];
   const tokenOwners = [];
+  const requestIdSet = new Set(existingRequestIds);
   const admin = {
     app() {},
     messaging: () => ({
       sendEachForMulticast: async (message) => pushes.push(message),
     }),
-    firestore: () => ({collection: () => ({doc: (id) => ({
-      get: async () => ({exists: !!conversation, data: () => conversation}),
+    firestore: () => ({collection: (colName) => ({doc: (id) => ({
+      get: async () => colName === 'Requests' ?
+        {exists: requestIdSet.has(id), data: () => ({})} :
+        {exists: !!conversation, data: () => conversation},
       collection: () => ({get: async () => {
         tokenOwners.push(id);
         return {docs: tokens.map((token) => ({id: token, data: () => ({token})}))};
@@ -264,5 +267,20 @@ test('onRequestCreated notifies recipients, excludes sender case-insensitively, 
   assert.equal(h.pushes.length, 1);
   assert.deepEqual(Array.from(h.pushes[0].tokens), ['token-1']);
   assert.equal(h.pushes[0].data.requestId, 'req-42');
+  assert.equal(h.errors.length, 0);
+});
+
+test('onMessageCreated skips mirrored or already-migrated Requests to prevent duplicate notifications', async () => {
+  const conv = {parties: ['Rider', 'Trainer'], partiesIds: ['rider@example.com', 'trainer@example.com']};
+  const h = harness({conversation: conv, existingRequestIds: ['c1_m1']});
+  await h.handlers.onMessageCreated({
+    params: {convId: 'c1', messageId: 'm1'},
+    data: {data: () => ({messageType: 'INSTRUCTOR_REQUEST', senderId: 'rider@example.com'})},
+  });
+  await h.handlers.onMessageCreated({
+    params: {convId: 'c2', messageId: 'm2'},
+    data: {data: () => ({messageType: 'INSTRUCTOR_REQUEST', senderId: 'rider@example.com', mirroredFromRequests: true})},
+  });
+  assert.equal(h.pushes.length, 0);
   assert.equal(h.errors.length, 0);
 });
