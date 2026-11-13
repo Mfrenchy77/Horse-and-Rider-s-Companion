@@ -1,8 +1,6 @@
 // ignore: lines_longer_than_80_chars
 // ignore_for_file: public_member_api_docs, sort_constructors_first, constant_identifier_names
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum LevelState {
   NO_PROGRESS,
   LEARNING,
@@ -10,7 +8,7 @@ enum LevelState {
   VERIFIED,
 }
 
-///Model of a Skill Level
+/// Model of a Skill Level
 class SkillLevel {
   SkillLevel({
     required this.skillId,
@@ -28,62 +26,36 @@ class SkillLevel {
   DateTime? lastEditDate;
   LevelState levelState;
 
-  SkillLevel.fromJson(Map<String, Object?> json)
-      : this(
-          skillId: json['skillId']! as String,
-          skillName: json['skillName']! as String,
-          verified: json['verified']! as bool,
-          lastEditBy: json['lastEditBy']! as String,
-          lastEditDate: (json['lastEditDate']! as Timestamp).toDate(),
-          levelState: (json['levelState']! as String) == 'NO_PROGRESS'
-              ? LevelState.NO_PROGRESS
-              : (json['levelState']! as String) == 'LEARNING'
-                  ? LevelState.LEARNING
-                  : (json['levelState']! as String) == 'PROFICIENT'
-                      ? LevelState.PROFICIENT
-                      : (json['levelState']! as String) == 'VERIFIED'
-                          ? LevelState.VERIFIED
-                          : LevelState.NO_PROGRESS,
-        );
-  factory SkillLevel.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
+  factory SkillLevel.fromMap(Map<String, Object?> data) {
     return SkillLevel(
-      verified: data!['verified'] as bool,
-      skillId: data['skillId'] as String,
-      skillName: data['skillName'] as String,
+      skillId: data['skillId']! as String,
+      skillName: data['skillName']! as String,
+      verified: (data['verified'] as bool?) ?? false,
       lastEditBy: data['lastEditBy'] as String?,
-      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
-      levelState: (data['levelState'] as String) == 'NO_PROGRESS'
-          ? LevelState.NO_PROGRESS
-          : (data['levelState'] as String) == 'LEARNING'
-              ? LevelState.LEARNING
-              : (data['levelState'] as String) == 'PROFICIENT'
-                  ? LevelState.PROFICIENT
-                  : (data['levelState'] as String) == 'VERIFIED'
-                      ? LevelState.VERIFIED
-                      : LevelState.NO_PROGRESS,
+      lastEditDate: _parseDateTime(data['lastEditDate']),
+      levelState: _parseLevelState(data['levelState'] as String?),
     );
   }
-  Map<String, Object?> toFirestore() {
+
+  SkillLevel.fromJson(Map<String, Object?> json)
+    : this(
+        skillId: json['skillId']! as String,
+        skillName: json['skillName']! as String,
+        verified: (json['verified'] as bool?) ?? false,
+        lastEditBy: json['lastEditBy'] as String?,
+        lastEditDate: _parseDateTime(json['lastEditDate']),
+        levelState: _parseLevelState(json['levelState'] as String?),
+      );
+
+  Map<String, Object?> toMap() {
     return {
       'skillId': skillId,
       'verified': verified,
       'skillName': skillName,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
-      if (lastEditDate != null) 'lastEditDate': lastEditDate,
-      'levelState': levelState == LevelState.NO_PROGRESS
-          ? 'NO_PROGRESS'
-          : levelState == LevelState.LEARNING
-              ? 'LEARNING'
-              : levelState == LevelState.PROFICIENT
-                  ? 'PROFICIENT'
-                  : levelState == LevelState.VERIFIED
-                      ? 'VERIFIED'
-                      : 'NO_PROGRESS',
+      if (lastEditDate != null)
+        'lastEditDate': lastEditDate!.toIso8601String(),
+      'levelState': levelStateName(levelState),
     };
   }
 
@@ -93,16 +65,34 @@ class SkillLevel {
       'verified': verified,
       'skillName': skillName,
       'lastEditBy': lastEditBy,
-      'lastEditDate': lastEditDate,
-      'levelState': levelState == LevelState.NO_PROGRESS
-          ? 'NO_PROGRESS'
-          : levelState == LevelState.LEARNING
-              ? 'LEARNING'
-              : levelState == LevelState.PROFICIENT
-                  ? 'PROFICIENT'
-                  : levelState == LevelState.VERIFIED
-                      ? 'VERIFIED'
-                      : 'NO_PROGRESS',
+      'lastEditDate': lastEditDate?.toIso8601String(),
+      'levelState': levelStateName(levelState),
     };
+  }
+
+  static LevelState _parseLevelState(String? value) {
+    return switch (value) {
+      'LEARNING' => LevelState.LEARNING,
+      'PROFICIENT' => LevelState.PROFICIENT,
+      'VERIFIED' => LevelState.VERIFIED,
+      _ => LevelState.NO_PROGRESS,
+    };
+  }
+
+  static String levelStateName(LevelState state) {
+    return switch (state) {
+      LevelState.NO_PROGRESS => 'NO_PROGRESS',
+      LevelState.LEARNING => 'LEARNING',
+      LevelState.PROFICIENT => 'PROFICIENT',
+      LevelState.VERIFIED => 'VERIFIED',
+    };
+  }
+
+  static DateTime? _parseDateTime(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return null;
   }
 }

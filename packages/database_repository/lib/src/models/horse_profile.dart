@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/mappers/skill_level_firestore_mapper.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 
@@ -227,7 +228,8 @@ class HorseProfile {
       if (instructors != null)
         'instructors': List<dynamic>.from(instructors!.map((e) => e.toJson())),
       if (skillLevels != null)
-        'skillLevels': skillLevels?.map((e) => e.toFirestore()).toList(),
+        'skillLevels':
+            skillLevels?.map(SkillLevelFirestoreMapper.toFirestore).toList(),
     };
   }
 
@@ -298,7 +300,9 @@ List<SkillLevel> _convertSkillLevel(List<dynamic>? skillLevelMap) {
 
   if (skillLevelMap != null) {
     for (final skillLevel in skillLevelMap) {
-      skillLevels.add(SkillLevel.fromJson(skillLevel as Map<String, dynamic>));
+      skillLevels.add(
+        SkillLevelFirestoreMapper.fromMap(skillLevel as Map<String, dynamic>),
+      );
     }
   }
   return skillLevels;
