@@ -75,7 +75,38 @@ function transition(link, actor, action) {
   return rule[2];
 }
 
-async function readRequestRecord(tx, db, requestDocId, actor, fallbackDocIds = []) {
+function matchesExpectedRequest(data, actor, expected) {
+  if (!expected) return true;
+  if (Array.isArray(expected.kinds) && !expected.kinds.includes(data.kind)) {
+    return false;
+  }
+  if (expected.horseId !== undefined && (data.horseId || null) !== (expected.horseId || null)) {
+    return false;
+  }
+  if (expected.connectionId && data.connectionId && data.connectionId !== expected.connectionId) {
+    return false;
+  }
+  if (expected.participants) {
+    const reqPair = [emailKey(data.senderEmail || ''), emailKey(data.recipientEmail || '')].sort();
+    const expPair = expected.participants.map(emailKey).sort();
+    if (reqPair[0] !== expPair[0] || reqPair[1] !== expPair[1]) return false;
+  }
+  if (expected.sender && emailKey(data.senderEmail || '') !== emailKey(expected.sender)) {
+    return false;
+  }
+  if (expected.recipient && emailKey(data.recipientEmail || '') !== emailKey(expected.recipient)) {
+    return false;
+  }
+  if (expected.actorMustBeRecipient && emailKey(data.recipientEmail || '') !== actor) {
+    return false;
+  }
+  if (expected.actorMustBeSender && emailKey(data.senderEmail || '') !== actor) {
+    return false;
+  }
+  return true;
+}
+
+async function readRequestRecord(tx, db, requestDocId, actor, fallbackDocIds = [], expected = null) {
   const candidates = [];
   if (requestDocId) candidates.push(requestDocId);
   if (Array.isArray(fallbackDocIds)) {
@@ -92,7 +123,7 @@ async function readRequestRecord(tx, db, requestDocId, actor, fallbackDocIds = [
     const data = snap.data();
     if (!data) continue;
     const parties = Array.isArray(data.partiesIds) ? data.partiesIds.map(emailKey) : [];
-    if (!parties.includes(actor)) {
+    if (!parties.includes(actor) || !matchesExpectedRequest(data, actor, expected)) {
       throw new HttpsError('permission-denied', 'Request unavailable.');
     }
     return {ref: reqRef, data};
@@ -160,7 +191,11 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
   const ref = db.collection(collection).doc(id);
   const [existingSnap, reqRecord] = await Promise.all([
     tx.get(ref),
-    readRequestRecord(tx, db, data.requestDocId, actor, data.fallbackRequestDocIds),
+    readRequestRecord(tx, db, data.requestDocId, actor, data.fallbackRequestDocIds, {
+      kinds: kind === 'horse' ? ['studentHorse'] : ['instructor', 'student'],
+      horseId: horseId || null,
+      participants: [learner, coach],
+    }),
   ]);
   const existing = existingSnap.data();
   if (existing && !terminal.has(existing.status) &&
@@ -338,7 +373,15 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
     throw new HttpsError('permission-denied', 'This action is unavailable for a transfer.');
   }
   const status = transition(link, actor, action);
-  const reqRecord = await readRequestRecord(tx, db, requestDocId, actor, fallbackRequestDocIds);
+  const reqRecord = await readRequestRecord(tx, db, requestDocId, actor, fallbackRequestDocIds, {
+    kinds: ['transferHorse'],
+    horseId: link.horseId,
+    connectionId: id,
+    sender: link.learner,
+    recipient: link.coach,
+    actorMustBeRecipient: action === 'accept' || action === 'decline',
+    actorMustBeSender: action === 'cancel',
+  });
   if (link.status === status) {
     writeRequestResolution(tx, reqRecord, status, id, now);
     return {id, status};
@@ -788,7 +831,11 @@ function connectionHandler(db, auth) {
 
       const status = transition(link, actor, data.action);
       const reqRecord = await readRequestRecord(
-          tx, db, data.requestDocId, actor, data.fallbackRequestDocIds,
+          tx, db, data.requestDocId, actor, data.fallbackRequestDocIds, {
+            kinds: link.kind === 'horse' ? ['studentHorse'] : ['instructor', 'student'],
+            horseId: link.horseId || null,
+            participants: [link.learner, link.coach],
+          },
       );
       if (status === 'accepted' && status !== link.status) {
         const record = await target(tx, db, link);

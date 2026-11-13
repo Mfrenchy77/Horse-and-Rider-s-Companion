@@ -404,6 +404,7 @@ test('connectionHandler atomically resolves Requests on send and transfer accept
   // 1. Coaching send with requestDocId marks Requests accepted atomically.
   docs.set('Requests/req-coach-1', {
     status: 'pending',
+    kind: 'instructor',
     partiesIds: [student, coach],
     senderEmail: student,
     recipientEmail: coach,
@@ -419,6 +420,8 @@ test('connectionHandler atomically resolves Requests on send and transfer accept
   });
   docs.set('Requests/req-xfer-1', {
     status: 'pending',
+    kind: 'transferHorse',
+    horseId: 'atlas',
     partiesIds: [student, outsider],
     senderEmail: student,
     recipientEmail: outsider,
@@ -480,6 +483,7 @@ test('fallbackRequestDocIds resolves migrated legacy Requests and rejects stale 
   docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
   docs.set('Requests/legacy_conv1_m1', {
     status: 'pending',
+    kind: 'instructor',
     partiesIds: [student, coach],
     senderEmail: student,
     recipientEmail: coach,
@@ -505,4 +509,49 @@ test('fallbackRequestDocIds resolves migrated legacy Requests and rejects stale 
       {code: 'failed-precondition'},
   );
   assert.equal(docs.get(`Requests/${offer.id}`).status, 'pending');
+});
+
+test('rejects mismatched requestDocId or fallbackRequestDocIds across same participants', async () => {
+  const {call, docs, getLink} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+  const offer = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider,
+  });
+  const version = getLink(offer.id).version;
+
+  // Mismatched kind (instructor request between same participants)
+  docs.set('Requests/req-wrong-kind', {
+    status: 'pending',
+    kind: 'instructor',
+    partiesIds: [student, outsider],
+    senderEmail: student,
+    recipientEmail: outsider,
+  });
+  await assert.rejects(
+      call(outsider, {action: 'accept', id: offer.id, version, requestDocId: 'req-wrong-kind'}),
+      {code: 'permission-denied'},
+  );
+
+  // Mismatched horseId via fallbackRequestDocIds
+  docs.set('Requests/req-wrong-horse', {
+    status: 'pending',
+    kind: 'transferHorse',
+    horseId: 'other-horse',
+    partiesIds: [student, outsider],
+    senderEmail: student,
+    recipientEmail: outsider,
+  });
+  await assert.rejects(
+      call(outsider, {
+        action: 'accept',
+        id: offer.id,
+        version,
+        requestDocId: 'missing',
+        fallbackRequestDocIds: ['req-wrong-horse'],
+      }),
+      {code: 'permission-denied'},
+  );
+  assert.equal(docs.get('Requests/req-wrong-kind').status, 'pending');
+  assert.equal(docs.get('Requests/req-wrong-horse').status, 'pending');
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
 });

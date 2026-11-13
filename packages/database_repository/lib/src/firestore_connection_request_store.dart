@@ -85,13 +85,15 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
     final resolvedId = docIdFor(request);
     final docId = resolvedId.isNotEmpty ? resolvedId : _requests.doc().id;
     final docRef = _requests.doc(docId);
-    final existing = await docRef.get();
-    if (existing.exists) return;
     final payload = request.toMap()
       ..['id'] = docId
       ..['createdAt'] = Timestamp.fromDate(request.createdAt)
       ..['updatedAt'] = Timestamp.fromDate(request.createdAt);
-    await docRef.set(payload);
+    await _firestore.runTransaction((tx) async {
+      final existing = await tx.get(docRef);
+      if (existing.exists) return;
+      tx.set(docRef, payload);
+    });
   }
 
   static const Set<String> _clientDismissStatuses = {

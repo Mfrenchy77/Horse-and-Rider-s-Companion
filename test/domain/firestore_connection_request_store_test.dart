@@ -239,6 +239,68 @@ void main() {
       );
     });
 
+    test(
+      'concurrent sendRequest calls are atomic, idempotent, and do not '
+      'overwrite existing requests',
+      () async {
+        final firstTime = DateTime(2026, 11, 13, 14);
+        final secondTime = DateTime(2026, 11, 13, 14, 5);
+        final first = buildRequest(
+          id: 'concurrent-conv',
+          kind: ConnectionRequestKind.instructor,
+          createdAt: firstTime,
+        );
+        final second = ConnectionRequest(
+          id: 'concurrent-conv',
+          messageId: first.messageId,
+          kind: ConnectionRequestKind.instructor,
+          senderEmail: first.senderEmail,
+          senderName: first.senderName,
+          recipientEmail: first.recipientEmail,
+          recipientName: first.recipientName,
+          title: 'Overwritten Title',
+          summary: 'Overwritten Summary',
+          parties: first.parties,
+          partiesIds: first.partiesIds,
+          createdAt: secondTime,
+        );
+
+        await Future.wait([
+          store.sendRequest(first),
+          store.sendRequest(second),
+        ]);
+
+        final snapshot = await firestore
+            .collection(FirestoreConnectionRequestStore.requestsCollection)
+            .get();
+        expect(snapshot.docs, hasLength(1));
+        final winningTitle = snapshot.docs.single.data()['title'] as String?;
+        expect(winningTitle, anyOf(first.title, second.title));
+
+        // Subsequent retry must not overwrite the winning document.
+        final retry = ConnectionRequest(
+          id: 'concurrent-conv',
+          messageId: first.messageId,
+          kind: ConnectionRequestKind.instructor,
+          senderEmail: first.senderEmail,
+          senderName: first.senderName,
+          recipientEmail: first.recipientEmail,
+          recipientName: first.recipientName,
+          title: 'Retry Title',
+          summary: 'Retry Summary',
+          parties: first.parties,
+          partiesIds: first.partiesIds,
+          createdAt: secondTime,
+        );
+        await store.sendRequest(retry);
+        final afterRetry = await firestore
+            .collection(FirestoreConnectionRequestStore.requestsCollection)
+            .get();
+        expect(afterRetry.docs, hasLength(1));
+        expect(afterRetry.docs.single.data()['title'], winningTitle);
+      },
+    );
+
     test('watchRequests returns empty list when userEmail is blank', () async {
       final items = await store.watchRequests(userEmail: '   ').first;
       expect(items, isEmpty);
