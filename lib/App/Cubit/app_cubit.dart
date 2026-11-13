@@ -2852,10 +2852,12 @@ class AppCubit extends Cubit<AppState> {
     if (payload == null) return;
     emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     try {
+      final fallbackIds = _fallbackRequestDocIds(request);
       final result = await submit({
         'action': 'send',
         ...payload,
         if (request.id.isNotEmpty) 'requestDocId': request.id,
+        if (fallbackIds.isNotEmpty) 'fallbackRequestDocIds': fallbackIds,
       });
       if (isClosed || state.usersProfile?.email != email) return;
       emit(
@@ -2880,6 +2882,18 @@ class AppCubit extends Cubit<AppState> {
         ),
       );
     }
+  }
+
+  static List<String> _fallbackRequestDocIds(ConnectionRequest request) {
+    if (request.id.isEmpty ||
+        request.messageId.isEmpty ||
+        request.id.endsWith('_${request.messageId}')) {
+      return const <String>[];
+    }
+    return <String>[
+      '${request.id}_${request.messageId}',
+      'legacy_${request.id}_${request.messageId}',
+    ];
   }
 
   Future<void> _acceptTransferRequest(ConnectionRequest request) async {
@@ -2913,11 +2927,13 @@ class AppCubit extends Cubit<AppState> {
         );
         return;
       }
+      final fallbackIds = _fallbackRequestDocIds(request);
       await submit({
         'action': 'accept',
         'id': connectionId,
         'version': version,
         if (request.id.isNotEmpty) 'requestDocId': request.id,
+        if (fallbackIds.isNotEmpty) 'fallbackRequestDocIds': fallbackIds,
       });
       if (isClosed || state.usersProfile?.email != email) return;
       emit(

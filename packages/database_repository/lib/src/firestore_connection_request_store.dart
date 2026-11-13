@@ -39,7 +39,8 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
         });
   }
 
-  static String _docIdFor(ConnectionRequest request) {
+  /// Resolves the canonical `Requests` document ID for [request].
+  static String docIdFor(ConnectionRequest request) {
     if (request.id.isNotEmpty &&
         request.messageId.isNotEmpty &&
         !request.id.endsWith('_${request.messageId}')) {
@@ -49,15 +50,48 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
     return request.messageId;
   }
 
+  /// Streams deduplication keys for non-pending `Requests` involving
+  /// [userEmail] so dual-read stores suppress resolved legacy items.
+  Stream<Set<String>> watchResolvedKeys({required String userEmail}) {
+    final normalizedEmail = userEmail.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) {
+      return Stream.value(const <String>{});
+    }
+    return _requests
+        .where('partiesIds', arrayContains: normalizedEmail)
+        .snapshots()
+        .map((snap) {
+          final keys = <String>{};
+          for (final doc in snap.docs) {
+            final data = doc.data();
+            final status = data['status'] as String? ?? 'pending';
+            if (status == 'pending') continue;
+            final req = ConnectionRequest.fromMap(
+              _normalizeTimestamps(data),
+              idFromDoc: doc.id,
+            );
+            keys.add(
+              req.messageId.isNotEmpty
+                  ? '${req.kind.name}:${req.senderEmail}:${req.messageId}'
+                  : '${req.kind.name}:${req.id}',
+            );
+          }
+          return keys;
+        });
+  }
+
   @override
   Future<void> sendRequest(ConnectionRequest request) async {
-    final resolvedId = _docIdFor(request);
+    final resolvedId = docIdFor(request);
     final docId = resolvedId.isNotEmpty ? resolvedId : _requests.doc().id;
+    final docRef = _requests.doc(docId);
+    final existing = await docRef.get();
+    if (existing.exists) return;
     final payload = request.toMap()
       ..['id'] = docId
       ..['createdAt'] = Timestamp.fromDate(request.createdAt)
       ..['updatedAt'] = Timestamp.fromDate(request.createdAt);
-    await _requests.doc(docId).set(payload);
+    await docRef.set(payload);
   }
 
   static const Set<String> _clientDismissStatuses = {
@@ -72,7 +106,7 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
     required String dismissalNote,
     String status = 'dismissed',
   }) async {
-    final docId = _docIdFor(request);
+    final docId = docIdFor(request);
     if (docId.isEmpty) return;
     final safeStatus = _clientDismissStatuses.contains(status)
         ? status

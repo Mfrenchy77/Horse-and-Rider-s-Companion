@@ -456,6 +456,21 @@ void main() {
           'msg-p1',
           'msg-dup1',
         ]);
+
+        // Even on a fresh CompositeConnectionRequestStore (simulating restart),
+        // a Requests doc marked 'accepted' suppresses its legacy counterpart.
+        await firestore
+            .collection(FirestoreConnectionRequestStore.requestsCollection)
+            .doc('dup1_msg-dup1')
+            .update({'status': 'accepted', 'isAccepted': true});
+        final freshComposite = CompositeConnectionRequestStore(
+          primary: store,
+          legacy: legacyStore,
+        );
+        final afterRestart = await freshComposite
+            .watchRequests(userEmail: 'recipient@example.com')
+            .firstWhere((items) => items.length == 1);
+        expect(afterRestart.map((r) => r.messageId).toList(), ['msg-p1']);
       },
     );
   });

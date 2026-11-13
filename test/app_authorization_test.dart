@@ -84,6 +84,10 @@ void main() {
           'learnerEmail': 'student@example.com',
           'coachEmail': rider.email,
           'requestDocId': 'conversation',
+          'fallbackRequestDocIds': [
+            'conversation_message',
+            'legacy_conversation_message',
+          ],
         },
       ]);
       expect(harness.cubit.state.acceptStatus, AcceptStatus.submitted);

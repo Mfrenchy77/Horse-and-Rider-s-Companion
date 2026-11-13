@@ -454,3 +454,55 @@ test('connectionHandler atomically resolves Requests on send and transfer accept
   });
   assert.equal(docs.get('Requests/req-xfer-1').status, 'accepted');
 });
+
+test('sendTransfer with createRequest atomically creates Requests and retries idempotently', async () => {
+  const {call, docs} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+  const payload = {
+    action: 'sendTransfer',
+    horseId: 'atlas',
+    recipientEmail: outsider,
+    createRequest: true,
+  };
+  const first = await call(student, payload);
+  assert.equal(first.requestCreated, true);
+  assert.equal(docs.get(`Requests/${first.id}`).status, 'pending');
+  assert.equal(docs.get(`Requests/${first.id}`).connectionId, first.id);
+
+  // Retry is idempotent and does not duplicate or alter createdAt.
+  const retry = await call(student, payload);
+  assert.deepEqual(retry, first);
+  assert.equal(docs.get(`Requests/${first.id}`).status, 'pending');
+});
+
+test('fallbackRequestDocIds resolves migrated legacy Requests and rejects stale owner transfers', async () => {
+  const {call, docs, getLink, request} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+  docs.set('Requests/legacy_conv1_m1', {
+    status: 'pending',
+    partiesIds: [student, coach],
+    senderEmail: student,
+    recipientEmail: coach,
+  });
+  await call(student, {
+    ...request('rider'),
+    requestDocId: 'conv1',
+    fallbackRequestDocIds: ['conv1_m1', 'legacy_conv1_m1'],
+  });
+  assert.equal(docs.get('Requests/legacy_conv1_m1').status, 'accepted');
+
+  // Transfer offered, then ownership changes before recipient accepts -> rejected.
+  const offer = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider, createRequest: true,
+  });
+  const offerVersion = getLink(offer.id).version;
+  docs.set('Horse_Profile/atlas', {
+    ...docs.get('Horse_Profile/atlas'),
+    currentOwnerId: coach,
+  });
+  await assert.rejects(
+      call(outsider, {action: 'accept', id: offer.id, version: offerVersion, requestDocId: offer.id}),
+      {code: 'failed-precondition'},
+  );
+  assert.equal(docs.get(`Requests/${offer.id}`).status, 'pending');
+});

@@ -75,18 +75,29 @@ function transition(link, actor, action) {
   return rule[2];
 }
 
-async function readRequestRecord(tx, db, requestDocId, actor) {
-  if (!requestDocId) return null;
-  const id = documentId(requestDocId, 'request ID');
-  const reqRef = db.collection('Requests').doc(id);
-  const snap = await tx.get(reqRef);
-  const data = snap.data();
-  if (!data) return null;
-  const parties = Array.isArray(data.partiesIds) ? data.partiesIds.map(emailKey) : [];
-  if (!parties.includes(actor)) {
-    throw new HttpsError('permission-denied', 'Request unavailable.');
+async function readRequestRecord(tx, db, requestDocId, actor, fallbackDocIds = []) {
+  const candidates = [];
+  if (requestDocId) candidates.push(requestDocId);
+  if (Array.isArray(fallbackDocIds)) {
+    for (const candidate of fallbackDocIds) {
+      if (typeof candidate === 'string' && candidate && !candidates.includes(candidate)) {
+        candidates.push(candidate);
+      }
+    }
   }
-  return {ref: reqRef, data};
+  for (const rawId of candidates) {
+    const id = documentId(rawId, 'request ID');
+    const reqRef = db.collection('Requests').doc(id);
+    const snap = await tx.get(reqRef);
+    const data = snap.data();
+    if (!data) continue;
+    const parties = Array.isArray(data.partiesIds) ? data.partiesIds.map(emailKey) : [];
+    if (!parties.includes(actor)) {
+      throw new HttpsError('permission-denied', 'Request unavailable.');
+    }
+    return {ref: reqRef, data};
+  }
+  return null;
 }
 
 function writeRequestResolution(tx, record, targetStatus, connectionId, now) {
@@ -149,7 +160,7 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
   const ref = db.collection(collection).doc(id);
   const [existingSnap, reqRecord] = await Promise.all([
     tx.get(ref),
-    readRequestRecord(tx, db, data.requestDocId, actor),
+    readRequestRecord(tx, db, data.requestDocId, actor, data.fallbackRequestDocIds),
   ]);
   const existing = existingSnap.data();
   if (existing && !terminal.has(existing.status) &&
@@ -243,34 +254,91 @@ async function sendTransfer(tx, db, auth, identity, data, now, version) {
     rider(tx, db, account.email),
   ]);
   const id = key(['transfer', horseId, identity.uid, account.uid]);
+  const reqRef = data.createRequest === true ? db.collection('Requests').doc(id) : null;
+  const existingReq = reqRef ? (await tx.get(reqRef)).data() : null;
   const pendingId = animal.profile.transferRequestId;
   if (pendingId) {
-    if (pendingId === id) return {id, status: 'pending'};
+    if (pendingId === id) {
+      if (reqRef && !existingReq) {
+        const recipientEmail = emailKey(account.email);
+        const ownerName = owner.profile.name || owner.profile.email;
+        const recipientName = recipient.profile.name || recipient.profile.email;
+        tx.set(reqRef, {
+          id,
+          messageId: id,
+          kind: 'transferHorse',
+          senderEmail: ownerEmail,
+          senderName: ownerName,
+          recipientEmail,
+          recipientName,
+          title: 'Transfer Horse',
+          summary: `${ownerName} wants to transfer ${animal.profile.name || horseId} to you`,
+          parties: [ownerName, recipientName],
+          partiesIds: [ownerEmail, recipientEmail],
+          createdAt: now,
+          updatedAt: now,
+          isAccepted: false,
+          status: 'pending',
+          horseId,
+          horseName: animal.profile.name || horseId,
+          horseOwnerId: animal.profile.currentOwnerId,
+          horseOwnerName: animal.profile.currentOwnerName || ownerName,
+          connectionId: id,
+        });
+      }
+      return {id, status: 'pending', ...(reqRef ? {requestCreated: true} : {})};
+    }
     throw new HttpsError('failed-precondition', 'Cancel the existing transfer request first.');
   }
   const recipientEmail = emailKey(account.email);
+  const ownerName = owner.profile.name || owner.profile.email;
+  const recipientName = recipient.profile.name || recipient.profile.email;
   tx.set(db.collection(collection).doc(id), {
     kind: 'transfer', version, horseId,
     horseName: animal.profile.name || horseId,
     learner: ownerEmail, coach: recipientEmail,
     learnerEmail: owner.profile.email, coachEmail: recipient.profile.email,
-    learnerName: owner.profile.name || owner.profile.email,
-    coachName: recipient.profile.name || recipient.profile.email,
+    learnerName: ownerName,
+    coachName: recipientName,
     participantUids: [identity.uid, account.uid],
     learnerUid: identity.uid, coachUid: account.uid,
     sender: ownerEmail, recipient: recipientEmail,
     status: 'pending', updatedAt: now,
   });
   tx.update(animal.ref, {transferRequestId: id});
-  return {id, status: 'pending'};
+  if (reqRef && !existingReq) {
+    tx.set(reqRef, {
+      id,
+      messageId: id,
+      kind: 'transferHorse',
+      senderEmail: ownerEmail,
+      senderName: ownerName,
+      recipientEmail,
+      recipientName,
+      title: 'Transfer Horse',
+      summary: `${ownerName} wants to transfer ${animal.profile.name || horseId} to you`,
+      parties: [ownerName, recipientName],
+      partiesIds: [ownerEmail, recipientEmail],
+      createdAt: now,
+      updatedAt: now,
+      isAccepted: false,
+      status: 'pending',
+      horseId,
+      horseName: animal.profile.name || horseId,
+      horseOwnerId: animal.profile.currentOwnerId,
+      horseOwnerName: animal.profile.currentOwnerName || ownerName,
+      connectionId: id,
+    });
+  }
+  return {id, status: 'pending', ...(reqRef ? {requestCreated: true} : {})};
 }
 
-async function resolveTransfer(tx, db, link, ref, id, actor, action, now, requestDocId) {
+async function resolveTransfer(tx, db, link, ref, id, actor, action, now, requestDocId, fallbackRequestDocIds) {
   if (!['accept', 'decline', 'cancel'].includes(action)) {
     throw new HttpsError('permission-denied', 'This action is unavailable for a transfer.');
   }
   const status = transition(link, actor, action);
-  const reqRecord = await readRequestRecord(tx, db, requestDocId, actor);
+  const reqRecord = await readRequestRecord(tx, db, requestDocId, actor, fallbackRequestDocIds);
   if (link.status === status) {
     writeRequestResolution(tx, reqRecord, status, id, now);
     return {id, status};
@@ -686,7 +754,9 @@ function connectionHandler(db, auth) {
         throw new HttpsError('failed-precondition', 'Refresh this connection and try again.');
       }
       if (link.kind === 'transfer') {
-        return resolveTransfer(tx, db, link, ref, id, actor, data.action, now, data.requestDocId);
+        return resolveTransfer(
+            tx, db, link, ref, id, actor, data.action, now, data.requestDocId, data.fallbackRequestDocIds,
+        );
       }
       if (['record', 'verifySkill', 'removeSkillVerification'].includes(data.action)) {
         return addRecord(tx, db, auth, link, actor, data, now, id);
@@ -717,7 +787,9 @@ function connectionHandler(db, auth) {
       }
 
       const status = transition(link, actor, data.action);
-      const reqRecord = await readRequestRecord(tx, db, data.requestDocId, actor);
+      const reqRecord = await readRequestRecord(
+          tx, db, data.requestDocId, actor, data.fallbackRequestDocIds,
+      );
       if (status === 'accepted' && status !== link.status) {
         const record = await target(tx, db, link);
         if (link.kind === 'horse' && isArchived(record.profile)) {

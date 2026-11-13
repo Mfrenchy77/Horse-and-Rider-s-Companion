@@ -140,39 +140,49 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
     );
     try {
       String? connectionId;
+      var requestCreated = false;
       if (_submitCoachingAction != null) {
         final result = await _submitCoachingAction({
           'action': 'sendTransfer',
           'horseId': horse.id,
           'recipientEmail': recipient.email.toLowerCase(),
+          'createRequest': true,
         });
         connectionId = result['id'] as String?;
+        requestCreated = result['requestCreated'] == true;
       }
-      final emails = [sender.email.toLowerCase(), recipient.email.toLowerCase()]
-        ..sort();
-      final conversationId = convertEmailToPath(emails.join('_'));
-      final request = ConnectionRequest(
-        id: conversationId,
-        messageId: ViewUtils.createId(),
-        kind: ConnectionRequestKind.transferHorse,
-        senderEmail: sender.email.toLowerCase(),
-        senderName: sender.name,
-        senderPicUrl: sender.picUrl,
-        recipientEmail: recipient.email.toLowerCase(),
-        recipientName: recipient.name,
-        title: 'Transfer Horse',
-        summary: '${sender.name} wants to transfer ${horse.name} to you',
-        parties: [sender.name, recipient.name],
-        partiesIds: [sender.email.toLowerCase(), recipient.email.toLowerCase()],
-        createdAt: DateTime.now(),
-        horseId: horse.id,
-        horseName: horse.name,
-        horsePicUrl: horse.picUrl,
-        horseOwnerId: horse.currentOwnerId,
-        horseOwnerName: horse.currentOwnerName,
-        connectionId: connectionId,
-      );
-      await _requestRepository.sendRequest(request);
+      if (!requestCreated) {
+        final emails = [
+          sender.email.toLowerCase(),
+          recipient.email.toLowerCase(),
+        ]..sort();
+        final conversationId = convertEmailToPath(emails.join('_'));
+        final request = ConnectionRequest(
+          id: conversationId,
+          messageId: connectionId ?? ViewUtils.createId(),
+          kind: ConnectionRequestKind.transferHorse,
+          senderEmail: sender.email.toLowerCase(),
+          senderName: sender.name,
+          senderPicUrl: sender.picUrl,
+          recipientEmail: recipient.email.toLowerCase(),
+          recipientName: recipient.name,
+          title: 'Transfer Horse',
+          summary: '${sender.name} wants to transfer ${horse.name} to you',
+          parties: [sender.name, recipient.name],
+          partiesIds: [
+            sender.email.toLowerCase(),
+            recipient.email.toLowerCase(),
+          ],
+          createdAt: DateTime.now(),
+          horseId: horse.id,
+          horseName: horse.name,
+          horsePicUrl: horse.picUrl,
+          horseOwnerId: horse.currentOwnerId,
+          horseOwnerName: horse.currentOwnerName,
+          connectionId: connectionId,
+        );
+        await _requestRepository.sendRequest(request);
+      }
       if (!isClosed) {
         emit(
           state.copyWith(

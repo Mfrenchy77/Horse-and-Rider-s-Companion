@@ -255,6 +255,10 @@ void main() {
             'learnerEmail': owner.email,
             'coachEmail': recipient.email,
             'requestDocId': 'owner_recipient',
+            'fallbackRequestDocIds': [
+              'owner_recipient_m1',
+              'legacy_owner_recipient_m1',
+            ],
           },
         ]);
         expect(cubit.state.acceptStatus, AcceptStatus.submitted);

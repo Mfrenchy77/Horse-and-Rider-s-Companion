@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:database_repository/src/connection_request.dart';
 import 'package:database_repository/src/connection_request_store.dart';
+import 'package:database_repository/src/firestore_connection_request_store.dart';
 
 /// Dual-read / synchronized [ConnectionRequestStore] for the migration
 /// compatibility window between dedicated `Requests` (`primary`) and legacy
@@ -44,6 +45,7 @@ class CompositeConnectionRequestStore implements ConnectionRequestStore {
     return Stream.multi((controller) {
       var primaryItems = const <ConnectionRequest>[];
       var legacyItems = const <ConnectionRequest>[];
+      var primaryResolvedKeys = const <String>{};
       var hasPrimary = false;
       var hasLegacy = false;
 
@@ -55,7 +57,11 @@ class CompositeConnectionRequestStore implements ConnectionRequestStore {
         }
         for (final item in legacyItems) {
           final key = _dedupeKey(item);
-          if (_resolvedKeys.contains(key) || item.isAccepted) continue;
+          if (_resolvedKeys.contains(key) ||
+              primaryResolvedKeys.contains(key) ||
+              item.isAccepted) {
+            continue;
+          }
           merged.putIfAbsent(key, () => item);
         }
         final sorted = merged.values.toList()
@@ -83,10 +89,19 @@ class CompositeConnectionRequestStore implements ConnectionRequestStore {
             },
             onError: controller.addError,
           );
+      final subResolved = _primary is FirestoreConnectionRequestStore
+          ? _primary
+                .watchResolvedKeys(userEmail: userEmail)
+                .listen((keys) {
+                  primaryResolvedKeys = keys;
+                  emitMerged();
+                }, onError: controller.addError)
+          : null;
 
       controller.onCancel = () async {
         await subPrimary.cancel();
         await subLegacy.cancel();
+        await subResolved?.cancel();
       };
     });
   }
