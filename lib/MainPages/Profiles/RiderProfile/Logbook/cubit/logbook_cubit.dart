@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
+import 'package:equatable/equatable.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 
 /// Side-effects for the Rider Logbook feature.
@@ -14,7 +15,7 @@ class LogbookCubit extends Cubit<LogbookState> {
   }) : super(const LogbookState());
 
   final ConnectionRepository? _connectionRepository;
-  final RiderProfileRepository _riderProfileRepository;
+  final RiderProfileRepository? _riderProfileRepository;
 
   bool get _busy => state.actionInProgress;
 
@@ -129,10 +130,13 @@ class LogbookCubit extends Cubit<LogbookState> {
         'level': level,
       });
       if (!isEdit && skillId != null) {
-        final profile = await _riderProfileRepository.getRiderProfileByEmail(
-          email: student.learner,
-          serverOnly: true,
-        );
+        final riderRepo = _riderProfileRepository;
+        final profile = riderRepo == null
+            ? null
+            : await riderRepo.getRiderProfileByEmail(
+                email: student.learner,
+                serverOnly: true,
+              );
         final confirmed = profile?.skillLevels?.any(
           (entry) =>
               entry.skillId == skillId &&
@@ -209,9 +213,15 @@ class LogbookCubit extends Cubit<LogbookState> {
     if (_busy) {
       throw const ConnectionFailure('Another request is in progress.');
     }
+    final repo = _riderProfileRepository;
+    if (repo == null) {
+      throw const ConnectionFailure(
+        'Could not save the entry. Your draft is still here.',
+      );
+    }
     emit(state.copyWith(actionInProgress: true, clearFeedback: true));
     try {
-      await _riderProfileRepository.saveRiderLogEntry(
+      await repo.saveRiderLogEntry(
         email: rider.email,
         isEdit: isEdit,
         entry: entry,
@@ -219,7 +229,11 @@ class LogbookCubit extends Cubit<LogbookState> {
       const msg = 'Saved.';
       emit(state.copyWith(actionInProgress: false, feedback: msg));
       return msg;
-    } catch (_) {
+    } catch (error) {
+      if (error is StateError) {
+        emit(state.copyWith(actionInProgress: false, feedback: error.message));
+        rethrow;
+      }
       const msg = 'Could not save the entry. Your draft is still here.';
       emit(state.copyWith(actionInProgress: false, feedback: msg));
       throw const ConnectionFailure(msg);
@@ -227,7 +241,7 @@ class LogbookCubit extends Cubit<LogbookState> {
   }
 }
 
-class LogbookState {
+class LogbookState extends Equatable {
   const LogbookState({this.actionInProgress = false, this.feedback});
 
   final bool actionInProgress;
@@ -243,4 +257,7 @@ class LogbookState {
       feedback: clearFeedback ? null : (feedback ?? this.feedback),
     );
   }
+
+  @override
+  List<Object?> get props => [actionInProgress, feedback];
 }

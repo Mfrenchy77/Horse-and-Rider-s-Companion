@@ -13,6 +13,7 @@ class _MockRiderProfileRepository extends Mock
 void main() {
   setUpAll(() {
     registerFallbackValue(<String, Object?>{});
+    registerFallbackValue(BaseListItem());
   });
 
   group('LogbookCubit', () {

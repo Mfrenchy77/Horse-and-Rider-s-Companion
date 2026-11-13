@@ -567,4 +567,80 @@ void main() {
     expect(find.text('Worked on transitions'), findsNothing);
     expect(find.text('Rider logbook'), findsOneWidget);
   });
+
+  testWidgets('rider deletes a shared logbook entry without provider errors', (
+    tester,
+  ) async {
+    final harness = await AppTestHarness.create();
+    addTearDown(harness.close);
+    const email = 'rider@example.com';
+    final profile = RiderProfile(
+      id: 'rider',
+      email: email,
+      name: 'Morgan',
+      notes: [
+        BaseListItem(
+          id: 'entry-1',
+          name: 'Canter poles session',
+          date: DateTime(2025, 3, 10),
+          parentId: email,
+          riderLog: const RiderLogDetails(
+            type: RiderLogType.training,
+            shared: true,
+          ),
+        ),
+      ],
+    );
+    harness.cubit.emit(
+      harness.cubit.state.copyWith(
+        isGuest: false,
+        usersProfile: profile,
+        user: const User(id: 'rider', email: email, name: 'Morgan'),
+      ),
+    );
+
+    final repository = _SharedRepository();
+    when(
+      () => repository.watchJournal('rider'),
+    ).thenAnswer((_) => Stream.value(const []));
+    when(
+      () => repository.submit(any()),
+    ).thenAnswer((_) async => {'status': 'deleted'});
+
+    await tester.pumpWidget(
+      RepositoryProvider<ConnectionRepository>.value(
+        value: repository,
+        child: BlocProvider.value(
+          value: harness.cubit,
+          child: MaterialApp(
+            home: Scaffold(
+              body: LogBookButton(profile: profile, horseProfile: null),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text("Rider's Log Book"));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Canter poles session'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Delete entry'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete this entry?'), findsOneWidget);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => repository.submit({
+        'action': 'deleteJournal',
+        'id': 'entry-1',
+        'shared': true,
+      }),
+    ).called(1);
+    expect(tester.takeException(), isNull);
+  });
 }

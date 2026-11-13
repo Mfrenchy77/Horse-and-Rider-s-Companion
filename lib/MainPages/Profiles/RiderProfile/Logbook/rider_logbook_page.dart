@@ -46,7 +46,7 @@ class RiderLogbookPage extends StatefulWidget {
         builder: (_) => BlocProvider(
           create: (ctx) => LogbookCubit(
             connectionRepository: ctx.read<ConnectionRepository?>(),
-            riderProfileRepository: ctx.read<RiderProfileRepository>(),
+            riderProfileRepository: ctx.read<RiderProfileRepository?>(),
           ),
           child: _LogEntryEditor(
             email: profile.email,
@@ -116,6 +116,22 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   bool _newestFirst = true;
   String? _journalUid;
   Stream<List<BaseListItem>>? _journal;
+  late final LogbookCubit _logbookCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _logbookCubit = LogbookCubit(
+      connectionRepository: context.read<ConnectionRepository?>(),
+      riderProfileRepository: context.read<RiderProfileRepository?>(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _logbookCubit.close();
+    super.dispose();
+  }
 
   Stream<List<BaseListItem>>? _journalFor(BuildContext context, String uid) {
     if (_journalUid != uid) {
@@ -130,7 +146,10 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   void _openEditor([BaseListItem? entry]) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => _LogEntryEditor(email: widget.email, entry: entry),
+        builder: (_) => BlocProvider.value(
+          value: _logbookCubit,
+          child: _LogEntryEditor(email: widget.email, entry: entry),
+        ),
       ),
     );
   }
@@ -218,7 +237,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
     );
     if (!mounted || !(confirmed ?? false)) return;
     try {
-      await context.read<LogbookCubit>().deleteEntry(entry);
+      await _logbookCubit.deleteEntry(entry);
     } catch (error) {
       if (!mounted) return;
       final message = error is ConnectionFailure
@@ -235,11 +254,8 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
     final state = context.watch<AppCubit>().state;
     final rider = _owner(state, widget.email);
 
-    return BlocProvider(
-      create: (context) => LogbookCubit(
-        connectionRepository: context.read<ConnectionRepository?>(),
-        riderProfileRepository: context.read<RiderProfileRepository>(),
-      ),
+    return BlocProvider.value(
+      value: _logbookCubit,
       child: Scaffold(
         appBar: ThemedAppBar(title: const Text('Rider logbook')),
         body: SafeArea(
