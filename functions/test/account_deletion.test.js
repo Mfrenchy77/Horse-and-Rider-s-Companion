@@ -340,3 +340,38 @@ test('retries idempotently from failed step after partial failure', async () => 
   assert.equal(deleteAuthCalls, 1);
   assert.equal(db.docs.has('DeletionJobs/u-retry'), false);
 });
+
+test('cancels pending Requests involving the deleted user', async () => {
+  const riderEmail = 'leaving@example.com';
+  const otherEmail = 'staying@example.com';
+  const db = createFirestoreMock([
+    [`Rider_Profile/${profileId(riderEmail)}`, {email: riderEmail, name: 'Leaving'}],
+    ['Requests/req-pending', {
+      status: 'pending',
+      partiesIds: [riderEmail, otherEmail],
+      senderEmail: riderEmail,
+      recipientEmail: otherEmail,
+    }],
+    ['Requests/req-unrelated', {
+      status: 'pending',
+      partiesIds: ['a@example.com', otherEmail],
+      senderEmail: 'a@example.com',
+      recipientEmail: otherEmail,
+    }],
+  ]);
+  const auth = {
+    revokeRefreshTokens: async () => {},
+    deleteUser: async () => {},
+  };
+  const handler = accountDeletionHandler(db, auth, null, {nowSeconds: () => 2000});
+  const result = await handler({
+    auth: {
+      uid: 'u-leaving',
+      token: {email: riderEmail, auth_time: 1990, firebase: {sign_in_provider: 'password'}},
+    },
+  });
+  assert.equal(result.status, 'completed');
+  assert.equal(db.docs.get('Requests/req-pending').status, 'cancelled');
+  assert.equal(db.docs.get('Requests/req-pending').dismissalNote, 'Account deleted');
+  assert.equal(db.docs.get('Requests/req-unrelated').status, 'pending');
+});

@@ -180,6 +180,22 @@ async function transferOwnedHorsesToAdmin(db, auth, email, emailSet, adminEmail)
   });
 }
 
+async function cleanupRequests(db, email, nowSeconds) {
+  const normalized = emailKey(email);
+  const snap = await db.collection('Requests')
+      .where('partiesIds', 'array-contains', normalized)
+      .get();
+  for (const doc of snap.docs) {
+    const data = doc.data() || {};
+    if (data.status !== 'pending') continue;
+    await doc.ref.update({
+      status: 'cancelled',
+      dismissalNote: 'Account deleted',
+      updatedAt: nowSeconds(),
+    });
+  }
+}
+
 async function cleanupJournalEntries(db, uid) {
   const ownedSnap = await db.collection('SharedRidingEntries')
       .where('riderUid', '==', uid).get();
@@ -375,6 +391,7 @@ function accountDeletionHandler(db, auth, bucket = null, options = {}) {
     try {
       await runStep('revokeTokens', () => revokeTokens(auth, uid));
       await runStep('connections', () => cleanupConnections(db, uid, email, emailSet));
+      await runStep('requests', () => cleanupRequests(db, email, nowSeconds));
       await runStep(
           'horses',
           () => transferOwnedHorsesToAdmin(db, auth, email, emailSet, adminEmail),

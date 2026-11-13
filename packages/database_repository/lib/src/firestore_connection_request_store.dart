@@ -39,11 +39,20 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
         });
   }
 
+  static String _docIdFor(ConnectionRequest request) {
+    if (request.id.isNotEmpty &&
+        request.messageId.isNotEmpty &&
+        !request.id.endsWith('_${request.messageId}')) {
+      return '${request.id}_${request.messageId}';
+    }
+    if (request.id.isNotEmpty) return request.id;
+    return request.messageId;
+  }
+
   @override
   Future<void> sendRequest(ConnectionRequest request) async {
-    final docId = request.id.isNotEmpty
-        ? request.id
-        : _requests.doc().id;
+    final resolvedId = _docIdFor(request);
+    final docId = resolvedId.isNotEmpty ? resolvedId : _requests.doc().id;
     final payload = request.toMap()
       ..['id'] = docId
       ..['createdAt'] = Timestamp.fromDate(request.createdAt)
@@ -56,8 +65,9 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
     required ConnectionRequest request,
     required String dismissalNote,
   }) async {
-    if (request.id.isEmpty) return;
-    await _requests.doc(request.id).update({
+    final docId = _docIdFor(request);
+    if (docId.isEmpty) return;
+    await _requests.doc(docId).update({
       'status': 'dismissed',
       'dismissalNote': dismissalNote,
       'updatedAt': FieldValue.serverTimestamp(),

@@ -91,10 +91,10 @@ void main() {
         expect(received, hasLength(4));
         // Sorted descending by createdAt
         expect(received.map((r) => r.id).toList(), [
-          'req-transfer',
-          'req-student-horse',
-          'req-student',
-          'req-instructor',
+          'req-transfer_msg-req-transfer',
+          'req-student-horse_msg-req-student-horse',
+          'req-student_msg-req-student',
+          'req-instructor_msg-req-instructor',
         ]);
         expect(received.map((r) => r.kind).toList(), [
           ConnectionRequestKind.transferHorse,
@@ -150,15 +150,80 @@ void main() {
         await sub.cancel();
 
         expect(emissions.first, isEmpty);
-        expect(emissions.last.map((r) => r.id).toList(), ['req-2']);
+        expect(emissions.last.map((r) => r.id).toList(), [
+          'req-2_msg-req-2',
+        ]);
 
         final dismissedDoc = await firestore
             .collection(FirestoreConnectionRequestStore.requestsCollection)
-            .doc('req-1')
+            .doc('req-1_msg-req-1')
             .get();
         expect(dismissedDoc.data()?['status'], 'dismissed');
         expect(dismissedDoc.data()?['dismissalNote'], 'Declined');
         expect(dismissedDoc.data()?['updatedAt'], isA<Timestamp>());
+      },
+    );
+
+    test(
+      'multiple requests between the same pair do not collide',
+      () async {
+        final now = DateTime(2026, 11, 13, 13);
+        const sharedConvId = 'sender@examplecom_recipient@examplecom';
+        final instructorReq = ConnectionRequest(
+          id: sharedConvId,
+          messageId: 'm1',
+          kind: ConnectionRequestKind.instructor,
+          senderEmail: 'sender@example.com',
+          senderName: 'Sender',
+          recipientEmail: 'recipient@example.com',
+          recipientName: 'Recipient',
+          title: 'Instructor Request',
+          summary: 'Summary 1',
+          parties: const ['Sender', 'Recipient'],
+          partiesIds: const ['sender@example.com', 'recipient@example.com'],
+          createdAt: now,
+        );
+        final transferReq = ConnectionRequest(
+          id: sharedConvId,
+          messageId: 'm2',
+          kind: ConnectionRequestKind.transferHorse,
+          senderEmail: 'sender@example.com',
+          senderName: 'Sender',
+          recipientEmail: 'recipient@example.com',
+          recipientName: 'Recipient',
+          title: 'Transfer Horse',
+          summary: 'Summary 2',
+          parties: const ['Sender', 'Recipient'],
+          partiesIds: const ['sender@example.com', 'recipient@example.com'],
+          createdAt: now.add(const Duration(minutes: 1)),
+          horseId: 'horse-1',
+          horseName: 'Comet',
+        );
+
+        await store.sendRequest(instructorReq);
+        await store.sendRequest(transferReq);
+
+        final received = await store
+            .watchRequests(userEmail: 'recipient@example.com')
+            .first;
+        expect(received, hasLength(2));
+        expect(
+          received.map((r) => r.kind).toList(),
+          [
+            ConnectionRequestKind.transferHorse,
+            ConnectionRequestKind.instructor,
+          ],
+        );
+
+        await store.dismissRequest(
+          request: instructorReq,
+          dismissalNote: 'Declined',
+        );
+        final afterDismiss = await store
+            .watchRequests(userEmail: 'recipient@example.com')
+            .first;
+        expect(afterDismiss, hasLength(1));
+        expect(afterDismiss.single.kind, ConnectionRequestKind.transferHorse);
       },
     );
 
@@ -179,7 +244,10 @@ void main() {
           .collection(FirestoreConnectionRequestStore.requestsCollection)
           .get();
       expect(snapshot.docs, hasLength(1));
-      expect(snapshot.docs.single.id, 'legacy_conv_1_msg_1');
+      expect(
+        snapshot.docs.single.id,
+        'legacy_conv_1_msg_1_msg-legacy_conv_1_msg_1',
+      );
     });
 
     test('watchRequests returns empty list when userEmail is blank', () async {
