@@ -36,7 +36,9 @@ class ResourcesRepository {
     if (resource.id == null) {
       throw ArgumentError('Resource.id must not be null');
     }
-    await _ref.doc(resource.id).set(resource, SetOptions(merge: true));
+    await guardFirebase(
+      () => _ref.doc(resource.id).set(resource, SetOptions(merge: true)),
+    );
   }
 
   /// Applies only the chosen link changes to the latest resource document.
@@ -68,12 +70,14 @@ class ResourcesRepository {
       throw ArgumentError('Resource.id must not be null');
     }
     final data = resource.toFirestore();
-    await _raw.doc(resource.id).set({
-      ...data,
-      if (!data.containsKey('createdAt'))
-        'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    await guardFirebase(
+      () => _raw.doc(resource.id).set({
+        ...data,
+        if (!data.containsKey('createdAt'))
+          'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)),
+    );
   }
 
   /// Convenience for articles.

@@ -2,7 +2,6 @@
 
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -328,7 +327,7 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
             .then(
               (value) => emit(state.copyWith(status: SubmissionStatus.success)),
             );
-      } on FirebaseException catch (e) {
+      } on RepositoryException catch (e) {
         debugPrint('Error: ${e.message}');
         emit(state.copyWith(error: e.toString(), isError: true));
         clearError();

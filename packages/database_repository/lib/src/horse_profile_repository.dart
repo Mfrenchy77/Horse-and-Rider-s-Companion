@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/models/horse_profile.dart';
+import 'package:database_repository/src/repository_exception.dart';
 
 ///Interface between Horse and Riders and Firebase
 class HorseProfileRepository {
@@ -23,9 +24,11 @@ class HorseProfileRepository {
   Future<void> createOrUpdateHorseProfile({
     required HorseProfile horseProfile,
   }) {
-    return _horseProfiledatabaseReference
-        .doc(horseProfile.id)
-        .set(horseProfile, SetOptions(merge: true));
+    return guardFirebase(
+      () => _horseProfiledatabaseReference
+          .doc(horseProfile.id)
+          .set(horseProfile, SetOptions(merge: true)),
+    );
   }
 
   ///retrieve all horse profiles for user [ids]
@@ -94,6 +97,6 @@ class HorseProfileRepository {
 
   ///Delete Horse Profile at [id]
   Future<void> deleteHorseProfile({required String id}) {
-    return _horseProfiledatabaseReference.doc(id).delete();
+    return guardFirebase(() => _horseProfiledatabaseReference.doc(id).delete());
   }
 }

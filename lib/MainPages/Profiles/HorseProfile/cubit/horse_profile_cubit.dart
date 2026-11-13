@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -70,9 +69,9 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
               }
             }
           });
-        } on FirebaseException catch (e) {
+        } on RepositoryException catch (e) {
           debugPrint('Failed to get Horse Profile: $e');
-          emit(state.copyWith(errorMessage: e.message.toString()));
+          emit(state.copyWith(errorMessage: e.message));
         }
       }
     } catch (e) {

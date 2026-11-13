@@ -16,16 +16,18 @@ class MessagesRepository {
 
   ///  create or update [message]
   Future<void> createOrUpdateMessage({required Message message}) {
-    return _firestore
-        .collection(CONVERSATIONS)
-        .doc(message.id)
-        .collection(MESSAGES)
-        .withConverter<Message>(
-          fromFirestore: Message.fromFirestore,
-          toFirestore: (Message message, options) => message.toFirestore(),
-        )
-        .doc(message.messageId)
-        .set(message);
+    return guardFirebase(
+      () => _firestore
+          .collection(CONVERSATIONS)
+          .doc(message.id)
+          .collection(MESSAGES)
+          .withConverter<Message>(
+            fromFirestore: Message.fromFirestore,
+            toFirestore: (Message message, options) => message.toFirestore(),
+          )
+          .doc(message.messageId)
+          .set(message),
+    );
   }
 
   /// retrieve Messages for User using their [conversationId]
@@ -78,7 +80,9 @@ class MessagesRepository {
   Future<void> createOrUpdateConversation({
     required Conversation conversation,
   }) {
-    return _conversations().doc(conversation.id).set(conversation);
+    return guardFirebase(
+      () => _conversations().doc(conversation.id).set(conversation),
+    );
   }
 
   ///   Retrieves a List of Groups for a User

@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/logbook_rider_profile_repository.dart';
 import 'package:database_repository/src/models/models.dart';
+import 'package:database_repository/src/repository_exception.dart';
 import 'package:flutter/foundation.dart';
 
 ///Interface for Firebase and Rider's Profile
@@ -30,7 +31,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
           .set(riderProfile);
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
-      rethrow;
+      throw RepositoryException.fromFirebase(e);
     }
   }
 
@@ -48,7 +49,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
           });
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
-      rethrow;
+      throw RepositoryException.fromFirebase(e);
     }
   }
 
@@ -200,7 +201,7 @@ class RiderProfileRepository implements LogbookRiderProfileRepository {
           .delete();
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
-      rethrow;
+      throw RepositoryException.fromFirebase(e);
     }
   }
 

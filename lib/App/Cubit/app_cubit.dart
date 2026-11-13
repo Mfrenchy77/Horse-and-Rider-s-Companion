@@ -4,7 +4,6 @@ import 'dart:async';
 
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
@@ -1105,7 +1104,7 @@ class AppCubit extends Cubit<AppState> {
             errorMessage: 'Removed ${horseProfile.name} as a student horse',
           ),
         );
-      } on FirebaseException catch (e) {
+      } on RepositoryException catch (e) {
         debugPrint('Error: $e');
       }
     } else {
@@ -2806,7 +2805,7 @@ class AppCubit extends Cubit<AppState> {
                 "Horse & Rider's Companion Support Team",
           ),
         );
-      } on FirebaseException catch (e) {
+      } on RepositoryException catch (e) {
         emit(
           state.copyWith(
             messageToSupportStatus: MessageToSupportStatus.initial,
@@ -3163,7 +3162,7 @@ class AppCubit extends Cubit<AppState> {
   Future<void> _persistMessage(Message message) async {
     try {
       await _messagesRepository.createOrUpdateMessage(message: message);
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       emit(state.copyWith(isError: true, errorMessage: 'Failed: ${e.message}'));
       debugPrint(e.toString());
     }

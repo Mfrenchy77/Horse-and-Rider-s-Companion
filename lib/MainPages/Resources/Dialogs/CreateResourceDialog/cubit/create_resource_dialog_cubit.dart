@@ -660,7 +660,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
       );
       emit(state.copyWith(submitStatus: ResourceSubmitStatus.success));
     } catch (e) {
-      final msg = e is MediaStorageException ? e.message : 'Error';
+      final msg = switch (e) {
+        RepositoryException(:final message) => message,
+        MediaStorageException(:final message) => message,
+        _ => 'Error',
+      };
       emit(
         state.copyWith(
           isError: true,
@@ -721,7 +725,11 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
         state.copyWith(
           submitStatus: ResourceSubmitStatus.error,
           isError: true,
-          error: e is MediaStorageException ? e.message : '$e',
+          error: switch (e) {
+            RepositoryException(:final message) => message,
+            MediaStorageException(:final message) => message,
+            _ => '$e',
+          },
         ),
       );
     }

@@ -1,7 +1,6 @@
 // ignore_for_file: cast_nullable_to_non_nullable, lines_longer_than_80_chars
 
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -529,7 +528,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
           status: FormStatus.success,
         ),
       );
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       debugPrint('Something went Wrong: $e');
       emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
     }
@@ -567,7 +566,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
           status: FormStatus.success,
         ),
       );
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       debugPrint('Something went Wrong: $e');
       emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
     }

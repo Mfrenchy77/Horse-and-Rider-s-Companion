@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -202,7 +201,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             }
           });
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
       debugPrint("Failed with error '${e.code}': ${e.message}");
@@ -267,7 +266,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             }
           });
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
       debugPrint("Failed with error '${e.code}': ${e.message}");
@@ -296,7 +295,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             }
           });
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
       debugPrint("Failed with error '${e.code}': ${e.message}");
@@ -335,7 +334,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
                 );
               }
             });
-      } on FirebaseException catch (e) {
+      } on RepositoryException catch (e) {
         emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
         debugPrint("Failed with error '${e.code}': ${e.message}");

@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -142,7 +141,7 @@ class NewGroupDialogCubit extends Cubit<NewGroupDialogState> {
             debugPrint('Conversation Created');
             emit(state.copyWith(status: FormStatus.success, id: id));
           });
-    } on FirebaseException catch (e) {
+    } on RepositoryException catch (e) {
       emit(
         state.copyWith(
           isError: true,
