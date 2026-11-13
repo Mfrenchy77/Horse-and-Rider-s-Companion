@@ -543,15 +543,6 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
 
   Future<void> deleteHorseProfile({required HorseProfile? horseProfile}) async {
     emit(state.copyWith(status: FormStatus.submitting));
-    final deleteNote = BaseListItem(
-      id: DateTime.now().toString(),
-      date: DateTime.now(),
-      parentId: state.usersProfile?.email,
-      name: state.usersProfile?.name,
-      message:
-          '${horseProfile?.name} was deleted by ${state.usersProfile?.name}',
-    );
-    horseProfile?.notes?.add(deleteNote);
     final userDeleteNote = BaseListItem(
       id: DateTime.now().toString(),
       date: DateTime.now(),

@@ -17,11 +17,11 @@ class Resource {
     this.url,
     this.name,
     this.type,
-    this.tags,
+    List<String>? tags,
     this.rating,
     this.status,
     this.content,
-    this.comments,
+    List<Comment>? comments,
     this.authorId,
     this.createdAt,
     this.thumbnail,
@@ -32,10 +32,13 @@ class Resource {
     this.lastEditDate,
     this.coverImageUrl,
     this.blocksEmbedding = false,
-    this.usersWhoRated,
+    List<BaseListItem>? usersWhoRated,
     this.numberOfRates,
     List<String>? skillTreeIds,
-  }) : skillTreeIds = (skillTreeIds ?? const <String>[]).toList();
+  }) : tags = tags?.toList(),
+       comments = comments?.toList(),
+       usersWhoRated = usersWhoRated?.toList(),
+       skillTreeIds = (skillTreeIds ?? const <String>[]).toList();
 
   /// Id of the resource (doc id). Keep required so repo can `.doc(id)`.
   final String? id;

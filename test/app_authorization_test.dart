@@ -5,7 +5,16 @@ import 'package:mocktail/mocktail.dart';
 
 import 'support/app_test_harness.dart';
 
+class _FakeRiderProfile extends Fake implements RiderProfile {}
+
+class _FakeResource extends Fake implements Resource {}
+
 void main() {
+  setUpAll(() {
+    registerFallbackValue(_FakeRiderProfile());
+    registerFallbackValue(_FakeResource());
+  });
+
   late AppTestHarness harness;
   final rider = RiderProfile(id: 'r', name: 'Rider', email: 'r@example.com');
   final actions = <Map<String, Object?>>[];
@@ -392,4 +401,206 @@ void main() {
     expect(harness.cubit.state.isForRider, isTrue);
     expect(harness.cubit.state.isGuest, isTrue);
   });
+
+  test(
+    'levelSelected updates rider skill level without mutating const lists '
+    'in place and persists exactly once (including error handling)',
+    () async {
+      final savedProfiles = <RiderProfile>[];
+      when(
+        () => harness.riders.createOrUpdateRiderProfile(
+          riderProfile: any(named: 'riderProfile'),
+        ),
+      ).thenAnswer((invocation) async {
+        savedProfiles.add(
+          invocation.namedArguments[#riderProfile] as RiderProfile,
+        );
+      });
+
+      final initialRider = RiderProfile(
+        id: 'r1',
+        name: 'Rider One',
+        email: 'r1@example.com',
+      );
+      final skill = Skill(
+        id: 'skill-1',
+        skillName: 'Mounting',
+        position: 1,
+        rider: true,
+        lastEditBy: 'admin',
+        description: 'Mount safely',
+        learningDescription: 'Learning to mount',
+        proficientDescription: 'Mounts smoothly',
+        lastEditDate: DateTime.utc(2025),
+      );
+
+      harness.cubit
+        ..emit(
+          harness.cubit.state.copyWith(
+            usersProfile: initialRider,
+            skill: skill,
+            isForRider: true,
+            isViewing: false,
+          ),
+        )
+        ..levelSelected(levelState: LevelState.PROFICIENT);
+      await Future<void>.delayed(Duration.zero);
+
+      // Should persist exactly once (no duplicate _persistRiderProfileChanges)
+      expect(savedProfiles, hasLength(1));
+      expect(savedProfiles.single.skillLevels, hasLength(1));
+      expect(
+        savedProfiles.single.skillLevels!.single.levelState,
+        LevelState.PROFICIENT,
+      );
+      expect(savedProfiles.single.notes, hasLength(1));
+      // Original profile lists were not mutated in place
+      expect(initialRider.skillLevels, isEmpty);
+      expect(initialRider.notes, isEmpty);
+
+      // Failure condition: repository error emits isError state
+      when(
+        () => harness.riders.createOrUpdateRiderProfile(
+          riderProfile: any(named: 'riderProfile'),
+        ),
+      ).thenThrow(Exception('write failed'));
+
+      harness.cubit.levelSelected(levelState: LevelState.LEARNING);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(harness.cubit.state.isError, isTrue);
+      expect(
+        harness.cubit.state.errorMessage,
+        contains('Failed to update'),
+      );
+    },
+  );
+
+  test(
+    'sortComments and sortConversations do not mutate state lists in place '
+    'and safely handle null comment ratings',
+    () {
+      final c1 = Comment(
+        id: 'c1',
+        comment: 'First',
+        rating: null,
+        date: DateTime.utc(2025),
+        user: BaseListItem(id: 'u1', name: 'User 1'),
+        parentId: null,
+        editedDate: null,
+        resourceId: 'res-1',
+        usersWhoRated: const [],
+      );
+      final c2 = Comment(
+        id: 'c2',
+        comment: 'Second',
+        rating: 10,
+        date: DateTime.utc(2025, 1, 2),
+        user: BaseListItem(id: 'u2', name: 'User 2'),
+        parentId: null,
+        editedDate: null,
+        resourceId: 'res-1',
+        usersWhoRated: const [],
+      );
+      final originalComments = <Comment>[c1, c2];
+
+      final conv1 = Conversation(
+        id: 'conv1',
+        parties: const ['A', 'B'],
+        partiesIds: const ['a@x.com', 'b@x.com'],
+        createdBy: 'A',
+        lastEditBy: 'A',
+        recentMessage: null,
+        createdOn: DateTime.utc(2025),
+        lastEditDate: DateTime.utc(2025, 1, 2),
+      );
+      final conv2 = Conversation(
+        id: 'conv2',
+        parties: const ['A', 'C'],
+        partiesIds: const ['a@x.com', 'c@x.com'],
+        createdBy: 'A',
+        lastEditBy: 'A',
+        recentMessage: null,
+        createdOn: DateTime.utc(2025, 1, 3),
+        lastEditDate: DateTime.utc(2025),
+      );
+      final originalConversations = <Conversation>[conv1, conv2];
+
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          resourceComments: originalComments,
+          conversations: originalConversations,
+        ),
+      );
+
+      // Sorting comments by Best handles null rating as 0 without crashing
+      // and does not mutate originalComments in place.
+      harness.cubit.sortComments(CommentSortState.Best);
+      expect(
+        harness.cubit.state.resourceComments.map((c) => c.id).toList(),
+        ['c2', 'c1'],
+      );
+      expect(originalComments.map((c) => c.id).toList(), ['c1', 'c2']);
+      expect(
+        identical(harness.cubit.state.resourceComments, originalComments),
+        isFalse,
+      );
+
+      harness.cubit.sortComments(CommentSortState.Worst);
+      expect(
+        harness.cubit.state.resourceComments.map((c) => c.id).toList(),
+        ['c1', 'c2'],
+      );
+
+      // Sorting conversations creates a new list rather than mutating in place
+      harness.cubit.sortConversations(ConversationsSort.createdDate);
+      expect(
+        harness.cubit.state.conversations!.map((c) => c.id).toList(),
+        ['conv2', 'conv1'],
+      );
+      expect(
+        originalConversations.map((c) => c.id).toList(),
+        ['conv1', 'conv2'],
+      );
+      expect(
+        identical(harness.cubit.state.conversations, originalConversations),
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'reccomendResource handles null rating and const usersWhoRated '
+    'without mutating original Resource in place',
+    () async {
+      Resource? savedResource;
+      when(
+        () => harness.resources.createOrUpdateResource(
+          resource: any(named: 'resource'),
+        ),
+      ).thenAnswer((invocation) async {
+        savedResource = invocation.namedArguments[#resource] as Resource;
+      });
+
+      final resource = Resource(
+        id: 'res-1',
+        name: 'Test Resource',
+        usersWhoRated: const [],
+      );
+
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(usersProfile: rider),
+      );
+
+      await harness.cubit.reccomendResource(resource: resource);
+
+      expect(savedResource, isNotNull);
+      expect(savedResource!.rating, 1);
+      expect(savedResource!.usersWhoRated, hasLength(1));
+      expect(savedResource!.usersWhoRated!.single.id, rider.email);
+      // Original resource was not mutated in place
+      expect(resource.rating, isNull);
+      expect(resource.usersWhoRated, isEmpty);
+    },
+  );
 }

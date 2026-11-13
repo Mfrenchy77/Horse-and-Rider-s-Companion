@@ -26,7 +26,7 @@ HorseSaleListing? _saleListing(Object? value) {
 class HorseProfile {
   /// Creates a new instance of [HorseProfile]
   HorseProfile({
-    this.notes,
+    List<BaseListItem>? notes,
     this.color,
     this.breed,
     this.gender,
@@ -41,9 +41,9 @@ class HorseProfile {
     this.lastEditBy,
     this.countryName,
     this.dateOfBirth,
-    this.skillLevels,
+    List<SkillLevel>? skillLevels,
     required this.id,
-    this.instructors,
+    List<BaseListItem>? instructors,
     this.locationName,
     this.lastEditDate,
     this.purchasePrice,
@@ -55,7 +55,9 @@ class HorseProfile {
     this.ownershipVersion,
     this.currentOwnerId = '',
     this.currentOwnerName = '',
-  });
+  }) : notes = notes?.toList(),
+       skillLevels = skillLevels?.toList(),
+       instructors = instructors?.toList();
 
   /// the horse's id
   final String id;

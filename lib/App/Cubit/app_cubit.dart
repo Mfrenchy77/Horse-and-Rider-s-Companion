@@ -475,40 +475,42 @@ class AppCubit extends Cubit<AppState> {
       return;
     }
 
-    riderProfile.skillLevels ??= [];
-    var skillLevel = riderProfile.skillLevels!.firstWhereOrNull(
+    final updatedSkillLevels = List<SkillLevel>.of(
+      riderProfile.skillLevels ?? const [],
+    );
+    final existingIndex = updatedSkillLevels.indexWhere(
       (element) => element.skillId == state.skill!.id,
     );
+    final updatedSkillLevel = SkillLevel(
+      levelState: levelState,
+      lastEditDate: DateTime.now(),
+      skillId: state.skill!.id,
+      skillName: state.skill!.skillName,
+      lastEditBy: state.usersProfile?.name,
+      verified: riderProfile.email != state.usersProfile?.email,
+    );
 
-    if (skillLevel != null) {
-      skillLevel
-        ..levelState = levelState
-        ..lastEditDate = DateTime.now()
-        ..lastEditBy = state.usersProfile?.name
-        ..verified = riderProfile.email != state.usersProfile?.email;
+    if (existingIndex != -1) {
+      updatedSkillLevels[existingIndex] = updatedSkillLevel;
       debugPrint('Updated existing skill level');
     } else {
-      skillLevel = SkillLevel(
-        levelState: levelState,
-        lastEditDate: DateTime.now(),
-        skillId: state.skill!.id,
-        skillName: state.skill!.skillName,
-        lastEditBy: state.usersProfile?.name,
-        verified: riderProfile.email != state.usersProfile?.email,
-      );
-      riderProfile.skillLevels!.add(skillLevel);
+      updatedSkillLevels.add(updatedSkillLevel);
       debugPrint('Added new skill level');
     }
 
-    _addNoteToProfile(riderProfile, note);
-    _persistRiderProfileChanges(riderProfile);
+    final updatedProfile = riderProfile.copyWith(
+      skillLevels: updatedSkillLevels,
+      notes: <BaseListItem>[...?riderProfile.notes, note],
+    );
+    _persistRiderProfileChanges(updatedProfile);
   }
 
   /// Adds a note to the rider's profile
   void _addNoteToProfile(RiderProfile riderProfile, BaseListItem note) {
-    riderProfile.notes ??= []; // Ensure the notes list is initialized
-    riderProfile.notes!.add(note);
-    _persistRiderProfileChanges(riderProfile);
+    final updatedProfile = riderProfile.copyWith(
+      notes: <BaseListItem>[...?riderProfile.notes, note],
+    );
+    _persistRiderProfileChanges(updatedProfile);
   }
 
   /// Persists the changes to the rider profile to the repository
@@ -709,16 +711,6 @@ class AppCubit extends Cubit<AppState> {
   Future<void> removeStudent({required RiderProfile studentProfile}) async {
     final user = state.usersProfile!;
 
-    // Remove student from the user's list
-    user.students?.removeWhere(
-      (student) => student.id == studentProfile.email.toLowerCase(),
-    );
-
-    // Remove user from the student's instructor list
-    studentProfile.instructors?.removeWhere(
-      (instructor) => instructor.id == user.email.toLowerCase(),
-    );
-
     // Add notes about the removal to both profiles
     final userNote = BaseListItem(
       message: user.name,
@@ -736,18 +728,29 @@ class AppCubit extends Cubit<AppState> {
       name: '${user.name} removed you as Instructor',
     );
 
-    user.notes?.add(userNote);
-    studentProfile.notes?.add(studentNote);
+    final updatedUser = user.copyWith(
+      students: user.students
+          ?.where((student) => student.id != studentProfile.email.toLowerCase())
+          .toList(),
+      notes: <BaseListItem>[...?user.notes, userNote],
+    );
+    final updatedStudent = studentProfile.copyWith(
+      instructors: studentProfile.instructors
+          ?.where((instructor) => instructor.id != user.email.toLowerCase())
+          .toList(),
+      notes: <BaseListItem>[...?studentProfile.notes, studentNote],
+    );
 
     try {
       await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: user,
+        riderProfile: updatedUser,
       );
       await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: studentProfile,
+        riderProfile: updatedStudent,
       );
       emit(
         state.copyWith(
+          usersProfile: updatedUser,
           isMessage: true,
           errorMessage: 'Removed ${studentProfile.name} as a Student',
         ),
@@ -767,16 +770,6 @@ class AppCubit extends Cubit<AppState> {
   }) async {
     final user = state.usersProfile!;
 
-    // Remove instructor from the user's list
-    user.instructors?.removeWhere(
-      (instructor) => instructor.id == instructorProfile.email.toLowerCase(),
-    );
-
-    // Remove user from the instructor's student list
-    instructorProfile.students?.removeWhere(
-      (student) => student.id == user.email.toLowerCase(),
-    );
-
     // Add notes about the removal to both profiles
     final userNote = BaseListItem(
       message: user.name,
@@ -794,18 +787,32 @@ class AppCubit extends Cubit<AppState> {
       name: '${user.name} removed you as Student',
     );
 
-    user.notes?.add(userNote);
-    instructorProfile.notes?.add(instructorNote);
+    final updatedUser = user.copyWith(
+      instructors: user.instructors
+          ?.where(
+            (instructor) =>
+                instructor.id != instructorProfile.email.toLowerCase(),
+          )
+          .toList(),
+      notes: <BaseListItem>[...?user.notes, userNote],
+    );
+    final updatedInstructor = instructorProfile.copyWith(
+      students: instructorProfile.students
+          ?.where((student) => student.id != user.email.toLowerCase())
+          .toList(),
+      notes: <BaseListItem>[...?instructorProfile.notes, instructorNote],
+    );
 
     try {
       await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: user,
+        riderProfile: updatedUser,
       );
       await _riderProfileRepository.createOrUpdateRiderProfile(
-        riderProfile: instructorProfile,
+        riderProfile: updatedInstructor,
       );
       emit(
         state.copyWith(
+          usersProfile: updatedUser,
           isMessage: true,
           errorMessage: 'Removed ${instructorProfile.name} as an Instructor',
         ),
@@ -1003,40 +1010,37 @@ class AppCubit extends Cubit<AppState> {
   ) {
     if (state.horseProfile != null && state.skill != null) {
       final timestamp = DateTime.now();
-      final updatedSkillLevels = horseProfile.skillLevels ?? [];
+      final updatedSkillLevels = List<SkillLevel>.of(
+        horseProfile.skillLevels ?? const [],
+      );
 
       // Attempt to find existing skill level index
       final existingIndex = updatedSkillLevels.indexWhere(
         (element) => element.skillId == state.skill?.id,
       );
 
+      final updatedSkillLevel = SkillLevel(
+        levelState: levelState,
+        lastEditDate: timestamp,
+        skillId: state.skill!.id,
+        skillName: state.skill!.skillName,
+        lastEditBy: state.usersProfile?.name,
+        verified: state.usersProfile?.email != horseProfile.currentOwnerId,
+      );
+
       // Replace or add the skill level
       if (existingIndex != -1) {
-        updatedSkillLevels[existingIndex] = SkillLevel(
-          levelState: levelState,
-          lastEditDate: timestamp,
-          skillId: state.skill!.id,
-          skillName: state.skill!.skillName,
-          lastEditBy: state.usersProfile?.name,
-          verified: state.usersProfile?.email != horseProfile.currentOwnerId,
-        );
+        updatedSkillLevels[existingIndex] = updatedSkillLevel;
       } else {
-        updatedSkillLevels.add(
-          SkillLevel(
-            levelState: levelState,
-            lastEditDate: timestamp,
-            skillId: state.skill!.id,
-            skillName: state.skill!.skillName,
-            lastEditBy: state.usersProfile?.name,
-            verified: state.usersProfile?.email != horseProfile.currentOwnerId,
-          ),
-        );
+        updatedSkillLevels.add(updatedSkillLevel);
       }
 
-      // Update the horse profile with the new list
-      horseProfile.skillLevels = updatedSkillLevels;
-      debugPrint('Skills: ${horseProfile.skillLevels?.length}');
-      _addNoteToHorseProfile(horseProfile, note);
+      // Update the horse profile with a new list
+      final updatedHorseProfile = horseProfile.copyWith(
+        skillLevels: updatedSkillLevels,
+      );
+      debugPrint('Skills: ${updatedHorseProfile.skillLevels?.length}');
+      _addNoteToHorseProfile(updatedHorseProfile, note);
     } else {
       debugPrint('horse Profile or skill is null');
     }
@@ -1073,23 +1077,30 @@ class AppCubit extends Cubit<AppState> {
   ///  Removes the horse from the users student horse list
   void _removeStudentHorse(HorseProfile horseProfile) {
     debugPrint('Remove Student Horse');
-    state.usersProfile?.studentHorses?.removeWhere(
-      (element) => element.id == horseProfile.id,
-    );
-    horseProfile.instructors?.removeWhere(
-      (element) => element.id == state.usersProfile?.email,
+    final currentUser = state.usersProfile;
+    final updatedHorse = horseProfile.copyWith(
+      instructors: horseProfile.instructors
+          ?.where((element) => element.id != currentUser?.email)
+          .toList(),
     );
 
-    if (state.usersProfile != null) {
+    if (currentUser != null) {
+      final updatedUser = currentUser.copyWith(
+        studentHorses: currentUser.studentHorses
+            ?.where((element) => element.id != horseProfile.id)
+            .toList(),
+      );
       try {
         _horseProfileRepository.createOrUpdateHorseProfile(
-          horseProfile: horseProfile,
+          horseProfile: updatedHorse,
         );
         _riderProfileRepository.createOrUpdateRiderProfile(
-          riderProfile: state.usersProfile!,
+          riderProfile: updatedUser,
         );
         emit(
           state.copyWith(
+            horseProfile: updatedHorse,
+            usersProfile: updatedUser,
             isMessage: true,
             errorMessage: 'Removed ${horseProfile.name} as a student horse',
           ),
@@ -1213,9 +1224,10 @@ class AppCubit extends Cubit<AppState> {
 
   /// Adds a note to the horse's profile and persists the changes
   void _addNoteToHorseProfile(HorseProfile horseProfile, BaseListItem note) {
-    horseProfile.notes ??= []; // Ensure the notes list is initialized
-    horseProfile.notes!.add(note);
-    _persistHorseProfileChanges(horseProfile);
+    final updatedHorseProfile = horseProfile.copyWith(
+      notes: <BaseListItem>[...?horseProfile.notes, note],
+    );
+    _persistHorseProfileChanges(updatedHorseProfile);
   }
 
   Future<void> setHorseArchive(String archiveStatus) async {
@@ -1551,7 +1563,7 @@ class AppCubit extends Cubit<AppState> {
 
       if (skill != null) {
         debugPrint('Skill Selected: ${skill.skillName}');
-        final skillTreeIds = resource.skillTreeIds;
+        final skillTreeIds = List<String>.of(resource.skillTreeIds);
 
         // Toggle the presence of skill.id in skillTreeIds
         if (skillTreeIds.contains(skill.id)) {
@@ -1560,10 +1572,12 @@ class AppCubit extends Cubit<AppState> {
           skillTreeIds.add(skill.id);
         }
 
-        resource.skillTreeIds = skillTreeIds;
+        final updatedResource = resource.copyWith(skillTreeIds: skillTreeIds);
 
         try {
-          _resourcesRepository.createOrUpdateResource(resource: resource);
+          _resourcesRepository.createOrUpdateResource(
+            resource: updatedResource,
+          );
         } catch (e) {
           debugPrint('Error: $e');
           emit(state.copyWith(errorMessage: e.toString(), isError: true));
@@ -2236,7 +2250,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Gets the resources Comments
   void getResourceComments(Resource resource) {
-    final comments = resource.comments ?? [];
+    final comments = List<Comment>.of(resource.comments ?? const []);
     emit(state.copyWith(resourceComments: comments));
   }
 
@@ -2263,26 +2277,27 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void sortComments(CommentSortState sortState) {
-    emit(state.copyWith(commentSortState: sortState));
-    final sortedList = state.resourceComments;
+    final sortedList = List<Comment>.of(state.resourceComments);
     switch (sortState) {
       case CommentSortState.Recent:
         sortedList.sort((a, b) => b.date.compareTo(a.date));
-        emit(state.copyWith(resourceComments: sortedList));
         break;
       case CommentSortState.Oldest:
         sortedList.sort((a, b) => a.date.compareTo(b.date));
-        emit(state.copyWith(resourceComments: sortedList));
         break;
       case CommentSortState.Best:
-        sortedList.sort((a, b) => b.rating!.compareTo(a.rating!));
-        emit(state.copyWith(resourceComments: sortedList));
+        sortedList.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
         break;
       case CommentSortState.Worst:
-        sortedList.sort((a, b) => a.rating!.compareTo(b.rating!));
-        emit(state.copyWith(resourceComments: sortedList));
+        sortedList.sort((a, b) => (a.rating ?? 0).compareTo(b.rating ?? 0));
         break;
     }
+    emit(
+      state.copyWith(
+        commentSortState: sortState,
+        resourceComments: sortedList,
+      ),
+    );
   }
 
   /// Returns a resource based on the [id]
@@ -2312,7 +2327,7 @@ class AppCubit extends Cubit<AppState> {
     emit(
       state.copyWith(
         resource: resource,
-        resourceComments: resource.comments ?? [],
+        resourceComments: List<Comment>.of(resource.comments ?? const []),
       ),
     );
   }
@@ -2534,10 +2549,9 @@ class AppCubit extends Cubit<AppState> {
 
   ///  User has clicked the recommend [resource] button
   Future<void> reccomendResource({required Resource resource}) async {
-    final editedresource = resource;
-    _setNewPositiveRating(resource: editedresource);
+    final editedresource = _setNewPositiveRating(resource: resource);
     await _resourcesRepository.createOrUpdateResource(resource: editedresource);
-    final message = isRatingPositive(resource)
+    final message = isRatingPositive(editedresource)
         ? 'Added a positive Rating to "${resource.name}"'
         : 'Removed positive Rating from "${resource.name}"';
     emit(state.copyWith(isMessage: true, errorMessage: message));
@@ -2545,10 +2559,9 @@ class AppCubit extends Cubit<AppState> {
 
   ///  User has clicked the dont recommend [resource] button
   Future<void> dontReccomendResource({required Resource resource}) async {
-    final editedresource = resource;
-    _setNewNegativeRating(resource: editedresource);
+    final editedresource = _setNewNegativeRating(resource: resource);
     await _resourcesRepository.createOrUpdateResource(resource: editedresource);
-    final message = isRatingNegative(resource)
+    final message = isRatingNegative(editedresource)
         ? 'Negatively Rated "${resource.name}"'
         : 'Removed negative Rating from "${resource.name}"';
     emit(state.copyWith(isMessage: true, errorMessage: message));
@@ -2565,82 +2578,73 @@ class AppCubit extends Cubit<AppState> {
       isCollapsed: false,
     );
 
-    //   List with the user and rated value loaded in
-    final newUsersWhoRated = [newuser];
+    final baseRating = resource.rating ?? 0;
+    final newPositiveRating = baseRating + 1;
+    final newDoublePositveRating = baseRating + 2;
+    final newNegativeRating = baseRating - 1;
 
-    // New Ratings
-    final newPositiveRating = resource.rating! + 1;
-    final newDoublePositveRating = resource.rating! + 2;
-    final newNegativeRating = resource.rating! - 1;
-
-    // All Conditions possible
-    if (resource.usersWhoRated != null && resource.usersWhoRated!.isNotEmpty) {
-      //   Reference to the user
-      final user = resource.usersWhoRated?.firstWhereOrNull(
+    final existingUsers = List<BaseListItem>.of(
+      resource.usersWhoRated ?? const [],
+    );
+    if (existingUsers.isNotEmpty) {
+      final index = existingUsers.indexWhere(
         (element) => element.id == userEmail,
       );
-      //   'List is not NULL
-      if (user != null) {
-        //   Found UserWhoRated
+      if (index != -1) {
+        final user = existingUsers[index];
         if (user.isSelected == null && user.isCollapsed == null) {
-          //   Never Rated before addding User and +1
-          resource.usersWhoRated?.add(newuser);
-          resource.rating = newPositiveRating;
-          return resource;
+          existingUsers.add(newuser);
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newPositiveRating,
+          );
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
-          //   Already Positive Rating, -1
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isSelected =
-              false;
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isCollapsed =
-              false;
-          resource.rating = newNegativeRating;
-          return resource;
+          existingUsers[index] = BaseListItem(
+            id: userEmail,
+            isSelected: false,
+            isCollapsed: false,
+          );
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newNegativeRating,
+          );
         } else if (user.isSelected == false && user.isCollapsed == false) {
-          //   User does not have a registered rateing +1
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isSelected =
-              true;
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isCollapsed =
-              false;
-          resource.rating = newPositiveRating;
-          return resource;
+          existingUsers[index] = BaseListItem(
+            id: userEmail,
+            isSelected: true,
+            isCollapsed: false,
+          );
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newPositiveRating,
+          );
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
-          //   User already rated NEGATIVE, adding +2
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isSelected =
-              true;
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isCollapsed =
-              false;
-          resource.rating = newDoublePositveRating;
-          return resource;
+          existingUsers[index] = BaseListItem(
+            id: userEmail,
+            isSelected: true,
+            isCollapsed: false,
+          );
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newDoublePositveRating,
+          );
         } else {
-          //   Unexpeted Condition  NULL
           return resource;
         }
       } else {
-        //   No UserWhoRated Found, Adding one
-        resource.usersWhoRated?.add(newuser);
-        resource.rating = newPositiveRating;
-        return resource;
+        existingUsers.add(newuser);
+        return resource.copyWith(
+          usersWhoRated: existingUsers,
+          rating: newPositiveRating,
+        );
       }
     } else {
-      //   UserWhoRated List is null adding and a +1
-      resource
-        ..usersWhoRated = newUsersWhoRated
-        ..rating = newPositiveRating;
-      return resource;
+      return resource.copyWith(
+        usersWhoRated: <BaseListItem>[newuser],
+        rating: newPositiveRating,
+      );
     }
   }
 
@@ -2655,82 +2659,73 @@ class AppCubit extends Cubit<AppState> {
       isCollapsed: true,
     );
 
-    //  List with the user and rated value loaded in
-    final newUsersWhoRated = [newuser];
+    final baseRating = resource.rating ?? 0;
+    final newPositiveRating = baseRating + 1;
+    final newNegativeRating = baseRating - 1;
+    final newDoubleNegativeRating = baseRating - 2;
 
-    //   New Rating Conditions
-    final newPositiveRating = resource.rating! + 1;
-    final newNegativeRating = resource.rating! - 1;
-    final newDoubleNegativeRating = resource.rating! - 2;
-
-    if (resource.usersWhoRated != null && resource.usersWhoRated!.isNotEmpty) {
-      //   Reference to the User
-      final user = resource.usersWhoRated?.firstWhereOrNull(
+    final existingUsers = List<BaseListItem>.of(
+      resource.usersWhoRated ?? const [],
+    );
+    if (existingUsers.isNotEmpty) {
+      final index = existingUsers.indexWhere(
         (element) => element.id == userEmail,
       );
-
-      //  List is not NULL
-      if (user != null) {
-        ///  Found UserWhoRated
+      if (index != -1) {
+        final user = existingUsers[index];
         if (user.isSelected == null && user.isCollapsed == null) {
-          //   Never Rated before addding User and -1
-          resource.usersWhoRated?.add(newuser);
-          resource.rating = newNegativeRating;
-          return resource;
+          existingUsers.add(newuser);
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newNegativeRating,
+          );
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == false && user.isCollapsed == true) {
-          //   Already Negative Rating, +1
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isSelected =
-              false;
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isCollapsed =
-              false;
-          resource.rating = newPositiveRating;
-          return resource;
+          existingUsers[index] = BaseListItem(
+            id: userEmail,
+            isSelected: false,
+            isCollapsed: false,
+          );
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newPositiveRating,
+          );
         } else if (user.isSelected == false && user.isCollapsed == false) {
-          //   User does not have a registered rating -1
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isSelected =
-              false;
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isCollapsed =
-              true;
-          resource.rating = newNegativeRating;
-          return resource;
+          existingUsers[index] = BaseListItem(
+            id: userEmail,
+            isSelected: false,
+            isCollapsed: true,
+          );
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newNegativeRating,
+          );
           // ignore: use_if_null_to_convert_nulls_to_bools
         } else if (user.isSelected == true && user.isCollapsed == false) {
-          //   User already rated POSITIVE, adding -2
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isSelected =
-              false;
-          resource.usersWhoRated
-                  ?.firstWhere((element) => element.id == userEmail)
-                  .isCollapsed =
-              true;
-          resource.rating = newDoubleNegativeRating;
-          return resource;
+          existingUsers[index] = BaseListItem(
+            id: userEmail,
+            isSelected: false,
+            isCollapsed: true,
+          );
+          return resource.copyWith(
+            usersWhoRated: existingUsers,
+            rating: newDoubleNegativeRating,
+          );
         } else {
-          //   Unexpeted Condition  NULL
           return resource;
         }
       } else {
-        //   No UserWhoRated Found, Adding one and -1
-        resource.usersWhoRated?.add(newuser);
-        resource.rating = newNegativeRating;
-        return resource;
+        existingUsers.add(newuser);
+        return resource.copyWith(
+          usersWhoRated: existingUsers,
+          rating: newNegativeRating,
+        );
       }
     } else {
-      //   UserWhoRated List is null adding and a -1
-      resource
-        ..usersWhoRated = newUsersWhoRated
-        ..rating = newNegativeRating;
-      return resource;
+      return resource.copyWith(
+        usersWhoRated: <BaseListItem>[newuser],
+        rating: newNegativeRating,
+      );
     }
   }
 
@@ -2963,7 +2958,9 @@ class AppCubit extends Cubit<AppState> {
 
   /// Sort the Conversations by messageState, creadtedDate, and lastEditDate
   void sortConversations(ConversationsSort value) {
-    final sortedConversations = state.conversations;
+    final sortedConversations = state.conversations == null
+        ? null
+        : List<Conversation>.of(state.conversations!);
 
     switch (value) {
       case ConversationsSort.createdDate:
