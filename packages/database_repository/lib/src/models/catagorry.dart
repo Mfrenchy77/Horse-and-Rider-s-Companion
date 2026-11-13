@@ -1,7 +1,5 @@
 // ignore_for_file: sort_constructors_first, public_member_api_docs
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 ///  Model of category
 class Catagorry {
   Catagorry({
@@ -22,24 +20,19 @@ class Catagorry {
   final String description;
   final DateTime lastEditDate;
 
-  factory Catagorry.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
+  factory Catagorry.fromMap(Map<String, dynamic> data) {
     return Catagorry(
-      id: data!['id'] as String,
+      id: data['id'] as String,
       name: data['name'] as String,
       rider: data['rider'] as bool,
       position: data['position'] as int,
       lastEditBy: data['lastEditBy'] as String,
       description: data['description'] as String,
-      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
+      lastEditDate: _parseDateTime(data['lastEditDate']),
     );
   }
 
-  Map<String, Object?> toFirestore() {
+  Map<String, Object?> toMap() {
     return {
       'id': id,
       'name': name,
@@ -47,7 +40,14 @@ class Catagorry {
       'position': position,
       'lastEditBy': lastEditBy,
       'description': description,
-      'lastEditDate': lastEditDate,
+      'lastEditDate': lastEditDate.toIso8601String(),
     };
+  }
+
+  static DateTime _parseDateTime(Object? value) {
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.parse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    throw ArgumentError('Expected DateTime, String, or int, got $value');
   }
 }

@@ -1,20 +1,25 @@
 // ignore_for_file: constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/mappers/catagorry_firestore_mapper.dart';
 import 'package:database_repository/src/models/catagorry.dart';
 
 ///   Crud Iterface for Firebase and Category gives the
 ///   option to specify wether the databse id for Rider
 ///   or horse
 class CatagorryRepository {
+  /// Creates a [CatagorryRepository] backed by [firestore].
+  CatagorryRepository({FirebaseFirestore? firestore})
+    : _categoryDatabaseReference = (firestore ?? FirebaseFirestore.instance)
+          .collection(CATEGORIES)
+          .withConverter<Catagorry>(
+            fromFirestore: CatagorryFirestoreMapper.fromFirestore,
+            toFirestore: CatagorryFirestoreMapper.toFirestore,
+          );
+
   static const String CATEGORIES = 'Categories';
 
-  final _categoryDatabaseReference = FirebaseFirestore.instance
-      .collection(CATEGORIES)
-      .withConverter<Catagorry>(
-        fromFirestore: Catagorry.fromFirestore,
-        toFirestore: (Catagorry catagorry, options) => catagorry.toFirestore(),
-      );
+  final CollectionReference<Catagorry> _categoryDatabaseReference;
 
   ///create or upadate [catagory]
   Future<void> createOrEditCategory({required Catagorry catagory}) {
