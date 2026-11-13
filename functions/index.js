@@ -581,6 +581,9 @@ async function sendEmail(emails, mail) {
 exports.onMessageCreated = onDocumentCreated(
     'Conversations/{convId}/Messages/{messageId}',
     async (event) => {
+      if (typeof process !== 'undefined' && process.env.MESSAGING_RETIRED === 'true') {
+        return;
+      }
       const snap = event.data;
       if (!snap) return;
       const message = snap.data();

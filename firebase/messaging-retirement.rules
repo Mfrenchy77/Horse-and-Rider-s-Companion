@@ -1,0 +1,21 @@
+// Staged Firestore security rules for retiring legacy Conversations/Messages.
+// Do NOT deploy until request flows (TransferHorseCubit / AppCubit requests)
+// have been migrated off Conversations/Messages or a legacy cleanup batch runs.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /Conversations/{conversationId} {
+      allow read: if request.auth != null
+        && request.auth.token.email in resource.data.partiesIds;
+      allow create, update, delete: if false;
+
+      match /Messages/{messageId} {
+        allow read: if request.auth != null
+          && request.auth.token.email in
+            get(/databases/$(database)/documents/Conversations/$(conversationId))
+              .data.partiesIds;
+        allow create, update, delete: if false;
+      }
+    }
+  }
+}
