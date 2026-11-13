@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:authentication_repository/authentication_repository.dart'
     as auth;
 import 'package:database_repository/database_repository.dart';
@@ -745,6 +747,51 @@ void main() {
       expect(appCubit.state.horseId, isEmpty);
       expect(appCubit.state.isViewing, isFalse);
       expect(appCubit.state.isForRider, isTrue);
+    },
+  );
+
+  testWidgets(
+    'ResourceCommentPage and SkillTreeView manage route state via lifecycle '
+    'and observers without re-emitting on rebuilds',
+    (tester) async {
+      final resource = Resource(
+        id: 'res-1',
+        name: 'Groundwork Basics',
+        skillTreeIds: const [],
+      );
+      when(
+        () => resourcesRepo.getResources(),
+      ).thenAnswer((_) => Stream.value([resource]));
+
+      final router = Routes().router(
+        settingsContoller: settingsController,
+        appCubit: appCubit,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(buildApp(router));
+      await tester.pumpAndSettle();
+
+      router.goNamed(ResourcesPage.name);
+      await tester.pumpAndSettle();
+      expect(appCubit.state.pageStatus, AppPageStatus.resourceList);
+
+      unawaited(
+        router.pushNamed(
+          ResourceCommentPage.name,
+          pathParameters: {ResourceCommentPage.pathParams: resource.id!},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(appCubit.state.pageStatus, AppPageStatus.resource);
+      expect(appCubit.state.resource?.id, resource.id);
+
+      // Popping ResourceCommentPage triggers routeObserverResources.onPop
+      // and clears the active resource.
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+      expect(appCubit.state.pageStatus, AppPageStatus.resourceList);
+      expect(appCubit.state.resource, isNull);
     },
   );
 }

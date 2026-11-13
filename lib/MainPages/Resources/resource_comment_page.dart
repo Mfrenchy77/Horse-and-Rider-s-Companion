@@ -46,6 +46,27 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant ResourceCommentPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.id != widget.id) {
+      _isInitialized = false;
+      _currentParentIndex = -1;
+      _loadFailure = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadResource();
+      });
+    }
+  }
+
+  Resource? _findResource(AppState state) {
+    if (state.resource?.id == widget.id) return state.resource;
+    for (final resource in state.resources) {
+      if (resource.id == widget.id) return resource;
+    }
+    return null;
+  }
+
   Future<void> _loadResource() async {
     final cubit = context.read<AppCubit>();
     final id = widget.id;
@@ -149,27 +170,35 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
     if (!_isInitialized &&
         _parentCommentIndexes.isNotEmpty &&
         _currentParentIndex == -1) {
+      _isInitialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        if (!mounted || _parentCommentIndexes.isEmpty) return;
         setState(() {
           _currentParentIndex = 0;
-          _isInitialized = true;
         });
-        _itemScrollController.scrollTo(
-          index: _parentCommentIndexes[0],
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: _parentCommentIndexes[0],
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
+    return BlocConsumer<AppCubit, AppState>(
+      listenWhen: (previous, current) =>
+          previous.resources != current.resources &&
+          current.resource?.id != widget.id,
+      listener: (context, state) {
+        context.read<AppCubit>().getResourceById(widget.id);
+      },
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        final resource = cubit.getResourceById(widget.id);
+        final resource = _findResource(state);
 
         if (resource == null) {
           return PopScope<void>(

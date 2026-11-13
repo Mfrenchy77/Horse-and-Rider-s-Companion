@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
@@ -102,9 +101,20 @@ class Routes {
       onPush: (route, previousRoute) {
         if (route.settings.name == SkillTreePage.name) {
           appCubit.setSkillTree();
+        } else if (route.settings.name == SkillTreeView.skillsListName) {
+          appCubit
+            ..navigateToSkillsList()
+            ..setSkillTreeTabIndex(0);
         }
       },
-      onPop: (_, __) {},
+      onPop: (route, previousRoute) {
+        if (route.settings.name == SkillTreeView.skillLevelName &&
+            previousRoute?.settings.name == SkillTreeView.skillsListName) {
+          appCubit
+            ..navigateToSkillsList()
+            ..setSkillTreeTabIndex(0);
+        }
+      },
     );
 
     final routeObserverResources = RouteObserverWithCallback(
@@ -249,16 +259,7 @@ class Routes {
                     GoRoute(
                       path: SkillTreeView.skillsListPath,
                       name: SkillTreeView.skillsListName,
-                      builder: (context, state) {
-                        if (state.pathParameters[SkillTreeView
-                                .skillPathParam] ==
-                            null) {
-                          context.read<AppCubit>()
-                            ..navigateToSkillsList()
-                            ..setSkillTreeTabIndex(0);
-                        }
-                        return const SkillTreeView();
-                      },
+                      builder: (context, state) => const SkillTreeView(),
                       routes: [
                         GoRoute(
                           path: SkillTreeView.skillLevelPath,
@@ -266,17 +267,9 @@ class Routes {
                           pageBuilder: (context, state) {
                             final id = state
                                 .pathParameters[SkillTreeView.skillPathParam]!;
-                            // A cached Skill Tree branch does not push its
-                            // root route again when opened from Resources.
-                            final cubit = context.read<AppCubit>()
-                              ..setSkillTree()
-                              ..setSkill(id);
-                            cubit.navigateToSkillLevel(
-                              skill: cubit.state.skill,
-                            );
-
                             return _horizontalSlidePage(
                               key: state.pageKey,
+                              name: state.name,
                               child: SkillTreeView(skillId: id),
                             );
                           },
@@ -348,6 +341,7 @@ class Routes {
                             .pathParameters[ResourceCommentPage.pathParams]!;
                         return _resourceCommentPage(
                           key: state.pageKey,
+                          name: state.name,
                           child: ResourceCommentPage(key: ValueKey(id), id: id),
                         );
                       },
@@ -359,6 +353,7 @@ class Routes {
                       pageBuilder: (context, state) {
                         return _horizontalSlidePage(
                           key: state.pageKey,
+                          name: state.name,
                           child: ResourceWebPage.fromState(state),
                         );
                       },
@@ -377,9 +372,11 @@ class Routes {
   static CustomTransitionPage<dynamic> _horizontalSlidePage({
     required LocalKey key,
     required Widget child,
+    String? name,
   }) {
     return CustomTransitionPage<dynamic>(
       key: key,
+      name: name,
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         final inTween = Tween<Offset>(
@@ -407,9 +404,11 @@ class Routes {
   static CustomTransitionPage<dynamic> _resourceCommentPage({
     required LocalKey key,
     required Widget child,
+    String? name,
   }) {
     return CustomTransitionPage<dynamic>(
       key: key,
+      name: name,
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) =>
           FadeTransition(opacity: animation, child: child),

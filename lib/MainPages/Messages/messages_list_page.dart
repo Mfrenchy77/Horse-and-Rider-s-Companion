@@ -8,7 +8,7 @@ import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/message_page.dart';
 import 'package:horseandriderscompanion/MainPages/Messages/view/messages_list_view.dart';
 
-class MessagesPage extends StatelessWidget {
+class MessagesPage extends StatefulWidget {
   const MessagesPage({
     this.messageId,
     super.key,
@@ -21,22 +21,54 @@ class MessagesPage extends StatelessWidget {
   final String? messageId;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
+  State<MessagesPage> createState() => _MessagesPageState();
+}
 
-        if (state.conversations == null) {
-          cubit.getConversations();
-        }
-        if (messageId != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            GoRouter.of(context).pushNamed(
-              MessagePage.name,
-              pathParameters: {MessagePage.pathParams: messageId!},
-            );
-          });
-        }
+class _MessagesPageState extends State<MessagesPage> {
+  String? _pushedMessageId;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncConversations();
+    _navigateToMessageIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant MessagesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.messageId != widget.messageId) {
+      _navigateToMessageIfNeeded();
+    }
+  }
+
+  void _syncConversations() {
+    final cubit = context.read<AppCubit>();
+    if (cubit.state.conversations == null) {
+      cubit.getConversations();
+    }
+  }
+
+  void _navigateToMessageIfNeeded() {
+    final id = widget.messageId;
+    if (id == null || _pushedMessageId == id) return;
+    _pushedMessageId = id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      GoRouter.of(context).pushNamed(
+        MessagePage.name,
+        pathParameters: {MessagePage.pathParams: id},
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<AppCubit, AppState>(
+      listenWhen: (previous, current) =>
+          previous.usersProfile != current.usersProfile,
+      listener: (context, state) => _syncConversations(),
+      builder: (context, state) {
         return state.conversations == null
             ? const LoadingPage()
             : const MessagesView(

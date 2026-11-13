@@ -31,6 +31,13 @@ class NavigationView extends StatefulWidget {
 class _NavigationViewState extends State<NavigationView> {
   String? _promptedVerificationEmail;
   final bool _onboardingDialogOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _showEmailVerificationIfNeeded(context.read<AppCubit>());
+  }
+
   void _showEmailVerificationIfNeeded(AppCubit cubit) {
     final state = cubit.state;
     if (!state.showEmailVerification) {
@@ -57,7 +64,6 @@ class _NavigationViewState extends State<NavigationView> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
-    _showEmailVerificationIfNeeded(cubit);
 
     return BlocListener<AppCubit, AppState>(
       listener: (context, state) {

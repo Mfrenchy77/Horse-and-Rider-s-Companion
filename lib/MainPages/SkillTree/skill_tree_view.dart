@@ -46,7 +46,26 @@ class _SkillTreeViewState extends State<SkillTreeView> {
   @override
   void initState() {
     super.initState();
-    if (widget.skillId != null) _showDetail();
+    _syncRouteSkill();
+  }
+
+  @override
+  void didUpdateWidget(covariant SkillTreeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.skillId != widget.skillId) {
+      _syncRouteSkill();
+    }
+  }
+
+  void _syncRouteSkill() {
+    final id = widget.skillId;
+    if (id != null) {
+      final cubit = context.read<AppCubit>()
+        ..setSkillTree()
+        ..setSkill(id);
+      cubit.navigateToSkillLevel(skill: cubit.state.skill);
+      _showDetail();
+    }
   }
 
   @override
