@@ -1,6 +1,7 @@
 // ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
 import 'package:database_repository/src/models/models.dart';
 import 'package:database_repository/src/repository_exception.dart';
 import 'package:database_repository/src/rider_profile_store.dart';
@@ -46,7 +47,9 @@ class RiderProfileRepository implements RiderProfileStore {
           .doc(_convertEmailToPath(email: riderProfile?.email))
           .update({
             OWNED_HORSES: FieldValue.arrayUnion([
-              BaseListItem(id: horseId).toFirestore(),
+              BaseListItemFirestoreMapper.toFirestore(
+                BaseListItem(id: horseId),
+              ),
             ]),
           });
     } on FirebaseException catch (e) {
@@ -73,7 +76,10 @@ class RiderProfileRepository implements RiderProfileStore {
         (item) => item is! Map || item['id'] != contact.id,
       );
       transaction.update(doc, {
-        'savedProfilesList': [...remaining, if (add) contact.toFirestore()],
+        'savedProfilesList': [
+          ...remaining,
+          if (add) BaseListItemFirestoreMapper.toFirestore(contact),
+        ],
       });
     });
   }
@@ -95,7 +101,9 @@ class RiderProfileRepository implements RiderProfileStore {
         .doc(_convertEmailToPath(email: email));
     if (!isEdit) {
       await doc.update({
-        'notes': FieldValue.arrayUnion([entry.toFirestore()]),
+        'notes': FieldValue.arrayUnion([
+          BaseListItemFirestoreMapper.toFirestore(entry),
+        ]),
       });
       return;
     }
@@ -110,11 +118,14 @@ class RiderProfileRepository implements RiderProfileStore {
       );
       if (index < 0) throw StateError('This log entry no longer exists.');
       final original = Map<String, dynamic>.from(notes[index]! as Map);
-      if (!BaseListItem.fromJson(original).canEditRiderLog(email)) {
+      if (!BaseListItemFirestoreMapper.fromMap(original).canEditRiderLog(email)) {
         throw StateError('This log entry cannot be edited.');
       }
       // Preserve legacy fields and any fields this version does not recognize.
-      notes[index] = {...original, ...entry.toFirestore()};
+      notes[index] = {
+        ...original,
+        ...BaseListItemFirestoreMapper.toFirestore(entry),
+      };
       transaction.update(doc, {'notes': notes});
     });
   }

@@ -56,7 +56,7 @@ class ConnectionRepository implements LogbookConnectionRepository {
       .map(
         (snapshot) => [
           for (final doc in snapshot.docs)
-            BaseListItem.fromJson(
+            BaseListItemFirestoreMapper.fromMap(
               Map<String, dynamic>.from(doc.data()['note'] as Map),
             ),
         ],
@@ -74,9 +74,9 @@ class ConnectionRepository implements LogbookConnectionRepository {
   BaseListItem _historyNote(Map<String, dynamic> raw) {
     final date = raw['date'];
     final parsed = date is String ? DateTime.tryParse(date)?.toLocal() : null;
-    return BaseListItem.fromJson({
+    return BaseListItem.fromMap({
       ...raw,
-      'date': parsed == null ? null : Timestamp.fromDate(parsed),
+      'date': parsed,
       'extra': raw['riderName'],
       'isSelected': raw['editable'] == true,
     });

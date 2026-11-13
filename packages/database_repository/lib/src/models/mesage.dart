@@ -57,7 +57,7 @@ class Message {
         messageId: data?['messageId'] as String?,
         date: (data?['date'] as Timestamp?)?.toDate(),
         requestItem: data?['requestItem'] != null
-            ? BaseListItem.fromJson(
+            ? BaseListItemFirestoreMapper.fromMap(
                 data?['requestItem'] as Map<String, dynamic>,
               )
             : null,
@@ -100,7 +100,7 @@ class Message {
       messageId: data['messageId'] as String?,
       date: (data['date'] as Timestamp?)?.toDate(),
       requestItem: data['requestItem'] != null
-          ? BaseListItem.fromJson(
+          ? BaseListItemFirestoreMapper.fromMap(
               data['requestItem'] as Map<String, dynamic>,
             )
           : null,
@@ -141,7 +141,8 @@ class Message {
       if (parties != null) 'parties': parties,
       if (recipients != null) 'recipients': recipients,
       if (messageId != null) 'messageId': messageId,
-      if (requestItem != null) 'requestItem': requestItem!.toJson(),
+      if (requestItem != null)
+        'requestItem': BaseListItemFirestoreMapper.toFirestore(requestItem!),
       if (senderProfilePicUrl != null)
         'senderProfilePicUrl': senderProfilePicUrl,
       'messageType': messageType == MessageType.STUDENT_HORSE_REQUEST
@@ -172,7 +173,8 @@ class Message {
       if (parties != null) 'parties': parties,
       if (recipients != null) 'recipients': recipients,
       if (messageId != null) 'messageId': messageId,
-      if (requestItem != null) 'requestItem': requestItem!.toJson(),
+      if (requestItem != null)
+        'requestItem': BaseListItemFirestoreMapper.toFirestore(requestItem!),
       if (senderProfilePicUrl != null)
         'senderProfilePicUrl': senderProfilePicUrl,
       'messageType': messageType == MessageType.STUDENT_HORSE_REQUEST

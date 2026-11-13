@@ -307,7 +307,7 @@ List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {
   if (itemMap != null) {
     for (final item in itemMap) {
       if (item is Map<String, dynamic>) {
-        out.add(BaseListItem.fromJson(item));
+        out.add(BaseListItemFirestoreMapper.fromMap(item));
       }
     }
   }

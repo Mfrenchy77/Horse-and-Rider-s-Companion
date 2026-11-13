@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
 import 'package:database_repository/src/mappers/skill_level_firestore_mapper.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
@@ -224,9 +225,13 @@ class HorseProfile {
       if (dateOfPurchase != null) 'dateOfPurchase': dateOfPurchase,
       if (currentOwnerName != null) 'currentOwnerName': currentOwnerName,
       if (notes != null)
-        'notes': List<dynamic>.from(notes!.map((e) => e.toJson())),
+        'notes': List<dynamic>.from(
+          notes!.map(BaseListItemFirestoreMapper.toFirestore),
+        ),
       if (instructors != null)
-        'instructors': List<dynamic>.from(instructors!.map((e) => e.toJson())),
+        'instructors': List<dynamic>.from(
+          instructors!.map(BaseListItemFirestoreMapper.toFirestore),
+        ),
       if (skillLevels != null)
         'skillLevels':
             skillLevels?.map(SkillLevelFirestoreMapper.toFirestore).toList(),
@@ -313,7 +318,9 @@ List<BaseListItem> _baseListItem(List<dynamic>? itemMap) {
 
   if (itemMap != null) {
     for (final note in itemMap) {
-      baseListItem.add(BaseListItem.fromJson(note as Map<String, dynamic>));
+      baseListItem.add(
+        BaseListItemFirestoreMapper.fromMap(note as Map<String, dynamic>),
+      );
     }
   }
   return baseListItem;

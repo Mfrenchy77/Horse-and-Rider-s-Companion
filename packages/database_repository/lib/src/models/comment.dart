@@ -64,7 +64,9 @@ class Comment {
           : _convertUsersWhoRated(data['usersWhoRated'] as List),
       user: data['user'] == null
           ? null
-          : BaseListItem.fromJson(data['user'] as Map<String, dynamic>),
+          : BaseListItemFirestoreMapper.fromMap(
+              data['user'] as Map<String, dynamic>,
+            ),
     );
   }
 
@@ -148,7 +150,9 @@ List<BaseListItem> _convertUsersWhoRated(List<dynamic>? itemMap) {
   final usersWhoRated = <BaseListItem>[];
   if (itemMap != null) {
     for (final item in itemMap) {
-      usersWhoRated.add(BaseListItem.fromJson(item as Map<String, dynamic>));
+      usersWhoRated.add(
+        BaseListItemFirestoreMapper.fromMap(item as Map<String, dynamic>),
+      );
     }
   }
 

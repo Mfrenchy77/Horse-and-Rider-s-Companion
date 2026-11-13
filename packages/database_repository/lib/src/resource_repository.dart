@@ -216,8 +216,8 @@ class ResourcesRepository implements ResourcesStore {
         .doc(resource.id)
         .collection('usersWhoRated')
         .withConverter<BaseListItem>(
-          fromFirestore: BaseListItem.fromFirestore,
-          toFirestore: (BaseListItem b, SetOptions? _) => b.toFirestore(),
+          fromFirestore: BaseListItemFirestoreMapper.fromFirestore,
+          toFirestore: BaseListItemFirestoreMapper.toFirestore,
         );
 
     await ratingsRef.doc(userWhoRated.id).set(userWhoRated);

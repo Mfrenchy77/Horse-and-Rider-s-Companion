@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
 import 'package:database_repository/src/mappers/skill_level_firestore_mapper.dart';
 import 'package:database_repository/src/models/base_list_item.dart';
 import 'package:database_repository/src/models/skill_level.dart';
@@ -229,31 +230,41 @@ class RiderProfile {
       if (subscriptionDate != null) 'subscriptionDate': subscriptionDate,
       if (savedResourcesList != null) 'savedResourcesList': savedResourcesList,
       if (notes != null)
-        'notes': List<dynamic>.from(notes!.map((e) => e.toJson())),
+        'notes': List<dynamic>.from(
+          notes!.map(BaseListItemFirestoreMapper.toFirestore),
+        ),
       if (subscriptionEndDate != null)
         'subscriptionEndDate': subscriptionEndDate,
       if (studentHorses != null)
         'studentHorses': List<dynamic>.from(
-          studentHorses!.map((e) => e.toJson()),
+          studentHorses!.map(BaseListItemFirestoreMapper.toFirestore),
         ),
       if (students != null)
-        'students': List<dynamic>.from(students!.map((e) => e.toJson())),
+        'students': List<dynamic>.from(
+          students!.map(BaseListItemFirestoreMapper.toFirestore),
+        ),
       if (savedProfilesList != null)
         'savedProfilesList': List<dynamic>.from(
-          savedProfilesList!.map((e) => e.toJson()),
+          savedProfilesList!.map(BaseListItemFirestoreMapper.toFirestore),
         ),
       if (skillLevels != null)
         'skillLevels': List<dynamic>.from(
           skillLevels!.map(SkillLevelFirestoreMapper.toJson),
         ),
       if (ownedHorses != null)
-        'ownedHorses': List<dynamic>.from(ownedHorses!.map((e) => e.toJson())),
+        'ownedHorses': List<dynamic>.from(
+          ownedHorses!.map(BaseListItemFirestoreMapper.toFirestore),
+        ),
       if (ownershipRosterVersion != null)
         'ownershipRosterVersion': ownershipRosterVersion,
       if (archivedHorses != null)
-        'archivedHorses': archivedHorses!.map((e) => e.toJson()).toList(),
+        'archivedHorses': archivedHorses!
+            .map(BaseListItemFirestoreMapper.toFirestore)
+            .toList(),
       if (instructors != null)
-        'instructors': List<dynamic>.from(instructors!.map((e) => e.toJson())),
+        'instructors': List<dynamic>.from(
+          instructors!.map(BaseListItemFirestoreMapper.toFirestore),
+        ),
     };
   }
 
@@ -341,7 +352,9 @@ List<BaseListItem> _convertBaseListItem(List<dynamic>? itemMap) {
   final baseListItem = <BaseListItem>[];
   if (itemMap != null) {
     for (final item in itemMap) {
-      baseListItem.add(BaseListItem.fromJson(item as Map<String, dynamic>));
+      baseListItem.add(
+        BaseListItemFirestoreMapper.fromMap(item as Map<String, dynamic>),
+      );
     }
   }
 
