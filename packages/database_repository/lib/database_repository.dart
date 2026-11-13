@@ -41,3 +41,4 @@ export 'src/connection_request.dart';
 export 'src/connection_request_store.dart';
 export 'src/firebase_connection_request_store.dart';
 export 'src/firestore_connection_request_store.dart';
+export 'src/composite_connection_request_store.dart';

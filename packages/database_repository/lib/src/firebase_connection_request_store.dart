@@ -61,6 +61,7 @@ class FirebaseConnectionRequestStore implements ConnectionRequestStore {
   Future<void> dismissRequest({
     required ConnectionRequest request,
     required String dismissalNote,
+    String status = 'dismissed',
   }) async {
     final dismissedMessage = request.toLegacyMessage(
       overrideType: MessageType.CHAT,

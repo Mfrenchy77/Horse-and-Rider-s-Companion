@@ -60,15 +60,25 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
     await _requests.doc(docId).set(payload);
   }
 
+  static const Set<String> _clientDismissStatuses = {
+    'declined',
+    'cancelled',
+    'dismissed',
+  };
+
   @override
   Future<void> dismissRequest({
     required ConnectionRequest request,
     required String dismissalNote,
+    String status = 'dismissed',
   }) async {
     final docId = _docIdFor(request);
     if (docId.isEmpty) return;
+    final safeStatus = _clientDismissStatuses.contains(status)
+        ? status
+        : 'dismissed';
     await _requests.doc(docId).update({
-      'status': 'dismissed',
+      'status': safeStatus,
       'dismissalNote': dismissalNote,
       'updatedAt': FieldValue.serverTimestamp(),
     });

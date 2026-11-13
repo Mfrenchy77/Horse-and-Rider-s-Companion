@@ -17,9 +17,13 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
     ConnectionRequestStore? requestRepository,
     MessagesStore? messagesRepository,
     required this._riderProfileRepository,
+    Future<Map<String, dynamic>> Function(Map<String, Object?>)?
+    submitCoachingAction,
   }) : _requestRepository =
            requestRepository ??
            FirebaseConnectionRequestStore(messagesStore: messagesRepository),
+       // ignore: prefer_initializing_formals
+       _submitCoachingAction = submitCoachingAction,
        super(const TransferHorseState()) {
     emit(state.copyWith(userProfile: userProfile, horseProfile: horseProfile));
   }
@@ -27,6 +31,8 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
   Timer? _debounce;
   final ConnectionRequestStore _requestRepository;
   final RiderProfileStore _riderProfileRepository;
+  final Future<Map<String, dynamic>> Function(Map<String, Object?>)?
+  _submitCoachingAction;
 
   int _lookupVersion = 0;
   bool _sending = false;
@@ -133,6 +139,15 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
       ),
     );
     try {
+      String? connectionId;
+      if (_submitCoachingAction != null) {
+        final result = await _submitCoachingAction({
+          'action': 'sendTransfer',
+          'horseId': horse.id,
+          'recipientEmail': recipient.email.toLowerCase(),
+        });
+        connectionId = result['id'] as String?;
+      }
       final emails = [sender.email.toLowerCase(), recipient.email.toLowerCase()]
         ..sort();
       final conversationId = convertEmailToPath(emails.join('_'));
@@ -155,6 +170,7 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
         horsePicUrl: horse.picUrl,
         horseOwnerId: horse.currentOwnerId,
         horseOwnerName: horse.currentOwnerName,
+        connectionId: connectionId,
       );
       await _requestRepository.sendRequest(request);
       if (!isClosed) {

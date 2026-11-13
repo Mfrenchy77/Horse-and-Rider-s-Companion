@@ -33,6 +33,7 @@ class AppCubit extends Cubit<AppState> {
     this._accountDeletionRepository,
     PushNotificationService? pushNotificationService,
     this._submitCoachingAction,
+    this._fetchConnection,
   }) : _messagesRepository = messagesRepository,
        _connectionRequestRepository =
            connectionRequestRepository ??
@@ -59,6 +60,8 @@ class AppCubit extends Cubit<AppState> {
   final PushNotificationService _pushNotificationService;
   final Future<Map<String, dynamic>> Function(Map<String, Object?>)?
   _submitCoachingAction;
+  final Future<Map<String, dynamic>?> Function(String connectionId)?
+  _fetchConnection;
 
   ///Streams
   late final StreamSubscription<User?> _userSubscription;
@@ -2812,7 +2815,7 @@ class AppCubit extends Cubit<AppState> {
   /// Accepts or reissues a [ConnectionRequest] via CoachingConnections.
   Future<void> acceptConnectionRequest(ConnectionRequest request) async {
     if (request.kind == ConnectionRequestKind.transferHorse) {
-      _handleTransferHorseRequest();
+      await _acceptTransferRequest(request);
       return;
     }
     final email = state.usersProfile?.email;
@@ -2849,7 +2852,11 @@ class AppCubit extends Cubit<AppState> {
     if (payload == null) return;
     emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     try {
-      final result = await submit({'action': 'send', ...payload});
+      final result = await submit({
+        'action': 'send',
+        ...payload,
+        if (request.id.isNotEmpty) 'requestDocId': request.id,
+      });
       if (isClosed || state.usersProfile?.email != email) return;
       emit(
         state.copyWith(
@@ -2870,6 +2877,64 @@ class AppCubit extends Cubit<AppState> {
           acceptStatus: AcceptStatus.waiting,
           isError: true,
           errorMessage: 'Could not send the connection request. Try again.',
+        ),
+      );
+    }
+  }
+
+  Future<void> _acceptTransferRequest(ConnectionRequest request) async {
+    final email = state.usersProfile?.email;
+    final submit = _submitCoachingAction;
+    final fetch = _fetchConnection;
+    final connectionId = request.connectionId;
+    if (state.isGuest ||
+        email == null ||
+        submit == null ||
+        fetch == null ||
+        connectionId == null ||
+        connectionId.isEmpty ||
+        request.senderEmail.toLowerCase() == email.toLowerCase() ||
+        state.acceptStatus == AcceptStatus.loading) {
+      _handleTransferHorseRequest();
+      return;
+    }
+    emit(state.copyWith(acceptStatus: AcceptStatus.loading));
+    try {
+      final link = await fetch(connectionId);
+      final version = link?['version'] as String?;
+      if (version == null || version.isEmpty) {
+        if (isClosed || state.usersProfile?.email != email) return;
+        emit(
+          state.copyWith(
+            acceptStatus: AcceptStatus.waiting,
+            isError: true,
+            errorMessage: 'This transfer is no longer available.',
+          ),
+        );
+        return;
+      }
+      await submit({
+        'action': 'accept',
+        'id': connectionId,
+        'version': version,
+        if (request.id.isNotEmpty) 'requestDocId': request.id,
+      });
+      if (isClosed || state.usersProfile?.email != email) return;
+      emit(
+        state.copyWith(
+          acceptStatus: AcceptStatus.submitted,
+          isMessage: true,
+          errorMessage:
+              'Horse transfer accepted for ${request.horseName ?? 'horse'}.',
+        ),
+      );
+    } catch (_) {
+      if (isClosed || state.usersProfile?.email != email) return;
+      emit(
+        state.copyWith(
+          acceptStatus: AcceptStatus.waiting,
+          isError: true,
+          errorMessage: 'Could not accept the horse transfer. Try again.',
         ),
       );
     }
@@ -2918,9 +2983,13 @@ class AppCubit extends Cubit<AppState> {
         ConnectionRequestKind.transferHorse => 'Denied horse transfer request',
       };
 
+      final isSender =
+          request.senderEmail.toLowerCase() ==
+          state.usersProfile?.email.toLowerCase();
       await _connectionRequestRepository.dismissRequest(
         request: request,
         dismissalNote: denialText,
+        status: isSender ? 'cancelled' : 'declined',
       );
       emit(
         state.copyWith(

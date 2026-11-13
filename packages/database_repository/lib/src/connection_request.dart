@@ -39,6 +39,7 @@ class ConnectionRequest extends Equatable {
     this.horsePicUrl,
     this.horseOwnerId,
     this.horseOwnerName,
+    this.connectionId,
   });
 
   /// Creates a [ConnectionRequest] from a backend-neutral map.
@@ -85,6 +86,9 @@ class ConnectionRequest extends Equatable {
       horsePicUrl: data['horsePicUrl'] as String?,
       horseOwnerId: data['horseOwnerId'] as String?,
       horseOwnerName: data['horseOwnerName'] as String?,
+      connectionId:
+          (data['connectionId'] as String?) ??
+          (data['coachingConnectionId'] as String?),
     );
   }
 
@@ -144,6 +148,9 @@ class ConnectionRequest extends Equatable {
 
   /// Current horse owner display name for horse-scoped requests.
   final String? horseOwnerName;
+
+  /// Optional linked `CoachingConnections` document ID (e.g. for transfers).
+  final String? connectionId;
 
   /// Converts a legacy [Message] (and optional [Conversation]) into a
   /// [ConnectionRequest], returning `null` if the message is not a request.
@@ -296,6 +303,7 @@ class ConnectionRequest extends Equatable {
       if (horsePicUrl != null) 'horsePicUrl': horsePicUrl,
       if (horseOwnerId != null) 'horseOwnerId': horseOwnerId,
       if (horseOwnerName != null) 'horseOwnerName': horseOwnerName,
+      if (connectionId != null) 'connectionId': connectionId,
     };
   }
 
@@ -320,5 +328,6 @@ class ConnectionRequest extends Equatable {
     horsePicUrl,
     horseOwnerId,
     horseOwnerName,
+    connectionId,
   ];
 }

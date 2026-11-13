@@ -44,69 +44,66 @@ void main() {
       );
     }
 
-    test(
-      'supports all four ConnectionRequestKind values via sendRequest and '
-      'watchRequests',
-      () async {
-        final base = DateTime(2026, 11, 13, 10);
-        final requests = [
-          buildRequest(
-            id: 'req-instructor',
-            kind: ConnectionRequestKind.instructor,
-            createdAt: base,
-          ),
-          buildRequest(
-            id: 'req-student',
-            kind: ConnectionRequestKind.student,
-            createdAt: base.add(const Duration(minutes: 1)),
-          ),
-          buildRequest(
-            id: 'req-student-horse',
-            kind: ConnectionRequestKind.studentHorse,
-            createdAt: base.add(const Duration(minutes: 2)),
-            horseId: 'horse-3',
-            horseName: 'Comet',
-            horseOwnerId: 'recipient@example.com',
-            horseOwnerName: 'Recipient Name',
-          ),
-          buildRequest(
-            id: 'req-transfer',
-            kind: ConnectionRequestKind.transferHorse,
-            createdAt: base.add(const Duration(minutes: 3)),
-            horseId: 'horse-4',
-            horseName: 'Apollo',
-            horseOwnerId: 'sender@example.com',
-            horseOwnerName: 'Sender Name',
-          ),
-        ];
+    test('supports all four ConnectionRequestKind values via sendRequest and '
+        'watchRequests', () async {
+      final base = DateTime(2026, 11, 13, 10);
+      final requests = [
+        buildRequest(
+          id: 'req-instructor',
+          kind: ConnectionRequestKind.instructor,
+          createdAt: base,
+        ),
+        buildRequest(
+          id: 'req-student',
+          kind: ConnectionRequestKind.student,
+          createdAt: base.add(const Duration(minutes: 1)),
+        ),
+        buildRequest(
+          id: 'req-student-horse',
+          kind: ConnectionRequestKind.studentHorse,
+          createdAt: base.add(const Duration(minutes: 2)),
+          horseId: 'horse-3',
+          horseName: 'Comet',
+          horseOwnerId: 'recipient@example.com',
+          horseOwnerName: 'Recipient Name',
+        ),
+        buildRequest(
+          id: 'req-transfer',
+          kind: ConnectionRequestKind.transferHorse,
+          createdAt: base.add(const Duration(minutes: 3)),
+          horseId: 'horse-4',
+          horseName: 'Apollo',
+          horseOwnerId: 'sender@example.com',
+          horseOwnerName: 'Sender Name',
+        ),
+      ];
 
-        for (final req in requests) {
-          await store.sendRequest(req);
-        }
+      for (final req in requests) {
+        await store.sendRequest(req);
+      }
 
-        final received = await store
-            .watchRequests(userEmail: '  RECIPIENT@example.com ')
-            .first;
+      final received = await store
+          .watchRequests(userEmail: '  RECIPIENT@example.com ')
+          .first;
 
-        expect(received, hasLength(4));
-        // Sorted descending by createdAt
-        expect(received.map((r) => r.id).toList(), [
-          'req-transfer_msg-req-transfer',
-          'req-student-horse_msg-req-student-horse',
-          'req-student_msg-req-student',
-          'req-instructor_msg-req-instructor',
-        ]);
-        expect(received.map((r) => r.kind).toList(), [
-          ConnectionRequestKind.transferHorse,
-          ConnectionRequestKind.studentHorse,
-          ConnectionRequestKind.student,
-          ConnectionRequestKind.instructor,
-        ]);
-        expect(received.first.horseId, 'horse-4');
-        expect(received.first.horseName, 'Apollo');
-        expect(received.first.horseOwnerId, 'sender@example.com');
-      },
-    );
+      expect(received, hasLength(4));
+      // Sorted descending by createdAt
+      expect(received.map((r) => r.id).toList(), [
+        'req-transfer_msg-req-transfer',
+        'req-student-horse_msg-req-student-horse',
+        'req-student_msg-req-student',
+        'req-instructor_msg-req-instructor',
+      ]);
+      expect(received.map((r) => r.kind).toList(), [
+        ConnectionRequestKind.transferHorse,
+        ConnectionRequestKind.studentHorse,
+        ConnectionRequestKind.student,
+        ConnectionRequestKind.instructor,
+      ]);
+      expect(received.first.horseId, 'horse-4');
+      expect(received.first.horseName, 'Apollo');
+      expect(received.first.horseOwnerId, 'sender@example.com');
+    });
 
     test(
       'streams realtime updates and excludes dismissed or unrelated requests',
@@ -150,9 +147,7 @@ void main() {
         await sub.cancel();
 
         expect(emissions.first, isEmpty);
-        expect(emissions.last.map((r) => r.id).toList(), [
-          'req-2_msg-req-2',
-        ]);
+        expect(emissions.last.map((r) => r.id).toList(), ['req-2_msg-req-2']);
 
         final dismissedDoc = await firestore
             .collection(FirestoreConnectionRequestStore.requestsCollection)
@@ -164,68 +159,62 @@ void main() {
       },
     );
 
-    test(
-      'multiple requests between the same pair do not collide',
-      () async {
-        final now = DateTime(2026, 11, 13, 13);
-        const sharedConvId = 'sender@examplecom_recipient@examplecom';
-        final instructorReq = ConnectionRequest(
-          id: sharedConvId,
-          messageId: 'm1',
-          kind: ConnectionRequestKind.instructor,
-          senderEmail: 'sender@example.com',
-          senderName: 'Sender',
-          recipientEmail: 'recipient@example.com',
-          recipientName: 'Recipient',
-          title: 'Instructor Request',
-          summary: 'Summary 1',
-          parties: const ['Sender', 'Recipient'],
-          partiesIds: const ['sender@example.com', 'recipient@example.com'],
-          createdAt: now,
-        );
-        final transferReq = ConnectionRequest(
-          id: sharedConvId,
-          messageId: 'm2',
-          kind: ConnectionRequestKind.transferHorse,
-          senderEmail: 'sender@example.com',
-          senderName: 'Sender',
-          recipientEmail: 'recipient@example.com',
-          recipientName: 'Recipient',
-          title: 'Transfer Horse',
-          summary: 'Summary 2',
-          parties: const ['Sender', 'Recipient'],
-          partiesIds: const ['sender@example.com', 'recipient@example.com'],
-          createdAt: now.add(const Duration(minutes: 1)),
-          horseId: 'horse-1',
-          horseName: 'Comet',
-        );
+    test('multiple requests between the same pair do not collide', () async {
+      final now = DateTime(2026, 11, 13, 13);
+      const sharedConvId = 'sender@examplecom_recipient@examplecom';
+      final instructorReq = ConnectionRequest(
+        id: sharedConvId,
+        messageId: 'm1',
+        kind: ConnectionRequestKind.instructor,
+        senderEmail: 'sender@example.com',
+        senderName: 'Sender',
+        recipientEmail: 'recipient@example.com',
+        recipientName: 'Recipient',
+        title: 'Instructor Request',
+        summary: 'Summary 1',
+        parties: const ['Sender', 'Recipient'],
+        partiesIds: const ['sender@example.com', 'recipient@example.com'],
+        createdAt: now,
+      );
+      final transferReq = ConnectionRequest(
+        id: sharedConvId,
+        messageId: 'm2',
+        kind: ConnectionRequestKind.transferHorse,
+        senderEmail: 'sender@example.com',
+        senderName: 'Sender',
+        recipientEmail: 'recipient@example.com',
+        recipientName: 'Recipient',
+        title: 'Transfer Horse',
+        summary: 'Summary 2',
+        parties: const ['Sender', 'Recipient'],
+        partiesIds: const ['sender@example.com', 'recipient@example.com'],
+        createdAt: now.add(const Duration(minutes: 1)),
+        horseId: 'horse-1',
+        horseName: 'Comet',
+      );
 
-        await store.sendRequest(instructorReq);
-        await store.sendRequest(transferReq);
+      await store.sendRequest(instructorReq);
+      await store.sendRequest(transferReq);
 
-        final received = await store
-            .watchRequests(userEmail: 'recipient@example.com')
-            .first;
-        expect(received, hasLength(2));
-        expect(
-          received.map((r) => r.kind).toList(),
-          [
-            ConnectionRequestKind.transferHorse,
-            ConnectionRequestKind.instructor,
-          ],
-        );
+      final received = await store
+          .watchRequests(userEmail: 'recipient@example.com')
+          .first;
+      expect(received, hasLength(2));
+      expect(received.map((r) => r.kind).toList(), [
+        ConnectionRequestKind.transferHorse,
+        ConnectionRequestKind.instructor,
+      ]);
 
-        await store.dismissRequest(
-          request: instructorReq,
-          dismissalNote: 'Declined',
-        );
-        final afterDismiss = await store
-            .watchRequests(userEmail: 'recipient@example.com')
-            .first;
-        expect(afterDismiss, hasLength(1));
-        expect(afterDismiss.single.kind, ConnectionRequestKind.transferHorse);
-      },
-    );
+      await store.dismissRequest(
+        request: instructorReq,
+        dismissalNote: 'Declined',
+      );
+      final afterDismiss = await store
+          .watchRequests(userEmail: 'recipient@example.com')
+          .first;
+      expect(afterDismiss, hasLength(1));
+      expect(afterDismiss.single.kind, ConnectionRequestKind.transferHorse);
+    });
 
     test('deterministic IDs are idempotent on repeated sendRequest', () async {
       final now = DateTime(2026, 11, 13, 14);
@@ -330,22 +319,144 @@ void main() {
           lastEditDate: created,
           recentMessage: legacyMessage,
         );
-      final restored = ConnectionRequest.fromLegacyMessage(
-        legacyMessage,
-        conversation: conversation,
-      );
+        final restored = ConnectionRequest.fromLegacyMessage(
+          legacyMessage,
+          conversation: conversation,
+        );
 
-      expect(restored, isNotNull);
-      expect(restored!.id, original.id);
-      expect(restored.messageId, original.messageId);
-      expect(restored.kind, original.kind);
-      expect(restored.senderEmail, original.senderEmail);
-      expect(restored.senderName, original.senderName);
-      expect(restored.recipientEmail, original.recipientEmail);
-      expect(restored.horseId, original.horseId);
-      expect(restored.horseName, original.horseName);
-      expect(restored.horseOwnerId, original.horseOwnerId);
-      expect(restored.horseOwnerName, original.horseOwnerName);
-    });
+        expect(restored, isNotNull);
+        expect(restored!.id, original.id);
+        expect(restored.messageId, original.messageId);
+        expect(restored.kind, original.kind);
+        expect(restored.senderEmail, original.senderEmail);
+        expect(restored.senderName, original.senderName);
+        expect(restored.recipientEmail, original.recipientEmail);
+        expect(restored.horseId, original.horseId);
+        expect(restored.horseName, original.horseName);
+        expect(restored.horseOwnerId, original.horseOwnerId);
+        expect(restored.horseOwnerName, original.horseOwnerName);
+      },
+    );
+
+    test(
+      'dismissRequest records declined/cancelled and rejects accepted',
+      () async {
+        final now = DateTime(2026, 11, 13, 17);
+        final reqDecline = buildRequest(
+          id: 'req-dec',
+          kind: ConnectionRequestKind.instructor,
+          createdAt: now,
+        );
+        final reqCancel = buildRequest(
+          id: 'req-can',
+          kind: ConnectionRequestKind.student,
+          createdAt: now,
+        );
+        final reqForge = buildRequest(
+          id: 'req-forge',
+          kind: ConnectionRequestKind.transferHorse,
+          createdAt: now,
+        );
+
+        await store.sendRequest(reqDecline);
+        await store.sendRequest(reqCancel);
+        await store.sendRequest(reqForge);
+
+        await store.dismissRequest(
+          request: reqDecline,
+          dismissalNote: 'Declined',
+          status: 'declined',
+        );
+        await store.dismissRequest(
+          request: reqCancel,
+          dismissalNote: 'Cancelled',
+          status: 'cancelled',
+        );
+        await store.dismissRequest(
+          request: reqForge,
+          dismissalNote: 'Forged',
+          status: 'accepted',
+        );
+
+        final col = firestore.collection(
+          FirestoreConnectionRequestStore.requestsCollection,
+        );
+        expect(
+          (await col.doc('req-dec_msg-req-dec').get()).data()?['status'],
+          'declined',
+        );
+        expect(
+          (await col.doc('req-can_msg-req-can').get()).data()?['status'],
+          'cancelled',
+        );
+        expect(
+          (await col.doc('req-forge_msg-req-forge').get()).data()?['status'],
+          'dismissed',
+        );
+      },
+    );
+
+    test(
+      'CompositeConnectionRequestStore merges, deduplicates, and syncs',
+      () async {
+        final legacyFirestore = FakeFirebaseFirestore();
+        final legacyMessages = MessagesRepository(
+          firestore: legacyFirestore,
+        );
+        final legacyStore = FirebaseConnectionRequestStore(
+          messagesStore: legacyMessages,
+        );
+        final composite = CompositeConnectionRequestStore(
+          primary: store,
+          legacy: legacyStore,
+        );
+
+        final now = DateTime(2026, 11, 13, 18);
+        final primaryOnly = buildRequest(
+          id: 'p1',
+          kind: ConnectionRequestKind.instructor,
+          createdAt: now.add(const Duration(minutes: 2)),
+        );
+        final legacyOnly = buildRequest(
+          id: 'l1',
+          kind: ConnectionRequestKind.student,
+          createdAt: now.add(const Duration(minutes: 1)),
+        );
+        final duplicate = buildRequest(
+          id: 'dup1',
+          kind: ConnectionRequestKind.studentHorse,
+          createdAt: now,
+          horseId: 'h1',
+          horseName: 'Comet',
+        );
+
+        await store.sendRequest(primaryOnly);
+        await legacyStore.sendRequest(legacyOnly);
+        await store.sendRequest(duplicate);
+        await legacyStore.sendRequest(duplicate);
+
+        final merged = await composite
+            .watchRequests(userEmail: 'recipient@example.com')
+            .firstWhere((items) => items.length == 3);
+        expect(merged.map((r) => r.messageId).toList(), [
+          'msg-p1',
+          'msg-l1',
+          'msg-dup1',
+        ]);
+
+        await composite.dismissRequest(
+          request: legacyOnly,
+          dismissalNote: 'Declined',
+          status: 'declined',
+        );
+        final afterDismiss = await composite
+            .watchRequests(userEmail: 'recipient@example.com')
+            .firstWhere((items) => items.length == 2);
+        expect(afterDismiss.map((r) => r.messageId).toList(), [
+          'msg-p1',
+          'msg-dup1',
+        ]);
+      },
+    );
   });
 }

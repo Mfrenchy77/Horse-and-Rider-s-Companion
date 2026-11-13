@@ -83,6 +83,7 @@ void main() {
           'kind': 'rider',
           'learnerEmail': 'student@example.com',
           'coachEmail': rider.email,
+          'requestDocId': 'conversation',
         },
       ]);
       expect(harness.cubit.state.acceptStatus, AcceptStatus.submitted);

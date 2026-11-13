@@ -68,6 +68,7 @@ class _InMemoryConnectionRequestStore implements ConnectionRequestStore {
   Future<void> dismissRequest({
     required ConnectionRequest request,
     required String dismissalNote,
+    String status = 'dismissed',
   }) async {
     _requests.remove(request.id);
     _emit();
@@ -253,6 +254,7 @@ void main() {
             'kind': 'rider',
             'learnerEmail': owner.email,
             'coachEmail': recipient.email,
+            'requestDocId': 'owner_recipient',
           },
         ]);
         expect(cubit.state.acceptStatus, AcceptStatus.submitted);
@@ -440,6 +442,109 @@ void main() {
 
         await tester.pumpWidget(const SizedBox());
         unawaited(cubit.close());
+      },
+    );
+
+    test(
+      'AppCubit accepts transferHorse via connectionHandler with version '
+      'and requestDocId',
+      () async {
+        final requestStore = _InMemoryConnectionRequestStore();
+        final submittedPayloads = <Map<String, Object?>>[];
+        final cubit = AppCubit(
+          messagesRepository: messagesStore,
+          connectionRequestRepository: requestStore,
+          skillTreeRepository: skillTreeStore,
+          resourcesRepository: resourcesStore,
+          riderProfileRepository: riderProfileStore,
+          horseProfileRepository: horseProfileStore,
+          authenticationRepository: authGateway,
+          fetchConnection: (id) async => {
+            'id': id,
+            'version': 'v-42',
+            'status': 'pending',
+          },
+          submitCoachingAction: (payload) async {
+            submittedPayloads.add(payload);
+            return {'id': payload['id'], 'status': 'accepted'};
+          },
+        );
+        cubit.emit(
+          cubit.state.copyWith(usersProfile: recipient, isGuest: false),
+        );
+
+        final transferReq = ConnectionRequest(
+          id: 'owner_recipient_m-xfer',
+          messageId: 'm-xfer',
+          kind: ConnectionRequestKind.transferHorse,
+          senderEmail: owner.email,
+          senderName: owner.name,
+          recipientEmail: recipient.email,
+          recipientName: recipient.name,
+          title: 'Transfer Horse',
+          summary: 'Transfer Atlas',
+          parties: [owner.name, recipient.name],
+          partiesIds: [owner.email, recipient.email],
+          createdAt: DateTime(2026, 4),
+          horseId: 'atlas',
+          horseName: 'Atlas',
+          connectionId: 'transfer_atlas_u1_u2',
+        );
+
+        await cubit.acceptConnectionRequest(transferReq);
+        expect(submittedPayloads, hasLength(1));
+        expect(submittedPayloads.single, {
+          'action': 'accept',
+          'id': 'transfer_atlas_u1_u2',
+          'version': 'v-42',
+          'requestDocId': 'owner_recipient_m-xfer',
+        });
+        expect(cubit.state.acceptStatus, AcceptStatus.submitted);
+        expect(cubit.state.isError, isFalse);
+
+        unawaited(cubit.close());
+      },
+    );
+
+    test(
+      'TransferHorseCubit calls sendTransfer before creating Requests doc',
+      () async {
+        final requestStore = _InMemoryConnectionRequestStore();
+        final submitted = <Map<String, Object?>>[];
+        final horse = HorseProfile(
+          id: 'atlas',
+          name: 'Atlas',
+          currentOwnerId: owner.email,
+          currentOwnerName: owner.name,
+          lastEditBy: owner.name,
+          lastEditDate: DateTime(2026),
+        );
+        final transferCubit = TransferHorseCubit(
+          userProfile: owner,
+          horseProfile: horse,
+          requestRepository: requestStore,
+          riderProfileRepository: riderProfileStore,
+          submitCoachingAction: (payload) async {
+            submitted.add(payload);
+            return {'id': 'transfer_atlas_u1_u2', 'status': 'pending'};
+          },
+        );
+        transferCubit.emit(
+          transferCubit.state.copyWith(
+            transferProfile: recipient,
+            isTransferable: true,
+          ),
+        );
+
+        await transferCubit.sendTransferRequest();
+        expect(submitted, hasLength(1));
+        expect(submitted.single['action'], 'sendTransfer');
+        expect(submitted.single['horseId'], 'atlas');
+        final items = await requestStore
+            .watchRequests(userEmail: recipient.email)
+            .first;
+        expect(items.single.connectionId, 'transfer_atlas_u1_u2');
+        unawaited(transferCubit.close());
       },
     );
   });

@@ -1,4 +1,5 @@
 import 'package:authentication_repository/authentication_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -72,6 +73,13 @@ class _AppState extends State<App> {
       authenticationRepository: widget._authenticationRepository,
       accountDeletionRepository: _accountDeletionRepository,
       submitCoachingAction: _connections.submit,
+      fetchConnection: (id) async {
+        final snap = await FirebaseFirestore.instance
+            .collection('CoachingConnections')
+            .doc(id)
+            .get();
+        return snap.data();
+      },
     );
 
     _router = Routes().router(

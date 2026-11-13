@@ -9,9 +9,10 @@ abstract interface class ConnectionRequestStore {
   /// Persists a new or updated [request].
   Future<void> sendRequest(ConnectionRequest request);
 
-  /// Dismisses/denies [request] with [dismissalNote].
+  /// Dismisses/denies/cancels [request] with [dismissalNote].
   Future<void> dismissRequest({
     required ConnectionRequest request,
     required String dismissalNote,
+    String status = 'dismissed',
   });
 }

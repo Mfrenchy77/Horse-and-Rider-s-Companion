@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/TransferHorseDialog/cubit/transfer_horse_cubit.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -35,6 +36,7 @@ class TransferHorseDialog extends StatelessWidget {
             context.read<RiderProfileStore?>() ??
             context.read<RiderProfileRepository?>() ??
             RiderProfileRepository(),
+        submitCoachingAction: context.read<ConnectionRepository?>()?.submit,
       ),
         child: BlocListener<TransferHorseCubit, TransferHorseState>(
           listener: (context, state) {
