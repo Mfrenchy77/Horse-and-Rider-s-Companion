@@ -21,8 +21,8 @@ class SkillTreeRepository implements SkillTreeStore {
 
   CollectionReference<Skill> _skills() =>
       _firestore.collection(SKILLS).withConverter<Skill>(
-            fromFirestore: Skill.fromFirestore,
-            toFirestore: (Skill skill, options) => skill.toFirestore(),
+            fromFirestore: SkillFirestoreMapper.fromFirestore,
+            toFirestore: SkillFirestoreMapper.toFirestore,
           );
 
   /// create or update [skill]

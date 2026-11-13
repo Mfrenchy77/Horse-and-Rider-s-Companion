@@ -1,7 +1,5 @@
 // ignore_for_file: constant_identifier_names
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// Difficulty state for skills
 enum DifficultyState {
   /// Introductory level skill
@@ -86,39 +84,21 @@ class Skill implements Comparable<Skill> {
   /// Description of the skill when proficient
   final String? proficientDescription;
 
-  /// Creates a Skill object from Firestore data.
+  /// Creates a [Skill] from a backend-neutral map.
   // ignore: sort_constructors_first
-  factory Skill.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> snapshot,
-    // ignore: avoid_unused_constructor_parameters
-    SnapshotOptions? options,
-  ) {
-    final data = snapshot.data();
+  factory Skill.fromMap(Map<String, dynamic> data) {
     return Skill(
-      id: data!['id'] as String,
+      id: data['id'] as String,
       rider: data['rider'] as bool,
       position: data['position'] as int,
       skillName: data['skillName'] as String,
       lastEditBy: data['lastEditBy'] as String?,
       description: data['description'] as String?,
-      lastEditDate: (data['lastEditDate'] as Timestamp).toDate(),
+      lastEditDate: _parseNullableDateTime(data['lastEditDate']),
       learningDescription: data['learningDescription'] as String?,
       proficientDescription: data['proficientDescription'] as String?,
-      category: (data['category'] as String?) == 'Husbandry'
-          ? SkillCategory.Husbandry
-          : (data['category'] as String?) == 'In_Hand'
-              ? SkillCategory.In_Hand
-              : (data['category'] as String?) == 'Mounted'
-                  ? SkillCategory.Mounted
-                  : SkillCategory.Other,
-      difficulty: (data['difficulty'] as String?) == 'Introductory'
-          ? DifficultyState.Introductory
-          : (data['difficulty'] as String?) == 'Intermediate'
-              ? DifficultyState.Intermediate
-              : (data['difficulty'] as String?) == 'Advanced'
-                  ? DifficultyState.Advanced
-                  : DifficultyState.Introductory,
-
+      category: _categoryFromString(data['category'] as String?),
+      difficulty: _difficultyFromString(data['difficulty'] as String?),
       // gracefully handle nulls and ensure it's a List<String>
       prerequisites: (data['prerequisites'] as List<dynamic>?)
               ?.whereType<String>()
@@ -127,8 +107,8 @@ class Skill implements Comparable<Skill> {
     );
   }
 
-  /// Converts the Skill object to a Firestore-compatible map.
-  Map<String, Object?> toFirestore() {
+  /// Converts the [Skill] object to a backend-neutral map.
+  Map<String, Object?> toMap() {
     return {
       'id': id,
       'rider': rider,
@@ -136,29 +116,79 @@ class Skill implements Comparable<Skill> {
       'skillName': skillName,
       if (lastEditBy != null) 'lastEditBy': lastEditBy,
       if (description != null) 'description': description,
-      if (lastEditDate != null) 'lastEditDate': lastEditDate,
-      'category': category == SkillCategory.Husbandry
-          ? 'Husbandry'
-          : category == SkillCategory.In_Hand
-              ? 'In_Hand'
-              : category == SkillCategory.Mounted
-                  ? 'Mounted'
-                  : 'Other',
-      'difficulty': difficulty == DifficultyState.Introductory
-          ? 'Introductory'
-          : difficulty == DifficultyState.Intermediate
-              ? 'Intermediate'
-              : difficulty == DifficultyState.Advanced
-                  ? 'Advanced'
-                  : 'Introductory',
+      if (lastEditDate != null)
+        'lastEditDate': lastEditDate!.toIso8601String(),
+      'category': categoryToString(category),
+      'difficulty': difficultyToString(difficulty),
       if (learningDescription != null)
         'learningDescription': learningDescription,
       if (proficientDescription != null)
         'proficientDescription': proficientDescription,
-
       // only store if non-empty
-      if (prerequisites.isNotEmpty) 'prerequisites': prerequisites,
+      if (prerequisites.isNotEmpty)
+        'prerequisites': List<String>.from(prerequisites),
     };
+  }
+
+  /// Serializes [category] to its persisted string value.
+  static String categoryToString(SkillCategory category) {
+    switch (category) {
+      case SkillCategory.Husbandry:
+        return 'Husbandry';
+      case SkillCategory.In_Hand:
+        return 'In_Hand';
+      case SkillCategory.Mounted:
+        return 'Mounted';
+      case SkillCategory.Other:
+        return 'Other';
+    }
+  }
+
+  /// Serializes [difficulty] to its persisted string value.
+  static String difficultyToString(DifficultyState difficulty) {
+    switch (difficulty) {
+      case DifficultyState.Introductory:
+        return 'Introductory';
+      case DifficultyState.Intermediate:
+        return 'Intermediate';
+      case DifficultyState.Advanced:
+        return 'Advanced';
+      case DifficultyState.All:
+        return 'Introductory';
+    }
+  }
+
+  static SkillCategory _categoryFromString(String? value) {
+    switch (value) {
+      case 'Husbandry':
+        return SkillCategory.Husbandry;
+      case 'In_Hand':
+        return SkillCategory.In_Hand;
+      case 'Mounted':
+        return SkillCategory.Mounted;
+      default:
+        return SkillCategory.Other;
+    }
+  }
+
+  static DifficultyState _difficultyFromString(String? value) {
+    switch (value) {
+      case 'Intermediate':
+        return DifficultyState.Intermediate;
+      case 'Advanced':
+        return DifficultyState.Advanced;
+      case 'Introductory':
+      default:
+        return DifficultyState.Introductory;
+    }
+  }
+
+  static DateTime? _parseNullableDateTime(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return null;
   }
 
   /// Gets the position of the skill in the skill tree.
