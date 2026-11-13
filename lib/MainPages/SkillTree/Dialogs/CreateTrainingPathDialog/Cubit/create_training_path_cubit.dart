@@ -12,7 +12,7 @@ part 'create_training_path_state.dart';
 
 class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
   CreateTrainingPathCubit({
-    required SkillTreeRepository trainingPathRepository,
+    required SkillTreeStore trainingPathRepository,
     required List<Skill> allSkills,
     TrainingPath? editing,
     required bool isForRider,
@@ -27,7 +27,7 @@ class CreateTrainingPathCubit extends Cubit<CreateTrainingPathState> {
           ),
         );
 
-  final SkillTreeRepository _repo;
+  final SkillTreeStore _repo;
 
   /// Turn your existing skillNodes list + allSkills into the four pieces
   static CreateTrainingPathState _buildInitialState({

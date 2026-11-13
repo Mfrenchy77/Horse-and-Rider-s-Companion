@@ -38,7 +38,7 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     );
   }
 
-  final SkillTreeRepository _skillsRepository;
+  final SkillTreeStore _skillsRepository;
 
   /// Called when the new Skill Name changes
   void skillNameChanged(String value) {

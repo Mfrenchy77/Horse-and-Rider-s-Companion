@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 
 /// Repository for Accessing Elements of the SkillTree
-class SkillTreeRepository {
+class SkillTreeRepository implements SkillTreeStore {
   /// Constructor for SkillTreeRepository
   SkillTreeRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
@@ -25,16 +25,19 @@ class SkillTreeRepository {
           );
 
   /// Create or update a TrainingPath
+  @override
   Future<void> createOrEditTrainingPath({required TrainingPath trainingPath}) {
     return _trainingPaths().doc(trainingPath.id).set(trainingPath);
   }
 
   /// Retrieve a TrainingPath by its ID
+  @override
   Stream<TrainingPath?> getTrainingPathById({required String id}) {
     return _trainingPaths().doc(id).snapshots().map((snap) => snap.data());
   }
 
   /// Retrieve all TrainingPaths
+  @override
   Stream<List<TrainingPath>> getAllTrainingPaths() {
     return _trainingPaths()
         .snapshots()
@@ -42,6 +45,7 @@ class SkillTreeRepository {
   }
 
   /// Delete a TrainingPath
+  @override
   void deleteTrainingPath({required TrainingPath? trainingPath}) {
     _trainingPaths().doc(trainingPath?.id).delete();
   }
@@ -61,12 +65,14 @@ class SkillTreeRepository {
           );
 
   /// create or update [skill]
+  @override
   Future<void> createOrEditSkill({required Skill skill}) {
     return _skills().doc(skill.id).set(skill);
   }
 
   /// Retrieve Skills by a category string stored under 'category'.
   /// The expected values are 'Husbandry', 'In_Hand', 'Mounted', or 'Other'.
+  @override
   Stream<List<Skill>> getSkillsFromCategory({required String id}) {
     return _skills()
         .where('category', isEqualTo: id)
@@ -75,6 +81,7 @@ class SkillTreeRepository {
   }
 
   /// Retreive all Skills
+  @override
   Stream<List<Skill>> getSkills() {
     return _skills()
         .snapshots()
@@ -82,6 +89,7 @@ class SkillTreeRepository {
   }
 
   ///  Retreives all Skills for Rider SKill Tree
+  @override
   Stream<List<Skill>> getSkillsForRiderSkillTree() {
     return _skills()
         .where('rider', isEqualTo: true)
@@ -90,6 +98,7 @@ class SkillTreeRepository {
   }
 
   ///  Retreives all Skills for Horse SKill Tree
+  @override
   Stream<List<Skill>> getSkillsForHorseSkillTree() {
     return _skills()
         .where('rider', isEqualTo: false)
@@ -98,6 +107,7 @@ class SkillTreeRepository {
   }
 
   /// delete Skill
+  @override
   void deleteSkill({required Skill? skill}) {
     _skills().doc(skill?.id).delete();
   }
