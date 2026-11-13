@@ -26,6 +26,13 @@ class LogBookButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.isGuest != current.isGuest ||
+          previous.usersProfile != current.usersProfile ||
+          previous.viewingProfile != current.viewingProfile ||
+          previous.horseProfile != current.horseProfile ||
+          previous.isViewing != current.isViewing ||
+          previous.isForRider != current.isForRider,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 

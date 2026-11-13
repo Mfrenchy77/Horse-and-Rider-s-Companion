@@ -135,6 +135,20 @@ class _SkillTreeViewState extends State<SkillTreeView> {
           previous.skill?.id != current.skill?.id ||
           previous.skillTreeNavigation != current.skillTreeNavigation ||
           (widget.skillId != null && previous.allSkills != current.allSkills),
+      buildWhen: (previous, current) =>
+          previous.skill != current.skill ||
+          previous.skillTreeNavigation != current.skillTreeNavigation ||
+          previous.sortedSkills != current.sortedSkills ||
+          previous.allSkills != current.allSkills ||
+          previous.isGuest != current.isGuest ||
+          previous.isEdit != current.isEdit ||
+          previous.isViewing != current.isViewing ||
+          previous.isForRider != current.isForRider ||
+          previous.usersProfile != current.usersProfile ||
+          previous.viewingProfile != current.viewingProfile ||
+          previous.horseProfile != current.horseProfile ||
+          previous.categorySortState != current.categorySortState ||
+          previous.difficultySortState != current.difficultySortState,
       listener: (context, state) {
         if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
         if (widget.skillId case final id?) {

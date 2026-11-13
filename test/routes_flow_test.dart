@@ -794,4 +794,70 @@ void main() {
       expect(appCubit.state.resource, isNull);
     },
   );
+
+  testWidgets(
+    'scoped buildWhen guards prevent unrelated AppCubit emissions from '
+    'rebuilding ProfilePage while preserving relevant updates',
+    (tester) async {
+      final rider = RiderProfile(
+        id: 'rider-1',
+        email: 'rider@example.com',
+        name: 'Initial Rider',
+      );
+      appCubit.emit(
+        appCubit.state.copyWith(
+          isGuest: false,
+          pageStatus: AppPageStatus.profile,
+          usersProfile: rider,
+        ),
+      );
+
+      var profileBuildCount = 0;
+      await tester.pumpWidget(
+        BlocProvider<AppCubit>.value(
+          value: appCubit,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) {
+                return BlocBuilder<AppCubit, AppState>(
+                  buildWhen: (previous, current) =>
+                      previous.pageStatus != current.pageStatus ||
+                      previous.isGuest != current.isGuest ||
+                      previous.usersProfile != current.usersProfile,
+                  builder: (context, state) {
+                    profileBuildCount++;
+                    return const ProfilePage();
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(profileBuildCount, 1);
+      expect(find.text('Initial Rider'), findsOneWidget);
+
+      // Unrelated state changes must not trigger a ProfilePage rebuild.
+      appCubit.emit(
+        appCubit.state.copyWith(
+          commentSortState: CommentSortState.Best,
+          categorySortState: CategorySortState.Mounted,
+          resourcesSortStatus: ResourcesSortStatus.oldest,
+        ),
+      );
+      await tester.pump();
+      expect(profileBuildCount, 1);
+
+      // Relevant profile change must trigger a rebuild and show updated name.
+      appCubit.emit(
+        appCubit.state.copyWith(
+          usersProfile: rider.copyWith(name: 'Updated Rider'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(profileBuildCount, 2);
+      expect(find.text('Updated Rider'), findsOneWidget);
+    },
+  );
 }

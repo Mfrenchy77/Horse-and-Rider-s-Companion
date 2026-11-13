@@ -67,6 +67,8 @@ class _MessagesPageState extends State<MessagesPage> {
     return BlocConsumer<AppCubit, AppState>(
       listenWhen: (previous, current) =>
           previous.usersProfile != current.usersProfile,
+      buildWhen: (previous, current) =>
+          previous.conversations != current.conversations,
       listener: (context, state) => _syncConversations(),
       builder: (context, state) {
         return state.conversations == null

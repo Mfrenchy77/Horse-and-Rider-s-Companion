@@ -15,6 +15,10 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.pageStatus != current.pageStatus ||
+          previous.isGuest != current.isGuest ||
+          previous.usersProfile != current.usersProfile,
       builder: (context, state) {
         // show a loading page while the profile is loading
         if (state.pageStatus == AppPageStatus.loading) {

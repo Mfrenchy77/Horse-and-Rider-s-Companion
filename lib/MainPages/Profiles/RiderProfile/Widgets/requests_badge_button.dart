@@ -13,6 +13,9 @@ class RequestsBadgeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.conversations != current.conversations ||
+          previous.usersProfile != current.usersProfile,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final count = cubit.pendingRequestCount();

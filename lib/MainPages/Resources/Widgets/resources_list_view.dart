@@ -13,6 +13,10 @@ class ResourcesListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.resourcesSortStatus != current.resourcesSortStatus ||
+          previous.savedResources != current.savedResources ||
+          previous.resources != current.resources,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         return Center(

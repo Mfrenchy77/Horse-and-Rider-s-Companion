@@ -35,6 +35,8 @@ class _HorseProfilePageState extends State<HorseProfilePage> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.horseProfile != current.horseProfile,
       builder: (context, state) {
         return state.horseProfile == null ||
                 state.horseProfile?.id != widget.horseId

@@ -85,6 +85,14 @@ class _NavigationViewState extends State<NavigationView> {
     final cubit = context.read<AppCubit>();
 
     return BlocListener<AppCubit, AppState>(
+      listenWhen: (previous, current) =>
+          previous.index != current.index ||
+          previous.showOnboarding != current.showOnboarding ||
+          previous.isError != current.isError ||
+          previous.isMessage != current.isMessage ||
+          previous.errorMessage != current.errorMessage ||
+          previous.showEmailVerification != current.showEmailVerification ||
+          previous.user.email != current.user.email,
       listener: (context, state) {
         // Switch shell branch when AppCubit index changes
         final newIndex = state.index;

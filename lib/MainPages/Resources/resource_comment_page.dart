@@ -193,6 +193,13 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
       listenWhen: (previous, current) =>
           previous.resources != current.resources &&
           current.resource?.id != widget.id,
+      buildWhen: (previous, current) =>
+          previous.resource != current.resource ||
+          previous.resources != current.resources ||
+          previous.resourceComments != current.resourceComments ||
+          previous.commentSortState != current.commentSortState ||
+          previous.isGuest != current.isGuest ||
+          previous.usersProfile != current.usersProfile,
       listener: (context, state) {
         context.read<AppCubit>().getResourceById(widget.id);
       },

@@ -55,6 +55,8 @@ class _ViewingProfilePageState extends State<ViewingProfilePage> {
     return BlocConsumer<AppCubit, AppState>(
       listenWhen: (previous, current) =>
           previous.usersProfile?.email != current.usersProfile?.email,
+      buildWhen: (previous, current) =>
+          previous.viewingProfile != current.viewingProfile,
       listener: (context, state) {
         if (state.usersProfile != null &&
             state.usersProfile!.email == widget.id) {

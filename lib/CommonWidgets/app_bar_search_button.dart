@@ -8,6 +8,10 @@ class AppBarSearchButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (previous, current) =>
+          previous.isSearch != current.isSearch ||
+          previous.pageStatus != current.pageStatus ||
+          previous.skillTreeNavigation != current.skillTreeNavigation,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         return Visibility(
