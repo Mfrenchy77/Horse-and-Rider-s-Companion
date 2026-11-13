@@ -75,6 +75,35 @@ function transition(link, actor, action) {
   return rule[2];
 }
 
+async function readRequestRecord(tx, db, requestDocId, actor) {
+  if (!requestDocId) return null;
+  const id = documentId(requestDocId, 'request ID');
+  const reqRef = db.collection('Requests').doc(id);
+  const snap = await tx.get(reqRef);
+  const data = snap.data();
+  if (!data) return null;
+  const parties = Array.isArray(data.partiesIds) ? data.partiesIds.map(emailKey) : [];
+  if (!parties.includes(actor)) {
+    throw new HttpsError('permission-denied', 'Request unavailable.');
+  }
+  return {ref: reqRef, data};
+}
+
+function writeRequestResolution(tx, record, targetStatus, connectionId, now) {
+  if (!record) return;
+  const current = record.data.status || 'pending';
+  if (current === targetStatus) return;
+  if (current !== 'pending') {
+    throw new HttpsError('failed-precondition', 'This request has already been resolved.');
+  }
+  tx.update(record.ref, {
+    status: targetStatus,
+    isAccepted: targetStatus === 'accepted',
+    ...(connectionId ? {coachingConnectionId: connectionId} : {}),
+    updatedAt: now,
+  });
+}
+
 async function send(tx, db, auth, data, actor, identity, now, version) {
   const kind = data.kind;
   if (kind !== 'rider' && kind !== 'horse') {
@@ -118,9 +147,14 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
   const coachUid = actor === coach ? identity.uid : otherUser.uid;
   const id = key([kind, learnerUid, coachUid, horseId]);
   const ref = db.collection(collection).doc(id);
-  const existing = (await tx.get(ref)).data();
+  const [existingSnap, reqRecord] = await Promise.all([
+    tx.get(ref),
+    readRequestRecord(tx, db, data.requestDocId, actor),
+  ]);
+  const existing = existingSnap.data();
   if (existing && !terminal.has(existing.status) &&
       (existing.ownershipVersion ?? null) === (targetHorse?.ownershipVersion ?? null)) {
+    writeRequestResolution(tx, reqRecord, 'accepted', id, now);
     // A crossed request remains incoming until its recipient explicitly accepts.
     return {id, status: existing.status, incoming: existing.recipient === actor};
   }
@@ -142,6 +176,7 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     status: 'pending',
     updatedAt: now,
   });
+  writeRequestResolution(tx, reqRecord, 'accepted', id, now);
   return {id, status: 'pending', incoming: false};
 }
 
@@ -230,12 +265,16 @@ async function sendTransfer(tx, db, auth, identity, data, now, version) {
   return {id, status: 'pending'};
 }
 
-async function resolveTransfer(tx, db, link, ref, id, actor, action, now) {
+async function resolveTransfer(tx, db, link, ref, id, actor, action, now, requestDocId) {
   if (!['accept', 'decline', 'cancel'].includes(action)) {
     throw new HttpsError('permission-denied', 'This action is unavailable for a transfer.');
   }
   const status = transition(link, actor, action);
-  if (link.status === status) return {id, status};
+  const reqRecord = await readRequestRecord(tx, db, requestDocId, actor);
+  if (link.status === status) {
+    writeRequestResolution(tx, reqRecord, status, id, now);
+    return {id, status};
+  }
   const animal = await horse(tx, db, link.horseId);
   if (emailKey(animal.profile.currentOwnerId) !== link.learner || animal.profile.transferRequestId !== id) {
     throw new HttpsError('failed-precondition', 'This transfer is no longer available.');
@@ -281,6 +320,7 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now) {
     tx.update(animal.ref, {transferRequestId: null});
   }
   tx.update(ref, {status, updatedAt: now});
+  writeRequestResolution(tx, reqRecord, status, id, now);
   return {id, status};
 }
 
@@ -645,7 +685,9 @@ function connectionHandler(db, auth) {
       if (data.version !== link.version) {
         throw new HttpsError('failed-precondition', 'Refresh this connection and try again.');
       }
-      if (link.kind === 'transfer') return resolveTransfer(tx, db, link, ref, id, actor, data.action, now);
+      if (link.kind === 'transfer') {
+        return resolveTransfer(tx, db, link, ref, id, actor, data.action, now, data.requestDocId);
+      }
       if (['record', 'verifySkill', 'removeSkillVerification'].includes(data.action)) {
         return addRecord(tx, db, auth, link, actor, data, now, id);
       }
@@ -675,6 +717,7 @@ function connectionHandler(db, auth) {
       }
 
       const status = transition(link, actor, data.action);
+      const reqRecord = await readRequestRecord(tx, db, data.requestDocId, actor);
       if (status === 'accepted' && status !== link.status) {
         const record = await target(tx, db, link);
         if (link.kind === 'horse' && isArchived(record.profile)) {
@@ -682,6 +725,7 @@ function connectionHandler(db, auth) {
         }
       }
       if (status !== link.status) tx.update(ref, {status, updatedAt: now});
+      writeRequestResolution(tx, reqRecord, status, id, now);
       return {id, status};
     });
   };

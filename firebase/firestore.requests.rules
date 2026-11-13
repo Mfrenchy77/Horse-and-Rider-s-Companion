@@ -1,0 +1,113 @@
+// Staged Firestore security rules for the Requests migration.
+// Live firebase/firestore.rules remains untouched until production cutover.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verifiedEmailIs(email) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == email;
+    }
+
+    function verifiedLowerEmail() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        ? request.auth.token.email.lower()
+        : '';
+    }
+
+    match /CoachingConnections/{connectionId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.uid in resource.data.participantUids;
+      allow create, update, delete: if false;
+    }
+
+    match /SharedRidingEntries/{entryId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.uid == resource.data.riderUid;
+      allow create, update, delete: if false;
+    }
+
+    match /Horse_Profile/{horseId} {
+      allow read: if true;
+      allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
+        && request.resource.data.get('archiveStatus', 'active') == 'active'
+        && !request.resource.data.keys().hasAny([
+          'saleListing', 'transferRequestId', 'ownershipVersion'
+        ]);
+      allow update: if verifiedEmailIs(resource.data.currentOwnerId)
+        && request.resource.data.currentOwnerId == resource.data.currentOwnerId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion'
+        ]);
+      // Keep the horse ID reserved for its shared history when archived.
+      allow delete: if false;
+    }
+
+    match /Rider_Profile/{riderId} {
+      allow read: if true;
+      allow create: if verifiedEmailIs(request.resource.data.email)
+        && request.resource.data.get('archivedHorses', []) == []
+        && !request.resource.data.keys().hasAny(['ownershipRosterVersion']);
+      allow update: if verifiedEmailIs(resource.data.email)
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', [])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownershipRosterVersion']);
+      allow delete: if verifiedEmailIs(resource.data.email);
+    }
+
+    match /Requests/{requestId} {
+      allow read: if request.auth != null
+        && request.auth.token.email_verified == true
+        && verifiedLowerEmail() in resource.data.partiesIds;
+
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.senderEmail == verifiedLowerEmail()
+        && request.resource.data.senderEmail in request.resource.data.partiesIds
+        && request.resource.data.recipientEmail in request.resource.data.partiesIds
+        && request.resource.data.senderEmail != request.resource.data.recipientEmail
+        && request.resource.data.status == 'pending'
+        && request.resource.data.get('isAccepted', false) == false
+        && request.resource.data.kind in [
+          'instructor', 'student', 'studentHorse', 'transferHorse'
+        ];
+
+      // Clients cannot directly forge 'accepted'. Only Cloud Functions
+      // (Admin SDK) can transition a request to 'accepted'.
+      // Terminal requests (status != 'pending') cannot be reopened or mutated.
+      allow update: if request.auth != null
+        && request.auth.token.email_verified == true
+        && verifiedLowerEmail() in resource.data.partiesIds
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'dismissalNote', 'updatedAt'
+        ])
+        && (
+          (request.resource.data.status == 'cancelled'
+            && verifiedLowerEmail() == resource.data.senderEmail)
+          || (request.resource.data.status == 'declined'
+            && verifiedLowerEmail() == resource.data.recipientEmail)
+          || request.resource.data.status == 'dismissed'
+        );
+
+      allow delete: if false;
+    }
+
+    match /DeletionJobs/{uid} {
+      allow read, write: if false;
+    }
+
+    match /{collection}/{document=**} {
+      allow read: if !(collection in [
+        'CoachingConnections', 'SharedRidingEntries', 'DeletionJobs', 'Requests'
+      ]);
+      allow write: if request.auth != null && !(collection in [
+        'CoachingConnections', 'SharedRidingEntries',
+        'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests'
+      ]);
+    }
+  }
+}

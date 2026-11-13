@@ -396,3 +396,61 @@ test('concurrent transfer acceptance only transfers ownership once', async () =>
   assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, null);
   assert.deepEqual(docs.get(buyerRef).ownedHorses.map((item) => item.id), ['atlas']);
 });
+
+test('connectionHandler atomically resolves Requests on send and transfer accept', async () => {
+  const {call, docs, getLink, request} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+
+  // 1. Coaching send with requestDocId marks Requests accepted atomically.
+  docs.set('Requests/req-coach-1', {
+    status: 'pending',
+    partiesIds: [student, coach],
+    senderEmail: student,
+    recipientEmail: coach,
+  });
+  const sent = await call(student, {...request('rider'), requestDocId: 'req-coach-1'});
+  assert.equal(docs.get('Requests/req-coach-1').status, 'accepted');
+  assert.equal(docs.get('Requests/req-coach-1').isAccepted, true);
+  assert.equal(docs.get('Requests/req-coach-1').coachingConnectionId, sent.id);
+
+  // 2. Failed transfer accept (wrong actor) leaves Requests pending.
+  const offer = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider,
+  });
+  docs.set('Requests/req-xfer-1', {
+    status: 'pending',
+    partiesIds: [student, outsider],
+    senderEmail: student,
+    recipientEmail: outsider,
+  });
+  await assert.rejects(
+      call(student, {
+        action: 'accept',
+        id: offer.id,
+        version: getLink(offer.id).version,
+        requestDocId: 'req-xfer-1',
+      }),
+      {code: 'permission-denied'},
+  );
+  assert.equal(docs.get('Requests/req-xfer-1').status, 'pending');
+
+  // 3. Authorized recipient transfer accept updates both Horse_Profile and Requests.
+  await call(outsider, {
+    action: 'accept',
+    id: offer.id,
+    version: getLink(offer.id).version,
+    requestDocId: 'req-xfer-1',
+  });
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, outsider);
+  assert.equal(docs.get('Requests/req-xfer-1').status, 'accepted');
+  assert.equal(docs.get('Requests/req-xfer-1').isAccepted, true);
+
+  // 4. Idempotent retry on already-accepted transfer + Requests succeeds without duplicating.
+  await call(outsider, {
+    action: 'accept',
+    id: offer.id,
+    version: getLink(offer.id).version,
+    requestDocId: 'req-xfer-1',
+  });
+  assert.equal(docs.get('Requests/req-xfer-1').status, 'accepted');
+});
