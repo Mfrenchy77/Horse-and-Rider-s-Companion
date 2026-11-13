@@ -34,20 +34,15 @@ class EditRiderProfileDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     debugPrint('EditRiderProfileDialog');
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider(create: (context) => KeysRepository()),
-        RepositoryProvider(create: (context) => CloudRepository()),
-        RepositoryProvider(create: (context) => RiderProfileRepository()),
-      ],
-      child: BlocProvider(
-        create: (context) => EditRiderProfileCubit(
-          user: user,
-          keysRepository: context.read<KeysRepository>(),
-          cloudRepository: context.read<CloudRepository>(),
-          riderProfile: riderProfile,
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-        ),
+    return BlocProvider(
+      create: (context) => EditRiderProfileCubit(
+        user: user,
+        keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
+        cloudRepository: context.read<CloudRepository?>() ?? CloudRepository(),
+        riderProfile: riderProfile,
+        riderProfileRepository:
+            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+      ),
         child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
           listener: (context, state) {
             if (state.status == SubmissionStatus.success) {
@@ -113,7 +108,6 @@ class EditRiderProfileDialog extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }

@@ -67,35 +67,17 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
   Widget build(BuildContext context) {
     // if horseProfile is null then we are creating a new horse profile
     // and editProfile should be false
-    final existingKeysRepo = context.read<KeysRepository?>();
-    final existingCloudRepo = context.read<CloudRepository?>();
-    final existingRiderRepo = context.read<RiderProfileRepository?>();
-    final existingHorseRepo = context.read<HorseProfileRepository?>();
-
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider<KeysRepository>(
-          create: (_) => existingKeysRepo ?? KeysRepository(),
-        ),
-        RepositoryProvider<CloudRepository>(
-          create: (_) => existingCloudRepo ?? CloudRepository(),
-        ),
-        RepositoryProvider<RiderProfileRepository>(
-          create: (_) => existingRiderRepo ?? RiderProfileRepository(),
-        ),
-        RepositoryProvider<HorseProfileRepository>(
-          create: (_) => existingHorseRepo ?? HorseProfileRepository(),
-        ),
-      ],
-      child: BlocProvider(
-        create: (context) => AddHorseDialogCubit(
-          usersProfile: widget._usersProfile,
-          horseProfile: widget._horseProfile,
-          keysRepository: context.read<KeysRepository>(),
-          cloudRepository: context.read<CloudRepository>(),
-          horseProfileRepository: context.read<HorseProfileRepository>(),
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-        ),
+    return BlocProvider(
+      create: (context) => AddHorseDialogCubit(
+        usersProfile: widget._usersProfile,
+        horseProfile: widget._horseProfile,
+        keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
+        cloudRepository: context.read<CloudRepository?>() ?? CloudRepository(),
+        horseProfileRepository:
+            context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
+        riderProfileRepository:
+            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+      ),
         child: BlocBuilder<AddHorseDialogCubit, AddHorseDialogState>(
           builder: (context, state) {
             final cubit = context.read<AddHorseDialogCubit>();
@@ -225,7 +207,6 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
             );
           },
         ),
-      ),
     );
   }
 }

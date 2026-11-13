@@ -20,18 +20,14 @@ class ProfileSearchDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider(create: (context) => RiderProfileRepository()),
-        RepositoryProvider(create: (context) => HorseProfileRepository()),
-        RepositoryProvider(create: (context) => KeysRepository()),
-      ],
-      child: BlocProvider(
-        create: (context) => ProfileSearchCubit(
-          horseProfileRepository: context.read<HorseProfileRepository>(),
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-          keysRepository: context.read<KeysRepository>(),
-        ),
+    return BlocProvider(
+      create: (context) => ProfileSearchCubit(
+        horseProfileRepository:
+            context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
+        riderProfileRepository:
+            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+        keysRepository: context.read<KeysRepository?>() ?? KeysRepository(),
+      ),
         child: BlocListener<ProfileSearchCubit, ProfileSearchState>(
           listener: (context, state) {
             final cubit = context.read<ProfileSearchCubit>();
@@ -166,7 +162,6 @@ class ProfileSearchDialog extends StatelessWidget {
             },
           ),
         ),
-      ),
     );
   }
 

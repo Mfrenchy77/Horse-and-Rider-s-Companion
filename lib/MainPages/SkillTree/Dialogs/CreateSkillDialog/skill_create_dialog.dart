@@ -31,16 +31,15 @@ class CreateSkillDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => SkillTreeRepository(),
-      child: BlocProvider(
-        create: (context) => CreateSkillDialogCubit(
-          skill: skill,
-          allSkills: allSkills,
-          isForRider: isForRider,
-          usersProfile: _usersProfile,
-          skillsRepository: context.read<SkillTreeRepository>(),
-        ),
+    return BlocProvider(
+      create: (context) => CreateSkillDialogCubit(
+        skill: skill,
+        allSkills: allSkills,
+        isForRider: isForRider,
+        usersProfile: _usersProfile,
+        skillsRepository:
+            context.read<SkillTreeRepository?>() ?? SkillTreeRepository(),
+      ),
         child: BlocListener<CreateSkillDialogCubit, CreateSkillDialogState>(
           listener: (context, state) {
             if (state.status == FormStatus.success) {
@@ -358,7 +357,6 @@ class CreateSkillDialog extends StatelessWidget {
             },
           ),
         ),
-      ),
     );
   }
 }

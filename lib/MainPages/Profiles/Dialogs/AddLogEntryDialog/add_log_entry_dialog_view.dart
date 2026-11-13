@@ -20,21 +20,14 @@ class AddLogEntryDialog extends StatelessWidget {
   final HorseProfile? horseProfile;
   @override
   Widget build(BuildContext context) {
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider(
-          create: (context) => HorseProfileRepository(),
-        ),
-        RepositoryProvider(
-          create: (context) => RiderProfileRepository(),
-        ),
-      ],
-      child: BlocProvider(
-        create: (context) => AddLogEntryCubit(
-          usersProfile: usersProfile,
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-          horseProfileRepository: context.read<HorseProfileRepository>(),
-        ),
+    return BlocProvider(
+      create: (context) => AddLogEntryCubit(
+        usersProfile: usersProfile,
+        riderProfileRepository:
+            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+        horseProfileRepository:
+            context.read<HorseProfileRepository?>() ?? HorseProfileRepository(),
+      ),
         child: BlocBuilder<AddLogEntryCubit, AddLogEntryState>(
           builder: (context, state) {
             if (state.status == FormStatus.success) {
@@ -98,7 +91,6 @@ class AddLogEntryDialog extends StatelessWidget {
             );
           },
         ),
-      ),
     );
   }
 }

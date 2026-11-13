@@ -19,17 +19,14 @@ class MesssageContactsSearchDialog extends StatelessWidget {
   final RiderProfile usersProfile;
   @override
   Widget build(BuildContext context) {
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider(create: (context) => MessagesRepository()),
-        RepositoryProvider(create: (context) => RiderProfileRepository()),
-      ],
-      child: BlocProvider(
-        create: (context) => NewGroupDialogCubit(
-          messagesRepository: context.read<MessagesRepository>(),
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-          usersProfile: usersProfile,
-        ),
+    return BlocProvider(
+      create: (context) => NewGroupDialogCubit(
+        messagesRepository:
+            context.read<MessagesRepository?>() ?? MessagesRepository(),
+        riderProfileRepository:
+            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+        usersProfile: usersProfile,
+      ),
         child: BlocListener<NewGroupDialogCubit, NewGroupDialogState>(
           listener: (context, state) {
             final cubit = context.read<NewGroupDialogCubit>();
@@ -82,7 +79,6 @@ class MesssageContactsSearchDialog extends StatelessWidget {
             },
           ),
         ),
-      ),
     );
   }
 }

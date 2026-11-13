@@ -20,18 +20,15 @@ class TransferHorseDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider(create: (context) => RiderProfileRepository()),
-        RepositoryProvider(create: (context) => MessagesRepository()),
-      ],
-      child: BlocProvider(
-        create: (context) => TransferHorseCubit(
-          userProfile: userProfile,
-          horseProfile: horseProfile,
-          messagesRepository: context.read<MessagesRepository>(),
-          riderProfileRepository: context.read<RiderProfileRepository>(),
-        ),
+    return BlocProvider(
+      create: (context) => TransferHorseCubit(
+        userProfile: userProfile,
+        horseProfile: horseProfile,
+        messagesRepository:
+            context.read<MessagesRepository?>() ?? MessagesRepository(),
+        riderProfileRepository:
+            context.read<RiderProfileRepository?>() ?? RiderProfileRepository(),
+      ),
         child: BlocListener<TransferHorseCubit, TransferHorseState>(
           listener: (context, state) {
             final cubit = context.read<TransferHorseCubit>();
@@ -181,7 +178,6 @@ class TransferHorseDialog extends StatelessWidget {
             },
           ),
         ),
-      ),
     );
   }
 }
