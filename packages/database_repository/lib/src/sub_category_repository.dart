@@ -3,18 +3,20 @@ import 'package:database_repository/database_repository.dart';
 
 /// SubCategoryRepository
 class SubCategoryRepository {
-  
+  /// Creates a [SubCategoryRepository] backed by [firestore].
+  SubCategoryRepository({FirebaseFirestore? firestore})
+    : _subCategoryDatabaseReference = (firestore ?? FirebaseFirestore.instance)
+          .collection(SUB_CATEGORIES)
+          .withConverter<SubCategory>(
+            fromFirestore: SubCategoryFirestoreMapper.fromFirestore,
+            toFirestore: SubCategoryFirestoreMapper.toFirestore,
+          );
+
   ///Constant for SubCategoryRepository
   // ignore: constant_identifier_names
   static const String SUB_CATEGORIES = 'SubCategories';
 
-  final _subCategoryDatabaseReference = FirebaseFirestore.instance
-      .collection(SUB_CATEGORIES)
-      .withConverter<SubCategory>(
-        fromFirestore: SubCategory.fromFirestore,
-        toFirestore: (SubCategory subCategory, options) =>
-            subCategory.toFirestore(),
-      );
+  final CollectionReference<SubCategory> _subCategoryDatabaseReference;
 
   ///create or upadate [subCategory]
   Future<void> createOrEditSubCategory({required SubCategory subCategory}) {
