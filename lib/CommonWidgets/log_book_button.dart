@@ -119,7 +119,7 @@ class LogBookButton extends StatelessWidget {
                       cubit.canWriteProfileRecords())
                     FilledButton.icon(
                       onPressed: () {
-                        showAppDialog<AddLogEntryDialog>(
+                        showAppGlassDialog<AddLogEntryDialog>(
                           context: context,
                           builder: (context) => AddLogEntryDialog(
                             usersProfile: cubit.state.usersProfile!,

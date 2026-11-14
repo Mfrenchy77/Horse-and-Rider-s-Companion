@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
@@ -63,7 +64,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                 case 4:
                   // Navigate to the add horse page
                   if (state.usersProfile != null) {
-                    showDialog<AddHorseDialog>(
+                    showAppGlassDialog<AddHorseDialog>(
                       context: context,
                       builder: (context) => AddHorseDialog(
                         horseProfile: null,

@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/horse_details.dart';
 import 'package:horseandriderscompanion/CommonWidgets/location_picker.dart';
-import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -114,20 +113,16 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
                   : '',
             );
 
-            return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              appBar: ThemedAppBar(
-                title: Text(
-                  widget._editProfile
-                      ? 'Edit Horse: ${state.horseProfile?.name}'
-                      : 'Create New Horse Profile',
-                ),
+            return AppGlassDialog(
+              maxWidth: 640,
+              title: Text(
+                widget._editProfile
+                    ? 'Edit Horse: ${state.horseProfile?.name}'
+                    : 'Create New Horse Profile',
               ),
-              body: FormPageBody(
-                maxWidth: 800,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                     ///   Horse photo
                     _horsePhoto(context: context, size: 85, state: state),
                     gap(),
@@ -193,27 +188,19 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
                     _horsePurchasePrice(context: context, state: state),
 
                     errorText(state: state),
-                    const SizedBox(height: 24),
-                    OverflowBar(
-                      alignment: MainAxisAlignment.end,
-                      overflowAlignment: OverflowBarAlignment.end,
-                      spacing: 8,
-                      overflowSpacing: 8,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancel'),
-                        ),
-                        _horseSubmitButton(
-                          isEdit: widget._editProfile,
-                          context: context,
-                          state: state,
-                        ),
-                      ],
-                    ),
                   ],
                 ),
-              ),
+              actions: [
+                AppOutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  label: 'Cancel',
+                ),
+                _horseSubmitButton(
+                  isEdit: widget._editProfile,
+                  context: context,
+                  state: state,
+                ),
+              ],
             );
           },
         ),
@@ -487,6 +474,7 @@ Widget _horseGender({
   required AddHorseDialogState state,
 }) {
   return DropdownButtonFormField(
+    isExpanded: true,
     initialValue: state.horseProfile?.gender ?? 'Mare',
     onChanged: (value) =>
         context.read<AddHorseDialogCubit>().horseGenderChanged(value as String),

@@ -5,7 +5,6 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -38,7 +37,7 @@ class AddLogEntryDialog extends StatelessWidget {
             if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
-            return OceanCoralAppDialog(
+            return AppGlassDialog(
               title: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Text(
@@ -50,7 +49,6 @@ class AddLogEntryDialog extends StatelessWidget {
                 ),
               ),
               insetPadding: const EdgeInsets.all(10),
-              scrollable: true,
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

@@ -126,7 +126,7 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           return;
         }
         if (value == 'edit') {
-          await showDialog<AddHorseDialog>(
+          await showAppGlassDialog<AddHorseDialog>(
             context: context,
             builder: (_) => AddHorseDialog(
               horseProfile: horse,
