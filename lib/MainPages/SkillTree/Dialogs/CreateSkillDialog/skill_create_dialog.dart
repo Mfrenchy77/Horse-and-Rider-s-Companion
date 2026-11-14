@@ -4,10 +4,9 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillDialog/Cubit/skill_create_dialog_cubit.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
@@ -73,18 +72,15 @@ class CreateSkillDialog extends StatelessWidget {
               //                 ..sort((a, b) => a!.skillName.compareTo(b!.skillName));
               //               debugPrint('sorted skills: ${skills.length}');
 
-              return Scaffold(
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                appBar: ThemedAppBar(
-                  title: Text(
-                    isEdit ? 'Edit ${skill?.skillName}' : 'Create New Skill',
-                  ),
+              return AppGlassDialog(
+                maxWidth: 800,
+                density: AppGlassDensity.frosted,
+                title: Text(
+                  isEdit ? 'Edit ${skill?.skillName}' : 'Create New Skill',
                 ),
-                body: FormPageBody(
-                  maxWidth: 800,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
                       ///   Name
                       TextFormField(
                         initialValue: isEdit ? skill?.skillName : '',
@@ -307,54 +303,40 @@ class CreateSkillDialog extends StatelessWidget {
                       //                           ],
                       //                         ),
                       const SizedBox(height: 24),
-                      OverflowBar(
-                        alignment: MainAxisAlignment.end,
-                        overflowAlignment: OverflowBarAlignment.end,
-                        spacing: 8,
-                        overflowSpacing: 8,
-                        children: [
-                          TextButton(
-                            onPressed: () => context.pop(),
-                            child: const Text('Cancel'),
-                          ),
-
-                          ///Delete
-                          Visibility(
-                            visible: isEdit,
-                            child: IconButton(
-                              onPressed: () {
-                                context
-                                    .read<CreateSkillDialogCubit>()
-                                    .deleteSkill(skill: skill as Skill);
-                              },
-                              icon: const Icon(Icons.delete),
-                            ),
-                          ),
-
-                          if (state.status == FormStatus.submitting)
-                            const CircularProgressIndicator()
-                          else
-                            FilledButton(
-                              onPressed: state.name.value.isEmpty
-                                  ? null
-                                  : () {
-                                      isEdit
-                                          ? context
-                                                .read<CreateSkillDialogCubit>()
-                                                .editSkill(editedSkill: skill)
-                                          : context
-                                                .read<CreateSkillDialogCubit>()
-                                                .createSkill(_position);
-                                    },
-                              child: Text(
-                                isEdit ? 'Submit Edited Skill' : 'Submit',
-                              ),
-                            ),
-                        ],
-                      ),
                     ],
                   ),
-                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  if (isEdit)
+                    IconButton(
+                      onPressed: () {
+                        context.read<CreateSkillDialogCubit>().deleteSkill(
+                          skill: skill as Skill,
+                        );
+                      },
+                      icon: const Icon(Icons.delete),
+                    ),
+                  if (state.status == FormStatus.submitting)
+                    const CircularProgressIndicator()
+                  else
+                    FilledButton(
+                      onPressed: state.name.value.isEmpty
+                          ? null
+                          : () {
+                              isEdit
+                                  ? context
+                                        .read<CreateSkillDialogCubit>()
+                                        .editSkill(editedSkill: skill)
+                                  : context
+                                        .read<CreateSkillDialogCubit>()
+                                        .createSkill(_position);
+                            },
+                      child: Text(isEdit ? 'Submit Edited Skill' : 'Submit'),
+                    ),
+                ],
               );
             },
           ),

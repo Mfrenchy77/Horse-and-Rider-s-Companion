@@ -13,7 +13,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connectio
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:intl/intl.dart';
 
@@ -195,20 +194,19 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   }
 
   Future<void> _openEntry(BaseListItem entry) async {
-    final action = await showAppDialog<String>(
+    final action = await showAppGlassDialog<String>(
       context: context,
       builder: (_) => BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
           final rider = _owner(state, widget.email);
           if (rider == null) {
-            return const OceanCoralAppDialog(
+            return const AppGlassDialog(
               content: Text('Logbook unavailable.'),
             );
           }
           final info = entry.riderLog;
           final attribution = _entryAttribution(entry, rider);
-          return OceanCoralAppDialog(
-            scrollable: true,
+          return AppGlassDialog(
             title: Text(
               info?.title ?? entry.riderLogType.label,
               style: AppTokens.sectionTitleStyle(context),

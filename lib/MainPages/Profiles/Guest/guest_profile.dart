@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
@@ -68,7 +69,7 @@ class GuestProfile extends StatelessWidget {
                           children: [
                             if (needsProfile)
                               FilledButton(
-                                onPressed: () => showDialog<void>(
+                                onPressed: () => showAppGlassDialog<void>(
                                   context: context,
                                   builder: (_) => EditRiderProfileDialog(
                                     user: state.user,

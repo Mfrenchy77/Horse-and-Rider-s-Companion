@@ -5,8 +5,8 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class ConnectionPanel extends StatelessWidget {
@@ -24,7 +24,7 @@ class ConnectionPanel extends StatelessWidget {
   static Future<void> openHistory(
     BuildContext context,
     CoachingConnection link,
-  ) => showAppDialog<void>(
+  ) => showAppGlassDialog<void>(
     context: context,
     builder: (_) => _ConnectionHistory(link: link),
   );
@@ -226,7 +226,7 @@ class ConnectionPanel extends StatelessWidget {
                           return;
                         }
                         final skills = cubit.skillsFor(link);
-                        showAppDialog<void>(
+                        showAppGlassDialog<void>(
                           context: context,
                           barrierDismissible: false,
                           builder: (_) => BlocProvider.value(
@@ -323,8 +323,7 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
-    child: OceanCoralAppDialog(
-      scrollable: true,
+    child: AppGlassDialog(
       title: Text(
         widget.link.kind == 'rider'
             ? 'Add lesson record'
@@ -410,9 +409,9 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
       context.read<ConnectionsCubit>().historyFor(widget.link);
 
   Future<void> _delete(BaseListItem entry) async {
-    final confirmed = await showAppDialog<bool>(
+    final confirmed = await showAppGlassDialog<bool>(
       context: context,
-      builder: (context) => OceanCoralAppDialog(
+      builder: (context) => AppGlassDialog(
         title: const Text('Delete this lesson?'),
         content: const Text('It will be removed from both logbooks.'),
         actions: [
@@ -445,8 +444,7 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
   }
 
   @override
-  Widget build(BuildContext context) => OceanCoralAppDialog(
-    scrollable: true,
+  Widget build(BuildContext context) => AppGlassDialog(
     title: Text(
       widget.link.kind == 'rider' ? 'Student logbook' : 'Horse history',
     ),

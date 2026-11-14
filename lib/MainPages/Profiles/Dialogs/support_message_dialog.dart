@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class SupportMessageDialog extends StatelessWidget {
   const SupportMessageDialog({super.key});
@@ -18,8 +18,7 @@ class SupportMessageDialog extends StatelessWidget {
         child: BlocBuilder<AppCubit, AppState>(
           builder: (context, state) {
             final homeCubit = context.read<AppCubit>();
-            return OceanCoralAppDialog(
-              scrollable: true,
+            return AppGlassDialog(
               title: const Text('Send Message to Support'),
               content: TextFormField(
                 textInputAction: TextInputAction.newline,

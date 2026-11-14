@@ -5,7 +5,7 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_sale_panel.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class HorseProfileOverFlowMenu extends StatelessWidget {
   const HorseProfileOverFlowMenu({super.key});
@@ -39,7 +39,7 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
     Future<void> manage(String action) async {
       switch (action) {
         case 'listing':
-          final listing = await showAppDialog<HorseSaleListing>(
+          final listing = await showAppGlassDialog<HorseSaleListing>(
             context: context,
             builder: (_) => HorseSaleListingDialog(listing: horse.saleListing),
           );
@@ -55,9 +55,9 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           );
           return;
         case 'unlist':
-          final confirmed = await showAppDialog<bool>(
+          final confirmed = await showAppGlassDialog<bool>(
             context: context,
-            builder: (context) => OceanCoralAppDialog(
+            builder: (context) => AppGlassDialog(
               title: const Text('Remove sale listing?'),
               actions: [
                 TextButton(
@@ -76,7 +76,7 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           return;
         default:
           final transfer = action == 'transfer';
-          final email = await showAppDialog<String>(
+          final email = await showAppGlassDialog<String>(
             context: context,
             builder: (_) => _TrainerEmailDialog(transfer: transfer),
           );
@@ -141,9 +141,9 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           return;
         }
         final markDeceased = value == 'deceased';
-        final status = await showAppDialog<String>(
+        final status = await showAppGlassDialog<String>(
           context: context,
-          builder: (context) => OceanCoralAppDialog(
+          builder: (context) => AppGlassDialog(
             title: Text(
               markDeceased
                   ? 'Mark this horse as deceased?'
@@ -200,7 +200,7 @@ class _TrainerEmailDialogState extends State<_TrainerEmailDialog> {
   String _email = '';
 
   @override
-  Widget build(BuildContext context) => OceanCoralAppDialog(
+  Widget build(BuildContext context) => AppGlassDialog(
     title: Text(widget.transfer ? 'Transfer ownership' : 'Invite a trainer'),
     content: Column(
       mainAxisSize: MainAxisSize.min,

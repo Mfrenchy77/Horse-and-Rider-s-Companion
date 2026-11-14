@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class UpdateResourceSkills extends StatefulWidget {
   const UpdateResourceSkills({super.key, required this.resource});
@@ -87,9 +87,8 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
 
     return PopScope(
       canPop: !_saving,
-      child: OceanCoralAppDialog(
+      child: AppGlassDialog(
         title: const Text('Associated skills'),
-        scrollable: true,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

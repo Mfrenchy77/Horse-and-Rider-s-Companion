@@ -7,7 +7,7 @@ import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/TransferHorseDialog/cubit/transfer_horse_cubit.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class TransferHorseDialog extends StatelessWidget {
@@ -108,8 +108,7 @@ class TransferHorseDialog extends StatelessWidget {
           child: BlocBuilder<TransferHorseCubit, TransferHorseState>(
             builder: (context, state) {
               final cubit = context.read<TransferHorseCubit>();
-              return OceanCoralAppDialog(
-                scrollable: true,
+              return AppGlassDialog(
                 title: Text('Transfer: ${state.horseProfile?.name}'),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,

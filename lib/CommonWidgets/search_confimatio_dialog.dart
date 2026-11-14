@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 /// Confirmation Dialog when user selects item from the search bar
 /// with on tap callback
@@ -9,7 +9,7 @@ Widget searchConfirmationDialog({
   required GestureTapCallback cancelTap,
   required GestureTapCallback confirmTap,
 }) {
-  return OceanCoralAppDialog(
+  return AppGlassDialog(
     title: Text(title),
     content: Text(text),
     actions: [

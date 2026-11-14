@@ -29,7 +29,7 @@ class CommentReplyButton extends StatelessWidget {
           ? null
           : () {
               onTap?.call();
-              showAppDialog<void>(
+              showAppGlassDialog<void>(
                 context: context,
                 builder: (_) => BlocProvider(
                   create: (_) => CommentCubit(

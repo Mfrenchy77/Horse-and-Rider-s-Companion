@@ -60,7 +60,7 @@ class ResourcesListView extends StatelessWidget {
                 ),
                 InkWell(
                   borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                  onTap: () => showAppDialog<void>(
+                  onTap: () => showAppGlassDialog<void>(
                     context: context,
                     builder: (context) => const ResourcesSortDialog(
                       key: Key('resources_sort_dialog'),

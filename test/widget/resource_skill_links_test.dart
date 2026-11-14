@@ -11,7 +11,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -67,7 +67,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Associated skills'));
     await tester.pump();
-    final surface = find.byType(OceanCoralSurface);
+    final surface = find.byType(AppGlassSurface);
     expect(surface, findsOneWidget);
     expect(
       find.ancestor(of: surface, matching: find.byType(ScaleTransition)),

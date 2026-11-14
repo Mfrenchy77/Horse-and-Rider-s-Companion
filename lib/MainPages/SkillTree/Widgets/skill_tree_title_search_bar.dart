@@ -48,7 +48,7 @@ class SkillTreeSearchTitleBar extends StatelessWidget {
             final isLinked =
                 resource?.skillTreeIds.contains(state.skill?.id) ?? false;
 
-            showAppDialog<void>(
+            showAppGlassDialog<void>(
               context: context,
               builder: (ctx) => searchConfirmationDialog(
                 title: isLinked ? 'Remove' : 'Add',

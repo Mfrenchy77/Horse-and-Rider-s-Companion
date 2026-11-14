@@ -21,7 +21,7 @@ class ProfileSearchButton extends StatelessWidget {
         return IconButton(
           tooltip: 'Search For Horse/Rider Profiles',
           onPressed: () {
-            showAppDialog<void>(
+            showAppGlassDialog<void>(
               context: context,
               builder: (dialogContext) => ProfileSearchDialog(
                 homeContext: context,

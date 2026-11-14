@@ -259,7 +259,7 @@ class _CommentItemState extends State<CommentItem> {
                                                 state.usersProfile;
                                             if (usersProfile == null) return;
 
-                                            showAppDialog<void>(
+                                            showAppGlassDialog<void>(
                                               context: context,
                                               builder: (_) => BlocProvider(
                                                 create: (_) => CommentCubit(
@@ -298,7 +298,7 @@ class _CommentItemState extends State<CommentItem> {
                                               'Report Comment: '
                                               '${widget.comment.id}',
                                             );
-                                            showAppDialog<void>(
+                                            showAppGlassDialog<void>(
                                               context: context,
                                               builder: (context) =>
                                                   const SupportMessageDialog(),

@@ -46,7 +46,7 @@ class SkillsListView extends StatelessWidget {
                   'Add a new ${state.isForRider ? 'Rider' : 'Horse'} skill',
               child: FloatingActionButton(
                 key: const Key('addSkillButton'),
-                onPressed: () => showDialog<CreateSkillDialog>(
+                onPressed: () => showAppGlassDialog<CreateSkillDialog>(
                   context: context,
                   builder: (context) => CreateSkillDialog(
                     // ignore: avoid_redundant_argument_values
@@ -141,7 +141,7 @@ class SkillsListView extends StatelessWidget {
                               },
                               onEdit: () {
                                 if (cubit.canEditSkill(skill)) {
-                                  showDialog<CreateSkillDialog>(
+                                  showAppGlassDialog<CreateSkillDialog>(
                                     context: context,
                                     builder: (context) => CreateSkillDialog(
                                       isEdit: true,

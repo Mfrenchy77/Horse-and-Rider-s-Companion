@@ -8,7 +8,7 @@ import 'package:horseandriderscompanion/CommonWidgets/profile_item.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/Cubit/profile_search_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -56,8 +56,8 @@ class ProfileSearchDialog extends StatelessWidget {
           child: BlocBuilder<ProfileSearchCubit, ProfileSearchState>(
             builder: (context, state) {
               final cubit = context.read<ProfileSearchCubit>();
-              return OceanCoralAppDialog(
-                scrollable: true,
+              return AppGlassDialog(
+                density: AppGlassDensity.frosted,
                 title: Text(_getSearchType(state.searchType)),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,

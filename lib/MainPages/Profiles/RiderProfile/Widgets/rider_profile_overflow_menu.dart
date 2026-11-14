@@ -43,7 +43,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
               switch (value) {
                 case 0:
                   // Navigate to the edit profile page
-                  showDialog<EditRiderProfileDialog>(
+                  showAppGlassDialog<EditRiderProfileDialog>(
                     context: context,
                     builder: (context) => EditRiderProfileDialog(
                       onProfileUpdated: () {},

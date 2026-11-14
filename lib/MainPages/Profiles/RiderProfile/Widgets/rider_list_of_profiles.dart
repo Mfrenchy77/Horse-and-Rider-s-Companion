@@ -2,10 +2,12 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/profile_design_tokens.dart';
 
 class RiderListOfProfiles extends StatelessWidget {
@@ -385,12 +387,13 @@ Future<void> _showAllDialog(
   required List<BaseListItem> items,
   required bool isHorse,
 }) {
-  return showDialog<void>(
+  return showAppGlassDialog<void>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (dialogContext) => AppGlassDialog(
+      scrollable: false,
       title: Text(title, style: ProfileTokens.sectionTitleStyle(dialogContext)),
-      content: SizedBox(
-        width: 460,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460, maxHeight: 420),
         child: isHorse
             ? GridView.builder(
                 shrinkWrap: true,
@@ -412,9 +415,9 @@ Future<void> _showAllDialog(
               ),
       ),
       actions: [
-        TextButton(
+        AppOutlinedButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('Close'),
+          label: 'Close',
         ),
       ],
     ),

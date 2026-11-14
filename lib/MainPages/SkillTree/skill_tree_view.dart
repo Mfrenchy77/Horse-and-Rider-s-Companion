@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
@@ -107,7 +108,7 @@ class _SkillTreeViewState extends State<SkillTreeView> {
     }
     final rider = state.usersProfile;
     if (rider == null) return;
-    showDialog<CreateSkillDialog>(
+    showAppGlassDialog<CreateSkillDialog>(
       context: context,
       builder: (_) => CreateSkillDialog(
         skill: skill,

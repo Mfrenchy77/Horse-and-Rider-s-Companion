@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class DeletePage extends StatefulWidget {
   const DeletePage({super.key});
@@ -48,8 +47,7 @@ class _DeletePageState extends State<DeletePage> {
         final needsReauth =
             status == AccountDeletionUiStatus.requiresRecentLogin;
 
-        return OceanCoralAppDialog(
-          scrollable: true,
+        return AppGlassDialog(
           title: const Text('Delete Account'),
           content: Column(
             mainAxisSize: MainAxisSize.min,

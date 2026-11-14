@@ -10,7 +10,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connectio
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillLevelView extends StatelessWidget {
@@ -27,9 +26,9 @@ class SkillLevelView extends StatelessWidget {
   ) async {
     final removing = level == null;
     final label = level == LevelState.LEARNING ? 'Learning' : 'Proficient';
-    final confirmed = await showAppDialog<bool>(
+    final confirmed = await showAppGlassDialog<bool>(
       context: context,
-      builder: (context) => OceanCoralAppDialog(
+      builder: (context) => AppGlassDialog(
         title: Text(removing ? 'Remove verification?' : 'Verify skill'),
         content: Text(
           removing

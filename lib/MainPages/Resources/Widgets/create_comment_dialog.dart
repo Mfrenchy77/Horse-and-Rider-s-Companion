@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class CreateCommentDialog extends StatelessWidget {
@@ -136,133 +137,112 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
 
     final screen = MediaQuery.of(context).size;
     final maxW = screen.width.clamp(320.0, 720.0);
-    final maxH = screen.height.clamp(360.0, 640.0);
+    final editorHeight = (screen.height.clamp(360.0, 640.0) - 200).clamp(
+      180.0,
+      440.0,
+    );
 
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
+    return AppGlassDialog(
+      maxWidth: 720,
+      density: AppGlassDensity.frosted,
+      scrollable: false,
+      title: Text(titleText, textAlign: TextAlign.center),
+      content: SizedBox(
         width: maxW,
-        height: maxH,
-        child: SafeArea(
-          top: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
+        height: editorHeight,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.comment != null && !widget.isEdit) ...[
+              Divider(
+                thickness: 2,
+                indent: 20,
+                endIndent: 20,
+                color: theme.primaryColor,
+              ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  titleText,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SelectableText(
+                  // For reply preview show parent’s plain text
+                  quill.Document.fromJson(
+                    jsonDecode(widget.comment!.comment ?? '[]')
+                        as List<dynamic>,
+                  ).toPlainText(),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-
-              if (widget.comment != null && !widget.isEdit) ...[
-                Divider(
-                  thickness: 2,
-                  indent: 20,
-                  endIndent: 20,
-                  color: theme.primaryColor,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SelectableText(
-                    // For reply preview show parent’s plain text
-                    quill.Document.fromJson(
-                      jsonDecode(widget.comment!.comment ?? '[]')
-                          as List<dynamic>,
-                    ).toPlainText(),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Divider(
-                  thickness: 2,
-                  indent: 20,
-                  endIndent: 20,
-                  color: theme.primaryColor,
-                ),
-              ],
-
-              const SizedBox(height: 8),
-
-              // Comments only need basic inline formatting.
-              SizedBox(
-                height: 44,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (final attribute in [
-                      quill.Attribute.bold,
-                      quill.Attribute.italic,
-                      quill.Attribute.underline,
-                      quill.Attribute.strikeThrough,
-                    ])
-                      quill.QuillToolbarToggleStyleButton(
-                        controller: _controller,
-                        attribute: attribute,
-                      ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Editor
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: quill.QuillEditor.basic(
-                        controller: _controller,
-                        config: quill.QuillEditorConfig(
-                          placeholder: widget.comment == null
-                              ? 'Enter your comment...'
-                              : 'Edit your comment...',
-                          autoFocus: true,
-                          expands: true,
-                          keyboardAppearance: Theme.of(context).brightness,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Actions
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.tonalIcon(
-                      icon: const Icon(Icons.send),
-                      onPressed: _canSend ? _send : null,
-                      label: const Text('Send Comment'),
-                    ),
-                  ],
-                ),
+              Divider(
+                thickness: 2,
+                indent: 20,
+                endIndent: 20,
+                color: theme.primaryColor,
               ),
             ],
-          ),
+
+            const SizedBox(height: 8),
+
+            // Comments only need basic inline formatting.
+            SizedBox(
+              height: 44,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (final attribute in [
+                    quill.Attribute.bold,
+                    quill.Attribute.italic,
+                    quill.Attribute.underline,
+                    quill.Attribute.strikeThrough,
+                  ])
+                    quill.QuillToolbarToggleStyleButton(
+                      controller: _controller,
+                      attribute: attribute,
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Editor
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  child: quill.QuillEditor.basic(
+                    controller: _controller,
+                    config: quill.QuillEditorConfig(
+                      placeholder: widget.comment == null
+                          ? 'Enter your comment...'
+                          : 'Edit your comment...',
+                      autoFocus: true,
+                      expands: true,
+                      keyboardAppearance: Theme.of(context).brightness,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.tonalIcon(
+          icon: const Icon(Icons.send),
+          onPressed: _canSend ? _send : null,
+          label: const Text('Send Comment'),
+        ),
+      ],
     );
   }
 }

@@ -4,9 +4,7 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Cubit/edit_rider_profile_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/bio.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/cancel_button.dart';
@@ -15,6 +13,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDi
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/rider_website.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/submit_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/trainer_question.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 /// Dialog to edit the rider's profile, if the user is registering for the
 /// first time [user] will not be null and we will use the user's information
@@ -68,52 +67,37 @@ class EditRiderProfileDialog extends StatelessWidget {
                 );
             }
           },
-          child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            appBar: ThemedAppBar(
-              automaticallyImplyLeading: user == null,
-              title: Text(
-                user != null
-                    ? 'Finish setting up your Profile'
-                    : 'Edit Profile',
+          child: AppGlassDialog(
+            maxWidth: 600,
+            density: AppGlassDensity.frosted,
+            title: Text(
+              user != null
+                  ? 'Finish setting up your Profile'
+                  : 'Edit Profile',
+            ),
+            content: Form(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ProfilePhoto(key: Key('profilePhoto')),
+                  gap(),
+                  const RiderName(key: Key('riderName')),
+                  gap(),
+                  const RiderBio(key: Key('riderBio')),
+                  gap(),
+                  const RiderWebsite(key: Key('riderWebsite')),
+                  gap(),
+                  const TrainerQuestion(key: Key('trainerQuestion')),
+                ],
               ),
             ),
-            body: FormPageBody(
-              maxWidth: 640,
-              child: Form(
-                child: Column(
-                  children: [
-                    const ProfilePhoto(key: Key('profilePhoto')),
-                    gap(),
-                    const RiderName(key: Key('riderName')),
-                    gap(),
-                    const RiderBio(key: Key('riderBio')),
-                    gap(),
-                    const RiderWebsite(key: Key('riderWebsite')),
-                    gap(),
-                    // const RiderLocation(
-                    //   key: Key('riderLocation'),
-                    // ),
-                    // gap(),
-                    const TrainerQuestion(key: Key('trainerQuestion')),
-                    const SizedBox(height: 24),
-                    OverflowBar(
-                      alignment: MainAxisAlignment.end,
-                      overflowAlignment: OverflowBarAlignment.end,
-                      spacing: 8,
-                      overflowSpacing: 8,
-                      children: [
-                        Visibility(
-                          visible: user == null,
-                          child: const CancelButton(key: Key('cancelButton')),
-                        ),
-                        const SubmitButton(key: Key('submitButton')),
-                      ],
-                    ),
-                  ],
-                ),
+            actions: [
+              Visibility(
+                visible: user == null,
+                child: const CancelButton(key: Key('cancelButton')),
               ),
-            ),
+              const SubmitButton(key: Key('submitButton')),
+            ],
           ),
         ),
     );

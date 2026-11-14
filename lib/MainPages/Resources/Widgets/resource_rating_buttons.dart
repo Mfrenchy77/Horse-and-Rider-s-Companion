@@ -112,7 +112,7 @@ class ResourceRatingButtons extends StatelessWidget {
               child: IconButton(
                 tooltip: 'Associated skills',
                 onPressed: () {
-                  showAppDialog<void>(
+                  showAppGlassDialog<void>(
                     context: context,
                     builder: (_) => UpdateResourceSkills(resource: resource),
                   );
@@ -132,7 +132,7 @@ class ResourceRatingButtons extends StatelessWidget {
                   switch (value) {
                     case 'Report':
                       debugPrint('Report: ${resource.name}');
-                      showAppDialog<void>(
+                      showAppGlassDialog<void>(
                         context: context,
                         builder: (context) => const SupportMessageDialog(),
                       );

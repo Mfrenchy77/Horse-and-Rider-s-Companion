@@ -1,7 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:intl/intl.dart';
 
 class HorseSalePanel extends StatelessWidget {
@@ -110,8 +109,7 @@ class _SaleListingDialogState extends State<HorseSaleListingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return OceanCoralAppDialog(
-      scrollable: true,
+    return AppGlassDialog(
       title: Text(
         widget.listing == null ? 'List for sale' : 'Edit sale listing',
       ),

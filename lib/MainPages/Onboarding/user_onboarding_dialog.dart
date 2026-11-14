@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 /// Onboarding for a newly signed-in user.
 /// Shows overview tabs and returns 'finish' when the user taps Finish.
@@ -117,11 +117,10 @@ class _UserOnboardingDialogState extends State<UserOnboardingDialog>
       ),
     ];
 
-    return OceanCoralAppDialog(
+    return AppGlassDialog(
       key: const Key('user_onboarding_dialog'),
       title: const Text('Welcome! Let’s set you up'),
       maxWidth: 640,
-      scrollable: true,
       content: dialogContent,
       actions: dialogActions,
     );

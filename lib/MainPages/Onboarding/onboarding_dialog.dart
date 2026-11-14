@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 /// Simple onboarding dialog with two tabs: Guest and Signed-in user.
 /// Signed-in tab includes a small "Complete Profile" flow.
@@ -46,7 +46,7 @@ class _OnboardingDialogState extends State<OnboardingDialog>
   }
 
   Future<void> _showCompleteProfile() async {
-    final result = await showAppDialog<Map<String, String>?>(
+    final result = await showAppGlassDialog<Map<String, String>?>(
       context: context,
       builder: (context) => const _CompleteProfileDialog(),
     );
@@ -58,7 +58,7 @@ class _OnboardingDialogState extends State<OnboardingDialog>
 
   @override
   Widget build(BuildContext context) {
-    return OceanCoralAppDialog(
+    return AppGlassDialog(
       key: const Key('onboarding_dialog'),
       title: const Text('Welcome to Horse & Rider Companion'),
       maxWidth: 560,
@@ -213,7 +213,7 @@ class _CompleteProfileDialogState extends State<_CompleteProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return OceanCoralAppDialog(
+    return AppGlassDialog(
       key: const Key('complete_profile_dialog'),
       title: const Text('Complete Your Profile'),
       content: Form(

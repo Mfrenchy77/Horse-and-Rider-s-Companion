@@ -47,7 +47,7 @@ class ResourceCommentBar extends StatelessWidget {
                   onPressed: state.usersProfile == null
                       ? null
                       : () {
-                          showAppDialog<void>(
+                          showAppGlassDialog<void>(
                             context: context,
                             builder: (_) => BlocProvider(
                               create: (_) => CommentCubit(
@@ -75,7 +75,7 @@ class ResourceCommentBar extends StatelessWidget {
                 IconButton.outlined(
                   icon: const Icon(Icons.sort),
                   onPressed: () {
-                    showAppDialog<void>(
+                    showAppGlassDialog<void>(
                       context: context,
                       builder: (context) => const SortCommentsDialog(
                         key: Key('SortCommentsDialog'),

@@ -138,7 +138,7 @@ void main() {
     tester.view.resetDevicePixelRatio();
   });
 
-  testWidgets('DeletePage renders OceanCoralAppDialog on mobile and desktop', (
+  testWidgets('DeletePage renders AppGlassDialog on mobile and desktop', (
     tester,
   ) async {
     final harness = await AppTestHarness.create();
@@ -170,7 +170,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.byType(OceanCoralAppDialog), findsOneWidget);
+      expect(find.byType(AppGlassDialog), findsOneWidget);
       expect(find.byType(AppFeedbackBanner), findsOneWidget);
       expect(find.byType(AppDestructiveButton), findsOneWidget);
       expect(find.byType(AppOutlinedButton), findsOneWidget);

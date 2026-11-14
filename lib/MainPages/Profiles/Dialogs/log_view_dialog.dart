@@ -14,7 +14,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connectio
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 
@@ -337,12 +336,11 @@ class LogViewDialogState extends State<LogViewDialog> {
           category == LogTag.Show && note.riderLog?.placing != null
           ? LogbookPlacingBadge(placing: note.riderLog!.placing!)
           : null,
-      onTap: () => showAppDialog<void>(
+      onTap: () => showAppGlassDialog<void>(
         context: context,
-        builder: (context) => OceanCoralAppDialog(
+        builder: (context) => AppGlassDialog(
           title: Text(heading, style: AppTokens.sectionTitleStyle(context)),
           maxWidth: 540,
-          scrollable: true,
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 12,

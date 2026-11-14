@@ -220,7 +220,7 @@ class UserProfileDrawer extends StatelessWidget {
                     leading: const Icon(Icons.person_search),
                     title: const Text('Search Horse/Rider'),
                     onTap: () {
-                      showAppDialog<void>(
+                      showAppGlassDialog<void>(
                         context: context,
                         builder: (dialogContext) => ProfileSearchDialog(
                           homeContext: context,
@@ -278,7 +278,7 @@ class UserProfileDrawer extends StatelessWidget {
                       debugPrint('Send Email to Support');
                       onClose?.call();
 
-                      showAppDialog<SupportMessageDialog>(
+                      showAppGlassDialog<SupportMessageDialog>(
                         context: context,
                         builder: (dialogContext) => const SupportMessageDialog(
                           key: Key('SupportMessageDialog'),

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class GuestOnboardingDialog extends StatefulWidget {
   const GuestOnboardingDialog({super.key, this.onSkip});
@@ -149,11 +149,10 @@ class _GuestOnboardingDialogState extends State<GuestOnboardingDialog>
       ),
     ];
 
-    return OceanCoralAppDialog(
+    return AppGlassDialog(
       key: const Key('guest_onboarding_dialog'),
       title: const Text("Welcome! Explore Horse & Rider's Companion"),
       maxWidth: 640,
-      scrollable: true,
       content: dialogContent,
       actions: dialogActions,
     );

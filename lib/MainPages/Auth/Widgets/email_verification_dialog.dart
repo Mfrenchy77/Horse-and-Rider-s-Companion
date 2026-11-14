@@ -4,7 +4,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
 
 class EmailVerificationDialog extends StatelessWidget {
@@ -21,9 +21,8 @@ class EmailVerificationDialog extends StatelessWidget {
       listener: (context, state) {
         if (ModalRoute.isCurrentOf(context) ?? false) safePop(context);
       },
-      child: OceanCoralAppDialog(
+      child: AppGlassDialog(
         maxWidth: 560,
-        scrollable: true,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,

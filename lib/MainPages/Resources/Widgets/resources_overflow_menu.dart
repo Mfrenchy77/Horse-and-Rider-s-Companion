@@ -41,7 +41,7 @@ class ResourcesOverflowMenu extends StatelessWidget {
                       cubit.toggleIsEditState();
                       break;
                     case 'Sort':
-                      showAppDialog<void>(
+                      showAppGlassDialog<void>(
                         context: context,
                         builder: (context) => const ResourcesSortDialog(
                           key: Key('resources_sort_dialog'),
@@ -62,7 +62,7 @@ class ResourcesOverflowMenu extends StatelessWidget {
                   ];
                 },
                 onSelected: (value) {
-                  showAppDialog<void>(
+                  showAppGlassDialog<void>(
                     context: context,
                     builder: (context) => const ResourcesSortDialog(
                       key: Key('resources_sort_dialog'),

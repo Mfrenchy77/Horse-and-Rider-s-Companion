@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class SortCommentsDialog extends StatelessWidget {
   const SortCommentsDialog({super.key});
@@ -11,7 +11,7 @@ class SortCommentsDialog extends StatelessWidget {
     final cubit = context.read<AppCubit>();
     final selected = context.select((AppCubit c) => c.state.commentSortState);
 
-    return OceanCoralAppDialog(
+    return AppGlassDialog(
       title: const Text('Sort Comments'),
       content: RadioGroup<CommentSortState>(
         groupValue: selected,

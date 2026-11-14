@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart'; // where AppCubit/AppState/ResourcesSortStatus live
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class ResourcesSortDialog extends StatelessWidget {
   const ResourcesSortDialog({super.key});
@@ -18,7 +18,7 @@ class ResourcesSortDialog extends StatelessWidget {
       Navigator.of(context).pop();
     }
 
-    return OceanCoralAppDialog(
+    return AppGlassDialog(
       title: const Text('Sort Resources'),
       content: RadioGroup<ResourcesSortStatus>(
         groupValue: selected,
