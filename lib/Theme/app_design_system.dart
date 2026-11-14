@@ -383,7 +383,7 @@ class AppGlassDialog extends StatelessWidget {
       );
       contentWidget = scrollable
           ? Flexible(child: SingleChildScrollView(child: styledContent))
-          : styledContent;
+          : Flexible(child: styledContent);
     }
 
     return Dialog(

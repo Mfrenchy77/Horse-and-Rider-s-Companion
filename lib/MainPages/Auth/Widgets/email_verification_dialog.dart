@@ -29,10 +29,7 @@ class EmailVerificationDialog extends StatelessWidget {
           children: <Widget>[
             const MaxWidthBox(
               maxWidth: 500,
-              child: Logo(
-                screenName: 'Email Verification Needed',
-                forceDark: true,
-              ),
+              child: Logo(screenName: 'Email Verification Needed'),
             ),
             const SizedBox(height: 20),
             Text(
@@ -41,12 +38,12 @@ class EmailVerificationDialog extends StatelessWidget {
                       'Please verify your email to continue.'
                   : 'An email has been sent to $email. '
                       'Please verify your email to continue.',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             gap(),
             const Text(
               'If you do not see the email, please check your spam folder.',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+              style: TextStyle(fontSize: 16),
             ),
           ],
         ),

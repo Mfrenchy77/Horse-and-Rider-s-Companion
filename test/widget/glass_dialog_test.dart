@@ -4,6 +4,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
+import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
@@ -530,6 +532,122 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }
+    },
+  );
+
+  testWidgets(
+    'AppGlassDialog(scrollable: false) avoids overflow with keyboard open',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetViewInsets();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: HorseAndRidersTheme().getTheme(),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () => showAppGlassDialog<void>(
+                  context: context,
+                  builder: (dialogContext) => AppGlassDialog(
+                    scrollable: false,
+                    title: const Text('Comment'),
+                    content: const SizedBox(
+                      height: 440,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: TextField(expands: true, maxLines: null),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Send'),
+                      ),
+                    ],
+                  ),
+                ),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'EmailVerificationDialog uses theme-aware text color in light theme',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: harness.cubit,
+          child: MaterialApp(
+            theme: HorseAndRidersTheme().getTheme(),
+            home: const Scaffold(
+              body: EmailVerificationDialog(email: 'rider@example.com'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final bodyText = tester.widget<Text>(
+        find.text(
+          'If you do not see the email, please check your spam folder.',
+        ),
+      );
+      expect(bodyText.style?.color, isNot(Colors.white));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'AppGlassDialogPage presents AboutPage with BackdropFilter barrier',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: HorseAndRidersTheme().getDarkTheme(),
+          home: Navigator(
+            onDidRemovePage: (_) {},
+            pages: const [
+              MaterialPage<void>(
+                child: Scaffold(body: Text('Background')),
+              ),
+              AppGlassDialogPage<void>(child: AboutPage()),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
+      expect(find.byType(AppGlassDialog), findsOneWidget);
+      expect(find.text('Our Story'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
 }
