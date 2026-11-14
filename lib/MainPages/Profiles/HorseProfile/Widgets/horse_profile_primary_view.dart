@@ -9,7 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_cover.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 import 'package:super_banners/super_banners.dart';
@@ -69,27 +69,22 @@ class HorseProfilePrimaryView extends StatelessWidget {
         if (forSale) HorseSalePanel(horse: horseProfile),
         _HorseDetails(key: ValueKey(horseProfile.id), horse: horseProfile),
         if (instructors.isNotEmpty)
-          GradientCard(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 12,
-                children: [
-                  Text(
-                    'Instructors',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final instructor in instructors)
-                        ProfileCard(baseItem: instructor),
-                    ],
-                  ),
-                ],
-              ),
+          AppSurfaceCard(
+            padding: const EdgeInsets.all(AppTokens.spaceMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [
+                const AppSectionHeader(title: 'Instructors'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final instructor in instructors)
+                      ProfileCard(baseItem: instructor),
+                  ],
+                ),
+              ],
             ),
           ),
         ConnectionPanel(horse: horseProfile),
@@ -155,10 +150,16 @@ class _HorseDetailsState extends State<_HorseDetails> {
               Text(
                 field.key,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: AppTokens.secondaryTextColor(context),
                 ),
               ),
-              Text(field.value!.trim(), style: theme.textTheme.bodyLarge),
+              Text(
+                field.value!.trim(),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppTokens.primaryTextColor(context),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
     ];
@@ -169,68 +170,68 @@ class _HorseDetailsState extends State<_HorseDetails> {
         owner != 'NONE';
     if (!hasOwner && fields.isEmpty) return const SizedBox.shrink();
 
-    return GradientCard(
+    return AppSurfaceCard(
       key: const Key('horseDetails'),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 12,
-          children: [
-            Text('About', style: theme.textTheme.titleLarge),
-            if (hasOwner)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  key: const Key('currentOwner'),
-                  onPressed: () {
-                    final cubit = context.read<AppCubit>();
-                    if (cubit.state.usersProfile?.email == ownerId) {
-                      cubit.createMessage('You are the owner of this horse.');
-                    } else {
-                      context.pushNamed(
-                        ViewingProfilePage.name,
-                        pathParameters: {
-                          ViewingProfilePage.pathParams: ownerId,
-                        },
-                      );
-                    }
-                  },
-                  child: Text('Owner · $owner'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 12,
+        children: [
+          const AppSectionHeader(title: 'About'),
+          if (hasOwner)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('currentOwner'),
+                icon: Icon(
+                  Icons.person_outline_rounded,
+                  size: 18,
+                  color: AppTokens.accentColor(context),
                 ),
-              ),
-            if (fields.isNotEmpty)
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns =
-                      constraints.maxWidth >= 264 &&
-                          MediaQuery.textScalerOf(context).scale(16) <= 22
-                      ? 2
-                      : 1;
-                  const gap = 16.0;
-                  final width =
-                      (constraints.maxWidth - gap * (columns - 1)) / columns;
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
-                    children: [
-                      for (final field in fields)
-                        SizedBox(width: width, child: field),
-                    ],
-                  );
+                onPressed: () {
+                  final cubit = context.read<AppCubit>();
+                  if (cubit.state.usersProfile?.email == ownerId) {
+                    cubit.createMessage('You are the owner of this horse.');
+                  } else {
+                    context.pushNamed(
+                      ViewingProfilePage.name,
+                      pathParameters: {ViewingProfilePage.pathParams: ownerId},
+                    );
+                  }
                 },
+                label: Text('Owner · $owner'),
               ),
-            if (canExpand)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _expanded = !_expanded),
-                  icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-                  label: Text(_expanded ? 'Show less' : 'Show more details'),
-                ),
+            ),
+          if (fields.isNotEmpty)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns =
+                    constraints.maxWidth >= 264 &&
+                        MediaQuery.textScalerOf(context).scale(16) <= 22
+                    ? 2
+                    : 1;
+                const gap = 16.0;
+                final width =
+                    (constraints.maxWidth - gap * (columns - 1)) / columns;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final field in fields)
+                      SizedBox(width: width, child: field),
+                  ],
+                );
+              },
+            ),
+          if (canExpand)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _expanded = !_expanded),
+                icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                label: Text(_expanded ? 'Show less' : 'Show more details'),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:intl/intl.dart';
 
@@ -25,60 +25,52 @@ class HorseSalePanel extends StatelessWidget {
         : NumberFormat.decimalPattern(
             Localizations.localeOf(context).toString(),
           ).format(amount);
-    return GradientCard(
-      margin: EdgeInsets.zero,
-      color: Color.alphaBlend(
-        colors.primary.withValues(alpha: .12),
-        colors.surface,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 14,
-          children: [
-            Text(
-              'For sale',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: colors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              price.isEmpty ? 'Contact for price' : price,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: colors.onSurface,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 20,
-                  color: colors.primary,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    listing.location,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: colors.onSurface,
-                    ),
+    final accent = AppTokens.accentColor(context);
+    return AppSurfaceCard(
+      borderColor: theme.brightness == Brightness.dark
+          ? AppTokens.coralAccent.withValues(alpha: 0.45)
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 14,
+        children: [
+          const AppStatusBadge(
+            label: 'For sale',
+            icon: Icons.sell_outlined,
+            tone: AppStatusTone.coral,
+          ),
+          Text(
+            price.isEmpty ? 'Contact for price' : price,
+            style: AppTokens.sectionTitleStyle(context).copyWith(fontSize: 28),
+          ),
+          Row(
+            children: [
+              Icon(Icons.location_on_outlined, size: 20, color: accent),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  listing.location,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppTokens.primaryTextColor(context),
                   ),
                 ),
-              ],
-            ),
-            Divider(height: 1, color: colors.outlineVariant),
-            Text(
-              listing.description,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colors.onSurface,
-                height: 1.45,
               ),
+            ],
+          ),
+          Divider(
+            height: 1,
+            color: theme.brightness == Brightness.dark
+                ? AppTokens.cardBorderDark
+                : colors.outlineVariant,
+          ),
+          Text(
+            listing.description,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: AppTokens.secondaryTextColor(context),
+              height: 1.45,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

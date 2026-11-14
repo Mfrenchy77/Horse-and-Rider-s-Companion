@@ -10,7 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_primary_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class HorseProfileView extends StatelessWidget {
   const HorseProfileView({super.key, required this.horseProfile});
@@ -26,34 +26,30 @@ class HorseProfileView extends StatelessWidget {
         HorseProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
       ],
     ),
-    body: ProfileLayout(
-      wideKey: const Key('horseProfileWide'),
-      compactKey: const Key('horseProfileCompact'),
-      identity: HorseProfilePrimaryView(
-        horseProfile: horseProfile,
-        key: const Key('HorseProfilePrimaryView'),
-      ),
-      skills: GradientCard(
-        key: const Key('horseSkills'),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+    body: AppScaffoldBackdrop(
+      child: ProfileLayout(
+        wideKey: const Key('horseProfileWide'),
+        compactKey: const Key('horseProfileCompact'),
+        identity: HorseProfilePrimaryView(
+          horseProfile: horseProfile,
+          key: const Key('HorseProfilePrimaryView'),
+        ),
+        skills: AppSurfaceCard(
+          key: const Key('horseSkills'),
+          padding: const EdgeInsets.all(AppTokens.spaceMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text('Skills', style: Theme.of(context).textTheme.titleLarge),
-                  TextButton(
-                    onPressed: () {
-                      context.read<AppCubit>().navigateToSkillsList();
-                      context.goNamed(SkillTreePage.name);
-                    },
-                    child: const Text('Explore Skill Tree'),
-                  ),
-                ],
+              AppSectionHeader(
+                title: 'Skills',
+                actionLabel: 'Explore Skill Tree',
+                showArrow: true,
+                onAction: () {
+                  context.read<AppCubit>().navigateToSkillsList();
+                  context.goNamed(SkillTreePage.name);
+                },
               ),
+              const SizedBox(height: 8),
               ProfileSkills(
                 key: const Key('ProfileSkills'),
                 skillLevels: horseProfile.skillLevels,
