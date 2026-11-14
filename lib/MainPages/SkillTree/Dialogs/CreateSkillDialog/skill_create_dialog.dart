@@ -15,11 +15,12 @@ class CreateSkillDialog extends StatelessWidget {
     super.key,
     this.skill,
     required this.isEdit,
-    required this._position,
+    required int position,
     required this.allSkills,
     required this.isForRider,
-    required this._usersProfile,
-  });
+    required RiderProfile usersProfile,
+  }) : _position = position,
+       _usersProfile = usersProfile;
 
   final bool isEdit;
   final Skill? skill;

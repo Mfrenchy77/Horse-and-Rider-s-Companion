@@ -17,8 +17,9 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     required List<Skill?>? allSkills,
     required bool isForRider,
     required RiderProfile usersProfile,
-    required this._skillsRepository,
-  }) : super(const CreateSkillDialogState()) {
+    required SkillTreeStore skillsRepository,
+  }) : _skillsRepository = skillsRepository,
+       super(const CreateSkillDialogState()) {
     emit(
       state.copyWith(
         skill: skill,

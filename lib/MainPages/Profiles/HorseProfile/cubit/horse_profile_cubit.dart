@@ -12,9 +12,11 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
     required String horseId,
     required bool? isGuest,
     required RiderProfile? usersProfile,
-    this._horseProfileRepository,
-    this._riderProfileRepository,
-  }) : super(const HorseProfileState()) {
+    HorseProfileStore? horseProfileRepository,
+    RiderProfileStore? riderProfileRepository,
+  }) : _horseProfileRepository = horseProfileRepository,
+       _riderProfileRepository = riderProfileRepository,
+       super(const HorseProfileState()) {
     emit(
       state.copyWith(
         horseId: horseId,

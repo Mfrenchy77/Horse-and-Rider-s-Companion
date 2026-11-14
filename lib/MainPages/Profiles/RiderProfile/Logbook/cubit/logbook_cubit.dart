@@ -12,9 +12,11 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/
 /// unit-testable.
 class LogbookCubit extends Cubit<LogbookState> {
   LogbookCubit({
-    required this._connectionRepository,
-    required this._riderProfileRepository,
-  }) : super(const LogbookState());
+    required LogbookConnectionRepository? connectionRepository,
+    required LogbookRiderProfileRepository? riderProfileRepository,
+  }) : _connectionRepository = connectionRepository,
+       _riderProfileRepository = riderProfileRepository,
+       super(const LogbookState());
 
   final LogbookConnectionRepository? _connectionRepository;
   final LogbookRiderProfileRepository? _riderProfileRepository;

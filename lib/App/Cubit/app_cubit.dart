@@ -25,21 +25,30 @@ class AppCubit extends Cubit<AppState> {
   AppCubit({
     required MessagesStore messagesRepository,
     ConnectionRequestStore? connectionRequestRepository,
-    required this._skillTreeRepository,
-    required this._resourcesRepository,
-    required this._riderProfileRepository,
-    required this._horseProfileRepository,
+    required SkillTreeStore skillTreeRepository,
+    required ResourcesStore resourcesRepository,
+    required RiderProfileStore riderProfileRepository,
+    required HorseProfileStore horseProfileRepository,
     required AuthGateway authenticationRepository,
-    this._accountDeletionRepository,
+    AccountDeletionRepository? accountDeletionRepository,
     PushNotificationService? pushNotificationService,
-    this._submitCoachingAction,
-    this._fetchConnection,
+    Future<Map<String, dynamic>> Function(Map<String, Object?>)?
+    submitCoachingAction,
+    Future<Map<String, dynamic>?> Function(String connectionId)?
+    fetchConnection,
   }) : _messagesRepository = messagesRepository,
        _connectionRequestRepository =
            connectionRequestRepository ??
            FirebaseConnectionRequestStore(messagesStore: messagesRepository),
+       _skillTreeRepository = skillTreeRepository,
+       _resourcesRepository = resourcesRepository,
+       _riderProfileRepository = riderProfileRepository,
+       _horseProfileRepository = horseProfileRepository,
        _authenticationRepository = authenticationRepository,
+       _accountDeletionRepository = accountDeletionRepository,
        _pushNotificationService = pushNotificationService ?? const FcmService(),
+       _submitCoachingAction = submitCoachingAction,
+       _fetchConnection = fetchConnection,
        super(
          authenticationRepository.currentUser.isNotEmpty
              ? AppState.authenticated(authenticationRepository.currentUser)

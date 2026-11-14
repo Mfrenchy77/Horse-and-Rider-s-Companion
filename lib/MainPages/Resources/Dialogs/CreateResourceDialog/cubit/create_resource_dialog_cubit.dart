@@ -24,7 +24,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required Resource? resource,
     required List<Skill?>? skills,
     required RiderProfile? usersProfile,
-    required this._resourcesRepository,
+    required ResourcesStore resourcesRepository,
     MediaStorageRepository? mediaStorage,
     LinkMetadataService? linkMetadataService,
     ResourceInputType initialInputType = ResourceInputType.link,
@@ -33,7 +33,8 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? previewMetaEndpoint,
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
-  }) : _debounce = null,
+  }) : _resourcesRepository = resourcesRepository,
+       _debounce = null,
        _storage = mediaStorage,
        // ignore: prefer_initializing_formals
        _linkMetadataService = linkMetadataService,

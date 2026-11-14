@@ -15,12 +15,15 @@ part 'edit_rider_profile_state.dart';
 class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   EditRiderProfileCubit({
     required User? user,
-    required this._riderProfile,
+    required RiderProfile? riderProfile,
     required ApiKeyProvider keysRepository,
-    required this._cloudRepository,
-    required this._riderProfileRepository,
+    required MediaStorageRepository cloudRepository,
+    required RiderProfileStore riderProfileRepository,
     LocationLookupService? locationLookupService,
   }) : _user = user,
+       _riderProfile = riderProfile,
+       _cloudRepository = cloudRepository,
+       _riderProfileRepository = riderProfileRepository,
        _locationLookupService =
            locationLookupService ??
            LocationLookupService(keysRepository: keysRepository),

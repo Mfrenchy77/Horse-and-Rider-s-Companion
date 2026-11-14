@@ -20,12 +20,16 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     required RiderProfile usersProfile,
     required HorseProfile? horseProfile,
     required ApiKeyProvider keysRepository,
-    required this._horseProfileRepository,
-    required this._riderProfileRepository,
-    this._cloudRepository,
-    this._imagePicker,
+    required HorseProfileStore horseProfileRepository,
+    required RiderProfileStore riderProfileRepository,
+    MediaStorageRepository? cloudRepository,
+    ImagePicker? imagePicker,
     LocationLookupService? locationLookupService,
-  }) : _locationLookupService =
+  }) : _horseProfileRepository = horseProfileRepository,
+       _riderProfileRepository = riderProfileRepository,
+       _cloudRepository = cloudRepository,
+       _imagePicker = imagePicker,
+       _locationLookupService =
            locationLookupService ??
            LocationLookupService(keysRepository: keysRepository),
        super(const AddHorseDialogState()) {

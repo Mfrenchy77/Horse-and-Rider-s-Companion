@@ -20,10 +20,12 @@ import 'package:intl/intl.dart';
 class AddHorseDialog extends StatefulWidget {
   const AddHorseDialog({
     super.key,
-    required this._editProfile,
+    required bool editProfile,
     required RiderProfile userProfile,
-    required this._horseProfile,
-  }) : _usersProfile = userProfile;
+    required HorseProfile? horseProfile,
+  }) : _editProfile = editProfile,
+       _usersProfile = userProfile,
+       _horseProfile = horseProfile;
 
   ///   If editProfile is true then we are editing an existing horse profile
   final bool _editProfile;
