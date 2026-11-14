@@ -34,6 +34,7 @@ class ConnectionRequest extends Equatable {
     this.parties = const [],
     this.partiesIds = const [],
     this.isAccepted = false,
+    this.status = 'pending',
     this.horseId,
     this.horseName,
     this.horsePicUrl,
@@ -81,6 +82,9 @@ class ConnectionRequest extends Equatable {
           const <String>[],
       createdAt: createdAt,
       isAccepted: data['isAccepted'] == true || data['status'] == 'accepted',
+      status:
+          (data['status'] as String?) ??
+          ((data['isAccepted'] == true) ? 'accepted' : 'pending'),
       horseId: data['horseId'] as String?,
       horseName: data['horseName'] as String?,
       horsePicUrl: data['horsePicUrl'] as String?,
@@ -133,6 +137,10 @@ class ConnectionRequest extends Equatable {
 
   /// Whether the request has already been accepted.
   final bool isAccepted;
+
+  /// Lifecycle status (`'pending'`, `'accepted'`, `'declined'`, `'cancelled'`,
+  /// `'dismissed'`).
+  final String status;
 
   /// Horse identifier for horse-scoped requests.
   final String? horseId;
@@ -297,7 +305,7 @@ class ConnectionRequest extends Equatable {
       'partiesIds': normalizedPartiesIds,
       'createdAt': createdAt.toIso8601String(),
       'isAccepted': isAccepted,
-      'status': isAccepted ? 'accepted' : 'pending',
+      'status': isAccepted ? 'accepted' : status,
       if (horseId != null) 'horseId': horseId,
       if (horseName != null) 'horseName': horseName,
       if (horsePicUrl != null) 'horsePicUrl': horsePicUrl,
@@ -323,6 +331,7 @@ class ConnectionRequest extends Equatable {
     partiesIds,
     createdAt,
     isAccepted,
+    status,
     horseId,
     horseName,
     horsePicUrl,
