@@ -28,7 +28,26 @@ class App extends StatefulWidget {
     required this._authenticationRepository,
     this._mediaStorageRepository,
     this._keysRepository,
+    this._connectionRequestStore,
+    this.useCompositeRequestStore = kUseCompositeRequestStore,
+    this.mirrorRequestWritesToLegacy = kMirrorRequestWritesToLegacy,
+    this._firestore,
   });
+
+  /// Opt-in flag for dual-reading `Requests` alongside legacy
+  /// `Conversations`/`Messages` during the migration window.
+  ///
+  /// Disabled by default until `Requests` security rules and backfill are
+  /// deployed to production.
+  static const bool kUseCompositeRequestStore = bool.fromEnvironment(
+    'USE_COMPOSITE_REQUEST_STORE',
+  );
+
+  /// Opt-in flag to mirror new `Requests` writes to legacy
+  /// `Conversations`/`Messages` for older client builds during transition.
+  static const bool kMirrorRequestWritesToLegacy = bool.fromEnvironment(
+    'MIRROR_REQUEST_WRITES_TO_LEGACY',
+  );
 
   final SettingsController settingsController;
   final MessagesStore _messagesRepository;
@@ -39,6 +58,10 @@ class App extends StatefulWidget {
   final AuthGateway _authenticationRepository;
   final MediaStorageRepository? _mediaStorageRepository;
   final ApiKeyProvider? _keysRepository;
+  final ConnectionRequestStore? _connectionRequestStore;
+  final bool useCompositeRequestStore;
+  final bool mirrorRequestWritesToLegacy;
+  final FirebaseFirestore? _firestore;
 
   @override
   State<App> createState() => _AppState();
@@ -54,9 +77,20 @@ class _AppState extends State<App> {
         authGateway: widget._authenticationRepository,
       );
   late final ConnectionRequestStore _connectionRequestStore =
-      FirebaseConnectionRequestStore(
-        messagesStore: widget._messagesRepository,
-      );
+      widget._connectionRequestStore ??
+      (widget.useCompositeRequestStore
+          ? CompositeConnectionRequestStore(
+              primary: FirestoreConnectionRequestStore(
+                firestore: widget._firestore,
+              ),
+              legacy: FirebaseConnectionRequestStore(
+                messagesStore: widget._messagesRepository,
+              ),
+              mirrorWritesToLegacy: widget.mirrorRequestWritesToLegacy,
+            )
+          : FirebaseConnectionRequestStore(
+              messagesStore: widget._messagesRepository,
+            ));
   late final GoRouter _router;
 
   @override
@@ -74,7 +108,8 @@ class _AppState extends State<App> {
       accountDeletionRepository: _accountDeletionRepository,
       submitCoachingAction: _connections.submit,
       fetchConnection: (id) async {
-        final snap = await FirebaseFirestore.instance
+        final firestore = widget._firestore ?? FirebaseFirestore.instance;
+        final snap = await firestore
             .collection('CoachingConnections')
             .doc(id)
             .get();
