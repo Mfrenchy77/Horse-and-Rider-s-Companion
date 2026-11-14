@@ -47,11 +47,11 @@ class AppTokens {
   static const double maxContentWidth = 1320;
 
   // Glassmorphism Dialog Tokens
-  static const double glassBackdropBlurSigma = 25;
-  static const Color glassBarrierDark = Color(0x52061215);
-  static const Color glassBarrierLight = Color(0x380A2329);
-  static const Color glassBorderDark = Color(0x4D8DC4CE);
-  static const Color glassBorderLight = Color(0x99FFFFFF);
+  static const double glassBackdropBlurSigma = 24;
+  static const Color glassBarrierDark = Color(0x33061215);
+  static const Color glassBarrierLight = Color(0x240A2329);
+  static const Color glassBorderDark = Color(0x528DC4CE);
+  static const Color glassBorderLight = Color(0xA6FFFFFF);
 
   // Gradients
   static const BoxDecoration midnightBackdrop = BoxDecoration(
@@ -257,16 +257,16 @@ class AppGlassSurface extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTokens.midnightCardTop.withValues(alpha: 0.72),
-              AppTokens.midnightCardBottom.withValues(alpha: 0.62),
+              AppTokens.midnightCardTop.withValues(alpha: 0.80),
+              AppTokens.midnightCardBottom.withValues(alpha: 0.72),
             ],
           )
         : LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.surface.withValues(alpha: 0.80),
-              theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.70),
+              theme.colorScheme.surface.withValues(alpha: 0.86),
+              theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.78),
             ],
           );
     final borderColor = isDark

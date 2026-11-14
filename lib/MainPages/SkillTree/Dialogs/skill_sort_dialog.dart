@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 ///  This dialog is used to sort the skills in the Skill Tree List
 class SkillSortDialog extends StatelessWidget {
@@ -14,14 +14,14 @@ class SkillSortDialog extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
 
-        return OceanCoralAppDialog(
+        return AppGlassDialog(
           insetPadding: const EdgeInsets.all(8),
           actions: [
-            TextButton(
+            AppOutlinedButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Close'),
+              label: 'Close',
             ),
           ],
           title: const Text('Sort Skills'),

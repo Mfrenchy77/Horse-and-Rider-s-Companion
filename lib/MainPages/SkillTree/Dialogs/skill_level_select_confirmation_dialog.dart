@@ -2,7 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class SkillLevelSelectedConfimationDialog extends StatelessWidget {
   const SkillLevelSelectedConfimationDialog({
@@ -15,8 +15,7 @@ class SkillLevelSelectedConfimationDialog extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
-        return OceanCoralAppDialog(
-          scrollable: true,
+        return AppGlassDialog(
           title: const Text('Confirm Skill Level'),
           content: Text(
             'Are you sure you want to set ${state.skill?.skillName} '
@@ -29,18 +28,18 @@ class SkillLevelSelectedConfimationDialog extends StatelessWidget {
                 : ' for yourself'} ?',
           ),
           actions: [
-            TextButton(
+            AppOutlinedButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('No'),
+              label: 'No',
             ),
-            FilledButton(
+            AppPrimaryButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 cubit.levelSelected(levelState: levelState);
               },
-              child: const Text('Yes'),
+              label: 'Yes',
             ),
           ],
         );

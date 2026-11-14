@@ -62,7 +62,7 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
             cubit.toggleIsEditState();
             break;
           case 'Sort':
-            showAppDialog<void>(
+            showAppGlassDialog<void>(
               context: context,
               builder: (_) => const SkillSortDialog(),
             );

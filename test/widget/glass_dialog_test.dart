@@ -1,10 +1,13 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:mocktail/mocktail.dart';
@@ -67,7 +70,7 @@ void main() {
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle();
 
-        expect(find.byType(BackdropFilter), findsOneWidget);
+        expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
         expect(find.byType(AppGlassDialog), findsOneWidget);
         expect(find.byType(AppGlassSurface), findsOneWidget);
         expect(find.text('Delete this entry?'), findsOneWidget);
@@ -119,7 +122,7 @@ void main() {
     await tester.pump();
 
     // Immediately visible with BackdropFilter when reduced motion is enabled.
-    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
     expect(find.text('Reduced motion dialog'), findsOneWidget);
 
     await tester.tap(find.text('Close'));
@@ -186,7 +189,7 @@ void main() {
       await tester.tap(find.text('Add Log'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
       expect(find.byType(AppGlassDialog), findsOneWidget);
       expect(find.textContaining('Add New Log Entry'), findsOneWidget);
 
@@ -267,7 +270,7 @@ void main() {
       await tester.tap(find.text('Edit Horse'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
       expect(find.byType(AppGlassDialog), findsOneWidget);
       expect(find.text('Edit Horse: Valero'), findsOneWidget);
 
@@ -275,6 +278,176 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AddHorseDialog), findsNothing);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'showAppGlassDialog actually blurs pixels behind the dialog',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final boundaryKey = GlobalKey();
+
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: boundaryKey,
+          child: MaterialApp(
+            theme: HorseAndRidersTheme().getDarkTheme(),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // High-contrast 8px black/white vertical stripes in top-left.
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Row(
+                        children: [
+                          for (int i = 0; i < 20; i++)
+                            Container(
+                              width: 8,
+                              height: 200,
+                              color: i.isEven ? Colors.white : Colors.black,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () => showAppGlassDialog<void>(
+                          context: context,
+                          builder: (dialogContext) => AppGlassDialog(
+                            title: const Text('Glass'),
+                            content: const Text('Blur check'),
+                            actions: [
+                              AppOutlinedButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                label: 'Close',
+                              ),
+                            ],
+                          ),
+                        ),
+                        child: const Text('Open'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final bytes = await tester.runAsync(() async {
+        final boundary =
+            boundaryKey.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary;
+        final image = await boundary.toImage();
+        return image.toByteData();
+      });
+      expect(bytes, isNotNull);
+
+      // Sample row y=60 across x=20..120 (over the 8px white/black stripes).
+      // If blurred strongly, adjacent pixels will be close in luminance
+      // (max - min << 100); if unblurred/merely dimmed, max - min > 150.
+      var minLum = 255;
+      var maxLum = 0;
+      const y = 60;
+      for (var x = 20; x < 120; x++) {
+        final offset = (y * 800 + x) * 4;
+        final r = bytes!.getUint8(offset);
+        if (r < minLum) minLum = r;
+        if (r > maxLum) maxLum = r;
+      }
+      debugPrint('Backdrop pixel luminance range: min=$minLum, max=$maxLum');
+      expect(maxLum - minLum, lessThan(40));
+    },
+  );
+
+  testWidgets(
+    'SkillSortDialog and SkillLevelSelectedConfimationDialog use glass dialog',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final skill = Skill(
+        id: 'skill-1',
+        skillName: 'Shoulder-in',
+        difficulty: DifficultyState.Intermediate,
+        rider: true,
+        position: 0,
+        description: 'Lateral movement',
+        learningDescription: 'Learning shoulder-in',
+        proficientDescription: 'Proficient shoulder-in',
+        lastEditBy: 'matt@example.com',
+        lastEditDate: DateTime(2026),
+      );
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          isGuest: false,
+          isForRider: true,
+          skill: skill,
+          usersProfile: RiderProfile(
+            id: 'rider-1',
+            email: 'matt@example.com',
+            name: 'Matt French',
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: harness.cubit,
+          child: MaterialApp(
+            theme: HorseAndRidersTheme().getDarkTheme(),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => showAppGlassDialog<void>(
+                        context: context,
+                        builder: (_) => const SkillSortDialog(),
+                      ),
+                      child: const Text('Sort'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => showAppGlassDialog<void>(
+                        context: context,
+                        builder: (_) =>
+                            const SkillLevelSelectedConfimationDialog(
+                              levelState: LevelState.PROFICIENT,
+                            ),
+                      ),
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Sort'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppGlassDialog), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
+      expect(find.text('Sort Skills'), findsOneWidget);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppGlassDialog), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
+      expect(find.text('Confirm Skill Level'), findsOneWidget);
+      await tester.tap(find.text('No'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppGlassDialog), findsNothing);
     },
   );
 }

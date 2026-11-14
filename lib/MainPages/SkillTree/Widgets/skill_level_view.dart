@@ -244,7 +244,7 @@ class SkillLevelView extends StatelessWidget {
                             (target == LevelState.PROFICIENT &&
                                 level == LevelState.VERIFIED)
                         ? null
-                        : () => showAppDialog<void>(
+                        : () => showAppGlassDialog<void>(
                             context: context,
                             builder: (_) => SkillLevelSelectedConfimationDialog(
                               key: const Key('levelSelectedConfirmationDialog'),

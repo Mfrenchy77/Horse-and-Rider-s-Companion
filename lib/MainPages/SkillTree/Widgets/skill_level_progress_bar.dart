@@ -27,7 +27,7 @@ class SkillLevelProgressBar extends StatelessWidget {
                     onTap: !cubit.canWriteProfileRecords()
                         ? null
                         : () {
-                            showAppDialog<void>(
+                            showAppGlassDialog<void>(
                               context: context,
                               builder: (context) =>
                                   const SkillLevelSelectedConfimationDialog(
@@ -91,7 +91,7 @@ class SkillLevelProgressBar extends StatelessWidget {
                     onTap: !cubit.canWriteProfileRecords()
                         ? null
                         : () {
-                            showAppDialog<void>(
+                            showAppGlassDialog<void>(
                               context: context,
                               builder: (context) =>
                                   const SkillLevelSelectedConfimationDialog(

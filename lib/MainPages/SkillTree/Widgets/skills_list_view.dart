@@ -80,7 +80,7 @@ class SkillsListView extends StatelessWidget {
                         padding: const EdgeInsets.all(3),
                         child: InkWell(
                           onTap: () {
-                            showAppDialog<void>(
+                            showAppGlassDialog<void>(
                               context: context,
                               builder: (_) => const SkillSortDialog(),
                             );

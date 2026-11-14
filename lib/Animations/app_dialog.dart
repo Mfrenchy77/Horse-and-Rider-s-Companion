@@ -110,9 +110,18 @@ class _AppDialogRoute<T> extends DialogRoute<T> {
         final t = reduceMotion ? 1.0 : _visibility.value.clamp(0.0, 1.0);
         final sigma = blurSigma * t;
         if (sigma <= 0.01) return child!;
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: child,
+        final filter = ImageFilter.blur(
+          sigmaX: sigma,
+          sigmaY: sigma,
+          tileMode: TileMode.clamp,
+        );
+        // Two passes keep each sigma <= 30 so WebGL/CanvasKit does not clamp
+        // or skip the blur while dramatically defocusing underlying text.
+        return ClipRect(
+          child: BackdropFilter(
+            filter: filter,
+            child: BackdropFilter(filter: filter, child: child),
+          ),
         );
       },
       child: barrier,
