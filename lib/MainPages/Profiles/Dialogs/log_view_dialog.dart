@@ -6,12 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
-import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_filter_bar.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_hero_header.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
@@ -107,72 +108,126 @@ class LogViewDialogState extends State<LogViewDialog> {
                 shownHorse.currentOwnerId.toLowerCase();
         return Scaffold(
           appBar: ThemedAppBar(title: const Text('Horse logbook')),
-          floatingActionButton: canAdd
-              ? FloatingActionButton(
-                  tooltip: 'Add entry',
-                  onPressed: () => showAppDialog<void>(
-                    context: context,
-                    builder: (_) => AddLogEntryDialog(
-                      usersProfile: rider,
-                      horseProfile: shownHorse,
-                    ),
+          body: AppScaffoldBackdrop(
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 920),
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppTokens.spaceLg,
+                          AppTokens.spaceLg,
+                          AppTokens.spaceLg,
+                          AppTokens.spaceMd,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: _header(
+                            context,
+                            shownHorse,
+                            onAddEntry: canAdd
+                                ? () => showAppDialog<void>(
+                                    context: context,
+                                    builder: (_) => AddLogEntryDialog(
+                                      usersProfile: rider,
+                                      horseProfile: shownHorse,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppTokens.spaceLg,
+                          0,
+                          AppTokens.spaceLg,
+                          AppTokens.spaceMd,
+                        ),
+                        sliver: SliverToBoxAdapter(child: _filters()),
+                      ),
+                      if (snapshot.connectionState == ConnectionState.waiting)
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTokens.spaceLg,
+                            vertical: AppTokens.spaceXs,
+                          ),
+                          sliver: SliverToBoxAdapter(
+                            child: LinearProgressIndicator(
+                              color: AppTokens.accentColor(context),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                      if (_history != null)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppTokens.spaceLg,
+                            0,
+                            AppTokens.spaceLg,
+                            AppTokens.spaceSm,
+                          ),
+                          sliver: SliverToBoxAdapter(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: () =>
+                                    setState(() => _historyUid = null),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: snapshot.hasError
+                                      ? Theme.of(context).colorScheme.error
+                                      : AppTokens.accentColor(context),
+                                ),
+                                icon: const Icon(Icons.refresh, size: 18),
+                                label: Text(
+                                  snapshot.hasError
+                                      ? 'Shared history unavailable. Retry'
+                                      : 'Refresh shared history',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (entries.isEmpty &&
+                          snapshot.connectionState != ConnectionState.waiting)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppTokens.spaceLg,
+                            AppTokens.spaceSm,
+                            AppTokens.spaceLg,
+                            AppTokens.spaceXl,
+                          ),
+                          sliver: SliverToBoxAdapter(
+                            child: AppEmptyState(
+                              icon: HorseAndRiderIcons.horseIcon,
+                              title: _query.isEmpty && _category == null
+                                  ? 'No Entries in the Log'
+                                  : 'No matching entries.',
+                              description: _query.isEmpty && _category == null
+                                  ? 'Record training sessions, shows, and '
+                                        'health care for '
+                                        '${shownHorse?.name ?? widget.name}.'
+                                  : 'Try clearing your search or selecting '
+                                        'another category.',
+                            ),
+                          ),
+                        ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppTokens.spaceLg,
+                          0,
+                          AppTokens.spaceLg,
+                          AppTokens.spaceXl,
+                        ),
+                        sliver: SliverList.builder(
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) =>
+                              _entry(entries[index]),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.add),
-                )
-              : null,
-          body: SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 840),
-                child: CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.all(16),
-                      sliver: SliverToBoxAdapter(
-                        child: _header(context, shownHorse),
-                      ),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      sliver: SliverToBoxAdapter(child: _filters()),
-                    ),
-                    if (snapshot.connectionState == ConnectionState.waiting)
-                      const SliverToBoxAdapter(
-                        child: LinearProgressIndicator(),
-                      ),
-                    if (_history != null)
-                      SliverToBoxAdapter(
-                        child: TextButton.icon(
-                          onPressed: () => setState(() => _historyUid = null),
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label: Text(
-                            snapshot.hasError
-                                ? 'Shared history unavailable. Retry'
-                                : 'Refresh shared history',
-                          ),
-                        ),
-                      ),
-                    if (entries.isEmpty &&
-                        snapshot.connectionState != ConnectionState.waiting)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            _query.isEmpty && _category == null
-                                ? 'No Entries in the Log'
-                                : 'No matching entries.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                      sliver: SliverList.builder(
-                        itemCount: entries.length,
-                        itemBuilder: (context, index) => _entry(entries[index]),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
@@ -204,8 +259,11 @@ class LogViewDialogState extends State<LogViewDialog> {
     return _newestFirst ? second.compareTo(first) : first.compareTo(second);
   }
 
-  Widget _header(BuildContext context, HorseProfile? horse) {
-    final theme = Theme.of(context);
+  Widget _header(
+    BuildContext context,
+    HorseProfile? horse, {
+    VoidCallback? onAddEntry,
+  }) {
     final details =
         [
               horse?.breed,
@@ -216,101 +274,31 @@ class LogViewDialogState extends State<LogViewDialog> {
             .map((value) => value.trim())
             .where((value) => value.isNotEmpty)
             .join(' · ');
-    return GradientCard(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox.square(
-                dimension: 64,
-                child: SmartImage(
-                  horse?.picUrl,
-                  width: 64,
-                  height: 64,
-                  fallback: ColoredBox(
-                    color: theme.colorScheme.secondaryContainer,
-                    child: Icon(
-                      HorseAndRiderIcons.horseIcon,
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    horse?.name ?? widget.name,
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  if (details.isNotEmpty) Text(details),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return LogbookHeroHeader(
+      title: horse?.name ?? widget.name,
+      details: details.isNotEmpty ? details : null,
+      photoUrl: horse?.picUrl,
+      onAddEntry: onAddEntry,
+      fallbackIcon: HorseAndRiderIcons.horseIcon,
     );
   }
 
   Widget _filters() {
-    final search = TextField(
-      onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
-      decoration: const InputDecoration(
-        prefixIcon: Icon(Icons.search),
-        labelText: 'Search entries',
-        border: OutlineInputBorder(),
-      ),
-    );
-    final sort = DropdownButton<bool>(
-      value: _newestFirst,
-      onChanged: (value) {
-        if (value != null) setState(() => _newestFirst = value);
-      },
-      items: const [
-        DropdownMenuItem(value: true, child: Text('Newest first')),
-        DropdownMenuItem(value: false, child: Text('Oldest first')),
+    return LogbookFilterBar<LogTag?>(
+      options: [
+        const LogbookFilterOption(value: null, label: 'All entries'),
+        for (final category in LogTag.values)
+          LogbookFilterOption(
+            value: category,
+            label: _categoryLabel(category),
+          ),
       ],
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 12,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            for (final category in [null, ...LogTag.values])
-              ChoiceChip(
-                label: Text(
-                  category == null ? 'All entries' : _categoryLabel(category),
-                ),
-                selected: _category == category,
-                onSelected: (_) => setState(() => _category = category),
-              ),
-          ],
-        ),
-        LayoutBuilder(
-          builder: (context, constraints) => constraints.maxWidth >= 420
-              ? Row(
-                  children: [
-                    Expanded(child: search),
-                    const SizedBox(width: 12),
-                    sort,
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [search, sort],
-                ),
-        ),
-      ],
+      selected: _category,
+      onSelected: (category) => setState(() => _category = category),
+      newestFirst: _newestFirst,
+      onSortChanged: (value) => setState(() => _newestFirst = value),
+      onSearchChanged: (value) =>
+          setState(() => _query = value.trim().toLowerCase()),
     );
   }
 
@@ -345,20 +333,52 @@ class LogViewDialogState extends State<LogViewDialog> {
       onTap: () => showAppDialog<void>(
         context: context,
         builder: (context) => OceanCoralAppDialog(
-          title: Text(heading),
+          title: Text(heading, style: AppTokens.sectionTitleStyle(context)),
+          maxWidth: 540,
           scrollable: true,
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 12,
             children: [
-              Text(metadata),
-              if (text.isNotEmpty && text != heading) Text(text),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  AppStatusBadge(
+                    label: _categoryLabel(category),
+                    icon: Icons.bookmark_outline_rounded,
+                    tone: AppStatusTone.coral,
+                  ),
+                  if (note.date case final date?)
+                    Text(
+                      DateFormat.yMMMd().format(date),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                      ),
+                    ),
+                ],
+              ),
+              Text(
+                metadata,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
+                ),
+              ),
+              if (text.isNotEmpty && text != heading)
+                SelectableText(
+                  text,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTokens.primaryTextColor(context),
+                    height: 1.45,
+                  ),
+                ),
             ],
           ),
           actions: [
-            TextButton(
+            AppOutlinedButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              label: 'Close',
             ),
           ],
         ),

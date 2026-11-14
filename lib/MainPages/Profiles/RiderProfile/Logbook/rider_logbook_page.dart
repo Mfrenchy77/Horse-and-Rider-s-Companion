@@ -5,11 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_filter_bar.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_hero_header.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:intl/intl.dart';
@@ -200,13 +202,44 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
           final attribution = _entryAttribution(entry, rider);
           return OceanCoralAppDialog(
             scrollable: true,
-            title: Text(info?.title ?? entry.riderLogType.label),
+            title: Text(
+              info?.title ?? entry.riderLogType.label,
+              style: AppTokens.sectionTitleStyle(context),
+            ),
             maxWidth: 560,
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${entry.riderLogType.label} · ${_dateLabel(entry.date)}'),
-                if (attribution != null) Text(attribution),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    AppStatusBadge(
+                      label: entry.riderLogType.label,
+                      icon: Icons.bookmark_outline_rounded,
+                      tone: AppStatusTone.coral,
+                    ),
+                    Text(
+                      _dateLabel(entry.date),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                      ),
+                    ),
+                    if (entry.riderLogType == RiderLogType.show &&
+                        info?.placing != null)
+                      _PlacingBadge(placing: info!.placing!),
+                  ],
+                ),
+                if (attribution != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    attribution,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTokens.secondaryTextColor(context),
+                    ),
+                  ),
+                ],
                 if (info?.instructor != null)
                   _EntryField(label: 'Instructor', value: info!.instructor!),
                 if (entry.riderLogType == RiderLogType.show &&
@@ -223,20 +256,22 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
               ],
             ),
             actions: [
-              TextButton(
+              AppOutlinedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
+                label: 'Close',
               ),
               if (entry.canEditRiderLog(rider.email))
-                FilledButton(
+                AppPrimaryButton(
                   onPressed: () => Navigator.pop(context, 'edit'),
-                  child: const Text('Edit entry'),
+                  icon: Icons.edit_outlined,
+                  label: 'Edit entry',
                 ),
               if (entry.canEditRiderLog(rider.email) &&
                   _readLogbookConnections(context) != null)
-                TextButton(
+                AppDestructiveButton(
+                  outlined: true,
                   onPressed: () => Navigator.pop(context, 'delete'),
-                  child: const Text('Delete entry'),
+                  label: 'Delete entry',
                 ),
             ],
           );
@@ -255,13 +290,13 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
         title: const Text('Delete this entry?'),
         content: const Text('A shared entry is removed from both logbooks.'),
         actions: [
-          TextButton(
+          AppOutlinedButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
+          AppDestructiveButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -289,30 +324,43 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
       value: _logbookCubit,
       child: Scaffold(
         appBar: ThemedAppBar(title: const Text('Rider logbook')),
-        body: SafeArea(
-          child: rider == null
-              ? Center(
-                  child: state.pageStatus == AppPageStatus.loading
-                      ? const CircularProgressIndicator()
-                      : const Text('Your rider logbook is unavailable.'),
-                )
-              : Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 840),
-                    child: StreamBuilder<List<BaseListItem>>(
-                      key: ValueKey(state.user.id),
-                      stream: _journalFor(context, state.user.id),
-                      builder: (context, snapshot) => _timeline(
-                        context,
-                        rider,
-                        snapshot.data ?? const [],
-                        sharedError: snapshot.hasError,
-                        sharedLoading:
-                            snapshot.connectionState == ConnectionState.waiting,
+        body: AppScaffoldBackdrop(
+          child: SafeArea(
+            child: rider == null
+                ? Center(
+                    child: state.pageStatus == AppPageStatus.loading
+                        ? const AppLoadingState(
+                            message: 'Loading rider logbook…',
+                          )
+                        : const Padding(
+                            padding: EdgeInsets.all(AppTokens.spaceLg),
+                            child: AppEmptyState(
+                              icon: Icons.auto_stories_outlined,
+                              title: 'Rider logbook unavailable',
+                              description:
+                                  'Your rider logbook is unavailable.',
+                            ),
+                          ),
+                  )
+                : Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 920),
+                      child: StreamBuilder<List<BaseListItem>>(
+                        key: ValueKey(state.user.id),
+                        stream: _journalFor(context, state.user.id),
+                        builder: (context, snapshot) => _timeline(
+                          context,
+                          rider,
+                          snapshot.data ?? const [],
+                          sharedError: snapshot.hasError,
+                          sharedLoading:
+                              snapshot.connectionState ==
+                              ConnectionState.waiting,
+                        ),
                       ),
                     ),
                   ),
-                ),
+          ),
         ),
       ),
     );
@@ -344,84 +392,98 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
     return CustomScrollView(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.spaceLg,
+            AppTokens.spaceLg,
+            AppTokens.spaceLg,
+            AppTokens.spaceMd,
+          ),
           sliver: SliverToBoxAdapter(
-            child: GradientCard(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      rider.name,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: _openEditor,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add entry'),
-                    ),
-                  ],
-                ),
-              ),
+            child: LogbookHeroHeader(
+              title: rider.name,
+              photoUrl: rider.picUrl,
+              onAddEntry: _openEditor,
+              fallbackIcon: Icons.person_outline_rounded,
             ),
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.spaceLg,
+            0,
+            AppTokens.spaceLg,
+            AppTokens.spaceMd,
+          ),
           sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    for (final type in [null, ...RiderLogType.values])
-                      ChoiceChip(
-                        label: Text(type?.label ?? 'All entries'),
-                        selected: _filter == type,
-                        onSelected: (_) => setState(() => _filter = type),
-                      ),
-                  ],
-                ),
-                DropdownButton<bool>(
-                  value: _newestFirst,
-                  onChanged: (value) {
-                    if (value != null) setState(() => _newestFirst = value);
-                  },
-                  items: const [
-                    DropdownMenuItem(value: true, child: Text('Newest first')),
-                    DropdownMenuItem(value: false, child: Text('Oldest first')),
-                  ],
-                ),
+            child: LogbookFilterBar<RiderLogType?>(
+              options: [
+                const LogbookFilterOption(value: null, label: 'All entries'),
+                for (final type in RiderLogType.values)
+                  LogbookFilterOption(value: type, label: type.label),
               ],
+              selected: _filter,
+              onSelected: (type) => setState(() => _filter = type),
+              newestFirst: _newestFirst,
+              onSortChanged: (value) => setState(() => _newestFirst = value),
             ),
           ),
         ),
         if (sharedLoading)
-          const SliverToBoxAdapter(child: LinearProgressIndicator()),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.spaceLg,
+              vertical: AppTokens.spaceXs,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: LinearProgressIndicator(
+                color: AppTokens.accentColor(context),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
         if (sharedError)
-          const SliverToBoxAdapter(
-            child: ListTile(title: Text('Shared entries could not be loaded.')),
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              AppTokens.spaceLg,
+              0,
+              AppTokens.spaceLg,
+              AppTokens.spaceMd,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: AppFeedbackBanner(
+                message: 'Shared entries could not be loaded.',
+                tone: AppStatusTone.warning,
+              ),
+            ),
           ),
         if (entries.isEmpty && !sharedLoading)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                _filter == null
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.spaceLg,
+              AppTokens.spaceSm,
+              AppTokens.spaceLg,
+              AppTokens.spaceXl,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: AppEmptyState(
+                icon: Icons.auto_stories_outlined,
+                title: _filter == null
+                    ? 'Start your training journal'
+                    : 'No matching entries',
+                description: _filter == null
                     ? 'Add your first entry.'
                     : 'No entries in this category.',
-                textAlign: TextAlign.center,
               ),
             ),
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.spaceLg,
+              0,
+              AppTokens.spaceLg,
+              AppTokens.spaceXl,
+            ),
             sliver: SliverList.builder(
               itemCount: entries.length,
               itemBuilder: (context, index) {
@@ -467,40 +529,19 @@ class _PlacingBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final (label, color) = switch (placing.trim().toLowerCase()) {
-      '1' || '1st' => ('1st', const Color(0xFFFFD15C)),
-      '2' || '2nd' => ('2nd', const Color(0xFFCBD5E1)),
-      '3' || '3rd' => ('3rd', const Color(0xFFDBA47B)),
-      _ => (placing, colors.secondaryContainer),
+    final (label, tone) = switch (placing.trim().toLowerCase()) {
+      '1' || '1st' => ('1st', AppStatusTone.warning),
+      '2' || '2nd' => ('2nd', AppStatusTone.neutral),
+      '3' || '3rd' => ('3rd', AppStatusTone.coral),
+      _ => (placing, AppStatusTone.info),
     };
-    final foreground = color.computeLuminance() > .18
-        ? Colors.black
-        : Colors.white;
     return Semantics(
       label: 'Show placing: $label',
       excludeSemantics: true,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 100),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.emoji_events_outlined, size: 16, color: foreground),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: foreground),
-              ),
-            ),
-          ],
-        ),
+      child: AppStatusBadge(
+        label: label,
+        icon: Icons.emoji_events_outlined,
+        tone: tone,
       ),
     );
   }
@@ -518,8 +559,19 @@ class _EntryField extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.labelLarge),
-        SelectableText(value),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: AppTokens.secondaryTextColor(context),
+          ),
+        ),
+        const SizedBox(height: 2),
+        SelectableText(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppTokens.primaryTextColor(context),
+          ),
+        ),
       ],
     ),
   );

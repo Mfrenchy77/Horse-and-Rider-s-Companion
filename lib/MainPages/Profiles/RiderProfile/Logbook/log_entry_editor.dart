@@ -297,25 +297,16 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Semantics(
                                 liveRegion: true,
-                                child: Text(
-                                  _error!,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
+                                child: AppFeedbackBanner(
+                                  message: _error!,
+                                  tone: AppStatusTone.error,
                                 ),
                               ),
                             ),
-                          FilledButton.icon(
+                          AppPrimaryButton(
                             onPressed: _saving || _loadingHorses ? null : _save,
-                            icon: _saving
-                                ? const SizedBox.square(
-                                    dimension: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.check),
-                            label: Text(_saving ? 'Saving…' : 'Save entry'),
+                            icon: _saving ? Icons.hourglass_top : Icons.check,
+                            label: _saving ? 'Saving…' : 'Save entry',
                           ),
                         ],
                       ),
@@ -324,25 +315,33 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                 ),
               )
             : null,
-        body: SafeArea(
-          bottom: false,
-          child: allowed
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 760),
-                      child: Form(
-                        key: _form,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _section(context, 'What would you like to log?', [
-                              const Text(
-                                'You can log an entry with or without a horse.',
-                              ),
-                              _typeSelector(context),
-                            ]),
+        body: AppScaffoldBackdrop(
+          child: SafeArea(
+            bottom: false,
+            child: allowed
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 760),
+                        child: Form(
+                          key: _form,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _section(context, 'What would you like to log?', [
+                                Text(
+                                  'You can log an entry with or without '
+                                  'a horse.',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: AppTokens.secondaryTextColor(
+                                          context,
+                                        ),
+                                      ),
+                                ),
+                                _typeSelector(context),
+                              ]),
                             const SizedBox(height: 10),
                             _section(context, 'Entry details', [
                               if (showStudents)
@@ -451,25 +450,37 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                     ),
                   ),
                 )
-              : const Center(child: Text('Your rider logbook is unavailable.')),
+              : const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppTokens.spaceLg),
+                    child: AppEmptyState(
+                      icon: Icons.auto_stories_outlined,
+                      title: 'Rider logbook unavailable',
+                      description: 'Your rider logbook is unavailable.',
+                    ),
+                  ),
+                ),
+          ),
         ),
       ),
     );
   }
 
   Widget _section(BuildContext context, String title, List<Widget> children) =>
-      GradientCard(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 8,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              ...children,
-            ],
-          ),
+      AppSurfaceCard(
+        padding: const EdgeInsets.all(AppTokens.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            Text(
+              title,
+              style: AppTokens.sectionTitleStyle(context).copyWith(
+                fontSize: 18,
+              ),
+            ),
+            ...children,
+          ],
         ),
       );
 
@@ -522,21 +533,24 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                       ),
                       minimumSize: const Size(0, 64),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                       ),
                       foregroundColor: _type == entry.key
-                          ? colors.primary
-                          : colors.onSurface,
+                          ? AppTokens.accentColor(context)
+                          : AppTokens.primaryTextColor(context),
                       backgroundColor: _type == entry.key
-                          ? Color.alphaBlend(
-                              colors.primary.withValues(alpha: .16),
-                              colors.surface,
+                          ? AppTokens.accentColor(context).withValues(
+                              alpha: 0.16,
                             )
+                          : Theme.of(context).brightness == Brightness.dark
+                          ? AppTokens.midnightButtonFill
                           : colors.surface,
                       side: BorderSide(
                         color: _type == entry.key
-                            ? colors.primary
-                            : colors.outline,
+                            ? AppTokens.accentColor(context)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? AppTokens.midnightButtonBorder
+                                : colors.outline,
                       ),
                     ),
                     child: Column(
@@ -751,7 +765,12 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     int? maxLength,
     bool required = false,
   }) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colors = theme.colorScheme;
+    final borderColor = isDark
+        ? AppTokens.midnightButtonBorder
+        : colors.outlineVariant;
     return TextFormField(
       key: key,
       controller: controller,
@@ -764,14 +783,28 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
         labelText: label,
         prefixIcon: icon == null ? null : Icon(icon, size: 18),
         filled: true,
-        fillColor: colors.surface,
+        fillColor: isDark ? AppTokens.midnightInputFill : colors.surface,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
         ),
         counterText: maxLength == null ? null : '',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+          borderSide: BorderSide(
+            color: AppTokens.accentColor(context),
+            width: 1.5,
+          ),
+        ),
       ),
       validator: required
           ? (text) => (text?.trim().isEmpty ?? true)

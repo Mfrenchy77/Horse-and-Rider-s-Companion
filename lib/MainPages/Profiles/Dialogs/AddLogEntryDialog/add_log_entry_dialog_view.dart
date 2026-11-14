@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/Cubit/add_log_entry_cubit.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/navigation_utils.dart';
@@ -45,6 +46,7 @@ class AddLogEntryDialog extends StatelessWidget {
                       ? 'Add New Log Entry'
                       : 'Add New Log Entry For \n${horseProfile?.name}',
                   textAlign: TextAlign.center,
+                  style: AppTokens.sectionTitleStyle(context),
                 ),
               ),
               insetPadding: const EdgeInsets.all(10),
@@ -69,22 +71,19 @@ class AddLogEntryDialog extends StatelessWidget {
                   gap(),
                   Visibility(
                     visible: state.status == FormStatus.failure,
-                    child: const ColoredBox(
-                      color: Colors.red,
-                      child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text('Error With Submission'),
-                      ),
+                    child: const AppFeedbackBanner(
+                      message: 'Error With Submission',
+                      tone: AppStatusTone.error,
                     ),
                   ),
                 ],
               ),
               actions: [
-                TextButton(
+                AppOutlinedButton(
                   onPressed: () {
                     safePop(context);
                   },
-                  child: const Text('Cancel'),
+                  label: 'Cancel',
                 ),
                 _submitButton(
                   context: context,
@@ -238,7 +237,7 @@ Widget _submitButton({
   required AddLogEntryState state,
   required HorseProfile? horseProfile,
 }) {
-  return FilledButton(
+  return AppPrimaryButton(
     onPressed: state.logEntry.value.length < 2
         ? null
         : () {
@@ -246,10 +245,8 @@ Widget _submitButton({
                   horseProfile: horseProfile,
                 );
           },
-    child: state.status == FormStatus.submitting
-        ? const CircularProgressIndicator()
-        : const Text(
-            'Submit Log Entry',
-          ),
+    label: state.status == FormStatus.submitting
+        ? 'Submitting…'
+        : 'Submit Log Entry',
   );
 }
