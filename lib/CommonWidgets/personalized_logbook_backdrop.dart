@@ -67,17 +67,28 @@ class PersonalizedLogbookBackdrop extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       Transform.scale(
-                        scale: 1.08,
-                        child: ImageFiltered(
-                          imageFilter: ui.ImageFilter.blur(
-                            sigmaX: 72,
-                            sigmaY: 72,
-                            tileMode: TileMode.mirror,
+                        scale: 1.12,
+                        child: ColorFiltered(
+                          colorFilter: _desaturate,
+                          child: photoWidget,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(
+                            sigmaX: 28,
+                            sigmaY: 28,
                           ),
-                          child: ColorFiltered(
-                            colorFilter: _desaturate,
-                            child: photoWidget,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(
+                            sigmaX: 28,
+                            sigmaY: 28,
                           ),
+                          child: const SizedBox.expand(),
                         ),
                       ),
                       DecoratedBox(
