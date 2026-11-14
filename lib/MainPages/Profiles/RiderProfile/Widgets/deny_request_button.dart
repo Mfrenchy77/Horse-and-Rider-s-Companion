@@ -21,12 +21,13 @@ class DenyRequestButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
+    final acceptStatus = context.select((AppCubit c) => c.state.acceptStatus);
     final isAccepted =
         request?.isAccepted ?? (message?.requestItem?.isSelected ?? false);
 
     return OutlinedButton(
       key: const Key('DenyRequestButton'),
-      onPressed: isAccepted
+      onPressed: isAccepted || acceptStatus == AcceptStatus.loading
           ? null
           : () {
               onBeforeDeny?.call();

@@ -574,12 +574,49 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  bool _hasPendingOutgoingRequest({
+    required ConnectionRequestKind kind,
+    required String recipientEmail,
+    String? horseId,
+  }) {
+    final sender = state.usersProfile?.email.toLowerCase();
+    if (sender == null) return false;
+    final target = recipientEmail.toLowerCase();
+    return (state.connectionRequests ?? const <ConnectionRequest>[]).any(
+      (r) =>
+          r.status == 'pending' &&
+          !r.isAccepted &&
+          r.kind == kind &&
+          r.senderEmail.toLowerCase() == sender &&
+          r.recipientEmail.toLowerCase() == target &&
+          (horseId == null || r.horseId == horseId),
+    );
+  }
+
   /// sends a message to the a riderProfile with a
   /// request to add them as your instructor
   Future<void> createInstructorRequest({
     required RiderProfile instructorProfile,
   }) async {
-    final user = state.usersProfile!;
+    final user = state.usersProfile;
+    if (state.isGuest || user == null) return;
+    if (user.email.toLowerCase() == instructorProfile.email.toLowerCase() ||
+        !(instructorProfile.isTrainer ?? false)) {
+      return;
+    }
+    if (_hasPendingOutgoingRequest(
+      kind: ConnectionRequestKind.instructor,
+      recipientEmail: instructorProfile.email,
+    )) {
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage:
+              'Instructor request already sent to ${instructorProfile.name}',
+        ),
+      );
+      return;
+    }
     final now = DateTime.now();
     final messageId = now.millisecondsSinceEpoch.toString();
     final sortedEmails = <String>[
@@ -630,7 +667,25 @@ class AppCubit extends Cubit<AppState> {
   Future<void> createStudentRequest({
     required RiderProfile studentProfile,
   }) async {
-    final user = state.usersProfile!;
+    final user = state.usersProfile;
+    if (state.isGuest || user == null) return;
+    if (user.email.toLowerCase() == studentProfile.email.toLowerCase() ||
+        !(user.isTrainer ?? false)) {
+      return;
+    }
+    if (_hasPendingOutgoingRequest(
+      kind: ConnectionRequestKind.student,
+      recipientEmail: studentProfile.email,
+    )) {
+      emit(
+        state.copyWith(
+          isMessage: true,
+          errorMessage:
+              'Student request already sent to ${studentProfile.name}',
+        ),
+      );
+      return;
+    }
     final now = DateTime.now();
     final emails = <String>[
       user.email.toLowerCase(),
@@ -1221,13 +1276,33 @@ class AppCubit extends Cubit<AppState> {
   ///  Creates a request to add the horse as a student horse
   void _addStudentHorseRequest() {
     debugPrint('Request to add horse as student horse');
-    if (state.ownersProfile == null) {
+    final user = state.usersProfile;
+    final owner = state.ownersProfile;
+    final horse = state.horseProfile;
+    if (state.isGuest ||
+        user == null ||
+        owner == null ||
+        horse == null ||
+        user.email.toLowerCase() == owner.email.toLowerCase() ||
+        !(user.isTrainer ?? false)) {
       debugPrint('Something went Wrong, No owner profile found');
       return;
     } else {
-      final user = state.usersProfile!;
-      final owner = state.ownersProfile!;
-      final horse = state.horseProfile;
+      if (_hasPendingOutgoingRequest(
+        kind: ConnectionRequestKind.studentHorse,
+        recipientEmail: owner.email,
+        horseId: horse.id,
+      )) {
+        emit(
+          state.copyWith(
+            isMessage: true,
+            errorMessage:
+                'Request to add ${horse.name} as a student horse has already '
+                'been sent to ${owner.name}',
+          ),
+        );
+        return;
+      }
       final now = DateTime.now();
       final id = _createHorseConversationId();
       final request = ConnectionRequest(
@@ -1242,15 +1317,15 @@ class AppCubit extends Cubit<AppState> {
         title: 'Student Horse Request',
         summary:
             '${user.name} has requested to add '
-            '${horse?.name} as a student horse.',
+            '${horse.name} as a student horse.',
         parties: [user.name, owner.name],
         partiesIds: [user.email.toLowerCase(), owner.email.toLowerCase()],
         createdAt: now,
-        horseId: horse?.id,
-        horseName: horse?.name,
-        horsePicUrl: horse?.picUrl,
-        horseOwnerId: horse?.currentOwnerId,
-        horseOwnerName: horse?.currentOwnerName,
+        horseId: horse.id,
+        horseName: horse.name,
+        horsePicUrl: horse.picUrl,
+        horseOwnerId: horse.currentOwnerId,
+        horseOwnerName: horse.currentOwnerName,
       );
 
       unawaited(_connectionRequestRepository.sendRequest(request));
@@ -2814,6 +2889,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Accepts or reissues a [ConnectionRequest] via CoachingConnections.
   Future<void> acceptConnectionRequest(ConnectionRequest request) async {
+    if (request.isAccepted || request.status != 'pending') return;
     if (request.kind == ConnectionRequestKind.transferHorse) {
       await _acceptTransferRequest(request);
       return;
@@ -2987,6 +3063,13 @@ class AppCubit extends Cubit<AppState> {
 
   /// Denies/dismisses a pending [ConnectionRequest].
   Future<void> denyConnectionRequest(ConnectionRequest request) async {
+    if (state.isGuest ||
+        state.usersProfile == null ||
+        state.acceptStatus == AcceptStatus.loading ||
+        request.isAccepted ||
+        request.status != 'pending') {
+      return;
+    }
     try {
       final denialText = switch (request.kind) {
         ConnectionRequestKind.instructor =>
@@ -3064,11 +3147,14 @@ class AppCubit extends Cubit<AppState> {
   List<ConnectionRequest> pendingConnectionRequests() {
     final requests = state.connectionRequests;
     if (requests != null) {
-      return requests
-          .where(
-            (r) => r.senderName != state.usersProfile?.name && !r.isAccepted,
-          )
-          .toList();
+      final myEmail = state.usersProfile?.email.toLowerCase();
+      return requests.where((r) {
+        if (r.isAccepted || r.status != 'pending') return false;
+        if (myEmail != null && r.senderEmail.isNotEmpty) {
+          return r.senderEmail.toLowerCase() != myEmail;
+        }
+        return r.senderName != state.usersProfile?.name;
+      }).toList();
     }
     return [
       for (final conversation in pendingRequestConversations())
