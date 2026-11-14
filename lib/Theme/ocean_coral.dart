@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
@@ -59,20 +60,23 @@ class OceanCoralSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final gradients = theme.extension<SurfaceGradients>();
-    if (gradients == null) return child;
+    if (!isDark && gradients == null) return child;
     final isOceanCoral = isOceanCoralDarkTheme(context);
 
     final radius = borderRadius ?? const BorderRadius.all(Radius.circular(20));
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: gradients.surface,
+        gradient: isDark ? AppTokens.cardSurfaceGradient : gradients?.surface,
         borderRadius: radius,
         border: Border.all(
-          color: isOceanCoral
-              ? ColorConst.dividerDarkBlueGrey
-              : theme.colorScheme.outlineVariant,
+          color: isDark
+              ? AppTokens.cardBorderDark
+              : isOceanCoral
+                  ? ColorConst.dividerDarkBlueGrey
+                  : theme.colorScheme.outlineVariant,
         ),
         boxShadow: const [
           BoxShadow(
@@ -161,7 +165,7 @@ class OceanCoralAppDialog extends StatelessWidget {
     this.actions,
     this.maxWidth = 520,
     this.insetPadding = const EdgeInsets.symmetric(
-      horizontal: 32,
+      horizontal: 16,
       vertical: 24,
     ),
     this.scrollable = false,
@@ -201,12 +205,13 @@ class OceanCoralAppDialog extends StatelessWidget {
           Semantics(
             namesRoute: true,
             child: DefaultTextStyle.merge(
-              style: Theme.of(context).textTheme.titleLarge,
+              style: AppTokens.sectionTitleStyle(context),
               textAlign: TextAlign.center,
               child: title!,
             ),
           ),
-        if (title != null && content != null) const SizedBox(height: 12),
+        if (title != null && content != null)
+          const SizedBox(height: AppTokens.spaceMd),
         if (content != null) content!,
       ],
     );
@@ -217,7 +222,7 @@ class OceanCoralAppDialog extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: OceanCoralSurface(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppTokens.spaceLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

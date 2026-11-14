@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 
 class DeletePage extends StatefulWidget {
   const DeletePage({super.key});
@@ -46,99 +48,105 @@ class _DeletePageState extends State<DeletePage> {
         final needsReauth =
             status == AccountDeletionUiStatus.requiresRecentLogin;
 
-        return AlertDialog(
+        return OceanCoralAppDialog(
+          scrollable: true,
           title: const Text('Delete Account'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This permanently removes your login, rider profile, '
-                  'profile photo, private logbook entries, and device tokens.',
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AppFeedbackBanner(
+                tone: AppStatusTone.warning,
+                message:
+                    'This permanently removes your login, rider profile, '
+                    'profile photo, private logbook entries, and device '
+                    'tokens.',
+              ),
+              const SizedBox(height: AppTokens.spaceSm + 2),
+              Text(
+                "Owned horses are transferred to the Horse & Rider's "
+                'Companion administrative account to preserve shared '
+                'training history, and your name/email are anonymized on '
+                'published resources and comments.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
+                  height: 1.4,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Owned horses are transferred to the Horse & Rider's "
-                  'Companion administrative account to preserve shared '
-                  'training history, and your name/email are anonymized on '
-                  'published resources and comments.',
+              ),
+              const SizedBox(height: AppTokens.spaceMd),
+              TextField(
+                enabled: !isBusy,
+                onChanged: cubit.emailChanged,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm your email',
+                  hintText: 'Enter your account email',
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
-                const SizedBox(height: 12),
+              ),
+              if (needsReauth) ...[
+                const SizedBox(height: AppTokens.spaceMd),
+                Text(
+                  'Please verify your identity again to complete deletion:',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppTokens.primaryTextColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppTokens.spaceSm),
                 TextField(
+                  controller: _passwordController,
                   enabled: !isBusy,
-                  onChanged: cubit.emailChanged,
+                  obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Confirm your email',
-                    hintText: 'Enter your account email',
+                    labelText: 'Current password',
+                    prefixIcon: Icon(Icons.lock_outline),
                   ),
                 ),
-                if (needsReauth) ...[
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Please verify your identity again to complete deletion:',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordController,
-                    enabled: !isBusy,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Current password',
+                const SizedBox(height: AppTokens.spaceSm + 2),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    AppPrimaryButton(
+                      label: 'Verify Password',
+                      onPressed: isBusy
+                          ? null
+                          : () => cubit.reauthenticateForDeletionWithPassword(
+                              _passwordController.text,
+                            ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ElevatedButton(
-                        onPressed: isBusy
-                            ? null
-                            : () => cubit.reauthenticateForDeletionWithPassword(
-                                _passwordController.text,
-                              ),
-                        child: const Text('Verify Password'),
-                      ),
-                      OutlinedButton(
-                        onPressed: isBusy
-                            ? null
-                            : cubit.reauthenticateForDeletionWithGoogle,
-                        child: const Text('Verify with Google'),
-                      ),
-                    ],
-                  ),
-                ],
-                if (state.accountDeletionError.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    state.accountDeletionError,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                    AppOutlinedButton(
+                      label: 'Verify with Google',
+                      onPressed: isBusy
+                          ? null
+                          : cubit.reauthenticateForDeletionWithGoogle,
                     ),
-                  ),
-                ],
-                if (isBusy) ...[
-                  const SizedBox(height: 16),
-                  const Center(child: CircularProgressIndicator()),
-                ],
+                  ],
+                ),
               ],
-            ),
+              if (state.accountDeletionError.isNotEmpty) ...[
+                const SizedBox(height: AppTokens.spaceMd),
+                AppFeedbackBanner(
+                  tone: AppStatusTone.error,
+                  message: state.accountDeletionError,
+                ),
+              ],
+              if (isBusy) ...[
+                const SizedBox(height: AppTokens.spaceMd),
+                const AppLoadingState(message: 'Deleting account…'),
+              ],
+            ],
           ),
           actions: [
-            TextButton(
+            AppOutlinedButton(
+              label: 'Cancel',
               onPressed: isBusy ? null : () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
             ),
-            TextButton(
+            AppDestructiveButton(
+              label: 'Delete',
               onPressed: !isBusy && state.deleteEmail.isValid
                   ? cubit.deleteAccount
                   : null,
-              child: Text(
-                'Delete',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
             ),
           ],
         );
