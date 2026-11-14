@@ -1,3 +1,4 @@
 {
-  "dart.flutterSdkPath": "/home/matteo/tools/flutter"
+  "dart.flutterSdkPath": "/home/matteo/tools/flutter-3.38.1",
+  "debug.toolBarLocation": "docked"
 }
