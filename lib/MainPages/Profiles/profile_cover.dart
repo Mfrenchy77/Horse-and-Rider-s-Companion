@@ -77,7 +77,6 @@ class ProfileCover extends StatelessWidget {
                   fit: BoxFit.cover,
                   alignment: const Alignment(0, -0.2),
                   semanticLabel: 'Photo of $name',
-                  webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
                   frameBuilder: (context, child, frame, synchronouslyLoaded) {
                     if (frame == null) return child;
                     return Tooltip(

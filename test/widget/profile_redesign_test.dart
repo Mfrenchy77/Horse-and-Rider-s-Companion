@@ -274,10 +274,7 @@ void main() {
       final router = _router();
       addTearDown(router.dispose);
       const photoUrl = 'https://example.com/profile-cover.png';
-      const provider = NetworkImage(
-        photoUrl,
-        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
-      );
+      const provider = NetworkImage(photoUrl);
       final hasPhoto = width >= RiderProfileView.largeBreakpoint;
       if (hasPhoto) {
         await tester.runAsync(() async {

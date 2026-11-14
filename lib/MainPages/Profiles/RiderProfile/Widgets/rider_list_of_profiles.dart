@@ -210,7 +210,6 @@ class _HorsePhotoCard extends StatelessWidget {
                     Image.network(
                       photo,
                       fit: BoxFit.cover,
-                      webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return placeholder;

@@ -126,9 +126,10 @@ class SmartImage extends StatelessWidget {
           width: width,
           height: height,
           fit: fit,
-          // An HTML image can display external images without fetch CORS.
+          // Prefer CanvasKit so BackdropFilter can blur images behind dialogs,
+          // falling back to an HTML image only if fetch CORS fails.
           webHtmlElementStrategy: candidate.host != 'wsrv.nl'
-              ? WebHtmlElementStrategy.prefer
+              ? WebHtmlElementStrategy.fallback
               : WebHtmlElementStrategy.never,
           cacheWidth: kIsWeb ? null : targetWidth,
           errorBuilder: (context, error, stack) {
