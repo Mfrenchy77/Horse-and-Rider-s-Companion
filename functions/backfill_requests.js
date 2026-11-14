@@ -85,9 +85,13 @@ function mapLegacyMessageToRequest({convId, conv = {}, messageId, message = {}})
   const docId = deterministicLegacyDocId(convId, messageId);
   const requestItem = message.requestItem && typeof message.requestItem === 'object' ? message.requestItem : null;
 
+  const msgIdStr = String(message.messageId || messageId || '');
+  const inferredConnectionId =
+    kind === 'transferHorse' && /^[a-f0-9]{64}$/i.test(msgIdStr) ? msgIdStr : null;
+
   return {
     id: docId,
-    messageId: String(message.messageId || messageId || ''),
+    messageId: msgIdStr,
     kind,
     senderEmail,
     senderName,
@@ -111,6 +115,7 @@ function mapLegacyMessageToRequest({convId, conv = {}, messageId, message = {}})
       horsePicUrl: requestItem?.imageUrl || null,
       horseOwnerId: requestItem?.parentId || null,
       horseOwnerName: requestItem?.message || null,
+      ...(inferredConnectionId ? {connectionId: inferredConnectionId} : {}),
     } : {}),
   };
 }
@@ -234,10 +239,16 @@ async function backfillRequests(db, options = {}) {
 
         const legacyRef = db.collection('Requests').doc(mapped.id);
         const directRef = db.collection('Requests').doc(directDocId(convId, messageId));
+        const canonicalId = mapped.messageId || messageId;
+        const canonicalRef = canonicalId ? db.collection('Requests').doc(canonicalId) : null;
 
         if (env.dryRun) {
-          const [legacySnap, directSnap] = await Promise.all([legacyRef.get(), directRef.get()]);
-          if (legacySnap.exists || directSnap.exists) {
+          const [legacySnap, directSnap, canonicalSnap] = await Promise.all([
+            legacyRef.get(),
+            directRef.get(),
+            canonicalRef ? canonicalRef.get() : Promise.resolve(null),
+          ]);
+          if (legacySnap.exists || directSnap.exists || canonicalSnap?.exists) {
             report.skippedExisting += 1;
           } else {
             report.wouldCreate += 1;
@@ -246,10 +257,11 @@ async function backfillRequests(db, options = {}) {
         }
 
         const outcome = await db.runTransaction(async (tx) => {
-          const [freshMsg, freshLegacy, freshDirect] = await Promise.all([
+          const [freshMsg, freshLegacy, freshDirect, freshCanonical] = await Promise.all([
             tx.get(msgDoc.ref),
             tx.get(legacyRef),
             tx.get(directRef),
+            canonicalRef ? tx.get(canonicalRef) : Promise.resolve(null),
           ]);
           if (!freshMsg.exists) return 'changed';
           const freshMapped = mapLegacyMessageToRequest({
@@ -259,7 +271,7 @@ async function backfillRequests(db, options = {}) {
             message: freshMsg.data() || {},
           });
           if (!freshMapped) return 'changed';
-          if (freshLegacy.exists || freshDirect.exists) return 'exists';
+          if (freshLegacy.exists || freshDirect.exists || freshCanonical?.exists) return 'exists';
           tx.set(legacyRef, freshMapped);
           return 'created';
         });

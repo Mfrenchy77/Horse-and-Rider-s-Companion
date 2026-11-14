@@ -599,11 +599,12 @@ exports.onMessageCreated = onDocumentCreated(
         ]);
         if (!reqTypes.has(message.messageType)) return;
         if (msgId) {
-          const [directReq, legacyReq] = await Promise.all([
+          const [msgReq, directReq, legacyReq] = await Promise.all([
+            admin.firestore().collection('Requests').doc(msgId).get(),
             admin.firestore().collection('Requests').doc(`${convId}_${msgId}`).get(),
             admin.firestore().collection('Requests').doc(`legacy_${convId}_${msgId}`).get(),
           ]);
-          if (directReq.exists || legacyReq.exists) return;
+          if (msgReq.exists || directReq.exists || legacyReq.exists) return;
         }
 
         const convRef = admin.firestore().collection('Conversations').doc(convId);

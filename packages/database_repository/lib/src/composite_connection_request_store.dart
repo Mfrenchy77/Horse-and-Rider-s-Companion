@@ -116,6 +116,14 @@ class CompositeConnectionRequestStore implements ConnectionRequestStore {
     }
   }
 
+  /// Mirrors an already server-created [request] to legacy storage when
+  /// [mirrorWritesToLegacy] is enabled, without duplicating `primary`.
+  Future<void> mirrorToLegacy(ConnectionRequest request) async {
+    if (!mirrorWritesToLegacy) return;
+    _resolvedKeys.remove(_dedupeKey(request));
+    await _legacy.sendRequest(request);
+  }
+
   @override
   Future<void> dismissRequest({
     required ConnectionRequest request,

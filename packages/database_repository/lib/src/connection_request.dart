@@ -205,10 +205,17 @@ class ConnectionRequest extends Equatable {
     final isHorseKind =
         kind == ConnectionRequestKind.studentHorse ||
         kind == ConnectionRequestKind.transferHorse;
+    final rawMessageId = message.messageId ?? '';
+    final inferredConnectionId =
+        kind == ConnectionRequestKind.transferHorse &&
+            RegExp(r'^[a-f0-9]{64}$', caseSensitive: false)
+                .hasMatch(rawMessageId)
+        ? rawMessageId
+        : null;
 
     return ConnectionRequest(
       id: message.id ?? conversation?.id ?? '',
-      messageId: message.messageId ?? '',
+      messageId: rawMessageId,
       kind: kind,
       senderEmail: senderEmail,
       senderName: senderName,
@@ -226,6 +233,7 @@ class ConnectionRequest extends Equatable {
       horsePicUrl: isHorseKind ? message.requestItem?.imageUrl : null,
       horseOwnerId: isHorseKind ? message.requestItem?.parentId : null,
       horseOwnerName: isHorseKind ? message.requestItem?.message : null,
+      connectionId: inferredConnectionId,
     );
   }
 

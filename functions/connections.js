@@ -77,6 +77,9 @@ function transition(link, actor, action) {
 
 function matchesExpectedRequest(data, actor, expected) {
   if (!expected) return true;
+  if (expected.requirePending === true && (data.status || 'pending') !== 'pending') {
+    return false;
+  }
   if (Array.isArray(expected.kinds) && !expected.kinds.includes(data.kind)) {
     return false;
   }
@@ -90,6 +93,19 @@ function matchesExpectedRequest(data, actor, expected) {
     const reqPair = [emailKey(data.senderEmail || ''), emailKey(data.recipientEmail || '')].sort();
     const expPair = expected.participants.map(emailKey).sort();
     if (reqPair[0] !== expPair[0] || reqPair[1] !== expPair[1]) return false;
+  }
+  if (expected.roleByKind === true && expected.learner && expected.coach) {
+    const reqSender = emailKey(data.senderEmail || '');
+    const reqRecipient = emailKey(data.recipientEmail || '');
+    if (data.kind === 'instructor') {
+      if (reqSender !== emailKey(expected.learner) || reqRecipient !== emailKey(expected.coach)) {
+        return false;
+      }
+    } else if (data.kind === 'student' || data.kind === 'studentHorse') {
+      if (reqSender !== emailKey(expected.coach) || reqRecipient !== emailKey(expected.learner)) {
+        return false;
+      }
+    }
   }
   if (expected.sender && emailKey(data.senderEmail || '') !== emailKey(expected.sender)) {
     return false;
@@ -128,18 +144,27 @@ async function readRequestRecord(tx, db, requestDocId, actor, fallbackDocIds = [
     }
     return {ref: reqRef, data};
   }
-  if (candidates.length === 0 && expected?.allowFallbackQuery === true) {
+  if (expected?.allowFallbackQuery === true) {
     const col = db.collection('Requests');
     if (typeof col.where === 'function') {
       const query = col.where('partiesIds', 'array-contains', actor);
       const snap = await tx.get(query);
       const docs = Array.isArray(snap?.docs) ? snap.docs : [];
-      const matched = docs.filter((doc) => {
+      const pendingMatched = docs.filter((doc) => {
         const d = doc.data() || {};
         return (d.status || 'pending') === 'pending' && matchesExpectedRequest(d, actor, expected);
       });
-      if (matched.length === 1 && matched[0].ref) {
-        return {ref: matched[0].ref, data: matched[0].data()};
+      if (pendingMatched.length === 1 && pendingMatched[0].ref) {
+        return {ref: pendingMatched[0].ref, data: pendingMatched[0].data()};
+      }
+      if (expected.includeResolvedInFallback === true) {
+        const resolvedMatched = docs.filter((doc) => {
+          const d = doc.data() || {};
+          return (d.status || 'pending') !== 'pending' && matchesExpectedRequest(d, actor, expected);
+        });
+        if (resolvedMatched.length >= 1 && resolvedMatched[0].ref) {
+          return {ref: resolvedMatched[0].ref, data: resolvedMatched[0].data()};
+        }
       }
     }
   }
@@ -150,7 +175,10 @@ function writeRequestResolution(tx, record, targetStatus, connectionId, now) {
   if (!record) return;
   const current = record.data.status || 'pending';
   if (current === targetStatus) return;
-  if (current !== 'pending') {
+  if (targetStatus === 'accepted' && current !== 'pending') {
+    throw new HttpsError('failed-precondition', 'This request has already been resolved.');
+  }
+  if (current === 'accepted') {
     throw new HttpsError('failed-precondition', 'This request has already been resolved.');
   }
   tx.update(record.ref, {
@@ -210,16 +238,30 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
       kinds: kind === 'horse' ? ['studentHorse'] : ['instructor', 'student'],
       horseId: horseId || null,
       participants: [learner, coach],
+      learner,
+      coach,
+      roleByKind: true,
+      actorMustBeRecipient: true,
+      requirePending: true,
     }),
   ]);
   const existing = existingSnap.data();
   if (existing && !terminal.has(existing.status) &&
       (existing.ownershipVersion ?? null) === (targetHorse?.ownershipVersion ?? null)) {
-    writeRequestResolution(tx, reqRecord, 'accepted', id, now);
+    if (reqRecord) {
+      if (existing.status !== 'accepted') {
+        tx.update(ref, {status: 'accepted', updatedAt: now});
+      }
+      writeRequestResolution(tx, reqRecord, 'accepted', id, now);
+      return {id, status: 'accepted', incoming: false};
+    }
     // A crossed request remains incoming until its recipient explicitly accepts.
     return {id, status: existing.status, incoming: existing.recipient === actor};
   }
   const reason = text(data.reason, 280, 'reason', true);
+  const targetStatus = reqRecord ? 'accepted' : 'pending';
+  const linkSender = reqRecord ? emailKey(reqRecord.data.senderEmail) : actor;
+  const linkRecipient = reqRecord ? actor : (actor === learner ? coach : learner);
   tx.set(ref, {
     kind, version, horseId,
     ownershipVersion: targetHorse?.ownershipVersion ?? null,
@@ -231,14 +273,14 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     coachName: coachRecord.profile.name || coachEmail,
     participantUids: [learnerUid, coachUid],
     learnerUid, coachUid,
-    sender: actor,
-    recipient: actor === learner ? coach : learner,
+    sender: linkSender,
+    recipient: linkRecipient,
     reason,
-    status: 'pending',
+    status: targetStatus,
     updatedAt: now,
   });
   writeRequestResolution(tx, reqRecord, 'accepted', id, now);
-  return {id, status: 'pending', incoming: false};
+  return {id, status: targetStatus, incoming: false};
 }
 
 function isArchived(animal) {
@@ -274,6 +316,26 @@ async function setSaleListing(tx, db, identity, data) {
   return {status: 'listed'};
 }
 
+async function inspectTransferLock(tx, db, pendingId) {
+  if (!pendingId || typeof pendingId !== 'string') {
+    return {activeId: null, staleConnRef: null, syncedStatus: null};
+  }
+  const connRef = db.collection(collection).doc(pendingId);
+  const reqRef = db.collection('Requests').doc(pendingId);
+  const [connSnap, reqSnap] = await Promise.all([tx.get(connRef), tx.get(reqRef)]);
+  const conn = connSnap.data();
+  const req = reqSnap.data();
+  if (conn && terminal.has(conn.status)) {
+    return {activeId: null, staleConnRef: null, syncedStatus: null};
+  }
+  if (req && ['declined', 'cancelled', 'dismissed'].includes(req.status)) {
+    const syncedStatus = req.status === 'declined' ? 'declined' : 'cancelled';
+    const staleConnRef = conn && conn.status === 'pending' ? connRef : null;
+    return {activeId: null, staleConnRef, syncedStatus};
+  }
+  return {activeId: pendingId, staleConnRef: null, syncedStatus: null};
+}
+
 async function sendTransfer(tx, db, auth, identity, data, now, version) {
   const horseId = documentId(data.horseId, 'horse ID');
   const animal = await horse(tx, db, horseId);
@@ -299,17 +361,21 @@ async function sendTransfer(tx, db, auth, identity, data, now, version) {
       emailKey(account.email) !== emailKey(requestedEmail)) {
     throw new HttpsError('failed-precondition', 'The recipient is unavailable.');
   }
-  const [owner, recipient] = await Promise.all([
+  const [owner, recipient, lockState] = await Promise.all([
     rider(tx, db, identity.email),
     rider(tx, db, account.email),
+    inspectTransferLock(tx, db, animal.profile.transferRequestId),
   ]);
   const id = key(['transfer', horseId, identity.uid, account.uid]);
   const reqRef = data.createRequest === true ? db.collection('Requests').doc(id) : null;
   const existingReq = reqRef ? (await tx.get(reqRef)).data() : null;
-  const pendingId = animal.profile.transferRequestId;
+  const pendingId = lockState.activeId;
+  if (lockState.staleConnRef && lockState.syncedStatus && lockState.staleConnRef.id !== id) {
+    tx.update(lockState.staleConnRef, {status: lockState.syncedStatus, updatedAt: now});
+  }
   if (pendingId) {
     if (pendingId === id) {
-      if (reqRef && !existingReq) {
+      if (reqRef && (!existingReq || ['declined', 'cancelled', 'dismissed'].includes(existingReq.status))) {
         const recipientEmail = emailKey(account.email);
         const ownerName = owner.profile.name || owner.profile.email;
         const recipientName = recipient.profile.name || recipient.profile.email;
@@ -356,7 +422,7 @@ async function sendTransfer(tx, db, auth, identity, data, now, version) {
     status: 'pending', updatedAt: now,
   });
   tx.update(animal.ref, {transferRequestId: id});
-  if (reqRef && !existingReq) {
+  if (reqRef && (!existingReq || ['declined', 'cancelled', 'dismissed'].includes(existingReq.status))) {
     tx.set(reqRef, {
       id,
       messageId: id,
@@ -388,7 +454,7 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
     throw new HttpsError('permission-denied', 'This action is unavailable for a transfer.');
   }
   const status = transition(link, actor, action);
-  const reqRecord = await readRequestRecord(tx, db, requestDocId, actor, fallbackRequestDocIds, {
+  const expectedTransferReq = {
     kinds: ['transferHorse'],
     horseId: link.horseId,
     connectionId: id,
@@ -397,10 +463,46 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
     actorMustBeRecipient: action === 'accept' || action === 'decline',
     actorMustBeSender: action === 'cancel',
     allowFallbackQuery: true,
-  });
+    includeResolvedInFallback: true,
+  };
+  const canonicalReqRef = db.collection('Requests').doc(id);
+  const canonicalSnap = await tx.get(canonicalReqRef);
+  const canonicalData = canonicalSnap.data();
+  let canonicalRecord = null;
+  if (canonicalData) {
+    const parties = Array.isArray(canonicalData.partiesIds) ?
+      canonicalData.partiesIds.map(emailKey) : [];
+    if (!parties.includes(actor) || !matchesExpectedRequest(canonicalData, actor, expectedTransferReq)) {
+      throw new HttpsError('permission-denied', 'Request unavailable.');
+    }
+    canonicalRecord = {ref: canonicalReqRef, data: canonicalData};
+  }
+  const secondaryReqId = requestDocId && requestDocId !== id ? requestDocId : null;
+  const secondaryFallbacks = Array.isArray(fallbackRequestDocIds) ?
+    fallbackRequestDocIds.filter((candidate) => candidate && candidate !== id) :
+    [];
+  const reqRecord = (secondaryReqId || secondaryFallbacks.length > 0 || !canonicalRecord) ?
+    await readRequestRecord(
+        tx,
+        db,
+        secondaryReqId,
+        actor,
+        secondaryFallbacks,
+        expectedTransferReq,
+    ) :
+    null;
   if (link.status === status) {
-    writeRequestResolution(tx, reqRecord, status, id, now);
+    writeRequestResolution(tx, canonicalRecord, status, id, now);
+    if (reqRecord && reqRecord.ref.id !== id) {
+      writeRequestResolution(tx, reqRecord, status, id, now);
+    }
     return {id, status};
+  }
+  if (status === 'accepted' && (
+    (canonicalRecord && (canonicalRecord.data.status || 'pending') !== 'pending') ||
+    (reqRecord && (reqRecord.data.status || 'pending') !== 'pending')
+  )) {
+    throw new HttpsError('failed-precondition', 'This transfer request has already been resolved.');
   }
   const animal = await horse(tx, db, link.horseId);
   if (emailKey(animal.profile.currentOwnerId) !== link.learner || animal.profile.transferRequestId !== id) {
@@ -447,7 +549,10 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
     tx.update(animal.ref, {transferRequestId: null});
   }
   tx.update(ref, {status, updatedAt: now});
-  writeRequestResolution(tx, reqRecord, status, id, now);
+  writeRequestResolution(tx, canonicalRecord, status, id, now);
+  if (reqRecord && reqRecord.ref.id !== id) {
+    writeRequestResolution(tx, reqRecord, status, id, now);
+  }
   return {id, status};
 }
 
@@ -461,15 +566,22 @@ async function setHorseArchive(tx, db, identity, data, now) {
   if (emailKey(animal.profile.currentOwnerId) !== emailKey(identity.email)) {
     throw new HttpsError('permission-denied', 'Only the horse owner can change its archive status.');
   }
-  if (archiveStatus !== 'active' && animal.profile.transferRequestId) {
+  const lockState = await inspectTransferLock(tx, db, animal.profile.transferRequestId);
+  if (archiveStatus !== 'active' && lockState.activeId) {
     throw new HttpsError('failed-precondition', 'Cancel the pending transfer before archiving this horse.');
   }
   const owner = await rider(tx, db, identity.email);
+  if (lockState.staleConnRef && lockState.syncedStatus) {
+    tx.update(lockState.staleConnRef, {status: lockState.syncedStatus, updatedAt: now});
+  }
   const owned = owner.profile.ownedHorses || [];
   const archived = owner.profile.archivedHorses || [];
   const active = archiveStatus === 'active';
   if ((animal.profile.archiveStatus || 'active') === archiveStatus &&
       hasHorse(active ? owned : archived, horseId) && !hasHorse(active ? archived : owned, horseId)) {
+    if (!lockState.activeId && animal.profile.transferRequestId) {
+      tx.update(animal.ref, {transferRequestId: null});
+    }
     return {status: archiveStatus};
   }
   const link = horseLink(horseId, animal.profile);
@@ -480,6 +592,7 @@ async function setHorseArchive(tx, db, identity, data, now) {
   tx.update(animal.ref, {
     archiveStatus,
     ...(!active ? {saleListing: null} : {}),
+    ...(!lockState.activeId && animal.profile.transferRequestId ? {transferRequestId: null} : {}),
     lastEditBy: owner.profile.name || owner.profile.email,
     lastEditDate: now,
   });
@@ -809,7 +922,11 @@ function connectionHandler(db, auth) {
             (link.coachUid === uid && link.coach === actor))) {
         throw new HttpsError('permission-denied', 'Connection unavailable.');
       }
-      if (data.version !== link.version) {
+      const allowVersionlessTransferCancel =
+        link.kind === 'transfer' &&
+        (data.action === 'cancel' || data.action === 'decline') &&
+        data.version == null;
+      if (!allowVersionlessTransferCancel && data.version !== link.version) {
         throw new HttpsError('failed-precondition', 'Refresh this connection and try again.');
       }
       if (link.kind === 'transfer') {
@@ -846,14 +963,24 @@ function connectionHandler(db, auth) {
       }
 
       const status = transition(link, actor, data.action);
-      const reqRecord = await readRequestRecord(
-          tx, db, data.requestDocId, actor, data.fallbackRequestDocIds, {
-            kinds: link.kind === 'horse' ? ['studentHorse'] : ['instructor', 'student'],
-            horseId: link.horseId || null,
-            participants: [link.learner, link.coach],
-            allowFallbackQuery: true,
-          },
-      );
+      const reqRecord = data.action === 'revoke' ?
+        null :
+        await readRequestRecord(
+            tx, db, data.requestDocId, actor, data.fallbackRequestDocIds, {
+              kinds: link.kind === 'horse' ? ['studentHorse'] : ['instructor', 'student'],
+              horseId: link.horseId || null,
+              participants: [link.learner, link.coach],
+              learner: link.learner,
+              coach: link.coach,
+              roleByKind: true,
+              sender: link.sender,
+              recipient: link.recipient,
+              actorMustBeRecipient: data.action === 'accept' || data.action === 'decline',
+              actorMustBeSender: data.action === 'cancel',
+              requirePending: link.status !== status,
+              allowFallbackQuery: true,
+            },
+        );
       if (status === 'accepted' && status !== link.status) {
         const record = await target(tx, db, link);
         if (link.kind === 'horse' && isArchived(record.profile)) {

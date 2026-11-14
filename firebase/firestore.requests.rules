@@ -59,13 +59,38 @@ service cloud.firestore {
     }
 
     match /Requests/{requestId} {
-      allow read: if request.auth != null
+      allow get: if request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          resource == null
+          || verifiedLowerEmail() in resource.data.partiesIds
+        );
+
+      allow list: if request.auth != null
         && request.auth.token.email_verified == true
         && verifiedLowerEmail() in resource.data.partiesIds;
 
       allow create: if request.auth != null
         && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly([
+          'id', 'messageId', 'kind', 'senderEmail', 'senderName',
+          'senderPicUrl', 'recipientEmail', 'recipientName', 'title',
+          'summary', 'parties', 'partiesIds', 'createdAt', 'updatedAt',
+          'isAccepted', 'status', 'horseId', 'horseName', 'horsePicUrl',
+          'horseOwnerId', 'horseOwnerName', 'connectionId'
+        ])
+        && request.resource.data.id == requestId
+        && request.resource.data.senderEmail is string
+        && request.resource.data.recipientEmail is string
+        && request.resource.data.recipientEmail.size() > 0
+        && request.resource.data.recipientEmail == request.resource.data.recipientEmail.lower()
         && request.resource.data.senderEmail == verifiedLowerEmail()
+        && request.resource.data.get('title', '') is string
+        && request.resource.data.get('title', '').size() <= 200
+        && request.resource.data.get('summary', '') is string
+        && request.resource.data.get('summary', '').size() <= 1000
+        && request.resource.data.partiesIds is list
+        && request.resource.data.partiesIds.size() == 2
         && request.resource.data.senderEmail in request.resource.data.partiesIds
         && request.resource.data.recipientEmail in request.resource.data.partiesIds
         && request.resource.data.senderEmail != request.resource.data.recipientEmail
@@ -73,7 +98,34 @@ service cloud.firestore {
         && request.resource.data.get('isAccepted', false) == false
         && request.resource.data.kind in [
           'instructor', 'student', 'studentHorse', 'transferHorse'
-        ];
+        ]
+        && (
+          request.resource.data.kind != 'studentHorse'
+          || (
+            request.resource.data.get('horseId', '') is string
+            && request.resource.data.get('horseId', '').size() > 0
+          )
+        )
+        && (
+          request.resource.data.kind != 'transferHorse'
+          || (
+            request.resource.data.get('horseId', '') is string
+            && request.resource.data.get('horseId', '').size() > 0
+            && request.resource.data.get('horseOwnerId', '') is string
+            && request.resource.data.get('horseOwnerId', '').lower() == verifiedLowerEmail()
+            && request.resource.data.get('connectionId', '') is string
+            && request.resource.data.get('connectionId', '').size() > 0
+            && exists(/databases/$(database)/documents/Horse_Profile/$(request.resource.data.horseId))
+            && get(/databases/$(database)/documents/Horse_Profile/$(request.resource.data.horseId)).data.currentOwnerId.lower() == verifiedLowerEmail()
+            && get(/databases/$(database)/documents/Horse_Profile/$(request.resource.data.horseId)).data.get('transferRequestId', null) == request.resource.data.connectionId
+            && exists(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId))
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.kind == 'transfer'
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.horseId == request.resource.data.horseId
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.sender == verifiedLowerEmail()
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.recipient == request.resource.data.recipientEmail
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.status == 'pending'
+          )
+        );
 
       // Clients cannot directly forge 'accepted'. Only Cloud Functions
       // (Admin SDK) can transition a request to 'accepted'.
@@ -85,6 +137,13 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'dismissalNote', 'updatedAt'
         ])
+        && (
+          !('dismissalNote' in request.resource.data.diff(resource.data).affectedKeys())
+          || (
+            request.resource.data.dismissalNote is string
+            && request.resource.data.dismissalNote.size() <= 500
+          )
+        )
         && (
           (request.resource.data.status == 'cancelled'
             && verifiedLowerEmail() == resource.data.senderEmail)

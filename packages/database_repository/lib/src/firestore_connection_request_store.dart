@@ -115,7 +115,13 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
     final safeStatus = _clientDismissStatuses.contains(status)
         ? status
         : 'dismissed';
-    await _requests.doc(docId).update({
+    final docRef = _requests.doc(docId);
+    final existing = await docRef.get();
+    if (existing.exists) {
+      final currentStatus = existing.data()?['status'] as String? ?? 'pending';
+      if (currentStatus != 'pending') return;
+    }
+    await docRef.update({
       'status': safeStatus,
       'dismissalNote': dismissalNote,
       'updatedAt': FieldValue.serverTimestamp(),

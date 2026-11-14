@@ -3085,6 +3085,25 @@ class AppCubit extends Cubit<AppState> {
       final isSender =
           request.senderEmail.toLowerCase() ==
           state.usersProfile?.email.toLowerCase();
+      final connectionId = request.connectionId;
+      if (request.kind == ConnectionRequestKind.transferHorse &&
+          connectionId != null &&
+          connectionId.isNotEmpty &&
+          _submitCoachingAction != null) {
+        String? version;
+        if (_fetchConnection != null) {
+          final link = await _fetchConnection(connectionId);
+          version = link?['version'] as String?;
+        }
+        final fallbackIds = _fallbackRequestDocIds(request);
+        await _submitCoachingAction({
+          'action': isSender ? 'cancel' : 'decline',
+          'id': connectionId,
+          if (version != null && version.isNotEmpty) 'version': version,
+          if (request.id.isNotEmpty) 'requestDocId': request.id,
+          if (fallbackIds.isNotEmpty) 'fallbackRequestDocIds': fallbackIds,
+        });
+      }
       await _connectionRequestRepository.dismissRequest(
         request: request,
         dismissalNote: denialText,

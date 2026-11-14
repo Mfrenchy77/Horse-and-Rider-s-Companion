@@ -488,6 +488,41 @@ void main() {
       expect(cubit.state.acceptStatus, AcceptStatus.submitted);
       expect(cubit.state.isError, isFalse);
 
+      // Denying a transferHorse request coordinates with coachingConnection
+      submittedPayloads.clear();
+      requestStore.seed(transferReq);
+      cubit.emit(
+        cubit.state.copyWith(acceptStatus: AcceptStatus.waiting),
+      );
+      await cubit.denyConnectionRequest(transferReq);
+      expect(submittedPayloads, [
+        {
+          'action': 'decline',
+          'id': 'transfer_atlas_u1_u2',
+          'version': 'v-42',
+          'requestDocId': 'owner_recipient_m-xfer',
+        },
+      ]);
+
+      // Sender cancelling a transferHorse request sends action: 'cancel'
+      submittedPayloads.clear();
+      requestStore.seed(transferReq);
+      cubit.emit(
+        cubit.state.copyWith(
+          usersProfile: owner,
+          acceptStatus: AcceptStatus.waiting,
+        ),
+      );
+      await cubit.denyConnectionRequest(transferReq);
+      expect(submittedPayloads, [
+        {
+          'action': 'cancel',
+          'id': 'transfer_atlas_u1_u2',
+          'version': 'v-42',
+          'requestDocId': 'owner_recipient_m-xfer',
+        },
+      ]);
+
       unawaited(cubit.close());
     });
 
@@ -530,6 +565,110 @@ void main() {
             .first;
         expect(items.single.connectionId, 'transfer_atlas_u1_u2');
         unawaited(transferCubit.close());
+      },
+    );
+
+    test(
+      'LOW-2: TransferHorseCubit preserves legacy visibility across stores',
+      () async {
+        final horse = HorseProfile(
+          id: 'atlas',
+          name: 'Atlas',
+          currentOwnerId: owner.email,
+          currentOwnerName: owner.name,
+          lastEditBy: owner.name,
+          lastEditDate: DateTime(2026),
+        );
+        const shaConnId =
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
+        // 1. Legacy-only store: sends createRequest: false -> MessagesStore
+        final messagesStore = _MockMessagesStore();
+        final capturedMessages = <Message>[];
+        when(
+          () => messagesStore.createOrUpdateConversation(
+            conversation: any(named: 'conversation'),
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => messagesStore.createOrUpdateMessage(
+            message: any(named: 'message'),
+          ),
+        ).thenAnswer((invocation) async {
+          capturedMessages.add(
+            invocation.namedArguments[#message] as Message,
+          );
+        });
+        final legacyOnlyStore = FirebaseConnectionRequestStore(
+          messagesStore: messagesStore,
+        );
+        final legacyPayloads = <Map<String, Object?>>[];
+        final legacyCubit = TransferHorseCubit(
+          userProfile: owner,
+          horseProfile: horse,
+          requestRepository: legacyOnlyStore,
+          riderProfileRepository: riderProfileStore,
+          submitCoachingAction: (payload) async {
+            legacyPayloads.add(payload);
+            return {'id': shaConnId, 'status': 'pending'};
+          },
+        );
+        legacyCubit.emit(
+          legacyCubit.state.copyWith(
+            transferProfile: recipient,
+            isTransferable: true,
+          ),
+        );
+        await legacyCubit.sendTransferRequest();
+        expect(legacyPayloads.single['createRequest'], isFalse);
+        expect(capturedMessages, hasLength(1));
+        final reconstructed = ConnectionRequest.fromLegacyMessage(
+          capturedMessages.single,
+        );
+        expect(reconstructed?.connectionId, shaConnId);
+        unawaited(legacyCubit.close());
+
+        // 2. Composite store with mirrorWritesToLegacy: true -> mirrors legacy
+        final primaryStore = _InMemoryConnectionRequestStore();
+        final mirrorLegacyStore = _InMemoryConnectionRequestStore();
+        final compositeMirror = CompositeConnectionRequestStore(
+          primary: primaryStore,
+          legacy: mirrorLegacyStore,
+          mirrorWritesToLegacy: true,
+        );
+        final compositePayloads = <Map<String, Object?>>[];
+        final compositeCubit = TransferHorseCubit(
+          userProfile: owner,
+          horseProfile: horse,
+          requestRepository: compositeMirror,
+          riderProfileRepository: riderProfileStore,
+          submitCoachingAction: (payload) async {
+            compositePayloads.add(payload);
+            return {
+              'id': shaConnId,
+              'status': 'pending',
+              'requestCreated': true,
+            };
+          },
+        );
+        compositeCubit.emit(
+          compositeCubit.state.copyWith(
+            transferProfile: recipient,
+            isTransferable: true,
+          ),
+        );
+        await compositeCubit.sendTransferRequest();
+        expect(compositePayloads.single['createRequest'], isTrue);
+        expect(
+          await primaryStore.watchRequests(userEmail: recipient.email).first,
+          isEmpty,
+        );
+        final mirrored = await mirrorLegacyStore
+            .watchRequests(userEmail: recipient.email)
+            .first;
+        expect(mirrored, hasLength(1));
+        expect(mirrored.single.connectionId, shaConnId);
+        unawaited(compositeCubit.close());
       },
     );
   });

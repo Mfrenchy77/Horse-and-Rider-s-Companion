@@ -137,6 +137,80 @@ async function fsDelete(docPath, idToken) {
   });
 }
 
+async function fsTransactionCreateIfAbsent(collectionPath, docId, data, idToken) {
+  const baseUrl = `http://${FIRESTORE_HOST}/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(idToken ? {Authorization: `Bearer ${idToken}`} : {}),
+  };
+  const beginRes = await fetch(`${baseUrl}:beginTransaction`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}),
+  });
+  if (!beginRes.ok) {
+    return {stage: 'begin', status: beginRes.status};
+  }
+  const {transaction} = await beginRes.json();
+  const docPath = `${collectionPath}/${docId}`;
+  const fullDocName = `projects/${PROJECT_ID}/databases/(default)/documents/${docPath}`;
+  const getRes = await fetch(`${baseUrl}:batchGet`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      documents: [fullDocName],
+      transaction,
+    }),
+  });
+  if (getRes.status !== 200) {
+    await fetch(`${baseUrl}:rollback`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({transaction}),
+    });
+    return {stage: 'get', status: getRes.status};
+  }
+  const batchPayloads = await getRes.json();
+  const firstEntry = Array.isArray(batchPayloads) ? batchPayloads[0] : batchPayloads;
+  if (firstEntry && firstEntry.error) {
+    await fetch(`${baseUrl}:rollback`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({transaction}),
+    });
+    return {stage: 'get', status: firstEntry.error.code || 403};
+  }
+  if (firstEntry && firstEntry.found) {
+    await fetch(`${baseUrl}:rollback`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({transaction}),
+    });
+    return {stage: 'get', status: 200, skippedExisting: true};
+  }
+  const commitRes = await fetch(`${baseUrl}:commit`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      transaction,
+      writes: [
+        {
+          update: {
+            name: fullDocName,
+            fields: toFsFields(data).fields,
+          },
+          currentDocument: {exists: false},
+        },
+      ],
+    }),
+  });
+  return {
+    stage: 'commit',
+    getStatus: firstEntry && firstEntry.missing ? 404 : 200,
+    status: commitRes.status,
+  };
+}
+
 async function callFunction(name, data, idToken) {
   const url = `http://${FUNCTIONS_HOST}/${PROJECT_ID}/us-central1/${name}`;
   const res = await fetch(url, {
@@ -252,6 +326,132 @@ async function main() {
     }, student.idToken);
     assert.equal(selfRes.status, 403);
 
+    // Extra unauthorized participant in partiesIds blocked
+    const extraPartyRes = await fsCreate('Requests', 'req-extra-party', {
+      ...reqDoc,
+      id: 'req-extra-party',
+      partiesIds: [student.email, trainer.email, intruder.email],
+    }, student.idToken);
+    assert.equal(extraPartyRes.status, 403);
+
+    // Empty or non-lowercase recipientEmail blocked
+    const emptyRecipientRes = await fsCreate('Requests', 'req-empty-recipient', {
+      ...reqDoc,
+      id: 'req-empty-recipient',
+      recipientEmail: '',
+      partiesIds: [student.email, ''],
+    }, student.idToken);
+    assert.equal(emptyRecipientRes.status, 403);
+
+    const upperRecipientRes = await fsCreate('Requests', 'req-upper-recipient', {
+      ...reqDoc,
+      id: 'req-upper-recipient',
+      recipientEmail: trainer.email.toUpperCase(),
+      partiesIds: [student.email, trainer.email.toUpperCase()],
+    }, student.idToken);
+    assert.equal(upperRecipientRes.status, 403);
+
+    // Injecting unexpected metadata fields on create blocked
+    const injectMigratedRes = await fsCreate('Requests', 'req-inject-migrated', {
+      ...reqDoc,
+      id: 'req-inject-migrated',
+      migratedFromLegacy: true,
+    }, student.idToken);
+    assert.equal(injectMigratedRes.status, 403);
+
+    const injectArbitraryRes = await fsCreate('Requests', 'req-inject-arbitrary', {
+      ...reqDoc,
+      id: 'req-inject-arbitrary',
+      adminOverride: true,
+    }, student.idToken);
+    assert.equal(injectArbitraryRes.status, 403);
+
+    // Mismatched internal id != requestId blocked
+    const mismatchIdRes = await fsCreate('Requests', 'req-mismatch-doc-id', {
+      ...reqDoc,
+      id: 'different-inner-id',
+    }, student.idToken);
+    assert.equal(mismatchIdRes.status, 403);
+
+    // HIGH-3: Non-owner cannot forge a transferHorse request in Requests
+    const forgedTransferByNonOwner = await fsCreate('Requests', 'req-forged-xfer-1', {
+      ...reqDoc,
+      id: 'req-forged-xfer-1',
+      kind: 'transferHorse',
+      horseId: 'horse-1',
+      horseName: 'Comet',
+      horseOwnerId: student.email,
+      connectionId: 'fake-conn-1',
+    }, student.idToken);
+    assert.equal(forgedTransferByNonOwner.status, 403);
+
+    // HIGH-3: Even horse owner cannot create a raw transferHorse doc in Requests without a matching backend transferRequestId lock
+    const unbackedTransferByOwner = await fsCreate('Requests', 'req-unbacked-xfer-1', {
+      ...reqDoc,
+      id: 'req-unbacked-xfer-1',
+      kind: 'transferHorse',
+      senderEmail: owner.email,
+      recipientEmail: recipient.email,
+      partiesIds: [owner.email, recipient.email],
+      horseId: 'horse-1',
+      horseName: 'Comet',
+      horseOwnerId: owner.email,
+      connectionId: 'unbacked-conn-1',
+    }, owner.idToken);
+    assert.equal(unbackedTransferByOwner.status, 403);
+
+    // LOW-3: Even with an active transfer lock for recipient, owner cannot forge a transferHorse Requests doc addressed to a different recipient
+    const activeOffer = await callFunction('coachingConnection', {
+      action: 'sendTransfer',
+      horseId: 'horse-1',
+      recipientEmail: recipient.email,
+      createRequest: false,
+    }, owner.idToken);
+    assert.equal(activeOffer.ok, true, JSON.stringify(activeOffer.body));
+    const activeTransferId = activeOffer.body.result.id;
+    const spoofedRecipientTransfer = await fsCreate('Requests', 'req-spoof-recipient-xfer', {
+      ...reqDoc,
+      id: 'req-spoof-recipient-xfer',
+      kind: 'transferHorse',
+      senderEmail: owner.email,
+      recipientEmail: student.email,
+      partiesIds: [owner.email, student.email],
+      horseId: 'horse-1',
+      horseName: 'Comet',
+      horseOwnerId: owner.email,
+      connectionId: activeTransferId,
+    }, owner.idToken);
+    assert.equal(spoofedRecipientTransfer.status, 403);
+    // Clean up the temporary transfer lock before continuing
+    await callFunction('coachingConnection', {
+      action: 'cancel',
+      id: activeTransferId,
+    }, owner.idToken);
+
+    // CRITICAL-1: FirestoreConnectionRequestStore.sendRequest transactional get-before-set on nonexistent doc succeeds
+    const txCreateRes = await fsTransactionCreateIfAbsent('Requests', 'req-tx-sec-1', {
+      ...reqDoc,
+      id: 'req-tx-sec-1',
+    }, student.idToken);
+    assert.equal(txCreateRes.getStatus, 404);
+    assert.equal(txCreateRes.status, 200);
+
+    // Idempotent second transactional sendRequest sees existing doc (200) and skips
+    const txRepeatRes = await fsTransactionCreateIfAbsent('Requests', 'req-tx-sec-1', {
+      ...reqDoc,
+      id: 'req-tx-sec-1',
+    }, student.idToken);
+    assert.equal(txRepeatRes.status, 200);
+    assert.equal(txRepeatRes.skippedExisting, true);
+
+    // Unauthorized third party cannot read existing doc inside a transaction (403)
+    const txIntruderRes = await fsTransactionCreateIfAbsent('Requests', 'req-tx-sec-1', {
+      ...reqDoc,
+      id: 'req-tx-sec-1',
+    }, intruder.idToken);
+    assert.equal(txIntruderRes.stage, 'get');
+    assert.equal(txIntruderRes.status, 403);
+
     // Legitimate student creates pending instructor request
     const okRes = await fsCreate('Requests', 'req-sec-1', reqDoc, student.idToken);
     assert.equal(okRes.status, 200);
@@ -261,12 +461,21 @@ async function main() {
     assert.equal((await fsPatch('Requests/req-sec-1', {status: 'dismissed'}, ['status'], intruder.idToken)).status, 403);
     assert.equal((await fsDelete('Requests/req-sec-1', student.idToken)).status, 403);
 
+    // Parties cannot alter ownership/authorization metadata on update
+    assert.equal((await fsPatch('Requests/req-sec-1', {senderEmail: intruder.email}, ['senderEmail'], student.idToken)).status, 403);
+    assert.equal((await fsPatch('Requests/req-sec-1', {partiesIds: [student.email, trainer.email, intruder.email]}, ['partiesIds'], student.idToken)).status, 403);
+    assert.equal((await fsPatch('Requests/req-sec-1', {isAccepted: true}, ['isAccepted'], trainer.idToken)).status, 403);
+    assert.equal((await fsPatch('Requests/req-sec-1', {connectionId: 'forged-conn'}, ['connectionId'], student.idToken)).status, 403);
+
     // Recipient cannot forge accepted directly in Firestore
     assert.equal((await fsPatch('Requests/req-sec-1', {status: 'accepted'}, ['status'], trainer.idToken)).status, 403);
 
     // Sender cannot decline; recipient cannot cancel
     assert.equal((await fsPatch('Requests/req-sec-1', {status: 'declined'}, ['status'], student.idToken)).status, 403);
     assert.equal((await fsPatch('Requests/req-sec-1', {status: 'cancelled'}, ['status'], trainer.idToken)).status, 403);
+
+    // Non-string dismissalNote blocked
+    assert.equal((await fsPatch('Requests/req-sec-1', {status: 'dismissed', dismissalNote: 123}, ['status', 'dismissalNote'], trainer.idToken)).status, 403);
 
     // Recipient can decline; then terminal request cannot be reopened
     assert.equal((await fsPatch('Requests/req-sec-1', {status: 'declined'}, ['status'], trainer.idToken)).status, 200);
@@ -309,7 +518,20 @@ async function main() {
     }, intruder.idToken);
     assert.equal(intruderCall.ok, false);
 
-    // Trainer accepts instructor request
+    // HIGH-1: Sender (student) cannot self-accept their own pending request via coachingConnection
+    const senderSelfAccept = await callFunction('coachingConnection', {
+      action: 'send',
+      kind: 'rider',
+      learnerEmail: student.email,
+      coachEmail: trainer.email,
+      requestDocId: reqId,
+    }, student.idToken);
+    assert.equal(senderSelfAccept.ok, false);
+    const stillPendingSnap = await db.collection('Requests').doc(reqId).get();
+    assert.equal(stillPendingSnap.data().status, 'pending');
+    assert.equal(stillPendingSnap.data().isAccepted, false);
+
+    // Trainer (recipient) accepts instructor request
     const acceptCall = await callFunction('coachingConnection', {
       action: 'send',
       kind: 'rider',
@@ -318,6 +540,10 @@ async function main() {
       requestDocId: reqId,
     }, trainer.idToken);
     assert.equal(acceptCall.ok, true, JSON.stringify(acceptCall.body));
+    assert.equal(acceptCall.body.result.status, 'accepted');
+
+    const connSnap = await db.collection('CoachingConnections').doc(acceptCall.body.result.id).get();
+    assert.equal(connSnap.data().status, 'accepted');
 
     const reqSnap = await db.collection('Requests').doc(reqId).get();
     assert.equal(reqSnap.data().status, 'accepted');
@@ -409,6 +635,76 @@ async function main() {
     assert.equal(intruderSend.ok, false);
 
     // Owner initiates transfer to recipient
+    const firstOfferRes = await callFunction('coachingConnection', {
+      action: 'sendTransfer',
+      horseId: 'horse-1',
+      recipientEmail: recipient.email,
+      createRequest: true,
+    }, owner.idToken);
+    assert.equal(firstOfferRes.ok, true, JSON.stringify(firstOfferRes.body));
+    const firstTransferId = firstOfferRes.body.result.id;
+    const firstTransferVersion = (await db.collection('CoachingConnections').doc(firstTransferId).get()).data().version;
+
+    // HIGH-2: Coordinated decline releases Horse_Profile.transferRequestId and blocks acceptance
+    const declineCall = await callFunction('coachingConnection', {
+      action: 'decline',
+      id: firstTransferId,
+      requestDocId: firstTransferId,
+    }, recipient.idToken);
+    assert.equal(declineCall.ok, true, JSON.stringify(declineCall.body));
+    assert.equal((await db.collection('CoachingConnections').doc(firstTransferId).get()).data().status, 'declined');
+    assert.equal((await db.collection('Requests').doc(firstTransferId).get()).data().status, 'declined');
+    assert.equal((await db.collection('Horse_Profile').doc('horse-1').get()).data().transferRequestId, null);
+
+    // Accepting after decline is rejected
+    const acceptAfterDecline = await callFunction('coachingConnection', {
+      action: 'accept',
+      id: firstTransferId,
+      version: firstTransferVersion,
+    }, recipient.idToken);
+    assert.equal(acceptAfterDecline.ok, false);
+
+    // HIGH-2 adversarial case: Owner sends transfer, cancels via Requests doc directly, recipient tries to accept without requestDocId
+    const secondOfferRes = await callFunction('coachingConnection', {
+      action: 'sendTransfer',
+      horseId: 'horse-1',
+      recipientEmail: recipient.email,
+      createRequest: true,
+    }, owner.idToken);
+    assert.equal(secondOfferRes.ok, true, JSON.stringify(secondOfferRes.body));
+    const secondTransferId = secondOfferRes.body.result.id;
+    const secondVersion = (await db.collection('CoachingConnections').doc(secondTransferId).get()).data().version;
+
+    const directCancelPatch = await fsPatch(`Requests/${secondTransferId}`, {
+      status: 'cancelled',
+      dismissalNote: 'Cancelled by owner in Requests UI',
+    }, ['status', 'dismissalNote'], owner.idToken);
+    assert.equal(directCancelPatch.status, 200);
+
+    // Recipient cannot accept transfer after Requests doc was cancelled (even without passing requestDocId or passing a pending fallback doc)
+    await db.collection('Requests').doc('legacy_conv_stale_xfer').set({
+      id: 'legacy_conv_stale_xfer',
+      messageId: secondTransferId,
+      kind: 'transferHorse',
+      senderEmail: owner.email,
+      recipientEmail: recipient.email,
+      partiesIds: [owner.email, recipient.email],
+      status: 'pending',
+      isAccepted: false,
+      horseId: 'horse-1',
+      connectionId: secondTransferId,
+    });
+    const acceptAfterDirectCancel = await callFunction('coachingConnection', {
+      action: 'accept',
+      id: secondTransferId,
+      version: secondVersion,
+      requestDocId: 'legacy_conv_stale_xfer',
+    }, recipient.idToken);
+    assert.equal(acceptAfterDirectCancel.ok, false);
+    assert.equal((await db.collection('Horse_Profile').doc('horse-1').get()).data().currentOwnerId, owner.email);
+    await db.collection('Requests').doc('legacy_conv_stale_xfer').delete();
+
+    // Owner is not locked out and re-initiates transfer to recipient
     const sendRes = await callFunction('coachingConnection', {
       action: 'sendTransfer',
       horseId: 'horse-1',

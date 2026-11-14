@@ -401,7 +401,7 @@ test('connectionHandler atomically resolves Requests on send and transfer accept
   const {call, docs, getLink, request} = fixture();
   docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
 
-  // 1. Coaching send with requestDocId marks Requests accepted atomically.
+  // 1. Sender cannot self-accept their own pending Requests doc via send (HIGH-1).
   docs.set('Requests/req-coach-1', {
     status: 'pending',
     kind: 'instructor',
@@ -409,7 +409,16 @@ test('connectionHandler atomically resolves Requests on send and transfer accept
     senderEmail: student,
     recipientEmail: coach,
   });
-  const sent = await call(student, {...request('rider'), requestDocId: 'req-coach-1'});
+  await assert.rejects(
+      call(student, {...request('rider'), requestDocId: 'req-coach-1'}),
+      {code: 'permission-denied'},
+  );
+  assert.equal(docs.get('Requests/req-coach-1').status, 'pending');
+
+  // Recipient calling send with requestDocId atomically marks both CoachingConnections and Requests accepted.
+  const sent = await call(coach, {...request('rider'), requestDocId: 'req-coach-1'});
+  assert.equal(sent.status, 'accepted');
+  assert.equal(getLink(sent.id).status, 'accepted');
   assert.equal(docs.get('Requests/req-coach-1').status, 'accepted');
   assert.equal(docs.get('Requests/req-coach-1').isAccepted, true);
   assert.equal(docs.get('Requests/req-coach-1').coachingConnectionId, sent.id);
@@ -488,11 +497,23 @@ test('fallbackRequestDocIds resolves migrated legacy Requests and rejects stale 
     senderEmail: student,
     recipientEmail: coach,
   });
-  await call(student, {
+  // Sender cannot self-accept migrated legacy request
+  await assert.rejects(
+      call(student, {
+        ...request('rider'),
+        requestDocId: 'conv1',
+        fallbackRequestDocIds: ['conv1_m1', 'legacy_conv1_m1'],
+      }),
+      {code: 'permission-denied'},
+  );
+  // Recipient accepts migrated legacy request and activates connection
+  const acceptedLegacy = await call(coach, {
     ...request('rider'),
     requestDocId: 'conv1',
     fallbackRequestDocIds: ['conv1_m1', 'legacy_conv1_m1'],
   });
+  assert.equal(acceptedLegacy.status, 'accepted');
+  assert.equal(getLink(acceptedLegacy.id).status, 'accepted');
   assert.equal(docs.get('Requests/legacy_conv1_m1').status, 'accepted');
 
   // Transfer offered, then ownership changes before recipient accepts -> rejected.
@@ -509,6 +530,49 @@ test('fallbackRequestDocIds resolves migrated legacy Requests and rejects stale 
       {code: 'failed-precondition'},
   );
   assert.equal(docs.get(`Requests/${offer.id}`).status, 'pending');
+});
+
+test('cancelling or declining a transferHorse Request coordinates lock release and blocks acceptance', async () => {
+  const {call, docs, getLink} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+
+  // 1. Coordinated decline via coachingConnection releases transferRequestId and updates Requests + CoachingConnections
+  const offer1 = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider, createRequest: true,
+  });
+  await call(outsider, {
+    action: 'decline',
+    id: offer1.id,
+    requestDocId: offer1.id,
+  });
+  assert.equal(getLink(offer1.id).status, 'declined');
+  assert.equal(docs.get(`Requests/${offer1.id}`).status, 'declined');
+  assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, null);
+
+  // 2. Even if a client mutated Requests/{id} directly to 'cancelled' or 'declined':
+  //    - Recipient CANNOT accept the transfer (even without passing requestDocId)
+  //    - Owner is NOT locked out of archiving or starting a new transfer
+  const offer2 = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider, createRequest: true,
+  });
+  const offer2Version = getLink(offer2.id).version;
+  docs.set(`Requests/${offer2.id}`, {
+    ...docs.get(`Requests/${offer2.id}`),
+    status: 'cancelled',
+  });
+  await assert.rejects(
+      call(outsider, {action: 'accept', id: offer2.id, version: offer2Version}),
+      {code: 'failed-precondition'},
+  );
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
+
+  // Owner can initiate a new transfer to coach; stale offer2 is automatically reconciled
+  const offer3 = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: coach, createRequest: true,
+  });
+  assert.equal(getLink(offer2.id).status, 'cancelled');
+  assert.equal(docs.get('Horse_Profile/atlas').transferRequestId, offer3.id);
+  assert.equal(docs.get(`Requests/${offer3.id}`).status, 'pending');
 });
 
 test('rejects mismatched requestDocId or fallbackRequestDocIds across same participants', async () => {
@@ -553,5 +617,79 @@ test('rejects mismatched requestDocId or fallbackRequestDocIds across same parti
   );
   assert.equal(docs.get('Requests/req-wrong-kind').status, 'pending');
   assert.equal(docs.get('Requests/req-wrong-horse').status, 'pending');
+  assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
+});
+
+test('MEDIUM-1: non-transfer actions enforce request direction and protect pending Requests on revoke', async () => {
+  const {call, docs, getLink} = fixture();
+  const riderRequest = {action: 'send', kind: 'rider', learnerEmail: student, coachEmail: coach};
+
+  // 1. Student initiates rider connection (pending); coach accepts -> accepted
+  const conn = await call(student, riderRequest);
+  const v1 = getLink(conn.id).version;
+  await call(coach, {action: 'accept', id: conn.id, version: v1});
+  assert.equal(getLink(conn.id).status, 'accepted');
+
+  // 2. Coach (link.recipient) creates a new opposite-direction Requests doc (coach -> student)
+  //    and tries idempotent accept passing that requestDocId -> MUST be rejected (permission-denied)
+  docs.set('Requests/req-coach-outgoing', {
+    status: 'pending',
+    kind: 'student',
+    partiesIds: [coach, student],
+    senderEmail: coach,
+    recipientEmail: student,
+  });
+  await assert.rejects(
+      call(coach, {action: 'accept', id: conn.id, version: v1, requestDocId: 'req-coach-outgoing'}),
+      {code: 'permission-denied'},
+  );
+  assert.equal(docs.get('Requests/req-coach-outgoing').status, 'pending');
+
+  // 3. Revoking an active connection MUST NOT mutate any pending Requests doc to 'revoked'
+  await call(student, {action: 'revoke', id: conn.id, version: v1});
+  assert.equal(getLink(conn.id).status, 'revoked');
+  assert.equal(docs.get('Requests/req-coach-outgoing').status, 'pending');
+
+  // 4. Cross-directional cancel/decline: student initiates new pending connection (student -> coach),
+  //    but tries to cancel coach's incoming Requests doc -> rejected
+  const conn2 = await call(student, riderRequest);
+  const v2 = getLink(conn2.id).version;
+  await assert.rejects(
+      call(student, {action: 'cancel', id: conn2.id, version: v2, requestDocId: 'req-coach-outgoing'}),
+      {code: 'permission-denied'},
+  );
+  assert.equal(docs.get('Requests/req-coach-outgoing').status, 'pending');
+});
+
+test('LOW-1: canonical Requests/{id} blocks transfer accept even with pending secondary requestDocId', async () => {
+  const {call, docs, getLink} = fixture();
+  docs.set('Rider_Profile/oth1r9991xppl1666l', {email: outsider, name: 'Buyer'});
+
+  const offer = await call(student, {
+    action: 'sendTransfer', horseId: 'atlas', recipientEmail: outsider, createRequest: true,
+  });
+  const version = getLink(offer.id).version;
+
+  // Cancel canonical Requests/{id} directly
+  docs.set(`Requests/${offer.id}`, {
+    ...docs.get(`Requests/${offer.id}`),
+    status: 'cancelled',
+  });
+  // Seed a stale pending legacy request doc for the same transfer
+  docs.set('Requests/legacy_conv_xfer', {
+    status: 'pending',
+    kind: 'transferHorse',
+    horseId: 'atlas',
+    connectionId: offer.id,
+    partiesIds: [student, outsider],
+    senderEmail: student,
+    recipientEmail: outsider,
+  });
+
+  // Attempting accept with the pending legacy requestDocId MUST still fail because canonical Requests/{id} is cancelled
+  await assert.rejects(
+      call(outsider, {action: 'accept', id: offer.id, version, requestDocId: 'legacy_conv_xfer'}),
+      {code: 'failed-precondition'},
+  );
   assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
 });

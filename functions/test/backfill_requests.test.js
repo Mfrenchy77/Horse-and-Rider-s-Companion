@@ -305,3 +305,75 @@ test('backfillRequests supports dry-run, idempotent execution, resumability, and
   assert.equal(rerun.reconciliation.requestsPendingTotal, 2);
   assert.deepEqual(rerun.reconciliation.mismatchedUsers, []);
 });
+
+test('NEW-LOW-1: backfill skips canonical Requests/{messageId} for mirrored transferHorse while backfilling legacy-only requests', async () => {
+  const canonicalConnectionId =
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+  const db = createInMemoryFirestore({
+    Requests: {
+      [canonicalConnectionId]: {
+        id: canonicalConnectionId,
+        messageId: canonicalConnectionId,
+        kind: 'transferHorse',
+        senderEmail: 'alice@example.com',
+        recipientEmail: 'bob@example.com',
+        partiesIds: ['alice@example.com', 'bob@example.com'],
+        status: 'pending',
+        isAccepted: false,
+        horseId: 'horse-1',
+        connectionId: canonicalConnectionId,
+      },
+    },
+    Conversations: {
+      conv_mirrored: {
+        parties: ['Alice', 'Bob'],
+        partiesIds: ['alice@example.com', 'bob@example.com'],
+        messages: {
+          [canonicalConnectionId]: {
+            messageId: canonicalConnectionId,
+            messageType: 'TRANSFER_HORSE_REQUEST',
+            senderId: 'alice@example.com',
+            sender: 'Alice',
+            requestItem: {id: 'horse-1', name: 'Apollo'},
+          },
+          legacy_only_1: {
+            messageId: 'legacy_only_1',
+            messageType: 'INSTRUCTOR_REQUEST',
+            senderId: 'alice@example.com',
+            sender: 'Alice',
+          },
+        },
+      },
+    },
+  });
+
+  // 1. Dry-run skips the mirrored transferHorse (canonical doc exists) and counts only legacy_only_1.
+  const dry = await backfillRequests(db, {projectId: 'demo-hrc'});
+  assert.equal(dry.wouldCreate, 1);
+  assert.equal(dry.skippedExisting, 1);
+  assert.equal(db._store.Requests.size, 1);
+
+  // 2. First execute creates only legacy_conv_mirrored_legacy_only_1, leaving canonical transfer untouched.
+  const firstRun = await backfillRequests(db, {
+    dryRun: false,
+    projectId: 'demo-hrc',
+    emulatorHost: '127.0.0.1:8089',
+  });
+  assert.equal(firstRun.created, 1);
+  assert.equal(firstRun.skippedExisting, 1);
+  assert.equal(db._store.Requests.size, 2);
+  assert.equal(db._store.Requests.has(`legacy_conv_mirrored_${canonicalConnectionId}`), false);
+  assert.equal(db._store.Requests.has('legacy_conv_mirrored_legacy_only_1'), true);
+  assert.deepEqual(firstRun.reconciliation.mismatchedUsers, []);
+
+  // 3. Repeated run is idempotent: 0 created, both skipped.
+  const secondRun = await backfillRequests(db, {
+    dryRun: false,
+    projectId: 'demo-hrc',
+    emulatorHost: '127.0.0.1:8089',
+  });
+  assert.equal(secondRun.created, 0);
+  assert.equal(secondRun.skippedExisting, 2);
+  assert.equal(db._store.Requests.size, 2);
+  assert.deepEqual(secondRun.reconciliation.mismatchedUsers, []);
+});
