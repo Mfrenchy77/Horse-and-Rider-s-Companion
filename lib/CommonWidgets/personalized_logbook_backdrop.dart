@@ -51,6 +51,9 @@ class PersonalizedLogbookBackdrop extends StatelessWidget {
           )
         : SmartImage(
             photoUrl,
+            // Blur tuning (1/3): Lower maxLogicalWidth pre-softens the image
+            // and routes through wsrv.nl (preferDirectFirst: false) so Web
+            // renders in CanvasKit where BackdropFilter can blur it.
             maxLogicalWidth: 32,
             config: const SmartImageConfig(preferDirectFirst: false),
             fallback: const SizedBox.shrink(),
@@ -74,6 +77,9 @@ class PersonalizedLogbookBackdrop extends StatelessWidget {
                           child: photoWidget,
                         ),
                       ),
+                      // Blur tuning (2/3): Stacked BackdropFilter passes
+                      // (keep each sigma <= 30 so WebGL/CanvasKit does not
+                      // clamp or skip the blur; add/remove passes to taste).
                       Positioned.fill(
                         child: BackdropFilter(
                           filter: ui.ImageFilter.blur(
@@ -92,6 +98,9 @@ class PersonalizedLogbookBackdrop extends StatelessWidget {
                           child: const SizedBox.expand(),
                         ),
                       ),
+                      // Blur tuning (3/3): Midnight-teal atmospheric scrim
+                      // controlling how much of the blurred photo shows
+                      // through (higher alpha = darker/subtler).
                       DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
