@@ -337,8 +337,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                             child: AppEmptyState(
                               icon: Icons.auto_stories_outlined,
                               title: 'Rider logbook unavailable',
-                              description:
-                                  'Your rider logbook is unavailable.',
+                              description: 'Your rider logbook is unavailable.',
                             ),
                           ),
                   )

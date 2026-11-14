@@ -342,124 +342,124 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                                 ),
                                 _typeSelector(context),
                               ]),
-                            const SizedBox(height: 10),
-                            _section(context, 'Entry details', [
-                              if (showStudents)
-                                DropdownButtonFormField<String>(
-                                  key: const Key('logEntryStudent'),
-                                  initialValue: _student?.id ?? '',
-                                  isExpanded: true,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Student',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: [
-                                    const DropdownMenuItem(
-                                      value: '',
-                                      child: Text('My logbook'),
+                              const SizedBox(height: 10),
+                              _section(context, 'Entry details', [
+                                if (showStudents)
+                                  DropdownButtonFormField<String>(
+                                    key: const Key('logEntryStudent'),
+                                    initialValue: _student?.id ?? '',
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Student',
+                                      border: OutlineInputBorder(),
                                     ),
-                                    for (final student in students)
-                                      DropdownMenuItem(
-                                        value: student.id,
-                                        child: Text(
-                                          student.learnerName,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                    items: [
+                                      const DropdownMenuItem(
+                                        value: '',
+                                        child: Text('My logbook'),
                                       ),
-                                    if (_student != null &&
-                                        !students.any(
-                                          (link) => link.id == _student!.id,
-                                        ))
-                                      DropdownMenuItem(
-                                        value: _student!.id,
-                                        child: Text(_student!.learnerName),
-                                      ),
-                                  ],
-                                  onChanged:
-                                      _saving || widget.initialSkill != null
-                                      ? null
-                                      : (id) => _chooseStudent(
-                                          students
-                                              .where((link) => link.id == id)
-                                              .firstOrNull,
+                                      for (final student in students)
+                                        DropdownMenuItem(
+                                          value: student.id,
+                                          child: Text(
+                                            student.learnerName,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
-                                ),
-                              if (_loadingHorses)
-                                const LinearProgressIndicator(),
-                              _horseAndDateFields(rider),
-                              if (_horseChoice == 'other')
-                                _field(
-                                  context,
-                                  _horse,
-                                  'Horse name',
-                                  required: true,
-                                ),
-                              if (_type == RiderLogType.show)
-                                _field(
-                                  context,
-                                  _placing,
-                                  'Placing (optional)',
-                                  maxLength: 40,
-                                ),
-                              if (_student == null &&
-                                  (_type == RiderLogType.lesson ||
-                                      _instructor.text.isNotEmpty)) ...[
+                                      if (_student != null &&
+                                          !students.any(
+                                            (link) => link.id == _student!.id,
+                                          ))
+                                        DropdownMenuItem(
+                                          value: _student!.id,
+                                          child: Text(_student!.learnerName),
+                                        ),
+                                    ],
+                                    onChanged:
+                                        _saving || widget.initialSkill != null
+                                        ? null
+                                        : (id) => _chooseStudent(
+                                            students
+                                                .where((link) => link.id == id)
+                                                .firstOrNull,
+                                          ),
+                                  ),
+                                if (_loadingHorses)
+                                  const LinearProgressIndicator(),
+                                _horseAndDateFields(rider),
+                                if (_horseChoice == 'other')
+                                  _field(
+                                    context,
+                                    _horse,
+                                    'Horse name',
+                                    required: true,
+                                  ),
+                                if (_type == RiderLogType.show)
+                                  _field(
+                                    context,
+                                    _placing,
+                                    'Placing (optional)',
+                                    maxLength: 40,
+                                  ),
+                                if (_student == null &&
+                                    (_type == RiderLogType.lesson ||
+                                        _instructor.text.isNotEmpty)) ...[
+                                  const Divider(height: 1),
+                                  _field(
+                                    context,
+                                    _instructor,
+                                    'Instructor (optional)',
+                                    icon: Icons.person_outline,
+                                  ),
+                                ],
                                 const Divider(height: 1),
                                 _field(
                                   context,
-                                  _instructor,
-                                  'Instructor (optional)',
-                                  icon: Icons.person_outline,
+                                  _title,
+                                  'Title (optional)',
+                                  maxLength: 100,
                                 ),
-                              ],
-                              const Divider(height: 1),
-                              _field(
-                                context,
-                                _title,
-                                'Title (optional)',
-                                maxLength: 100,
-                              ),
-                              _field(
-                                context,
-                                _focus,
-                                'Work / focus (optional)',
-                                maxLines: 2,
-                              ),
-                            ]),
-                            const SizedBox(height: 10),
-                            _section(context, 'Notes and next steps', [
-                              if (_student != null) ..._skillFields(context),
-                              _field(
-                                context,
-                                _notes,
-                                'Notes',
-                                minLines: 3,
-                                maxLines: 7,
-                                required: true,
-                              ),
-                              _field(
-                                context,
-                                _nextSteps,
-                                'Next steps (optional)',
-                                maxLines: 3,
-                              ),
-                            ]),
-                          ],
+                                _field(
+                                  context,
+                                  _focus,
+                                  'Work / focus (optional)',
+                                  maxLines: 2,
+                                ),
+                              ]),
+                              const SizedBox(height: 10),
+                              _section(context, 'Notes and next steps', [
+                                if (_student != null) ..._skillFields(context),
+                                _field(
+                                  context,
+                                  _notes,
+                                  'Notes',
+                                  minLines: 3,
+                                  maxLines: 7,
+                                  required: true,
+                                ),
+                                _field(
+                                  context,
+                                  _nextSteps,
+                                  'Next steps (optional)',
+                                  maxLines: 3,
+                                ),
+                              ]),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                )
-              : const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTokens.spaceLg),
-                    child: AppEmptyState(
-                      icon: Icons.auto_stories_outlined,
-                      title: 'Rider logbook unavailable',
-                      description: 'Your rider logbook is unavailable.',
+                  )
+                : const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTokens.spaceLg),
+                      child: AppEmptyState(
+                        icon: Icons.auto_stories_outlined,
+                        title: 'Rider logbook unavailable',
+                        description: 'Your rider logbook is unavailable.',
+                      ),
                     ),
                   ),
-                ),
           ),
         ),
       ),
@@ -475,9 +475,9 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           children: [
             Text(
               title,
-              style: AppTokens.sectionTitleStyle(context).copyWith(
-                fontSize: 18,
-              ),
+              style: AppTokens.sectionTitleStyle(
+                context,
+              ).copyWith(fontSize: 18),
             ),
             ...children,
           ],
@@ -539,9 +539,9 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                           ? AppTokens.accentColor(context)
                           : AppTokens.primaryTextColor(context),
                       backgroundColor: _type == entry.key
-                          ? AppTokens.accentColor(context).withValues(
-                              alpha: 0.16,
-                            )
+                          ? AppTokens.accentColor(
+                              context,
+                            ).withValues(alpha: 0.16)
                           : Theme.of(context).brightness == Brightness.dark
                           ? AppTokens.midnightButtonFill
                           : colors.surface,
@@ -549,8 +549,8 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                         color: _type == entry.key
                             ? AppTokens.accentColor(context)
                             : Theme.of(context).brightness == Brightness.dark
-                                ? AppTokens.midnightButtonBorder
-                                : colors.outline,
+                            ? AppTokens.midnightButtonBorder
+                            : colors.outline,
                       ),
                     ),
                     child: Column(

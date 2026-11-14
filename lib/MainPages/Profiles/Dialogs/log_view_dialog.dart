@@ -288,10 +288,7 @@ class LogViewDialogState extends State<LogViewDialog> {
       options: [
         const LogbookFilterOption(value: null, label: 'All entries'),
         for (final category in LogTag.values)
-          LogbookFilterOption(
-            value: category,
-            label: _categoryLabel(category),
-          ),
+          LogbookFilterOption(value: category, label: _categoryLabel(category)),
       ],
       selected: _category,
       onSelected: (category) => setState(() => _category = category),
