@@ -650,4 +650,192 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'showAppGlassModalBottomSheet renders frosted sheet with blur and '
+    'dismisses',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      for (final theme in [
+        HorseAndRidersTheme().getTheme(),
+        HorseAndRidersTheme().getDarkTheme(),
+      ]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () => showAppGlassModalBottomSheet<void>(
+                      context: context,
+                      showDragHandle: true,
+                      builder: (_) => const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('Glass sheet content'),
+                      ),
+                    ),
+                    child: const Text('Open Sheet'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open Sheet'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
+        final surface = tester.widget<AppGlassSurface>(
+          find.byType(AppGlassSurface),
+        );
+        expect(surface.density, AppGlassDensity.frosted);
+        expect(find.text('Glass sheet content'), findsOneWidget);
+
+        // Tap outside the bottom sheet on the blurred barrier to dismiss.
+        await tester.tapAt(const Offset(180, 40));
+        await tester.pumpAndSettle();
+        expect(find.text('Glass sheet content'), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
+  testWidgets(
+    'showAppGlassModalBottomSheet handles keyboard insets without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetViewInsets();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: HorseAndRidersTheme().getDarkTheme(),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () => showAppGlassModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (sheetContext) => Padding(
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom:
+                          MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
+                    ),
+                    child: const SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            decoration: InputDecoration(labelText: 'Title'),
+                          ),
+                          SizedBox(height: 12),
+                          Text('Bottom action area'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bottom action area'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'AddLogEntryDialog uses frosted density and pops on save success',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final rider = RiderProfile(
+        id: 'rider-1',
+        email: 'matt@example.com',
+        name: 'Matt French',
+      );
+      registerFallbackValue(rider);
+      when(
+        () => harness.riders.createOrUpdateRiderProfile(
+          riderProfile: any(named: 'riderProfile'),
+        ),
+      ).thenAnswer((_) async {});
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(isGuest: false, usersProfile: rider),
+      );
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<RiderProfileRepository>.value(
+              value: harness.riders,
+            ),
+            RepositoryProvider<HorseProfileRepository>.value(
+              value: harness.horses,
+            ),
+          ],
+          child: BlocProvider.value(
+            value: harness.cubit,
+            child: MaterialApp(
+              theme: HorseAndRidersTheme().getDarkTheme(),
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: ElevatedButton(
+                    onPressed: () => showAppGlassDialog<void>(
+                      context: context,
+                      builder: (_) => AddLogEntryDialog(
+                        usersProfile: rider,
+                        horseProfile: null,
+                      ),
+                    ),
+                    child: const Text('Open Log'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Log'));
+      await tester.pumpAndSettle();
+
+      final dialog = tester.widget<AppGlassDialog>(find.byType(AppGlassDialog));
+      expect(dialog.density, AppGlassDensity.frosted);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Log Entry'),
+        'Great trot work',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Submit Log Entry'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddLogEntryDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
