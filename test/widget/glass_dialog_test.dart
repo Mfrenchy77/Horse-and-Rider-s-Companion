@@ -519,6 +519,7 @@ void main() {
         expect(dialog.density, AppGlassDensity.frosted);
         expect(dialog.maxWidth, 600);
         expect(find.text('Create New Horse Profile'), findsOneWidget);
+        expect(find.text('Tap to add a photo of your horse'), findsOneWidget);
 
         // Comfortable margins around floating dialog on 1280px desktop.
         final surfaceRect = tester.getRect(find.byType(AppGlassSurface));

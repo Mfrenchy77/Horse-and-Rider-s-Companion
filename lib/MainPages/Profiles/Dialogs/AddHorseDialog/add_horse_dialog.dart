@@ -13,7 +13,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialo
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Widgets/horse_height.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
-import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:intl/intl.dart';
 
@@ -280,45 +279,106 @@ Widget _horsePhoto({
   required double size,
   required AddHorseDialogState state,
 }) {
-  final isDark = SharedPrefs().isDarkMode;
-  return InkWell(
-    onTap: () => context.read<AddHorseDialogCubit>().horsePicButtonClicked(),
-    child: Column(
-      children: [
-        ///   Image
-        Visibility(
-          visible: state.picStatus == PictureGetterStatus.picking,
-          child: const CircularProgressIndicator(),
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+  final hasPhoto = state.picUrl.trim().isNotEmpty;
+  final radius = BorderRadius.circular(AppTokens.radiusLg);
+  final surfaceColors = isDark
+      ? [
+          AppTokens.midnightCardTop.withValues(alpha: 0.94),
+          AppTokens.midnightCardBottom.withValues(alpha: 0.92),
+        ]
+      : [
+          theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.95),
+          theme.colorScheme.surfaceContainer.withValues(alpha: 0.92),
+        ];
+  final borderColor = isDark
+      ? AppTokens.glassBorderDark
+      : theme.colorScheme.outlineVariant;
+  final iconColor = isDark
+      ? AppTokens.coralAccent
+      : theme.colorScheme.primary;
+
+  Widget placeholderBadge() => Container(
+    height: size,
+    width: size,
+    decoration: BoxDecoration(
+      color: isDark
+          ? AppTokens.midnightInputFill
+          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      border: Border.all(
+        color: isDark
+            ? AppTokens.midnightButtonBorder
+            : theme.colorScheme.outlineVariant,
+      ),
+    ),
+    child: Icon(
+      HorseAndRiderIcons.horseIcon,
+      size: size * 0.48,
+      color: iconColor,
+    ),
+  );
+
+  return Material(
+    type: MaterialType.transparency,
+    child: InkWell(
+      borderRadius: radius,
+      onTap: () => context.read<AddHorseDialogCubit>().horsePicButtonClicked(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.spaceMd,
+          vertical: AppTokens.spaceMd,
         ),
-        Visibility(
-          visible:
-              state.picStatus == PictureGetterStatus.got ||
-              state.picStatus == PictureGetterStatus.nothing,
-          child: CachedNetworkImage(
-            placeholderFadeInDuration: const Duration(milliseconds: 500),
-            fadeOutDuration: const Duration(milliseconds: 500),
-            imageUrl: state.picUrl,
-            placeholder: (context, url) =>
-                const Image(image: AssetImage('assets/horse_icon_01.png')),
-            errorWidget: (context, url, error) =>
-                const Image(image: AssetImage('assets/horse_icon_01.png')),
-            height: size,
-            width: size,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: surfaceColors,
           ),
+          border: Border.all(color: borderColor),
         ),
-        smallGap(),
-        const Text(
-          ' Tap to Add a Photo of your Horse',
-          style: TextStyle(fontSize: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (state.picStatus == PictureGetterStatus.picking)
+              SizedBox(
+                height: size,
+                width: size,
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (hasPhoto)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                child: CachedNetworkImage(
+                  placeholderFadeInDuration: const Duration(milliseconds: 500),
+                  fadeOutDuration: const Duration(milliseconds: 500),
+                  imageUrl: state.picUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => placeholderBadge(),
+                  errorWidget: (context, url, error) => placeholderBadge(),
+                  height: size,
+                  width: size,
+                ),
+              )
+            else
+              placeholderBadge(),
+            const SizedBox(height: AppTokens.spaceSm),
+            Text(
+              hasPhoto
+                  ? 'Tap to change horse photo'
+                  : 'Tap to add a photo of your horse',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-        smallGap(),
-        Divider(
-          color: isDark ? Colors.grey.shade300 : Colors.black87,
-          endIndent: 20,
-          indent: 20,
-        ),
-        smallGap(),
-      ],
+      ),
     ),
   );
 }
