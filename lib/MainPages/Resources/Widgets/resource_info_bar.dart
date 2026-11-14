@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' show Document;
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
@@ -222,16 +223,11 @@ class ResourceInfoBar extends StatelessWidget {
                             switch (value) {
                               case 'Edit':
                                 if (state.usersProfile != null) {
-                                  showModalBottomSheet<
+                                  showAppGlassModalBottomSheet<
                                     CreateResourceDialogCubit
                                   >(
                                     isScrollControlled: true,
                                     useSafeArea: true,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(20),
-                                      ),
-                                    ),
                                     context: context,
                                     builder: (context) => CreateResourcDialog(
                                       skills: state.allSkills,

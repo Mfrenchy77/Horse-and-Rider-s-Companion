@@ -12,7 +12,7 @@ import 'package:horseandriderscompanion/CommonWidgets/skill_type_icon.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
-import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class CreateResourcDialog extends StatefulWidget {
   const CreateResourcDialog({
@@ -133,8 +133,9 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                     padding: const EdgeInsets.all(12),
                     child: MaxWidthBox(
                       maxWidth: 700,
-                      child: OceanCoralSurface(
+                      child: AppGlassSurface(
                         padding: const EdgeInsets.all(16),
+                        density: AppGlassDensity.frosted,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/accept_request_button.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
@@ -61,7 +62,7 @@ class RequestsBadgeButton extends StatelessWidget {
     final legacyList = useConnectionRequests
         ? null
         : cubit.pendingRequestConversations();
-    showModalBottomSheet<void>(
+    showAppGlassModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (ctx) {

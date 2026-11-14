@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
@@ -333,7 +334,7 @@ class _QuickShareResourcePageState extends State<QuickShareResourcePage> {
           onPressed: saving || state.usersProfile == null
               ? null
               : () {
-                  showModalBottomSheet<void>(
+                  showAppGlassModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
                     useSafeArea: true,

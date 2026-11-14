@@ -250,19 +250,21 @@ class AppGlassSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppTokens.spaceXl),
     this.borderRadius = AppTokens.radiusXl,
+    this.customBorderRadius,
     this.density = AppGlassDensity.standard,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double borderRadius;
+  final BorderRadius? customBorderRadius;
   final AppGlassDensity density;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final radius = BorderRadius.circular(borderRadius);
+    final radius = customBorderRadius ?? BorderRadius.circular(borderRadius);
     final isFrosted = density == AppGlassDensity.frosted;
     final topAlpha = isDark
         ? (isFrosted ? 0.91 : 0.80)

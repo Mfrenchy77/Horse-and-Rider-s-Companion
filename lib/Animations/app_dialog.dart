@@ -51,6 +51,155 @@ Future<T?> showAppGlassDialog<T>({
   );
 }
 
+/// Opens a frosted-glass modal bottom sheet that blurs the page behind it.
+Future<T?> showAppGlassModalBottomSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool isScrollControlled = false,
+  bool useSafeArea = false,
+  bool showDragHandle = false,
+  bool useRootNavigator = false,
+  bool isDismissible = true,
+  bool enableDrag = true,
+  double blurSigma = AppTokens.glassBackdropBlurSigma,
+  AppGlassDensity density = AppGlassDensity.frosted,
+  EdgeInsetsGeometry padding = EdgeInsets.zero,
+}) {
+  final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return navigator.push(
+    _AppGlassModalBottomSheetRoute<T>(
+      builder: builder,
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
+      isScrollControlled: isScrollControlled,
+      useSafeArea: useSafeArea,
+      showDragHandle: showDragHandle,
+      isDismissible: isDismissible,
+      enableDrag: enableDrag,
+      reduceMotion: MediaQuery.disableAnimationsOf(context),
+      blurSigma: blurSigma,
+      density: density,
+      padding: padding,
+      barrierColor: isDark
+          ? AppTokens.glassBarrierDark
+          : AppTokens.glassBarrierLight,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    ),
+  );
+}
+
+class _GlassModalBarrier extends StatelessWidget {
+  const _GlassModalBarrier({
+    required this.animation,
+    required this.reduceMotion,
+    required this.blurSigma,
+    required this.barrier,
+  });
+
+  final Animation<double> animation;
+  final bool reduceMotion;
+  final double blurSigma;
+  final Widget barrier;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final t = reduceMotion
+            ? 1.0
+            : Curves.easeOutCubic.transform(animation.value.clamp(0.0, 1.0));
+        final sigma = blurSigma * t;
+        if (sigma <= 0.01) return child!;
+        final filter = ImageFilter.blur(
+          sigmaX: sigma,
+          sigmaY: sigma,
+          tileMode: TileMode.clamp,
+        );
+        // Two passes keep each sigma <= 30 so WebGL/CanvasKit does not clamp
+        // or skip the blur while dramatically defocusing underlying text.
+        return ClipRect(
+          child: BackdropFilter(
+            filter: filter,
+            child: BackdropFilter(filter: filter, child: child),
+          ),
+        );
+      },
+      child: barrier,
+    );
+  }
+}
+
+class _AppGlassModalBottomSheetRoute<T> extends ModalBottomSheetRoute<T> {
+  _AppGlassModalBottomSheetRoute({
+    required WidgetBuilder builder,
+    required super.capturedThemes,
+    required super.isScrollControlled,
+    required super.useSafeArea,
+    required bool showDragHandle,
+    required super.isDismissible,
+    required super.enableDrag,
+    required this.reduceMotion,
+    required this.blurSigma,
+    required AppGlassDensity density,
+    required EdgeInsetsGeometry padding,
+    required Color barrierColor,
+    required super.barrierLabel,
+  }) : super(
+         backgroundColor: Colors.transparent,
+         elevation: 0,
+         modalBarrierColor: barrierColor,
+         showDragHandle: false,
+         builder: (ctx) {
+           return AppGlassSurface(
+             customBorderRadius: const BorderRadius.vertical(
+               top: Radius.circular(AppTokens.radiusXl),
+             ),
+             density: density,
+             padding: padding,
+             child: Column(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+                 if (showDragHandle)
+                   Padding(
+                     padding: const EdgeInsets.only(top: 10, bottom: 4),
+                     child: Container(
+                       width: 36,
+                       height: 4,
+                       decoration: BoxDecoration(
+                         color: AppTokens.secondaryTextColor(
+                           ctx,
+                         ).withValues(alpha: 0.45),
+                         borderRadius: BorderRadius.circular(2),
+                       ),
+                     ),
+                   ),
+                 Flexible(child: builder(ctx)),
+               ],
+             ),
+           );
+         },
+       );
+
+  final bool reduceMotion;
+  final double blurSigma;
+
+  @override
+  Widget buildModalBarrier() {
+    final barrier = super.buildModalBarrier();
+    if (blurSigma <= 0) return barrier;
+    return _GlassModalBarrier(
+      animation: animation!,
+      reduceMotion: reduceMotion,
+      blurSigma: blurSigma,
+      barrier: barrier,
+    );
+  }
+}
+
 /// A [Page] that presents a frosted-glass dialog route for declarative routers
 /// such as GoRouter, matching [showAppGlassDialog].
 class AppGlassDialogPage<T> extends Page<T> {
@@ -144,27 +293,11 @@ class _AppDialogRoute<T> extends DialogRoute<T> {
     final barrier = super.buildModalBarrier();
     if (!useGlassBackdrop || blurSigma <= 0) return barrier;
 
-    return AnimatedBuilder(
+    return _GlassModalBarrier(
       animation: animation!,
-      builder: (context, child) {
-        final t = reduceMotion ? 1.0 : _visibility.value.clamp(0.0, 1.0);
-        final sigma = blurSigma * t;
-        if (sigma <= 0.01) return child!;
-        final filter = ImageFilter.blur(
-          sigmaX: sigma,
-          sigmaY: sigma,
-          tileMode: TileMode.clamp,
-        );
-        // Two passes keep each sigma <= 30 so WebGL/CanvasKit does not clamp
-        // or skip the blur while dramatically defocusing underlying text.
-        return ClipRect(
-          child: BackdropFilter(
-            filter: filter,
-            child: BackdropFilter(filter: filter, child: child),
-          ),
-        );
-      },
-      child: barrier,
+      reduceMotion: reduceMotion,
+      blurSigma: blurSigma,
+      barrier: barrier,
     );
   }
 
