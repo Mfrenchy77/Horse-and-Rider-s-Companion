@@ -43,6 +43,7 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
   static String docIdFor(ConnectionRequest request) {
     if (request.id.isNotEmpty &&
         request.messageId.isNotEmpty &&
+        request.id != request.messageId &&
         !request.id.endsWith('_${request.messageId}')) {
       return '${request.id}_${request.messageId}';
     }
@@ -70,9 +71,10 @@ class FirestoreConnectionRequestStore implements ConnectionRequestStore {
               _normalizeTimestamps(data),
               idFromDoc: doc.id,
             );
+            final sender = req.senderEmail.trim().toLowerCase();
             keys.add(
               req.messageId.isNotEmpty
-                  ? '${req.kind.name}:${req.senderEmail}:${req.messageId}'
+                  ? '${req.kind.name}:$sender:${req.messageId}'
                   : '${req.kind.name}:${req.id}',
             );
           }

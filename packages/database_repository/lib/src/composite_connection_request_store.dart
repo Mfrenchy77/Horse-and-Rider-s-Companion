@@ -34,8 +34,9 @@ class CompositeConnectionRequestStore implements ConnectionRequestStore {
   final Set<String> _resolvedKeys = <String>{};
 
   static String _dedupeKey(ConnectionRequest request) {
+    final sender = request.senderEmail.trim().toLowerCase();
     if (request.messageId.isNotEmpty) {
-      return '${request.kind.name}:${request.senderEmail}:${request.messageId}';
+      return '${request.kind.name}:$sender:${request.messageId}';
     }
     return '${request.kind.name}:${request.id}';
   }
