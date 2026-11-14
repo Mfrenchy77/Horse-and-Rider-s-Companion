@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:database_repository/database_repository.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_hero_header.dart';
+import 'package:horseandriderscompanion/CommonWidgets/personalized_logbook_backdrop.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/in_memory_logbook_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
@@ -19,6 +21,30 @@ import '../support/app_test_harness.dart';
 
 const _scratchDir =
     '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch';
+
+Future<Uint8List> _createSamplePhotoBytes() async {
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  const size = Size(160, 120);
+  final bgPaint = ui.Paint()
+    ..shader = ui.Gradient.linear(
+      Offset.zero,
+      Offset(size.width, size.height),
+      [
+        const Color(0xFF1F4D57),
+        const Color(0xFFB56E4C),
+        const Color(0xFFE5B887),
+      ],
+      [0.0, 0.55, 1.0],
+    );
+  canvas.drawRect(Offset.zero & size, bgPaint);
+  final highlightPaint = ui.Paint()..color = const Color(0xCCFFF3E0);
+  canvas.drawCircle(const Offset(108, 46), 24, highlightPaint);
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(160, 120);
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  return byteData!.buffer.asUint8List();
+}
 
 Future<void> _captureScreenshot(WidgetTester tester, String filename) async {
   await tester.runAsync(() async {
@@ -112,6 +138,7 @@ void main() {
     required AppTestHarness harness,
     required RiderProfile rider,
     required Size size,
+    ImageProvider? previewImage,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -141,13 +168,25 @@ void main() {
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
               theme: HorseAndRidersTheme().getDarkTheme(),
-              home: RiderLogbookPage(email: rider.email),
+              home: RiderLogbookPage(
+                email: rider.email,
+                previewImage: previewImage,
+              ),
             ),
           ),
         ),
       ),
     );
     await tester.pump();
+    if (previewImage != null) {
+      await tester.runAsync(
+        () => precacheImage(
+          previewImage,
+          tester.element(find.byType(PersonalizedLogbookBackdrop)),
+        ),
+      );
+      await tester.pump();
+    }
     await tester.pump(const Duration(milliseconds: 200));
   }
 
@@ -157,6 +196,7 @@ void main() {
     required RiderProfile rider,
     required HorseProfile horse,
     required Size size,
+    ImageProvider? previewImage,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -186,6 +226,7 @@ void main() {
                 notes: horse.notes,
                 isRider: false,
                 appContext: context,
+                previewImage: previewImage,
               ),
             ),
           ),
@@ -193,6 +234,15 @@ void main() {
       ),
     );
     await tester.pump();
+    if (previewImage != null) {
+      await tester.runAsync(
+        () => precacheImage(
+          previewImage,
+          tester.element(find.byType(PersonalizedLogbookBackdrop)),
+        ),
+      );
+      await tester.pump();
+    }
     await tester.pump(const Duration(milliseconds: 200));
   }
 
@@ -208,13 +258,18 @@ void main() {
       notes: sampleRiderEntries,
     );
 
+    final photoBytes = await tester.runAsync(_createSamplePhotoBytes);
+    final photo = MemoryImage(photoBytes!);
+
     await pumpRiderLogbook(
       tester,
       harness: harness,
       rider: rider,
       size: const Size(412, 860),
+      previewImage: photo,
     );
 
+    expect(find.byType(PersonalizedLogbookBackdrop), findsOneWidget);
     expect(find.byType(LogbookHeroHeader), findsOneWidget);
     expect(find.text('Matt French'), findsOneWidget);
     expect(find.text('Training journal & progress history'), findsOneWidget);
@@ -239,13 +294,18 @@ void main() {
       notes: sampleRiderEntries,
     );
 
+    final photoBytes = await tester.runAsync(_createSamplePhotoBytes);
+    final photo = MemoryImage(photoBytes!);
+
     await pumpRiderLogbook(
       tester,
       harness: harness,
       rider: rider,
       size: const Size(1180, 820),
+      previewImage: photo,
     );
 
+    expect(find.byType(PersonalizedLogbookBackdrop), findsOneWidget);
     expect(find.byType(LogbookHeroHeader), findsOneWidget);
     expect(find.byType(LogbookEntryCard), findsAtLeastNWidgets(2));
     expect(tester.takeException(), isNull);
@@ -295,14 +355,19 @@ void main() {
       notes: sampleHorseEntries,
     );
 
+    final photoBytes = await tester.runAsync(_createSamplePhotoBytes);
+    final photo = MemoryImage(photoBytes!);
+
     await pumpHorseLogbook(
       tester,
       harness: harness,
       rider: rider,
       horse: horse,
       size: const Size(412, 860),
+      previewImage: photo,
     );
 
+    expect(find.byType(PersonalizedLogbookBackdrop), findsOneWidget);
     expect(find.byType(LogbookHeroHeader), findsOneWidget);
     expect(find.text('Valero'), findsOneWidget);
     expect(find.text('Training journal & progress history'), findsOneWidget);
@@ -332,14 +397,19 @@ void main() {
       notes: sampleHorseEntries,
     );
 
+    final photoBytes = await tester.runAsync(_createSamplePhotoBytes);
+    final photo = MemoryImage(photoBytes!);
+
     await pumpHorseLogbook(
       tester,
       harness: harness,
       rider: rider,
       horse: horse,
       size: const Size(1180, 820),
+      previewImage: photo,
     );
 
+    expect(find.byType(PersonalizedLogbookBackdrop), findsOneWidget);
     expect(find.byType(LogbookHeroHeader), findsOneWidget);
     expect(find.byType(LogbookEntryCard), findsAtLeastNWidgets(2));
     expect(tester.takeException(), isNull);
@@ -357,6 +427,42 @@ void main() {
     );
     expect(find.byType(AppEmptyState), findsOneWidget);
     expect(find.text('No Entries in the Log'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Rider logbook scrolls smoothly with long entry lists', (
+    tester,
+  ) async {
+    final harness = await AppTestHarness.create();
+    addTearDown(harness.close);
+    final manyEntries = [
+      for (var i = 0; i < 18; i++)
+        BaseListItem(
+          id: 'scroll-$i',
+          name: 'Training note #$i for endurance and rhythm.',
+          date: DateTime(2026, 11).add(Duration(days: i)),
+          riderLog: RiderLogDetails(
+            type: RiderLogType.values[i % RiderLogType.values.length],
+            title: 'Session $i',
+          ),
+        ),
+    ];
+    final rider = RiderProfile(
+      id: 'rider-scroll',
+      email: 'scroll@example.com',
+      name: 'Matt French',
+      notes: manyEntries,
+    );
+    final photoBytes = await tester.runAsync(_createSamplePhotoBytes);
+    await pumpRiderLogbook(
+      tester,
+      harness: harness,
+      rider: rider,
+      size: const Size(412, 860),
+      previewImage: MemoryImage(photoBytes!),
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
+    await tester.pump();
     expect(tester.takeException(), isNull);
   });
 }

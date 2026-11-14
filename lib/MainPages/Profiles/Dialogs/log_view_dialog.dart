@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_filter_bar.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_hero_header.dart';
+import 'package:horseandriderscompanion/CommonWidgets/personalized_logbook_backdrop.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
@@ -27,6 +28,7 @@ class LogViewDialog extends StatefulWidget {
     required this.appContext,
     this.horseId,
     this.horseProfile,
+    this.previewImage,
   });
 
   final String name;
@@ -35,6 +37,7 @@ class LogViewDialog extends StatefulWidget {
   final HorseProfile? horseProfile;
   final BuildContext appContext;
   final List<BaseListItem>? notes;
+  final ImageProvider? previewImage;
 
   @override
   LogViewDialogState createState() => LogViewDialogState();
@@ -108,7 +111,9 @@ class LogViewDialogState extends State<LogViewDialog> {
                 shownHorse.currentOwnerId.toLowerCase();
         return Scaffold(
           appBar: ThemedAppBar(title: const Text('Horse logbook')),
-          body: AppScaffoldBackdrop(
+          body: PersonalizedLogbookBackdrop(
+            photoUrl: shownHorse?.picUrl,
+            imageProvider: widget.previewImage,
             child: SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -278,6 +283,7 @@ class LogViewDialogState extends State<LogViewDialog> {
       title: horse?.name ?? widget.name,
       details: details.isNotEmpty ? details : null,
       photoUrl: horse?.picUrl,
+      imageProvider: widget.previewImage,
       onAddEntry: onAddEntry,
       fallbackIcon: HorseAndRiderIcons.horseIcon,
     );

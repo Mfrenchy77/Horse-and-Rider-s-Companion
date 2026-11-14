@@ -40,10 +40,10 @@ class LogbookFilterBar<T> extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final accent = AppTokens.accentColor(context);
     final borderColor = isDark
-        ? AppTokens.midnightButtonBorder
+        ? const Color(0x475E8F99)
         : theme.colorScheme.outlineVariant;
     final fillColor = isDark
-        ? AppTokens.midnightInputFill
+        ? AppTokens.midnightInputFill.withValues(alpha: 0.72)
         : theme.colorScheme.surface;
 
     final sortControl = Container(
@@ -51,7 +51,7 @@ class LogbookFilterBar<T> extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: isDark
-            ? AppTokens.midnightButtonFill
+            ? AppTokens.midnightButtonFill.withValues(alpha: 0.64)
             : theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         border: Border.all(color: borderColor),
@@ -186,10 +186,10 @@ class _FilterPill extends StatelessWidget {
         ? AppTokens.coralText
         : theme.colorScheme.onPrimary;
     final unselectedBg = isDark
-        ? AppTokens.midnightButtonFill
+        ? AppTokens.midnightButtonFill.withValues(alpha: 0.64)
         : theme.colorScheme.surfaceContainerLow;
     final unselectedBorder = isDark
-        ? AppTokens.midnightButtonBorder
+        ? const Color(0x475E8F99)
         : theme.colorScheme.outlineVariant;
 
     return ChoiceChip(

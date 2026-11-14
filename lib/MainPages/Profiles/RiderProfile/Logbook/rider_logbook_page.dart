@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_filter_bar.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_hero_header.dart';
+import 'package:horseandriderscompanion/CommonWidgets/personalized_logbook_backdrop.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
@@ -29,9 +30,14 @@ LogbookRiderProfileRepository? _readLogbookRiderProfiles(
     context.read<RiderProfileRepository?>();
 
 class RiderLogbookPage extends StatefulWidget {
-  const RiderLogbookPage({super.key, required this.email});
+  const RiderLogbookPage({
+    super.key,
+    required this.email,
+    this.previewImage,
+  });
 
   final String email;
+  final ImageProvider? previewImage;
 
   static void open(BuildContext context) {
     final state = context.read<AppCubit>().state;
@@ -324,7 +330,9 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
       value: _logbookCubit,
       child: Scaffold(
         appBar: ThemedAppBar(title: const Text('Rider logbook')),
-        body: AppScaffoldBackdrop(
+        body: PersonalizedLogbookBackdrop(
+          photoUrl: rider?.picUrl,
+          imageProvider: widget.previewImage,
           child: SafeArea(
             child: rider == null
                 ? Center(
@@ -401,6 +409,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
             child: LogbookHeroHeader(
               title: rider.name,
               photoUrl: rider.picUrl,
+              imageProvider: widget.previewImage,
               onAddEntry: _openEditor,
               fallbackIcon: Icons.person_outline_rounded,
             ),

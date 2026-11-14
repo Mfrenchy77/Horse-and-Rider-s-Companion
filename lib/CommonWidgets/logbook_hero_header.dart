@@ -10,6 +10,7 @@ class LogbookHeroHeader extends StatelessWidget {
     this.subtitle = 'Training journal & progress history',
     this.details,
     this.photoUrl,
+    this.imageProvider,
     this.onAddEntry,
     this.addEntryLabel = 'Add entry',
     this.fallbackIcon = Icons.auto_stories_outlined,
@@ -19,20 +20,24 @@ class LogbookHeroHeader extends StatelessWidget {
   final String subtitle;
   final String? details;
   final String? photoUrl;
+  final ImageProvider? imageProvider;
   final VoidCallback? onAddEntry;
   final String addEntryLabel;
   final IconData fallbackIcon;
+
+  static const _glassBorderDark = Color(0x475E8F99);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
+    final hasUrl = photoUrl != null && photoUrl!.trim().isNotEmpty;
+    final hasPhoto = imageProvider != null || hasUrl;
     final cardBase = isDark
         ? AppTokens.midnightCardBottom
         : theme.colorScheme.surfaceContainerLow;
     final borderColor = isDark
-        ? AppTokens.cardBorderDark
+        ? _glassBorderDark
         : theme.colorScheme.outlineVariant;
 
     return LayoutBuilder(
@@ -45,7 +50,16 @@ class LogbookHeroHeader extends StatelessWidget {
           child: Container(
             constraints: BoxConstraints(minHeight: minHeight),
             decoration: BoxDecoration(
-              gradient: isDark ? AppTokens.cardSurfaceGradient : null,
+              gradient: isDark
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppTokens.midnightCardTop.withValues(alpha: 0.72),
+                        AppTokens.midnightCardBottom.withValues(alpha: 0.62),
+                      ],
+                    )
+                  : null,
               color: isDark ? null : theme.colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               border: Border.all(color: borderColor),
@@ -55,7 +69,8 @@ class LogbookHeroHeader extends StatelessWidget {
                 Positioned.fill(
                   child: hasPhoto
                       ? _PhotoBackdrop(
-                          photoUrl: photoUrl!,
+                          photoUrl: photoUrl,
+                          imageProvider: imageProvider,
                           cardBase: cardBase,
                           isWide: isWide,
                           fallback: _PlaceholderBackdrop(
@@ -84,9 +99,9 @@ class LogbookHeroHeader extends StatelessWidget {
                           title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTokens.heroTitleStyle(context).copyWith(
-                            fontSize: isWide ? 28 : 24,
-                          ),
+                          style: AppTokens.heroTitleStyle(
+                            context,
+                          ).copyWith(fontSize: isWide ? 28 : 24),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -103,8 +118,9 @@ class LogbookHeroHeader extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppTokens.secondaryTextColor(context)
-                                  .withValues(alpha: 0.85),
+                              color: AppTokens.secondaryTextColor(
+                                context,
+                              ).withValues(alpha: 0.85),
                             ),
                           ),
                         ],
@@ -132,18 +148,29 @@ class LogbookHeroHeader extends StatelessWidget {
 class _PhotoBackdrop extends StatelessWidget {
   const _PhotoBackdrop({
     required this.photoUrl,
+    required this.imageProvider,
     required this.cardBase,
     required this.isWide,
     required this.fallback,
   });
 
-  final String photoUrl;
+  final String? photoUrl;
+  final ImageProvider? imageProvider;
   final Color cardBase;
   final bool isWide;
   final Widget fallback;
 
   @override
   Widget build(BuildContext context) {
+    final image = imageProvider != null
+        ? Image(
+            image: imageProvider!,
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+            errorBuilder: (_, _, _) => fallback,
+          )
+        : SmartImage(photoUrl, fallback: fallback);
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -152,20 +179,17 @@ class _PhotoBackdrop extends StatelessWidget {
           child: FractionallySizedBox(
             widthFactor: isWide ? 0.58 : 0.72,
             heightFactor: 1,
-            child: SmartImage(
-              photoUrl,
-              fallback: fallback,
-            ),
+            child: image,
           ),
         ),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                cardBase,
-                cardBase.withValues(alpha: 0.94),
-                cardBase.withValues(alpha: 0.56),
-                cardBase.withValues(alpha: 0.14),
+                cardBase.withValues(alpha: 0.90),
+                cardBase.withValues(alpha: 0.82),
+                cardBase.withValues(alpha: 0.42),
+                cardBase.withValues(alpha: 0.08),
               ],
               stops: isWide
                   ? const [0.0, 0.40, 0.68, 1.0]
@@ -178,10 +202,7 @@ class _PhotoBackdrop extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                cardBase.withValues(alpha: 0.36),
-              ],
+              colors: [Colors.transparent, cardBase.withValues(alpha: 0.32)],
               stops: const [0.55, 1.0],
             ),
           ),
@@ -192,10 +213,7 @@ class _PhotoBackdrop extends StatelessWidget {
 }
 
 class _PlaceholderBackdrop extends StatelessWidget {
-  const _PlaceholderBackdrop({
-    required this.icon,
-    required this.isDark,
-  });
+  const _PlaceholderBackdrop({required this.icon, required this.isDark});
 
   final IconData icon;
   final bool isDark;
@@ -209,10 +227,10 @@ class _PlaceholderBackdrop extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? const [
-                  AppTokens.midnightCardTop,
-                  AppTokens.midnightMid,
-                  AppTokens.midnightDeep,
+              ? [
+                  AppTokens.midnightCardTop.withValues(alpha: 0.74),
+                  AppTokens.midnightMid.withValues(alpha: 0.68),
+                  AppTokens.midnightDeep.withValues(alpha: 0.78),
                 ]
               : [
                   theme.colorScheme.surfaceContainerHigh,
