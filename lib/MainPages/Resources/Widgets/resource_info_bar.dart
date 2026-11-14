@@ -171,10 +171,6 @@ class ResourceInfoBar extends StatelessWidget {
                           resourceUrl: resource.url,
                           borderRadius: BorderRadius.zero,
                         ),
-                        if (Theme.of(context).brightness == Brightness.dark)
-                          const AppImageVignette(
-                            bottomColor: AppTokens.midnightCardTop,
-                          ),
                         if (isVideo)
                           const Center(
                             child: CircleAvatar(

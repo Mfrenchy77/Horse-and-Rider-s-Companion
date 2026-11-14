@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_view.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 import '../support/app_test_harness.dart';
@@ -111,6 +112,7 @@ void main() {
     expect(find.text('Resources'), findsOneWidget);
     expect(find.text('Turn on the Forehand - Part 2'), findsOneWidget);
     expect(find.text('Tack Fit: What to Look For'), findsOneWidget);
+    expect(find.byType(AppImageVignette), findsNothing);
 
     await tester.runAsync(() async {
       final boundary =
