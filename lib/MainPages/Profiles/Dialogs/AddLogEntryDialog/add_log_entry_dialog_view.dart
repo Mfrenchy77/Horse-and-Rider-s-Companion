@@ -32,12 +32,17 @@ class AddLogEntryDialog extends StatelessWidget {
             context.read<HorseProfileRepository?>() ??
             HorseProfileRepository(),
       ),
-        child: BlocBuilder<AddLogEntryCubit, AddLogEntryState>(
-          builder: (context, state) {
+        child: BlocListener<AddLogEntryCubit, AddLogEntryState>(
+          listenWhen: (previous, current) => previous.status != current.status,
+          listener: (context, state) {
             if (state.status == FormStatus.success) {
               Navigator.of(context).pop();
             }
-            return AppGlassDialog(
+          },
+          child: BlocBuilder<AddLogEntryCubit, AddLogEntryState>(
+            builder: (context, state) {
+              return AppGlassDialog(
+                density: AppGlassDensity.frosted,
               title: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Text(
@@ -92,6 +97,7 @@ class AddLogEntryDialog extends StatelessWidget {
             );
           },
         ),
+      ),
     );
   }
 }
