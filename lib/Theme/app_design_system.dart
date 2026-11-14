@@ -46,6 +46,13 @@ class AppTokens {
   static const double minTouchTarget = 48;
   static const double maxContentWidth = 1320;
 
+  // Glassmorphism Dialog Tokens
+  static const double glassBackdropBlurSigma = 25;
+  static const Color glassBarrierDark = Color(0x52061215);
+  static const Color glassBarrierLight = Color(0x380A2329);
+  static const Color glassBorderDark = Color(0x4D8DC4CE);
+  static const Color glassBorderLight = Color(0x99FFFFFF);
+
   // Gradients
   static const BoxDecoration midnightBackdrop = BoxDecoration(
     gradient: LinearGradient(
@@ -223,6 +230,180 @@ class AppDialogSurface extends StatelessWidget {
       padding: padding,
       borderRadius: borderRadius,
       child: child,
+    );
+  }
+}
+
+/// Translucent frosted-glass surface for floating dialogs.
+class AppGlassSurface extends StatelessWidget {
+  const AppGlassSurface({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(AppTokens.spaceXl),
+    this.borderRadius = AppTokens.radiusXl,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(borderRadius);
+    final gradient = isDark
+        ? LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTokens.midnightCardTop.withValues(alpha: 0.72),
+              AppTokens.midnightCardBottom.withValues(alpha: 0.62),
+            ],
+          )
+        : LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface.withValues(alpha: 0.80),
+              theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.70),
+            ],
+          );
+    final borderColor = isDark
+        ? AppTokens.glassBorderDark
+        : AppTokens.glassBorderLight;
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.36)
+        : const Color(0xFF0A242B).withValues(alpha: 0.16);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor,
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: radius,
+            border: Border.all(color: borderColor, width: 1.2),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: isDark ? 0.08 : 0.35),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.38],
+              ),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Padding(padding: padding, child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating frosted-glass dialog shell supporting light and dark themes.
+class AppGlassDialog extends StatelessWidget {
+  const AppGlassDialog({
+    super.key,
+    this.title,
+    this.content,
+    this.actions,
+    this.maxWidth = 520,
+    this.insetPadding = const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 24,
+    ),
+    this.padding = const EdgeInsets.all(AppTokens.spaceXl),
+    this.scrollable = true,
+  });
+
+  final Widget? title;
+  final Widget? content;
+  final List<Widget>? actions;
+  final double maxWidth;
+  final EdgeInsets insetPadding;
+  final EdgeInsetsGeometry padding;
+  final bool scrollable;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final actionWidgets = actions ?? const <Widget>[];
+    final bodyStyle =
+        theme.textTheme.bodyMedium?.copyWith(
+          color: AppTokens.primaryTextColor(context),
+        ) ??
+        const TextStyle();
+
+    Widget? contentWidget;
+    if (content != null) {
+      final styledContent = DefaultTextStyle.merge(
+        style: bodyStyle,
+        child: content!,
+      );
+      contentWidget = scrollable
+          ? Flexible(child: SingleChildScrollView(child: styledContent))
+          : styledContent;
+    }
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: insetPadding,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: AppGlassSurface(
+          padding: padding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (title != null)
+                Semantics(
+                  namesRoute: true,
+                  child: DefaultTextStyle.merge(
+                    style: AppTokens.sectionTitleStyle(context),
+                    textAlign: TextAlign.center,
+                    child: title!,
+                  ),
+                ),
+              if (title != null && contentWidget != null)
+                const SizedBox(height: AppTokens.spaceMd),
+              ?contentWidget,
+              if (actionWidgets.isNotEmpty) ...[
+                const SizedBox(height: AppTokens.spaceLg),
+                OverflowBar(
+                  alignment: MainAxisAlignment.end,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  spacing: 8,
+                  overflowSpacing: 8,
+                  children: actionWidgets,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
