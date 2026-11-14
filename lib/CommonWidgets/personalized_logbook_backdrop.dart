@@ -51,7 +51,8 @@ class PersonalizedLogbookBackdrop extends StatelessWidget {
           )
         : SmartImage(
             photoUrl,
-            maxLogicalWidth: 400,
+            maxLogicalWidth: 32,
+            config: const SmartImageConfig(preferDirectFirst: false),
             fallback: const SizedBox.shrink(),
           );
 
