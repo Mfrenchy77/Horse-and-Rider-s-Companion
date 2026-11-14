@@ -505,7 +505,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.byType(LogbookAddFab), findsOneWidget);
+    expect(find.text('Add entry'), findsOneWidget);
+    expect(find.byType(LogbookAddFab), findsNothing);
 
     await tester.enterText(
       find.widgetWithText(TextField, 'Search entries'),
@@ -563,7 +564,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.byType(LogbookAddFab), findsOneWidget);
+    expect(find.text('Add entry'), findsOneWidget);
+    expect(find.byType(LogbookAddFab), findsNothing);
     expect(find.byType(LogbookPlacingBadge), findsOneWidget);
     expect(find.text('2nd'), findsOneWidget);
     expect(tester.takeException(), isNull);

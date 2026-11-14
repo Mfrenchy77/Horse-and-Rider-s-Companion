@@ -291,9 +291,9 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
   }
 
   Future<void> _deleteEntry(BaseListItem entry) async {
-    final confirmed = await showAppDialog<bool>(
+    final confirmed = await showAppGlassDialog<bool>(
       context: context,
-      builder: (context) => OceanCoralAppDialog(
+      builder: (context) => AppGlassDialog(
         title: const Text('Delete this entry?'),
         content: const Text('A shared entry is removed from both logbooks.'),
         actions: [
@@ -331,9 +331,6 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
       value: _logbookCubit,
       child: Scaffold(
         appBar: ThemedAppBar(title: const Text('Rider logbook')),
-        floatingActionButton: rider == null
-            ? null
-            : LogbookAddFab(onPressed: _openEditor),
         body: PersonalizedLogbookBackdrop(
           photoUrl: rider?.picUrl,
           imageProvider: widget.previewImage,

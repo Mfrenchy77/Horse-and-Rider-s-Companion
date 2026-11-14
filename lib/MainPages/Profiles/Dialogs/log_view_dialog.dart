@@ -111,17 +111,6 @@ class LogViewDialogState extends State<LogViewDialog> {
                 shownHorse.currentOwnerId.toLowerCase();
         return Scaffold(
           appBar: ThemedAppBar(title: const Text('Horse logbook')),
-          floatingActionButton: canAdd
-              ? LogbookAddFab(
-                  onPressed: () => showAppDialog<void>(
-                    context: context,
-                    builder: (_) => AddLogEntryDialog(
-                      usersProfile: rider,
-                      horseProfile: shownHorse,
-                    ),
-                  ),
-                )
-              : null,
           body: PersonalizedLogbookBackdrop(
             photoUrl: shownHorse?.picUrl,
             imageProvider: widget.previewImage,
@@ -143,7 +132,7 @@ class LogViewDialogState extends State<LogViewDialog> {
                             context,
                             shownHorse,
                             onAddEntry: canAdd
-                                ? () => showAppDialog<void>(
+                                ? () => showAppGlassDialog<void>(
                                     context: context,
                                     builder: (_) => AddLogEntryDialog(
                                       usersProfile: rider,
