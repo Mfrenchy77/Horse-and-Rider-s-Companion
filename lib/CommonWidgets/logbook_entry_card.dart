@@ -92,8 +92,9 @@ class LogbookEntryCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppTokens.primaryTextColor(context)
-                                  .withValues(alpha: 0.9),
+                              color: AppTokens.primaryTextColor(
+                                context,
+                              ).withValues(alpha: 0.9),
                               height: 1.4,
                             ),
                           ),
@@ -104,7 +105,8 @@ class LogbookEntryCard extends StatelessWidget {
                   const SizedBox(width: 10),
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: trailing ??
+                    child:
+                        trailing ??
                         Icon(
                           Icons.chevron_right_rounded,
                           color: AppTokens.secondaryTextColor(context),
