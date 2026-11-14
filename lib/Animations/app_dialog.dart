@@ -51,9 +51,49 @@ Future<T?> showAppGlassDialog<T>({
   );
 }
 
+/// A [Page] that presents a frosted-glass dialog route for declarative routers
+/// such as GoRouter, matching [showAppGlassDialog].
+class AppGlassDialogPage<T> extends Page<T> {
+  const AppGlassDialogPage({
+    super.key,
+    super.name,
+    super.arguments,
+    super.restorationId,
+    required this.child,
+    this.barrierDismissible = true,
+    this.blurSigma = AppTokens.glassBackdropBlurSigma,
+  });
+
+  final Widget child;
+  final bool barrierDismissible;
+  final double blurSigma;
+
+  @override
+  Route<T> createRoute(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _AppDialogRoute<T>(
+      context: context,
+      settings: this,
+      builder: (_) => child,
+      barrierDismissible: barrierDismissible,
+      reduceMotion: MediaQuery.disableAnimationsOf(context),
+      themes: InheritedTheme.capture(
+        from: context,
+        to: Navigator.of(context).context,
+      ),
+      useGlassBackdrop: true,
+      blurSigma: blurSigma,
+      barrierColor: isDark
+          ? AppTokens.glassBarrierDark
+          : AppTokens.glassBarrierLight,
+    );
+  }
+}
+
 class _AppDialogRoute<T> extends DialogRoute<T> {
   _AppDialogRoute({
     required super.context,
+    super.settings,
     required super.builder,
     required super.barrierDismissible,
     required super.themes,

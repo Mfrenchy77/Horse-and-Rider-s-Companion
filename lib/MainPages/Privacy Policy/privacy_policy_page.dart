@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -15,17 +15,16 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AppCubit>();
-    return Dialog(
-      elevation: 8,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            IconButton(
-              onPressed: () => context.pop(),
-              icon: const Icon(Icons.close),
-            ),
+    return AppGlassDialog(
+      maxWidth: 640,
+      density: AppGlassDensity.frosted,
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(Icons.close),
+          ),
             const MaxWidthBox(
               maxWidth: 500,
               child: Logo(
@@ -180,20 +179,15 @@ class PrivacyPolicyPage extends StatelessWidget {
               ' HorseandRidersCompanion@gmail.com.',
               style: TextStyle(fontSize: 16),
             ),
-            smallGap(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                FilledButton.tonalIcon(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => context.pop(),
-                  label: const Text('Close'),
-                ),
-              ],
-            ),
           ],
         ),
-      ),
-    );
+        actions: <Widget>[
+          FilledButton.tonalIcon(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
+            label: const Text('Close'),
+          ),
+        ],
+      );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -11,17 +11,17 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            IconButton(
-              onPressed: () => context.pop(),
-              icon: const Icon(Icons.close),
-            ),
-            const MaxWidthBox(maxWidth: 600, child: Logo(screenName: '')),
+    return AppGlassDialog(
+      maxWidth: 640,
+      density: AppGlassDensity.frosted,
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(Icons.close),
+          ),
+          const MaxWidthBox(maxWidth: 600, child: Logo(screenName: '')),
             const Text(
               "Welcome to Horse & Rider's Companion!",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -112,20 +112,15 @@ class AboutPage extends StatelessWidget {
               "For any inquiries or feedback, please don't hesitate to reach"
               ' out to us at HorseandRidersCompanion@gmail.com.',
             ),
-            smallGap(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                FilledButton.tonalIcon(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => context.pop(),
-                  label: const Text('Close'),
-                ),
-              ],
-            ),
           ],
         ),
-      ),
-    );
+        actions: <Widget>[
+          FilledButton.tonalIcon(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
+            label: const Text('Close'),
+          ),
+        ],
+      );
   }
 }

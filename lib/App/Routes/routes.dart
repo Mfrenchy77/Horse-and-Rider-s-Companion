@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
 
@@ -224,25 +225,42 @@ class Routes {
                     GoRoute(
                       name: PrivacyPolicyPage.name,
                       path: PrivacyPolicyPage.path,
-                      builder: (context, state) => const PrivacyPolicyPage(),
+                      pageBuilder: (context, state) => AppGlassDialogPage<void>(
+                        key: state.pageKey,
+                        name: state.name,
+                        child: const PrivacyPolicyPage(),
+                      ),
                     ),
                     GoRoute(
                       name: AboutPage.name,
                       path: AboutPage.routeName,
-                      builder: (context, state) => const AboutPage(),
+                      pageBuilder: (context, state) => AppGlassDialogPage<void>(
+                        key: state.pageKey,
+                        name: state.name,
+                        child: const AboutPage(),
+                      ),
                     ),
                     GoRoute(
                       name: EmailVerificationDialog.name,
                       path: EmailVerificationDialog.path,
-                      builder: (context, state) => EmailVerificationDialog(
-                        email: state
-                            .pathParameters[EmailVerificationDialog.pathParms]!,
+                      pageBuilder: (context, state) => AppGlassDialogPage<void>(
+                        key: state.pageKey,
+                        name: state.name,
+                        child: EmailVerificationDialog(
+                          email:
+                              state.pathParameters[EmailVerificationDialog
+                                  .pathParms]!,
+                        ),
                       ),
                     ),
                     GoRoute(
                       name: DeletePage.name,
                       path: DeletePage.path,
-                      builder: (context, state) => const DeletePage(),
+                      pageBuilder: (context, state) => AppGlassDialogPage<void>(
+                        key: state.pageKey,
+                        name: state.name,
+                        child: const DeletePage(),
+                      ),
                     ),
                   ],
                 ),
