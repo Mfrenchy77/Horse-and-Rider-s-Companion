@@ -571,9 +571,22 @@ async function main() {
       status: 'pending',
     });
 
+    const bucket = admin.storage().bucket(`${PROJECT_ID}.appspot.com`);
+    const riderPhotoPath = `Riders_Photo/${profileId(recipient.email)}`;
+    const coverPath = `covers/${recipient.email}/cover.jpg`;
+    const horsePhotoPath = 'Horses_Photo/horse-2';
+    await bucket.file(riderPhotoPath).save(Buffer.from('rider-photo'), {contentType: 'image/jpeg'});
+    await bucket.file(coverPath).save(Buffer.from('cover-photo'), {contentType: 'image/jpeg'});
+    await bucket.file(horsePhotoPath).save(Buffer.from('horse-photo'), {contentType: 'image/jpeg'});
+
     const delRes = await callFunction('requestAccountDeletion', {}, recipient.idToken);
     assert.equal(delRes.ok, true, JSON.stringify(delRes.body));
     assert.equal(delRes.body.result.status, 'completed');
+
+    // User-owned media deleted, surviving horse image preserved
+    assert.equal((await bucket.file(riderPhotoPath).exists())[0], false);
+    assert.equal((await bucket.file(coverPath).exists())[0], false);
+    assert.equal((await bucket.file(horsePhotoPath).exists())[0], true);
 
     // Pending request cancelled
     const cancelledReq = await db.collection('Requests').doc('pending-del-1').get();

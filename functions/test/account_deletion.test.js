@@ -375,3 +375,41 @@ test('cancels pending Requests involving the deleted user', async () => {
   assert.equal(db.docs.get('Requests/req-pending').dismissalNote, 'Account deleted');
   assert.equal(db.docs.get('Requests/req-unrelated').status, 'pending');
 });
+
+test('preserves retryable DeletionJob when Storage cleanup fails with non-404 error', async () => {
+  const riderEmail = 'storagefail@example.com';
+  const db = createFirestoreMock([
+    [`Rider_Profile/${profileId(riderEmail)}`, {email: riderEmail, name: 'Storage Fail'}],
+  ]);
+  let authDeleted = false;
+  const auth = {
+    revokeRefreshTokens: async () => {},
+    deleteUser: async () => {
+      authDeleted = true;
+    },
+  };
+  const bucket = {
+    file: () => ({
+      delete: async () => {
+        const err = new Error('Storage unavailable');
+        err.code = 500;
+        throw err;
+      },
+    }),
+  };
+  const handler = accountDeletionHandler(db, auth, bucket, {nowSeconds: () => 3000});
+  await assert.rejects(
+      () => handler({
+        auth: {
+          uid: 'u-storage-fail',
+          token: {email: riderEmail, auth_time: 2990, firebase: {sign_in_provider: 'password'}},
+        },
+      }),
+      /Account deletion could not be completed/i,
+  );
+  assert.equal(authDeleted, false);
+  const job = db.docs.get('DeletionJobs/u-storage-fail');
+  assert.equal(job.status, 'failed_retryable');
+  assert.equal(job.steps.profileAndTokens, true);
+  assert.equal(job.steps.storage, undefined);
+});
