@@ -78,11 +78,15 @@ void main() {
       );
 
       final me = RiderProfile(id: 'me', name: 'Me', email: 'me@example.com');
-      final instructor =
-          RiderProfile(id: 'i', name: 'Instructor', email: 'i@x.com');
+      final instructor = RiderProfile(
+        id: 'i',
+        name: 'Instructor',
+        email: 'i@x.com',
+        isTrainer: true,
+      );
 
       // seed usersProfile into cubit state
-      cubit.emit(cubit.state.copyWith(usersProfile: me));
+      cubit.emit(cubit.state.copyWith(isGuest: false, usersProfile: me));
 
       when(
         () => messagesRepo.createOrUpdateConversation(
@@ -124,9 +128,14 @@ void main() {
         authenticationRepository: authRepo,
       );
 
-      final me = RiderProfile(id: 'me', name: 'Me', email: 'me@example.com');
+      final me = RiderProfile(
+        id: 'me',
+        name: 'Me',
+        email: 'me@example.com',
+        isTrainer: true,
+      );
       final student = RiderProfile(id: 's', name: 'Student', email: 's@x.com');
-      cubit.emit(cubit.state.copyWith(usersProfile: me));
+      cubit.emit(cubit.state.copyWith(isGuest: false, usersProfile: me));
 
       when(
         () => messagesRepo.createOrUpdateConversation(
@@ -169,7 +178,12 @@ void main() {
         authenticationRepository: authRepo,
       );
 
-      final me = RiderProfile(id: 'me', name: 'Me', email: 'me@example.com');
+      final me = RiderProfile(
+        id: 'me',
+        name: 'Me',
+        email: 'me@example.com',
+        isTrainer: true,
+      );
       final owner = RiderProfile(id: 'o', name: 'Owner', email: 'owner@x.com');
       final horse = HorseProfile(
         id: 'h1',
@@ -180,6 +194,7 @@ void main() {
 
       cubit.emit(
         cubit.state.copyWith(
+          isGuest: false,
           usersProfile: me,
           ownersProfile: owner,
           horseProfile: horse,

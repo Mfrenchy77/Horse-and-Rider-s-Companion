@@ -41,6 +41,7 @@ class AppTestHarness {
   static Future<AppTestHarness> create({
     Future<Map<String, dynamic>> Function(Map<String, Object?>)?
     submitCoachingAction,
+    ConnectionRequestStore? requestStore,
   }) async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({
@@ -68,6 +69,7 @@ class AppTestHarness {
       riderProfileRepository: harness.riders,
       horseProfileRepository: harness.horses,
       messagesRepository: harness.messages,
+      connectionRequestRepository: requestStore,
       accountDeletionRepository: harness.accountDeletion,
       submitCoachingAction: submitCoachingAction,
     );

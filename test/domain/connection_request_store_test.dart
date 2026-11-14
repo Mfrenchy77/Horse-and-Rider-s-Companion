@@ -125,6 +125,7 @@ void main() {
       id: 'recipient@example.com',
       email: 'recipient@example.com',
       name: 'Recipient Rider',
+      isTrainer: true,
       picUrl: '',
     );
     final horse = HorseProfile(
