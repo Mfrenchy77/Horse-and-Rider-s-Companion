@@ -465,4 +465,107 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Rider logbook supports search, sort, FAB, and light theme', (
+    tester,
+  ) async {
+    final harness = await AppTestHarness.create();
+    addTearDown(harness.close);
+    final rider = RiderProfile(
+      id: 'rider-theme',
+      email: 'theme@example.com',
+      name: 'Matt French',
+      notes: sampleRiderEntries,
+    );
+    harness.cubit.emit(
+      harness.cubit.state.copyWith(isGuest: false, usersProfile: rider),
+    );
+    final logbookRepo = InMemoryLogbookConnectionRepository();
+    final riderRepo = InMemoryLogbookRiderProfileRepository();
+
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<LogbookConnectionRepository>.value(
+            value: logbookRepo,
+          ),
+          RepositoryProvider<LogbookRiderProfileRepository>.value(
+            value: riderRepo,
+          ),
+        ],
+        child: BlocProvider.value(
+          value: harness.cubit,
+          child: MaterialApp(
+            theme: HorseAndRidersTheme().getLightTheme(),
+            home: RiderLogbookPage(email: rider.email),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byType(LogbookAddFab), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Search entries'),
+      'Navarro',
+    );
+    await tester.pump();
+    expect(find.text('Autumn Classic Ease of Handling'), findsOneWidget);
+    expect(find.byType(LogbookPlacingBadge), findsOneWidget);
+    expect(find.text('Working Equitation Lesson'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Horse logbook renders placing badge, FAB, and light theme', (
+    tester,
+  ) async {
+    final harness = await AppTestHarness.create();
+    addTearDown(harness.close);
+    final rider = RiderProfile(
+      id: 'rider-1',
+      email: 'matt@example.com',
+      name: 'Matt French',
+    );
+    final horse = HorseProfile(
+      id: 'horse-1',
+      name: 'Valero',
+      currentOwnerId: 'matt@example.com',
+      notes: sampleHorseEntries,
+    );
+    harness.cubit.emit(
+      harness.cubit.state.copyWith(
+        isGuest: false,
+        usersProfile: rider,
+        horseProfile: horse,
+      ),
+    );
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: harness.cubit,
+        child: MaterialApp(
+          theme: HorseAndRidersTheme().getLightTheme(),
+          home: Builder(
+            builder: (context) => LogViewDialog(
+              name: horse.name,
+              horseId: horse.id,
+              horseProfile: horse,
+              notes: horse.notes,
+              isRider: false,
+              appContext: context,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byType(LogbookAddFab), findsOneWidget);
+    expect(find.byType(LogbookPlacingBadge), findsOneWidget);
+    expect(find.text('2nd'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

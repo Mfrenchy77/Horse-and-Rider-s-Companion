@@ -153,6 +153,7 @@ String? _entryAttribution(BaseListItem entry, RiderProfile rider) {
 class _RiderLogbookPageState extends State<RiderLogbookPage> {
   RiderLogType? _filter;
   bool _newestFirst = true;
+  String _query = '';
   String? _journalUid;
   Stream<List<BaseListItem>>? _journal;
   late final LogbookCubit _logbookCubit;
@@ -234,7 +235,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                     ),
                     if (entry.riderLogType == RiderLogType.show &&
                         info?.placing != null)
-                      _PlacingBadge(placing: info!.placing!),
+                      LogbookPlacingBadge(placing: info!.placing!),
                   ],
                 ),
                 if (attribution != null) ...[
@@ -330,6 +331,9 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
       value: _logbookCubit,
       child: Scaffold(
         appBar: ThemedAppBar(title: const Text('Rider logbook')),
+        floatingActionButton: rider == null
+            ? null
+            : LogbookAddFab(onPressed: _openEditor),
         body: PersonalizedLogbookBackdrop(
           photoUrl: rider?.picUrl,
           imageProvider: widget.previewImage,
@@ -386,7 +390,24 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
               ...?rider.notes?.where((entry) => !sharedIds.contains(entry.id)),
               ...shared,
             ]
-            .where((entry) => _filter == null || entry.riderLogType == _filter)
+            .where((entry) {
+              if (_filter != null && entry.riderLogType != _filter) {
+                return false;
+              }
+              if (_query.isEmpty) return true;
+              final info = entry.riderLog;
+              return [
+                entry.name,
+                entry.riderLogType.label,
+                info?.title,
+                info?.horse,
+                info?.instructor,
+                info?.focus,
+                info?.nextSteps,
+              ].whereType<String>().any(
+                (value) => value.toLowerCase().contains(_query),
+              );
+            })
             .toList()
           ..sort((a, b) {
             if (a.date == null) return b.date == null ? 0 : 1;
@@ -433,6 +454,8 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
               onSelected: (type) => setState(() => _filter = type),
               newestFirst: _newestFirst,
               onSortChanged: (value) => setState(() => _newestFirst = value),
+              onSearchChanged: (value) =>
+                  setState(() => _query = value.trim().toLowerCase()),
             ),
           ),
         ),
@@ -475,12 +498,12 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
             sliver: SliverToBoxAdapter(
               child: AppEmptyState(
                 icon: Icons.auto_stories_outlined,
-                title: _filter == null
+                title: _filter == null && _query.isEmpty
                     ? 'Start your training journal'
                     : 'No matching entries',
-                description: _filter == null
+                description: _filter == null && _query.isEmpty
                     ? 'Add your first entry.'
-                    : 'No entries in this category.',
+                    : 'No entries match your current filter or search.',
               ),
             ),
           )
@@ -518,7 +541,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                   trailing:
                       entry.riderLogType == RiderLogType.show &&
                           entry.riderLog?.placing != null
-                      ? _PlacingBadge(placing: entry.riderLog!.placing!)
+                      ? LogbookPlacingBadge(placing: entry.riderLog!.placing!)
                       : null,
                   onTap: () => _openEntry(entry),
                 );
@@ -526,31 +549,6 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _PlacingBadge extends StatelessWidget {
-  const _PlacingBadge({required this.placing});
-
-  final String placing;
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, tone) = switch (placing.trim().toLowerCase()) {
-      '1' || '1st' => ('1st', AppStatusTone.warning),
-      '2' || '2nd' => ('2nd', AppStatusTone.neutral),
-      '3' || '3rd' => ('3rd', AppStatusTone.coral),
-      _ => (placing, AppStatusTone.info),
-    };
-    return Semantics(
-      label: 'Show placing: $label',
-      excludeSemantics: true,
-      child: AppStatusBadge(
-        label: label,
-        icon: Icons.emoji_events_outlined,
-        tone: tone,
-      ),
     );
   }
 }

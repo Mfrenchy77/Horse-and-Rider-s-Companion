@@ -153,3 +153,52 @@ class LogbookEntryCard extends StatelessWidget {
     );
   }
 }
+
+/// Shared show-placing badge used in Rider and Horse logbooks.
+class LogbookPlacingBadge extends StatelessWidget {
+  const LogbookPlacingBadge({super.key, required this.placing});
+
+  final String placing;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, tone) = switch (placing.trim().toLowerCase()) {
+      '1' || '1st' => ('1st', AppStatusTone.warning),
+      '2' || '2nd' => ('2nd', AppStatusTone.neutral),
+      '3' || '3rd' => ('3rd', AppStatusTone.coral),
+      _ => (placing, AppStatusTone.info),
+    };
+    return Semantics(
+      label: 'Show placing: $label',
+      excludeSemantics: true,
+      child: AppStatusBadge(
+        label: label,
+        icon: Icons.emoji_events_outlined,
+        tone: tone,
+      ),
+    );
+  }
+}
+
+/// Shared floating action button for adding entries in Rider and Horse
+/// logbooks.
+class LogbookAddFab extends StatelessWidget {
+  const LogbookAddFab({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return FloatingActionButton(
+      tooltip: 'Add log entry',
+      backgroundColor: AppTokens.accentColor(context),
+      foregroundColor: isDark
+          ? AppTokens.coralText
+          : theme.colorScheme.onPrimary,
+      onPressed: onPressed,
+      child: const Icon(Icons.add),
+    );
+  }
+}

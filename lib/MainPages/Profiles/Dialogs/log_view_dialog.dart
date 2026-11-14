@@ -111,6 +111,17 @@ class LogViewDialogState extends State<LogViewDialog> {
                 shownHorse.currentOwnerId.toLowerCase();
         return Scaffold(
           appBar: ThemedAppBar(title: const Text('Horse logbook')),
+          floatingActionButton: canAdd
+              ? LogbookAddFab(
+                  onPressed: () => showAppDialog<void>(
+                    context: context,
+                    builder: (_) => AddLogEntryDialog(
+                      usersProfile: rider,
+                      horseProfile: shownHorse,
+                    ),
+                  ),
+                )
+              : null,
           body: PersonalizedLogbookBackdrop(
             photoUrl: shownHorse?.picUrl,
             imageProvider: widget.previewImage,
@@ -333,6 +344,10 @@ class LogViewDialogState extends State<LogViewDialog> {
         LogTag.Edit => Icons.history,
         LogTag.Other => Icons.notes,
       },
+      trailing:
+          category == LogTag.Show && note.riderLog?.placing != null
+          ? LogbookPlacingBadge(placing: note.riderLog!.placing!)
+          : null,
       onTap: () => showAppDialog<void>(
         context: context,
         builder: (context) => OceanCoralAppDialog(
@@ -360,6 +375,8 @@ class LogViewDialogState extends State<LogViewDialog> {
                         color: AppTokens.secondaryTextColor(context),
                       ),
                     ),
+                  if (category == LogTag.Show && note.riderLog?.placing != null)
+                    LogbookPlacingBadge(placing: note.riderLog!.placing!),
                 ],
               ),
               Text(

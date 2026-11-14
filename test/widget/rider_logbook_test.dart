@@ -395,11 +395,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Oldest first').last);
       await tester.pumpAndSettle();
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -120));
+      await tester.pumpAndSettle();
       expect(
         tester.getTopLeft(find.text('Practised transitions')).dy,
         greaterThan(tester.getTopLeft(find.text('Relax your shoulders')).dy),
       );
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Lesson'));
+      final lessonChip = find.widgetWithText(ChoiceChip, 'Lesson');
+      await tester.ensureVisible(lessonChip);
+      await tester.tap(lessonChip);
       await tester.pumpAndSettle();
       expect(find.text('Relax your shoulders'), findsNothing);
       await tester.tap(find.text('Practised transitions'));
@@ -424,6 +428,12 @@ void main() {
       await tester.tap(save);
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ChoiceChip, 'All entries'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Updated transitions'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
       expect(find.text('Updated transitions'), findsOneWidget);
       expect(find.text('2nd'), findsOneWidget);
