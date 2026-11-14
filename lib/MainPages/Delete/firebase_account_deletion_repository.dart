@@ -10,12 +10,10 @@ import 'package:http/http.dart' as http;
 /// Cloud Function-backed implementation of [AccountDeletionRepository].
 class FirebaseAccountDeletionRepository implements AccountDeletionRepository {
   FirebaseAccountDeletionRepository({
-    required AuthGateway authGateway,
-    String? projectId,
-    http.Client? httpClient,
-  }) : _authGateway = authGateway,
-       _projectId = projectId,
-       _httpClient = httpClient;
+    required this._authGateway,
+    this._projectId,
+    this._httpClient,
+  });
 
   final AuthGateway _authGateway;
   final String? _projectId;
@@ -83,8 +81,9 @@ class FirebaseAccountDeletionRepository implements AccountDeletionRepository {
         final error = body['error'];
         if (error is Map) {
           final details = error['details'];
-          final detailsCode =
-              details is Map ? details['code'] as String? : null;
+          final detailsCode = details is Map
+              ? details['code'] as String?
+              : null;
           final message = error['message'] as String?;
           if (detailsCode == 'requires-recent-login') {
             return AccountDeletionResult(

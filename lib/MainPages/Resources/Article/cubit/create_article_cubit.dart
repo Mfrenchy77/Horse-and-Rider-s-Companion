@@ -12,10 +12,9 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
   CreateArticleCubit({
     ResourcesStore? resourcesRepository,
     MediaStorageRepository? mediaStorage,
-    RiderProfile? user,
+    this._user,
   }) : _repo = resourcesRepository ?? ResourcesRepository(),
        _storage = mediaStorage ?? CloudRepository(),
-       _user = user,
        super(const ArticleCreateState());
 
   final ResourcesStore _repo;

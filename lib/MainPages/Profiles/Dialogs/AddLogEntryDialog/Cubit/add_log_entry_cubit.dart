@@ -10,12 +10,10 @@ part 'add_log_entry_state.dart';
 
 class AddLogEntryCubit extends Cubit<AddLogEntryState> {
   AddLogEntryCubit({
-    required HorseProfileStore horseProfileRepository,
-    required RiderProfileStore riderProfileRepository,
+    required this._horseProfileRepository,
+    required this._riderProfileRepository,
     required this.usersProfile,
-  }) : _horseProfileRepository = horseProfileRepository,
-       _riderProfileRepository = riderProfileRepository,
-       super(AddLogEntryState(date: DateTime.now()));
+  }) : super(AddLogEntryState(date: DateTime.now()));
 
   final HorseProfileStore _horseProfileRepository;
   final RiderProfileStore _riderProfileRepository;

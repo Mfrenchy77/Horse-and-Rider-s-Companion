@@ -107,26 +107,33 @@ void main() {
           StreamController<List<Conversation>>.broadcast();
 
       when(() => authGateway.currentUser).thenReturn(User.empty);
-      when(() => authGateway.user)
-          .thenAnswer((_) => const Stream<User?>.empty());
-      when(() => skillTreeStore.getSkills())
-          .thenAnswer((_) => const Stream<List<Skill>>.empty());
-      when(() => resourcesStore.getResources())
-          .thenAnswer((_) => const Stream<List<Resource>>.empty());
       when(
-        () => messagesStore.getConversations(
-          userEmail: any(named: 'userEmail'),
-        ),
+        () => authGateway.user,
+      ).thenAnswer((_) => const Stream<User?>.empty());
+      when(
+        () => skillTreeStore.getSkills(),
+      ).thenAnswer((_) => const Stream<List<Skill>>.empty());
+      when(
+        () => resourcesStore.getResources(),
+      ).thenAnswer((_) => const Stream<List<Resource>>.empty());
+      when(
+        () =>
+            messagesStore.getConversations(userEmail: any(named: 'userEmail')),
       ).thenAnswer((_) => conversationsController.stream);
-      when(() => messagesStore.createOrUpdateConversation(
-            conversation: any(named: 'conversation'),
-          )).thenAnswer((_) async {});
-      when(() => messagesStore.createOrUpdateMessage(
-            message: any(named: 'message'),
-          )).thenAnswer((_) async {});
-      when(() => riderProfileStore.getRiderProfileByEmail(
-            email: any(named: 'email'),
-          )).thenAnswer((_) async => null);
+      when(
+        () => messagesStore.createOrUpdateConversation(
+          conversation: any(named: 'conversation'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () =>
+            messagesStore.createOrUpdateMessage(message: any(named: 'message')),
+      ).thenAnswer((_) async {});
+      when(
+        () => riderProfileStore.getRiderProfileByEmail(
+          email: any(named: 'email'),
+        ),
+      ).thenAnswer((_) async => null);
     });
 
     tearDown(() async {
@@ -147,44 +154,43 @@ void main() {
       expect(app.useCompositeRequestStore, isFalse);
     });
 
-    test(
-      'App configures CompositeConnectionRequestStore when opted in and '
-      'supports rollback',
-      () {
-        final optedIn = App(
-          settingsController: SettingsController(SettingsService()),
-          messagesRepository: messagesStore,
-          skillTreeRepository: skillTreeStore,
-          resourcesRepository: resourcesStore,
-          riderProfileRepository: riderProfileStore,
-          horseProfileRepository: horseProfileStore,
-          authenticationRepository: authGateway,
-          useCompositeRequestStore: true,
-          firestore: fakeFirestore,
-        );
-        expect(optedIn.useCompositeRequestStore, isTrue);
+    test('App configures CompositeConnectionRequestStore when opted in and '
+        'supports rollback', () {
+      final optedIn = App(
+        settingsController: SettingsController(SettingsService()),
+        messagesRepository: messagesStore,
+        skillTreeRepository: skillTreeStore,
+        resourcesRepository: resourcesStore,
+        riderProfileRepository: riderProfileStore,
+        horseProfileRepository: horseProfileStore,
+        authenticationRepository: authGateway,
+        useCompositeRequestStore: true,
+        firestore: fakeFirestore,
+      );
+      expect(optedIn.useCompositeRequestStore, isTrue);
 
-        final rolledBack = App(
-          settingsController: SettingsController(SettingsService()),
-          messagesRepository: messagesStore,
-          skillTreeRepository: skillTreeStore,
-          resourcesRepository: resourcesStore,
-          riderProfileRepository: riderProfileStore,
-          horseProfileRepository: horseProfileStore,
-          authenticationRepository: authGateway,
-        );
-        expect(rolledBack.useCompositeRequestStore, isFalse);
-      },
-    );
+      final rolledBack = App(
+        settingsController: SettingsController(SettingsService()),
+        messagesRepository: messagesStore,
+        skillTreeRepository: skillTreeStore,
+        resourcesRepository: resourcesStore,
+        riderProfileRepository: riderProfileStore,
+        horseProfileRepository: horseProfileStore,
+        authenticationRepository: authGateway,
+      );
+      expect(rolledBack.useCompositeRequestStore, isFalse);
+    });
 
     test(
       'CompositeConnectionRequestStore shows legacy + Requests, deduplicates '
       'case-insensitively, and suppresses resolved items',
       () async {
-        final primary =
-            FirestoreConnectionRequestStore(firestore: fakeFirestore);
-        final legacy =
-            FirebaseConnectionRequestStore(messagesStore: messagesStore);
+        final primary = FirestoreConnectionRequestStore(
+          firestore: fakeFirestore,
+        );
+        final legacy = FirebaseConnectionRequestStore(
+          messagesStore: messagesStore,
+        );
         final composite = CompositeConnectionRequestStore(
           primary: primary,
           legacy: legacy,
@@ -210,8 +216,9 @@ void main() {
           },
         );
 
-        cubit.emit(cubit.state.copyWith(isGuest: false, usersProfile: trainer));
-        cubit.getConversations();
+        cubit
+          ..emit(cubit.state.copyWith(isGuest: false, usersProfile: trainer))
+          ..getConversations();
         await pumpEventQueue();
 
         // 1. Legacy-only request is visible
@@ -308,29 +315,27 @@ void main() {
 
         // Accept Requests-backed duplicate; watchResolvedKeys suppresses legacy
         final dupReq = cubit.pendingConnectionRequests().firstWhere(
-              (r) => r.messageId == 'msg-dup-1',
-            );
+          (r) => r.messageId == 'msg-dup-1',
+        );
         await cubit.acceptConnectionRequest(dupReq);
         await pumpEventQueue();
         expect(cubit.pendingRequestCount(), 2);
 
         // Deny the Requests-only item
         final newReq = cubit.pendingConnectionRequests().firstWhere(
-              (r) => r.messageId == 'msg-new-1',
-            );
+          (r) => r.messageId == 'msg-new-1',
+        );
         await cubit.denyConnectionRequest(newReq);
         await pumpEventQueue();
         expect(cubit.pendingRequestCount(), 1);
 
         // Remaining item is the legacy-only request
-        expect(
-          cubit.pendingConnectionRequests().single.messageId,
-          'msg-leg-1',
-        );
+        expect(cubit.pendingConnectionRequests().single.messageId, 'msg-leg-1');
 
         // Rollback to legacy adapter still reads legacy conversations cleanly
-        final legacyFuture =
-            legacy.watchRequests(userEmail: trainer.email).first;
+        final legacyFuture = legacy
+            .watchRequests(userEmail: trainer.email)
+            .first;
         conversationsController.add([legacyConv]);
         final legacyOnly = await legacyFuture;
         expect(legacyOnly.map((r) => r.messageId), contains('msg-leg-1'));
@@ -342,10 +347,12 @@ void main() {
     testWidgets(
       'RequestsBadgeButton reflects CompositeConnectionRequestStore count',
       (tester) async {
-        final primary =
-            FirestoreConnectionRequestStore(firestore: fakeFirestore);
-        final legacy =
-            FirebaseConnectionRequestStore(messagesStore: messagesStore);
+        final primary = FirestoreConnectionRequestStore(
+          firestore: fakeFirestore,
+        );
+        final legacy = FirebaseConnectionRequestStore(
+          messagesStore: messagesStore,
+        );
         final composite = CompositeConnectionRequestStore(
           primary: primary,
           legacy: legacy,
@@ -359,8 +366,9 @@ void main() {
           horseProfileRepository: horseProfileStore,
           authenticationRepository: authGateway,
         );
-        cubit.emit(cubit.state.copyWith(isGuest: false, usersProfile: trainer));
-        cubit.getConversations();
+        cubit
+          ..emit(cubit.state.copyWith(isGuest: false, usersProfile: trainer))
+          ..getConversations();
         conversationsController.add(const []);
 
         await primary.sendRequest(
@@ -396,67 +404,62 @@ void main() {
       },
     );
 
-    test(
-      'TransferHorseCubit preserves canonical connectionId doc ID and '
-      'fallback behavior',
-      () async {
-        final primary =
-            FirestoreConnectionRequestStore(firestore: fakeFirestore);
-        final legacy =
-            FirebaseConnectionRequestStore(messagesStore: messagesStore);
-        final composite = CompositeConnectionRequestStore(
-          primary: primary,
-          legacy: legacy,
-        );
+    test('TransferHorseCubit preserves canonical connectionId doc ID and '
+        'fallback behavior', () async {
+      final primary = FirestoreConnectionRequestStore(firestore: fakeFirestore);
+      final legacy = FirebaseConnectionRequestStore(
+        messagesStore: messagesStore,
+      );
+      final composite = CompositeConnectionRequestStore(
+        primary: primary,
+        legacy: legacy,
+      );
 
-        when(
-          () => riderProfileStore.getRiderProfileByEmail(
-            email: trainer.email,
+      when(
+        () => riderProfileStore.getRiderProfileByEmail(email: trainer.email),
+      ).thenAnswer((_) async => trainer);
+
+      final cubit = TransferHorseCubit(
+        horseProfile: horse,
+        userProfile: owner,
+        riderProfileRepository: riderProfileStore,
+        requestRepository: composite,
+        submitCoachingAction: (payload) async {
+          expect(payload['action'], 'sendTransfer');
+          expect(payload['createRequest'], true);
+          return {'id': 'sha256-transfer-id', 'requestCreated': false};
+        },
+      );
+
+      await cubit.getTransferProfile(trainer.email);
+      await cubit.sendTransferRequest();
+
+      expect(cubit.state.status, TransferHorseStatus.success);
+      final snap = await fakeFirestore.collection('Requests').get();
+      expect(snap.docs, hasLength(1));
+      expect(snap.docs.single.data()['connectionId'], 'sha256-transfer-id');
+      expect(snap.docs.single.data()['messageId'], 'sha256-transfer-id');
+      expect(
+        FirestoreConnectionRequestStore.docIdFor(
+          ConnectionRequest(
+            id: 'sha256-transfer-id',
+            messageId: 'sha256-transfer-id',
+            kind: ConnectionRequestKind.transferHorse,
+            senderEmail: owner.email,
+            senderName: owner.name,
+            recipientEmail: trainer.email,
+            recipientName: trainer.name,
+            title: 'Transfer Horse',
+            summary: 'Transfer',
+            parties: [owner.name, trainer.name],
+            partiesIds: [owner.email, trainer.email],
+            createdAt: DateTime(2026),
+            connectionId: 'sha256-transfer-id',
           ),
-        ).thenAnswer((_) async => trainer);
-
-        final cubit = TransferHorseCubit(
-          horseProfile: horse,
-          userProfile: owner,
-          riderProfileRepository: riderProfileStore,
-          requestRepository: composite,
-          submitCoachingAction: (payload) async {
-            expect(payload['action'], 'sendTransfer');
-            expect(payload['createRequest'], true);
-            return {'id': 'sha256-transfer-id', 'requestCreated': false};
-          },
-        );
-
-        await cubit.getTransferProfile(trainer.email);
-        await cubit.sendTransferRequest();
-
-        expect(cubit.state.status, TransferHorseStatus.success);
-        final snap = await fakeFirestore.collection('Requests').get();
-        expect(snap.docs, hasLength(1));
-        expect(snap.docs.single.data()['connectionId'], 'sha256-transfer-id');
-        expect(snap.docs.single.data()['messageId'], 'sha256-transfer-id');
-        expect(
-          FirestoreConnectionRequestStore.docIdFor(
-            ConnectionRequest(
-              id: 'sha256-transfer-id',
-              messageId: 'sha256-transfer-id',
-              kind: ConnectionRequestKind.transferHorse,
-              senderEmail: owner.email,
-              senderName: owner.name,
-              recipientEmail: trainer.email,
-              recipientName: trainer.name,
-              title: 'Transfer Horse',
-              summary: 'Transfer',
-              parties: [owner.name, trainer.name],
-              partiesIds: [owner.email, trainer.email],
-              createdAt: DateTime(2026),
-              connectionId: 'sha256-transfer-id',
-            ),
-          ),
-          'sha256-transfer-id',
-        );
-        await cubit.close();
-      },
-    );
+        ),
+        'sha256-transfer-id',
+      );
+      await cubit.close();
+    });
   });
 }

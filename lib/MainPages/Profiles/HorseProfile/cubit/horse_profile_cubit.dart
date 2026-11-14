@@ -12,11 +12,9 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
     required String horseId,
     required bool? isGuest,
     required RiderProfile? usersProfile,
-    HorseProfileStore? horseProfileRepository,
-    RiderProfileStore? riderProfileRepository,
-  }) : _horseProfileRepository = horseProfileRepository,
-       _riderProfileRepository = riderProfileRepository,
-       super(const HorseProfileState()) {
+    this._horseProfileRepository,
+    this._riderProfileRepository,
+  }) : super(const HorseProfileState()) {
     emit(
       state.copyWith(
         horseId: horseId,
@@ -40,13 +38,11 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
         debugPrint('Horse Profile not retrieved, getting now');
         try {
           await _horseProfileSubscription?.cancel();
-          final horseRepo =
-              _horseProfileRepository ?? HorseProfileRepository();
-          final riderRepo =
-              _riderProfileRepository ?? RiderProfileRepository();
-          _horseProfileSubscription = horseRepo
-              .getHorseProfile(id: id)
-              .listen((horseProfile) {
+          final horseRepo = _horseProfileRepository ?? HorseProfileRepository();
+          final riderRepo = _riderProfileRepository ?? RiderProfileRepository();
+          _horseProfileSubscription = horseRepo.getHorseProfile(id: id).listen((
+            horseProfile,
+          ) {
             if (isClosed) return;
             debugPrint('Horse Profile Retrieved: ${horseProfile?.name}');
             if (horseProfile != null) {
@@ -56,17 +52,19 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
                     .getRiderProfile(email: horseProfile.currentOwnerId)
                     .first
                     .then((ownerProfile) {
-                  if (isClosed) return;
-                  debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
-                  emit(
-                    state.copyWith(
-                      index: 0,
-                      horseId: horseProfile.id,
-                      horseProfile: horseProfile,
-                      ownersProfile: ownerProfile,
-                    ),
-                  );
-                });
+                      if (isClosed) return;
+                      debugPrint(
+                        'Owner Profile Retrieved: ${ownerProfile?.name}',
+                      );
+                      emit(
+                        state.copyWith(
+                          index: 0,
+                          horseId: horseProfile.id,
+                          horseProfile: horseProfile,
+                          ownersProfile: ownerProfile,
+                        ),
+                      );
+                    });
               } else {
                 debugPrint('Owner');
                 emit(

@@ -16,13 +16,12 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
     required HorseProfile horseProfile,
     ConnectionRequestStore? requestRepository,
     MessagesStore? messagesRepository,
-    required RiderProfileStore riderProfileRepository,
+    required this._riderProfileRepository,
     Future<Map<String, dynamic>> Function(Map<String, Object?>)?
     submitCoachingAction,
   }) : _requestRepository =
            requestRepository ??
            FirebaseConnectionRequestStore(messagesStore: messagesRepository),
-       _riderProfileRepository = riderProfileRepository,
        // ignore: prefer_initializing_formals
        _submitCoachingAction = submitCoachingAction,
        super(const TransferHorseState()) {

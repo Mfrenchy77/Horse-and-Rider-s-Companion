@@ -40,9 +40,7 @@ class _InMemoryConnectionRequestStore implements ConnectionRequestStore {
   }
 
   @override
-  Stream<List<ConnectionRequest>> watchRequests({
-    required String userEmail,
-  }) {
+  Stream<List<ConnectionRequest>> watchRequests({required String userEmail}) {
     final normalized = userEmail.toLowerCase();
     List<ConnectionRequest> filter(Iterable<ConnectionRequest> items) =>
         items.where((r) => r.partiesIds.contains(normalized)).toList();
@@ -169,9 +167,8 @@ void main() {
       'TransferHorseCubit sends ConnectionRequest without MessagesStore',
       () async {
         when(
-          () => riderProfileStore.getRiderProfileByEmail(
-            email: recipient.email,
-          ),
+          () =>
+              riderProfileStore.getRiderProfileByEmail(email: recipient.email),
         ).thenAnswer((_) async => recipient);
 
         final cubit = TransferHorseCubit(
@@ -199,88 +196,81 @@ void main() {
       },
     );
 
-    test(
-      'AppCubit creates, watches, accepts, and denies requests',
-      () async {
-        final submittedPayloads = <Map<String, Object?>>[];
-        final cubit = AppCubit(
-          messagesRepository: messagesStore,
-          connectionRequestRepository: requestStore,
-          skillTreeRepository: skillTreeStore,
-          resourcesRepository: resourcesStore,
-          riderProfileRepository: riderProfileStore,
-          horseProfileRepository: horseProfileStore,
-          authenticationRepository: authGateway,
-          submitCoachingAction: (payload) async {
-            submittedPayloads.add(payload);
-            return {'status': 'pending'};
-          },
-        );
+    test('AppCubit creates, watches, accepts, and denies requests', () async {
+      final submittedPayloads = <Map<String, Object?>>[];
+      final cubit = AppCubit(
+        messagesRepository: messagesStore,
+        connectionRequestRepository: requestStore,
+        skillTreeRepository: skillTreeStore,
+        resourcesRepository: resourcesStore,
+        riderProfileRepository: riderProfileStore,
+        horseProfileRepository: horseProfileStore,
+        authenticationRepository: authGateway,
+        submitCoachingAction: (payload) async {
+          submittedPayloads.add(payload);
+          return {'status': 'pending'};
+        },
+      );
 
-        cubit.emit(
-          cubit.state.copyWith(
-            isGuest: false,
-            usersProfile: recipient,
-          ),
-        );
-        cubit.getConversations();
-        await pumpEventQueue();
+      cubit
+        ..emit(cubit.state.copyWith(isGuest: false, usersProfile: recipient))
+        ..getConversations();
+      await pumpEventQueue();
 
-        final incoming = ConnectionRequest(
-          id: 'owner_recipient',
-          messageId: 'm1',
-          kind: ConnectionRequestKind.instructor,
-          senderEmail: owner.email,
-          senderName: owner.name,
-          recipientEmail: recipient.email,
-          recipientName: recipient.name,
-          title: 'Instructor Request',
-          summary:
-              'Owner Rider has requested Recipient Rider to be their '
-              'Instructor',
-          parties: [owner.name, recipient.name],
-          partiesIds: [owner.email, recipient.email],
-          createdAt: DateTime(2026),
-        );
-        requestStore.seed(incoming);
-        await pumpEventQueue();
+      final incoming = ConnectionRequest(
+        id: 'owner_recipient',
+        messageId: 'm1',
+        kind: ConnectionRequestKind.instructor,
+        senderEmail: owner.email,
+        senderName: owner.name,
+        recipientEmail: recipient.email,
+        recipientName: recipient.name,
+        title: 'Instructor Request',
+        summary:
+            'Owner Rider has requested Recipient Rider to be their '
+            'Instructor',
+        parties: [owner.name, recipient.name],
+        partiesIds: [owner.email, recipient.email],
+        createdAt: DateTime(2026),
+      );
+      requestStore.seed(incoming);
+      await pumpEventQueue();
 
-        expect(cubit.pendingRequestCount(), 1);
-        expect(cubit.pendingConnectionRequests(), [incoming]);
+      expect(cubit.pendingRequestCount(), 1);
+      expect(cubit.pendingConnectionRequests(), [incoming]);
 
-        await cubit.acceptConnectionRequest(incoming);
-        expect(submittedPayloads, [
-          {
-            'action': 'send',
-            'kind': 'rider',
-            'learnerEmail': owner.email,
-            'coachEmail': recipient.email,
-            'requestDocId': 'owner_recipient',
-            'fallbackRequestDocIds': [
-              'owner_recipient_m1',
-              'legacy_owner_recipient_m1',
-            ],
-          },
-        ]);
-        expect(cubit.state.acceptStatus, AcceptStatus.submitted);
+      await cubit.acceptConnectionRequest(incoming);
+      expect(submittedPayloads, [
+        {
+          'action': 'send',
+          'kind': 'rider',
+          'learnerEmail': owner.email,
+          'coachEmail': recipient.email,
+          'requestDocId': 'owner_recipient',
+          'fallbackRequestDocIds': [
+            'owner_recipient_m1',
+            'legacy_owner_recipient_m1',
+          ],
+        },
+      ]);
+      expect(cubit.state.acceptStatus, AcceptStatus.submitted);
 
-        await cubit.denyConnectionRequest(incoming);
-        await pumpEventQueue();
-        expect(cubit.pendingRequestCount(), 0);
-        expect(cubit.state.errorMessage, 'Request denied');
+      await cubit.denyConnectionRequest(incoming);
+      await pumpEventQueue();
+      expect(cubit.pendingRequestCount(), 0);
+      expect(cubit.state.errorMessage, 'Request denied');
 
-        await cubit.createStudentRequest(studentProfile: owner);
-        await pumpEventQueue();
-        final afterSend = await requestStore
-            .watchRequests(userEmail: recipient.email)
-            .first;
-        expect(afterSend, hasLength(1));
-        expect(afterSend.single.kind, ConnectionRequestKind.student);
-        verifyZeroInteractions(messagesStore);
+      await cubit.createStudentRequest(studentProfile: owner);
+      await pumpEventQueue();
+      final afterSend = await requestStore
+          .watchRequests(userEmail: recipient.email)
+          .first;
+      expect(afterSend, hasLength(1));
+      expect(afterSend.single.kind, ConnectionRequestKind.student);
+      verifyZeroInteractions(messagesStore);
 
-        await cubit.close();
-      },
-    );
+      await cubit.close();
+    });
 
     test(
       'FirebaseConnectionRequestStore delegates send, watch, and dismiss',
@@ -294,8 +284,7 @@ void main() {
           recipientEmail: recipient.email,
           recipientName: recipient.name,
           title: 'Student Horse Request',
-          summary:
-              'Owner Rider has requested to add Comet as a student horse.',
+          summary: 'Owner Rider has requested to add Comet as a student horse.',
           parties: [owner.name, recipient.name],
           partiesIds: [owner.email, recipient.email],
           createdAt: DateTime(2026, 2),
@@ -348,8 +337,9 @@ void main() {
           ),
         ).called(1);
 
-        final watched =
-            await adapter.watchRequests(userEmail: recipient.email).first;
+        final watched = await adapter
+            .watchRequests(userEmail: recipient.email)
+            .first;
         expect(watched, hasLength(1));
         expect(watched.single.kind, ConnectionRequestKind.studentHorse);
         expect(watched.single.horseId, horse.id);
@@ -389,10 +379,7 @@ void main() {
         );
 
         cubit.emit(
-          cubit.state.copyWith(
-            isGuest: false,
-            usersProfile: recipient,
-          ),
+          cubit.state.copyWith(isGuest: false, usersProfile: recipient),
         );
         requestStore.seed(
           ConnectionRequest(
@@ -416,9 +403,7 @@ void main() {
           MaterialApp(
             home: BlocProvider<AppCubit>.value(
               value: cubit,
-              child: const Scaffold(
-                body: RequestsBadgeButton(),
-              ),
+              child: const Scaffold(body: RequestsBadgeButton()),
             ),
           ),
         );
@@ -450,66 +435,61 @@ void main() {
       },
     );
 
-    test(
-      'AppCubit accepts transferHorse via connectionHandler with version '
-      'and requestDocId',
-      () async {
-        final requestStore = _InMemoryConnectionRequestStore();
-        final submittedPayloads = <Map<String, Object?>>[];
-        final cubit = AppCubit(
-          messagesRepository: messagesStore,
-          connectionRequestRepository: requestStore,
-          skillTreeRepository: skillTreeStore,
-          resourcesRepository: resourcesStore,
-          riderProfileRepository: riderProfileStore,
-          horseProfileRepository: horseProfileStore,
-          authenticationRepository: authGateway,
-          fetchConnection: (id) async => {
-            'id': id,
-            'version': 'v-42',
-            'status': 'pending',
-          },
-          submitCoachingAction: (payload) async {
-            submittedPayloads.add(payload);
-            return {'id': payload['id'], 'status': 'accepted'};
-          },
-        );
-        cubit.emit(
-          cubit.state.copyWith(usersProfile: recipient, isGuest: false),
-        );
-
-        final transferReq = ConnectionRequest(
-          id: 'owner_recipient_m-xfer',
-          messageId: 'm-xfer',
-          kind: ConnectionRequestKind.transferHorse,
-          senderEmail: owner.email,
-          senderName: owner.name,
-          recipientEmail: recipient.email,
-          recipientName: recipient.name,
-          title: 'Transfer Horse',
-          summary: 'Transfer Atlas',
-          parties: [owner.name, recipient.name],
-          partiesIds: [owner.email, recipient.email],
-          createdAt: DateTime(2026, 4),
-          horseId: 'atlas',
-          horseName: 'Atlas',
-          connectionId: 'transfer_atlas_u1_u2',
-        );
-
-        await cubit.acceptConnectionRequest(transferReq);
-        expect(submittedPayloads, hasLength(1));
-        expect(submittedPayloads.single, {
-          'action': 'accept',
-          'id': 'transfer_atlas_u1_u2',
+    test('AppCubit accepts transferHorse via connectionHandler with version '
+        'and requestDocId', () async {
+      final requestStore = _InMemoryConnectionRequestStore();
+      final submittedPayloads = <Map<String, Object?>>[];
+      final cubit = AppCubit(
+        messagesRepository: messagesStore,
+        connectionRequestRepository: requestStore,
+        skillTreeRepository: skillTreeStore,
+        resourcesRepository: resourcesStore,
+        riderProfileRepository: riderProfileStore,
+        horseProfileRepository: horseProfileStore,
+        authenticationRepository: authGateway,
+        fetchConnection: (id) async => {
+          'id': id,
           'version': 'v-42',
-          'requestDocId': 'owner_recipient_m-xfer',
-        });
-        expect(cubit.state.acceptStatus, AcceptStatus.submitted);
-        expect(cubit.state.isError, isFalse);
+          'status': 'pending',
+        },
+        submitCoachingAction: (payload) async {
+          submittedPayloads.add(payload);
+          return {'id': payload['id'], 'status': 'accepted'};
+        },
+      );
+      cubit.emit(cubit.state.copyWith(usersProfile: recipient, isGuest: false));
 
-        unawaited(cubit.close());
-      },
-    );
+      final transferReq = ConnectionRequest(
+        id: 'owner_recipient_m-xfer',
+        messageId: 'm-xfer',
+        kind: ConnectionRequestKind.transferHorse,
+        senderEmail: owner.email,
+        senderName: owner.name,
+        recipientEmail: recipient.email,
+        recipientName: recipient.name,
+        title: 'Transfer Horse',
+        summary: 'Transfer Atlas',
+        parties: [owner.name, recipient.name],
+        partiesIds: [owner.email, recipient.email],
+        createdAt: DateTime(2026, 4),
+        horseId: 'atlas',
+        horseName: 'Atlas',
+        connectionId: 'transfer_atlas_u1_u2',
+      );
+
+      await cubit.acceptConnectionRequest(transferReq);
+      expect(submittedPayloads, hasLength(1));
+      expect(submittedPayloads.single, {
+        'action': 'accept',
+        'id': 'transfer_atlas_u1_u2',
+        'version': 'v-42',
+        'requestDocId': 'owner_recipient_m-xfer',
+      });
+      expect(cubit.state.acceptStatus, AcceptStatus.submitted);
+      expect(cubit.state.isError, isFalse);
+
+      unawaited(cubit.close());
+    });
 
     test(
       'TransferHorseCubit calls sendTransfer before creating Requests doc',

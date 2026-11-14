@@ -149,13 +149,14 @@ void main() {
   test(
     'requires a valid link, title and a known skill before writing',
     () async {
-      cubit.emit(
-        cubit.state.copyWith(
-          title: 'Guide',
-          url: const Url.dirty('https://example.com/guide'),
-        ),
-      );
-      cubit.resourceSkillsChanged('unknown');
+      cubit
+        ..emit(
+          cubit.state.copyWith(
+            title: 'Guide',
+            url: const Url.dirty('https://example.com/guide'),
+          ),
+        )
+        ..resourceSkillsChanged('unknown');
       await cubit.submit();
       expect(cubit.state.error, contains('at least one related skill'));
 

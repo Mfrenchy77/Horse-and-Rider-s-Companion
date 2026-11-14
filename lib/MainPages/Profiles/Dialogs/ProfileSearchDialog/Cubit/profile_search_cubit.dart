@@ -13,12 +13,10 @@ part 'profile_search_state.dart';
 class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   ProfileSearchCubit({
     required ApiKeyProvider keysRepository,
-    required RiderProfileStore riderProfileRepository,
-    required HorseProfileStore horseProfileRepository,
+    required this._riderProfileRepository,
+    required this._horseProfileRepository,
     // ignore: prefer_initializing_formals
   }) : _keysRepository = keysRepository,
-       _riderProfileRepository = riderProfileRepository,
-       _horseProfileRepository = horseProfileRepository,
        super(const ProfileSearchState());
 
   ///Repositories
