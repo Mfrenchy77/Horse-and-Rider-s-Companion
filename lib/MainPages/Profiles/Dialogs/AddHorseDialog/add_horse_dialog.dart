@@ -113,8 +113,16 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
                   : '',
             );
 
+            final isWide = MediaQuery.sizeOf(context).width >= 700;
             return AppGlassDialog(
-              maxWidth: 640,
+              maxWidth: 600,
+              density: AppGlassDensity.frosted,
+              insetPadding: isWide
+                  ? const EdgeInsets.symmetric(horizontal: 32, vertical: 36)
+                  : const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+              padding: EdgeInsets.all(
+                isWide ? AppTokens.spaceXl : AppTokens.spaceLg,
+              ),
               title: Text(
                 widget._editProfile
                     ? 'Edit Horse: ${state.horseProfile?.name}'

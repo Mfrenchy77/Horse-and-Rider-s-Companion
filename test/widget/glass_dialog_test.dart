@@ -450,4 +450,85 @@ void main() {
       expect(find.byType(AppGlassDialog), findsNothing);
     },
   );
+
+  testWidgets(
+    'AddHorseDialog uses frosted density on desktop in light and dark themes',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final rider = RiderProfile(
+        id: 'rider-1',
+        email: 'matt@example.com',
+        name: 'Matt French',
+      );
+      final keys = _MockKeysRepository();
+      when(keys.getLocationApiKey).thenAnswer((_) async => '');
+      when(keys.getZipCodeApiKey).thenAnswer((_) async => '');
+
+      for (final theme in [
+        HorseAndRidersTheme().getDarkTheme(),
+        HorseAndRidersTheme().getLightTheme(),
+      ]) {
+        await tester.pumpWidget(
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<KeysRepository>.value(value: keys),
+              RepositoryProvider<CloudRepository>.value(
+                value: _MockCloudRepository(),
+              ),
+              RepositoryProvider<HorseProfileRepository>.value(
+                value: harness.horses,
+              ),
+              RepositoryProvider<RiderProfileRepository>.value(
+                value: harness.riders,
+              ),
+            ],
+            child: BlocProvider.value(
+              value: harness.cubit,
+              child: MaterialApp(
+                theme: theme,
+                home: Builder(
+                  builder: (context) => Scaffold(
+                    body: ElevatedButton(
+                      onPressed: () => showAppGlassDialog<void>(
+                        context: context,
+                        builder: (_) => AddHorseDialog(
+                          editProfile: false,
+                          userProfile: rider,
+                          horseProfile: null,
+                        ),
+                      ),
+                      child: const Text('Create Horse'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Create Horse'));
+        await tester.pumpAndSettle();
+
+        final dialog = tester.widget<AppGlassDialog>(
+          find.byType(AppGlassDialog),
+        );
+        expect(dialog.density, AppGlassDensity.frosted);
+        expect(dialog.maxWidth, 600);
+        expect(find.text('Create New Horse Profile'), findsOneWidget);
+
+        // Comfortable margins around floating dialog on 1280px desktop.
+        final surfaceRect = tester.getRect(find.byType(AppGlassSurface));
+        expect(surfaceRect.left, greaterThan(250));
+        expect(1280 - surfaceRect.right, greaterThan(250));
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
 }

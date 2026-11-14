@@ -234,6 +234,15 @@ class AppDialogSurface extends StatelessWidget {
   }
 }
 
+/// Controls how translucent vs. frosted an [AppGlassSurface] appears.
+enum AppGlassDensity {
+  /// Balanced translucency for compact dialogs and confirmation prompts.
+  standard,
+
+  /// Higher-opacity frosting for dense forms over bright photographic pages.
+  frosted,
+}
+
 /// Translucent frosted-glass surface for floating dialogs.
 class AppGlassSurface extends StatelessWidget {
   const AppGlassSurface({
@@ -241,32 +250,43 @@ class AppGlassSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppTokens.spaceXl),
     this.borderRadius = AppTokens.radiusXl,
+    this.density = AppGlassDensity.standard,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double borderRadius;
+  final AppGlassDensity density;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final radius = BorderRadius.circular(borderRadius);
+    final isFrosted = density == AppGlassDensity.frosted;
+    final topAlpha = isDark
+        ? (isFrosted ? 0.91 : 0.80)
+        : (isFrosted ? 0.94 : 0.86);
+    final bottomAlpha = isDark
+        ? (isFrosted ? 0.87 : 0.72)
+        : (isFrosted ? 0.90 : 0.78);
     final gradient = isDark
         ? LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTokens.midnightCardTop.withValues(alpha: 0.80),
-              AppTokens.midnightCardBottom.withValues(alpha: 0.72),
+              AppTokens.midnightCardTop.withValues(alpha: topAlpha),
+              AppTokens.midnightCardBottom.withValues(alpha: bottomAlpha),
             ],
           )
         : LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.surface.withValues(alpha: 0.86),
-              theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.78),
+              theme.colorScheme.surface.withValues(alpha: topAlpha),
+              theme.colorScheme.surfaceContainerLow.withValues(
+                alpha: bottomAlpha,
+              ),
             ],
           );
     final borderColor = isDark
@@ -333,6 +353,7 @@ class AppGlassDialog extends StatelessWidget {
     ),
     this.padding = const EdgeInsets.all(AppTokens.spaceXl),
     this.scrollable = true,
+    this.density = AppGlassDensity.standard,
   });
 
   final Widget? title;
@@ -342,6 +363,7 @@ class AppGlassDialog extends StatelessWidget {
   final EdgeInsets insetPadding;
   final EdgeInsetsGeometry padding;
   final bool scrollable;
+  final AppGlassDensity density;
 
   @override
   Widget build(BuildContext context) {
@@ -374,6 +396,7 @@ class AppGlassDialog extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: AppGlassSurface(
           padding: padding,
+          density: density,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
