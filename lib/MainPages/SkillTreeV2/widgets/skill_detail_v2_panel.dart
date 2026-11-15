@@ -102,6 +102,7 @@ class SkillDetailV2Panel extends StatelessWidget {
                     color: AppTokens.secondaryTextColor(context),
                   ),
                 ),
+              ..._buildAliasesSection(context, skill),
             ],
           ),
           if (skill.safety.isNotEmpty)
@@ -272,6 +273,44 @@ class SkillDetailV2Panel extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onSelectLevel(level),
     );
+  }
+
+  List<Widget> _buildAliasesSection(
+    BuildContext context,
+    CurriculumSkill skill,
+  ) {
+    final primaryLower = skill.name.trim().toLowerCase();
+    final seen = <String>{};
+    final visibleAliases = <String>[];
+    for (final raw in skill.aliases) {
+      final trimmed = raw.trim();
+      final lower = trimmed.toLowerCase();
+      if (trimmed.isEmpty || lower == primaryLower || !seen.add(lower)) {
+        continue;
+      }
+      visibleAliases.add(trimmed);
+    }
+    if (visibleAliases.isEmpty) return const [];
+
+    final theme = Theme.of(context);
+    final baseStyle = theme.textTheme.bodySmall?.copyWith(
+      color: AppTokens.secondaryTextColor(context),
+    );
+    return [
+      Text.rich(
+        key: const Key('skillDetailAliasesText'),
+        TextSpan(
+          style: baseStyle,
+          children: [
+            TextSpan(
+              text: 'Also known as: ',
+              style: baseStyle?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            TextSpan(text: visibleAliases.join(' · ')),
+          ],
+        ),
+      ),
+    ];
   }
 }
 

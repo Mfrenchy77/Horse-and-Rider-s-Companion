@@ -138,8 +138,8 @@
     "subject": "rider",
     "realm": "In_Hand",
     "familyId": "rider.in_hand.ground_control_yielding",
-    "name": "Yield the Forequarters (In-Hand)",
-    "aliases": ["Move the shoulders over (in-hand)", "Turn on the haunches (in-hand)"],
+    "name": "Turn on the Haunches (In-Hand)",
+    "aliases": ["Yield the Forequarters (In-Hand)", "Move the shoulders over (in-hand)"],
     "summary": "Guiding a reasonably prepared horse from the ground to step its shoulders laterally around a relatively steady hindquarters.",
     "purpose": "Balances hindquarter control with shoulder control for straightness, personal space boundaries, and obstacle alignment.",
     "safety": [

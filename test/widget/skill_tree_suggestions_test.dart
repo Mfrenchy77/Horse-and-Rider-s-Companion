@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/suggest_improvement_dialog.dart';
 
@@ -152,9 +153,9 @@ void main() {
           ),
         );
 
-        final v2Repo = SkillTreeV2Repository(
-          store: InMemorySkillTreeV2Store(),
-        );
+        final v2Store = await const AssetCurriculumV2Loader()
+            .loadInMemoryStore();
+        final v2Repo = SkillTreeV2Repository(store: v2Store);
 
         await tester.pumpWidget(
           MultiRepositoryProvider(
@@ -173,18 +174,55 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        // Permanent header buttons were moved into the app-bar overflow menu.
         expect(
           find.byKey(const Key('skillTreeV2SuggestImprovementButton')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(
           find.byKey(const Key('skillTreeV2MySuggestionsButton')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
           findsOneWidget,
         );
 
-        // Open general suggestion dialog from header.
+        // Empty My Suggestions dialog should be compact.
         await tester.tap(
-          find.byKey(const Key('skillTreeV2SuggestImprovementButton')),
+          find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Toggle Edit Controls'), findsNothing);
+        expect(find.text('Sort'), findsNothing);
+        await tester.tap(
+          find.byKey(const Key('skillTreeV2MenuMySuggestions')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mySuggestionsDialog')), findsOneWidget);
+        expect(
+          find.text('You have not submitted any Skill Tree suggestions yet.'),
+          findsOneWidget,
+        );
+        final emptyDialogSize = tester.getSize(
+          find
+              .descendant(
+                of: find.byKey(const Key('mySuggestionsDialog')),
+                matching: find.byType(Material),
+              )
+              .first,
+        );
+        expect(emptyDialogSize.height, lessThan(260));
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+
+        // Open general suggestion dialog from app-bar overflow menu.
+        await tester.tap(
+          find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const Key('skillTreeV2MenuSuggestImprovement')),
         );
         await tester.pumpAndSettle();
 
@@ -192,6 +230,8 @@ void main() {
           find.byKey(const Key('suggestImprovementDialog')),
           findsOneWidget,
         );
+        expect(find.text('What would you like to improve?'), findsOneWidget);
+        expect(find.text('Suggestion Type'), findsNothing);
         await tester.enterText(
           find.byKey(const Key('suggestionTitleField')),
           'Add ground-tying safety note',
@@ -210,13 +250,80 @@ void main() {
         expect(submitted.single.subject, 'rider');
         expect(submitted.single.title, 'Add ground-tying safety note');
 
-        // Open My Suggestions and verify it renders.
+        // Open My Suggestions from overflow menu and verify it renders.
         await tester.tap(
-          find.byKey(const Key('skillTreeV2MySuggestionsButton')),
+          find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const Key('skillTreeV2MenuMySuggestions')),
         );
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('mySuggestionsDialog')), findsOneWidget);
         expect(find.text('Add ground-tying safety note'), findsOneWidget);
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+
+        // Search by legacy alias and verify renamed skill + visible aliases +
+        // contextual suggestion submission.
+        await tester.enterText(
+          find.byKey(const Key('skillTreeV2SearchField')),
+          'Yield the Forequarters',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Turn on the Haunches (In-Hand)'), findsWidgets);
+        await tester.tap(find.text('Turn on the Haunches (In-Hand)').first);
+        await tester.pumpAndSettle();
+
+        final aliasesTextFinder = find.byKey(
+          const Key('skillDetailAliasesText'),
+        );
+        expect(aliasesTextFinder, findsOneWidget);
+        final aliasesWidget = tester.widget<Text>(aliasesTextFinder);
+        final aliasesPlain = aliasesWidget.textSpan?.toPlainText() ?? '';
+        expect(
+          aliasesPlain,
+          'Also known as: Yield the Forequarters (In-Hand) · '
+          'Move the shoulders over (in-hand)',
+        );
+        // Rendered as plain secondary text, not Material Chips.
+        expect(
+          find.descendant(
+            of: aliasesTextFinder,
+            matching: find.byType(Chip),
+          ),
+          findsNothing,
+        );
+
+        // Contextual suggestion from skill detail panel.
+        await tester.ensureVisible(
+          find.text('Suggest Improvement for This Skill'),
+        );
+        await tester.tap(find.text('Suggest Improvement for This Skill'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('suggestImprovementDialog')),
+          findsOneWidget,
+        );
+        await tester.enterText(
+          find.byKey(const Key('suggestionTitleField')),
+          'Clarify shoulder position cue',
+        );
+        await tester.enterText(
+          find.byKey(const Key('suggestionDescriptionField')),
+          'Add handler shoulder angle guidance for Turn on the Haunches.',
+        );
+        await tester.tap(find.byKey(const Key('suggestionSubmitButton')));
+        await tester.pumpAndSettle();
+
+        final allSubmitted = await suggestionsRepo.fetchMySuggestions(
+          submitterUid: 'rider-1',
+        );
+        expect(allSubmitted, hasLength(2));
+        expect(
+          allSubmitted.first.targetSkillId,
+          'rider.in_hand.yield_forequarters',
+        );
       },
     );
 
@@ -244,6 +351,75 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
       expect(find.text('Sign In Required'), findsOneWidget);
+    });
+
+    testWidgets('Hides Also known as when skill has no distinct aliases', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final store = InMemorySkillTreeV2Store(
+        families: const [
+          SkillFamily(
+            id: 'rider.husbandry.test_family',
+            subject: SkillSubject.rider,
+            realm: SkillCategory.Husbandry,
+            name: 'Test Family',
+            description: 'Test',
+          ),
+        ],
+        skills: const [
+          CurriculumSkill(
+            id: 'rider.husbandry.no_alias_skill',
+            subject: SkillSubject.rider,
+            realm: SkillCategory.Husbandry,
+            familyId: 'rider.husbandry.test_family',
+            name: 'Basic Leading',
+            aliases: ['basic leading', '  '],
+            summary: 'Lead calmly.',
+            purpose: 'Safety.',
+            availableLevels: [DifficultyState.Introductory],
+            levels: {
+              DifficultyState.Introductory: SkillLevelDefinition(
+                overview: 'Overview',
+                learning: 'Learning',
+                proficient: 'Proficient',
+              ),
+            },
+          ),
+        ],
+      );
+      final repo = SkillTreeV2Repository(store: store);
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<SkillTreeSuggestionsRepository>.value(
+              value: suggestionsRepo,
+            ),
+          ],
+          child: BlocProvider<AppCubit>.value(
+            value: harness.cubit,
+            child: MaterialApp(
+              home: SkillTreeV2View(repository: repo),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Test Family'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Basic Leading').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('skillDetailAliasesText')), findsNothing);
+      expect(find.textContaining('Also known as:'), findsNothing);
     });
   });
 

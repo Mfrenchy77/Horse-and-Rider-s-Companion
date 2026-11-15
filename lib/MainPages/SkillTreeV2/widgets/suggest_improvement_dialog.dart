@@ -271,7 +271,7 @@ class _SuggestImprovementDialogState extends State<_SuggestImprovementDialog> {
                   key: const Key('suggestionCategoryField'),
                   initialValue: _category,
                   decoration: const InputDecoration(
-                    labelText: 'Suggestion Type',
+                    labelText: 'What would you like to improve?',
                     border: OutlineInputBorder(),
                   ),
                   items: [
@@ -411,81 +411,83 @@ class _MySuggestionsDialogState extends State<_MySuggestionsDialog> {
     return AlertDialog(
       key: const Key('mySuggestionsDialog'),
       title: const Text('My Submitted Suggestions'),
-      content: SizedBox(
-        width: 540,
-        height: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 540, maxHeight: 420),
         child: FutureBuilder<List<SkillTreeSuggestion>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const SizedBox(
+                height: 96,
+                child: Center(child: CircularProgressIndicator()),
+              );
             }
             if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  'Could not load your suggestions.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
+              return Text(
+                'Could not load your suggestions.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
                 ),
               );
             }
             final items = snapshot.data ?? const [];
             if (items.isEmpty) {
-              return const Center(
-                child: Text(
-                  'You have not submitted any Skill Tree suggestions yet.',
-                ),
+              return const Text(
+                'You have not submitted any Skill Tree suggestions yet.',
               );
             }
-            return ListView.separated(
-              itemCount: items.length,
-              separatorBuilder: (_, _) => const Divider(height: 16),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: AppTokens.spaceXs,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+            return SizedBox(
+              width: 540,
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: items.length,
+                separatorBuilder: (_, _) => const Divider(height: 16),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: AppTokens.spaceXs,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                        Chip(
-                          label: Text(item.status.label),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                    Text(
-                      item.description,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    if (item.publicResolutionNote != null &&
-                        item.publicResolutionNote!.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppTokens.spaceSm),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(
-                            AppTokens.radiusSm,
+                          Chip(
+                            label: Text(item.status.label),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ),
+                      Text(
+                        item.description,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      if (item.publicResolutionNote != null &&
+                          item.publicResolutionNote!.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppTokens.spaceSm),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(
+                              AppTokens.radiusSm,
+                            ),
+                          ),
+                          child: Text(
+                            'Resolution note: ${item.publicResolutionNote}',
+                            style: theme.textTheme.bodySmall,
                           ),
                         ),
-                        child: Text(
-                          'Resolution note: ${item.publicResolutionNote}',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             );
           },
         ),

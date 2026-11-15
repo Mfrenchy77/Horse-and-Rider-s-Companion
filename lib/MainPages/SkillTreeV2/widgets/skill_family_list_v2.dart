@@ -62,9 +62,10 @@ class SkillFamilyListV2 extends StatelessWidget {
         final isExpanded =
             isSearching || state.expandedFamilyIds.contains(family.id);
 
-        return AppSurfaceCard(
-          key: Key('skillFamily_${family.id}'),
-          child: Column(
+        return RepaintBoundary(
+          child: AppSurfaceCard(
+            key: Key('skillFamily_${family.id}'),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppTokens.spaceSm,
             children: [
@@ -133,6 +134,7 @@ class SkillFamilyListV2 extends StatelessWidget {
                   ),
             ],
           ),
+        ),
         );
       },
     );

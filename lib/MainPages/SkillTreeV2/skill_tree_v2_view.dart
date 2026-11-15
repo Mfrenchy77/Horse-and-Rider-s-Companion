@@ -407,37 +407,38 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           } else if (state.errorMessage != null) {
             body = Center(child: Text(state.errorMessage!));
           } else {
-            body = SingleChildScrollView(
-            key: const Key('skillTreeV2View'),
-            controller: _scrollController,
-            padding: const EdgeInsets.all(AppTokens.spaceMd),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1240),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: AppTokens.spaceMd,
-                  children: [
-                    if (_cubit.isInMemoryStore)
-                      Container(
-                        key: const Key('skillTreeV2PreviewBanner'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTokens.spaceMd,
-                          vertical: AppTokens.spaceSm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondaryContainer.withValues(
-                            alpha: 0.45,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppTokens.radiusSm,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.science_outlined, size: 18),
+            body = RepaintBoundary(
+              child: SingleChildScrollView(
+                key: const Key('skillTreeV2View'),
+                controller: _scrollController,
+                padding: const EdgeInsets.all(AppTokens.spaceMd),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1240),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: AppTokens.spaceMd,
+                      children: [
+                        if (_cubit.isInMemoryStore)
+                          Container(
+                            key: const Key('skillTreeV2PreviewBanner'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTokens.spaceMd,
+                              vertical: AppTokens.spaceSm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.secondaryContainer.withValues(
+                                alpha: 0.45,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppTokens.radiusSm,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.science_outlined, size: 18),
                             const SizedBox(width: AppTokens.spaceSm),
                             Expanded(
                               child: Text(
@@ -469,26 +470,6 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                         _cubit.setSearchQuery(query);
                         _syncLocalHistoryEntry();
                       },
-                      onSuggestImprovement: () async {
-                        final created = await showSuggestImprovementDialog(
-                          context,
-                          subject: state.subject,
-                          realm: state.realm,
-                        );
-                        if (created != null && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Suggestion submitted for review. Thank you!',
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      onViewMySuggestions:
-                          !appState.isGuest && appState.user.emailVerified
-                          ? () => showMySuggestionsDialog(context)
-                          : null,
                     ),
                     if (state.viewMode == SkillTreeV2ViewMode.summary)
                       AbilitySummaryV2View(
@@ -701,6 +682,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 ),
               ),
             ),
+            ),
           );
           }
 
@@ -711,6 +693,59 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 onPressed: () => _handleAppBarBack(context),
               ),
               title: const Text('Skill Tree 2.0 (Preview)'),
+              actions: [
+                PopupMenuButton<String>(
+                  key: const Key('skillTreeV2AppBarOverflowMenu'),
+                  tooltip: 'More options',
+                  onSelected: (value) async {
+                    if (value == 'suggest') {
+                      final created = await showSuggestImprovementDialog(
+                        context,
+                        subject: state.subject,
+                        realm: state.realm,
+                      );
+                      if (created != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Suggestion submitted for review. Thank you!',
+                            ),
+                          ),
+                        );
+                      }
+                    } else if (value == 'my_suggestions') {
+                      await showMySuggestionsDialog(context);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<String>(
+                      key: Key('skillTreeV2MenuSuggestImprovement'),
+                      value: 'suggest',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lightbulb_outline, size: 18),
+                          SizedBox(width: AppTokens.spaceSm),
+                          Flexible(child: Text('Suggest an Improvement')),
+                        ],
+                      ),
+                    ),
+                    if (!appState.isGuest && appState.user.emailVerified)
+                      const PopupMenuItem<String>(
+                        key: Key('skillTreeV2MenuMySuggestions'),
+                        value: 'my_suggestions',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.history_edu_outlined, size: 18),
+                            SizedBox(width: AppTokens.spaceSm),
+                            Flexible(child: Text('My Suggestions')),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
             body: AppScaffoldBackdrop(child: body),
           );

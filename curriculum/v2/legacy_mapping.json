@@ -666,7 +666,7 @@
     "legacyRealm": "In_Hand",
     "legacyDifficulty": "Intermediate",
     "v2SkillId": "rider.in_hand.yield_forequarters",
-    "v2SkillName": "Yield the Forequarters (In-Hand)",
+    "v2SkillName": "Turn on the Haunches (In-Hand)",
     "targetLevel": "intermediate",
     "action": "retained"
   },
