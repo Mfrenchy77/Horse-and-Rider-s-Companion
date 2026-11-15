@@ -42,7 +42,8 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
     fetch: fetch || (async () => { throw new Error('Unexpected network access'); }),
     require: (id) => mocks[id] ||
       (id === './connections' ? require('../connections') :
-      id === './account_deletion' ? require('../account_deletion') : require(id)),
+      id === './account_deletion' ? require('../account_deletion') :
+      id === './suggestions' ? require('../suggestions') : require(id)),
   }, {filename: 'index.js'});
   return {handlers: exports, pushes, errors, tokenOwners};
 }

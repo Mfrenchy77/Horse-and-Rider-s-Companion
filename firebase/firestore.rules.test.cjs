@@ -448,6 +448,11 @@ test('SkillTreeSuggestions and AuditEvents enforce staff/submitter read and deny
     submittedByUid: 'sub-1',
     status: 'approved',
   }));
+  await assertFails(updateDoc(doc(submitterDb, 'SkillTreeSuggestions/sug-1'), {status: 'approved'}));
+  await assertFails(deleteDoc(doc(submitterDb, 'SkillTreeSuggestions/sug-1')));
+  await assertFails(setDoc(doc(modDb, 'SkillTreeSuggestions/sug-3'), {id: 'sug-3'}));
+  await assertFails(updateDoc(doc(modDb, 'SkillTreeSuggestions/sug-1'), {status: 'approved'}));
+  await assertFails(deleteDoc(doc(modDb, 'SkillTreeSuggestions/sug-1')));
   await assertFails(updateDoc(doc(adminDb, 'SkillTreeSuggestions/sug-1'), {status: 'approved'}));
   await assertFails(deleteDoc(doc(adminDb, 'SkillTreeSuggestions/sug-1')));
 
@@ -461,9 +466,25 @@ test('SkillTreeSuggestions and AuditEvents enforce staff/submitter read and deny
 
   // Direct writes to AuditEvents are denied for all clients.
   await assertFails(setDoc(
+    doc(adminDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-2'),
+    {id: 'evt-2', privateNote: 'Bypass'},
+  ));
+  await assertFails(setDoc(
     doc(modDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-2'),
     {id: 'evt-2', privateNote: 'Bypass'},
   ));
+  await assertFails(setDoc(
+    doc(submitterDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-2'),
+    {id: 'evt-2', privateNote: 'Bypass'},
+  ));
+
+  // SkillsV2 and SkillFamilies remain protected against client writes (even by admin/mod without editor claim).
+  await assertFails(setDoc(doc(otherDb, 'SkillsV2/v2-hack'), {id: 'v2-hack'}));
+  await assertFails(setDoc(doc(modDb, 'SkillsV2/v2-mod'), {id: 'v2-mod'}));
+  await assertFails(setDoc(doc(adminDb, 'SkillsV2/v2-admin'), {id: 'v2-admin'}));
+  await assertFails(setDoc(doc(otherDb, 'SkillFamilies/fam-hack'), {id: 'fam-hack'}));
+  await assertFails(setDoc(doc(modDb, 'SkillFamilies/fam-mod'), {id: 'fam-mod'}));
+  await assertFails(setDoc(doc(adminDb, 'SkillFamilies/fam-admin'), {id: 'fam-admin'}));
 });
 
 test('Privilege escalation via Rider_Profile fields does not grant admin/mod/editor access', async () => {
@@ -471,15 +492,35 @@ test('Privilege escalation via Rider_Profile fields does not grant admin/mod/edi
     email: 'esc@example.com', email_verified: true,
   }).firestore();
 
-  await assertSucceeds(setDoc(doc(escalatedUserDb, 'Rider_Profile/esc@example.com'), {
+  // Client cannot self-assign editor on create or update.
+  await assertFails(setDoc(doc(escalatedUserDb, 'Rider_Profile/esc@example.com'), {
     email: 'esc@example.com',
     ownerUid: 'esc-1',
     editor: true,
-    admin: true,
-    moderator: true,
+  }));
+  await assertSucceeds(setDoc(doc(escalatedUserDb, 'Rider_Profile/esc@example.com'), {
+    email: 'esc@example.com',
+    ownerUid: 'esc-1',
+  }));
+  await assertFails(updateDoc(doc(escalatedUserDb, 'Rider_Profile/esc@example.com'), {
+    editor: true,
   }));
 
+  // Even if profile fields are set server-side, they do not grant Firestore editor/staff privileges.
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'Rider_Profile/esc-seeded@example.com'), {
+      email: 'esc@example.com',
+      ownerUid: 'esc-1',
+      editor: true,
+      admin: true,
+      moderator: true,
+    });
+  });
+
   await assertFails(setDoc(doc(escalatedUserDb, 'Skills/s-esc'), {id: 's-esc'}));
+  await assertFails(setDoc(doc(escalatedUserDb, 'SkillsV2/s-esc'), {id: 's-esc'}));
+  await assertFails(setDoc(doc(escalatedUserDb, 'SkillFamilies/fam-esc'), {id: 'fam-esc'}));
   await assertFails(getDoc(doc(escalatedUserDb, 'SkillTreeSuggestions/sug-1')));
   await assertFails(getDoc(doc(escalatedUserDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
 });

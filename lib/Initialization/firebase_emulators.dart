@@ -28,4 +28,10 @@ class FirebaseEmulators {
 
   static Uri accountDeletionEndpoint() =>
       Uri.http('$_host:5001', '/$projectId/us-central1/requestAccountDeletion');
+
+  static Uri submitSuggestionEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/submitSkillTreeSuggestion');
+
+  static Uri reviewSuggestionEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/reviewSkillTreeSuggestion');
 }

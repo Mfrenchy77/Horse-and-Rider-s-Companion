@@ -14,6 +14,7 @@ try { admin.app(); } catch { admin.initializeApp(); }
 const logger = require('firebase-functions/logger');
 const {connectionHandler} = require('./connections');
 const {accountDeletionHandler} = require('./account_deletion');
+const {submitSuggestionHandler, reviewSuggestionHandler} = require('./suggestions');
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},
@@ -28,6 +29,16 @@ exports.requestAccountDeletion = onCall(
         admin.storage().bucket(),
         {adminEmail: process.env.ADMIN_ACCOUNT_EMAIL},
     )(request),
+);
+
+exports.submitSkillTreeSuggestion = onCall(
+    {region: 'us-central1'},
+    (request) => submitSuggestionHandler(admin.firestore())(request),
+);
+
+exports.reviewSkillTreeSuggestion = onCall(
+    {region: 'us-central1'},
+    (request) => reviewSuggestionHandler(admin.firestore())(request),
 );
 
 /** ------------------------------------------------------------------------ */

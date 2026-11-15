@@ -31,6 +31,7 @@ export 'src/resource_repository.dart';
 export 'src/skill_tree_store.dart';
 export 'src/skilltree_repository.dart';
 export 'src/skill_tree_v2_repository.dart';
+export 'src/skill_tree_suggestions_store.dart';
 export 'src/categoryy_repository.dart';
 export 'src/open_maps_repository.dart';
 export 'src/url_metadata_repository.dart';

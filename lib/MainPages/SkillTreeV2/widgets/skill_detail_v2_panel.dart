@@ -23,6 +23,7 @@ class SkillDetailV2Panel extends StatelessWidget {
     required this.onVerifyLevel,
     required this.onSelectRelatedSkill,
     required this.onChangeResourceSort,
+    this.onSuggestForSkill,
     this.onBack,
   });
 
@@ -39,6 +40,7 @@ class SkillDetailV2Panel extends StatelessWidget {
   onVerifyLevel;
   final ValueChanged<String> onSelectRelatedSkill;
   final ValueChanged<SkillTreeV2ResourceSort> onChangeResourceSort;
+  final VoidCallback? onSuggestForSkill;
   final VoidCallback? onBack;
 
   @override
@@ -211,6 +213,16 @@ class SkillDetailV2Panel extends StatelessWidget {
             sort: state.resourceSort,
             onChangeResourceSort: onChangeResourceSort,
           ),
+          if (onSuggestForSkill != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                key: const Key('skillDetailV2SuggestButton'),
+                onPressed: onSuggestForSkill,
+                icon: const Icon(Icons.lightbulb_outline, size: 18),
+                label: const Text('Suggest Improvement for This Skill'),
+              ),
+            ),
         ],
       ),
     );

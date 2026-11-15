@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/instructor
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_list_v2.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_tree_v2_header.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/suggest_improvement_dialog.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
@@ -468,6 +469,26 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                         _cubit.setSearchQuery(query);
                         _syncLocalHistoryEntry();
                       },
+                      onSuggestImprovement: () async {
+                        final created = await showSuggestImprovementDialog(
+                          context,
+                          subject: state.subject,
+                          realm: state.realm,
+                        );
+                        if (created != null && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Suggestion submitted for review. Thank you!',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      onViewMySuggestions:
+                          !appState.isGuest && appState.user.emailVerified
+                          ? () => showMySuggestionsDialog(context)
+                          : null,
                     ),
                     if (state.viewMode == SkillTreeV2ViewMode.summary)
                       AbilitySummaryV2View(
@@ -587,6 +608,31 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                         _cubit.selectSkill(id),
                                     onChangeResourceSort:
                                         _cubit.setResourceSort,
+                                    onSuggestForSkill: () async {
+                                      final created =
+                                          await showSuggestImprovementDialog(
+                                            context,
+                                            subject: state.subject,
+                                            realm: state.selectedSkill!.realm,
+                                            familyId:
+                                                state.selectedSkill!.familyId,
+                                            targetSkill: state.selectedSkill,
+                                            targetLevel:
+                                                state.effectiveSelectedLevel,
+                                          );
+                                      if (created != null && context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Suggestion submitted for '
+                                              'review. Thank you!',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
                           ),
                         ],
@@ -625,6 +671,25 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                             ),
                         onSelectRelatedSkill: (id) => _cubit.selectSkill(id),
                         onChangeResourceSort: _cubit.setResourceSort,
+                        onSuggestForSkill: () async {
+                          final created = await showSuggestImprovementDialog(
+                            context,
+                            subject: state.subject,
+                            realm: state.selectedSkill!.realm,
+                            familyId: state.selectedSkill!.familyId,
+                            targetSkill: state.selectedSkill,
+                            targetLevel: state.effectiveSelectedLevel,
+                          );
+                          if (created != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Suggestion submitted for review. Thank you!',
+                                ),
+                              ),
+                            );
+                          }
+                        },
                       )
                     else
                       SkillFamilyListV2(

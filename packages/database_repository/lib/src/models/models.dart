@@ -23,3 +23,4 @@ export 'base_list_item.dart';
 export 'skill_family.dart';
 export 'curriculum_skill.dart';
 export 'skill_progress_v2.dart';
+export 'skill_tree_suggestion.dart';

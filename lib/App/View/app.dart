@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/firebase_account_deletion_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
@@ -29,6 +30,7 @@ class App extends StatefulWidget {
     this._mediaStorageRepository,
     this._keysRepository,
     this._connectionRequestStore,
+    this._skillTreeSuggestionsStore,
     this.useCompositeRequestStore = kUseCompositeRequestStore,
     this.mirrorRequestWritesToLegacy = kMirrorRequestWritesToLegacy,
     this._firestore,
@@ -59,6 +61,7 @@ class App extends StatefulWidget {
   final MediaStorageRepository? _mediaStorageRepository;
   final ApiKeyProvider? _keysRepository;
   final ConnectionRequestStore? _connectionRequestStore;
+  final SkillTreeSuggestionsStore? _skillTreeSuggestionsStore;
   final bool useCompositeRequestStore;
   final bool mirrorRequestWritesToLegacy;
   final FirebaseFirestore? _firestore;
@@ -75,6 +78,21 @@ class _AppState extends State<App> {
   late final AccountDeletionRepository _accountDeletionRepository =
       FirebaseAccountDeletionRepository(
         authGateway: widget._authenticationRepository,
+      );
+  late final SkillTreeSuggestionsRepository _skillTreeSuggestionsRepository =
+      SkillTreeSuggestionsRepository(
+        store:
+            widget._skillTreeSuggestionsStore ??
+            CloudSkillTreeSuggestionsStore(
+              firestore: widget._firestore,
+              tokenProvider: widget._authenticationRepository.getAccessToken,
+              submitEndpoint: FirebaseEmulators.enabled
+                  ? FirebaseEmulators.submitSuggestionEndpoint()
+                  : null,
+              reviewEndpoint: FirebaseEmulators.enabled
+                  ? FirebaseEmulators.reviewSuggestionEndpoint()
+                  : null,
+            ),
       );
   late final ConnectionRequestStore _connectionRequestStore =
       widget._connectionRequestStore ??
@@ -181,6 +199,9 @@ class _AppState extends State<App> {
         ),
         RepositoryProvider<AccountDeletionRepository>.value(
           value: _accountDeletionRepository,
+        ),
+        RepositoryProvider<SkillTreeSuggestionsRepository>.value(
+          value: _skillTreeSuggestionsRepository,
         ),
         if (widget._authenticationRepository
             case final AuthenticationRepository repo)

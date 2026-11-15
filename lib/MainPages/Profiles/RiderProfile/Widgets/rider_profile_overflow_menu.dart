@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
@@ -30,6 +31,12 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                 value: 4,
                 child: Text('Add Horse'),
               ),
+              if (state.canAccessAdministration)
+                const PopupMenuItem<int>(
+                  key: Key('overflowAdministrationItem'),
+                  value: 5,
+                  child: Text('Administration'),
+                ),
               const PopupMenuItem<int>(
                 value: 1,
                 child: Text('Settings'),
@@ -74,6 +81,11 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                     );
                   } else {
                     debugPrint('Can not add horse, user profile is null');
+                  }
+                  break;
+                case 5:
+                  if (state.canAccessAdministration) {
+                    context.goNamed(AdministrationPage.name);
                   }
                   break;
               }

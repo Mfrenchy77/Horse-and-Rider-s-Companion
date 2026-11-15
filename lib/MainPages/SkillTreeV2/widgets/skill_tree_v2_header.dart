@@ -14,6 +14,8 @@ class SkillTreeV2Header extends StatefulWidget {
     required this.onSelectRealm,
     required this.onSelectViewMode,
     required this.onSearchChanged,
+    this.onSuggestImprovement,
+    this.onViewMySuggestions,
   });
 
   final SkillTreeV2State state;
@@ -22,6 +24,8 @@ class SkillTreeV2Header extends StatefulWidget {
   final ValueChanged<SkillCategory> onSelectRealm;
   final ValueChanged<SkillTreeV2ViewMode> onSelectViewMode;
   final ValueChanged<String> onSearchChanged;
+  final VoidCallback? onSuggestImprovement;
+  final VoidCallback? onViewMySuggestions;
 
   @override
   State<SkillTreeV2Header> createState() => _SkillTreeV2HeaderState();
@@ -113,9 +117,31 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
                 else
                   SkillTreeV2ViewMode.summary,
               },
-              onSelectionChanged: (selection) =>
-                  widget.onSelectViewMode(selection.first),
-            ),
+                onSelectionChanged: (selection) =>
+                    widget.onSelectViewMode(selection.first),
+              ),
+            if (widget.onSuggestImprovement != null ||
+                widget.onViewMySuggestions != null)
+              Wrap(
+                spacing: AppTokens.spaceXs,
+                runSpacing: AppTokens.spaceXs,
+                children: [
+                  if (widget.onSuggestImprovement != null)
+                    OutlinedButton.icon(
+                      key: const Key('skillTreeV2SuggestImprovementButton'),
+                      onPressed: widget.onSuggestImprovement,
+                      icon: const Icon(Icons.lightbulb_outline, size: 18),
+                      label: const Text('Suggest an Improvement'),
+                    ),
+                  if (widget.onViewMySuggestions != null)
+                    TextButton.icon(
+                      key: const Key('skillTreeV2MySuggestionsButton'),
+                      onPressed: widget.onViewMySuggestions,
+                      icon: const Icon(Icons.history_edu_outlined, size: 18),
+                      label: const Text('My Suggestions'),
+                    ),
+                ],
+              ),
           ],
         ),
         if (isHorse && !widget.hasHorseProfile)

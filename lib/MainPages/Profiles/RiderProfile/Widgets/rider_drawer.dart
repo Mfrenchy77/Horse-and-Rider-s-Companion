@@ -6,6 +6,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/seasonal_decoration.dart';
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
+import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
@@ -238,6 +239,18 @@ class UserProfileDrawer extends StatelessWidget {
                     height: 10,
                     thickness: 1,
                   ),
+
+                  // Administration (Staff only)
+                  if (context.watch<AppCubit>().state.canAccessAdministration)
+                    ListTile(
+                      key: const Key('drawerAdministrationTile'),
+                      leading: const Icon(Icons.admin_panel_settings_outlined),
+                      title: const Text('Administration'),
+                      onTap: () {
+                        onClose?.call();
+                        context.goNamed(AdministrationPage.name);
+                      },
+                    ),
 
                   // Settings
                   ListTile(

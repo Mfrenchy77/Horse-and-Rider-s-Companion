@@ -6,6 +6,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
 
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
+import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
@@ -261,6 +262,15 @@ class Routes {
                         name: state.name,
                         child: const DeletePage(),
                       ),
+                    ),
+                    GoRoute(
+                      name: AdministrationPage.name,
+                      path: AdministrationPage.path,
+                      redirect: (context, state) =>
+                          appCubit.state.canAccessAdministration
+                          ? null
+                          : ProfilePage.path,
+                      builder: (context, state) => const AdministrationPage(),
                     ),
                   ],
                 ),
