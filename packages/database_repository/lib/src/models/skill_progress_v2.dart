@@ -127,12 +127,12 @@ class SkillProgressRecord {
 class LevelVerification {
   const LevelVerification({
     this.verifiedState = LevelState.PROFICIENT,
-    required this.verifiedByUid,
+    this.verifiedByUid,
     required this.verifiedByName,
     this.verifiedAt,
-    required this.connectionId,
+    this.connectionId,
     this.standardVersion = 1,
-    required this.eventId,
+    this.eventId,
   });
 
   factory LevelVerification.fromMap(Map<String, dynamic> data) {
@@ -140,35 +140,35 @@ class LevelVerification {
       verifiedState: data['verifiedState'] == 'LEARNING'
           ? LevelState.LEARNING
           : LevelState.PROFICIENT,
-      verifiedByUid: data['verifiedByUid'] as String? ?? '',
+      verifiedByUid: data['verifiedByUid'] as String?,
       verifiedByName: data['verifiedByName'] as String? ?? '',
       verifiedAt: parseFlexibleDateTime(data['verifiedAt']),
-      connectionId: data['connectionId'] as String? ?? '',
+      connectionId: data['connectionId'] as String?,
       standardVersion: (data['standardVersion'] as num?)?.toInt() ?? 1,
-      eventId: data['eventId'] as String? ?? '',
+      eventId: data['eventId'] as String?,
     );
   }
 
   final LevelState verifiedState;
-  final String verifiedByUid;
+  final String? verifiedByUid;
   final String verifiedByName;
   final DateTime? verifiedAt;
-  final String connectionId;
+  final String? connectionId;
   final int standardVersion;
-  final String eventId;
+  final String? eventId;
 
   Map<String, Object?> toMap({bool preserveDateTime = false}) {
     return {
       'verifiedState': SkillLevel.levelStateName(verifiedState),
-      'verifiedByUid': verifiedByUid,
+      if (verifiedByUid != null) 'verifiedByUid': verifiedByUid,
       'verifiedByName': verifiedByName,
       if (verifiedAt != null)
         'verifiedAt': preserveDateTime
             ? verifiedAt
             : verifiedAt!.toIso8601String(),
-      'connectionId': connectionId,
+      if (connectionId != null) 'connectionId': connectionId,
       'standardVersion': standardVersion,
-      'eventId': eventId,
+      if (eventId != null) 'eventId': eventId,
     };
   }
 }

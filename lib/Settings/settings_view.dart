@@ -182,6 +182,18 @@ class SettingsView extends StatelessWidget {
                               ],
                               onChanged: controller.updateSkillTreeLayout,
                             ),
+                            const SizedBox(height: AppTokens.spaceSm),
+                            SwitchListTile.adaptive(
+                              key: const Key('skillTreeV2PreviewSetting'),
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Skill Tree 2.0 (Preview)'),
+                              subtitle: const Text(
+                                'Preview the Rider & Horse curriculum locally.',
+                              ),
+                              value: controller.skillTreeV2Enabled,
+                              onChanged: (value) => controller
+                                  .updateSkillTreeV2Enabled(enabled: value),
+                            ),
                           ],
                         ),
                       ),

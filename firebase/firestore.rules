@@ -16,6 +16,71 @@ service cloud.firestore {
         : '';
     }
 
+    function verifiedAuth() {
+      return request.auth != null
+        && request.auth.token.email_verified == true;
+    }
+
+    function isProfileOwner(profileData, fallbackEmail) {
+      return verifiedAuth()
+        && (
+          profileData.keys().hasAll(['ownerUid'])
+            ? request.auth.uid == profileData.ownerUid
+            : verifiedEmailIs(fallbackEmail)
+        );
+    }
+
+    function isVerifiedEditor() {
+      return verifiedAuth()
+        && request.auth.token.get('editor', false) == true;
+    }
+
+    function validSkillProgressLevel(skillData, levelsMap, levelKey) {
+      return !(levelKey in levelsMap) || (
+        levelKey in skillData.availableLevels
+        && levelsMap[levelKey] is map
+        && levelsMap[levelKey].keys().hasOnly([
+          'state', 'updatedAt', 'updatedByUid', 'updatedByName'
+        ])
+        && levelsMap[levelKey].state in ['LEARNING', 'PROFICIENT']
+        && levelsMap[levelKey].get('updatedByUid', '') == request.auth.uid
+      );
+    }
+
+    function validSkillProgressDoc(skillId, expectedSubject) {
+      let skillDoc = get(/databases/$(database)/documents/SkillsV2/$(skillId));
+      let data = request.resource.data;
+      return exists(/databases/$(database)/documents/SkillsV2/$(skillId))
+        && skillDoc.data.status == 'active'
+        && skillDoc.data.subject == expectedSubject
+        && data.keys().hasOnly([
+          'skillId', 'subject', 'levels', 'updatedAt', 'schemaVersion'
+        ])
+        && data.skillId == skillId
+        && data.subject == expectedSubject
+        && data.schemaVersion == 2
+        && data.levels is map
+        && data.levels.keys().hasOnly(['introductory', 'intermediate', 'advanced'])
+        && data.levels.size() >= 1
+        && data.levels.size() <= 3
+        && validSkillProgressLevel(skillDoc.data, data.levels, 'introductory')
+        && validSkillProgressLevel(skillDoc.data, data.levels, 'intermediate')
+        && validSkillProgressLevel(skillDoc.data, data.levels, 'advanced');
+    }
+
+    function canReadVerificationEvent(ownerUid) {
+      return verifiedAuth()
+        && (
+          request.auth.uid == ownerUid
+          || (
+            resource.data.connectionId is string
+            && exists(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId))
+            && get(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId)).data.status == 'accepted'
+            && request.auth.uid == get(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId)).data.coachUid
+          )
+        );
+    }
+
     match /CoachingConnections/{connectionId} {
       allow get, list: if request.auth != null
         && request.auth.token.email_verified == true
@@ -30,32 +95,144 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /SkillFamilies/{familyId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /SkillsV2/{skillId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /Skills/{skillId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor();
+    }
+
+    match /Levels/{levelId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor();
+    }
+
+    match /Resources/{resourceId} {
+      allow read: if true;
+      allow create: if verifiedAuth()
+        && (
+          isVerifiedEditor()
+          || (
+            request.resource.data.get('lastEditBy', '') is string
+            && request.resource.data.lastEditBy.lower() == verifiedLowerEmail()
+          )
+        );
+      allow update: if verifiedAuth()
+        && (
+          isVerifiedEditor()
+          || (
+            resource.data.get('lastEditBy', '') is string
+            && resource.data.lastEditBy.lower() == verifiedLowerEmail()
+            && request.resource.data.get('lastEditBy', '') == resource.data.get('lastEditBy', '')
+          )
+          || (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'comments', 'rating', 'numberOfRatings', 'usersWhoRated'
+            ])
+            && (!('comments' in request.resource.data.diff(resource.data).affectedKeys())
+              || request.resource.data.comments is list)
+          )
+        );
+      allow delete: if verifiedAuth()
+        && (
+          isVerifiedEditor()
+          || (
+            resource.data.get('lastEditBy', '') is string
+            && resource.data.lastEditBy.lower() == verifiedLowerEmail()
+          )
+        );
+
+      match /usersWhoRated/{ratingUserId} {
+        allow read: if true;
+        allow create, update, delete: if verifiedAuth()
+          && (
+            ratingUserId == request.auth.uid
+            || ratingUserId.lower() == verifiedLowerEmail()
+          );
+      }
+    }
+
     match /Horse_Profile/{horseId} {
       allow read: if true;
       allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
+        && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
         && request.resource.data.get('archiveStatus', 'active') == 'active'
         && !request.resource.data.keys().hasAny([
           'saleListing', 'transferRequestId', 'ownershipVersion'
         ]);
-      allow update: if verifiedEmailIs(resource.data.currentOwnerId)
+      allow update: if isProfileOwner(resource.data, resource.data.currentOwnerId)
         && request.resource.data.currentOwnerId == resource.data.currentOwnerId
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion'
+          'ownerUid', 'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion'
         ]);
       // Keep the horse ID reserved for its shared history when archived.
       allow delete: if false;
+
+      match /SkillProgress/{skillId} {
+        allow read: if true;
+        allow create, update: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
+          && validSkillProgressDoc(skillId, 'horse');
+        allow delete: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '');
+      }
+
+      match /SkillVerifications/{skillId} {
+        allow read: if true;
+        allow write: if false;
+      }
+
+      match /SkillVerificationEvents/{eventId} {
+        allow get, list: if canReadVerificationEvent(
+          get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
+        );
+        allow write: if false;
+      }
     }
 
     match /Rider_Profile/{riderId} {
       allow read: if true;
       allow create: if verifiedEmailIs(request.resource.data.email)
+        && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
+        && request.resource.data.get('editor', false) == false
         && request.resource.data.get('archivedHorses', []) == []
         && !request.resource.data.keys().hasAny(['ownershipRosterVersion']);
-      allow update: if verifiedEmailIs(resource.data.email)
+      allow update: if isProfileOwner(resource.data, resource.data.email)
         && request.resource.data.email == resource.data.email
         && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', [])
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownershipRosterVersion']);
-      allow delete: if verifiedEmailIs(resource.data.email);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'ownerUid', 'editor', 'ownershipRosterVersion'
+        ]);
+      allow delete: if isProfileOwner(resource.data, resource.data.email);
+
+      match /SkillProgress/{skillId} {
+        allow read: if true;
+        allow create, update: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
+          && validSkillProgressDoc(skillId, 'rider');
+        allow delete: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '');
+      }
+
+      match /SkillVerifications/{skillId} {
+        allow read: if true;
+        allow write: if false;
+      }
+
+      match /SkillVerificationEvents/{eventId} {
+        allow get, list: if canReadVerificationEvent(
+          get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
+        );
+        allow write: if false;
+      }
     }
 
     match /Requests/{requestId} {
@@ -161,11 +338,14 @@ service cloud.firestore {
 
     match /{collection}/{document=**} {
       allow read: if !(collection in [
-        'CoachingConnections', 'SharedRidingEntries', 'DeletionJobs', 'Requests'
+        'CoachingConnections', 'SharedRidingEntries',
+        'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
+        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources'
       ]);
       allow write: if request.auth != null && !(collection in [
         'CoachingConnections', 'SharedRidingEntries',
-        'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests'
+        'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
+        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources'
       ]);
     }
   }

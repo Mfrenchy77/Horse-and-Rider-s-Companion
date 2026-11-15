@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Settings/feature_flags.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -26,6 +27,13 @@ class SettingsService {
 
   Future<void> updateSkillTreeLayout(SkillTreeLayout layout) async {
     await SharedPrefs().setSkillTreeLayout(layout.name);
+  }
+
+  bool getSkillTreeV2Enabled() =>
+      SharedPrefs().skillTreeV2Enabled ?? FeatureFlags.kSkillTreeV2Default;
+
+  Future<void> updateSkillTreeV2Enabled({required bool enabled}) async {
+    await SharedPrefs().setSkillTreeV2Enabled(enabled: enabled);
   }
 
   /// Loads the User's preferred ThemeMode from local or remote storage.

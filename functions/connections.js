@@ -538,6 +538,7 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
     tx.update(animal.ref, {
       currentOwnerId: recipient.profile.email,
       currentOwnerName: recipient.profile.name || recipient.profile.email,
+      ownerUid: link.coachUid,
       ownershipVersion: link.version,
       transferRequestId: null,
       saleListing: null,
@@ -892,6 +893,128 @@ async function addRecord(tx, db, auth, link, actor, data, now, connectionId) {
   return {status: link.status, ...(verification ? {verified: !removal} : {})};
 }
 
+async function handleSkillLevelVerification(tx, db, link, identity, data, now, connectionId) {
+  const actor = emailKey(identity.email);
+  if (link.status !== 'accepted' || identity.uid !== link.coachUid || actor !== link.coach) {
+    throw new HttpsError('permission-denied', 'An active coaching connection is required.');
+  }
+  const removal = data.action === 'revokeSkillLevel';
+  const record = await target(tx, db, link);
+  if (link.kind === 'horse' && isArchived(record.profile)) {
+    throw new HttpsError('failed-precondition', 'This horse is archived.');
+  }
+  const clientId = documentId(data.recordId, 'record ID');
+  const prefix = removal ? 'unverify-v2' : 'verify-v2';
+  const eventId = `${prefix}-${connectionId}-${clientId}`;
+  const eventRef = record.ref.collection('SkillVerificationEvents').doc(eventId);
+  const existingEvent = await tx.get(eventRef);
+  if (existingEvent.exists) {
+    return {
+      status: link.status,
+      verified: !removal,
+      skillId: existingEvent.data().skillId,
+      level: existingEvent.data().level,
+      eventId,
+    };
+  }
+
+  const skillId = documentId(data.skillId, 'skill ID');
+  const level = typeof data.level === 'string' ? data.level.toLowerCase() : '';
+  if (!['introductory', 'intermediate', 'advanced'].includes(level)) {
+    throw new HttpsError('invalid-argument', 'Choose a valid difficulty level.');
+  }
+
+  const skillSnap = await tx.get(db.collection('SkillsV2').doc(skillId));
+  const skill = skillSnap.data();
+  if (!skill || skill.status !== 'active' || skill.subject !== link.kind ||
+      !Array.isArray(skill.availableLevels) || !skill.availableLevels.includes(level) ||
+      !skill.levels?.[level]) {
+    throw new HttpsError(
+        'invalid-argument',
+        'Choose an active matching skill and available difficulty level.',
+    );
+  }
+
+  const verifRef = record.ref.collection('SkillVerifications').doc(skillId);
+  const verifSnap = await tx.get(verifRef);
+  const existingLevels = {...(verifSnap.data()?.levels || {})};
+  const previousLevel = existingLevels[level] || null;
+
+  if (removal && !previousLevel) {
+    throw new HttpsError('failed-precondition', 'This difficulty level is not currently verified.');
+  }
+
+  const reason = removal && typeof data.reason === 'string' && data.reason.trim() ?
+    data.reason.trim().slice(0, 1000) : null;
+  const standardVersion = Number(skill.levels[level].standardVersion) || 1;
+  const levelLabel = level.charAt(0).toUpperCase() + level.slice(1);
+  const skillName = skill.name || skillId;
+
+  const entry = {
+    id: eventId,
+    date: entryDate(data.date, now),
+    name: removal ?
+      `${link.coachName} removed ${levelLabel} verification for ${skillName}.` :
+      `${link.coachName} verified ${skillName} (${levelLabel} · Proficient).`,
+    parentId: link.coachEmail,
+    message: link.coachName,
+    imageUrl: 'LogTag.Other',
+    riderLog: {
+      type: 'activity',
+      title: removal ? 'Verification removed' : 'Skill verification',
+      authorRole: 'verifier',
+    },
+  };
+
+  const sharedRef = link.kind === 'rider' ? journalRef(db, link.learnerUid, eventId) : null;
+  if (sharedRef) {
+    storeJournal(tx, sharedRef, record.profile, link.learnerUid, link.coachUid, entry, null, null);
+  } else {
+    tx.update(record.ref, {notes: [...(record.profile.notes || []), entry]});
+  }
+
+  if (removal) {
+    delete existingLevels[level];
+  } else {
+    existingLevels[level] = {
+      verifiedState: 'PROFICIENT',
+      verifiedByName: link.coachName,
+      verifiedAt: now,
+      standardVersion,
+    };
+  }
+
+  tx.set(verifRef, {
+    skillId,
+    levels: existingLevels,
+    updatedAt: now,
+  });
+
+  const eventDoc = {
+    id: eventId,
+    type: removal ? 'revoked' : 'verified',
+    skillId,
+    skillName,
+    level,
+    verifiedState: 'PROFICIENT',
+    actorUid: identity.uid,
+    actorName: link.coachName,
+    connectionId,
+    standardVersion,
+    at: now,
+    ...(previousLevel ? {
+      previousVerification: {
+        verifiedByName: previousLevel.verifiedByName || null,
+        verifiedAt: previousLevel.verifiedAt || null,
+      },
+    } : {}),
+    ...(reason ? {reason} : {}),
+  };
+  tx.create(eventRef, eventDoc);
+
+  return {status: link.status, verified: !removal, skillId, level, eventId};
+}
+
 function connectionHandler(db, auth) {
   return async (request) => {
     const email = request.auth?.token?.email;
@@ -936,6 +1059,9 @@ function connectionHandler(db, auth) {
       }
       if (['record', 'verifySkill', 'removeSkillVerification'].includes(data.action)) {
         return addRecord(tx, db, auth, link, actor, data, now, id);
+      }
+      if (['verifySkillLevel', 'revokeSkillLevel'].includes(data.action)) {
+        return handleSkillLevelVerification(tx, db, link, identity, data, now, id);
       }
       if (data.action === 'studentHistory') return studentHistory(tx, db, link, actor);
       if (data.action === 'editLesson' || data.action === 'deleteLesson') {

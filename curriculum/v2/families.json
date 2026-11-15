@@ -192,7 +192,7 @@
     "id": "horse.in_hand.cooperative_care",
     "subject": "horse",
     "realm": "In_Hand",
-    "name": "Cooperative Care",
+    "name": "Handling & Care",
     "description": "Standing calmly and cooperating during daily grooming, hoof care, tacking, and veterinary handling.",
     "sortOrder": 20,
     "schemaVersion": 2

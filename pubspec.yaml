@@ -80,6 +80,7 @@ environment:
 flutter:
   assets:
     - assets/
+    - curriculum/v2/
   fonts:
     - family: HorseAndRiderIcons
       fonts:

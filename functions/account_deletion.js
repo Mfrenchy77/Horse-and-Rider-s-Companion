@@ -163,6 +163,7 @@ async function transferOwnedHorsesToAdmin(db, auth, email, emailSet, adminEmail)
     await doc.ref.update({
       currentOwnerId: adminAccount.email,
       currentOwnerName: adminAccount.name,
+      ownerUid: adminAccount.uid,
       saleListing: null,
       transferRequestId: null,
       ownershipVersion: version,

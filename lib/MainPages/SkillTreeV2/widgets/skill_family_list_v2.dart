@@ -1,0 +1,255 @@
+import 'package:database_repository/database_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+
+class SkillFamilyListV2 extends StatelessWidget {
+  const SkillFamilyListV2({
+    super.key,
+    required this.state,
+    required this.onSelectSkill,
+  });
+
+  final SkillTreeV2State state;
+  final ValueChanged<CurriculumSkill> onSelectSkill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSearching = state.searchQuery.trim().isNotEmpty;
+    final visible = state.visibleSkills;
+
+    if (visible.isEmpty) {
+      return AppSurfaceCard(
+        child: Padding(
+          padding: const EdgeInsets.all(AppTokens.spaceMd),
+          child: Text(
+            isSearching
+                ? 'No skills match "${state.searchQuery.trim()}".'
+                : 'No skills in this category yet.',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    if (isSearching) {
+      return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: visible.length,
+        separatorBuilder: (_, __) => const SizedBox(height: AppTokens.spaceSm),
+        itemBuilder: (context, index) {
+          final skill = visible[index];
+          return _SkillRowCard(
+            skill: skill,
+            subtitle: realmDisplayLabel(skill.realm),
+            isSelected: skill.id == state.selectedSkillId,
+            progress: state.progressBySkillId[skill.id],
+            verification: state.verificationsBySkillId[skill.id],
+            onTap: () => onSelectSkill(skill),
+          );
+        },
+      );
+    }
+
+    final families = state.realmFamilies;
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: families.length,
+      separatorBuilder: (_, __) => const SizedBox(height: AppTokens.spaceMd),
+      itemBuilder: (context, index) {
+        final family = families[index];
+        final familySkills =
+            visible.where((s) => s.familyId == family.id).toList()
+              ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        if (familySkills.isEmpty) return const SizedBox.shrink();
+
+        return AppSurfaceCard(
+          key: Key('skillFamily_${family.id}'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppTokens.spaceSm,
+            children: [
+              Text(
+                family.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (family.description.trim().isNotEmpty)
+                Text(
+                  family.description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppTokens.secondaryTextColor(context),
+                  ),
+                ),
+              for (final skill in familySkills)
+                _SkillRowCard(
+                  skill: skill,
+                  isSelected: skill.id == state.selectedSkillId,
+                  progress: state.progressBySkillId[skill.id],
+                  verification: state.verificationsBySkillId[skill.id],
+                  onTap: () => onSelectSkill(skill),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SkillRowCard extends StatelessWidget {
+  const _SkillRowCard({
+    required this.skill,
+    required this.isSelected,
+    required this.progress,
+    required this.verification,
+    required this.onTap,
+    this.subtitle,
+  });
+
+  final CurriculumSkill skill;
+  final bool isSelected;
+  final SkillProgressRecord? progress;
+  final SkillVerificationRecord? verification;
+  final VoidCallback onTap;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: isSelected
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
+          : theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      child: InkWell(
+        key: Key('skillCard_${skill.id}'),
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppTokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppTokens.spaceXs,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      skill.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 18),
+                ],
+              ),
+              if (skill.summary.trim().isNotEmpty)
+                Text(
+                  skill.summary,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppTokens.secondaryTextColor(context),
+                  ),
+                ),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final level in skill.availableLevels)
+                    _LevelStatusPill(
+                      level: level,
+                      selfState: progress?.levels[level]?.state,
+                      isVerified:
+                          verification?.levels.containsKey(level) ?? false,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LevelStatusPill extends StatelessWidget {
+  const _LevelStatusPill({
+    required this.level,
+    required this.selfState,
+    required this.isVerified,
+  });
+
+  final DifficultyState level;
+  final LevelState? selfState;
+  final bool isVerified;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final short = shortDifficultyLabel(level);
+    final (IconData? icon, Color bg, Color fg, String suffix) = isVerified
+        ? (
+            Icons.verified,
+            theme.colorScheme.primaryContainer,
+            theme.colorScheme.onPrimaryContainer,
+            ' · Verified',
+          )
+        : switch (selfState) {
+            LevelState.PROFICIENT => (
+              Icons.check_circle_outline,
+              theme.colorScheme.tertiaryContainer,
+              theme.colorScheme.onTertiaryContainer,
+              ' · Proficient',
+            ),
+            LevelState.LEARNING => (
+              Icons.school_outlined,
+              theme.colorScheme.secondaryContainer,
+              theme.colorScheme.onSecondaryContainer,
+              ' · Learning',
+            ),
+            _ => (
+              null,
+              theme.colorScheme.surfaceContainerHighest,
+              theme.colorScheme.onSurfaceVariant,
+              '',
+            ),
+          };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: fg),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            '$short$suffix',
+            style: theme.textTheme.labelSmall?.copyWith(color: fg),
+          ),
+        ],
+      ),
+    );
+  }
+}
