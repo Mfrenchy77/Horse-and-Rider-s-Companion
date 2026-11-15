@@ -384,7 +384,7 @@
     "status": "active",
     "subject": "horse",
     "realm": "Mounted",
-    "familyId": "horse.mounted.pivots_body_control",
+    "familyId": "horse.mounted.lateral_movements",
     "name": "Sidepass (Under Saddle)",
     "aliases": ["Sidepass over rail (under saddle)"],
     "summary": "The horse's ability to step directly sideways in open space or over a ground rail on light rider requests.",

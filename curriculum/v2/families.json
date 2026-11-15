@@ -112,7 +112,7 @@
     "subject": "rider",
     "realm": "Mounted",
     "name": "Pivots & Body Control",
-    "description": "Stationary, backward, and purely sideways repositioning of the horse's body.",
+    "description": "Controlling and repositioning the horse's shoulders, hindquarters, and body through turns and backing.",
     "sortOrder": 40,
     "schemaVersion": 2
   },
@@ -121,7 +121,7 @@
     "subject": "rider",
     "realm": "Mounted",
     "name": "Lateral Movements",
-    "description": "Moving forward and sideways along a line with controlled bend and alignment.",
+    "description": "Moving the horse sideways or forward-and-sideways with varying degrees of bend, alignment, and collection.",
     "sortOrder": 50,
     "schemaVersion": 2
   },
@@ -247,7 +247,7 @@
     "subject": "horse",
     "realm": "Mounted",
     "name": "Pivots & Body Control",
-    "description": "Repositioning the forehand, hindquarters, or whole body under saddle on light requests.",
+    "description": "Controlling and repositioning the horse's shoulders, hindquarters, and body through turns and backing.",
     "sortOrder": 40,
     "schemaVersion": 2
   },
@@ -256,7 +256,7 @@
     "subject": "horse",
     "realm": "Mounted",
     "name": "Lateral Movements",
-    "description": "Moving forward and sideways under saddle with balance and controlled bend.",
+    "description": "Moving the horse sideways or forward-and-sideways with varying degrees of bend, alignment, and collection.",
     "sortOrder": 50,
     "schemaVersion": 2
   },

@@ -422,7 +422,7 @@
     "status": "active",
     "subject": "rider",
     "realm": "Mounted",
-    "familyId": "rider.mounted.pivots_body_control",
+    "familyId": "rider.mounted.lateral_movements",
     "name": "Sidepass",
     "aliases": ["Sidepass over rail (mounted)", "Sidepass (mounted)"],
     "summary": "Guiding a reasonably prepared horse to step directly sideways with even crossing of front and hind legs, in open space or over a ground rail.",
