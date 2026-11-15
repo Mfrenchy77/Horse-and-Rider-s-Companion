@@ -106,6 +106,10 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
       _returnToBrowsingList();
       return;
     }
+    if (_cubit.state.viewMode == SkillTreeV2ViewMode.matrix) {
+      _cubit.setViewMode(SkillTreeV2ViewMode.summary);
+      return;
+    }
     if (_cubit.state.viewMode != SkillTreeV2ViewMode.browse) {
       _cubit.setViewMode(SkillTreeV2ViewMode.browse);
     }
@@ -410,16 +414,43 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                       AbilitySummaryV2View(
                         state: state,
                         profileLabel: profileLabel,
+                        canVerify: canVerify,
                         onBrowseRealm: (realm) {
                           setState(() => _mobileShowingDetail = false);
                           _cubit.selectRealm(realm);
                           _syncLocalHistoryEntry();
                         },
+                        onExploreSkills: () {
+                          setState(() => _mobileShowingDetail = false);
+                          _cubit.setViewMode(SkillTreeV2ViewMode.browse);
+                          _syncLocalHistoryEntry();
+                        },
+                        onSelectSkill: (skill, level) {
+                          _cubit.openSkillInExplore(skill, level: level);
+                          if (!isWide) {
+                            _openMobileDetail(skill.id, level: level);
+                          } else {
+                            _syncLocalHistoryEntry();
+                          }
+                        },
+                        onOpenReviewVerifications: canVerify
+                            ? () {
+                                setState(() => _mobileShowingDetail = false);
+                                _cubit.setViewMode(SkillTreeV2ViewMode.matrix);
+                                _syncLocalHistoryEntry();
+                              }
+                            : null,
                       )
-                    else if (state.viewMode == SkillTreeV2ViewMode.matrix)
+                    else if (state.viewMode == SkillTreeV2ViewMode.matrix &&
+                        canVerify)
                       InstructorAbilityMatrixV2View(
                         state: state,
                         canVerify: canVerify,
+                        onBackToMySkills: () {
+                          setState(() => _mobileShowingDetail = false);
+                          _cubit.setViewMode(SkillTreeV2ViewMode.summary);
+                          _syncLocalHistoryEntry();
+                        },
                         onChangeFilter: _cubit.setMatrixFilter,
                         onSelectCell: (skill, level) {
                           if (!isWide) {

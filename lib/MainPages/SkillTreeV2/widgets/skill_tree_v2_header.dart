@@ -87,20 +87,20 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
                 ButtonSegment(
                   value: SkillTreeV2ViewMode.browse,
                   icon: Icon(Icons.account_tree_outlined),
-                  label: Text('Browse'),
+                  label: Text('Explore Skills'),
                 ),
                 ButtonSegment(
                   value: SkillTreeV2ViewMode.summary,
                   icon: Icon(Icons.insights_outlined),
-                  label: Text('Summary'),
-                ),
-                ButtonSegment(
-                  value: SkillTreeV2ViewMode.matrix,
-                  icon: Icon(Icons.grid_on_outlined),
-                  label: Text('Skill Overview'),
+                  label: Text('My Skills'),
                 ),
               ],
-              selected: {state.viewMode},
+              selected: {
+                if (state.viewMode == SkillTreeV2ViewMode.browse)
+                  SkillTreeV2ViewMode.browse
+                else
+                  SkillTreeV2ViewMode.summary,
+              },
               onSelectionChanged: (selection) =>
                   widget.onSelectViewMode(selection.first),
             ),

@@ -12,6 +12,7 @@ class InstructorAbilityMatrixV2View extends StatelessWidget {
     required this.onChangeFilter,
     required this.onSelectCell,
     required this.onVerifyCell,
+    this.onBackToMySkills,
   });
 
   final SkillTreeV2State state;
@@ -25,6 +26,7 @@ class InstructorAbilityMatrixV2View extends StatelessWidget {
     required bool verified,
   })
   onVerifyCell;
+  final VoidCallback? onBackToMySkills;
 
   static const List<DifficultyState> _levels = [
     DifficultyState.Introductory,
@@ -47,8 +49,18 @@ class InstructorAbilityMatrixV2View extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppTokens.spaceSm,
             children: [
+              if (onBackToMySkills != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const Key('matrixBackToMySkillsButton'),
+                    onPressed: onBackToMySkills,
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back to My Skills'),
+                  ),
+                ),
               Text(
-                'Instructor Ability Matrix · '
+                'Review Verifications · '
                 '${subjectDisplayLabel(state.subject)}',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,

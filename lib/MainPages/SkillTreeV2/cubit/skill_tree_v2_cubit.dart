@@ -177,6 +177,21 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     emit(state.copyWith(viewMode: mode, clearActionMessage: true));
   }
 
+  void openSkillInExplore(CurriculumSkill skill, {DifficultyState? level}) {
+    emit(
+      state.copyWith(
+        subject: skill.subject,
+        realm: skill.realm,
+        viewMode: SkillTreeV2ViewMode.browse,
+        searchQuery: '',
+        expandedFamilyIds: {skill.familyId},
+        selectedSkillId: skill.id,
+        selectedLevel: level ?? skill.availableLevels.firstOrNull,
+        clearActionMessage: true,
+      ),
+    );
+  }
+
   void setMatrixFilter(AbilityMatrixFilter filter) {
     emit(state.copyWith(matrixFilter: filter));
   }

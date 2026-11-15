@@ -326,19 +326,21 @@ void main() {
 
       expect(find.textContaining('Verified by Alex Rider'), findsOneWidget);
 
-      // Switch to Summary view
-      await tester.ensureVisible(find.text('Summary'));
+      // Switch to My Skills view
+      await tester.ensureVisible(find.text('My Skills'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Summary'));
+      await tester.tap(find.text('My Skills'));
       await tester.pumpAndSettle();
       expect(find.textContaining('1 Proficient'), findsOneWidget);
       expect(find.textContaining('1 Instructor Verified'), findsOneWidget);
       expect(find.text('Browse category'), findsWidgets);
+      expect(
+        find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
 
-      // Switch to Skill Overview view and verify on mobile width too
-      await tester.ensureVisible(find.text('Skill Overview'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Skill Overview'));
+      // Authorized instructor can open Review Verifications grid
+      await tester.tap(find.byKey(const Key('reviewVerificationsButton')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('matrixFilter_verified')));
       await tester.pumpAndSettle();
@@ -515,8 +517,8 @@ void main() {
   );
 
   testWidgets(
-    'Uses custom horse icon, Category terminology, Skill Overview tab, '
-    'and Handling & Care family',
+    'Uses custom horse icon, two-tab navigation, Category terminology, '
+    'Handling & Care family, empty states, Horse Skills, and instructor access',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -525,16 +527,51 @@ void main() {
       final appState = authenticatedRiderState();
       when(() => mockAppCubit.state).thenReturn(appState);
 
-      await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
+      await tester.pumpWidget(
+        wrapV2(
+          appCubit: mockAppCubit,
+          enableLocalInstructorPreview: false,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Custom horse icon instead of generic paw icon
       expect(find.byIcon(HorseAndRiderIcons.horseIcon), findsOneWidget);
       expect(find.byIcon(Icons.pets_outlined), findsNothing);
 
-      // Skill Overview tab instead of Matrix
-      expect(find.text('Skill Overview'), findsOneWidget);
+      // Two-tab navigation: Explore Skills | My Skills
+      expect(find.text('Explore Skills'), findsOneWidget);
+      expect(find.text('My Skills'), findsOneWidget);
+      expect(find.text('Browse'), findsNothing);
+      expect(find.text('Summary'), findsNothing);
       expect(find.text('Matrix'), findsNothing);
+      expect(find.text('Skill Overview'), findsNothing);
+
+      // Rider My Skills empty state + unauthorized user sees no Review
+      // Verifications button
+      await tester.tap(find.text('My Skills'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          "You haven't started tracking any skills yet. "
+          'Explore the Skill Tree to get started.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('reviewVerificationsButton')),
+        findsNothing,
+      );
+
+      // Empty state action returns to Explore Skills
+      await tester.tap(find.byKey(const Key('mySkillsEmptyExploreButton')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+        ),
+        findsOneWidget,
+      );
 
       // Horse In-Hand family renamed to Handling & Care
       await tester.tap(find.text('Horse'));
@@ -542,11 +579,17 @@ void main() {
       expect(find.text('Handling & Care'), findsOneWidget);
       expect(find.text('Cooperative Care'), findsNothing);
 
-      // Summary uses Category terminology
-      await tester.tap(find.text('Summary'));
+      // Horse Skills heading and horse-specific empty state
+      await tester.tap(find.text('My Skills'));
       await tester.pumpAndSettle();
-      expect(find.text('Browse category'), findsWidgets);
-      expect(find.text('Browse realm'), findsNothing);
+      expect(find.text('Horse Skills'), findsOneWidget);
+      expect(
+        find.text(
+          'No horse skills have been started yet. '
+          'Explore the Skill Tree to get started.',
+        ),
+        findsOneWidget,
+      );
     },
   );
 
