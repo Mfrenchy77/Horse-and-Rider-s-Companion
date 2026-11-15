@@ -20,6 +20,7 @@ class SkillTreeV2State extends Equatable {
     this.searchQuery = '',
     this.families = const [],
     this.skills = const [],
+    this.expandedFamilyIds = const {},
     this.selectedSkillId,
     this.selectedLevel,
     this.progressBySkillId = const {},
@@ -40,6 +41,7 @@ class SkillTreeV2State extends Equatable {
   final String searchQuery;
   final List<SkillFamily> families;
   final List<CurriculumSkill> skills;
+  final Set<String> expandedFamilyIds;
   final String? selectedSkillId;
   final DifficultyState? selectedLevel;
   final Map<String, SkillProgressRecord> progressBySkillId;
@@ -101,6 +103,7 @@ class SkillTreeV2State extends Equatable {
     String? searchQuery,
     List<SkillFamily>? families,
     List<CurriculumSkill>? skills,
+    Set<String>? expandedFamilyIds,
     String? selectedSkillId,
     bool clearSelectedSkill = false,
     DifficultyState? selectedLevel,
@@ -126,6 +129,7 @@ class SkillTreeV2State extends Equatable {
       searchQuery: searchQuery ?? this.searchQuery,
       families: families ?? this.families,
       skills: skills ?? this.skills,
+      expandedFamilyIds: expandedFamilyIds ?? this.expandedFamilyIds,
       selectedSkillId: clearSelectedSkill
           ? null
           : (selectedSkillId ?? this.selectedSkillId),
@@ -156,6 +160,7 @@ class SkillTreeV2State extends Equatable {
     searchQuery,
     families,
     skills,
+    expandedFamilyIds,
     selectedSkillId,
     selectedLevel,
     progressBySkillId,

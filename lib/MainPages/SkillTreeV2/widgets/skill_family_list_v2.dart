@@ -9,10 +9,12 @@ class SkillFamilyListV2 extends StatelessWidget {
     super.key,
     required this.state,
     required this.onSelectSkill,
+    required this.onToggleFamily,
   });
 
   final SkillTreeV2State state;
   final ValueChanged<CurriculumSkill> onSelectSkill;
+  final ValueChanged<String> onToggleFamily;
 
   @override
   Widget build(BuildContext context) {
@@ -34,27 +36,17 @@ class SkillFamilyListV2 extends StatelessWidget {
       );
     }
 
-    if (isSearching) {
-      return ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: visible.length,
-        separatorBuilder: (_, __) => const SizedBox(height: AppTokens.spaceSm),
-        itemBuilder: (context, index) {
-          final skill = visible[index];
-          return _SkillRowCard(
-            skill: skill,
-            subtitle: realmDisplayLabel(skill.realm),
-            isSelected: skill.id == state.selectedSkillId,
-            progress: state.progressBySkillId[skill.id],
-            verification: state.verificationsBySkillId[skill.id],
-            onTap: () => onSelectSkill(skill),
-          );
-        },
-      );
-    }
+    final families = isSearching
+        ? (state.families
+              .where(
+                (f) =>
+                    f.subject == state.subject &&
+                    visible.any((s) => s.familyId == f.id),
+              )
+              .toList()
+            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)))
+        : state.realmFamilies;
 
-    final families = state.realmFamilies;
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -67,33 +59,78 @@ class SkillFamilyListV2 extends StatelessWidget {
               ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
         if (familySkills.isEmpty) return const SizedBox.shrink();
 
+        final isExpanded =
+            isSearching || state.expandedFamilyIds.contains(family.id);
+
         return AppSurfaceCard(
           key: Key('skillFamily_${family.id}'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppTokens.spaceSm,
             children: [
-              Text(
-                family.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (family.description.trim().isNotEmpty)
-                Text(
-                  family.description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppTokens.secondaryTextColor(context),
+              Semantics(
+                button: true,
+                expanded: isExpanded,
+                label: family.name,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    key: Key('skillFamilyHeader_${family.id}'),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    onTap: isSearching ? null : () => onToggleFamily(family.id),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppTokens.spaceXs,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: AppTokens.spaceXs,
+                              children: [
+                                Text(
+                                  family.name,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (family.description.trim().isNotEmpty)
+                                  Text(
+                                    family.description,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppTokens.secondaryTextColor(
+                                        context,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppTokens.spaceSm),
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                            color: AppTokens.secondaryTextColor(context),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              for (final skill in familySkills)
-                _SkillRowCard(
-                  skill: skill,
-                  isSelected: skill.id == state.selectedSkillId,
-                  progress: state.progressBySkillId[skill.id],
-                  verification: state.verificationsBySkillId[skill.id],
-                  onTap: () => onSelectSkill(skill),
-                ),
+              ),
+              if (isExpanded)
+                for (final skill in familySkills)
+                  _SkillRowCard(
+                    skill: skill,
+                    subtitle: isSearching
+                        ? realmDisplayLabel(skill.realm)
+                        : null,
+                    isSelected: skill.id == state.selectedSkillId,
+                    progress: state.progressBySkillId[skill.id],
+                    verification: state.verificationsBySkillId[skill.id],
+                    onTap: () => onSelectSkill(skill),
+                  ),
             ],
           ),
         );

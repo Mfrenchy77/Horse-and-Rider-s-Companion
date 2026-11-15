@@ -216,6 +216,18 @@ void main() {
       await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(
+        find.byKey(
+          const Key('skillFamilyHeader_horse.mounted.lateral_movements'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_horse.mounted.lateral_movements'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
         find.byKey(const Key('skillCard_horse.mounted.shoulder_in')),
       );
       await tester.pumpAndSettle();
@@ -267,6 +279,12 @@ void main() {
         findsOneWidget,
       );
 
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+        ),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('skillCard_rider.husbandry.grooming')),
       );
@@ -480,6 +498,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
         find.byKey(const Key('skillCard_rider.husbandry.grooming')),
       );
       await tester.pumpAndSettle();
@@ -523,6 +547,169 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Browse category'), findsWidgets);
       expect(find.text('Browse realm'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Skill families default collapsed, toggle independently, reset on '
+    'context switch, preserve on return, and auto-expand for search',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 850));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final mockAppCubit = _MockAppCubit();
+      final appState = authenticatedRiderState();
+      when(() => mockAppCubit.state).thenReturn(appState);
+
+      await tester.pumpWidget(
+        wrapV2(appCubit: mockAppCubit, surfaceSize: const Size(430, 850)),
+      );
+      await tester.pumpAndSettle();
+
+      // Collapsed by default: family headers & chevrons visible, skills hidden
+      expect(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.health_first_aid'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.expand_more), findsWidgets);
+
+      // Expand two families simultaneously
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.health_first_aid'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.health_first_aid'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.first_aid')),
+        findsOneWidget,
+      );
+
+      // Collapse the second family again
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.health_first_aid'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.first_aid')),
+        findsNothing,
+      );
+
+      // Open a skill on mobile and return: first family stays expanded
+      await tester.ensureVisible(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillDetailV2_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('skillTreeV2AppBarBackButton')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.first_aid')),
+        findsNothing,
+      );
+
+      // Search auto-expands matching family without altering saved expansion
+      await tester.enterText(
+        find.byKey(const Key('skillTreeV2SearchField')),
+        'first aid',
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.first_aid')),
+        findsOneWidget,
+      );
+
+      // Clearing search restores previous expansion state
+      await tester.enterText(
+        find.byKey(const Key('skillTreeV2SearchField')),
+        '',
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.first_aid')),
+        findsNothing,
+      );
+
+      // Switching category resets expansion to collapsed
+      await tester.tap(find.byKey(const Key('skillTreeV2Realm_In_Hand')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('skillTreeV2Realm_Husbandry')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsNothing,
+      );
+
+      // Switching subject resets expansion to collapsed
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Horse'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rider'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+        findsNothing,
+      );
     },
   );
 }

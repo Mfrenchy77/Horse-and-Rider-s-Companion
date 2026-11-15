@@ -137,6 +137,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         subject: subject,
         realm: nextRealm,
         searchQuery: '',
+        expandedFamilyIds: const {},
         selectedSkillId: nextSkill?.id,
         selectedLevel: nextSkill?.availableLevels.firstOrNull,
         clearSelectedSkill: nextSkill == null,
@@ -154,6 +155,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       state.copyWith(
         realm: realm,
         viewMode: SkillTreeV2ViewMode.browse,
+        expandedFamilyIds: const {},
         selectedSkillId: nextSkill?.id,
         selectedLevel: nextSkill?.availableLevels.firstOrNull,
         clearSelectedSkill: nextSkill == null,
@@ -161,6 +163,14 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         clearActionMessage: true,
       ),
     );
+  }
+
+  void toggleFamilyExpanded(String familyId) {
+    final next = Set<String>.from(state.expandedFamilyIds);
+    if (!next.add(familyId)) {
+      next.remove(familyId);
+    }
+    emit(state.copyWith(expandedFamilyIds: next));
   }
 
   void setViewMode(SkillTreeV2ViewMode mode) {

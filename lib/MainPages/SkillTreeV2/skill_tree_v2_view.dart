@@ -451,6 +451,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                               state: state,
                               onSelectSkill: (skill) =>
                                   _cubit.selectSkill(skill.id),
+                              onToggleFamily: _cubit.toggleFamilyExpanded,
                             ),
                           ),
                           Expanded(
@@ -539,6 +540,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                       SkillFamilyListV2(
                         state: state,
                         onSelectSkill: (skill) => _openMobileDetail(skill.id),
+                        onToggleFamily: _cubit.toggleFamilyExpanded,
                       ),
                   ],
                 ),
