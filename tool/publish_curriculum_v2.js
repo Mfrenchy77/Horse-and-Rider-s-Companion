@@ -20,12 +20,15 @@ const SKILL_FILES = [
 function parseArgs(argv) {
   const args = {
     apply: false,
+    allowProduction: false,
     projectId: process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT || '',
   };
   for (let i = 2; i < argv.length; i += 1) {
     const token = argv[i];
     if (token === '--apply') {
       args.apply = true;
+    } else if (token === '--allow-production') {
+      args.allowProduction = true;
     } else if (token === '--dry-run') {
       args.apply = false;
     } else if (token === '--project' && argv[i + 1]) {
@@ -69,8 +72,23 @@ async function main() {
     console.log(
       `DRY RUN: Would upsert ${families.length} SkillFamilies and ${skills.length} SkillsV2 (${totalStandards} standards).`,
     );
-    console.log('Re-run with --apply (and --project <id> or FIRESTORE_EMULATOR_HOST) to write to Firestore.');
+    console.log('Re-run with --apply --project <id> (plus --allow-production when FIRESTORE_EMULATOR_HOST is not set) to write to Firestore.');
     return;
+  }
+
+  if (!args.projectId) {
+    throw new Error('Explicit --project <projectId> is required when using --apply.');
+  }
+  const isEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
+  if (!isEmulator && !args.allowProduction) {
+    throw new Error(
+      'Refusing to write to production Firestore without --allow-production (set FIRESTORE_EMULATOR_HOST for emulator writes).',
+    );
+  }
+  if (isEmulator && args.projectId === 'horse-and-riders-compani-d2bd4') {
+    throw new Error(
+      'Refusing to run against FIRESTORE_EMULATOR_HOST with production project ID.',
+    );
   }
 
   const appOptions = args.projectId ? {projectId: args.projectId} : {};
