@@ -1,0 +1,367 @@
+[
+  {
+    "id": "rider.in_hand.catch_halter_turnout",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.haltering_leading",
+    "name": "Catching, Haltering & Turnout",
+    "aliases": ["Catch and halter", "Turn out safely", "Haltering"],
+    "summary": "Safely approaching, haltering, and releasing a horse in a stall, paddock, or pasture.",
+    "purpose": "Establishes safe, calm transitions between confinement, handling, and turnout—especially around gates and herd mates.",
+    "safety": [
+      "Keep lead ropes unlooped and out of tangles.",
+      "Turn the horse to face the gate before removing the halter so it does not bolt away."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Catching, fitting a halter, and turning out a calm horse in a familiar space.",
+        "components": [
+          {"title": "Catching and haltering", "description": "Approaching calmly, placing the halter smoothly, and checking noseband/throatlatch fit."},
+          {"title": "Safe turnout", "description": "Entering the gate safely, turning the horse toward the gate, removing halter calmly, and exiting securely."}
+        ],
+        "learning": "Catches, halters, and turns out a cooperative horse with reminders on positioning, halter fit, or gate procedure.",
+        "proficient": "Independently catches, fits a halter accurately, and turns out a cooperative horse calmly and safely without rushing through gates.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Managing catching and turnout safely in herd settings, large pastures, or around energetic horses.",
+        "components": [
+          {"title": "Herd awareness", "description": "Reading group dynamics and maintaining safe space from other horses at gates."},
+          {"title": "Adaptability", "description": "Using calm approach-and-retreat or appropriate timing with hesitant horses."}
+        ],
+        "learning": "Handles group turnout or hesitant horses with occasional guidance.",
+        "proficient": "Independently manages catching and turnout safely in varied group or energetic settings, maintaining clear personal space and gate control.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.safe_handling", "relation": "foundation", "level": "introductory"},
+      {"skillId": "rider.in_hand.leading", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.catch_and_halter", "rider.in_hand.turn_out"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.in_hand.leading",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.haltering_leading",
+    "name": "Leading",
+    "aliases": ["Lead at walk", "Lead at trot", "Back up from ground", "Present for inspection", "Jogging in hand"],
+    "summary": "Leading a horse calmly at walk, trot, halt, and rein-back from the ground, including presenting for veterinary or pre-purchase inspection.",
+    "purpose": "Forms the foundation for every ground interaction, safe movement around barns, and clear presentation for farriers or veterinarians.",
+    "safety": [
+      "Walk beside the shoulder/throat area rather than directly in front or behind.",
+      "Never wrap the lead rope around hands or fingers."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Leading at walk and short trot, halting, turning, and asking for basic backward steps on a cooperative horse.",
+        "components": [
+          {"title": "Position and rope management", "description": "Keeping a safe shoulder-level position and slack/soft contact on the lead."},
+          {"title": "Walk, halt, trot, and back-up", "description": "Guiding smooth starts, halts, turns, brief trot jogs, and a few straight backward steps."}
+        ],
+        "learning": "Leads a quiet horse at walk and short trot with occasional crowding, lagging, or uneven rope handling.",
+        "proficient": "Independently leads a cooperative horse at walk and trot, halts, turns, and asks for calm backward steps while maintaining safe spacing and soft contact.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Straight, balanced leading and turning for formal inspection (vet/lameness jogs) and handling busier environments.",
+        "components": [
+          {"title": "Inspection presentation", "description": "Trotting straight on a loose lead without pulling the head, executing balanced turns away from the handler, and standing square/calmly."}
+        ],
+        "learning": "Presents a horse for straight trot-ups and turns with occasional loss of straightness or lead tension.",
+        "proficient": "Independently presents a horse calmly for inspection—walking and trotting straight on a light lead, turning cleanly, and standing quietly—even with mild distractions.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.in_hand.leading", "relation": "counterpart"},
+      {"skillId": "rider.in_hand.turn_on_forehand", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.lead_walk", "rider.in_hand.lead_trot", "rider.in_hand.back_up", "rider.in_hand.present_inspection"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.in_hand.turn_on_forehand",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.ground_control_yielding",
+    "name": "Turn on the Forehand (In-Hand)",
+    "aliases": ["Yield the Hindquarters", "Disengage the Hindquarters", "Move the Hips Over", "Turn on the Forehand from the Ground"],
+    "summary": "Guiding a reasonably prepared horse from the ground to step its hindquarters laterally around a relatively steady forehand.",
+    "purpose": "Teaches the handler clear timing and positioning to open space, align a horse at gates or trailers, and prepare for mounted lateral aids.",
+    "safety": [
+      "Stay near the shoulder/girth zone out of kicking range.",
+      "Do not trap the horse's head tightly so it steps backward or spins."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Asking a prepared horse from halt or slow walk to step its hindquarters away smoothly on both sides.",
+        "components": [
+          {"title": "Handler positioning and timing", "description": "Standing safely near the shoulder, asking clearly, and releasing promptly when the horse steps across."}
+        ],
+        "learning": "Asks for hindquarter steps with coaching on positioning or timing; horse may drift forward/backward.",
+        "proficient": "Independently guides a prepared horse to step its hindquarters around cleanly on both sides with minimal forward/backward drift and calm relaxation.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Integrating hindquarter yields fluidly from walk, in tight spaces, or to prepare alignment for obstacles.",
+        "components": [
+          {"title": "Precision and flow", "description": "Transitioning smoothly between forward walk and clean hindquarter steps without stopping abruptly."}
+        ],
+        "learning": "Integrates hindquarter yields into active walking or tight spaces with intermittent hesitation.",
+        "proficient": "Independently uses subtle ground cues to adjust hindquarter alignment from walk or halt with precision, rhythm, and minimal cue escalation.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.yield_forequarters", "relation": "next"},
+      {"skillId": "rider.mounted.turn_on_forehand", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.yield_hindquarters"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.in_hand.yield_forequarters",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.ground_control_yielding",
+    "name": "Yield the Forequarters (In-Hand)",
+    "aliases": ["Move the shoulders over (in-hand)", "Turn on the haunches (in-hand)"],
+    "summary": "Guiding a reasonably prepared horse from the ground to step its shoulders laterally around a relatively steady hindquarters.",
+    "purpose": "Balances hindquarter control with shoulder control for straightness, personal space boundaries, and obstacle alignment.",
+    "safety": [
+      "Maintain clear personal space so the horse does not step into the handler.",
+      "Avoid pulling sharply on the halter."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Guiding clean shoulder steps in both directions without pushing the horse backward.",
+        "components": [
+          {"title": "Shoulder direction", "description": "Coordinating body position and light halter/hand requests so the front legs cross smoothly."}
+        ],
+        "learning": "Asks the forequarters to step aside with occasional backward drift or unclear timing.",
+        "proficient": "Independently guides a prepared horse to step its shoulders smoothly in both directions around relatively steady hindquarters, without rushing or backing.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.turn_on_forehand", "relation": "foundation", "level": "introductory"},
+      {"skillId": "rider.in_hand.sidepass_in_hand", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.yield_forequarters"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.in_hand.sidepass_in_hand",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.ground_control_yielding",
+    "name": "Sidepass (In-Hand)",
+    "aliases": ["Sidepass from the ground"],
+    "summary": "Guiding a reasonably prepared horse from the ground to step directly sideways with front and hind legs crossing evenly.",
+    "purpose": "Combines shoulder and hindquarter control into coordinated lateral movement for gates, rails, and groundwork precision.",
+    "safety": [
+      "Stay safely positioned beside the horse without stepping into its path.",
+      "Keep requests calm and clear rather than escalating force."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Coordinating straight sideways steps in both directions on a reasonably prepared horse.",
+        "components": [
+          {"title": "Balanced lateral guidance", "description": "Preventing shoulder or hip lag so the horse stays parallel while stepping sideways."}
+        ],
+        "learning": "Guides sideways steps with occasional shoulder/hip lag or forward/backward drift.",
+        "proficient": "Independently guides several calm, even sideways steps in both directions while keeping the horse's body straight and relaxed.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.yield_forequarters", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.mounted.sidepass", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.sidepass_in_hand"],
+    "sortOrder": 30
+  },
+  {
+    "id": "rider.in_hand.longeing",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.longeing_long_lining",
+    "name": "Longeing",
+    "aliases": ["Lunge walk and trot", "Lunge canter", "Lunging"],
+    "summary": "Working a reasonably prepared horse on a circle with a longe line across gaits and transitions while maintaining safe handler positioning and line control.",
+    "purpose": "Allows assessment of movement, calm warm-up, and rhythmic transition practice from the ground.",
+    "safety": [
+      "Never wrap the longe line around hands or fingers; wear gloves and safe footwear.",
+      "Work in an enclosed, good-footing area and stay outside the kick zone."
+    ],
+    "availableLevels": ["intermediate", "advanced"],
+    "levels": {
+      "intermediate": {
+        "overview": "Safe line management, clear circle geometry, and transitions across walk, trot, and canter on a prepared horse.",
+        "components": [
+          {"title": "Line and equipment handling", "description": "Gathering and paying out the line smoothly without dragging loops or tangling."},
+          {"title": "Gait and transition control", "description": "Maintaining a consistent circle size and guiding calm transitions across walk, trot, canter, and halt."}
+        ],
+        "learning": "Longes at walk, trot, and canter with occasional tangling, drifting circle size, or rushed transitions.",
+        "proficient": "Independently and safely longes a prepared horse in both directions through walk, trot, and canter with smooth line handling, steady circle size, and calm transitions.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Refining balance, bend, tempo changes, and figure adjustments (moving circles, ground poles) purposefully on the longe.",
+        "components": [
+          {"title": "Within-gait adjustments", "description": "Asking for subtle lengthening/shortening, bending, and smooth transitions over poles without tension."}
+        ],
+        "learning": "Practices within-gait adjustments and moving circles with intermittent loss of rhythm or contact.",
+        "proficient": "Independently shapes circle size, bend, and within-gait balance across gaits purposefully, maintaining relaxed responsiveness and clear communication.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.ground_driving", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.lunge_walk_trot", "rider.in_hand.lunge_canter"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.in_hand.ground_driving",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.longeing_long_lining",
+    "name": "Ground Driving",
+    "aliases": ["Long-lining", "Two-line ground work"],
+    "summary": "Directing a horse from on foot, from behind or behind-and-to-the-side, using two long lines.",
+    "purpose": "Builds forward movement, steering, and confidence without a rider, preparing horses for riding or driving and refining straightness.",
+    "safety": [
+      "Never wrap lines around hands or body; stay clear of kicking range and line tangles.",
+      "Start in an enclosed area with a horse that accepts lines touching its legs and hindquarters."
+    ],
+    "availableLevels": ["intermediate", "advanced"],
+    "levels": {
+      "intermediate": {
+        "overview": "Safe two-line handling, positioning, and walk/halt steering in an enclosed area on an experienced horse.",
+        "components": [
+          {"title": "Equipment and line organization", "description": "Fitting driving gear safely and managing two lines without tangling."},
+          {"title": "Position and walk steering", "description": "Keeping a safe angle/distance while guiding starts, halts, and turns both ways."}
+        ],
+        "learning": "Drives an experienced, quiet horse at walk in an enclosed area with guidance; lines sometimes tangle or turns are imprecise.",
+        "proficient": "Independently and safely ground drives an experienced horse at walk and halt in an enclosed area, managing both lines cleanly, steering both ways, and responding calmly to minor spooks or crossed lines.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Steady contact, accurate figures and trot transitions, varied settings, and purposeful training application.",
+        "components": [
+          {"title": "Trot figures and contact", "description": "Maintaining steady, elastic contact and accurate circles, straight lines, and transitions at walk and trot."}
+        ],
+        "learning": "Drives trot figures and transitions with intermittent loss of contact, accuracy, or positioning.",
+        "proficient": "Independently ground drives at walk and trot with steady contact, accurate figures and transitions, safe positioning throughout, and purposeful progression.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.in_hand.ground_driving", "relation": "counterpart"},
+      {"skillId": "rider.in_hand.longeing", "relation": "foundation", "level": "intermediate"}
+    ],
+    "legacyIds": ["rider.in_hand.ground_driving"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.in_hand.obstacles_outings",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.obstacles_outings_travel",
+    "name": "In-Hand Obstacles & Outings",
+    "aliases": ["Lead through obstacles", "Hand-walk on trail or road", "Despooking in hand"],
+    "summary": "Leading a horse calmly through ground obstacles and hand-walking outside the arena in varied environments.",
+    "purpose": "Develops handler timing, space management, and calm leadership when navigating unfamiliar surfaces, traffic, or trail features.",
+    "safety": [
+      "Inspect obstacles and footing before leading through.",
+      "Use high-visibility gear near roads and stay on the safest side relative to traffic."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Leading calmly over simple, familiar arena obstacles (ground poles, low cones) and quiet property paths.",
+        "components": [
+          {"title": "Simple obstacle setup", "description": "Giving the horse space to look, keeping a straight approach, and rewarding calm forward steps."}
+        ],
+        "learning": "Leads through simple obstacles with reminders about pace or allowing the horse room to look.",
+        "proficient": "Independently leads a cooperative horse calmly over simple ground poles or familiar paths with clear direction and safe spacing.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Navigating more demanding obstacles (tarps, bridges, tight corridors) and hand-walking safely on trails or quiet roads.",
+        "components": [
+          {"title": "Environmental judgment", "description": "Reading tension around novel objects, traffic, or uneven terrain and maintaining calm boundaries."}
+        ],
+        "learning": "Handles novel obstacles or trail outings with occasional hesitation or rushed pacing.",
+        "proficient": "Independently leads a prepared horse through varied obstacles and along trails or quiet roads, keeping safe spacing, calm timing, and good judgment around distractions.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.leading", "relation": "foundation", "level": "introductory"},
+      {"skillId": "rider.mounted.terrain_obstacles", "relation": "next"}
+    ],
+    "legacyIds": ["rider.in_hand.obstacles_in_hand", "rider.in_hand.hand_walk_trail"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.in_hand.trailer_loading",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "familyId": "rider.in_hand.obstacles_outings_travel",
+    "name": "Trailer Loading",
+    "aliases": ["Load a horse into a trailer", "Unloading from trailer"],
+    "summary": "Safely preparing a trailer and calmly loading and unloading a reasonably prepared horse.",
+    "purpose": "Ensures safe transport for routine travel and emergencies without trapping the handler or rushing the horse.",
+    "safety": [
+      "Hitch the trailer securely or block wheels before loading.",
+      "Never tie the horse before the butt bar/doors are secured, and always untie before opening the butt bar on exit."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Safe trailer setup, positioning, and calm loading/unloading of a reasonably prepared horse.",
+        "components": [
+          {"title": "Trailer preparation and exit safety", "description": "Checking hitch, flooring, dividers, and escape doors; never standing trapped in front of a rushing horse."},
+          {"title": "Loading and unloading sequence", "description": "Maintaining calm straightness, securing butt bar before tying, and untying before releasing rear restraint."}
+        ],
+        "learning": "Loads and unloads a cooperative horse with reminders on trailer prep or tie/butt-bar order.",
+        "proficient": "Independently prepares the trailer safely, loads and unloads a prepared horse calmly without rushing, and follows correct securing and release order.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.in_hand.trailer_loading", "relation": "counterpart"},
+      {"skillId": "rider.in_hand.leading", "relation": "foundation", "level": "introductory"}
+    ],
+    "legacyIds": ["rider.in_hand.trailer_loading"],
+    "sortOrder": 20
+  }
+]

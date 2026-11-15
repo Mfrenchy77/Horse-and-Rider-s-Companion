@@ -20,3 +20,6 @@ export 'rider_profile.dart';
 export 'rider_log_details.dart';
 export 'location_info.dart';
 export 'base_list_item.dart';
+export 'skill_family.dart';
+export 'curriculum_skill.dart';
+export 'skill_progress_v2.dart';

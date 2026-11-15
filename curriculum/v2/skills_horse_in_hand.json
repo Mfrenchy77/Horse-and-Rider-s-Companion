@@ -1,0 +1,286 @@
+[
+  {
+    "id": "horse.in_hand.leading",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.leading_manners",
+    "name": "Leading & Halter Response",
+    "aliases": ["Lead politely", "Yield to halter pressure"],
+    "summary": "The horse's ability to yield politely to light halter requests and lead calmly beside a handler.",
+    "purpose": "Forms the foundation for safe daily handling, veterinary/farrier care, and groundwork.",
+    "safety": [
+      "Introduce halter requests progressively in an enclosed space before working near distractions."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Yielding to light halter requests (forward, halt, step back, turn) and leading politely at walk on a loose line in familiar spaces.",
+        "components": [
+          {"title": "Halter softness", "description": "Stepping forward, halting, backing, and turning lightly without leaning, pulling, or crowding."},
+          {"title": "Polite walk leading", "description": "Matching the handler's pace calmly without forging ahead or lagging."}
+        ],
+        "learning": "Leads and yields to the halter in familiar settings with occasional pushing, lagging, or distraction.",
+        "proficient": "Calmly and reliably yields to light halter requests and leads politely at walk on a relaxed lead without crowding, pulling, or bolting.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Leading politely at walk and trot, turning cleanly, and staying attentive in busier or unfamiliar environments.",
+        "components": [
+          {"title": "Trot-up and distractions", "description": "Trotting beside the handler on a light lead, halting promptly, and maintaining manners around other horses or activity."}
+        ],
+        "learning": "Leads at trot or in busier spaces with intermittent tension or surging.",
+        "proficient": "Consistently leads calmly at walk and trot on a light lead, halts and backs promptly, and maintains respectful personal space in varied environments.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.leading", "relation": "counterpart"}
+    ],
+    "legacyIds": ["horse.in_hand.lead_politely", "horse.in_hand.yield_to_halter"],
+    "sortOrder": 10
+  },
+  {
+    "id": "horse.in_hand.standing_quietly",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.leading_manners",
+    "name": "Standing Quietly",
+    "aliases": ["Stand tied", "Ground tie"],
+    "summary": "The horse's ability to stand calmly and patiently when tied, held, or asked to wait in place.",
+    "purpose": "Keeps the horse safe and relaxed during grooming, tacking, waiting at trailers, and farrier or vet visits.",
+    "safety": [
+      "Always use safe tie points and breakaway/quick-release arrangements; never ground-tie near traffic or unenclosed hazards."
+    ],
+    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "levels": {
+      "introductory": {
+        "overview": "Standing calmly when tied in a familiar, quiet location for routine care.",
+        "components": [
+          {"title": "Tied patience", "description": "Standing without pulling back, pawing, or crowding when tied safely in a familiar spot."}
+        ],
+        "learning": "Stands tied for short periods with occasional fidgeting, pawing, or mild tension.",
+        "proficient": "Stands quietly and relaxed when tied in familiar settings for routine grooming and preparation without pulling back or fussing.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Standing calmly when tied in busier environments, at trailers, or when nearby horses move away.",
+        "components": [
+          {"title": "Patience around distractions", "description": "Maintaining composure when herd mates leave or activity occurs nearby."}
+        ],
+        "learning": "Stands tied around mild distractions with intermittent restlessness.",
+        "proficient": "Stands calmly and reliably when tied in varied or busier locations—including trailers and group settings—without panicking or pulling back.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Reliable ground-tying (standing in place with lead dropped or slack) in appropriate enclosed or controlled settings.",
+        "components": [
+          {"title": "Ground-tie discipline", "description": "Waiting calmly in place while the handler steps away briefly and moves around."}
+        ],
+        "learning": "Holds position with lead dropped for brief moments in quiet spaces before wandering.",
+        "proficient": "Reliably remains standing calmly in place on a dropped lead while the handler steps away and returns, without wandering or grazing.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.safe_handling", "relation": "counterpart"}
+    ],
+    "legacyIds": ["horse.in_hand.stand_tied", "horse.in_hand.ground_tie_horse"],
+    "sortOrder": 20
+  },
+  {
+    "id": "horse.in_hand.daily_care_handling",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.cooperative_care",
+    "name": "Daily Care Handling",
+    "aliases": ["Stand for saddling", "Stand for blanketing", "Stand for bathing"],
+    "summary": "The horse's calm cooperation during routine care—grooming, blanketing, bathing, and tacking up.",
+    "purpose": "Reduces stress and injury risk during everyday care and preparation.",
+    "safety": [
+      "Build comfort gradually with sensitive horses; never force acceptance through restraint alone."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Standing calmly and accepting routine grooming, blanketing, bathing, and saddling/bridling in familiar settings.",
+        "components": [
+          {"title": "Grooming and blanketing", "description": "Accepting brushes, blankets, and straps around legs/belly calmly."},
+          {"title": "Bathing and tacking", "description": "Accepting water/hosing and saddle/bridle placement without pinning ears, kicking, or evading."}
+        ],
+        "learning": "Accepts daily care and tacking with mild fidgeting or sensitivity around girth, ears, or water.",
+        "proficient": "Cooperates calmly and stands quietly for routine grooming, blanketing, bathing, and saddling/bridling without bracing, biting, or kicking.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Remaining relaxed during full-body bathing, clippers/sprays, and tacking in unfamiliar or busier venues.",
+        "components": [
+          {"title": "Confidence in varied settings", "description": "Maintaining calm cooperation at clinics, shows, wash stalls, or around unfamiliar gear."}
+        ],
+        "learning": "Cooperates with sprays, clippers, or busy wash areas with occasional tension.",
+        "proficient": "Remains relaxed and cooperative during thorough bathing, grooming, blanketing, and tacking even in busy or unfamiliar environments.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.grooming", "relation": "counterpart"},
+      {"skillId": "rider.husbandry.blanketing", "relation": "counterpart"},
+      {"skillId": "rider.husbandry.tack", "relation": "counterpart"}
+    ],
+    "legacyIds": ["horse.in_hand.stand_for_saddling", "horse.in_hand.stand_for_blanketing", "horse.in_hand.stand_for_bathing"],
+    "sortOrder": 10
+  },
+  {
+    "id": "horse.in_hand.hoof_handling",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.cooperative_care",
+    "name": "Hoof Handling",
+    "aliases": ["Stand for hoof handling", "Pick up feet", "Stand for farrier"],
+    "summary": "The horse's ability to yield all four hooves willingly, balance calmly, and cooperate for hoof cleaning and farrier care.",
+    "purpose": "Essential for safe daily hoof maintenance and stress-free trimming or shoeing.",
+    "safety": [
+      "Respect the horse's balance and physical comfort, especially in older or stiff horses."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Lifting all four hooves willingly on light request and holding them calmly for routine hoof picking.",
+        "components": [
+          {"title": "Yielding and holding", "description": "Shifting weight smoothly and holding each hoof briefly without snatching away or leaning heavily."}
+        ],
+        "learning": "Picks up feet with hesitation, mild leaning, or snatching back before being released.",
+        "proficient": "Willingly lifts all four hooves on light request, balances comfortably, and holds each foot calmly for thorough cleaning.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Standing patiently for extended farrier work (trimming, rasping, or shoeing) on all four limbs.",
+        "components": [
+          {"title": "Farrier patience", "description": "Accepting hoof stands, rasping, and longer holding intervals calmly without pulling."}
+        ],
+        "learning": "Cooperates with farrier work for short intervals before becoming restless.",
+        "proficient": "Stands calmly and cooperatively through complete trimming or shoeing sessions on all four hooves.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.grooming", "relation": "counterpart"}
+    ],
+    "legacyIds": ["horse.in_hand.hoof_handling"],
+    "sortOrder": 20
+  },
+  {
+    "id": "horse.in_hand.vet_handling",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.cooperative_care",
+    "name": "Veterinary & Medical Handling",
+    "aliases": ["Stand for vet exam", "Accept thermometer", "Accept oral syringe"],
+    "summary": "The horse's calm cooperation during health checks, vital-sign measurement, oral medication, and routine veterinary examinations.",
+    "purpose": "Allows accurate vital signs, safe treatment, and calmer emergency care.",
+    "safety": [
+      "Prepare horses gradually with positive, low-stress practice rather than waiting for an emergency."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Standing quietly for physical exams, stethoscope, thermometer, mouth/eye checks, and oral medication.",
+        "components": [
+          {"title": "Cooperative exam behavior", "description": "Accepting unfamiliar handlers, palpation, vital-sign checks, and oral syringes calmly."}
+        ],
+        "learning": "Tolerates routine exam steps with mild tension or head-shyness.",
+        "proficient": "Stands calmly and cooperatively for physical exams, temperature/pulse/respiration checks, and oral administration without panicking or evading.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.health_monitoring", "relation": "counterpart"},
+      {"skillId": "rider.husbandry.medications", "relation": "counterpart"}
+    ],
+    "legacyIds": ["horse.in_hand.stand_for_vet"],
+    "sortOrder": 30
+  },
+  {
+    "id": "horse.in_hand.trailer_loading",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.travel_environments",
+    "name": "Trailer Loading",
+    "aliases": ["Load into trailer", "Calm trailering"],
+    "summary": "The horse's willingness to walk calmly into a trailer, wait quietly while secured, and unload smoothly without rushing.",
+    "purpose": "Supports safe, low-stress transport for travel, outings, and emergencies.",
+    "safety": [
+      "Allow time for calm inspection and never rush unloading backward or forward."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Loading willingly, standing calmly while butt bars/doors are closed, and unloading smoothly.",
+        "components": [
+          {"title": "Calm entry and exit", "description": "Stepping onto the ramp or step-up calmly without bolting in or backing out abruptly."}
+        ],
+        "learning": "Loads with brief hesitation or rushes slightly during loading or unloading.",
+        "proficient": "Steps calmly into the trailer on light request, stands quietly while secured, and unloads smoothly at a controlled walk.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.trailer_loading", "relation": "counterpart"}
+    ],
+    "legacyIds": ["horse.in_hand.load_trailer"],
+    "sortOrder": 10
+  },
+  {
+    "id": "horse.in_hand.ground_driving",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.work_on_line",
+    "name": "Ground Driving",
+    "aliases": ["Basic ground driving", "Long-lining (horse)"],
+    "summary": "The horse's learned ability to move forward, halt, and turn calmly in response to two long lines handled from behind or beside it.",
+    "purpose": "Builds confidence, steering clarity, and forward acceptance without a rider's weight.",
+    "safety": [
+      "Ensure the horse calmly accepts lines touching its sides and hindquarters before driving; early sessions require a handler proficient in Rider Ground Driving."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Calmly accepting driving gear and lines along the body, walking forward, halting, and turning in an enclosed area.",
+        "components": [
+          {"title": "Line acceptance", "description": "Remaining relaxed when two lines rest lightly against sides and quarters."},
+          {"title": "Walk, halt, and basic turns", "description": "Responding to light, steady requests without bracing, rushing, or turning to face the handler."}
+        ],
+        "learning": "Accepts lines with mild tension or hesitation; may need a helper at the head or show delayed halts/turns.",
+        "proficient": "Calmly accepts equipment and lines touching its body, walks forward willingly, and halts and turns both ways in an enclosed area on light requests without bracing or rushing.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Moving forward confidently at walk and trot with steady rhythm, straightness, prompt transitions, and composure in varied settings.",
+        "components": [
+          {"title": "Trot straightness and adaptability", "description": "Following figures and transitions smoothly at walk and trot and staying calm if lines brush legs unexpectedly."}
+        ],
+        "learning": "Drives at trot or outside the arena with occasional rushing, bracing, or loss of straightness.",
+        "proficient": "Drives forward confidently at walk and trot with steady rhythm and straightness, makes prompt transitions, follows figures cleanly, and stays calm in varied settings.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.ground_driving", "relation": "counterpart"}
+    ],
+    "legacyIds": [],
+    "sortOrder": 10
+  }
+]

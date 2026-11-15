@@ -1,0 +1,670 @@
+[
+  {
+    "id": "rider.mounted.mounting",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.position_balance_safety",
+    "name": "Mounting & Dismounting",
+    "aliases": ["Mounting", "Dismounting", "Pre-ride check"],
+    "summary": "Safely checking tack, mounting smoothly from a mounting block or ground, settling into the saddle, and dismounting cleanly.",
+    "purpose": "Protects the horse's back and ensures the rider starts and finishes every ride safely and in control.",
+    "safety": [
+      "Check girth tightness and stirrup security before mounting.",
+      "Use a mounting block whenever possible to reduce torque on the horse's back."
+    ],
+    "availableLevels": ["introductory"],
+    "levels": {
+      "introductory": {
+        "overview": "Completing a pre-mount check, mounting smoothly without dropping onto the horse's back, and dismounting safely.",
+        "components": [
+          {"title": "Pre-mount safety check", "description": "Checking girth, bridle/halter, and clear surroundings."},
+          {"title": "Smooth mount and dismount", "description": "Maintaining light rein contact while stepping smoothly up and settling gently, and clearing the cantle/stirrups cleanly on dismount."}
+        ],
+        "learning": "Mounts and dismounts a quiet horse with assistance holding the horse or adjusting tack.",
+        "proficient": "Independently performs a pre-mount check, mounts smoothly using a mounting block without pulling the saddle or thumping the horse's back, and dismounts cleanly with control.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.standing", "relation": "counterpart"},
+      {"skillId": "rider.husbandry.tack", "relation": "foundation", "level": "introductory"}
+    ],
+    "legacyIds": ["rider.mounted.mounting"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.walk",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Walk",
+    "aliases": ["Mounted walk", "Following the walk"],
+    "summary": "Following the horse's four-beat walk in balance while maintaining basic direction, tempo, and halt.",
+    "purpose": "Establishes independent rider balance, supple hips, and calm communication before faster gaits.",
+    "safety": [
+      "Keep heels relaxed and hands independent of balance.",
+      "Maintain safe spacing from other horses."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Maintaining a balanced, relaxed seat at walk, asking for walk, and halting safely.",
+        "components": [
+          {"title": "Following the motion", "description": "Allowing pelvis and hands to follow the four-beat walk without bracing."}
+        ],
+        "learning": "Walks on a quiet horse with occasional stiffness, gripping, or reliance on the reins for balance.",
+        "proficient": "Independently asks for walk, follows the motion comfortably with balanced posture and soft contact, and returns calmly to halt.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Influencing walk energy, stride length (active working walk vs. relaxed free walk), and straightness.",
+        "components": [
+          {"title": "Within-gait adjustment", "description": "Asking for a marchier or more relaxed walk without breaking into trot or losing rhythm."}
+        ],
+        "learning": "Practices adjusting walk stride length and energy with intermittent loss of four-beat rhythm.",
+        "proficient": "Independently rides an active, rhythmic walk, lengthens and shortens the walk smoothly, and transitions cleanly between working and relaxed walk.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.walk", "relation": "counterpart"},
+      {"skillId": "rider.mounted.trot", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.walk"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.trot",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Trot",
+    "aliases": ["Posting trot", "Rising trot", "Sitting trot", "Trot diagonals"],
+    "summary": "Riding the two-beat trot (posting, sitting, or two-point) in balance without relying on the reins.",
+    "purpose": "Builds rider core stability, rhythm awareness, and shock absorption across a bouncier gait.",
+    "safety": [
+      "Keep balance over your own base of support rather than pulling on the horse's mouth."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Maintaining safe, functional balance at trot (posting, sitting, or two-point) and returning calmly to walk.",
+        "components": [
+          {"title": "Rhythm and balance", "description": "Matching the two-beat rhythm without bouncing heavily or gripping with the hands."}
+        ],
+        "learning": "Trots short stretches with occasional loss of rhythm, bouncing, or needing a grab strap/coaching.",
+        "proficient": "Independently transitions into trot, maintains balanced rhythm for sustained stretches without pulling on the reins, and makes a controlled transition back to walk.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Smoothly posting on the intended diagonal, sitting trot comfortably in balance, and regulating trot tempo.",
+        "components": [
+          {"title": "Diagonals and sitting balance", "description": "Recognizing and changing diagonals smoothly and absorbing trot motion in sitting trot without tension."}
+        ],
+        "learning": "Checks and changes diagonals or sits the trot with intermittent stiffness or missed beats.",
+        "proficient": "Independently rides balanced posting (identifying and changing diagonals cleanly) and supple sitting trot, maintaining steady tempo and soft contact.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.trot", "relation": "counterpart"},
+      {"skillId": "rider.mounted.canter", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.trot"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.mounted.canter",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Canter",
+    "aliases": ["Lope", "Canter depart", "Canter leads"],
+    "summary": "Riding the three-beat canter or lope in balance, with progressive control of leads, geometry, and tempo.",
+    "purpose": "Allows riders to experience the sweeping three-beat gait early while building refined lead awareness and balance over time.",
+    "safety": [
+      "Establish reliable walk/trot control and safe arena spacing before cantering."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Basic functional canter execution: departing calmly, maintaining the gait with control, and making a safe downward transition.",
+        "components": [
+          {"title": "Balanced seat", "description": "Following the three-beat motion without falling forward or pulling back on the mouth."}
+        ],
+        "learning": "Canters short stretches with guidance; seat or rein steadiness may waver during depart or downward transition.",
+        "proficient": "Independently cues a calm canter, maintains balanced seat and basic steering for several strides or a lap, and makes a safe, controlled downward transition. Correct lead selection is not required at this level.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Consistent departs on the intended lead, balanced circles/turns at canter, and regulated tempo.",
+        "components": [
+          {"title": "Lead awareness and balance", "description": "Preparing the depart, feeling which lead the horse is on, and maintaining rhythm around turns."}
+        ],
+        "learning": "Cues intended leads and rides canter turns with occasional wrong leads or rushing.",
+        "proficient": "Independently prepares and rides balanced canter departs on the intended lead in both directions, maintains steady rhythm on lines and 20 m circles, and transitions down smoothly.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.canter", "relation": "counterpart"},
+      {"skillId": "rider.mounted.steering_navigation", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.canter"],
+    "sortOrder": 30
+  },
+  {
+    "id": "rider.mounted.transitions",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Transitions",
+    "aliases": ["Upward transitions", "Downward transitions", "Halt on a mark", "Direct transitions"],
+    "summary": "Preparing and riding smooth, accurate upward, downward, and within-gait transitions—including halting accurately at a chosen spot.",
+    "purpose": "Develops rider timing, seat preparation, and responsive communication across gaits without pulling or rushing.",
+    "safety": [
+      "Keep transitions progressive and balanced rather than abruptly hauling on the reins or kicking."
+    ],
+    "availableLevels": ["intermediate", "advanced"],
+    "levels": {
+      "intermediate": {
+        "overview": "Smooth progressive upward and downward transitions (halt–walk–trot–canter) and halting accurately on a mark.",
+        "components": [
+          {"title": "Upward and downward preparation", "description": "Preparing the horse's balance before asking so transitions happen calmly without hollowing or falling onto the forehand."},
+          {"title": "Halt on a mark", "description": "Planning ahead to halt squarely and quietly at a designated cone, letter, or line."}
+        ],
+        "learning": "Rides progressive transitions and halts at marks with occasional rushing, lagging, or missed spots.",
+        "proficient": "Independently prepares and rides smooth progressive upward and downward transitions across walk, trot, and canter, and halts calmly on a chosen mark.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Direct transitions (halt–trot, walk–canter, canter–walk, canter–halt) and crisp within-gait lengthenings and shortenings.",
+        "components": [
+          {"title": "Direct and within-gait transitions", "description": "Maintaining uphill balance, straightness, and suppleness through demanding gait changes."}
+        ],
+        "learning": "Practices walk–canter or within-gait transitions with intermittent loss of straightness or balance.",
+        "proficient": "Independently rides balanced direct transitions and clear within-gait adjustments in both directions with minimal visible effort and steady relaxation.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.transitions", "relation": "counterpart"},
+      {"skillId": "rider.mounted.half_halt", "relation": "foundation", "level": "intermediate"}
+    ],
+    "legacyIds": ["rider.mounted.upward_transitions", "rider.mounted.downward_transitions", "rider.mounted.halt_on_mark"],
+    "sortOrder": 40
+  },
+  {
+    "id": "rider.mounted.half_halt",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Half-Halt (Rebalancing)",
+    "aliases": ["Half-halt", "Rebalancing", "Check and release"],
+    "summary": "Using a brief, coordinated rebalancing request to gather the horse's attention and balance before a turn, figure, or transition.",
+    "purpose": "Allows the rider to improve balance and prepare the horse smoothly without breaking gait or pulling continuously.",
+    "safety": [
+      "Always release promptly after the rebalancing moment; never hold continuous backward pressure."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Coordinating seat, core, leg, and brief soft rein timing to rebalance the horse without halting.",
+        "components": [
+          {"title": "Timing and release", "description": "Asking briefly as needed before corners or transitions and immediately softening."}
+        ],
+        "learning": "Practices rebalancing moments with coaching; timing may occasionally stall the horse or turn into steady rein pull.",
+        "proficient": "Independently uses subtle, timely rebalancing requests before turns and transitions, improving the horse's posture and responsiveness without breaking rhythm.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.transitions", "relation": "counterpart"},
+      {"skillId": "rider.mounted.transitions", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.half_halt"],
+    "sortOrder": 50
+  },
+  {
+    "id": "rider.mounted.steering_navigation",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.steering_bend_direction",
+    "name": "Steering & Navigation",
+    "aliases": ["Ride a straight line", "Ride a 20 m circle", "Slalom between markers", "Serpentine", "Figure eight", "Cloverleaf", "Cone patterns"],
+    "summary": "Guiding a horse accurately along straight lines, circles, turns, and marker patterns with appropriate bend, rhythm, and look-ahead.",
+    "purpose": "Unifies arena geometry and pattern navigation into one core steering ability across walk, trot, and canter.",
+    "safety": [
+      "Look ahead to plan turns early, use safe marker spacing, and keep speed within rider and footing limits."
+    ],
+    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "levels": {
+      "introductory": {
+        "overview": "Basic steering, straight lines, recognizable ~20 m circles, turns, and simple marker patterns at walk.",
+        "components": [
+          {"title": "Look-ahead and alignment", "description": "Looking where you intend to go and guiding shoulders and direction calmly."},
+          {"title": "Lines, circles, and simple patterns", "description": "Riding straight away from the rail, recognizable ~20 m circles, and simple cone paths at walk."}
+        ],
+        "learning": "Steers lines, circles, and walk patterns with occasional drifting, cutting corners, or over-reliance on one rein.",
+        "proficient": "Independently steers straight lines, recognizable ~20 m circles, turns, and simple marker patterns at walk with steady rhythm and safe spacing.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Greater accuracy, rhythm, bend, and timely preparation through figures and patterns (circles, serpentines, slaloms, figure-eights) at trot.",
+        "components": [
+          {"title": "Trot geometry and bend changes", "description": "Preparing direction and bend changes smoothly between arcs without losing rhythm or knocking markers."}
+        ],
+        "learning": "Rides trot figures and patterns with late bend changes, drifting arcs, or tempo fluctuations.",
+        "proficient": "Independently rides accurate lines, circles, serpentines, and marker patterns at trot with consistent rhythm, timely preparation, and smooth changes of bend.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Complex changes of direction, balance, and appropriate lead management through figures and patterns at canter.",
+        "components": [
+          {"title": "Canter balance and lead planning", "description": "Maintaining balanced speed and choosing appropriate lead changes (simple, flying, or deliberate counter-canter) suited to the horse's training."}
+        ],
+        "learning": "Navigates canter patterns with intermittent loss of balance, speed control, or lead timing.",
+        "proficient": "Independently rides complex canter figures and patterns with balanced speed, accurate geometry, and planned, calm lead management.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.steering_navigation", "relation": "counterpart"},
+      {"skillId": "rider.mounted.walk", "relation": "foundation", "level": "introductory"}
+    ],
+    "legacyIds": ["rider.mounted.straight_line", "rider.mounted.circle_20m", "rider.mounted.slalom"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.turn_on_forehand",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.pivots_body_control",
+    "name": "Turn on the Forehand",
+    "aliases": ["Yield the hindquarters (mounted)", "Disengage the hindquarters"],
+    "summary": "Guiding a reasonably prepared horse to step its hindquarters laterally around a relatively steady forehand.",
+    "purpose": "Develops independent hindquarter control for opening space, gate alignment, and early lateral coordination.",
+    "safety": [
+      "Avoid pulling the horse backward or trapping its mouth while asking for sideways steps."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "From halt or very slow walk, guiding a 90–180° turn on the forehand on a cooperative horse.",
+        "components": [
+          {"title": "Centered seat and clear request", "description": "Keeping the forehand quiet while allowing the hind legs to step across freely."}
+        ],
+        "learning": "Practices turns on the forehand with uneven steps, forward/backward drift, or pauses to reset.",
+        "proficient": "Independently prepares the horse from halt or slow walk and guides a calm 90–180° turn on the forehand in both directions with minimal drift and soft contact.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Precise 180–360° turns on the forehand with minimal forehand pivot drift, clean rhythm, and fluid transitions in and out of walk.",
+        "components": [
+          {"title": "Pivot steadiness and transitions", "description": "Entering from walk or halt smoothly, keeping steady four-beat stepping, and walking straight out."}
+        ],
+        "learning": "Refines pivot steadiness and transitions with occasional crossing errors or loss of rhythm.",
+        "proficient": "Independently rides crisp, rhythmic turns on the forehand in both directions with steady forehand placement, no backward steps, and seamless walk transitions.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.turn_on_forehand", "relation": "counterpart"},
+      {"skillId": "rider.mounted.leg_yield", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.turn_on_forehand"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.turn_on_haunches",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.pivots_body_control",
+    "name": "Turn on the Haunches",
+    "aliases": ["Turn on the hindquarters", "Walk pirouette (early)"],
+    "summary": "Guiding a reasonably prepared horse from walk to step its forehand around an arc while the hindquarters remain relatively anchored.",
+    "purpose": "Develops shoulder control, preparation, and balanced turning around the hindquarters.",
+    "safety": [
+      "Do not force a tight pivot by pulling hard on the inside rein; prioritize steady forward walk rhythm."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Guiding a calm, generous arc of the forehand around the hindquarters from walk without backing or spinning.",
+        "components": [
+          {"title": "Walk rhythm and shoulder guidance", "description": "Keeping the horse stepping forward into a small turning arc rather than twisting or backing."}
+        ],
+        "learning": "Guides the forehand around the haunches with wide arcs, pauses, or occasional backward steps.",
+        "proficient": "Independently guides a calm, rhythmic small-arc turn on the haunches in both directions from walk without spinning, backing, or harsh rein pull.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Compact (~1 m) rhythmic turns on the haunches with clear preparation, consistent bend, and smooth exit.",
+        "components": [
+          {"title": "Compactness and bend", "description": "Rebalancing before the turn and maintaining four-beat walk rhythm and soft bend around a tight pivot area."}
+        ],
+        "learning": "Rides tighter turns on the haunches with intermittent loss of walk rhythm or bend.",
+        "proficient": "Independently prepares and rides smooth, compact (~1 m) turns on the haunches in both directions, maintaining four-beat rhythm, relaxed bend, and clean straight exits.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.turn_on_haunches", "relation": "counterpart"},
+      {"skillId": "rider.mounted.half_halt", "relation": "foundation", "level": "intermediate"}
+    ],
+    "legacyIds": ["rider.mounted.turn_on_haunches"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.mounted.rein_back",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.pivots_body_control",
+    "name": "Rein Back",
+    "aliases": ["Back up (mounted)", "Back through an L or corridor"],
+    "summary": "Guiding a reasonably prepared horse to step calmly backward in a diagonal two-beat pattern—on straight lines or through patterns like an L or corridor.",
+    "purpose": "Improves responsiveness, straightness, and practical maneuvering for gates, tight spaces, and trail patterns.",
+    "safety": [
+      "Never use harsh backward pulling or alternating see-saw rein pressure.",
+      "Pause and step forward to reset safely if the horse becomes tense or stuck."
+    ],
+    "availableLevels": ["intermediate", "advanced"],
+    "levels": {
+      "intermediate": {
+        "overview": "Smoothly guiding 3–5 straight diagonal backward steps from a square halt, plus backing cleanly through an L or corridor.",
+        "components": [
+          {"title": "Straight rein-back", "description": "Preparing a calm halt and inviting diagonal backward steps without rushing or raising the head."},
+          {"title": "Corridor and L-pattern application", "description": "Aligning straight and steering shoulders/hips cleanly through an L-shaped boundary without knocking rails."}
+        ],
+        "learning": "Backs straight or through an L with occasional crookedness, hesitation, or boundary touches.",
+        "proficient": "Independently guides calm, straight diagonal backward steps from halt—and backs cleanly through an L or corridor without rushing, harsh rein use, or knocking boundaries—then halts or walks forward smoothly.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Backing precise longer distances, serpentines, or transitions directly between rein-back and trot/canter.",
+        "components": [
+          {"title": "Precision and direct transitions", "description": "Sustaining straightness, rhythm, and soft contact through complex backing lines and crisp forward departures."}
+        ],
+        "learning": "Practices extended backing patterns or direct rein-back transitions with intermittent loss of straightness or rhythm.",
+        "proficient": "Independently guides accurate, relaxed rein-back lines and curves and transitions smoothly from rein-back into forward gaits without tension.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.rein_back", "relation": "counterpart"}
+    ],
+    "legacyIds": ["rider.mounted.rein_back", "rider.mounted.back_through_L"],
+    "sortOrder": 30
+  },
+  {
+    "id": "rider.mounted.sidepass",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.pivots_body_control",
+    "name": "Sidepass",
+    "aliases": ["Sidepass over rail (mounted)", "Sidepass (mounted)"],
+    "summary": "Guiding a reasonably prepared horse to step directly sideways with even crossing of front and hind legs, in open space or over a ground rail.",
+    "purpose": "Provides exact lateral positioning for gates, obstacles, and independent control of shoulders and hips.",
+    "safety": [
+      "Use safe, stable ground poles on even footing when practicing over a rail.",
+      "Do not rush or force the horse sideways if it becomes confused."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Guiding calm, straight sideways steps in both directions in open space and aligned over a ground rail.",
+        "components": [
+          {"title": "Pure sideways alignment", "description": "Balancing shoulder and hip aids so neither end lags or drifts forward/backward."},
+          {"title": "Sidepass over a rail", "description": "Aligning lengthwise over a ground pole and stepping cleanly sideways without knocking it."}
+        ],
+        "learning": "Guides sideways steps with occasional forward/backward drift, lagging hips/shoulders, or touching the rail.",
+        "proficient": "Independently aligns the horse and guides several calm, straight sideways steps in both directions—including cleanly over a ground rail—without rushing or losing balance.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.sidepass", "relation": "counterpart"},
+      {"skillId": "rider.mounted.leg_yield", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.mounted.object_handling", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.sidepass_rail"],
+    "sortOrder": 40
+  },
+  {
+    "id": "rider.mounted.leg_yield",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.lateral_movements",
+    "name": "Leg Yield",
+    "aliases": ["Yield laterally", "Sideways and forward"],
+    "summary": "Guiding a reasonably prepared horse forward and sideways simultaneously at walk or trot with a straight body or slight flexion away from the direction of travel.",
+    "purpose": "Teaches the rider to coordinate forward and lateral requests without losing rhythm, balance, or straightness.",
+    "safety": [
+      "Avoid pulling backward on the reins while asking for sideways movement; ensure clear arena space."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Balanced, rhythmic leg yield in both directions at walk and trot.",
+        "components": [
+          {"title": "Forward-lateral balance", "description": "Keeping the horse stepping forward across the diagonal without rushing, stalling, or falling through the shoulder."}
+        ],
+        "learning": "Practices leg yield at walk or trot with inconsistent angle, varying rhythm, or shoulder/hip drift.",
+        "proficient": "Independently guides balanced, rhythmic leg yields in both directions at walk and trot, maintaining consistent forwardness, alignment, and smooth returns to a straight line.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.leg_yield", "relation": "counterpart"},
+      {"skillId": "rider.mounted.turn_on_forehand", "relation": "foundation", "level": "introductory"},
+      {"skillId": "rider.mounted.shoulder_in", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.leg_yield"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.shoulder_in",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.lateral_movements",
+    "name": "Shoulder-In",
+    "aliases": ["Shoulder-fore", "Épaule en dedans"],
+    "summary": "Guiding a horse along a straight line with the shoulders brought slightly inward and a slight, even bend away from the direction of travel.",
+    "purpose": "Develops rider feel for bend, straightness, and engagement of the inside hind leg as a foundation for advanced lateral work.",
+    "safety": [
+      "Build from shallow angles and short sections; never force neck bend with the reins."
+    ],
+    "availableLevels": ["intermediate", "advanced"],
+    "levels": {
+      "intermediate": {
+        "overview": "Recognizable and functional shoulder-fore or shoulder-in at walk (with optional short trot experiments).",
+        "components": [
+          {"title": "Establishing bend and line", "description": "Creating slight uniform bend before bringing the shoulders off the track and returning smoothly to straight."}
+        ],
+        "learning": "Positions the shoulders in for a few walk strides with inconsistent angle, bend, or rhythm.",
+        "proficient": "Independently rides a recognizable, functional shoulder-fore or shoulder-in at walk in both directions, moving forward along the line without drifting and returning smoothly to straight. Trot proficiency is not required.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Sustained shoulder-in at trot along a full long side with improved precision, consistency, balance, and coordination.",
+        "components": [
+          {"title": "Sustained trot balance and connections", "description": "Maintaining uniform angle and bend at trot and connecting shoulder-in smoothly with figures and other movements."}
+        ],
+        "learning": "Sustains shoulder-in at trot with occasional loss of angle, bend, or impulsion.",
+        "proficient": "Independently sustains shoulder-in at trot along a full long side in both directions with consistent angle and bend, steady rhythm and impulsion, clean entries/exits, and relaxation.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.shoulder_in", "relation": "counterpart"},
+      {"skillId": "rider.mounted.leg_yield", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.mounted.travers", "relation": "next"}
+    ],
+    "legacyIds": ["rider.mounted.shoulder_in"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.mounted.travers",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.lateral_movements",
+    "name": "Travers (Haunches-In)",
+    "aliases": ["Haunches-in (Travers)", "Travers"],
+    "summary": "Guiding a reasonably prepared horse along a straight line at walk or trot with slight inward bend (in the direction of travel), keeping the forehand on the track while carrying the hindquarters slightly inward.",
+    "purpose": "Advances rider coordination, independent seat control, and feel for lateral collection.",
+    "safety": [
+      "Avoid pulling the head inward or forcing the haunches over abruptly; keep segments brief and prioritize rhythm."
+    ],
+    "availableLevels": ["advanced"],
+    "levels": {
+      "advanced": {
+        "overview": "Guiding travers in both directions at walk and trot with true inward bend, steady forehand line, and rhythmic engagement.",
+        "components": [
+          {"title": "True inward bend", "description": "Maintaining slight bend toward the direction of travel while carrying the haunches inward (~30°) on three or four tracks."}
+        ],
+        "learning": "Practices travers at walk or trot with intermittent over-bending, forehand drift, or loss of rhythm.",
+        "proficient": "Independently guides travers in both directions at walk and trot with true inward bend, forehand remaining on the track, hindquarters carried smoothly inward, and steady rhythm and balance.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.travers", "relation": "counterpart"},
+      {"skillId": "rider.mounted.shoulder_in", "relation": "foundation", "level": "advanced"}
+    ],
+    "legacyIds": ["rider.mounted.haunches_in"],
+    "sortOrder": 30
+  },
+  {
+    "id": "rider.mounted.terrain_obstacles",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.terrain_obstacles",
+    "name": "Terrain & Obstacle Negotiation",
+    "aliases": ["Crossing Obstacles (Mounted)", "Water crossing (mounted)", "Bridge obstacle", "Tarps and ground poles", "Trail terrain"],
+    "summary": "Guiding a horse safely and confidently across ground poles, bridges, tarps, water crossings, slopes, and varied terrain.",
+    "purpose": "Builds balanced rider posture, clear forward support, and sound judgment across unfamiliar footing and environmental challenges.",
+    "safety": [
+      "Inspect unfamiliar footing, bridges, banks, and water depth before riding across.",
+      "Never pull back on the mouth while the horse is stepping onto or balancing across an obstacle, and slow down whenever footing or visibility warrants it."
+    ],
+    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "levels": {
+      "introductory": {
+        "overview": "Safe, controlled negotiation of straightforward obstacles and terrain (ground poles, low bridges, tarps, shallow puddles, gentle slopes) at walk.",
+        "components": [
+          {"title": "Balanced non-interfering seat", "description": "Allowing the horse to look and place its feet while offering calm, steady forward support."}
+        ],
+        "learning": "Crosses straightforward obstacles or shallow water at walk with occasional hesitation, crooked lines, or tension in contact.",
+        "proficient": "Independently approaches and negotiates straightforward obstacles, shallow water, and gentle terrain at walk in balance, keeping straight lines and relaxed, non-restrictive contact.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "More demanding coordination across varied terrain, deeper/natural water crossings, uneven slopes, and appropriate trot work over poles or safe terrain.",
+        "components": [
+          {"title": "Terrain balance and trot poles", "description": "Adjusting rider position (e.g., light seat/two-point) for slopes and trot poles while keeping steady rhythm."}
+        ],
+        "learning": "Negotiates varied terrain or trot pole lines with intermittent loss of balance, rhythm, or line.",
+        "proficient": "Independently negotiates varied terrain, natural water crossings, and appropriate trot-level obstacle lines with balanced position, steady rhythm, and calm confidence.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Complex terrain navigation and appropriate canter work (such as canter poles, open terrain lines, or combinations), with sound judgment about when to slow down.",
+        "components": [
+          {"title": "Speed and safety judgment", "description": "Maintaining canter balance where safe and deliberately down-transitioning for bridges, deep water, slick footing, or steep drops."}
+        ],
+        "learning": "Practices complex terrain combinations or canter lines with occasional timing errors or late pace adjustments.",
+        "proficient": "Independently navigates complex terrain and appropriate canter lines with balanced seat, accurate stride planning, and consistently sound judgment on when to slow down for safety.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.terrain_obstacles", "relation": "counterpart"},
+      {"skillId": "rider.mounted.steering_navigation", "relation": "foundation", "level": "introductory"}
+    ],
+    "legacyIds": ["rider.mounted.bridge_obstacle", "rider.mounted.water_obstacle"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.object_handling",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.object_handling",
+    "name": "Object Handling",
+    "aliases": ["Open/close a gate (mounted)", "Gate obstacle", "Carry objects mounted", "Garrocha", "Ring and rope handling"],
+    "summary": "Managing gates and handling, carrying, moving, or placing objects (such as gates, bells, mail, ropes, rings, or poles) while mounted.",
+    "purpose": "Integrates calm standing, one-handed control, and precise horse positioning for trail riding, ranch work, and working equitation.",
+    "safety": [
+      "Keep steady control of gates so they do not swing into horse or rider; be ready to release an object and ride safely if the horse spooks.",
+      "Gates and similar fixed latch tasks are handled at halt/walk—never require unsafe gaits for an object."
+    ],
+    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "levels": {
+      "introductory": {
+        "overview": "Fundamental object handling at halt or walk (such as picking up, carrying, or placing simple objects, ringing a bell, or basic assisted gate work).",
+        "components": [
+          {"title": "One-handed balance at halt and walk", "description": "Reaching, holding, or placing an object smoothly without pulling on the reins or losing seat balance."}
+        ],
+        "learning": "Handles simple objects at halt or walk with occasional horse drift, fumbled rein transfers, or pauses.",
+        "proficient": "Independently handles, carries, and places simple objects calmly at halt or walk while maintaining balanced posture and steady horse control.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Coordinated handling—such as independently opening, passing through, and closing a gate cleanly, or carrying/exchanging objects at trot where appropriate.",
+        "components": [
+          {"title": "Gate management", "description": "Positioning beside the latch, controlling the gate through the pass-through, and latching calmly at halt/walk."},
+          {"title": "Trot object coordination", "description": "Carrying or placing appropriate objects smoothly at trot without losing rhythm or line."}
+        ],
+        "learning": "Opens/closes gates or carries objects at trot with occasional repositioning, gate-swing, or tempo changes.",
+        "proficient": "Independently manages gates cleanly from halt/walk and performs coordinated object handling (including trot applications where appropriate) with calm one-handed control.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Demanding handling and accurate object interaction at canter where appropriate (such as ring spearing, garrocha work, or fluid complex sequences).",
+        "components": [
+          {"title": "Precision at speed", "description": "Maintaining straightness, rhythm, and one-handed accuracy while interacting with objects at canter where safe and appropriate."}
+        ],
+        "learning": "Practices demanding object interactions at canter with intermittent loss of line, balance, or accuracy.",
+        "proficient": "Independently executes demanding object-handling sequences—including accurate interaction at canter where appropriate—with poised one-handed control, balanced posture, and calm horse responsiveness.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.object_handling", "relation": "counterpart"},
+      {"skillId": "rider.mounted.sidepass", "relation": "foundation", "level": "intermediate"}
+    ],
+    "legacyIds": ["rider.mounted.gate_obstacle"],
+    "sortOrder": 10
+  }
+]

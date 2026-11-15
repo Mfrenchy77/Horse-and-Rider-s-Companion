@@ -1,0 +1,281 @@
+[
+  {
+    "id": "rider.husbandry.safety_handling",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "name": "Safety & Handling",
+    "description": "Moving around horses safely, reading basic body language, and restraining horses securely.",
+    "sortOrder": 10,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.husbandry.daily_care_grooming",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "name": "Daily Care & Grooming",
+    "description": "Routine coat, hoof, and skin care, seasonal maintenance, and blanketing.",
+    "sortOrder": 20,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.husbandry.health_first_aid",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "name": "Health & First Aid",
+    "description": "Recognizing normal health, noticing changes early, basic first aid, and safe care procedures.",
+    "sortOrder": 30,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.husbandry.feeding_stable",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "name": "Feeding & Stable Management",
+    "description": "Safe daily feeding routines and maintaining clean, hazard-free living spaces.",
+    "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.husbandry.tack_equipment",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "name": "Tack & Equipment",
+    "description": "Selecting, fitting, putting on, checking, and caring for riding and handling equipment.",
+    "sortOrder": 50,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.in_hand.haltering_leading",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "name": "Haltering & Leading",
+    "description": "Catching, haltering, leading at walk and trot, turning out, and presenting horses from the ground.",
+    "sortOrder": 10,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.in_hand.ground_control_yielding",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "name": "Ground Control & Yielding",
+    "description": "Guiding the hindquarters, forequarters, and full body sideways from the ground.",
+    "sortOrder": 20,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.in_hand.longeing_long_lining",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "name": "Longeing & Long-Lining",
+    "description": "Working horses on a longe line or two long lines with safe positioning and clear communication.",
+    "sortOrder": 30,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.in_hand.obstacles_outings_travel",
+    "subject": "rider",
+    "realm": "In_Hand",
+    "name": "Obstacles, Outings & Travel",
+    "description": "Negotiating ground obstacles, hand-walking outside the arena, and trailer loading safely.",
+    "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.position_balance_safety",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Position, Balance & Safety",
+    "description": "Mounting, dismounting, and maintaining a secure, balanced rider position.",
+    "sortOrder": 10,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.gaits_rhythm_transitions",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Gaits, Rhythm & Transitions",
+    "description": "Riding walk, trot, and canter with balance, rhythm, rebalancing, and clear transitions.",
+    "sortOrder": 20,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.steering_bend_direction",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Steering, Bend & Direction Changes",
+    "description": "Guiding lines, figures, patterns, turns, and bend across gaits.",
+    "sortOrder": 30,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.pivots_body_control",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Pivots & Body Control",
+    "description": "Stationary, backward, and purely sideways repositioning of the horse's body.",
+    "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.lateral_movements",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Lateral Movements",
+    "description": "Moving forward and sideways along a line with controlled bend and alignment.",
+    "sortOrder": 50,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.terrain_obstacles",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Terrain & Obstacles",
+    "description": "Negotiating environmental surfaces, ground poles, bridges, water, and terrain safely.",
+    "sortOrder": 60,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.mounted.object_handling",
+    "subject": "rider",
+    "realm": "Mounted",
+    "name": "Object Handling",
+    "description": "Managing gates and handling, carrying, or placing objects while mounted.",
+    "sortOrder": 70,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.theory.learning",
+    "subject": "rider",
+    "realm": "Other",
+    "name": "How Horses Learn",
+    "description": "Principles of equine learning, timing, clarity, and reinforcement.",
+    "sortOrder": 10,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.theory.behavior",
+    "subject": "rider",
+    "realm": "Other",
+    "name": "Behavior & Body Language",
+    "description": "Reading equine emotional state, stress signals, and natural behavior.",
+    "sortOrder": 20,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.theory.movement_training",
+    "subject": "rider",
+    "realm": "Other",
+    "name": "Movement & Training Principles",
+    "description": "Equine biomechanics, gaits, straightness, balance, and progressive conditioning.",
+    "sortOrder": 30,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.theory.welfare_ethics",
+    "subject": "rider",
+    "realm": "Other",
+    "name": "Welfare, Ethics & Ownership",
+    "description": "Equine welfare, responsible stewardship, and ethical decision-making.",
+    "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.in_hand.leading_manners",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "name": "Leading & Ground Manners",
+    "description": "Responding politely to halter requests, leading calmly, and standing quietly on the ground.",
+    "sortOrder": 10,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.in_hand.cooperative_care",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "name": "Cooperative Care",
+    "description": "Standing calmly and cooperating during daily grooming, hoof care, tacking, and veterinary handling.",
+    "sortOrder": 20,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.in_hand.travel_environments",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "name": "Travel & New Environments",
+    "description": "Loading, unloading, and coping calmly with trailers and unfamiliar surroundings.",
+    "sortOrder": 30,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.in_hand.work_on_line",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "name": "Work on the Line",
+    "description": "Responding calmly and clearly to long-line requests from the ground.",
+    "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.standing_mounting_manners",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Standing & Mounting Manners",
+    "description": "Standing calmly for mounting, dismounting, and stationary pauses under saddle.",
+    "sortOrder": 10,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.gaits_rhythm_transitions",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Gaits, Rhythm & Transitions",
+    "description": "Carrying a rider in walk, trot, and canter with steady rhythm and responsive transitions.",
+    "sortOrder": 20,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.steering_bend_direction",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Steering, Bend & Direction Changes",
+    "description": "Following lines, turns, figures, and patterns with balance and appropriate bend.",
+    "sortOrder": 30,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.pivots_body_control",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Pivots & Body Control",
+    "description": "Repositioning the forehand, hindquarters, or whole body under saddle on light requests.",
+    "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.lateral_movements",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Lateral Movements",
+    "description": "Moving forward and sideways under saddle with balance and controlled bend.",
+    "sortOrder": 50,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.terrain_obstacles",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Terrain & Obstacles",
+    "description": "Negotiating surfaces, poles, bridges, water, and varied terrain calmly under saddle.",
+    "sortOrder": 60,
+    "schemaVersion": 2
+  },
+  {
+    "id": "horse.mounted.object_handling",
+    "subject": "horse",
+    "realm": "Mounted",
+    "name": "Object Handling",
+    "description": "Remaining calm and responsive while the rider opens gates or handles objects.",
+    "sortOrder": 70,
+    "schemaVersion": 2
+  }
+]

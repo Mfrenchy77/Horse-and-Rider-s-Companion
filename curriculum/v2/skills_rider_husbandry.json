@@ -1,0 +1,409 @@
+[
+  {
+    "id": "rider.husbandry.safe_handling",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.safety_handling",
+    "name": "Safe Handling & Restraint",
+    "aliases": ["Approach safely", "Tie safely", "Horse safety", "Quick-release knot"],
+    "summary": "Approaching, moving around, reading basic body language, and tying or restraining a horse safely.",
+    "purpose": "Prevents preventable injuries to both horse and handler during everyday care and preparation.",
+    "safety": [
+      "Always announce your presence before approaching blind spots.",
+      "Avoid standing directly behind the hindquarters or wrapping lead ropes around hands or body.",
+      "Use a safe tie point at or above wither height with an emergency release method."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Safe positioning around a calm, cooperative horse and basic safe tying.",
+        "components": [
+          {"title": "Approaching and moving around", "description": "Approaching at the shoulder, staying close or well clear when passing behind, and keeping exits unblocked."},
+          {"title": "Safe tying", "description": "Choosing a solid tie point, adjusting rope length safely, and using a quick-release knot or breakaway arrangement."}
+        ],
+        "learning": "Approaches and ties a quiet horse with reminders about blind spots, rope handling, or tie length.",
+        "proficient": "Independently approaches, moves around, and ties a cooperative horse safely, maintaining safe positioning, rope management, and emergency release readiness.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Adapting handling and restraint thoughtfully for anxious, green, or unfamiliar horses and varied environments.",
+        "components": [
+          {"title": "Reading early tension", "description": "Recognizing ear, eye, posture, and breathing cues before a horse reacts."},
+          {"title": "Choosing restraint", "description": "Deciding when to tie, cross-tie, or have a handler hold the horse based on the situation."}
+        ],
+        "learning": "Adjusts handling for mild tension or busy environments with occasional coaching.",
+        "proficient": "Independently reads early signs of discomfort, selects appropriate restraint or holding methods for the setting, and keeps both horse and bystanders safe.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.catch_halter_turnout", "relation": "next"},
+      {"skillId": "horse.in_hand.standing_quietly", "relation": "counterpart"}
+    ],
+    "legacyIds": ["rider.husbandry.approach_safely", "rider.husbandry.tie_safely"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.husbandry.grooming",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.daily_care_grooming",
+    "name": "Grooming",
+    "aliases": ["Brushing", "Pick hooves", "Bathing basics", "Daily grooming", "Mane and tail care"],
+    "summary": "Keeping a horse's coat, skin, mane, tail, and hooves clean and healthy while noticing changes in condition.",
+    "purpose": "Supports equine comfort and hygiene, builds handling confidence, and serves as the primary daily check for injuries or abnormalities.",
+    "safety": [
+      "Work from safe positions and watch the horse's body language.",
+      "Take care around sensitive areas, slippery wash areas, chilling after bathing, and product sensitivities."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Routine full-body grooming, hoof cleaning, and noticing obvious abnormalities on a cooperative horse.",
+        "components": [
+          {"title": "Routine coat, mane, and tail care", "description": "Using appropriate brushes gently and effectively without pulling hair or irritating sensitive areas."},
+          {"title": "Hoof picking", "description": "Safely asking for and cleaning all four hooves, checking for thrush, packed debris, or loose shoes."},
+          {"title": "Tool hygiene and obvious checks", "description": "Cleaning tools and spotting obvious cuts, heat, swelling, or missing shoes."}
+        ],
+        "learning": "Grooms and cleans hooves on a cooperative horse with guidance or occasional reminders about positioning or thoroughness.",
+        "proficient": "Independently and safely grooms a cooperative horse thoroughly, cleans all four hooves, maintains safe positioning, and notices and reports obvious problems.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Bathing, seasonal coat management, adapting to individual sensitivities, and spotting subtle abnormalities.",
+        "components": [
+          {"title": "Bathing and drying", "description": "Safe water introduction, thorough rinsing, scraping, and weather-appropriate drying."},
+          {"title": "Seasonal coat care", "description": "Managing heavy shedding, winter coats, mud, and rain-related skin issues."},
+          {"title": "Subtle condition checks", "description": "Recognizing early skin conditions, mild filling or heat, hoof changes, and body-condition shifts."}
+        ],
+        "learning": "Bathes and manages seasonal care with guidance; beginning to spot subtle changes but seeks confirmation.",
+        "proficient": "Independently plans and carries out grooming suited to season, weather, and horse sensitivity—including safe bathing—and knows when to monitor, adjust care, or seek advice.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.in_hand.daily_care_handling", "relation": "counterpart"},
+      {"skillId": "horse.in_hand.hoof_handling", "relation": "counterpart"},
+      {"skillId": "rider.husbandry.health_monitoring", "relation": "next"}
+    ],
+    "legacyIds": ["rider.husbandry.grooming_basics", "rider.husbandry.pick_hooves", "rider.husbandry.bathing_basics"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.husbandry.blanketing",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.daily_care_grooming",
+    "name": "Blanketing",
+    "aliases": ["Rugging", "Blanket fit", "Blanketing basics"],
+    "summary": "Selecting, fitting, putting on, and removing horse blankets or sheets safely across different designs.",
+    "purpose": "Protects horses from weather when needed while preventing rubbing, overheating, or dangerous strap entanglement.",
+    "safety": [
+      "Fasten chest straps first when putting on and unfasten them last when removing.",
+      "Never leave leg straps or belly surcingles dangling where a horse could catch a hoof."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Safely putting on, adjusting, and removing a properly sized blanket on a cooperative horse.",
+        "components": [
+          {"title": "Safe sequence", "description": "Folding cleanly onto the back, fastening front-to-back, and unfastening back-to-front."},
+          {"title": "Strap adjustment", "description": "Securing belly and leg straps without twisting or excessive slack."}
+        ],
+        "learning": "Puts on and removes a blanket with reminders on strap order or adjustment.",
+        "proficient": "Independently puts on, adjusts, and removes different blanket designs safely without startling the horse or leaving straps loose.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Evaluating blanket fit, weight selection for weather and coat, and checking for rubs or overheating.",
+        "components": [
+          {"title": "Weight and weather judgment", "description": "Choosing appropriate turnout, stable, or cooler weights based on clipping, shelter, and forecast."},
+          {"title": "Fit and pressure checks", "description": "Checking wither clearance, shoulder freedom, and early rub marks."}
+        ],
+        "learning": "Selects blanket weights and checks fit with occasional guidance.",
+        "proficient": "Independently selects appropriate blankets for conditions, evaluates fit across movement, and identifies and corrects rubbing or overheating early.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.in_hand.daily_care_handling", "relation": "counterpart"}
+    ],
+    "legacyIds": ["rider.husbandry.blanketing_basics"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.husbandry.health_monitoring",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.health_first_aid",
+    "name": "Health Monitoring",
+    "aliases": ["Basic health check", "Vital signs", "TPR", "Temperature pulse respiration"],
+    "summary": "Assessing a horse's daily appearance, demeanor, and vital signs to establish baselines and spot illness or injury early.",
+    "purpose": "Early recognition of colic, fever, lameness, or infection improves treatment outcomes and welfare.",
+    "safety": [
+      "Maintain safe positioning when checking temperature, digital pulses, or gut sounds.",
+      "Use clean equipment and sanitize thermometers between horses."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Conducting a visual head-to-tail daily check and recognizing clear red flags.",
+        "components": [
+          {"title": "Daily visual and physical check", "description": "Checking attitude, appetite, manure/urine, eyes, nostrils, coat, legs, and hooves."},
+          {"title": "Red flags", "description": "Recognizing acute colic signs, non-weight-bearing lameness, significant swelling, or bleeding."}
+        ],
+        "learning": "Performs a basic health check with guidance on what is normal versus concerning.",
+        "proficient": "Independently performs a systematic daily health check and promptly reports abnormal demeanor, appetite, or visible injury.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Measuring vital signs accurately, knowing normal equine ranges, and communicating findings clearly to a veterinarian.",
+        "components": [
+          {"title": "TPR and mucous membranes", "description": "Taking rectal temperature, heart rate, respiratory rate, capillary refill time, gum color, and gut sounds."},
+          {"title": "Digital pulses", "description": "Palpating digital pulses and noting abnormal warmth in the hoof."}
+        ],
+        "learning": "Measures vital signs with assistance or needs reference ranges to interpret results.",
+        "proficient": "Independently and accurately measures temperature, pulse, respiration, mucous membranes, and gut sounds, compares against normal ranges, and communicates findings clearly.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.first_aid", "relation": "next"},
+      {"skillId": "horse.in_hand.vet_handling", "relation": "counterpart"}
+    ],
+    "legacyIds": ["rider.husbandry.basic_health_check", "rider.husbandry.vital_signs"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.husbandry.first_aid",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.health_first_aid",
+    "name": "First Aid",
+    "aliases": ["Basic first aid", "Wound care", "Equine emergency care"],
+    "summary": "Providing safe initial care for minor wounds and stabilizing common equine emergencies while awaiting veterinary guidance.",
+    "purpose": "Prevents contamination or worsening of injuries and keeps the horse calm and safe until a veterinarian arrives.",
+    "safety": [
+      "Prioritize human safety when a horse is painful or panicked.",
+      "Do not apply unapproved topical products to deep wounds before veterinary evaluation."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Maintaining a barn first-aid kit, cleaning minor superficial wounds, and managing emergencies calmly.",
+        "components": [
+          {"title": "Minor wound care", "description": "Rinsing, assessing location (especially near joints/tendons), and applying appropriate basic dressings."},
+          {"title": "Emergency triage", "description": "Controlling bleeding with clean pressure, keeping a colicking or injured horse safe, and contacting a vet promptly."}
+        ],
+        "learning": "Assists with basic wound cleaning and kit use under supervision.",
+        "proficient": "Independently assesses minor wounds, performs safe initial cleaning/protection, recognizes injuries requiring immediate veterinary care, and stabilizes emergencies calmly.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.health_monitoring", "relation": "foundation", "level": "introductory"},
+      {"skillId": "rider.husbandry.leg_wraps", "relation": "next"}
+    ],
+    "legacyIds": ["rider.husbandry.basic_first_aid"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.husbandry.medications",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.health_first_aid",
+    "name": "Administering Medications",
+    "aliases": ["Oral medication", "Deworming", "Paste syringe"],
+    "summary": "Safely preparing and administering prescribed or approved oral medications according to veterinary or label instructions.",
+    "purpose": "Ensures horses receive accurate doses calmly without stress, aspiration, or wasted medication.",
+    "safety": [
+      "Verify the right horse, medication, dose, and route every time.",
+      "Ensure the horse's mouth is empty of hay/grain before using an oral syringe."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Accurate dosing and calm administration via oral syringe, top-dressing, or other approved oral methods.",
+        "components": [
+          {"title": "Verification and dosing", "description": "Reading labels, measuring doses accurately, and logging administration."},
+          {"title": "Calm delivery", "description": "Administering via feed or oral syringe without fighting the horse's head."}
+        ],
+        "learning": "Measures and administers oral medication with supervision or reminders.",
+        "proficient": "Independently verifies instructions, measures accurate doses, administers oral medications calmly and safely, and confirms the full dose is taken.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.health_monitoring", "relation": "foundation", "level": "introductory"},
+      {"skillId": "horse.in_hand.vet_handling", "relation": "counterpart"}
+    ],
+    "legacyIds": ["rider.husbandry.oral_medication"],
+    "sortOrder": 30
+  },
+  {
+    "id": "rider.husbandry.leg_wraps",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.health_first_aid",
+    "name": "Leg Wraps & Bandaging",
+    "aliases": ["Leg bandaging basics", "Standing wraps", "Polo wraps", "Exercise wraps"],
+    "summary": "Selecting, applying, inspecting, and removing standing wraps, exercise wraps, or basic medical bandages safely.",
+    "purpose": "Protects lower limbs during travel, rest, exercise, or wound care without causing tendon pressure or circulation issues.",
+    "safety": [
+      "Apply even tension without wrinkles or ridges over tendons.",
+      "Avoid kneeling on both knees beside the horse; stay ready to step away."
+    ],
+    "availableLevels": ["intermediate"],
+    "levels": {
+      "intermediate": {
+        "overview": "Applying appropriate padding and wraps with safe, even tension and recognizing complications.",
+        "components": [
+          {"title": "Wrap selection and padding", "description": "Matching wrap type (standing, exercise, medical) and padding to the purpose."},
+          {"title": "Even tension and inspection", "description": "Wrapping smoothly around the cannon bone and checking for heat, swelling, or slipped wraps."}
+        ],
+        "learning": "Applies leg wraps with guidance to correct tension, overlap, or padding alignment.",
+        "proficient": "Independently selects, applies, inspects, and removes standing, exercise, or basic medical wraps with even tension, smooth padding, and awareness of complications.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.husbandry.first_aid", "relation": "foundation", "level": "intermediate"}
+    ],
+    "legacyIds": ["rider.husbandry.leg_bandaging_basics"],
+    "sortOrder": 40
+  },
+  {
+    "id": "rider.husbandry.feeding",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.feeding_stable",
+    "name": "Feeding",
+    "aliases": ["Feeding basics", "Forage and grain", "Equine nutrition basics"],
+    "summary": "Following feeding routines safely, checking feed and water quality, and understanding core equine nutritional principles.",
+    "purpose": "Supports digestive health and reduces the risk of colic, choke, or barn-aisle conflict during feeding time.",
+    "safety": [
+      "Keep feed rooms securely latched.",
+      "Follow safe feeding order in group or barn settings to prevent kicking or biting over food."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Measuring and delivering established rations safely while checking forage and water quality.",
+        "components": [
+          {"title": "Ration delivery", "description": "Following feed charts by weight/scoop accurately and delivering safely."},
+          {"title": "Quality checks", "description": "Checking water cleanliness and inspecting hay and grain for mold, dust, or foreign objects."}
+        ],
+        "learning": "Delivers feed and checks water with supervision or feed-chart reminders.",
+        "proficient": "Independently follows feeding schedules accurately, maintains clean water, inspects feed quality, and feeds safely without rushing or causing agitation.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Adjusting feeding routines thoughtfully for workload, body condition, and gradual diet transitions.",
+        "components": [
+          {"title": "Forage-first principles", "description": "Understanding why forage is the foundation, small frequent meals, and gradual transitions."},
+          {"title": "Condition and workload", "description": "Recognizing weight loss/gain trends and knowing when to consult an owner, trainer, or vet."}
+        ],
+        "learning": "Discusses diet adjustments and body condition with guidance.",
+        "proficient": "Independently evaluates forage quality, water intake, and body condition, plans safe gradual feed transitions, and spots feeding-related risks early.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [],
+    "legacyIds": ["rider.husbandry.feeding_basics"],
+    "sortOrder": 10
+  },
+  {
+    "id": "rider.husbandry.stable_care",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.feeding_stable",
+    "name": "Stable Care",
+    "aliases": ["Stall cleaning basics", "Mucking", "Bedding and turnout safety"],
+    "summary": "Maintaining clean, dry, hazard-free stalls, shelters, and turnout areas.",
+    "purpose": "Protects respiratory and hoof health while preventing injuries from sharp hardware, toxic plants, or damaged fencing.",
+    "safety": [
+      "Keep pitchforks and wheelbarrows positioned safely away from horses.",
+      "Do not leave stall doors unlatched or tools in walkways."
+    ],
+    "availableLevels": ["introductory"],
+    "levels": {
+      "introductory": {
+        "overview": "Thorough stall/shelter cleaning, safe tool handling, and daily hazard checks.",
+        "components": [
+          {"title": "Cleaning and bedding", "description": "Removing manure and wet bedding, banking or leveling clean bedding, and scrubbing water buckets."},
+          {"title": "Hazard checks", "description": "Checking latches, protruding nails, fencing, and toxic weeds."}
+        ],
+        "learning": "Cleans stalls and checks water with reminders on thoroughness or tool placement.",
+        "proficient": "Independently cleans and beds stalls or shelters thoroughly, handles tools safely around horses, and identifies and reports physical hazards.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [],
+    "legacyIds": ["rider.husbandry.stall_cleaning_basics"],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.husbandry.tack",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Husbandry",
+    "familyId": "rider.husbandry.tack_equipment",
+    "name": "Tack Use, Fit & Care",
+    "aliases": ["Tack check and fit", "Clean tack", "Saddling", "Bridling", "Tacking up", "Untacking"],
+    "summary": "Putting on, adjusting, safety-checking, removing, and maintaining saddles, bridles, halters, and protective gear.",
+    "purpose": "Ensures equipment is comfortable for the horse, secure for the rider, and free from worn stitching or unsafe fit.",
+    "safety": [
+      "Inspect stitching, billets, girth buckles, and reins before every ride.",
+      "Check girth tightness gradually and re-check before mounting."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Tacking up, untacking, performing pre-ride safety checks, and routine cleaning on familiar tack.",
+        "components": [
+          {"title": "Tacking up and untacking", "description": "Calmly placing pad/saddle and bridle or halter without bumping teeth, ears, or back; removing and storing neatly."},
+          {"title": "Safety and basic fit check", "description": "Checking wither clearance, girth alignment, bit/headstall placement, and worn leather or hardware."},
+          {"title": "Routine tack care", "description": "Wiping down sweat and dirt after rides and conditioning leather or washing synthetic gear appropriately."}
+        ],
+        "learning": "Tacks up, checks fit, and cleans gear with occasional supervision or reminders.",
+        "proficient": "Independently and calmly tacks up and untacks a cooperative horse, completes a thorough pre-ride safety and basic fit check, and cleans and stores equipment properly.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Evaluating saddle and bridle fit across conformation and movement, and adapting equipment thoughtfully.",
+        "components": [
+          {"title": "Functional fit assessment", "description": "Assessing saddle balance, gullet/shoulder clearance, pad bulk, and bridle/bit comfort."},
+          {"title": "Deep maintenance", "description": "Disassembling, inspecting hidden wear points, conditioning, and knowing when repair or professional saddle fitting is needed."}
+        ],
+        "learning": "Evaluates fit and wear patterns with guidance.",
+        "proficient": "Independently assesses saddle, pad, and bridle fit statically and in motion, recognizes signs of tack discomfort or unsafe wear, and adjusts or seeks qualified fitting appropriately.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.in_hand.daily_care_handling", "relation": "counterpart"},
+      {"skillId": "rider.mounted.mounting", "relation": "next"}
+    ],
+    "legacyIds": ["rider.husbandry.tack_check_and_fit", "rider.husbandry.clean_tack_and_equipment"],
+    "sortOrder": 10
+  }
+]

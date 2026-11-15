@@ -10,7 +10,7 @@ const LEGACY_TYPE_TO_KIND = Object.freeze({
 
 function emailKey(value) {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
-}
+
 
 function normalizePartiesIds(conv, message, senderEmail) {
   const fromConv = Array.isArray(conv?.partiesIds) ?
