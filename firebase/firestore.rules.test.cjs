@@ -609,3 +609,44 @@ test('Resources allows verified admin writes while denying moderator and unrelat
     name: 'User Hack',
   }));
 });
+
+test('Conversations, notification tokens, and unknown collections enforce strict rules (no catch-all)', async () => {
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'Conversations/conv-1'), {
+      id: 'conv-1',
+      partiesIds: ['alice@example.com', 'bob@example.com'],
+    });
+    await setDoc(doc(db, 'Conversations/conv-1/Messages/msg-1'), {
+      id: 'msg-1',
+      body: 'Hello',
+    });
+    await setDoc(doc(db, 'UnknownCollection/doc-1'), { secret: true });
+  });
+
+  const aliceDb = environment.authenticatedContext('alice-1', {
+    email: 'alice@example.com',
+    email_verified: true,
+  }).firestore();
+  const charlieDb = environment.authenticatedContext('charlie-1', {
+    email: 'charlie@example.com',
+    email_verified: true,
+  }).firestore();
+
+  // Participants can read legacy Conversations/Messages; non-participants and writes are denied.
+  await assertSucceeds(getDoc(doc(aliceDb, 'Conversations/conv-1')));
+  await assertSucceeds(getDoc(doc(aliceDb, 'Conversations/conv-1/Messages/msg-1')));
+  await assertFails(getDoc(doc(charlieDb, 'Conversations/conv-1')));
+  await assertFails(getDoc(doc(charlieDb, 'Conversations/conv-1/Messages/msg-1')));
+  await assertFails(setDoc(doc(aliceDb, 'Conversations/conv-1/Messages/msg-2'), { body: 'No client writes' }));
+
+  // Notification tokens are owner-only.
+  await assertSucceeds(setDoc(doc(aliceDb, 'RiderProfiles/alice@example.com/tokens/tok-1'), { token: 'tok-1' }));
+  await assertSucceeds(getDoc(doc(aliceDb, 'RiderProfiles/alice@example.com/tokens/tok-1')));
+  await assertFails(getDoc(doc(charlieDb, 'RiderProfiles/alice@example.com/tokens/tok-1')));
+  await assertFails(setDoc(doc(charlieDb, 'RiderProfiles/alice@example.com/tokens/tok-2'), { token: 'tok-2' }));
+
+  // Unknown collections are denied by default.
+  await assertFails(getDoc(doc(aliceDb, 'UnknownCollection/doc-1')));
+  await assertFails(setDoc(doc(aliceDb, 'UnknownCollection/doc-2'), { hack: true }));
+});

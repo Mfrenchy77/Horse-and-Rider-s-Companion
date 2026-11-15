@@ -376,19 +376,43 @@ service cloud.firestore {
       }
     }
 
-    match /{collection}/{document=**} {
-      allow read: if !(collection in [
-        'CoachingConnections', 'SharedRidingEntries',
-        'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
-        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources',
-        'SkillTreeSuggestions', 'SkillTreeCurriculumDrafts'
-      ]);
-      allow write: if request.auth != null && !(collection in [
-        'CoachingConnections', 'SharedRidingEntries',
-        'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
-        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources',
-        'SkillTreeSuggestions', 'SkillTreeCurriculumDrafts'
-      ]);
+    match /Categories/{categoryId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor() || isAdmin();
+    }
+
+    match /SubCategories/{subCategoryId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor() || isAdmin();
+    }
+
+    match /Conversations/{conversationId} {
+      allow read: if request.auth != null
+        && (
+          request.auth.token.email in resource.data.partiesIds
+          || verifiedLowerEmail() in resource.data.partiesIds
+        );
+      allow create, update, delete: if false;
+
+      match /Messages/{messageId} {
+        allow read: if request.auth != null
+          && (
+            request.auth.token.email in
+              get(/databases/$(database)/documents/Conversations/$(conversationId)).data.partiesIds
+            || verifiedLowerEmail() in
+              get(/databases/$(database)/documents/Conversations/$(conversationId)).data.partiesIds
+          );
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /RiderProfiles/{emailDoc}/tokens/{tokenId} {
+      allow read, create, update, delete: if verifiedEmailIs(emailDoc)
+        || (verifiedAuth() && emailDoc.lower() == verifiedLowerEmail());
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

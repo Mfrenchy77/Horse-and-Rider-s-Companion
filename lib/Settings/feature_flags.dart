@@ -2,10 +2,11 @@
 class FeatureFlags {
   const FeatureFlags._();
 
-  /// Enables Skill Tree 2.0 when `--dart-define=SKILL_TREE_V2=true` is passed.
-  /// Defaults to `false` so production retains the legacy Skill Tree until
-  /// Phase 3 review and backend rollout are complete.
+  /// Enables Skill Tree 2.0 by default for production release.
+  /// Pass `--dart-define=SKILL_TREE_V2=false` as an emergency rollback flag
+  /// to revert to the legacy Skill Tree.
   static const bool kSkillTreeV2Default = bool.fromEnvironment(
     'SKILL_TREE_V2',
+    defaultValue: true,
   );
 }

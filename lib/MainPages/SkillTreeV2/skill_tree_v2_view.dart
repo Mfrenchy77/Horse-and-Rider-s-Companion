@@ -1,4 +1,5 @@
 import 'package:database_repository/database_repository.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
@@ -256,6 +257,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         allSkills: draft.skills,
         existingSkillIds: draft.skills.map((s) => s.id).toSet(),
         defaultSortOrder: familySkillCount + 1,
+        initialExpandedLevel:
+            initial == null ? null : effectiveState.effectiveSelectedLevel,
       ),
     );
     if (result == null || !mounted) return;
@@ -410,13 +413,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   }
 
   SkillTreeV2Repository _resolveDefaultRepository() {
-    // Keep Skill Tree 2.0 Preview isolated from production Firestore until
-    // SkillsV2 and SkillProgress rules/collections are rolled out.
-    return SkillTreeV2Repository(
-      store: HybridCurriculumSkillTreeV2Store(
-        primaryStore: SkillTreeV2View._previewProgressStore,
-      ),
-    );
+    if (Firebase.apps.isEmpty) {
+      return SkillTreeV2Repository(
+        store: HybridCurriculumSkillTreeV2Store(
+          primaryStore: SkillTreeV2View._previewProgressStore,
+        ),
+      );
+    }
+    return SkillTreeV2Repository(store: FirestoreSkillTreeV2Store());
   }
 
   @override
@@ -1122,7 +1126,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 key: const Key('skillTreeV2AppBarBackButton'),
                 onPressed: () => _handleAppBarBack(context),
               ),
-              title: const Text('Skill Tree 2.0 (Preview)'),
+              title: const Text('Skill Tree'),
               actions: [
                 PopupMenuButton<String>(
                   key: const Key('skillTreeV2AppBarOverflowMenu'),

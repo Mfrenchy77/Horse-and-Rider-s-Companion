@@ -281,6 +281,7 @@ class EditCurriculumSkillDialog extends StatefulWidget {
     required this.allSkills,
     required this.existingSkillIds,
     this.defaultSortOrder = 0,
+    this.initialExpandedLevel,
   });
 
   final CurriculumSkill? initialSkill;
@@ -288,6 +289,7 @@ class EditCurriculumSkillDialog extends StatefulWidget {
   final List<CurriculumSkill> allSkills;
   final Set<String> existingSkillIds;
   final int defaultSortOrder;
+  final DifficultyState? initialExpandedLevel;
 
   @override
   State<EditCurriculumSkillDialog> createState() =>
@@ -310,10 +312,12 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
   late final TextEditingController _safetyController;
   late final TextEditingController _sortOrderController;
   late final Set<DifficultyState> _selectedLevels;
+  late final Set<DifficultyState> _expandedLevels;
   late final Map<DifficultyState, _EditableLevelFields> _levelFields;
   late final List<_EditableRelatedSkill> _relatedSkills;
 
   bool _idManuallyEdited = false;
+  bool _hasAttemptedSubmit = false;
   String? _levelsError;
 
   bool get _isEditing => widget.initialSkill != null;
@@ -339,6 +343,16 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
     _selectedLevels = initial != null && initial.availableLevels.isNotEmpty
         ? Set<DifficultyState>.from(initial.availableLevels)
         : <DifficultyState>{DifficultyState.Introductory};
+
+    final initialExpanded = widget.initialExpandedLevel;
+    if (initialExpanded != null && _selectedLevels.contains(initialExpanded)) {
+      _expandedLevels = {initialExpanded};
+    } else {
+      final firstSelected = _editableLevels
+          .where(_selectedLevels.contains)
+          .firstOrNull;
+      _expandedLevels = firstSelected != null ? {firstSelected} : {};
+    }
 
     _levelFields = {
       for (final level in _editableLevels)
@@ -394,14 +408,31 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
         .toList();
   }
 
+  bool _levelHasValidationError(DifficultyState level) {
+    if (!_hasAttemptedSubmit || !_selectedLevels.contains(level)) return false;
+    final fields = _levelFields[level]!;
+    if (fields.overviewController.text.trim().isEmpty ||
+        fields.learningController.text.trim().isEmpty ||
+        fields.proficientController.text.trim().isEmpty) {
+      return true;
+    }
+    return fields.components.any(
+      (c) =>
+          c.titleController.text.trim().isEmpty ||
+          c.descriptionController.text.trim().isEmpty,
+    );
+  }
+
   void _submit() {
     setState(() {
+      _hasAttemptedSubmit = true;
       _levelsError = _selectedLevels.isEmpty
           ? 'Select at least one difficulty level.'
           : null;
     });
     if (!(_formKey.currentState?.validate() ?? false) ||
         _selectedLevels.isEmpty) {
+      setState(() {});
       return;
     }
 
@@ -475,6 +506,7 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
       ..sort((a, b) => a.name.compareTo(b.name));
 
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       title: Text(_isEditing ? 'Edit Skill (Draft)' : 'Add Skill (Draft)'),
       content: SizedBox(
         width: 660,
@@ -636,7 +668,10 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                     _buildLevelEditor(context, level, _levelFields[level]!),
                   ],
                 const SizedBox(height: 16),
-                Row(
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
                   children: [
                     Text(
                       'Related Skills',
@@ -644,9 +679,9 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const Spacer(),
                     if (selectableRelated.isNotEmpty)
                       TextButton.icon(
+                        key: const Key('addRelatedSkillButton'),
                         onPressed: () {
                           setState(() {
                             _relatedSkills.add(
@@ -690,21 +725,72 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
     _EditableLevelFields fields,
   ) {
     final theme = Theme.of(context);
+    final isExpanded = _expandedLevels.contains(level);
+    final hasError = _levelHasValidationError(level);
     return Card(
+      key: Key('levelEditorCard_${level.name}'),
       margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              '${_difficultyLabel(level)} Standard',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+            InkWell(
+              key: Key('levelEditorHeader_${level.name}'),
+              borderRadius: BorderRadius.circular(6),
+              onTap: () {
+                setState(() {
+                  if (isExpanded) {
+                    _expandedLevels.remove(level);
+                  } else {
+                    _expandedLevels.add(level);
+                  }
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${_difficultyLabel(level)} Standard',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (hasError && !isExpanded) ...[
+                      Icon(
+                        Icons.error_outline,
+                        size: 16,
+                        color: theme.colorScheme.error,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Needs attention',
+                        key: Key('levelEditorErrorBadge_${level.name}'),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            TextFormField(
+            Visibility(
+              visible: isExpanded,
+              maintainState: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  TextFormField(
               controller: fields.overviewController,
               minLines: 2,
               maxLines: 3,
@@ -752,13 +838,15 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
               },
             ),
             const SizedBox(height: 8),
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
               children: [
                 Text(
                   'Educational Components',
                   style: theme.textTheme.labelLarge,
                 ),
-                const Spacer(),
                 TextButton.icon(
                   onPressed: () {
                     setState(() {
@@ -823,6 +911,9 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                 ],
               ),
             ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -840,70 +931,99 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
         : [
             ...selectableRelated,
           ];
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: DropdownButtonFormField<String>(
-            initialValue: hasCurrent ? item.skillId : null,
-            decoration: const InputDecoration(
-              labelText: 'Skill',
-              border: OutlineInputBorder(),
+
+    Widget buildSkillDropdown() => DropdownButtonFormField<String>(
+      key: Key('relatedSkillDropdown_$index'),
+      isExpanded: true,
+      initialValue: hasCurrent ? item.skillId : null,
+      decoration: const InputDecoration(
+        labelText: 'Skill',
+        border: OutlineInputBorder(),
+      ),
+      items: options
+          .map(
+            (s) => DropdownMenuItem<String>(
+              value: s.id,
+              child: Text(
+                s.name,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            items: options
-                .map(
-                  (s) => DropdownMenuItem<String>(
-                    value: s.id,
-                    child: Text(
-                      s.name,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                item.skillId = value;
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: DropdownButtonFormField<SkillRelationType>(
-            initialValue: item.relation,
-            decoration: const InputDecoration(
-              labelText: 'Relation',
-              border: OutlineInputBorder(),
+          )
+          .toList(),
+      onChanged: (value) {
+        if (value == null) return;
+        setState(() {
+          item.skillId = value;
+        });
+      },
+    );
+
+    Widget buildRelationDropdown() => DropdownButtonFormField<SkillRelationType>(
+      key: Key('relatedRelationDropdown_$index'),
+      isExpanded: true,
+      initialValue: item.relation,
+      decoration: const InputDecoration(
+        labelText: 'Relation',
+        border: OutlineInputBorder(),
+      ),
+      items: SkillRelationType.values
+          .map(
+            (r) => DropdownMenuItem<SkillRelationType>(
+              value: r,
+              child: Text(
+                _relationLabel(r),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            items: SkillRelationType.values
-                .map(
-                  (r) => DropdownMenuItem<SkillRelationType>(
-                    value: r,
-                    child: Text(_relationLabel(r)),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                item.relation = value;
-              });
-            },
-          ),
-        ),
-        IconButton(
-          tooltip: 'Remove related skill',
-          onPressed: () {
-            setState(() {
-              _relatedSkills.removeAt(index);
-            });
-          },
-          icon: const Icon(Icons.delete_outline),
-        ),
-      ],
+          )
+          .toList(),
+      onChanged: (value) {
+        if (value == null) return;
+        setState(() {
+          item.relation = value;
+        });
+      },
+    );
+
+    Widget buildRemoveButton() => IconButton(
+      key: Key('removeRelatedSkillButton_$index'),
+      tooltip: 'Remove related skill',
+      onPressed: () {
+        setState(() {
+          _relatedSkills.removeAt(index);
+        });
+      },
+      icon: const Icon(Icons.delete_outline),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 460) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buildSkillDropdown(),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: buildRelationDropdown()),
+                  const SizedBox(width: 4),
+                  buildRemoveButton(),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(flex: 3, child: buildSkillDropdown()),
+            const SizedBox(width: 8),
+            Expanded(flex: 2, child: buildRelationDropdown()),
+            buildRemoveButton(),
+          ],
+        );
+      },
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_draft_dialogs.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../support/app_test_harness.dart';
@@ -386,6 +387,306 @@ void main() {
         );
         expect(find.text('Profile Shell Page'), findsOneWidget);
         expect(profileUpdatedCalled, isTrue);
+      },
+    );
+  });
+
+  group('EditCurriculumSkillDialog Responsive & Collapsible UX', () {
+    const testFamily = SkillFamily(
+      id: 'rider.mounted.balance',
+      subject: SkillSubject.rider,
+      realm: SkillCategory.Mounted,
+      name: 'Mounted Balance',
+      description: 'Core rider balance.',
+    );
+
+    final longNamedOtherSkill = CurriculumSkill(
+      id: 'rider.mounted.very_long_other_skill',
+      subject: SkillSubject.rider,
+      realm: SkillCategory.Mounted,
+      familyId: 'rider.mounted.balance',
+      name: 'Very Long Skill Name That Previously Caused RenderFlex Overflow '
+          'On Mobile Viewports',
+      summary: 'Summary',
+      purpose: 'Purpose',
+      availableLevels: const [DifficultyState.Introductory],
+      levels: const {
+        DifficultyState.Introductory: SkillLevelDefinition(
+          overview: 'Intro overview',
+          learning: 'Intro learning',
+          proficient: 'Intro proficient',
+        ),
+      },
+    );
+
+    final secondOtherSkill = CurriculumSkill(
+      id: 'rider.mounted.second_other_skill',
+      subject: SkillSubject.rider,
+      realm: SkillCategory.Mounted,
+      familyId: 'rider.mounted.balance',
+      name: 'Half Halt',
+      summary: 'Summary',
+      purpose: 'Purpose',
+      availableLevels: const [DifficultyState.Introductory],
+      levels: const {
+        DifficultyState.Introductory: SkillLevelDefinition(
+          overview: 'Intro overview',
+          learning: 'Intro learning',
+          proficient: 'Intro proficient',
+        ),
+      },
+    );
+
+    final multiLevelSkill = CurriculumSkill(
+      id: 'rider.mounted.neutral_pelvis',
+      subject: SkillSubject.rider,
+      realm: SkillCategory.Mounted,
+      familyId: 'rider.mounted.balance',
+      name: 'Neutral Pelvis',
+      summary: 'Maintain neutral pelvis.',
+      purpose: 'Allows independent aids.',
+      availableLevels: const [
+        DifficultyState.Introductory,
+        DifficultyState.Intermediate,
+        DifficultyState.Advanced,
+      ],
+      levels: const {
+        DifficultyState.Introductory: SkillLevelDefinition(
+          overview: 'Intro overview',
+          learning: 'Intro learning',
+          proficient: 'Intro proficient',
+        ),
+        DifficultyState.Intermediate: SkillLevelDefinition(
+          overview: 'Intermediate overview',
+          learning: 'Intermediate learning',
+          proficient: 'Intermediate proficient',
+        ),
+        DifficultyState.Advanced: SkillLevelDefinition(
+          overview: 'Advanced overview',
+          learning: 'Advanced learning',
+          proficient: '',
+        ),
+      },
+    );
+
+    for (final size in [const Size(360, 800), const Size(1280, 900)]) {
+      testWidgets(
+        'renders Related Skills without overflow and supports edit/remove at '
+        '${size.width.toInt()}x${size.height.toInt()}',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          CurriculumSkill? savedResult;
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) => ElevatedButton(
+                    onPressed: () async {
+                      savedResult = await showDialog<CurriculumSkill>(
+                        context: context,
+                        builder: (_) => EditCurriculumSkillDialog(
+                          initialSkill: CurriculumSkill(
+                            id: 'rider.mounted.target',
+                            subject: SkillSubject.rider,
+                            realm: SkillCategory.Mounted,
+                            familyId: 'rider.mounted.balance',
+                            name: 'Target Skill',
+                            summary: 'Summary',
+                            purpose: 'Purpose',
+                            availableLevels: const [
+                              DifficultyState.Introductory,
+                            ],
+                            levels: const {
+                              DifficultyState.Introductory:
+                                  SkillLevelDefinition(
+                                overview: 'Intro overview',
+                                learning: 'Intro learning',
+                                proficient: 'Intro proficient',
+                              ),
+                            },
+                          ),
+                          family: testFamily,
+                          allSkills: [longNamedOtherSkill, secondOtherSkill],
+                          existingSkillIds: const {'rider.mounted.target'},
+                        ),
+                      );
+                    },
+                    child: const Text('Open Editor'),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Open Editor'));
+          await tester.pumpAndSettle();
+
+          final addRelatedBtn = find.byKey(
+            const Key('addRelatedSkillButton'),
+          );
+          await tester.ensureVisible(addRelatedBtn);
+          await tester.tap(addRelatedBtn);
+          await tester.pumpAndSettle();
+
+          // Change relation to Counterpart and add a second related skill.
+          final relationDropdown = find.byKey(
+            const Key('relatedRelationDropdown_0'),
+          );
+          await tester.ensureVisible(relationDropdown);
+          await tester.tap(relationDropdown);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Counterpart').last);
+          await tester.pumpAndSettle();
+
+          await tester.ensureVisible(addRelatedBtn);
+          await tester.tap(addRelatedBtn);
+          await tester.pumpAndSettle();
+
+          // Remove the second related skill row.
+          final removeSecondBtn = find.byKey(
+            const Key('removeRelatedSkillButton_1'),
+          );
+          await tester.ensureVisible(removeSecondBtn);
+          await tester.tap(removeSecondBtn);
+          await tester.pumpAndSettle();
+
+          final applyBtn = find.widgetWithText(FilledButton, 'Apply to Draft');
+          await tester.ensureVisible(applyBtn);
+          await tester.tap(applyBtn);
+          await tester.pumpAndSettle();
+
+          expect(tester.takeException(), isNull);
+          expect(savedResult, isNotNull);
+          expect(savedResult!.relatedSkills, hasLength(1));
+          expect(
+            savedResult!.relatedSkills.first.relation,
+            SkillRelationType.counterpart,
+          );
+        },
+      );
+    }
+
+    testWidgets(
+      'difficulty standards expand initial level, preserve edits on collapse, '
+      'and indicate validation errors on collapsed levels',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        CurriculumSkill? savedResult;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () async {
+                    savedResult = await showDialog<CurriculumSkill>(
+                      context: context,
+                      builder: (_) => EditCurriculumSkillDialog(
+                        initialSkill: multiLevelSkill,
+                        family: testFamily,
+                        allSkills: [multiLevelSkill, secondOtherSkill],
+                        existingSkillIds: const {'rider.mounted.neutral_pelvis'},
+                        initialExpandedLevel: DifficultyState.Intermediate,
+                      ),
+                    );
+                  },
+                  child: const Text('Open MultiLevel'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open MultiLevel'));
+        await tester.pumpAndSettle();
+
+        // Intermediate is expanded initially; Introductory and Advanced are collapsed.
+        expect(find.text('Intermediate overview'), findsOneWidget);
+        expect(find.text('Intro overview'), findsNothing);
+        expect(find.text('Advanced overview'), findsNothing);
+
+        // Expand Introductory and edit its overview, then collapse and reopen.
+        final introHeader = find.byKey(
+          const Key('levelEditorHeader_Introductory'),
+        );
+        await tester.ensureVisible(introHeader);
+        await tester.tap(introHeader);
+        await tester.pumpAndSettle();
+        expect(find.text('Intro overview'), findsOneWidget);
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Intro overview'),
+          'Updated intro overview',
+        );
+        await tester.pumpAndSettle();
+
+        // Collapse Introductory and reopen to confirm value survived.
+        await tester.ensureVisible(introHeader);
+        await tester.tap(introHeader);
+        await tester.pumpAndSettle();
+        expect(find.text('Updated intro overview'), findsNothing);
+
+        await tester.ensureVisible(introHeader);
+        await tester.tap(introHeader);
+        await tester.pumpAndSettle();
+        expect(find.text('Updated intro overview'), findsOneWidget);
+
+        // Submit while Advanced (collapsed) has an empty Proficient field.
+        final applyBtn = find.widgetWithText(FilledButton, 'Apply to Draft');
+        await tester.ensureVisible(applyBtn);
+        await tester.tap(applyBtn);
+        await tester.pumpAndSettle();
+
+        // Dialog stays open and collapsed Advanced header shows error badge.
+        expect(savedResult, isNull);
+        expect(
+          find.byKey(const Key('levelEditorErrorBadge_Advanced')),
+          findsOneWidget,
+        );
+
+        // Expand Advanced, fill Proficient, and submit successfully.
+        final advHeader = find.byKey(const Key('levelEditorHeader_Advanced'));
+        await tester.ensureVisible(advHeader);
+        await tester.tap(advHeader);
+        await tester.pumpAndSettle();
+
+        final advCard = find.byKey(const Key('levelEditorCard_Advanced'));
+        final proficientField = find.descendant(
+          of: advCard,
+          matching: find.widgetWithText(TextFormField, 'Proficient Standard *'),
+        );
+        await tester.ensureVisible(proficientField);
+        await tester.enterText(proficientField, 'Advanced proficient criteria');
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(applyBtn);
+        await tester.tap(applyBtn);
+        await tester.pumpAndSettle();
+
+        expect(savedResult, isNotNull);
+        expect(
+          savedResult!.levels[DifficultyState.Introductory]?.overview,
+          'Updated intro overview',
+        );
+        expect(
+          savedResult!.levels[DifficultyState.Advanced]?.proficient,
+          'Advanced proficient criteria',
+        );
       },
     );
   });

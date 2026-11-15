@@ -97,7 +97,8 @@ void main() {
   }
 
   testWidgets(
-    'feature flag defaults to false and preserves legacy SkillTreeView',
+    'feature flag defaults to true and preserves legacy SkillTreeView when '
+    'rolled back',
     (tester) async {
     final auth = _MockAuth();
     final skills = _MockSkills();
@@ -116,6 +117,9 @@ void main() {
     );
     addTearDown(appCubit.close);
 
+    expect(settings.skillTreeV2Enabled, isTrue);
+
+    await settings.updateSkillTreeV2Enabled(enabled: false);
     expect(settings.skillTreeV2Enabled, isFalse);
 
     await tester.pumpWidget(
