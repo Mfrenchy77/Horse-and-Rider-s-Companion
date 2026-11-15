@@ -1561,21 +1561,38 @@ class AppCubit extends Cubit<AppState> {
     return state.skill?.id;
   }
 
-  /// Whether or not a user can edit a skill or not. Based on whether they
-  /// have created it or their email is in the admin list
-  bool canEditSkill(Skill? skill) {
-    return state.usersProfile != null &&
-        (state.usersProfile?.email == skill?.lastEditBy ||
-            AuthorizedEmails.emails.contains(state.usersProfile?.email));
+  /// Refreshes the authenticated user's custom role claims from the auth
+  /// backend and updates [AppState] if roles changed.
+  Future<void> refreshUserRoles({bool forceRefresh = true}) async {
+    final refreshedUser = await _authenticationRepository.refreshRoles(
+      forceRefresh: forceRefresh,
+    );
+    if (refreshedUser != null && !isClosed) {
+      _handleAuthUser(refreshedUser);
+    }
   }
 
-  /// Wheter or not a user can edit a resource or not. Based on whether they
-  /// have created it or their email is in the admin list
-  bool canEditResource(Resource resource) {
+  /// Whether or not a user can edit a skill or not. Based on the `editor`
+  /// custom claim, whether they last edited it, or legacy email allowlist.
+  bool canEditSkill(Skill? skill) {
+    if (state.isEditor) return true;
+    final profileEmail = state.usersProfile?.email.toLowerCase();
     return state.usersProfile != null &&
-        (state.usersProfile?.email == resource.authorId ||
-            state.usersProfile?.email == resource.lastEditBy ||
-            AuthorizedEmails.emails.contains(state.usersProfile?.email));
+        profileEmail != null &&
+        (profileEmail == skill?.lastEditBy?.toLowerCase() ||
+            AuthorizedEmails.emails.contains(profileEmail));
+  }
+
+  /// Whether or not a user can edit a resource or not. Based on the `editor`
+  /// custom claim, whether they created/edited it, or legacy email allowlist.
+  bool canEditResource(Resource resource) {
+    if (state.isEditor) return true;
+    final profileEmail = state.usersProfile?.email.toLowerCase();
+    return state.usersProfile != null &&
+        profileEmail != null &&
+        (profileEmail == resource.authorId?.toLowerCase() ||
+            profileEmail == resource.lastEditBy?.toLowerCase() ||
+            AuthorizedEmails.emails.contains(profileEmail));
   }
 
   /// Returns the full Skill object from the id

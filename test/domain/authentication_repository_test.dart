@@ -15,6 +15,8 @@ class MockGoogleSignIn extends Mock implements GoogleSignIn {}
 
 class MockGoogleAccount extends Mock implements GoogleSignInAccount {}
 
+class MockIdTokenResult extends Mock implements firebase.IdTokenResult {}
+
 void main() {
   late MockFirebaseAuth auth;
   late MockFirebaseUser user;
@@ -266,8 +268,106 @@ void main() {
       email: 'a@b.com',
       isGuest: false,
       emailVerified: true,
+      isAdmin: true,
+      isModerator: true,
+      isEditor: true,
       photo: 'https://example.com/photo.png',
     );
     expect(User.fromJson(value.toJson()), value);
+    expect(
+      User.fromJson(const {
+        'id': 'u',
+        'name': 'Rider',
+        'email': 'a@b.com',
+        'emailVerfified': true,
+        'isGuest': false,
+      }),
+      const User(
+        id: 'u',
+        name: 'Rider',
+        email: 'a@b.com',
+        isGuest: false,
+        emailVerified: true,
+      ),
+    );
+  });
+
+  test(
+    'auth stream reads admin, moderator, and editor custom claims',
+    () async {
+      final tokenResult = MockIdTokenResult();
+      when(() => tokenResult.claims).thenReturn({
+        'admin': true,
+        'moderator': false,
+        'editor': true,
+      });
+      when(
+        () => user.getIdTokenResult(),
+      ).thenAnswer((_) async => tokenResult);
+      when(auth.userChanges).thenAnswer((_) => Stream.value(user));
+
+      final result = await repository.user.first;
+
+      expect(result?.isAdmin, isTrue);
+      expect(result?.isModerator, isFalse);
+      expect(result?.isEditor, isTrue);
+      expect(result?.canAccessAdministration, isTrue);
+    },
+  );
+
+  test(
+    'refreshRoles forces token refresh and updates cached user',
+    () async {
+      final initialToken = MockIdTokenResult();
+      when(() => initialToken.claims).thenReturn({});
+      final refreshedToken = MockIdTokenResult();
+      when(() => refreshedToken.claims).thenReturn({'moderator': true});
+      when(
+        () => user.getIdTokenResult(),
+      ).thenAnswer((_) async => initialToken);
+      when(
+        () => user.getIdTokenResult(true),
+      ).thenAnswer((_) async => refreshedToken);
+      when(auth.userChanges).thenAnswer((_) => Stream.value(user));
+
+      await repository.user.first;
+      expect(repository.currentUser.isModerator, isFalse);
+
+      final refreshed = await repository.refreshRoles();
+      expect(refreshed?.isModerator, isTrue);
+      expect(refreshed?.isAdmin, isFalse);
+      expect(refreshed?.canAccessAdministration, isTrue);
+      expect(repository.currentUser, refreshed);
+      expect(repository.getCachedUser(), refreshed);
+    },
+  );
+
+  test('canAccessAdministration rejects unverified or guest users', () {
+    const unverifiedAdmin = User(
+      id: 'u1',
+      name: 'Unverified',
+      email: 'a@b.com',
+      isGuest: false,
+      isAdmin: true,
+    );
+    const guestModerator = User(
+      id: 'g1',
+      name: 'Guest',
+      email: '',
+      emailVerified: true,
+      isModerator: true,
+    );
+    const verifiedEditorOnly = User(
+      id: 'e1',
+      name: 'Editor',
+      email: 'e@b.com',
+      isGuest: false,
+      emailVerified: true,
+      isEditor: true,
+    );
+
+    expect(unverifiedAdmin.canAccessAdministration, isFalse);
+    expect(guestModerator.canAccessAdministration, isFalse);
+    expect(verifiedEditorOnly.canAccessAdministration, isFalse);
   });
 }

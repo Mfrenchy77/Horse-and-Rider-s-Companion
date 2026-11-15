@@ -10,8 +10,7 @@ class SkillTreeV2Header extends StatefulWidget {
     super.key,
     required this.state,
     required this.hasHorseProfile,
-    required this.horseName,
-    required this.onSelectSubject,
+    required this.profileLabel,
     required this.onSelectRealm,
     required this.onSelectViewMode,
     required this.onSearchChanged,
@@ -19,8 +18,7 @@ class SkillTreeV2Header extends StatefulWidget {
 
   final SkillTreeV2State state;
   final bool hasHorseProfile;
-  final String? horseName;
-  final ValueChanged<SkillSubject> onSelectSubject;
+  final String? profileLabel;
   final ValueChanged<SkillCategory> onSelectRealm;
   final ValueChanged<SkillTreeV2ViewMode> onSelectViewMode;
   final ValueChanged<String> onSearchChanged;
@@ -52,6 +50,16 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = widget.state;
+    final isHorse = state.subject == SkillSubject.horse;
+    final hasProfileLabel =
+        widget.profileLabel != null && widget.profileLabel!.trim().isNotEmpty;
+    final contextTitle = isHorse
+        ? (hasProfileLabel
+              ? 'Horse Skills · ${widget.profileLabel}'
+              : 'Horse Skills')
+        : (hasProfileLabel
+              ? 'Rider Skills · ${widget.profileLabel}'
+              : 'Rider Skills');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,23 +71,27 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
           crossAxisAlignment: WrapCrossAlignment.center,
           alignment: WrapAlignment.spaceBetween,
           children: [
-            SegmentedButton<SkillSubject>(
-              key: const Key('skillTreeV2SubjectSelector'),
-              segments: const [
-                ButtonSegment(
-                  value: SkillSubject.rider,
-                  icon: Icon(Icons.person_outline),
-                  label: Text('Rider'),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isHorse
+                      ? HorseAndRiderIcons.horseIcon
+                      : Icons.person_outline,
+                  size: 20,
+                  color: AppTokens.accentColor(context),
                 ),
-                ButtonSegment(
-                  value: SkillSubject.horse,
-                  icon: Icon(HorseAndRiderIcons.horseIcon),
-                  label: Text('Horse'),
+                const SizedBox(width: AppTokens.spaceXs),
+                Flexible(
+                  child: Text(
+                    contextTitle,
+                    key: const Key('skillTreeV2ContextTitle'),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
-              selected: {state.subject},
-              onSelectionChanged: (selection) =>
-                  widget.onSelectSubject(selection.first),
             ),
             SegmentedButton<SkillTreeV2ViewMode>(
               key: const Key('skillTreeV2ViewModeSelector'),
@@ -106,7 +118,7 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
             ),
           ],
         ),
-        if (state.subject == SkillSubject.horse)
+        if (isHorse && !widget.hasHorseProfile)
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppTokens.spaceMd,
@@ -120,20 +132,12 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
             ),
             child: Row(
               children: [
-                Icon(
-                  widget.hasHorseProfile
-                      ? Icons.check_circle_outline
-                      : Icons.info_outline,
-                  size: 18,
-                ),
+                const Icon(Icons.info_outline, size: 18),
                 const SizedBox(width: AppTokens.spaceSm),
                 Expanded(
                   child: Text(
-                    widget.hasHorseProfile
-                        ? 'Tracking Horse abilities for '
-                              '${widget.horseName ?? 'selected horse'}.'
-                        : 'Browsing Horse curriculum freely. Select or add a '
-                              'horse profile when you want to record progress.',
+                    'No horse profile selected. Select a horse profile to '
+                    'record Horse progress.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ),

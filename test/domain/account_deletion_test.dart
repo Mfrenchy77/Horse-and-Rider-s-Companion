@@ -85,6 +85,9 @@ class _FakeAuthGateway implements AuthGateway {
   Future<void> reloadCurrentUser() async {}
 
   @override
+  Future<User?> refreshRoles({bool forceRefresh = true}) async => _current;
+
+  @override
   bool isEmailVerified() => _current.emailVerified;
 
   Future<void> dispose() => _controller.close();

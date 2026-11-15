@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 
@@ -17,6 +18,18 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
   final SkillTreeV2Repository repository;
 
   SkillTreeV2Store get store => repository.store;
+
+  InMemorySkillTreeV2Store? get _inMemoryStore {
+    final current = repository.store;
+    if (current is InMemorySkillTreeV2Store) return current;
+    if (current is HybridCurriculumSkillTreeV2Store &&
+        current.primaryStore is InMemorySkillTreeV2Store) {
+      return current.primaryStore as InMemorySkillTreeV2Store;
+    }
+    return null;
+  }
+
+  bool get isInMemoryStore => _inMemoryStore != null;
 
   Future<void> initialize({
     SkillSubject? initialSubject,
@@ -130,12 +143,20 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       await syncProfile(subject: subject, profileDocId: profileDocId);
       return;
     }
+    await switchProfileContext(subject: subject, profileDocId: profileDocId);
+  }
+
+  Future<void> switchProfileContext({
+    required SkillSubject subject,
+    required String? profileDocId,
+  }) async {
     final nextRealm = realmsForSubject(subject).first;
     final nextSkill = _firstSkillFor(state.skills, subject, nextRealm);
     emit(
       state.copyWith(
         subject: subject,
         realm: nextRealm,
+        viewMode: SkillTreeV2ViewMode.browse,
         searchQuery: '',
         expandedFamilyIds: const {},
         selectedSkillId: nextSkill?.id,
@@ -299,8 +320,8 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     required String coachName,
     String? reason,
   }) async {
-    final inMemory = repository.store;
-    if (inMemory is! InMemorySkillTreeV2Store) return false;
+    final inMemory = _inMemoryStore;
+    if (inMemory == null) return false;
     emit(state.copyWith(isSubmitting: true, clearActionMessage: true));
     inMemory.applyVerificationLocally(
       subject: skill.subject,

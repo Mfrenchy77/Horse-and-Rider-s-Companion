@@ -27,6 +27,14 @@ class SkillTreeV2View extends StatefulWidget {
   final SkillTreeV2Repository? repository;
   final bool enableLocalInstructorPreview;
 
+  static InMemorySkillTreeV2Store _previewProgressStore =
+      InMemorySkillTreeV2Store();
+
+  @visibleForTesting
+  static void resetPreviewStoreForTest() {
+    _previewProgressStore = InMemorySkillTreeV2Store();
+  }
+
   @override
   State<SkillTreeV2View> createState() => _SkillTreeV2ViewState();
 }
@@ -54,19 +62,13 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   }
 
   SkillTreeV2Repository _resolveDefaultRepository() {
-    try {
-      return SkillTreeV2Repository(
-        store: HybridCurriculumSkillTreeV2Store(
-          primaryStore: FirestoreSkillTreeV2Store(),
-        ),
-      );
-    } catch (_) {
-      return SkillTreeV2Repository(
-        store: HybridCurriculumSkillTreeV2Store(
-          primaryStore: InMemorySkillTreeV2Store(),
-        ),
-      );
-    }
+    // Keep Skill Tree 2.0 Preview isolated from production Firestore until
+    // SkillsV2 and SkillProgress rules/collections are rolled out.
+    return SkillTreeV2Repository(
+      store: HybridCurriculumSkillTreeV2Store(
+        primaryStore: SkillTreeV2View._previewProgressStore,
+      ),
+    );
   }
 
   @override
@@ -310,27 +312,60 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
 
     return BlocProvider.value(
       value: _cubit,
-      child: BlocConsumer<SkillTreeV2Cubit, SkillTreeV2State>(
+      child: BlocListener<AppCubit, AppState>(
         listenWhen: (prev, curr) =>
-            prev.actionMessage != curr.actionMessage &&
-            curr.actionMessage != null,
-        listener: (context, state) {
-          final msg = state.actionMessage;
-          if (msg != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(msg)),
-            );
-            _cubit.clearActionMessage();
-          }
-        },
-        builder: (context, state) {
-          final profileDocId = _profileDocIdFor(appState, state.subject);
-          _cubit.syncProfile(
-            subject: state.subject,
-            profileDocId: profileDocId,
+            prev.isForRider != curr.isForRider ||
+            prev.isViewing != curr.isViewing ||
+            prev.viewingProfile?.email != curr.viewingProfile?.email ||
+            prev.usersProfile?.email != curr.usersProfile?.email ||
+            prev.horseProfile?.id != curr.horseProfile?.id,
+        listener: (context, nextAppState) {
+          final nextSubject = nextAppState.isForRider
+              ? SkillSubject.rider
+              : SkillSubject.horse;
+          final nextProfileDocId = _profileDocIdFor(nextAppState, nextSubject);
+          setState(() => _mobileShowingDetail = false);
+          _cubit.switchProfileContext(
+            subject: nextSubject,
+            profileDocId: nextProfileDocId,
           );
+          _syncLocalHistoryEntry();
+        },
+        child: BlocConsumer<SkillTreeV2Cubit, SkillTreeV2State>(
+          listenWhen: (prev, curr) =>
+              prev.actionMessage != curr.actionMessage &&
+              curr.actionMessage != null,
+          listener: (context, state) {
+            final msg = state.actionMessage;
+            if (msg != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(msg)),
+              );
+              _cubit.clearActionMessage();
+            }
+          },
+          builder: (context, state) {
+            final contextSubject = appState.isForRider
+                ? SkillSubject.rider
+                : SkillSubject.horse;
+            final profileDocId = _profileDocIdFor(appState, contextSubject);
+            if (contextSubject != state.subject) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _cubit.switchProfileContext(
+                    subject: contextSubject,
+                    profileDocId: profileDocId,
+                  );
+                }
+              });
+            } else {
+              _cubit.syncProfile(
+                subject: contextSubject,
+                profileDocId: profileDocId,
+              );
+            }
 
-          final isRiderSubject = state.subject == SkillSubject.rider;
+            final isRiderSubject = contextSubject == SkillSubject.rider;
           final rider = appState.isViewing
               ? appState.viewingProfile
               : appState.usersProfile;
@@ -360,7 +395,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           final canVerify =
               coachingLink != null ||
               (widget.enableLocalInstructorPreview &&
-                  _cubit.store is InMemorySkillTreeV2Store &&
+                  _cubit.isInMemoryStore &&
                   profileDocId != null);
 
           final isWide = MediaQuery.sizeOf(context).width >= 900;
@@ -382,18 +417,42 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: AppTokens.spaceMd,
                   children: [
+                    if (_cubit.isInMemoryStore)
+                      Container(
+                        key: const Key('skillTreeV2PreviewBanner'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTokens.spaceMd,
+                          vertical: AppTokens.spaceSm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer.withValues(
+                            alpha: 0.45,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppTokens.radiusSm,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.science_outlined, size: 18),
+                            const SizedBox(width: AppTokens.spaceSm),
+                            Expanded(
+                              child: Text(
+                                'Preview mode: Assessments are stored locally '
+                                'for this session and are not saved to your '
+                                'account.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     SkillTreeV2Header(
                       state: state,
                       hasHorseProfile: horse != null,
-                      horseName: horse?.name,
-                      onSelectSubject: (subject) {
-                        setState(() => _mobileShowingDetail = false);
-                        _cubit.selectSubject(
-                          subject,
-                          profileDocId: _profileDocIdFor(appState, subject),
-                        );
-                        _syncLocalHistoryEntry();
-                      },
+                      profileLabel: profileLabel,
                       onSelectRealm: (realm) {
                         setState(() => _mobileShowingDetail = false);
                         _cubit.selectRealm(realm);
@@ -591,6 +650,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
             body: AppScaffoldBackdrop(child: body),
           );
         },
+        ),
       ),
     );
   }

@@ -133,11 +133,14 @@ class SkillDetailV2Panel extends StatelessWidget {
               runSpacing: AppTokens.spaceXs,
               children: [
                 for (final level in skill.availableLevels)
-                  ChoiceChip(
-                    key: Key('levelTab_${skill.id}_${level.name}'),
-                    label: Text(difficultyDisplayLabel(level)),
+                  _buildLevelChoiceChip(
+                    context: context,
+                    skill: skill,
+                    level: level,
                     selected: selectedLevel == level,
-                    onSelected: (_) => onSelectLevel(level),
+                    selfState: progress?.levels[level]?.state,
+                    isVerified:
+                        verification?.levels.containsKey(level) ?? false,
                   ),
               ],
             ),
@@ -218,6 +221,45 @@ class SkillDetailV2Panel extends StatelessWidget {
       if (s.id == id) return s.name;
     }
     return id;
+  }
+
+  Widget _buildLevelChoiceChip({
+    required BuildContext context,
+    required CurriculumSkill skill,
+    required DifficultyState level,
+    required bool selected,
+    required LevelState? selfState,
+    required bool isVerified,
+  }) {
+    final baseLabel = difficultyDisplayLabel(level);
+    final (Icon? avatar, String label) = isVerified
+        ? (
+            Icon(
+              Icons.verified,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            '$baseLabel · Verified',
+          )
+        : switch (selfState) {
+            LevelState.PROFICIENT => (
+              const Icon(Icons.check_circle_outline, size: 16),
+              '$baseLabel · Proficient',
+            ),
+            LevelState.LEARNING => (
+              const Icon(Icons.school_outlined, size: 16),
+              '$baseLabel · Learning',
+            ),
+            _ => (null, baseLabel),
+          };
+
+    return ChoiceChip(
+      key: Key('levelTab_${skill.id}_${level.name}'),
+      avatar: avatar,
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelectLevel(level),
+    );
   }
 }
 

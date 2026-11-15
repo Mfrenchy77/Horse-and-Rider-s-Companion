@@ -197,8 +197,8 @@ class AuthenticationRepository implements AuthGateway {
   Future<void> _cacheCurrentUser() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
-      final user = firebaseUser.toAppUser();
-      await _cacheUser(user!);
+      final user = await _toAppUserWithClaims(firebaseUser);
+      await _cacheUser(user);
     } else {
       await _clearCachedUser();
     }
@@ -219,9 +219,11 @@ class AuthenticationRepository implements AuthGateway {
 
   @override
   Stream<User?> get user {
-    return _firebaseAuth.userChanges().map((firebaseUser) {
-      final user = firebaseUser == null ? User.empty : firebaseUser.toAppUser();
-      _cache.write<User>(key: userCacheKey, value: user!);
+    return _firebaseAuth.userChanges().asyncMap((firebaseUser) async {
+      final user = firebaseUser == null
+          ? User.empty
+          : await _toAppUserWithClaims(firebaseUser);
+      _cache.write<User>(key: userCacheKey, value: user);
       return user;
     });
   }
@@ -382,6 +384,35 @@ class AuthenticationRepository implements AuthGateway {
   }
 
   @override
+  Future<User?> refreshRoles({bool forceRefresh = true}) async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser == null) {
+      await _clearCachedUser();
+      return User.empty;
+    }
+    final refreshedUser = await _toAppUserWithClaims(
+      firebaseUser,
+      forceRefresh: forceRefresh,
+    );
+    await _cacheUser(refreshedUser);
+    return refreshedUser;
+  }
+
+  Future<User> _toAppUserWithClaims(
+    firebase_auth.User firebaseUser, {
+    bool forceRefresh = false,
+  }) async {
+    Map<String, dynamic>? claims;
+    try {
+      final tokenResult = await firebaseUser.getIdTokenResult(forceRefresh);
+      claims = tokenResult.claims;
+    } catch (_) {
+      claims = null;
+    }
+    return firebaseUser.toAppUser(claims: claims)!;
+  }
+
+  @override
   bool isEmailVerified() {
     final user = _firebaseAuth.currentUser;
     return user?.emailVerified ?? false;
@@ -489,7 +520,7 @@ class ReauthenticationFailure implements Exception {
 
 /// Converts a [firebase_auth.User] to your app's [User] model.
 extension UserConversion on firebase_auth.User? {
-  User? toAppUser() {
+  User? toAppUser({Map<String, dynamic>? claims}) {
     final firebaseUser = this;
     if (firebaseUser == null) return null;
     return User(
@@ -499,6 +530,9 @@ extension UserConversion on firebase_auth.User? {
       name: firebaseUser.displayName ?? '',
       isGuest: firebaseUser.isAnonymous,
       emailVerified: firebaseUser.emailVerified,
+      isAdmin: claims?['admin'] == true,
+      isModerator: claims?['moderator'] == true,
+      isEditor: claims?['editor'] == true,
     );
   }
 }

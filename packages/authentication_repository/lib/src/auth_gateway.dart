@@ -43,6 +43,10 @@ abstract interface class AuthGateway {
   /// Refreshes the current user's session/profile attributes from the backend.
   Future<void> reloadCurrentUser();
 
+  /// Refreshes the current user's ID token claims and returns the updated
+  /// [User], or [User.empty] if signed out.
+  Future<User?> refreshRoles({bool forceRefresh = true});
+
   /// Returns `true` if the current user's email address is verified.
   bool isEmailVerified();
 

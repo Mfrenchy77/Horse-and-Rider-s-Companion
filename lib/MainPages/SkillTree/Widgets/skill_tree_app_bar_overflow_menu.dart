@@ -16,7 +16,8 @@ class SkillTreeAppBarOverFlowMenu extends StatelessWidget {
     final tabIndex = context.select((AppCubit c) => c.state.skillTreeTabIndex);
     final isGuest = context.select((AppCubit c) => c.state.isGuest);
     final isEditor = context.select(
-      (AppCubit c) => c.state.usersProfile?.editor ?? false,
+      (AppCubit c) =>
+          c.state.isEditor || (c.state.usersProfile?.editor ?? false),
     );
 
     final menuItems = <PopupMenuEntry<String>>[];

@@ -120,6 +120,12 @@ class _InMemoryAuthGateway implements AuthGateway {
   }
 
   @override
+  Future<User?> refreshRoles({bool forceRefresh = true}) async {
+    _controller.add(_current);
+    return _current;
+  }
+
+  @override
   bool isEmailVerified() => _current.emailVerified;
 
   @override

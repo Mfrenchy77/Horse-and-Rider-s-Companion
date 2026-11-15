@@ -14,6 +14,9 @@ class User extends Equatable {
     required this.email,
     this.isGuest = true,
     this.emailVerified = false,
+    this.isAdmin = false,
+    this.isModerator = false,
+    this.isEditor = false,
   });
 
   /// The current user's id.
@@ -34,6 +37,20 @@ class User extends Equatable {
   /// Whether the current user is a guest.
   final bool isGuest;
 
+  /// Whether the Firebase Auth token includes the `admin: true` custom claim.
+  final bool isAdmin;
+
+  /// Whether the Firebase Auth token includes the `moderator: true` custom
+  /// claim.
+  final bool isModerator;
+
+  /// Whether the Firebase Auth token includes the `editor: true` custom claim.
+  final bool isEditor;
+
+  /// Whether this authenticated, email-verified user can access Administration.
+  bool get canAccessAdministration =>
+      !isGuest && emailVerified && (isAdmin || isModerator);
+
   /// Empty user which represents an unauthenticated user.
   static const empty = User(id: '', name: '', email: '');
 
@@ -42,6 +59,31 @@ class User extends Equatable {
 
   /// Convenience getter to determine whether the current user is not empty.
   bool get isNotEmpty => this != User.empty;
+
+  /// Returns a copy of this [User] with the provided fields updated.
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? photo,
+    bool? emailVerified,
+    bool? isGuest,
+    bool? isAdmin,
+    bool? isModerator,
+    bool? isEditor,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      photo: photo ?? this.photo,
+      emailVerified: emailVerified ?? this.emailVerified,
+      isGuest: isGuest ?? this.isGuest,
+      isAdmin: isAdmin ?? this.isAdmin,
+      isModerator: isModerator ?? this.isModerator,
+      isEditor: isEditor ?? this.isEditor,
+    );
+  }
 
   /// Converts the user to a map
   Map<String, dynamic> toJson() {
@@ -52,6 +94,9 @@ class User extends Equatable {
       'photo': photo,
       'emailVerfified': emailVerified,
       'isGuest': isGuest,
+      'isAdmin': isAdmin,
+      'isModerator': isModerator,
+      'isEditor': isEditor,
     };
   }
 
@@ -65,9 +110,22 @@ class User extends Equatable {
       photo: json['photo'] as String?,
       emailVerified: json['emailVerfified'] as bool,
       isGuest: json['isGuest'] as bool,
+      isAdmin: json['isAdmin'] as bool? ?? false,
+      isModerator: json['isModerator'] as bool? ?? false,
+      isEditor: json['isEditor'] as bool? ?? false,
     );
   }
 
   @override
-  List<Object?> get props => [email, id, name, photo, emailVerified, isGuest];
+  List<Object?> get props => [
+        email,
+        id,
+        name,
+        photo,
+        emailVerified,
+        isGuest,
+        isAdmin,
+        isModerator,
+        isEditor,
+      ];
 }

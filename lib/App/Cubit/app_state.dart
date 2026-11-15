@@ -154,6 +154,21 @@ class AppState extends Equatable {
   /// Whether the user is a guest or not.
   final bool isGuest;
 
+  /// Whether the authenticated, verified user has the `admin: true` claim.
+  bool get isAdmin =>
+      !isGuest && !user.isGuest && user.emailVerified && user.isAdmin;
+
+  /// Whether the authenticated, verified user has the `moderator: true` claim.
+  bool get isModerator =>
+      !isGuest && !user.isGuest && user.emailVerified && user.isModerator;
+
+  /// Whether the authenticated, verified user has the `editor: true` claim.
+  bool get isEditor =>
+      !isGuest && !user.isGuest && user.emailVerified && user.isEditor;
+
+  /// Whether the authenticated, verified user can access Administration tools.
+  bool get canAccessAdministration => isAdmin || isModerator;
+
   /// Set when an Error snackbar needs to be shown
   final bool isError;
 

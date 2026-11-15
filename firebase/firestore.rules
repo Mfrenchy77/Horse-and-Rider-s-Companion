@@ -35,6 +35,20 @@ service cloud.firestore {
         && request.auth.token.get('editor', false) == true;
     }
 
+    function isAdmin() {
+      return verifiedAuth()
+        && request.auth.token.get('admin', false) == true;
+    }
+
+    function isModerator() {
+      return verifiedAuth()
+        && request.auth.token.get('moderator', false) == true;
+    }
+
+    function isStaff() {
+      return isAdmin() || isModerator();
+    }
+
     function validSkillProgressLevel(skillData, levelsMap, levelKey) {
       return !(levelKey in levelsMap) || (
         levelKey in skillData.availableLevels
@@ -336,16 +350,31 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /SkillTreeSuggestions/{suggestionId} {
+      allow read: if isStaff()
+        || (verifiedAuth()
+          && resource != null
+          && resource.data.submittedByUid == request.auth.uid);
+      allow create, update, delete: if false;
+
+      match /AuditEvents/{eventId} {
+        allow read: if isStaff();
+        allow create, update, delete: if false;
+      }
+    }
+
     match /{collection}/{document=**} {
       allow read: if !(collection in [
         'CoachingConnections', 'SharedRidingEntries',
         'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
-        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources'
+        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources',
+        'SkillTreeSuggestions'
       ]);
       allow write: if request.auth != null && !(collection in [
         'CoachingConnections', 'SharedRidingEntries',
         'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
-        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources'
+        'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources',
+        'SkillTreeSuggestions'
       ]);
     }
   }

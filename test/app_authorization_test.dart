@@ -1,3 +1,4 @@
+import 'package:authentication_repository/authentication_repository.dart' show User;
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
@@ -568,4 +569,229 @@ void main() {
       expect(resource.usersWhoRated, isEmpty);
     },
   );
+
+  group('Custom claims authorization & role refresh', () {
+    test(
+      'AppState derives admin, moderator, editor, and canAccessAdministration '
+      'strictly from verified non-guest token claims',
+      () {
+        const verifiedRider = User(
+          id: 'r1',
+          name: 'Rider',
+          email: 'rider@example.com',
+          isGuest: false,
+          emailVerified: true,
+        );
+        const verifiedInstructor = User(
+          id: 'i1',
+          name: 'Instructor',
+          email: 'instructor@example.com',
+          isGuest: false,
+          emailVerified: true,
+        );
+        const verifiedModerator = User(
+          id: 'm1',
+          name: 'Moderator',
+          email: 'mod@example.com',
+          isGuest: false,
+          emailVerified: true,
+          isModerator: true,
+        );
+        const verifiedAdmin = User(
+          id: 'a1',
+          name: 'Admin',
+          email: 'admin@example.com',
+          isGuest: false,
+          emailVerified: true,
+          isAdmin: true,
+        );
+        const verifiedEditor = User(
+          id: 'e1',
+          name: 'Editor',
+          email: 'editor@example.com',
+          isGuest: false,
+          emailVerified: true,
+          isEditor: true,
+        );
+        const unverifiedAdmin = User(
+          id: 'ua1',
+          name: 'Unverified Admin',
+          email: 'unverified@example.com',
+          isGuest: false,
+          isAdmin: true,
+          isModerator: true,
+          isEditor: true,
+        );
+
+        final riderState = harness.cubit.state.copyWith(
+          user: verifiedRider,
+          isGuest: false,
+          usersProfile: RiderProfile(
+            id: 'r1',
+            name: 'Rider',
+            email: 'rider@example.com',
+            editor: true, // Legacy profile flag must NOT grant admin/mod.
+          ),
+        );
+        expect(riderState.isAdmin, isFalse);
+        expect(riderState.isModerator, isFalse);
+        expect(riderState.isEditor, isFalse);
+        expect(riderState.canAccessAdministration, isFalse);
+
+        final instructorState = harness.cubit.state.copyWith(
+          user: verifiedInstructor,
+          isGuest: false,
+          usersProfile: RiderProfile(
+            id: 'i1',
+            name: 'Instructor',
+            email: 'instructor@example.com',
+            isTrainer: true,
+          ),
+        );
+        expect(instructorState.canAccessAdministration, isFalse);
+
+        final modState = harness.cubit.state.copyWith(
+          user: verifiedModerator,
+          isGuest: false,
+        );
+        expect(modState.isAdmin, isFalse);
+        expect(modState.isModerator, isTrue);
+        expect(modState.canAccessAdministration, isTrue);
+
+        final adminState = harness.cubit.state.copyWith(
+          user: verifiedAdmin,
+          isGuest: false,
+        );
+        expect(adminState.isAdmin, isTrue);
+        expect(adminState.isModerator, isFalse);
+        expect(adminState.canAccessAdministration, isTrue);
+
+        final editorState = harness.cubit.state.copyWith(
+          user: verifiedEditor,
+          isGuest: false,
+        );
+        expect(editorState.isEditor, isTrue);
+        expect(editorState.canAccessAdministration, isFalse);
+
+        final unverifiedState = harness.cubit.state.copyWith(
+          user: unverifiedAdmin,
+          isGuest: false,
+        );
+        expect(unverifiedState.isAdmin, isFalse);
+        expect(unverifiedState.isModerator, isFalse);
+        expect(unverifiedState.isEditor, isFalse);
+        expect(unverifiedState.canAccessAdministration, isFalse);
+
+        final guestState = harness.cubit.state.copyWith(
+          user: verifiedAdmin.copyWith(isGuest: true),
+          isGuest: true,
+        );
+        expect(guestState.isAdmin, isFalse);
+        expect(guestState.canAccessAdministration, isFalse);
+      },
+    );
+
+    test(
+      'refreshUserRoles updates AppState when custom claims change',
+      () async {
+        const initialUser = User(
+          id: 'u-role',
+          name: 'Staff',
+          email: 'staff@example.com',
+          isGuest: false,
+          emailVerified: true,
+        );
+        const promotedUser = User(
+          id: 'u-role',
+          name: 'Staff',
+          email: 'staff@example.com',
+          isGuest: false,
+          emailVerified: true,
+          isModerator: true,
+        );
+
+        when(
+          () => harness.riders.getRiderProfile(
+            email: 'staff@example.com',
+          ),
+        ).thenAnswer((_) => Stream.value(null));
+        when(
+          () => harness.auth.refreshRoles(),
+        ).thenAnswer((_) async => promotedUser);
+
+        harness.cubit.emit(
+          harness.cubit.state.copyWith(user: initialUser, isGuest: false),
+        );
+        expect(harness.cubit.state.canAccessAdministration, isFalse);
+
+        await harness.cubit.refreshUserRoles();
+
+        expect(harness.cubit.state.isModerator, isTrue);
+        expect(harness.cubit.state.canAccessAdministration, isTrue);
+        verify(() => harness.auth.refreshRoles()).called(1);
+      },
+    );
+
+    test(
+      'canEditSkill and canEditResource honor editor claim and legacy '
+      'case-insensitive email allowlist',
+      () {
+        final sampleSkill = Skill(
+          id: 's1',
+          skillName: 'Halt',
+          rider: true,
+          position: 0,
+          description: 'Balanced halt',
+          learningDescription: 'Practicing halt',
+          proficientDescription: 'Square halt',
+          lastEditBy: 'someone@example.com',
+          lastEditDate: DateTime.utc(2025),
+        );
+        const editorUser = User(
+          id: 'ed-1',
+          name: 'Editor',
+          email: 'ed@example.com',
+          isGuest: false,
+          emailVerified: true,
+          isEditor: true,
+        );
+        harness.cubit.emit(
+          harness.cubit.state.copyWith(user: editorUser, isGuest: false),
+        );
+        expect(harness.cubit.canEditSkill(sampleSkill), isTrue);
+        expect(
+          harness.cubit.canEditResource(Resource(id: 'r1', name: 'Guide')),
+          isTrue,
+        );
+
+        // Legacy email allowlist compatibility (mixed-case profile email).
+        const ordinaryUser = User(
+          id: 'leg-1',
+          name: 'Legacy',
+          email: 'HorseAndRidersCompanion@gmail.com',
+          isGuest: false,
+          emailVerified: true,
+        );
+        harness.cubit.emit(
+          harness.cubit.state.copyWith(
+            user: ordinaryUser,
+            isGuest: false,
+            usersProfile: RiderProfile(
+              id: 'leg-1',
+              name: 'Legacy',
+              email: 'HorseAndRidersCompanion@gmail.com',
+            ),
+          ),
+        );
+        expect(harness.cubit.canEditSkill(sampleSkill), isTrue);
+        expect(
+          harness.cubit.canEditResource(Resource(id: 'r1', name: 'Guide')),
+          isTrue,
+        );
+        // Legacy allowlist alone does NOT grant Administration access.
+        expect(harness.cubit.state.isAdmin, isFalse);
+        expect(harness.cubit.state.canAccessAdministration, isFalse);
+      },
+    );
+  });
 }

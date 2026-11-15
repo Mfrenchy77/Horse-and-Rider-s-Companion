@@ -26,7 +26,8 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
 
   bool _canEdit(AppCubit cubit) =>
       !cubit.state.isGuest &&
-      ((cubit.state.usersProfile?.editor ?? false) ||
+      (cubit.state.isEditor ||
+          (cubit.state.usersProfile?.editor ?? false) ||
           cubit.canEditResource(widget.resource));
 
   String _skillDetails(Skill skill) =>

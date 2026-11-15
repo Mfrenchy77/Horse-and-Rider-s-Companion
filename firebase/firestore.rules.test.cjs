@@ -400,3 +400,86 @@ test('Horse SkillProgress ownership follows ownerUid transfer and revokes old ow
     },
   ));
 });
+
+test('SkillTreeSuggestions and AuditEvents enforce staff/submitter read and deny direct writes', async () => {
+  const adminDb = environment.authenticatedContext('admin-1', {
+    email: 'admin@example.com', email_verified: true, admin: true,
+  }).firestore();
+  const modDb = environment.authenticatedContext('mod-1', {
+    email: 'mod@example.com', email_verified: true, moderator: true,
+  }).firestore();
+  const submitterDb = environment.authenticatedContext('sub-1', {
+    email: 'sub@example.com', email_verified: true,
+  }).firestore();
+  const otherDb = environment.authenticatedContext('other-1', {
+    email: 'other@example.com', email_verified: true,
+  }).firestore();
+  const unverifiedModDb = environment.authenticatedContext('unv-mod', {
+    email: 'unvmod@example.com', email_verified: false, moderator: true,
+  }).firestore();
+  const guestDb = environment.unauthenticatedContext().firestore();
+
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'SkillTreeSuggestions/sug-1'), {
+      id: 'sug-1',
+      submittedByUid: 'sub-1',
+      status: 'pending',
+      title: 'Add backing through L-bend',
+    });
+    await setDoc(doc(db, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1'), {
+      id: 'evt-1',
+      actorUid: 'mod-1',
+      privateNote: 'Internal triage note',
+    });
+  });
+
+  // Read access on SkillTreeSuggestions: admin, moderator, and submitter succeed; others fail.
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeSuggestions/sug-1')));
+  await assertSucceeds(getDoc(doc(modDb, 'SkillTreeSuggestions/sug-1')));
+  await assertSucceeds(getDoc(doc(submitterDb, 'SkillTreeSuggestions/sug-1')));
+  await assertFails(getDoc(doc(otherDb, 'SkillTreeSuggestions/sug-1')));
+  await assertFails(getDoc(doc(unverifiedModDb, 'SkillTreeSuggestions/sug-1')));
+  await assertFails(getDoc(doc(guestDb, 'SkillTreeSuggestions/sug-1')));
+
+  // Direct client writes to SkillTreeSuggestions are denied for everyone (including admin/moderator).
+  await assertFails(setDoc(doc(submitterDb, 'SkillTreeSuggestions/sug-2'), {
+    id: 'sug-2',
+    submittedByUid: 'sub-1',
+    status: 'approved',
+  }));
+  await assertFails(updateDoc(doc(adminDb, 'SkillTreeSuggestions/sug-1'), {status: 'approved'}));
+  await assertFails(deleteDoc(doc(adminDb, 'SkillTreeSuggestions/sug-1')));
+
+  // AuditEvents are readable only by verified staff (admin or moderator).
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+  await assertSucceeds(getDoc(doc(modDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+  await assertFails(getDoc(doc(submitterDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+  await assertFails(getDoc(doc(otherDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+  await assertFails(getDoc(doc(unverifiedModDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+  await assertFails(getDoc(doc(guestDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+
+  // Direct writes to AuditEvents are denied for all clients.
+  await assertFails(setDoc(
+    doc(modDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-2'),
+    {id: 'evt-2', privateNote: 'Bypass'},
+  ));
+});
+
+test('Privilege escalation via Rider_Profile fields does not grant admin/mod/editor access', async () => {
+  const escalatedUserDb = environment.authenticatedContext('esc-1', {
+    email: 'esc@example.com', email_verified: true,
+  }).firestore();
+
+  await assertSucceeds(setDoc(doc(escalatedUserDb, 'Rider_Profile/esc@example.com'), {
+    email: 'esc@example.com',
+    ownerUid: 'esc-1',
+    editor: true,
+    admin: true,
+    moderator: true,
+  }));
+
+  await assertFails(setDoc(doc(escalatedUserDb, 'Skills/s-esc'), {id: 's-esc'}));
+  await assertFails(getDoc(doc(escalatedUserDb, 'SkillTreeSuggestions/sug-1')));
+  await assertFails(getDoc(doc(escalatedUserDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
+});
