@@ -5,11 +5,14 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/ability_summary_v2_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_draft_dialogs.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/instructor_ability_matrix_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_list_v2.dart';
@@ -46,6 +49,350 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   double _savedListScrollOffset = 0;
   bool _mobileShowingDetail = false;
   LocalHistoryEntry? _localHistoryEntry;
+  bool _isAdminEditMode = false;
+  bool _isPreviewingDraft = true;
+  bool _hasUnsavedDraftChanges = false;
+  bool _isDraftBusy = false;
+  SkillTreeCurriculumDraft? _draft;
+
+  bool _isVerifiedAdmin(AppState appState) =>
+      !appState.isGuest && appState.user.emailVerified && appState.isAdmin;
+
+  SkillTreeV2State _effectiveState(SkillTreeV2State publishedState) {
+    final draft = _draft;
+    if (draft == null || !_isPreviewingDraft) return publishedState;
+    return publishedState.copyWith(
+      families: draft.families,
+      skills: draft.skills,
+    );
+  }
+
+  Future<void> _toggleAdminEditMode(SkillTreeV2State publishedState) async {
+    if (_isAdminEditMode) {
+      setState(() {
+        _isAdminEditMode = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isAdminEditMode = true;
+      _isPreviewingDraft = true;
+      _isDraftBusy = true;
+    });
+
+    try {
+      final draftRepo = context.read<SkillTreeDraftRepository?>();
+      final remoteDraft = await draftRepo?.fetchDraft();
+      if (!mounted) return;
+      setState(() {
+        _draft ??= remoteDraft ??
+            SkillTreeCurriculumDraft(
+              families: List<SkillFamily>.from(publishedState.families),
+              skills: List<CurriculumSkill>.from(publishedState.skills),
+            );
+        _isDraftBusy = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _draft ??= SkillTreeCurriculumDraft(
+          families: List<SkillFamily>.from(publishedState.families),
+          skills: List<CurriculumSkill>.from(publishedState.skills),
+        );
+        _isDraftBusy = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Loaded local draft fallback: $e')),
+      );
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    final draft = _draft;
+    if (draft == null) return;
+    final draftRepo = context.read<SkillTreeDraftRepository?>();
+    if (draftRepo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Draft repository is not configured.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isDraftBusy = true);
+    try {
+      final saved = await draftRepo.saveDraft(draft);
+      if (!mounted) return;
+      setState(() {
+        _draft = saved;
+        _hasUnsavedDraftChanges = false;
+        _isDraftBusy = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Curriculum draft saved (not yet published).'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isDraftBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save draft: $e')),
+      );
+    }
+  }
+
+  Future<void> _discardDraft() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard Curriculum Draft?'),
+        content: const Text(
+          'This will discard all draft curriculum edits and revert to the '
+          'published curriculum. User progress is unaffected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !mounted) return;
+
+    setState(() => _isDraftBusy = true);
+    try {
+      final draftRepo = context.read<SkillTreeDraftRepository?>();
+      await draftRepo?.discardDraft();
+      if (!mounted) return;
+      setState(() {
+        _draft = null;
+        _hasUnsavedDraftChanges = false;
+        _isAdminEditMode = false;
+        _isPreviewingDraft = false;
+        _isDraftBusy = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Curriculum draft discarded.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isDraftBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to discard draft: $e')),
+      );
+    }
+  }
+
+  Future<void> _addOrEditFamily(
+    SkillTreeV2State effectiveState, {
+    SkillFamily? initial,
+  }) async {
+    final draft = _draft ??
+        SkillTreeCurriculumDraft(
+          families: List<SkillFamily>.from(effectiveState.families),
+          skills: List<CurriculumSkill>.from(effectiveState.skills),
+        );
+    final result = await showDialog<SkillFamily>(
+      context: context,
+      builder: (_) => EditSkillFamilyDialog(
+        initialFamily: initial,
+        defaultSubject: effectiveState.subject,
+        defaultRealm: effectiveState.realm,
+        existingFamilyIds: draft.families.map((f) => f.id).toSet(),
+        defaultSortOrder: effectiveState.realmFamilies.length + 1,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    final updatedFamilies = List<SkillFamily>.from(draft.families);
+    final existingIdx = updatedFamilies.indexWhere((f) => f.id == result.id);
+    if (existingIdx >= 0) {
+      updatedFamilies[existingIdx] = result;
+    } else {
+      updatedFamilies.add(result);
+    }
+
+    setState(() {
+      _draft = SkillTreeCurriculumDraft(
+        families: updatedFamilies,
+        skills: draft.skills,
+        updatedByUid: draft.updatedByUid,
+        updatedByName: draft.updatedByName,
+        updatedAt: draft.updatedAt,
+      );
+      _hasUnsavedDraftChanges = true;
+      _isPreviewingDraft = true;
+    });
+    if (!effectiveState.expandedFamilyIds.contains(result.id)) {
+      _cubit.toggleFamilyExpanded(result.id);
+    }
+  }
+
+  Future<void> _addOrEditSkill(
+    SkillTreeV2State effectiveState, {
+    required SkillFamily family,
+    CurriculumSkill? initial,
+  }) async {
+    final draft = _draft ??
+        SkillTreeCurriculumDraft(
+          families: List<SkillFamily>.from(effectiveState.families),
+          skills: List<CurriculumSkill>.from(effectiveState.skills),
+        );
+    final familySkillCount =
+        draft.skills.where((s) => s.familyId == family.id).length;
+    final result = await showDialog<CurriculumSkill>(
+      context: context,
+      builder: (_) => EditCurriculumSkillDialog(
+        initialSkill: initial,
+        family: family,
+        allSkills: draft.skills,
+        existingSkillIds: draft.skills.map((s) => s.id).toSet(),
+        defaultSortOrder: familySkillCount + 1,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    final updatedSkills = List<CurriculumSkill>.from(draft.skills);
+    final existingIdx = updatedSkills.indexWhere((s) => s.id == result.id);
+    if (existingIdx >= 0) {
+      updatedSkills[existingIdx] = result;
+    } else {
+      updatedSkills.add(result);
+    }
+
+    setState(() {
+      _draft = SkillTreeCurriculumDraft(
+        families: draft.families,
+        skills: updatedSkills,
+        updatedByUid: draft.updatedByUid,
+        updatedByName: draft.updatedByName,
+        updatedAt: draft.updatedAt,
+      );
+      _hasUnsavedDraftChanges = true;
+      _isPreviewingDraft = true;
+    });
+    _cubit.selectSkill(result.id);
+  }
+
+  Future<void> _openDraftPreview(SkillTreeV2State publishedState) async {
+    final draft = _draft;
+    if (draft == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => DraftPreviewDialog(
+        publishedFamilies: publishedState.families,
+        publishedSkills: publishedState.skills,
+        draftFamilies: draft.families,
+        draftSkills: draft.skills,
+        isPreviewingDraft: _isPreviewingDraft,
+        onTogglePreview: (value) {
+          setState(() {
+            _isPreviewingDraft = value;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildAdminDraftBanner(
+    BuildContext context,
+    SkillTreeV2State publishedState,
+    SkillTreeV2State effectiveState,
+  ) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('skillTreeV2AdminDraftBanner'),
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: Border.all(color: theme.colorScheme.tertiary.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppTokens.spaceSm,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.edit_note_outlined, size: 20),
+              const SizedBox(width: AppTokens.spaceSm),
+              Expanded(
+                child: Text(
+                  _isPreviewingDraft
+                      ? (_hasUnsavedDraftChanges
+                          ? 'Admin Draft Mode · Unsaved draft changes'
+                          : 'Admin Draft Mode · Previewing draft')
+                      : 'Admin Draft Mode · Viewing published curriculum',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (_isDraftBusy)
+                const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          Wrap(
+            spacing: AppTokens.spaceSm,
+            runSpacing: AppTokens.spaceXs,
+            children: [
+              if (_isAdminEditMode)
+                FilledButton.tonalIcon(
+                  key: const Key('draftAddFamilyButton'),
+                  onPressed: _isDraftBusy
+                      ? null
+                      : () => _addOrEditFamily(effectiveState),
+                  icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                  label: const Text('Add Skill Family'),
+                ),
+              OutlinedButton.icon(
+                key: const Key('draftPreviewButton'),
+                onPressed: _isDraftBusy
+                    ? null
+                    : () => _openDraftPreview(publishedState),
+                icon: const Icon(Icons.compare_arrows_outlined, size: 18),
+                label: Text(
+                  _isPreviewingDraft ? 'Preview Changes' : 'Switch to Draft',
+                ),
+              ),
+              FilledButton.icon(
+                key: const Key('draftSaveButton'),
+                onPressed: _isDraftBusy ? null : _saveDraft,
+                icon: const Icon(Icons.save_outlined, size: 18),
+                label: const Text('Save Draft'),
+              ),
+              TextButton.icon(
+                key: const Key('draftDiscardButton'),
+                onPressed: _isDraftBusy ? null : _discardDraft,
+                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                label: const Text('Discard Changes'),
+              ),
+              Tooltip(
+                message: 'Publish via validated JSON/Admin SDK (Future)',
+                child: OutlinedButton.icon(
+                  key: const Key('draftPublishDisabledButton'),
+                  onPressed: null,
+                  icon: const Icon(Icons.publish_outlined, size: 18),
+                  label: const Text('Publish (Future Workflow)'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -400,12 +747,39 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                   profileDocId != null);
 
           final isWide = MediaQuery.sizeOf(context).width >= 900;
+          final isVerifiedAdmin = _isVerifiedAdmin(appState);
+          final isAdminEditActive = isVerifiedAdmin && _isAdminEditMode;
+          final publishedState = state;
+          final effectiveState = _effectiveState(publishedState);
+          final appCubit = context.read<AppCubit>();
+          bool canEditResourceFn(Resource resource) =>
+              !appState.isGuest &&
+              appState.usersProfile != null &&
+              appCubit.canEditResource(resource);
+          Future<void> editResourceFn(Resource resource) async {
+            final profile = appState.usersProfile;
+            if (profile == null) return;
+            await showDialog<void>(
+              context: context,
+              builder: (_) => CreateResourcDialog(
+                skills: appState.allSkills,
+                userProfile: profile,
+                resource: resource,
+              ),
+            );
+          }
+          Future<void> linkResourceSkillsFn(Resource resource) async {
+            await showDialog<void>(
+              context: context,
+              builder: (_) => UpdateResourceSkills(resource: resource),
+            );
+          }
 
           final Widget body;
-          if (state.isLoading) {
+          if (publishedState.isLoading) {
             body = const Center(child: CircularProgressIndicator());
-          } else if (state.errorMessage != null) {
-            body = Center(child: Text(state.errorMessage!));
+          } else if (publishedState.errorMessage != null) {
+            body = Center(child: Text(publishedState.errorMessage!));
           } else {
             body = RepaintBoundary(
               child: SingleChildScrollView(
@@ -451,8 +825,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                           ],
                         ),
                       ),
+                    if (isVerifiedAdmin && (_isAdminEditMode || _draft != null))
+                      _buildAdminDraftBanner(
+                        context,
+                        publishedState,
+                        effectiveState,
+                      ),
                     SkillTreeV2Header(
-                      state: state,
+                      state: effectiveState,
                       hasHorseProfile: horse != null,
                       profileLabel: profileLabel,
                       onSelectRealm: (realm) {
@@ -471,9 +851,9 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                         _syncLocalHistoryEntry();
                       },
                     ),
-                    if (state.viewMode == SkillTreeV2ViewMode.summary)
+                    if (effectiveState.viewMode == SkillTreeV2ViewMode.summary)
                       AbilitySummaryV2View(
-                        state: state,
+                        state: effectiveState,
                         profileLabel: profileLabel,
                         canVerify: canVerify,
                         onBrowseRealm: (realm) {
@@ -502,10 +882,11 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                               }
                             : null,
                       )
-                    else if (state.viewMode == SkillTreeV2ViewMode.matrix &&
+                    else if (effectiveState.viewMode ==
+                            SkillTreeV2ViewMode.matrix &&
                         canVerify)
                       InstructorAbilityMatrixV2View(
-                        state: state,
+                        state: effectiveState,
                         canVerify: canVerify,
                         onBackToMySkills: () {
                           setState(() => _mobileShowingDetail = false);
@@ -540,33 +921,60 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                           Expanded(
                             flex: 5,
                             child: SkillFamilyListV2(
-                              state: state,
+                              state: effectiveState,
+                              isAdminEditMode: isAdminEditActive,
                               onSelectSkill: (skill) =>
                                   _cubit.selectSkill(skill.id),
                               onToggleFamily: _cubit.toggleFamilyExpanded,
+                              onEditFamily: (family) => _addOrEditFamily(
+                                effectiveState,
+                                initial: family,
+                              ),
+                              onAddSkillToFamily: (family) => _addOrEditSkill(
+                                effectiveState,
+                                family: family,
+                              ),
                             ),
                           ),
                           Expanded(
                             flex: 7,
-                            child: state.selectedSkill == null
+                            child: effectiveState.selectedSkill == null
                                 ? const AppSurfaceCard(
                                     child: Text(
                                       'Select a skill to view standards.',
                                     ),
                                   )
                                 : SkillDetailV2Panel(
-                                    state: state,
-                                    skill: state.selectedSkill!,
+                                    state: effectiveState,
+                                    skill: effectiveState.selectedSkill!,
                                     allResources: appState.resources,
                                     canSelfAssess: canSelfAssess,
                                     selfAssessDisabledReason:
                                         selfAssessDisabledReason,
                                     canVerify: canVerify,
+                                    isAdminEditMode: isAdminEditActive,
+                                    onEditSkill: () {
+                                      final selected =
+                                          effectiveState.selectedSkill!;
+                                      final family = effectiveState.families
+                                          .firstWhere(
+                                            (f) => f.id == selected.familyId,
+                                          );
+                                      _addOrEditSkill(
+                                        effectiveState,
+                                        family: family,
+                                        initial: selected,
+                                      );
+                                    },
+                                    canEditResource: canEditResourceFn,
+                                    onEditResource: editResourceFn,
+                                    onLinkResourceSkills: linkResourceSkillsFn,
                                     onSelectLevel: _cubit.selectLevel,
                                     onSelfAssess: (level, nextState) {
                                       if (profileDocId == null) return;
                                       _cubit.setSelfAssessment(
-                                        skillId: state.selectedSkill!.id,
+                                        skillId:
+                                            effectiveState.selectedSkill!.id,
                                         level: level,
                                         levelState: nextState,
                                         profileDocId: profileDocId,
@@ -578,7 +986,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                         (level, {required verified}) =>
                                             _handleVerifyLevel(
                                           context: context,
-                                          skill: state.selectedSkill!,
+                                          skill: effectiveState.selectedSkill!,
                                           level: level,
                                           verified: verified,
                                           coachingLink: coachingLink,
@@ -593,13 +1001,15 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                       final created =
                                           await showSuggestImprovementDialog(
                                             context,
-                                            subject: state.subject,
-                                            realm: state.selectedSkill!.realm,
-                                            familyId:
-                                                state.selectedSkill!.familyId,
-                                            targetSkill: state.selectedSkill,
-                                            targetLevel:
-                                                state.effectiveSelectedLevel,
+                                            subject: effectiveState.subject,
+                                            realm: effectiveState
+                                                .selectedSkill!.realm,
+                                            familyId: effectiveState
+                                                .selectedSkill!.familyId,
+                                            targetSkill:
+                                                effectiveState.selectedSkill,
+                                            targetLevel: effectiveState
+                                                .effectiveSelectedLevel,
                                           );
                                       if (created != null && context.mounted) {
                                         ScaffoldMessenger.of(
@@ -619,20 +1029,35 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                         ],
                       )
                     else if (_mobileShowingDetail &&
-                        state.selectedSkill != null)
+                        effectiveState.selectedSkill != null)
                       SkillDetailV2Panel(
-                        state: state,
-                        skill: state.selectedSkill!,
+                        state: effectiveState,
+                        skill: effectiveState.selectedSkill!,
                         allResources: appState.resources,
                         canSelfAssess: canSelfAssess,
                         selfAssessDisabledReason: selfAssessDisabledReason,
                         canVerify: canVerify,
+                        isAdminEditMode: isAdminEditActive,
+                        onEditSkill: () {
+                          final selected = effectiveState.selectedSkill!;
+                          final family = effectiveState.families.firstWhere(
+                            (f) => f.id == selected.familyId,
+                          );
+                          _addOrEditSkill(
+                            effectiveState,
+                            family: family,
+                            initial: selected,
+                          );
+                        },
+                        canEditResource: canEditResourceFn,
+                        onEditResource: editResourceFn,
+                        onLinkResourceSkills: linkResourceSkillsFn,
                         onBack: () => _handleAppBarBack(context),
                         onSelectLevel: _cubit.selectLevel,
                         onSelfAssess: (level, nextState) {
                           if (profileDocId == null) return;
                           _cubit.setSelfAssessment(
-                            skillId: state.selectedSkill!.id,
+                            skillId: effectiveState.selectedSkill!.id,
                             level: level,
                             levelState: nextState,
                             profileDocId: profileDocId,
@@ -643,7 +1068,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                         onVerifyLevel: (level, {required verified}) =>
                             _handleVerifyLevel(
                               context: context,
-                              skill: state.selectedSkill!,
+                              skill: effectiveState.selectedSkill!,
                               level: level,
                               verified: verified,
                               coachingLink: coachingLink,
@@ -655,11 +1080,11 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                         onSuggestForSkill: () async {
                           final created = await showSuggestImprovementDialog(
                             context,
-                            subject: state.subject,
-                            realm: state.selectedSkill!.realm,
-                            familyId: state.selectedSkill!.familyId,
-                            targetSkill: state.selectedSkill,
-                            targetLevel: state.effectiveSelectedLevel,
+                            subject: effectiveState.subject,
+                            realm: effectiveState.selectedSkill!.realm,
+                            familyId: effectiveState.selectedSkill!.familyId,
+                            targetSkill: effectiveState.selectedSkill,
+                            targetLevel: effectiveState.effectiveSelectedLevel,
                           );
                           if (created != null && context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -674,9 +1099,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                       )
                     else
                       SkillFamilyListV2(
-                        state: state,
+                        state: effectiveState,
+                        isAdminEditMode: isAdminEditActive,
                         onSelectSkill: (skill) => _openMobileDetail(skill.id),
                         onToggleFamily: _cubit.toggleFamilyExpanded,
+                        onEditFamily: (family) =>
+                            _addOrEditFamily(effectiveState, initial: family),
+                        onAddSkillToFamily: (family) =>
+                            _addOrEditSkill(effectiveState, family: family),
                       ),
                   ],
                 ),
@@ -701,8 +1131,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                     if (value == 'suggest') {
                       final created = await showSuggestImprovementDialog(
                         context,
-                        subject: state.subject,
-                        realm: state.realm,
+                        subject: effectiveState.subject,
+                        realm: effectiveState.realm,
                       );
                       if (created != null && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -715,6 +1145,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                       }
                     } else if (value == 'my_suggestions') {
                       await showMySuggestionsDialog(context);
+                    } else if (value == 'admin_edit_draft' && isVerifiedAdmin) {
+                      await _toggleAdminEditMode(publishedState);
                     }
                   },
                   itemBuilder: (context) => [
@@ -740,6 +1172,30 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                             Icon(Icons.history_edu_outlined, size: 18),
                             SizedBox(width: AppTokens.spaceSm),
                             Flexible(child: Text('My Suggestions')),
+                          ],
+                        ),
+                      ),
+                    if (isVerifiedAdmin)
+                      PopupMenuItem<String>(
+                        key: const Key('skillTreeV2MenuAdminEditDraft'),
+                        value: 'admin_edit_draft',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isAdminEditMode
+                                  ? Icons.edit_off_outlined
+                                  : Icons.edit_note_outlined,
+                              size: 18,
+                            ),
+                            const SizedBox(width: AppTokens.spaceSm),
+                            Flexible(
+                              child: Text(
+                                _isAdminEditMode
+                                    ? 'Exit Curriculum Draft Mode'
+                                    : 'Edit Curriculum (Draft)',
+                              ),
+                            ),
                           ],
                         ),
                       ),

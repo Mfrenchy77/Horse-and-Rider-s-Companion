@@ -94,6 +94,19 @@ class _AppState extends State<App> {
                   : null,
             ),
       );
+  late final SkillTreeDraftRepository _skillTreeDraftRepository =
+      SkillTreeDraftRepository(
+        store: CloudSkillTreeDraftStore(
+          firestore: widget._firestore,
+          tokenProvider: widget._authenticationRepository.getAccessToken,
+          saveEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.saveCurriculumDraftEndpoint()
+              : null,
+          discardEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.discardCurriculumDraftEndpoint()
+              : null,
+        ),
+      );
   late final ConnectionRequestStore _connectionRequestStore =
       widget._connectionRequestStore ??
       (widget.useCompositeRequestStore
@@ -202,6 +215,9 @@ class _AppState extends State<App> {
         ),
         RepositoryProvider<SkillTreeSuggestionsRepository>.value(
           value: _skillTreeSuggestionsRepository,
+        ),
+        RepositoryProvider<SkillTreeDraftRepository>.value(
+          value: _skillTreeDraftRepository,
         ),
         if (widget._authenticationRepository
             case final AuthenticationRepository repo)

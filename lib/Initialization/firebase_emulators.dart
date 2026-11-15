@@ -34,4 +34,14 @@ class FirebaseEmulators {
 
   static Uri reviewSuggestionEndpoint() =>
       Uri.http('$_host:5001', '/$projectId/us-central1/reviewSkillTreeSuggestion');
+
+  static Uri saveCurriculumDraftEndpoint() => Uri.http(
+    '$_host:5001',
+    '/$projectId/us-central1/saveSkillTreeCurriculumDraft',
+  );
+
+  static Uri discardCurriculumDraftEndpoint() => Uri.http(
+    '$_host:5001',
+    '/$projectId/us-central1/discardSkillTreeCurriculumDraft',
+  );
 }

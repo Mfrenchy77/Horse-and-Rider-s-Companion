@@ -36,89 +36,90 @@ void main() {
     test(
       'enforces 10 submissions per 24h and moderator vs admin rules',
       () async {
-      for (var i = 0; i < 10; i++) {
-        final s = await suggestionsRepo.submitSuggestion(
-          SkillTreeSuggestionDraft(
-            contributionCategory: SuggestionCategory.componentOrExample,
-            subject: 'rider',
-            realm: 'Mounted',
-            title: 'Suggestion #${i + 1}',
-            description: 'Helpful detail for suggestion #${i + 1}.',
+        for (var i = 0; i < 10; i++) {
+          final s = await suggestionsRepo.submitSuggestion(
+            SkillTreeSuggestionDraft(
+              contributionCategory: SuggestionCategory.componentOrExample,
+              subject: 'rider',
+              realm: 'Mounted',
+              title: 'Suggestion #${i + 1}',
+              description: 'Helpful detail for suggestion #${i + 1}.',
+            ),
+          );
+          expect(s.status, SuggestionStatus.submitted);
+        }
+
+        await expectLater(
+          suggestionsRepo.submitSuggestion(
+            const SkillTreeSuggestionDraft(
+              contributionCategory: SuggestionCategory.componentOrExample,
+              subject: 'rider',
+              realm: 'Mounted',
+              title: 'Suggestion #11',
+              description: 'This should hit the 24-hour rate limit.',
+            ),
+          ),
+          throwsA(
+            isA<SkillTreeSuggestionException>().having(
+              (e) => e.code,
+              'code',
+              'resource-exhausted',
+            ),
           ),
         );
-        expect(s.status, SuggestionStatus.submitted);
-      }
 
-      await expectLater(
-        suggestionsRepo.submitSuggestion(
-          const SkillTreeSuggestionDraft(
-            contributionCategory: SuggestionCategory.componentOrExample,
-            subject: 'rider',
-            realm: 'Mounted',
-            title: 'Suggestion #11',
-            description: 'This should hit the 24-hour rate limit.',
+        final mine = await suggestionsRepo.fetchMySuggestions(
+          submitterUid: 'rider-1',
+        );
+        expect(mine, hasLength(10));
+
+        // Moderator can triage/clarify but cannot approve.
+        suggestionsStore
+          ..actorUid = 'mod-1'
+          ..actorName = 'Mod'
+          ..actorIsModerator = true;
+
+        await expectLater(
+          suggestionsRepo.reviewSuggestion(
+            SuggestionReviewUpdate(
+              suggestionId: mine.first.id,
+              status: SuggestionStatus.approvedAsNewSkill,
+            ),
           ),
-        ),
-        throwsA(
-          isA<SkillTreeSuggestionException>().having(
-            (e) => e.code,
-            'code',
-            'resource-exhausted',
+          throwsA(
+            isA<SkillTreeSuggestionException>().having(
+              (e) => e.code,
+              'code',
+              'permission-denied',
+            ),
           ),
-        ),
-      );
+        );
 
-      final mine = await suggestionsRepo.fetchMySuggestions(
-        submitterUid: 'rider-1',
-      );
-      expect(mine, hasLength(10));
+        final triaged = await suggestionsRepo.reviewSuggestion(
+          SuggestionReviewUpdate(
+            suggestionId: mine.first.id,
+            status: SuggestionStatus.needsClarification,
+            privateNote: 'Internal triage note',
+            publicResolutionNote: 'Please add level context.',
+            includePublicResolutionNote: true,
+          ),
+        );
+        expect(triaged.status, SuggestionStatus.needsClarification);
 
-      // Moderator can triage/clarify but cannot approve.
-      suggestionsStore
-        ..actorUid = 'mod-1'
-        ..actorName = 'Mod'
-        ..actorIsModerator = true;
-
-      await expectLater(
-        suggestionsRepo.reviewSuggestion(
+        // Admin can approve.
+        suggestionsStore
+          ..actorUid = 'admin-1'
+          ..actorName = 'Admin'
+          ..actorIsAdmin = true;
+        final approved = await suggestionsRepo.reviewSuggestion(
           SuggestionReviewUpdate(
             suggestionId: mine.first.id,
             status: SuggestionStatus.approvedAsNewSkill,
           ),
-        ),
-        throwsA(
-          isA<SkillTreeSuggestionException>().having(
-            (e) => e.code,
-            'code',
-            'permission-denied',
-          ),
-        ),
-      );
-
-      final triaged = await suggestionsRepo.reviewSuggestion(
-        SuggestionReviewUpdate(
-          suggestionId: mine.first.id,
-          status: SuggestionStatus.needsClarification,
-          privateNote: 'Internal triage note',
-          publicResolutionNote: 'Please add level context.',
-          includePublicResolutionNote: true,
-        ),
-      );
-      expect(triaged.status, SuggestionStatus.needsClarification);
-
-      // Admin can approve.
-      suggestionsStore
-        ..actorUid = 'admin-1'
-        ..actorName = 'Admin'
-        ..actorIsAdmin = true;
-      final approved = await suggestionsRepo.reviewSuggestion(
-        SuggestionReviewUpdate(
-          suggestionId: mine.first.id,
-          status: SuggestionStatus.approvedAsNewSkill,
-        ),
-      );
-      expect(approved.status, SuggestionStatus.approvedAsNewSkill);
-    });
+        );
+        expect(approved.status, SuggestionStatus.approvedAsNewSkill);
+      },
+    );
   });
 
   group('Community submission UI', () {
@@ -166,9 +167,7 @@ void main() {
             ],
             child: BlocProvider<AppCubit>.value(
               value: harness.cubit,
-              child: MaterialApp(
-                home: SkillTreeV2View(repository: v2Repo),
-              ),
+              child: MaterialApp(home: SkillTreeV2View(repository: v2Repo)),
             ),
           ),
         );
@@ -195,9 +194,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Toggle Edit Controls'), findsNothing);
         expect(find.text('Sort'), findsNothing);
-        await tester.tap(
-          find.byKey(const Key('skillTreeV2MenuMySuggestions')),
-        );
+        await tester.tap(find.byKey(const Key('skillTreeV2MenuMySuggestions')));
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('mySuggestionsDialog')), findsOneWidget);
         expect(
@@ -255,9 +252,7 @@ void main() {
           find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
         );
         await tester.pumpAndSettle();
-        await tester.tap(
-          find.byKey(const Key('skillTreeV2MenuMySuggestions')),
-        );
+        await tester.tap(find.byKey(const Key('skillTreeV2MenuMySuggestions')));
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('mySuggestionsDialog')), findsOneWidget);
         expect(find.text('Add ground-tying safety note'), findsOneWidget);
@@ -288,10 +283,7 @@ void main() {
         );
         // Rendered as plain secondary text, not Material Chips.
         expect(
-          find.descendant(
-            of: aliasesTextFinder,
-            matching: find.byType(Chip),
-          ),
+          find.descendant(of: aliasesTextFinder, matching: find.byType(Chip)),
           findsNothing,
         );
 
@@ -405,9 +397,7 @@ void main() {
           ],
           child: BlocProvider<AppCubit>.value(
             value: harness.cubit,
-            child: MaterialApp(
-              home: SkillTreeV2View(repository: repo),
-            ),
+            child: MaterialApp(home: SkillTreeV2View(repository: repo)),
           ),
         ),
       );
@@ -464,9 +454,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Open drawer
-        tester
-            .state<ScaffoldState>(find.byType(Scaffold))
-            .openDrawer();
+        tester.state<ScaffoldState>(find.byType(Scaffold)).openDrawer();
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('drawerAdministrationTile')), findsNothing);
 
@@ -567,10 +555,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('administrationPage')), findsOneWidget);
-        expect(
-          find.textContaining('Moderator permissions:'),
-          findsOneWidget,
-        );
+        expect(find.textContaining('Moderator permissions:'), findsOneWidget);
         expect(
           find.text('Add trailer loading calm wait'),
           findsAtLeastNWidgets(1),

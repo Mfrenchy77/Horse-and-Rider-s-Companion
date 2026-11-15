@@ -15,6 +15,10 @@ const logger = require('firebase-functions/logger');
 const {connectionHandler} = require('./connections');
 const {accountDeletionHandler} = require('./account_deletion');
 const {submitSuggestionHandler, reviewSuggestionHandler} = require('./suggestions');
+const {
+  saveCurriculumDraftHandler,
+  discardCurriculumDraftHandler,
+} = require('./curriculum_drafts');
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},
@@ -39,6 +43,16 @@ exports.submitSkillTreeSuggestion = onCall(
 exports.reviewSkillTreeSuggestion = onCall(
     {region: 'us-central1'},
     (request) => reviewSuggestionHandler(admin.firestore())(request),
+);
+
+exports.saveSkillTreeCurriculumDraft = onCall(
+    {region: 'us-central1'},
+    (request) => saveCurriculumDraftHandler(admin.firestore())(request),
+);
+
+exports.discardSkillTreeCurriculumDraft = onCall(
+    {region: 'us-central1'},
+    (request) => discardCurriculumDraftHandler(admin.firestore())(request),
 );
 
 /** ------------------------------------------------------------------------ */

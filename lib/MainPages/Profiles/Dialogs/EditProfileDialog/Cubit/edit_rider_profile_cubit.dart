@@ -322,14 +322,20 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         countryName: state.selectedCountry,
       );
       try {
-        await _riderProfileRepository
-            .createOrUpdateRiderProfile(riderProfile: riderProfile)
-            .then(
-              (value) => emit(state.copyWith(status: SubmissionStatus.success)),
-            );
+        emit(state.copyWith(status: SubmissionStatus.inProgress));
+        await _riderProfileRepository.createOrUpdateRiderProfile(
+          riderProfile: riderProfile,
+        );
+        emit(state.copyWith(status: SubmissionStatus.success));
       } on RepositoryException catch (e) {
         debugPrint('Error: ${e.message}');
-        emit(state.copyWith(error: e.toString(), isError: true));
+        emit(
+          state.copyWith(
+            status: SubmissionStatus.failure,
+            error: e.toString(),
+            isError: true,
+          ),
+        );
         clearError();
       }
     } else {

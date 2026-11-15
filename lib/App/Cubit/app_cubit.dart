@@ -1583,10 +1583,10 @@ class AppCubit extends Cubit<AppState> {
             AuthorizedEmails.emails.contains(profileEmail));
   }
 
-  /// Whether or not a user can edit a resource or not. Based on the `editor`
-  /// custom claim, whether they created/edited it, or legacy email allowlist.
+  /// Whether or not a user can edit a resource or not. Based on the `admin` or
+  /// `editor` custom claim, whether they created/edited it, or legacy allowlist.
   bool canEditResource(Resource resource) {
-    if (state.isEditor) return true;
+    if (state.isAdmin || state.isEditor) return true;
     final profileEmail = state.usersProfile?.email.toLowerCase();
     return state.usersProfile != null &&
         profileEmail != null &&

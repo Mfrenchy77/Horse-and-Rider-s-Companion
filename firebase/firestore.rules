@@ -119,6 +119,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /SkillTreeCurriculumDrafts/{draftId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /AuditEvents/{eventId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
     match /Skills/{skillId} {
       allow read: if true;
       allow write: if isVerifiedEditor();
@@ -133,7 +143,8 @@ service cloud.firestore {
       allow read: if true;
       allow create: if verifiedAuth()
         && (
-          isVerifiedEditor()
+          isAdmin()
+          || isVerifiedEditor()
           || (
             request.resource.data.get('lastEditBy', '') is string
             && request.resource.data.lastEditBy.lower() == verifiedLowerEmail()
@@ -141,7 +152,8 @@ service cloud.firestore {
         );
       allow update: if verifiedAuth()
         && (
-          isVerifiedEditor()
+          isAdmin()
+          || isVerifiedEditor()
           || (
             resource.data.get('lastEditBy', '') is string
             && resource.data.lastEditBy.lower() == verifiedLowerEmail()
@@ -157,7 +169,8 @@ service cloud.firestore {
         );
       allow delete: if verifiedAuth()
         && (
-          isVerifiedEditor()
+          isAdmin()
+          || isVerifiedEditor()
           || (
             resource.data.get('lastEditBy', '') is string
             && resource.data.lastEditBy.lower() == verifiedLowerEmail()
@@ -368,13 +381,13 @@ service cloud.firestore {
         'CoachingConnections', 'SharedRidingEntries',
         'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
         'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources',
-        'SkillTreeSuggestions'
+        'SkillTreeSuggestions', 'SkillTreeCurriculumDrafts'
       ]);
       allow write: if request.auth != null && !(collection in [
         'CoachingConnections', 'SharedRidingEntries',
         'Horse_Profile', 'Rider_Profile', 'DeletionJobs', 'Requests',
         'SkillFamilies', 'SkillsV2', 'Skills', 'Levels', 'Resources',
-        'SkillTreeSuggestions'
+        'SkillTreeSuggestions', 'SkillTreeCurriculumDrafts'
       ]);
     }
   }

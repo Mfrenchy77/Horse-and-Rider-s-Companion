@@ -524,3 +524,88 @@ test('Privilege escalation via Rider_Profile fields does not grant admin/mod/edi
   await assertFails(getDoc(doc(escalatedUserDb, 'SkillTreeSuggestions/sug-1')));
   await assertFails(getDoc(doc(escalatedUserDb, 'SkillTreeSuggestions/sug-1/AuditEvents/evt-1')));
 });
+
+test('SkillTreeCurriculumDrafts allows admin read only and denies all client writes', async () => {
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'SkillTreeCurriculumDrafts/default'), {
+      id: 'default',
+      schemaVersion: 2,
+      families: [],
+      skills: [],
+      published: false,
+    });
+    await setDoc(doc(db, 'SkillTreeCurriculumDrafts/default/AuditEvents/evt-1'), {
+      id: 'evt-1',
+      type: 'draft_saved',
+    });
+  });
+
+  const adminDb = environment.authenticatedContext('admin-draft', {
+    email: 'admin-draft@example.com',
+    email_verified: true,
+    admin: true,
+  }).firestore();
+  const modDb = environment.authenticatedContext('mod-draft', {
+    email: 'mod-draft@example.com',
+    email_verified: true,
+    moderator: true,
+  }).firestore();
+  const userDb = environment.authenticatedContext('user-draft', {
+    email: 'user-draft@example.com',
+    email_verified: true,
+  }).firestore();
+
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default')));
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default/AuditEvents/evt-1')));
+
+  await assertFails(getDoc(doc(modDb, 'SkillTreeCurriculumDrafts/default')));
+  await assertFails(getDoc(doc(modDb, 'SkillTreeCurriculumDrafts/default/AuditEvents/evt-1')));
+  await assertFails(getDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default')));
+
+  await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
+  await assertFails(setDoc(doc(modDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
+  await assertFails(setDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
+});
+
+test('Resources allows verified admin writes while denying moderator and unrelated users', async () => {
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'Resources/res-owned'), {
+      id: 'res-owned',
+      name: 'Owned Resource',
+      lastEditBy: 'owner@example.com',
+    });
+  });
+
+  const adminDb = environment.authenticatedContext('admin-res', {
+    email: 'admin-res@example.com',
+    email_verified: true,
+    admin: true,
+  }).firestore();
+  const modDb = environment.authenticatedContext('mod-res', {
+    email: 'mod-res@example.com',
+    email_verified: true,
+    moderator: true,
+  }).firestore();
+  const userDb = environment.authenticatedContext('user-res', {
+    email: 'user-res@example.com',
+    email_verified: true,
+  }).firestore();
+
+  await assertSucceeds(updateDoc(doc(adminDb, 'Resources/res-owned'), {
+    name: 'Admin Updated Resource',
+  }));
+  await assertSucceeds(setDoc(doc(adminDb, 'Resources/res-admin-created'), {
+    id: 'res-admin-created',
+    name: 'Admin Created Resource',
+    lastEditBy: 'admin-res@example.com',
+  }));
+
+  await assertFails(updateDoc(doc(modDb, 'Resources/res-owned'), {
+    name: 'Mod Hack',
+  }));
+  await assertFails(updateDoc(doc(userDb, 'Resources/res-owned'), {
+    name: 'User Hack',
+  }));
+});

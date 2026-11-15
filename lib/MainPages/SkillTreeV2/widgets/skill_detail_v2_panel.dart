@@ -24,6 +24,11 @@ class SkillDetailV2Panel extends StatelessWidget {
     required this.onSelectRelatedSkill,
     required this.onChangeResourceSort,
     this.onSuggestForSkill,
+    this.isAdminEditMode = false,
+    this.onEditSkill,
+    this.canEditResource,
+    this.onEditResource,
+    this.onLinkResourceSkills,
     this.onBack,
   });
 
@@ -41,6 +46,11 @@ class SkillDetailV2Panel extends StatelessWidget {
   final ValueChanged<String> onSelectRelatedSkill;
   final ValueChanged<SkillTreeV2ResourceSort> onChangeResourceSort;
   final VoidCallback? onSuggestForSkill;
+  final bool isAdminEditMode;
+  final VoidCallback? onEditSkill;
+  final bool Function(Resource resource)? canEditResource;
+  final ValueChanged<Resource>? onEditResource;
+  final ValueChanged<Resource>? onLinkResourceSkills;
   final VoidCallback? onBack;
 
   @override
@@ -88,11 +98,25 @@ class SkillDetailV2Panel extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                skill.name,
-                style: AppTokens.sectionTitleStyle(
-                  context,
-                ).copyWith(fontSize: 22),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      skill.name,
+                      style: AppTokens.sectionTitleStyle(
+                        context,
+                      ).copyWith(fontSize: 22),
+                    ),
+                  ),
+                  if (isAdminEditMode && onEditSkill != null)
+                    OutlinedButton.icon(
+                      key: Key('editSkillButton_${skill.id}'),
+                      onPressed: onEditSkill,
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('Edit Skill'),
+                    ),
+                ],
               ),
               if (skill.summary.trim().isNotEmpty) Text(skill.summary),
               if (skill.purpose.trim().isNotEmpty)
@@ -213,6 +237,9 @@ class SkillDetailV2Panel extends StatelessWidget {
             fallbackResources: allResources,
             sort: state.resourceSort,
             onChangeResourceSort: onChangeResourceSort,
+            canEditResource: canEditResource,
+            onEditResource: onEditResource,
+            onLinkResourceSkills: onLinkResourceSkills,
           ),
           if (onSuggestForSkill != null)
             Align(
@@ -320,12 +347,18 @@ class _SkillV2ResourcesSection extends StatefulWidget {
     required this.fallbackResources,
     required this.sort,
     required this.onChangeResourceSort,
+    this.canEditResource,
+    this.onEditResource,
+    this.onLinkResourceSkills,
   });
 
   final CurriculumSkill skill;
   final List<Resource> fallbackResources;
   final SkillTreeV2ResourceSort sort;
   final ValueChanged<SkillTreeV2ResourceSort> onChangeResourceSort;
+  final bool Function(Resource resource)? canEditResource;
+  final ValueChanged<Resource>? onEditResource;
+  final ValueChanged<Resource>? onLinkResourceSkills;
 
   @override
   State<_SkillV2ResourcesSection> createState() =>
@@ -494,10 +527,40 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
             spacing: AppTokens.spaceSm,
             children: [
               for (final resource in relatedResources)
-                ResourcesItem(
-                  resource: resource,
-                  isResourceList: true,
-                  fromSkillTree: true,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppTokens.spaceXs,
+                  children: [
+                    ResourcesItem(
+                      resource: resource,
+                      isResourceList: true,
+                      fromSkillTree: true,
+                    ),
+                    if (widget.canEditResource?.call(resource) ?? false)
+                      Wrap(
+                        spacing: AppTokens.spaceXs,
+                        children: [
+                          if (widget.onEditResource != null)
+                            TextButton.icon(
+                              key: Key('editResourceButton_${resource.id}'),
+                              onPressed: () =>
+                                  widget.onEditResource!(resource),
+                              icon: const Icon(Icons.edit_outlined, size: 16),
+                              label: const Text('Edit Resource'),
+                            ),
+                          if (widget.onLinkResourceSkills != null)
+                            TextButton.icon(
+                              key: Key(
+                                'linkResourceSkillsButton_${resource.id}',
+                              ),
+                              onPressed: () =>
+                                  widget.onLinkResourceSkills!(resource),
+                              icon: const Icon(Icons.link_outlined, size: 16),
+                              label: const Text('Link Skills'),
+                            ),
+                        ],
+                      ),
+                  ],
                 ),
             ],
           ),

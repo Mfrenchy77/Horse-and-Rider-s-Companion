@@ -51,10 +51,16 @@ class EditRiderProfileDialog extends StatelessWidget {
             RiderProfileRepository(),
       ),
         child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status ||
+              (current.isError && !previous.isError),
           listener: (context, state) {
             if (state.status == SubmissionStatus.success) {
               onProfileUpdated();
-              Navigator.of(context).pop();
+              final route = ModalRoute.of(context);
+              if (route?.isCurrent ?? false) {
+                Navigator.of(context).pop();
+              }
             }
             if (state.isError) {
               ScaffoldMessenger.of(context)

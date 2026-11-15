@@ -10,11 +10,17 @@ class SkillFamilyListV2 extends StatelessWidget {
     required this.state,
     required this.onSelectSkill,
     required this.onToggleFamily,
+    this.isAdminEditMode = false,
+    this.onEditFamily,
+    this.onAddSkillToFamily,
   });
 
   final SkillTreeV2State state;
   final ValueChanged<CurriculumSkill> onSelectSkill;
   final ValueChanged<String> onToggleFamily;
+  final bool isAdminEditMode;
+  final ValueChanged<SkillFamily>? onEditFamily;
+  final ValueChanged<SkillFamily>? onAddSkillToFamily;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +28,18 @@ class SkillFamilyListV2 extends StatelessWidget {
     final isSearching = state.searchQuery.trim().isNotEmpty;
     final visible = state.visibleSkills;
 
-    if (visible.isEmpty) {
+    final families = isSearching
+        ? (state.families
+              .where(
+                (f) =>
+                    f.subject == state.subject &&
+                    visible.any((s) => s.familyId == f.id),
+              )
+              .toList()
+            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)))
+        : state.realmFamilies;
+
+    if (visible.isEmpty && !(isAdminEditMode && !isSearching && families.isNotEmpty)) {
       return AppSurfaceCard(
         child: Padding(
           padding: const EdgeInsets.all(AppTokens.spaceMd),
@@ -36,17 +53,6 @@ class SkillFamilyListV2 extends StatelessWidget {
       );
     }
 
-    final families = isSearching
-        ? (state.families
-              .where(
-                (f) =>
-                    f.subject == state.subject &&
-                    visible.any((s) => s.familyId == f.id),
-              )
-              .toList()
-            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)))
-        : state.realmFamilies;
-
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -57,7 +63,9 @@ class SkillFamilyListV2 extends StatelessWidget {
         final familySkills =
             visible.where((s) => s.familyId == family.id).toList()
               ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-        if (familySkills.isEmpty) return const SizedBox.shrink();
+        if (familySkills.isEmpty && !(isAdminEditMode && !isSearching)) {
+          return const SizedBox.shrink();
+        }
 
         final isExpanded =
             isSearching || state.expandedFamilyIds.contains(family.id);
@@ -110,6 +118,14 @@ class SkillFamilyListV2 extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: AppTokens.spaceSm),
+                          if (isAdminEditMode && onEditFamily != null)
+                            IconButton(
+                              key: Key('editFamilyButton_${family.id}'),
+                              tooltip: 'Edit Skill Family',
+                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => onEditFamily!(family),
+                            ),
                           Icon(
                             isExpanded ? Icons.expand_less : Icons.expand_more,
                             color: AppTokens.secondaryTextColor(context),
@@ -120,7 +136,7 @@ class SkillFamilyListV2 extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isExpanded)
+              if (isExpanded) ...[
                 for (final skill in familySkills)
                   _SkillRowCard(
                     skill: skill,
@@ -132,6 +148,17 @@ class SkillFamilyListV2 extends StatelessWidget {
                     verification: state.verificationsBySkillId[skill.id],
                     onTap: () => onSelectSkill(skill),
                   ),
+                if (isAdminEditMode && onAddSkillToFamily != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: Key('addSkillButton_${family.id}'),
+                      onPressed: () => onAddSkillToFamily!(family),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Skill'),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
