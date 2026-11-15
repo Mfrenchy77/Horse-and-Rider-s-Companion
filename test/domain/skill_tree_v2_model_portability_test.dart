@@ -206,5 +206,61 @@ void main() {
       expect(mapped.skillId, progress.skillId);
       expect(mapped.updatedAt, isA<DateTime>());
     });
+
+    test('legacy Resource.skillTreeIds resolve to merged CurriculumSkill via legacyIds', () {
+      const steering = CurriculumSkill(
+        id: 'rider.mounted.steering_navigation',
+        subject: SkillSubject.rider,
+        realm: SkillCategory.Mounted,
+        familyId: 'rider.mounted.steering_bend_direction',
+        name: 'Steering & Navigation',
+        summary: 'Guiding lines, circles, and patterns.',
+        purpose: 'Core steering.',
+        availableLevels: [
+          DifficultyState.Introductory,
+          DifficultyState.Intermediate,
+          DifficultyState.Advanced,
+        ],
+        levels: {
+          DifficultyState.Introductory: SkillLevelDefinition(
+            overview: 'Walk',
+            learning: 'Learning walk',
+            proficient: 'Proficient walk',
+          ),
+        },
+        legacyIds: [
+          'rider.mounted.straight_line',
+          'rider.mounted.circle_20m',
+          'rider.mounted.slalom',
+        ],
+      );
+
+      final legacyResource = Resource(
+        id: 'res-1',
+        name: 'Cone Slalom Exercises',
+        lastEditBy: 'coach@example.com',
+        skillTreeIds: const ['rider.mounted.slalom'],
+      );
+      final canonicalResource = Resource(
+        id: 'res-2',
+        name: 'Steering Fundamentals',
+        lastEditBy: 'coach@example.com',
+        skillTreeIds: const ['rider.mounted.steering_navigation'],
+      );
+      final unrelatedResource = Resource(
+        id: 'res-3',
+        name: 'Grooming Guide',
+        lastEditBy: 'coach@example.com',
+        skillTreeIds: const ['rider.husbandry.grooming_basics'],
+      );
+
+      final lookupIds = steering.allResourceLookupIds.toSet();
+      final matches = [legacyResource, canonicalResource, unrelatedResource]
+          .where((r) => r.skillTreeIds.any(lookupIds.contains))
+          .map((r) => r.id)
+          .toList();
+
+      expect(matches, ['res-1', 'res-2']);
+    });
   });
 }
