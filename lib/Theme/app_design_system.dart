@@ -166,27 +166,49 @@ class AppSurfaceCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(AppTokens.spaceLg),
     this.borderRadius = AppTokens.radiusLg,
     this.borderColor,
+    this.useDoubleGradient = false,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double borderRadius;
   final Color? borderColor;
+  final bool useDoubleGradient;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (theme.brightness != Brightness.dark) {
+      final content = useDoubleGradient
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.30),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.38],
+                ),
+              ),
+              child: Padding(padding: padding, child: child),
+            )
+          : Padding(padding: padding, child: child);
       return GradientCard(
         margin: EdgeInsets.zero,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Padding(padding: padding, child: child),
+          child: content,
         ),
       );
     }
 
     final radius = BorderRadius.circular(borderRadius);
+    final inner = Material(
+      type: MaterialType.transparency,
+      child: Padding(padding: padding, child: child),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
@@ -202,10 +224,12 @@ class AppSurfaceCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: radius,
-        child: Material(
-          type: MaterialType.transparency,
-          child: Padding(padding: padding, child: child),
-        ),
+        child: useDoubleGradient
+            ? DecoratedBox(
+                decoration: AppTokens.atmosphericOverlay(context),
+                child: inner,
+              )
+            : inner,
       ),
     );
   }

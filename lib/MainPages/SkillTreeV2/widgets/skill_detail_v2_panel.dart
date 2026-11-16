@@ -71,6 +71,7 @@ class SkillDetailV2Panel extends StatelessWidget {
 
     return AppSurfaceCard(
       key: Key('skillDetailV2_${skill.id}'),
+      useDoubleGradient: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppTokens.spaceMd,
