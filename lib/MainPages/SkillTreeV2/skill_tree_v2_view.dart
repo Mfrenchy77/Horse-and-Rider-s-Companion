@@ -27,10 +27,14 @@ class SkillTreeV2View extends StatefulWidget {
     super.key,
     this.repository,
     this.enableLocalInstructorPreview = false,
+    this.initialSkillId,
+    this.initialLevel,
   });
 
   final SkillTreeV2Repository? repository;
   final bool enableLocalInstructorPreview;
+  final String? initialSkillId;
+  final DifficultyState? initialLevel;
 
   static InMemorySkillTreeV2Store _previewProgressStore =
       InMemorySkillTreeV2Store();
@@ -51,6 +55,9 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   final ScrollController _detailScrollController = ScrollController();
   double _savedListScrollOffset = 0;
   String? _lastSelectedSkillId;
+  String? _pendingInitialSkillId;
+  DifficultyState? _pendingInitialLevel;
+  bool _suppressNextSubjectSwitch = false;
   bool _mobileShowingDetail = false;
   LocalHistoryEntry? _localHistoryEntry;
   bool _isAdminEditMode = false;
@@ -403,6 +410,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   @override
   void initState() {
     super.initState();
+    _pendingInitialSkillId = widget.initialSkillId;
+    _pendingInitialLevel = widget.initialLevel;
     final appState = context.read<AppCubit>().state;
     final initialSubject = appState.isForRider
         ? SkillSubject.rider
@@ -413,6 +422,70 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         initialSubject: initialSubject,
         profileDocId: _profileDocIdFor(appState, initialSubject),
       );
+  }
+
+  @override
+  void didUpdateWidget(covariant SkillTreeV2View oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialSkillId != null &&
+        (widget.initialSkillId != oldWidget.initialSkillId ||
+            widget.initialLevel != oldWidget.initialLevel)) {
+      _pendingInitialSkillId = widget.initialSkillId;
+      _pendingInitialLevel = widget.initialLevel;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _applyPendingInitialSkillIfReady(
+            context.read<AppCubit>(),
+            _cubit.state,
+          );
+        }
+      });
+    }
+  }
+
+  void _applyPendingInitialSkillIfReady(
+    AppCubit appCubit,
+    SkillTreeV2State state,
+  ) {
+    if (!mounted ||
+        state.isLoading ||
+        state.skills.isEmpty ||
+        _pendingInitialSkillId == null) {
+      return;
+    }
+    final targetId = _pendingInitialSkillId!;
+    final targetLevel = _pendingInitialLevel;
+    _pendingInitialSkillId = null;
+    _pendingInitialLevel = null;
+
+    final resolved =
+        state.skills.where((s) => s.id == targetId).firstOrNull ??
+        state.skills.where((s) => s.legacyIds.contains(targetId)).firstOrNull;
+    if (resolved == null) return;
+
+    final resolvedLevel =
+        targetLevel != null && resolved.availableLevels.contains(targetLevel)
+        ? targetLevel
+        : resolved.availableLevels.firstOrNull;
+
+    final currentIsForRider = appCubit.state.isForRider;
+    final targetIsForRider = resolved.subject == SkillSubject.rider;
+    if (currentIsForRider != targetIsForRider) {
+      _suppressNextSubjectSwitch = true;
+      appCubit.setSkillSubject(isForRider: targetIsForRider);
+    }
+    _cubit.syncProfile(
+      subject: resolved.subject,
+      profileDocId: _profileDocIdFor(appCubit.state, resolved.subject),
+    );
+    _cubit.openSkillInExplore(resolved, level: resolvedLevel);
+
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
+    if (!isWide) {
+      setState(() => _mobileShowingDetail = true);
+      _syncLocalHistoryEntry();
+    }
+    _resetDetailScrollToTop();
   }
 
   SkillTreeV2Repository _resolveDefaultRepository() {
@@ -692,6 +765,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
               ? SkillSubject.rider
               : SkillSubject.horse;
           final nextProfileDocId = _profileDocIdFor(nextAppState, nextSubject);
+          if (_suppressNextSubjectSwitch) {
+            _suppressNextSubjectSwitch = false;
+            _cubit.syncProfile(
+              subject: nextSubject,
+              profileDocId: nextProfileDocId,
+            );
+            return;
+          }
           setState(() => _mobileShowingDetail = false);
           _cubit.switchProfileContext(
             subject: nextSubject,
@@ -724,12 +805,29 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 ? SkillSubject.rider
                 : SkillSubject.horse;
             final profileDocId = _profileDocIdFor(appState, contextSubject);
-            if (contextSubject != state.subject) {
+            if (!state.isLoading &&
+                state.skills.isNotEmpty &&
+                _pendingInitialSkillId != null) {
+              final appCubitRef = context.read<AppCubit>();
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
+                  _applyPendingInitialSkillIfReady(appCubitRef, _cubit.state);
+                }
+              });
+            } else if (contextSubject != state.subject) {
+              final appCubitRef = context.read<AppCubit>();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted || _pendingInitialSkillId != null) return;
+                final liveSubject = appCubitRef.state.isForRider
+                    ? SkillSubject.rider
+                    : SkillSubject.horse;
+                if (liveSubject != _cubit.state.subject) {
                   _cubit.switchProfileContext(
-                    subject: contextSubject,
-                    profileDocId: profileDocId,
+                    subject: liveSubject,
+                    profileDocId: _profileDocIdFor(
+                      appCubitRef.state,
+                      liveSubject,
+                    ),
                   );
                 }
               });

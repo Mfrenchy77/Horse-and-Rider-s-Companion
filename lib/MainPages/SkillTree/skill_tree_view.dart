@@ -11,6 +11,8 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/CreateSkillD
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_app_bar_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_tree_title_search_bar.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Settings/feature_flags.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
@@ -24,8 +26,25 @@ class SkillTreeView extends StatefulWidget {
   static const skillLevelPath = 'Skill::$skillPathParam';
   static const skillPathParam = 'skillId';
 
-  static void openSkill(GoRouter router, String id) =>
-      router.goNamed(skillLevelName, pathParameters: {skillPathParam: id});
+  static void openSkill(
+    GoRouter router,
+    String id, {
+    bool useV2 = FeatureFlags.kSkillTreeV2Default,
+    DifficultyState? level,
+  }) {
+    if (useV2) {
+      router.goNamed(
+        SkillTreePage.name,
+        queryParameters: {
+          skillPathParam: id,
+          if (level != null && level != DifficultyState.All)
+            'level': level.name,
+        },
+      );
+      return;
+    }
+    router.goNamed(skillLevelName, pathParameters: {skillPathParam: id});
+  }
 
   final String? skillId;
 

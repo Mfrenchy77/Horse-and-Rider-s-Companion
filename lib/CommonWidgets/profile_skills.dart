@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Settings/feature_flags.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -58,11 +60,19 @@ class ProfileSkills extends StatelessWidget {
                     ? null
                     : () {
                         context.read<AppCubit>().setSkillTree();
-                        context.goNamed(
-                          SkillTreeView.skillLevelName,
-                          pathParameters: {
-                            SkillTreeView.skillPathParam: level.skillId,
-                          },
+                        final skill = skills[level.skillId];
+                        SkillTreeView.openSkill(
+                          GoRouter.of(context),
+                          level.skillId,
+                          useV2:
+                              SettingsControllerScope.maybeOf(
+                                context,
+                              )?.skillTreeV2Enabled ??
+                              FeatureFlags.kSkillTreeV2Default,
+                          level: skill == null ||
+                                  skill.difficulty == DifficultyState.All
+                              ? null
+                              : skill.difficulty,
                         );
                       },
               ),

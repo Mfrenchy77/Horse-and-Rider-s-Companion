@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/Settings/feature_flags.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class UpdateResourceSkills extends StatefulWidget {
@@ -63,10 +65,18 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
 
   Future<void> _openSkill(Skill skill) async {
     final router = GoRouter.of(context);
+    final useV2 =
+        SettingsControllerScope.maybeOf(context)?.skillTreeV2Enabled ??
+        FeatureFlags.kSkillTreeV2Default;
     final route = ModalRoute.of(context);
     Navigator.of(context).pop();
     await route?.completed;
-    SkillTreeView.openSkill(router, skill.id);
+    SkillTreeView.openSkill(
+      router,
+      skill.id,
+      useV2: useV2,
+      level: skill.difficulty == DifficultyState.All ? null : skill.difficulty,
+    );
   }
 
   @override

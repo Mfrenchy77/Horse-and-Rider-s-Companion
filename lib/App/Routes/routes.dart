@@ -1,3 +1,4 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -285,7 +286,20 @@ class Routes {
                 GoRoute(
                   path: SkillTreePage.path,
                   name: SkillTreePage.name,
-                  builder: (context, state) => const SkillTreePage(),
+                  builder: (context, state) {
+                    final skillId =
+                        state.uri.queryParameters[SkillTreeView.skillPathParam];
+                    final levelParam = state.uri.queryParameters['level'];
+                    final level = levelParam == null
+                        ? null
+                        : DifficultyState.values
+                              .where((l) => l.name == levelParam)
+                              .firstOrNull;
+                    return SkillTreePage(
+                      initialSkillId: skillId,
+                      initialLevel: level,
+                    );
+                  },
                   routes: [
                     GoRoute(
                       path: SkillTreeView.skillsListPath,

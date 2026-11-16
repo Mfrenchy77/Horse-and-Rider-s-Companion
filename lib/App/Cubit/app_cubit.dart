@@ -3388,6 +3388,11 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(index: 1, pageStatus: AppPageStatus.skillTree));
   }
 
+  void setSkillSubject({required bool isForRider}) {
+    if (state.isForRider == isForRider) return;
+    emit(state.copyWith(isForRider: isForRider));
+  }
+
   ///Reset from the Resource Page to the Resource List
   void resetFromResource() {
     debugPrint('resetFromResource');

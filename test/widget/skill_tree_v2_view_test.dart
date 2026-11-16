@@ -6,8 +6,10 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
@@ -1371,6 +1373,166 @@ void main() {
       expect(
         find.byKey(const Key('skillTreeV2MenuToggleAdminEdit')),
         findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'SkillTreeView.openSkill routes Rider and Horse links (including legacy '
+    'IDs and level) into Skill Tree 2.0 at top of detail and preserves '
+    'rollback',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final mockAppCubit = _MockAppCubit();
+      final horse = HorseProfile(
+        id: 'horse-comet',
+        name: 'Comet',
+        currentOwnerId: 'alex@example.com',
+      );
+      final controller = StreamController<AppState>.broadcast();
+      addTearDown(controller.close);
+      var currentState = authenticatedRiderState(horseProfile: horse);
+      whenListen(mockAppCubit, controller.stream, initialState: currentState);
+      when(() => mockAppCubit.state).thenAnswer((_) => currentState);
+      when(
+        () => mockAppCubit.setSkillSubject(
+          isForRider: any(named: 'isForRider'),
+        ),
+      ).thenAnswer((invocation) {
+        final isForRider = invocation.namedArguments[#isForRider] as bool;
+        currentState = currentState.copyWith(isForRider: isForRider);
+        controller.add(currentState);
+      });
+
+      late GoRouter router;
+      router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          GoRoute(path: '/home', builder: (_, __) => const SizedBox()),
+          GoRoute(
+            path: SkillTreePage.path,
+            name: SkillTreePage.name,
+            builder: (context, state) {
+              final skillId =
+                  state.uri.queryParameters[SkillTreeView.skillPathParam];
+              final levelParam = state.uri.queryParameters['level'];
+              final level = levelParam == null
+                  ? null
+                  : DifficultyState.values
+                        .where((l) => l.name == levelParam)
+                        .firstOrNull;
+              return SkillTreePage(
+                initialSkillId: skillId,
+                initialLevel: level,
+              );
+            },
+            routes: [
+              GoRoute(
+                path: SkillTreeView.skillsListPath,
+                name: SkillTreeView.skillsListName,
+                builder: (_, __) => const SizedBox(),
+                routes: [
+                  GoRoute(
+                    path: SkillTreeView.skillLevelPath,
+                    name: SkillTreeView.skillLevelName,
+                    builder: (_, state) => Text(
+                      'LEGACY:'
+                      '${state.pathParameters[SkillTreeView.skillPathParam]}',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final mockResourcesRepo = _MockResources();
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<ResourcesStore?>.value(value: null),
+            RepositoryProvider<ResourcesRepository>.value(
+              value: mockResourcesRepo,
+            ),
+          ],
+          child: MediaQuery(
+            data: const MediaQueryData(size: Size(1200, 900)),
+            child: SettingsControllerScope(
+              controller: settings,
+              child: BlocProvider<AppCubit>.value(
+                value: mockAppCubit,
+                child: MaterialApp.router(routerConfig: router),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      Future<void> pumpUntilV2Loaded() async {
+        for (var i = 0; i < 40; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 25)),
+          );
+          await tester.pump();
+          if (find
+              .byKey(const Key('skillTreeV2View'))
+              .evaluate()
+              .isNotEmpty) {
+            break;
+          }
+        }
+        await tester.pumpAndSettle();
+      }
+
+      // 1. Rider legacy skill ID + Intermediate level -> opens V2 skill at top.
+      SkillTreeView.openSkill(
+        router,
+        'rider.husbandry.pick_hooves',
+        level: DifficultyState.Intermediate,
+      );
+      await pumpUntilV2Loaded();
+
+      expect(find.byKey(const Key('skillTreeV2PageView')), findsOneWidget);
+      expect(
+        find.byKey(const Key('skillDetailV2_rider.husbandry.grooming')),
+        findsOneWidget,
+      );
+      final detailScroll = tester.widget<SingleChildScrollView>(
+        find.byKey(const Key('skillTreeV2DetailScroll')),
+      );
+      expect(detailScroll.controller!.offset, 0);
+
+      // Scroll detail down, then navigate to a Horse legacy skill ID.
+      detailScroll.controller!.jumpTo(80);
+      await tester.pump();
+      expect(detailScroll.controller!.offset, greaterThan(0));
+
+      // 2. Horse legacy skill ID -> switches to Horse context, opens Sidepass,
+      //    and resets detail scroll to 0.
+      SkillTreeView.openSkill(router, 'horse.mounted.sidepass_horse');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('skillDetailV2_horse.mounted.sidepass')),
+        findsOneWidget,
+      );
+      expect(find.text('Horse Skills · Comet'), findsOneWidget);
+      expect(detailScroll.controller!.offset, 0);
+
+      // 3. Emergency rollback (useV2: false) uses legacy SkillLevel route.
+      SkillTreeView.openSkill(
+        router,
+        'rider.husbandry.pick_hooves',
+        useV2: false,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('LEGACY:rider.husbandry.pick_hooves'),
+        findsOneWidget,
       );
     },
   );
