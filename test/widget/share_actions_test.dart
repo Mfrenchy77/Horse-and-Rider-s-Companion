@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/share_helper.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/app_test_harness.dart';
@@ -36,6 +37,10 @@ HorseProfile _horse({
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    registerFallbackValue(_horse());
+  });
 
   late InMemorySkillTreeV2Store store;
   late SkillTreeV2Repository repository;
@@ -155,6 +160,14 @@ void main() {
       addTearDown(harness.close);
 
       final horse = _horse();
+      when(
+        () => harness.horses.createOrUpdateHorseProfile(
+          horseProfile: any(named: 'horseProfile'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => harness.horses.getPublicHorseProfileById(id: horse.id),
+      ).thenAnswer((_) => Stream.value(horse.copyWith(isPublic: true)));
 
       // 1. Guest cannot open overflow menu on private horse.
       // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
@@ -221,6 +234,36 @@ void main() {
 
       expect(harness.cubit.state.horseProfile?.isPublic, isTrue);
       expect(find.byKey(const Key('shareLinkDialog')), findsOneWidget);
+
+      // 3. Failure to publish keeps profile private and does not open Share.
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      final privateHorse = _horse();
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(horseProfile: privateHorse),
+      );
+      when(
+        () => harness.horses.getPublicHorseProfileById(id: privateHorse.id),
+      ).thenAnswer((_) => Stream.error(StateError('Sync failed')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('RiderProfileOverFlowMenu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('horseMenuShareProfile')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('horseEnablePublicAndShareButton')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(harness.cubit.state.horseProfile?.isPublic, isFalse);
+      expect(find.byKey(const Key('shareLinkDialog')), findsNothing);
+      expect(
+        find.text('Could not enable public sharing. Please try again.'),
+        findsOneWidget,
+      );
     },
   );
 

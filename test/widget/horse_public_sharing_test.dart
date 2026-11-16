@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../support/app_test_harness.dart';
 
@@ -41,6 +42,10 @@ HorseProfile _buildHorse({
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(_buildHorse());
+  });
+
   test('HorseProfile defaults isPublic to false and round-trips it', () {
     final horse = _buildHorse();
     expect(horse.isPublic, isFalse);
@@ -155,6 +160,14 @@ void main() {
           description: 'Calm trail partner.',
         ),
       );
+      when(
+        () => harness.horses.createOrUpdateHorseProfile(
+          horseProfile: any(named: 'horseProfile'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => harness.horses.getPublicHorseProfileById(id: horse.id),
+      ).thenAnswer((_) => Stream.value(horse.copyWith(isPublic: true)));
       final owner = RiderProfile(
         id: 'owner@example.com',
         email: 'owner@example.com',

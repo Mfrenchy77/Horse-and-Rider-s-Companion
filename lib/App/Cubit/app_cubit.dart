@@ -1178,7 +1178,12 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Updates whether [horseProfile] is publicly shareable.
-  Future<void> setHorsePublicSharing(
+  ///
+  /// When enabling public sharing, waits for the sanitized
+  /// `Public_Horse_Profile` document to become available before returning
+  /// `true`. Returns `false` and emits an error state if updating or
+  /// publishing fails.
+  Future<bool> setHorsePublicSharing(
     HorseProfile horseProfile, {
     required bool isPublic,
   }) async {
@@ -1187,8 +1192,36 @@ class AppCubit extends Cubit<AppState> {
       lastEditDate: DateTime.now(),
       lastEditBy: state.usersProfile?.name,
     );
-    emit(state.copyWith(horseProfile: updatedHorseProfile));
-    await _persistHorseProfileChanges(updatedHorseProfile);
+    try {
+      await _horseProfileRepository.createOrUpdateHorseProfile(
+        horseProfile: updatedHorseProfile,
+      );
+      if (isPublic) {
+        final published = await _horseProfileRepository
+            .getPublicHorseProfileById(id: horseProfile.id)
+            .where((profile) => profile != null && profile.isPublic)
+            .first
+            .timeout(const Duration(seconds: 10));
+        if (published == null) {
+          throw StateError('Public horse profile not available');
+        }
+      }
+      emit(state.copyWith(horseProfile: updatedHorseProfile));
+      return true;
+    } catch (error) {
+      debugPrint('Error updating public sharing: $error');
+      emit(
+        state.copyWith(
+          horseProfile: horseProfile,
+          isError: true,
+          errorMessage: isPublic
+              ? 'Could not enable public sharing for ${horseProfile.name}. '
+                    'Please try again.'
+              : 'Could not update sharing settings for ${horseProfile.name}.',
+        ),
+      );
+      return false;
+    }
   }
 
   void _updateHorseSkillLevel(

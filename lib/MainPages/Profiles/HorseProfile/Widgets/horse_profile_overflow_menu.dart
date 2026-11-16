@@ -206,8 +206,21 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
             if (enableAndShare != true || !isOwner || !context.mounted) {
               return;
             }
-            await cubit.setHorsePublicSharing(horse, isPublic: true);
+            final enabled = await cubit.setHorsePublicSharing(
+              horse,
+              isPublic: true,
+            );
             if (!context.mounted) return;
+            if (!enabled) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Could not enable public sharing. Please try again.',
+                  ),
+                ),
+              );
+              return;
+            }
           }
           await shareAppLink(
             context,
