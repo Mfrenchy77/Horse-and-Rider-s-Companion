@@ -17,6 +17,7 @@ class AssetCurriculumV2Loader {
     'curriculum/v2/skills_rider_husbandry.json',
     'curriculum/v2/skills_rider_in_hand.json',
     'curriculum/v2/skills_rider_mounted.json',
+    'curriculum/v2/skills_rider_theory.json',
     'curriculum/v2/skills_horse_in_hand.json',
     'curriculum/v2/skills_horse_mounted.json',
   ];

@@ -28,6 +28,7 @@ void main() {
         'curriculum/v2/skills_rider_husbandry.json',
         'curriculum/v2/skills_rider_in_hand.json',
         'curriculum/v2/skills_rider_mounted.json',
+        'curriculum/v2/skills_rider_theory.json',
         'curriculum/v2/skills_horse_in_hand.json',
         'curriculum/v2/skills_horse_mounted.json',
       ];
@@ -57,13 +58,13 @@ void main() {
     });
 
     test('contains expected families, skills, and level standards', () {
-      expect(families.length, 31);
-      expect(skills.length, 57);
+      expect(families.length, 32);
+      expect(skills.length, 72);
       final totalLevels = skills.fold<int>(
         0,
         (sum, s) => sum + s.availableLevels.length,
       );
-      expect(totalLevels, 104);
+      expect(totalLevels, 149);
     });
 
     test('all skills have valid families, ordered levels, and non-empty criteria', () {

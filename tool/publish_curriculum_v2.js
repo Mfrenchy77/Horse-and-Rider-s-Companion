@@ -13,6 +13,7 @@ const SKILL_FILES = [
   'skills_rider_husbandry.json',
   'skills_rider_in_hand.json',
   'skills_rider_mounted.json',
+  'skills_rider_theory.json',
   'skills_horse_in_hand.json',
   'skills_horse_mounted.json',
 ];

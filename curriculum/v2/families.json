@@ -144,20 +144,20 @@
     "schemaVersion": 2
   },
   {
-    "id": "rider.theory.learning",
+    "id": "rider.theory.training_principles",
     "subject": "rider",
     "realm": "Other",
-    "name": "How Horses Learn",
-    "description": "Principles of equine learning, timing, clarity, and reinforcement.",
+    "name": "Training Principles & Progression",
+    "description": "Progressive training frameworks, conditioning, and thoughtful session planning across disciplines.",
     "sortOrder": 10,
     "schemaVersion": 2
   },
   {
-    "id": "rider.theory.behavior",
+    "id": "rider.theory.learning",
     "subject": "rider",
     "realm": "Other",
-    "name": "Behavior & Body Language",
-    "description": "Reading equine emotional state, stress signals, and natural behavior.",
+    "name": "Equine Learning & Communication",
+    "description": "How horses learn through conditioning, timing, reinforcement, and observable body language.",
     "sortOrder": 20,
     "schemaVersion": 2
   },
@@ -165,18 +165,27 @@
     "id": "rider.theory.movement_training",
     "subject": "rider",
     "realm": "Other",
-    "name": "Movement & Training Principles",
-    "description": "Equine biomechanics, gaits, straightness, balance, and progressive conditioning.",
+    "name": "Equine Biomechanics & Movement",
+    "description": "Gaits, footfall patterns, balance, weight distribution, bend, flexion, and straightness.",
     "sortOrder": 30,
     "schemaVersion": 2
   },
   {
-    "id": "rider.theory.welfare_ethics",
+    "id": "rider.theory.behavior",
     "subject": "rider",
     "realm": "Other",
-    "name": "Welfare, Ethics & Ownership",
-    "description": "Equine welfare, responsible stewardship, and ethical decision-making.",
+    "name": "Horse Behavior & Welfare",
+    "description": "Recognizing stress, fear, pain, and fatigue, and applying ethical, welfare-centered horsemanship.",
     "sortOrder": 40,
+    "schemaVersion": 2
+  },
+  {
+    "id": "rider.theory.rider_equipment",
+    "subject": "rider",
+    "realm": "Other",
+    "name": "Rider Knowledge & Equipment",
+    "description": "Understanding rider aids, tack fit and function, and the purpose and limits of training equipment.",
+    "sortOrder": 50,
     "schemaVersion": 2
   },
   {
