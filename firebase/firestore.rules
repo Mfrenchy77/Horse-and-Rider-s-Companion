@@ -188,7 +188,7 @@ service cloud.firestore {
     }
 
     match /Horse_Profile/{horseId} {
-      allow read: if true;
+      allow read: if verifiedAuth();
       allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
         && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
         && request.resource.data.get('archiveStatus', 'active') == 'active'
@@ -204,7 +204,7 @@ service cloud.firestore {
       allow delete: if false;
 
       match /SkillProgress/{skillId} {
-        allow read: if true;
+        allow read: if verifiedAuth();
         allow create, update: if verifiedAuth()
           && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
           && validSkillProgressDoc(skillId, 'horse');
@@ -213,7 +213,7 @@ service cloud.firestore {
       }
 
       match /SkillVerifications/{skillId} {
-        allow read: if true;
+        allow read: if verifiedAuth();
         allow write: if false;
       }
 
@@ -223,6 +223,12 @@ service cloud.firestore {
         );
         allow write: if false;
       }
+    }
+
+    match /Public_Horse_Profile/{horseId} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if false;
     }
 
     match /Rider_Profile/{riderId} {
@@ -241,7 +247,7 @@ service cloud.firestore {
       allow delete: if isProfileOwner(resource.data, resource.data.email);
 
       match /SkillProgress/{skillId} {
-        allow read: if true;
+        allow read: if verifiedAuth();
         allow create, update: if verifiedAuth()
           && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
           && validSkillProgressDoc(skillId, 'rider');
@@ -250,7 +256,7 @@ service cloud.firestore {
       }
 
       match /SkillVerifications/{skillId} {
-        allow read: if true;
+        allow read: if verifiedAuth();
         allow write: if false;
       }
 

@@ -9,7 +9,8 @@ import 'package:database_repository/src/repository_exception.dart';
 ///Interface between Horse and Riders and Firebase
 class HorseProfileRepository implements HorseProfileStore {
   HorseProfileRepository({FirebaseFirestore? firestore})
-      : _horseProfiledatabaseReference =
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        _horseProfiledatabaseReference =
             (firestore ?? FirebaseFirestore.instance)
                 .collection(HORSE_PROFILE)
                 .withConverter<HorseProfile>(
@@ -18,7 +19,9 @@ class HorseProfileRepository implements HorseProfileStore {
                 );
 
   static const String HORSE_PROFILE = 'Horse_Profile';
+  static const String PUBLIC_HORSE_PROFILE = 'Public_Horse_Profile';
 
+  final FirebaseFirestore _firestore;
   final CollectionReference<HorseProfile> _horseProfiledatabaseReference;
 
   ///create or update [horseProfile]
@@ -50,6 +53,20 @@ class HorseProfileRepository implements HorseProfileStore {
   @override
   Stream<HorseProfile?> getHorseProfileById({required String id}) {
     return _horseProfiledatabaseReference
+        .doc(id)
+        .snapshots()
+        .map((snap) => snap.data());
+  }
+
+  /// retrieve a sanitized public horse profile by its [id]
+  @override
+  Stream<HorseProfile?> getPublicHorseProfileById({required String id}) {
+    return _firestore
+        .collection(PUBLIC_HORSE_PROFILE)
+        .withConverter<HorseProfile>(
+          fromFirestore: HorseProfileFirestoreMapper.fromFirestore,
+          toFirestore: HorseProfileFirestoreMapper.toFirestore,
+        )
         .doc(id)
         .snapshots()
         .map((snap) => snap.data());

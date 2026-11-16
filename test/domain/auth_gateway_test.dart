@@ -358,6 +358,10 @@ class _StubHorseProfileStore implements HorseProfileStore {
   @override
   Stream<HorseProfile?> getHorseProfileById({required String id}) =>
       const Stream.empty();
+
+  @override
+  Stream<HorseProfile?> getPublicHorseProfileById({required String id}) =>
+      const Stream.empty();
 }
 
 void main() {

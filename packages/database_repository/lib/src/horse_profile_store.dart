@@ -13,6 +13,9 @@ abstract interface class HorseProfileStore {
   /// Streams the horse profile matching [id].
   Stream<HorseProfile?> getHorseProfileById({required String id});
 
+  /// Streams the sanitized public horse profile matching [id].
+  Stream<HorseProfile?> getPublicHorseProfileById({required String id});
+
   /// Streams horse profiles whose name matches the [name] prefix.
   Stream<List<HorseProfile>> getHorseByName({required String name});
 

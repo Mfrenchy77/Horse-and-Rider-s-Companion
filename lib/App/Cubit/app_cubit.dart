@@ -1106,28 +1106,42 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Horse Profile not retrieved, getting now');
       // Cancel any existing listener before subscribing to a new horse
       await _horseProfileSubscription?.cancel();
-      _horseProfileSubscription = _horseProfileRepository
-          .getHorseProfileById(id: id)
-          .listen((horseProfile) {
-            if (horseProfile != null) {
-              debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
+      final stream = state.isGuest
+          ? _horseProfileRepository.getPublicHorseProfileById(id: id)
+          : _horseProfileRepository.getHorseProfileById(id: id);
+      _horseProfileSubscription = stream.listen(
+        (horseProfile) {
+          if (horseProfile != null) {
+            debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
 
+            if (!state.isGuest) {
               _checkAndSetOwnerProfile(horseProfile);
-              emit(
-                state.copyWith(
-                  horseId: horseProfile.id,
-                  horseProfile: horseProfile,
-                ),
-              );
-            } else {
-              emit(
-                state.copyWith(
-                  pageStatus: AppPageStatus.error,
-                  errorMessage: 'Failed to retrieve horse profile',
-                ),
-              );
             }
-          });
+            emit(
+              state.copyWith(
+                horseId: horseProfile.id,
+                horseProfile: horseProfile,
+              ),
+            );
+          } else {
+            emit(
+              state.copyWith(
+                pageStatus: AppPageStatus.error,
+                errorMessage: 'Failed to retrieve horse profile',
+              ),
+            );
+          }
+        },
+        onError: (Object error) {
+          debugPrint('Failed to retrieve horse profile: $error');
+          emit(
+            state.copyWith(
+              pageStatus: AppPageStatus.error,
+              errorMessage: 'Failed to retrieve horse profile',
+            ),
+          );
+        },
+      );
     }
   }
 

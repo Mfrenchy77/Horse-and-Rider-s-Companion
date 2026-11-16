@@ -130,6 +130,14 @@ class _InMemoryHorseProfileStore implements HorseProfileStore {
   }
 
   @override
+  Stream<HorseProfile?> getPublicHorseProfileById({required String id}) {
+    return getHorseProfileById(id: id).map(
+      (horse) =>
+          horse != null && horse.isPublic && !horse.isArchived ? horse : null,
+    );
+  }
+
+  @override
   Stream<HorseProfile?> getHorseProfile({required String? id}) =>
       id == null ? Stream.value(null) : getHorseProfileById(id: id);
 

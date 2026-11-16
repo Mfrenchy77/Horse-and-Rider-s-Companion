@@ -8,7 +8,7 @@ const {JSDOM} = require('jsdom');
 const {Readability} = require('@mozilla/readability');
 const cheerio = require('cheerio');
 const {onCall, onRequest} = require('firebase-functions/v2/https');
-const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onDocumentCreated, onDocumentWritten} = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 try { admin.app(); } catch { admin.initializeApp(); }
 const logger = require('firebase-functions/logger');
@@ -20,6 +20,7 @@ const {
   discardCurriculumDraftHandler,
 } = require('./curriculum_drafts');
 const {sharePreviewHandler} = require('./share_preview');
+const {syncPublicHorseProfileHandler} = require('./public_horse_profile');
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},
@@ -59,6 +60,11 @@ exports.discardSkillTreeCurriculumDraft = onCall(
 exports.sharePreview = onRequest(
     {region: 'us-central1', timeoutSeconds: 15, memory: '256MiB'},
     sharePreviewHandler(admin.firestore()),
+);
+
+exports.syncPublicHorseProfile = onDocumentWritten(
+    {document: 'Horse_Profile/{horseId}', region: 'us-central1'},
+    syncPublicHorseProfileHandler(admin.firestore()),
 );
 
 /** ------------------------------------------------------------------------ */

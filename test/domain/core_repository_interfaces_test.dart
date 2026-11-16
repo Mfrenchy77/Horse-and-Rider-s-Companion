@@ -43,6 +43,14 @@ class _InMemoryHorseProfileStore implements HorseProfileStore {
   }
 
   @override
+  Stream<HorseProfile?> getPublicHorseProfileById({required String id}) {
+    final horse = horses[id];
+    return Stream.value(
+      horse != null && horse.isPublic && !horse.isArchived ? horse : null,
+    );
+  }
+
+  @override
   Stream<List<HorseProfile>> getHorseByName({required String name}) {
     return Stream.value(
       horses.values.where((h) => h.name.startsWith(name)).toList(),
