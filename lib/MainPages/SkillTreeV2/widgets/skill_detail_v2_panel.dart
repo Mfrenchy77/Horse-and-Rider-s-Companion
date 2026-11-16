@@ -583,18 +583,17 @@ class _LevelDetailSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? null : theme.colorScheme.surfaceContainerLow,
         gradient: isDark
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomCenter,
+            ? const LinearGradient(
+                // Match the warm center of the legacy selected skill row.
                 colors: [
-                  Color.alphaBlend(
-                    AppTokens.coralAccent.withValues(alpha: 0.16),
-                    AppTokens.midnightCardTop,
-                  ),
-                  AppTokens.midnightCardTop,
+                  Color(0xFF303030),
+                  Color(0xFF493E3A),
+                  Color(0xFF50433F),
+                  Color(0xFF433E3B),
+                  Color(0xFF303435),
                   AppTokens.midnightCardBottom,
                 ],
-                stops: const [0, 0.42, 1],
+                stops: [0, 0.22, 0.42, 0.69, 0.83, 1],
               )
             : null,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
