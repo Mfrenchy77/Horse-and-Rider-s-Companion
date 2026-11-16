@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -27,8 +28,22 @@ class AuthView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final gradients = theme.extension<SurfaceGradients>();
-    final useThemedCard =
-        gradients != null && theme.brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
+    final formTheme = isDark
+        ? theme.copyWith(
+            inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+              focusedBorder: const _AuthFocusBorder(
+                borderSide: BorderSide(
+                  color: AppTokens.coralAccent,
+                  width: 1.4,
+                ),
+              ),
+              focusedErrorBorder: const _AuthFocusBorder(
+                borderSide: BorderSide(color: AppTokens.errorDark, width: 1.4),
+              ),
+            ),
+          )
+        : theme;
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       backgroundColor: gradients != null
@@ -98,99 +113,88 @@ class AuthView extends StatelessWidget {
         },
         child: BlocBuilder<LoginCubit, LoginState>(
           builder: (context, state) {
-            return isSmallScreen
-                ? SingleChildScrollView(
-                    child: Center(
-                      child: MaxWidthBox(
-                        maxWidth: 550,
-                        child: GradientCard(
-                          color: useThemedCard ? null : ColorConst.cardDark,
-                          margin: const EdgeInsets.only(
-                            left: 20,
-                            right: 20,
-                            top: 42,
-                          ),
-                          elevation: 5,
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              children: [
-                                Logo(
-                                  screenName: getScreenName(state.pageStatus),
-                                  forceDark: true,
-                                ),
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 300,
-                                      ),
-                                      child: Form(
-                                        autovalidateMode:
-                                            AutovalidateMode.onUserInteraction,
-                                        child: getView(state: state),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                : SingleChildScrollView(
-                    child: Center(
-                      child: MaxWidthBox(
-                        maxWidth: 1000,
-                        child: GradientCard(
-                          color: useThemedCard ? null : ColorConst.cardDark,
-                          margin: const EdgeInsets.only(
-                            left: 20,
-                            right: 20,
-                            top: 42,
-                          ),
-                          elevation: 5,
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Logo(
-                                    screenName: getScreenName(state.pageStatus),
-                                    forceDark: true,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 300,
-                                        ),
-                                        child: Form(
-                                          autovalidateMode: AutovalidateMode
-                                              .onUserInteraction,
-                                          child: getView(state: state),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+            final logo = Logo(
+              screenName: getScreenName(state.pageStatus),
+              forceDark: true,
+            );
+            final form = ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Theme(
+                data: formTheme,
+                child: Form(
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: getView(state: state),
+                ),
+              ),
+            );
+            final content = isSmallScreen
+                ? Column(children: [logo, form])
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: logo),
+                      Expanded(child: Center(child: form)),
+                    ],
                   );
+            return SizedBox.expand(
+              child: AppScaffoldBackdrop(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 42, 20, 20),
+                  child: Center(
+                    child: MaxWidthBox(
+                      maxWidth: isSmallScreen ? 510 : 960,
+                      child: isDark
+                          ? AppSurfaceCard(child: content)
+                          : GradientCard(
+                              color: ColorConst.cardDark,
+                              margin: EdgeInsets.zero,
+                              elevation: 5,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: content,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            );
           },
         ),
       ),
+    );
+  }
+}
+
+/// Paints the selection gradient inside the input, above any validation text.
+class _AuthFocusBorder extends OutlineInputBorder {
+  const _AuthFocusBorder({required super.borderSide})
+    : super(
+        borderRadius: const BorderRadius.all(
+          Radius.circular(AppTokens.radiusMd),
+        ),
+      );
+
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    double? gapStart,
+    double gapExtent = 0,
+    double gapPercentage = 0,
+    TextDirection? textDirection,
+  }) {
+    canvas.drawPath(
+      getOuterPath(rect, textDirection: textDirection),
+      Paint()..shader = AppTokens.selectedSurfaceGradient.createShader(rect),
+    );
+    super.paint(
+      canvas,
+      rect,
+      gapStart: gapStart,
+      gapExtent: gapExtent,
+      gapPercentage: gapPercentage,
+      textDirection: textDirection,
     );
   }
 }

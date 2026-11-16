@@ -69,21 +69,23 @@ class AppTokens {
     colors: [midnightCardTop, midnightCardBottom],
   );
 
+  // Match the warm center of the legacy selected skill row.
+  static const LinearGradient selectedSurfaceGradient = LinearGradient(
+    colors: [
+      Color(0xFF303030),
+      Color(0xFF493E3A),
+      Color(0xFF50433F),
+      Color(0xFF433E3B),
+      Color(0xFF303435),
+      midnightCardBottom,
+    ],
+    stops: [0, 0.22, 0.42, 0.69, 0.83, 1],
+  );
+
   static BoxDecoration selectedSurfaceDecoration(BorderRadius radius) {
     return BoxDecoration(
       borderRadius: radius,
-      // Match the warm center of the legacy selected skill row.
-      gradient: const LinearGradient(
-        colors: [
-          Color(0xFF303030),
-          Color(0xFF493E3A),
-          Color(0xFF50433F),
-          Color(0xFF433E3B),
-          Color(0xFF303435),
-          midnightCardBottom,
-        ],
-        stops: [0, 0.22, 0.42, 0.69, 0.83, 1],
-      ),
+      gradient: selectedSurfaceGradient,
       border: Border.all(color: coralAccent, width: 1.4),
     );
   }
