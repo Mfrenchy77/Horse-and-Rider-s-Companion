@@ -278,28 +278,31 @@ class _SuggestionsListPane extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = suggestions[index];
           final isSelected = item.id == selectedId;
-          return ListTile(
-            key: Key('adminSuggestionTile_${item.id}'),
+          return AppSelectionHighlight(
             selected: isSelected,
-            title: Text(
-              item.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              '${item.contributionCategory.label} · '
-              '${item.subject} · ${item.submitterName}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Chip(
-              label: Text(
-                item.status.label,
-                style: theme.textTheme.labelSmall,
+            child: ListTile(
+              key: Key('adminSuggestionTile_${item.id}'),
+              selected: isSelected,
+              title: Text(
+                item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              visualDensity: VisualDensity.compact,
+              subtitle: Text(
+                '${item.contributionCategory.label} · '
+                '${item.subject} · ${item.submitterName}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: Chip(
+                label: Text(
+                  item.status.label,
+                  style: theme.textTheme.labelSmall,
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+              onTap: () => onSelect(item),
             ),
-            onTap: () => onSelect(item),
           );
         },
       ),

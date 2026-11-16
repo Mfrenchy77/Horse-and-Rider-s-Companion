@@ -188,11 +188,11 @@ class _SkillRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: isSelected
+    return AppSelectionHighlight(
+      selected: isSelected,
+      backgroundColor: isSelected
           ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
           : theme.colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
       child: InkWell(
         key: Key('skillCard_${skill.id}'),
         borderRadius: BorderRadius.circular(AppTokens.radiusSm),

@@ -69,6 +69,25 @@ class AppTokens {
     colors: [midnightCardTop, midnightCardBottom],
   );
 
+  static BoxDecoration selectedSurfaceDecoration(BorderRadius radius) {
+    return BoxDecoration(
+      borderRadius: radius,
+      // Match the warm center of the legacy selected skill row.
+      gradient: const LinearGradient(
+        colors: [
+          Color(0xFF303030),
+          Color(0xFF493E3A),
+          Color(0xFF50433F),
+          Color(0xFF433E3B),
+          Color(0xFF303435),
+          midnightCardBottom,
+        ],
+        stops: [0, 0.22, 0.42, 0.69, 0.83, 1],
+      ),
+      border: Border.all(color: coralAccent, width: 1.4),
+    );
+  }
+
   static BoxDecoration atmosphericOverlay(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (!isDark) {
@@ -152,6 +171,41 @@ class AppScaffoldBackdrop extends StatelessWidget {
       decoration: AppTokens.midnightBackdrop,
       child: DecoratedBox(
         decoration: AppTokens.atmosphericOverlay(context),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Highlights a selected row while keeping its tap and focus effects visible.
+class AppSelectionHighlight extends StatelessWidget {
+  const AppSelectionHighlight({
+    super.key,
+    required this.selected,
+    required this.child,
+    this.backgroundColor,
+  });
+
+  final bool selected;
+  final Widget child;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppTokens.radiusSm);
+    final showHighlight =
+        selected && Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      type: backgroundColor == null
+          ? MaterialType.transparency
+          : MaterialType.canvas,
+      color: backgroundColor,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: showHighlight
+            ? AppTokens.selectedSurfaceDecoration(radius)
+            : null,
         child: child,
       ),
     );

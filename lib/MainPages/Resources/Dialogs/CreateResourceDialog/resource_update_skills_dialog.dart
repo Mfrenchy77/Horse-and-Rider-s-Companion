@@ -206,23 +206,26 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
               else if (matches.isEmpty)
                 const Text('No skills match these filters.'),
               for (final skill in matches)
-                CheckboxListTile(
-                  key: ValueKey('resource-skill-${skill.id}'),
-                  contentPadding: EdgeInsets.zero,
-                  value: _selected.contains(skill.id),
-                  title: Text(skill.skillName),
-                  subtitle: Text(_skillDetails(skill)),
-                  onChanged: _saving
-                      ? null
-                      : (selected) {
-                          setState(() {
-                            if (selected ?? false) {
-                              _selected.add(skill.id);
-                            } else {
-                              _selected.remove(skill.id);
-                            }
-                          });
-                        },
+                AppSelectionHighlight(
+                  selected: _selected.contains(skill.id),
+                  child: CheckboxListTile(
+                    key: ValueKey('resource-skill-${skill.id}'),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    value: _selected.contains(skill.id),
+                    title: Text(skill.skillName),
+                    subtitle: Text(_skillDetails(skill)),
+                    onChanged: _saving
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              if (selected ?? false) {
+                                _selected.add(skill.id);
+                              } else {
+                                _selected.remove(skill.id);
+                              }
+                            });
+                          },
+                  ),
                 ),
             ],
             if (_error != null)
