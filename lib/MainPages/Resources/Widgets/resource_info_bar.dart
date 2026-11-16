@@ -30,8 +30,14 @@ String resourceInfoHeroTag(Resource resource) {
 }
 
 class ResourceInfoBar extends StatelessWidget {
-  const ResourceInfoBar({super.key, required this.resource});
+  const ResourceInfoBar({
+    super.key,
+    required this.resource,
+    this.canOpenArticle = true,
+  });
+
   final Resource resource;
+  final bool canOpenArticle;
 
   bool get _isArticle => resource.type == ResourceType.article;
 
@@ -150,13 +156,14 @@ class ResourceInfoBar extends StatelessWidget {
               (skill) => skillIds.contains(skill.id),
             );
 
+            final canOpenImage = !_isArticle || canOpenArticle;
             final image = InkWell(
               key: const Key('ResourceImage'),
               onLongPress: () => cubit.openResource(url: resource.url),
-              onTap: () => _openLinkOrArticle(context),
+              onTap: canOpenImage ? () => _openLinkOrArticle(context) : null,
               child: Tooltip(
                 message: _isArticle
-                    ? 'Read article'
+                    ? (canOpenArticle ? 'Read article' : '')
                     : isVideo
                     ? 'Watch on YouTube'
                     : (resource.url?.isNotEmpty ?? false)

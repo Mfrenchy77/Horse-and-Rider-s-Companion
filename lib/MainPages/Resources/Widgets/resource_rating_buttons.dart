@@ -14,8 +14,14 @@ import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class ResourceRatingButtons extends StatelessWidget {
-  const ResourceRatingButtons({super.key, required this.resource});
+  const ResourceRatingButtons({
+    super.key,
+    required this.resource,
+    this.canOpenComments = true,
+  });
+
   final Resource resource;
+  final bool canOpenComments;
   @override
   Widget build(BuildContext context) {
     final accent = AppTokens.accentColor(context);
@@ -79,15 +85,16 @@ class ResourceRatingButtons extends StatelessWidget {
                     : resource.comments?.length == 1
                     ? '1 Comment'
                     : '${resource.comments!.length} Comments',
-                onPressed: () {
-                  // Show the comments associated with this resource
-                  context.pushNamed(
-                    ResourceCommentPage.name,
-                    pathParameters: {
-                      ResourceCommentPage.pathParams: resource.id ?? '',
-                    },
-                  );
-                },
+                onPressed: canOpenComments
+                    ? () {
+                        context.pushNamed(
+                          ResourceCommentPage.name,
+                          pathParameters: {
+                            ResourceCommentPage.pathParams: resource.id ?? '',
+                          },
+                        );
+                      }
+                    : null,
                 icon: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(
@@ -99,7 +106,6 @@ class ResourceRatingButtons extends StatelessWidget {
                         resource.comments == null
                             ? '0'
                             : resource.comments!.length.toString(),
-                        style: TextStyle(color: muted),
                       ),
                     ],
                   ),

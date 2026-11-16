@@ -2,9 +2,11 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_comment_llist.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:mocktail/mocktail.dart';
@@ -69,6 +71,73 @@ void main() {
   Finder row(String id) => find.byWidgetPredicate(
     (widget) => widget is CommentItem && widget.comment.id == id,
   );
+
+  testWidgets('comment count opens comments once and Back returns to list', (
+    tester,
+  ) async {
+    final value = Resource(
+      id: 'resource',
+      name: 'Article with comments',
+      type: ResourceType.article,
+    );
+    harness.cubit.emit(
+      harness.cubit.state.copyWith(
+        resource: value,
+        resources: [value],
+        usersProfile: rider,
+      ),
+    );
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: ResourcesItem(resource: value, isResourceList: true),
+          ),
+          routes: [
+            GoRoute(
+              path: ResourceCommentPage.path,
+              name: ResourceCommentPage.name,
+              builder: (context, state) => ResourceCommentPage(
+                id: state.pathParameters[ResourceCommentPage.pathParams]!,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: harness.cubit,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final count = find.widgetWithIcon(IconButton, Icons.comment);
+    expect(tester.widget<IconButton>(count).onPressed, isNotNull);
+    await tester.tap(count);
+    await tester.pumpAndSettle();
+    expect(find.byType(ResourceCommentPage), findsOneWidget);
+    expect(tester.widget<IconButton>(count).onPressed, isNull);
+    expect(
+      tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send))
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.tap(count);
+    await tester.tap(count);
+    await tester.tap(find.byKey(const Key('ResourceImage')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(find.byType(ResourceCommentPage), findsNothing);
+    expect(find.byType(ResourcesItem), findsOneWidget);
+    expect(tester.widget<IconButton>(count).onPressed, isNotNull);
+  });
 
   testWidgets('eleven stored comments render exactly eleven comment rows', (
     tester,

@@ -19,11 +19,12 @@ class CommentPageHeader extends StatelessWidget {
             padding: EdgeInsets.zero,
             child: ResourceInfoBar(
               resource: resource,
+              canOpenArticle: false,
               key: const Key('ResourceInfoBar'),
             ),
           ),
         ),
-        ResourceRatingButtons(resource: resource),
+        ResourceRatingButtons(resource: resource, canOpenComments: false),
         smallGap(),
         Divider(color: Theme.of(context).primaryColor, endIndent: 5, indent: 5),
         ResourceCommentBar(
