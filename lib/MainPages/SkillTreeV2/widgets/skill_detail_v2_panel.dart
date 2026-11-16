@@ -536,17 +536,6 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
                       isResourceList: true,
                       fromSkillTree: true,
                     ),
-                    if ((widget.canEditResource?.call(resource) ?? false) &&
-                        widget.onEditResource != null)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          key: Key('editResourceButton_${resource.id}'),
-                          onPressed: () => widget.onEditResource!(resource),
-                          icon: const Icon(Icons.edit_outlined, size: 16),
-                          label: const Text('Edit Resource'),
-                        ),
-                      ),
                   ],
                 ),
             ],

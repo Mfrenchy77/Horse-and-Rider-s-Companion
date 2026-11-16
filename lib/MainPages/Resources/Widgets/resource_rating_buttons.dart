@@ -6,6 +6,7 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/save_resource_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
@@ -133,12 +134,15 @@ class ResourceRatingButtons extends StatelessWidget {
                 icon: Icon(Icons.more_vert, color: muted),
                 onSelected: (value) {
                   switch (value) {
-                    case 'ManageSkillLinks':
+                    case 'EditResource':
+                      final profile = state.usersProfile;
+                      if (profile == null) return;
                       showAppGlassDialog<void>(
                         context: context,
-                        builder: (_) => UpdateResourceSkills(
+                        builder: (_) => CreateResourcDialog(
+                          skills: state.allSkills,
+                          userProfile: profile,
                           resource: resource,
-                          initialManageMode: true,
                         ),
                       );
                       break;
@@ -152,18 +156,15 @@ class ResourceRatingButtons extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) {
-                  final canManageSkillLinks =
+                  final canEdit =
                       !state.isGuest &&
-                      (resource.id?.isNotEmpty ?? false) &&
-                      (state.isAdmin ||
-                          state.isEditor ||
-                          (state.usersProfile?.editor ?? false) ||
-                          cubit.canEditResource(resource));
+                      state.usersProfile != null &&
+                      cubit.canEditResource(resource);
                   return <PopupMenuEntry<String>>[
-                    if (canManageSkillLinks)
+                    if (canEdit)
                       const PopupMenuItem<String>(
-                        value: 'ManageSkillLinks',
-                        child: Text('Manage Skill Links'),
+                        value: 'EditResource',
+                        child: Text('Edit Resource'),
                       ),
                     const PopupMenuItem<String>(
                       value: 'Report',

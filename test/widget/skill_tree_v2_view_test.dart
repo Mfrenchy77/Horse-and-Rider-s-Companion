@@ -1273,11 +1273,14 @@ void main() {
             (invocation.positionalArguments.first as Resource).id == 'res-own',
       );
 
+      final mockResourcesRepo = _MockResources();
       await tester.pumpWidget(
         MultiRepositoryProvider(
           providers: [
             RepositoryProvider<ResourcesStore?>.value(value: null),
-            RepositoryProvider<ResourcesRepository?>.value(value: null),
+            RepositoryProvider<ResourcesRepository>.value(
+              value: mockResourcesRepo,
+            ),
           ],
           child: wrapV2(appCubit: mockAppCubit),
         ),
@@ -1298,7 +1301,7 @@ void main() {
       expect(find.text('Related Resources (2)'), findsOneWidget);
       expect(find.text('Alex Handling Guide'), findsOneWidget);
 
-      // Standalone Link Skills buttons beneath Resource cards are gone.
+      // Standalone Edit Resource & Link Skills buttons beneath cards are gone.
       expect(
         find.byKey(const Key('linkResourceSkillsButton_res-other')),
         findsNothing,
@@ -1313,10 +1316,10 @@ void main() {
       );
       expect(
         find.byKey(const Key('editResourceButton_res-own')),
-        findsOneWidget,
+        findsNothing,
       );
 
-      // Unauthorized resource overflow menu hides Manage Skill Links.
+      // Unauthorized resource overflow menu hides Edit Resource & Manage Links.
       final otherMenu = find.byKey(
         const Key('resourceOverflowMenu_res-other'),
       );
@@ -1324,25 +1327,39 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(otherMenu);
       await tester.pumpAndSettle();
+      expect(find.text('Edit Resource'), findsNothing);
       expect(find.text('Manage Skill Links'), findsNothing);
+      expect(find.text('Report'), findsOneWidget);
       await tester.tapAt(const Offset(600, 10));
       await tester.pumpAndSettle();
 
-      // Authorized resource overflow menu opens blurred Associated skills.
+      // Authorized resource overflow menu exposes Edit Resource (not Manage
+      // Skill Links) and opens the blurred modal.
       final ownMenu = find.byKey(const Key('resourceOverflowMenu_res-own'));
       await tester.ensureVisible(ownMenu);
       await tester.pumpAndSettle();
       await tester.tap(ownMenu);
       await tester.pumpAndSettle();
-      expect(find.text('Manage Skill Links'), findsOneWidget);
-      await tester.tap(find.text('Manage Skill Links'));
+      expect(find.text('Edit Resource'), findsOneWidget);
+      expect(find.text('Manage Skill Links'), findsNothing);
+      await tester.tap(find.text('Edit Resource'));
+      await tester.pumpAndSettle();
+      expect(find.byType(BackdropFilter), findsWidgets);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      // Associated skills icon button opens compact blurred Associated skills
+      // dialog with Manage Links for authorized owner.
+      final assocButtons = find.byTooltip('Associated skills');
+      await tester.ensureVisible(assocButtons.first);
+      await tester.pumpAndSettle();
+      await tester.tap(assocButtons.first);
       await tester.pumpAndSettle();
 
       expect(find.text('Associated skills'), findsOneWidget);
       expect(find.byType(BackdropFilter), findsWidgets);
+      expect(find.byKey(const Key('manageSkillLinksButton')), findsOneWidget);
 
-      await tester.tap(find.text('Done'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
 

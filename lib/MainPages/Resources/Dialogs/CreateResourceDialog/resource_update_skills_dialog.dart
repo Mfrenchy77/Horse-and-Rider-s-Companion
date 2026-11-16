@@ -7,14 +7,9 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class UpdateResourceSkills extends StatefulWidget {
-  const UpdateResourceSkills({
-    super.key,
-    required this.resource,
-    this.initialManageMode = false,
-  });
+  const UpdateResourceSkills({super.key, required this.resource});
 
   final Resource resource;
-  final bool initialManageMode;
 
   @override
   State<UpdateResourceSkills> createState() => _UpdateResourceSkillsState();
@@ -23,7 +18,7 @@ class UpdateResourceSkills extends StatefulWidget {
 class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
   late final _original = widget.resource.skillTreeIds.toSet();
   late final _selected = {..._original};
-  late bool _isManaging = widget.initialManageMode;
+  bool _isManaging = false;
   String _query = '';
   String? _error;
   bool _saving = false;

@@ -328,11 +328,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Unauthorized user does not see Manage Skill Links in three-dot menu.
+      // Unauthorized user does not see Edit Resource or Manage Skill Links.
       await tester.tap(
         find.byKey(const Key('resourceOverflowMenu_guide')),
       );
       await tester.pumpAndSettle();
+      expect(find.text('Edit Resource'), findsNothing);
       expect(find.text('Manage Skill Links'), findsNothing);
       expect(find.text('Report'), findsOneWidget);
       await tester.tapAt(const Offset(10, 10));
@@ -350,7 +351,8 @@ void main() {
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
 
-      // Switch to resource owner: three-dot menu exposes Manage Skill Links.
+      // Switch to resource owner: overflow menu exposes Edit Resource (not
+      // Manage Skill Links), and Associated skills dialog exposes Manage Links.
       app.emit(
         app.state.copyWith(
           usersProfile: RiderProfile(
@@ -366,8 +368,14 @@ void main() {
         find.byKey(const Key('resourceOverflowMenu_guide')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Manage Skill Links'), findsOneWidget);
-      await tester.tap(find.text('Manage Skill Links'));
+      expect(find.text('Edit Resource'), findsOneWidget);
+      expect(find.text('Manage Skill Links'), findsNothing);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Associated skills'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('manageSkillLinksButton')));
       await tester.pumpAndSettle();
 
       // Uncheck skill, then Cancel returns to compact view without saving.
