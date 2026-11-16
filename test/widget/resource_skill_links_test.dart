@@ -18,6 +18,52 @@ import 'package:mocktail/mocktail.dart';
 import '../support/app_test_harness.dart';
 
 void main() {
+  testWidgets('empty associated skills show a single message', (tester) async {
+    final harness = await AppTestHarness.create();
+    addTearDown(harness.close);
+    final app = harness.cubit;
+
+    for (final ids in [<String>[], ['missing-skill']]) {
+      final resource = Resource(
+        id: 'guide',
+        name: 'Leading guide',
+        skillTreeIds: ids,
+      );
+      app.emit(
+        app.state.copyWith(
+          isGuest: true,
+          resource: resource,
+          resources: [resource],
+        ),
+      );
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: app,
+          child: MaterialApp(
+            theme: mainThemeDark,
+            home: const ResourceCommentPage(id: 'guide'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Associated skills'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          ids.isEmpty
+              ? 'No associated skills yet.'
+              : 'No associated skills to display.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Linked skills'), findsNothing);
+      expect(find.byKey(const Key('manageSkillLinksButton')), findsNothing);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+    }
+  });
+
   testWidgets('comments dialog displays an already associated skill', (
     tester,
   ) async {

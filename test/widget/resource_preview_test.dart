@@ -168,10 +168,7 @@ void main() {
     final context = tester.element(find.byType(Center));
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final provider = ResizeImage(
-      const NetworkImage(
-        url,
-        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
-      ),
+      const NetworkImage(url),
       width: (480 * dpr).round(),
     );
 
@@ -193,6 +190,13 @@ void main() {
               ),
             ),
           ),
+        );
+        final preview = tester.widget<Image>(find.byType(Image));
+        final networkImage =
+            (preview.image as ResizeImage).imageProvider as NetworkImage;
+        expect(
+          networkImage.webHtmlElementStrategy,
+          WebHtmlElementStrategy.never,
         );
         await tester.pumpAndSettle();
 

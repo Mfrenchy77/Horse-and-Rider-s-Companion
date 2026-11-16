@@ -127,11 +127,12 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
                 color: colors.onSurfaceVariant,
               ),
             ),
-            Text('Linked skills', style: theme.textTheme.titleSmall),
+            if (linked.isNotEmpty)
+              Text('Linked skills', style: theme.textTheme.titleSmall),
             if (_original.isEmpty)
               const Text('No associated skills yet.')
             else if (linked.isEmpty)
-              const Text('Linked skills are unavailable.')
+              const Text('No associated skills to display.')
             else
               for (final skill in linked)
                 Material(

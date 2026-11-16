@@ -36,7 +36,10 @@ class ResourceImage extends StatelessWidget {
                 resourceUrl: resourceUrl,
                 fallback: fallback,
                 maxLogicalWidth: 480,
-                config: const SmartImageConfig(forceWebP: true),
+                config: const SmartImageConfig(
+                  forceWebP: true,
+                  allowWebHtmlFallback: false,
+                ),
               ),
       ),
     );

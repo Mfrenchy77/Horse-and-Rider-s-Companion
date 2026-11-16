@@ -14,11 +14,13 @@ class SmartImageConfig {
     this.proxyMode = SmartImageProxyMode.webOnly,
     this.forceWebP = false,
     this.preferDirectFirst = true,
+    this.allowWebHtmlFallback = true,
   });
 
   final SmartImageProxyMode proxyMode;
   final bool forceWebP;
   final bool preferDirectFirst;
+  final bool allowWebHtmlFallback;
 }
 
 /// Loads the original image, then optionally tries one proxy and one
@@ -50,7 +52,7 @@ class SmartImage extends StatelessWidget {
   // Share the current candidate, resolver request and terminal outcome across
   // resource cards and detail pages. Flutter's ImageCache shares image loads.
   static final _previews =
-      <(Uri, Uri?, Uri?, bool, LinkMetadataService?), _Preview>{};
+      <(Uri, Uri?, Uri?, bool, bool, LinkMetadataService?), _Preview>{};
   static const _cacheLimit = 512;
 
   @override
@@ -84,6 +86,7 @@ class SmartImage extends StatelessWidget {
       page,
       proxy,
       config.preferDirectFirst,
+      config.allowWebHtmlFallback,
       linkMetadataService,
     );
     final resolver =
@@ -126,9 +129,9 @@ class SmartImage extends StatelessWidget {
           width: width,
           height: height,
           fit: fit,
-          // Prefer CanvasKit so BackdropFilter can blur images behind dialogs,
-          // falling back to an HTML image only if fetch CORS fails.
-          webHtmlElementStrategy: candidate.host != 'wsrv.nl'
+          // HTML platform views sit outside Flutter's backdrop blur.
+          webHtmlElementStrategy: config.allowWebHtmlFallback &&
+                  candidate.host != 'wsrv.nl'
               ? WebHtmlElementStrategy.fallback
               : WebHtmlElementStrategy.never,
           cacheWidth: kIsWeb ? null : targetWidth,
