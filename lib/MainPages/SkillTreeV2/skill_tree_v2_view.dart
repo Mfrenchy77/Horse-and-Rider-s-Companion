@@ -20,6 +20,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_fami
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_tree_v2_header.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/suggest_improvement_dialog.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+import 'package:horseandriderscompanion/Utilities/share_helper.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillTreeV2View extends StatefulWidget {
@@ -1299,7 +1300,17 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                   key: const Key('skillTreeV2AppBarOverflowMenu'),
                   tooltip: 'More options',
                   onSelected: (value) async {
-                    if (value == 'suggest') {
+                    if (value == 'share_skill' &&
+                        effectiveState.selectedSkill != null) {
+                      final skill = effectiveState.selectedSkill!;
+                      await shareAppLink(
+                        context,
+                        title:
+                            "${skill.name} — Horse & Rider's Companion",
+                        dialogTitle: 'Share Skill',
+                        url: buildSkillShareUrl(skill.id),
+                      );
+                    } else if (value == 'suggest') {
                       final created = await showSuggestImprovementDialog(
                         context,
                         subject: effectiveState.subject,
@@ -1321,6 +1332,19 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                     }
                   },
                   itemBuilder: (context) => [
+                    if (effectiveState.selectedSkill != null)
+                      const PopupMenuItem<String>(
+                        key: Key('skillTreeV2MenuShareSkill'),
+                        value: 'share_skill',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.share_outlined, size: 18),
+                            SizedBox(width: AppTokens.spaceSm),
+                            Flexible(child: Text('Share Skill')),
+                          ],
+                        ),
+                      ),
                     if (!(_mobileShowingDetail &&
                         effectiveState.selectedSkill != null))
                       const PopupMenuItem<String>(

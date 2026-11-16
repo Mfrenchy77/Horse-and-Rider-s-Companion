@@ -6,6 +6,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_sale_panel.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+import 'package:horseandriderscompanion/Utilities/share_helper.dart';
 
 class HorseProfileOverFlowMenu extends StatelessWidget {
   const HorseProfileOverFlowMenu({super.key});
@@ -26,13 +27,16 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           c.state.horseManageHorseId == horse?.id,
     );
 
-    if (isGuest || horse == null || userEmail == null) {
+    if (horse == null) {
       return const SizedBox.shrink();
     }
 
     final isOwner =
+        !isGuest &&
+        userEmail != null &&
         horse.currentOwnerId.toLowerCase() == userEmail.toLowerCase();
-    if (!isOwner) return const SizedBox.shrink();
+    final canSharePublicly = horse.isPublic && !horse.isArchived;
+    if (!isOwner && !canSharePublicly) return const SizedBox.shrink();
 
     final canManage = !horse.isArchived;
 
@@ -98,43 +102,121 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
     return PopupMenuButton<String>(
       enabled: !busy,
       itemBuilder: (_) => [
-        if (!horse.isArchived)
-          const PopupMenuItem(value: 'edit', child: Text('Edit')),
-        if (canManage) ...[
-          PopupMenuItem(
-            value: 'toggle_public',
-            child: Text(
-              horse.isPublic
-                  ? 'Make profile private'
-                  : 'Enable public sharing',
-            ),
+        const PopupMenuItem(
+          key: Key('horseMenuShareProfile'),
+          value: 'share',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.share_outlined, size: 18),
+              SizedBox(width: AppTokens.spaceSm),
+              Text('Share Profile'),
+            ],
           ),
-          PopupMenuItem(
-            value: 'listing',
-            child: Text(
-              horse.saleListing == null ? 'List for sale' : 'Edit listing',
+        ),
+        if (isOwner) ...[
+          if (!horse.isArchived)
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+          if (canManage) ...[
+            PopupMenuItem(
+              value: 'toggle_public',
+              child: Text(
+                horse.isPublic
+                    ? 'Make profile private'
+                    : 'Enable public sharing',
+              ),
             ),
-          ),
-          if (horse.saleListing != null)
-            const PopupMenuItem(value: 'unlist', child: Text('Remove listing')),
-          if (horse.transferRequestId == null)
+            PopupMenuItem(
+              value: 'listing',
+              child: Text(
+                horse.saleListing == null ? 'List for sale' : 'Edit listing',
+              ),
+            ),
+            if (horse.saleListing != null)
+              const PopupMenuItem(
+                value: 'unlist',
+                child: Text('Remove listing'),
+              ),
+            if (horse.transferRequestId == null)
+              const PopupMenuItem(
+                value: 'transfer',
+                child: Text('Transfer ownership'),
+              ),
+            const PopupMenuItem(value: 'invite', child: Text('Invite trainer')),
+          ],
+          if (horse.isArchived)
+            const PopupMenuItem(value: 'restore', child: Text('Restore horse'))
+          else
+            const PopupMenuItem(value: 'archive', child: Text('Archive horse')),
+          if (horse.archiveStatus == 'archived')
             const PopupMenuItem(
-              value: 'transfer',
-              child: Text('Transfer ownership'),
+              value: 'deceased',
+              child: Text('Mark as deceased'),
             ),
-          const PopupMenuItem(value: 'invite', child: Text('Invite trainer')),
         ],
-        if (horse.isArchived)
-          const PopupMenuItem(value: 'restore', child: Text('Restore horse'))
-        else
-          const PopupMenuItem(value: 'archive', child: Text('Archive horse')),
-        if (horse.archiveStatus == 'archived')
-          const PopupMenuItem(
-            value: 'deceased',
-            child: Text('Mark as deceased'),
-          ),
       ],
       onSelected: (value) async {
+        if (value == 'share') {
+          if (horse.isArchived) {
+            await showAppGlassDialog<void>(
+              context: context,
+              builder: (dialogContext) => AppGlassDialog(
+                key: const Key('horseSharePrivateDialog'),
+                title: const Text('Cannot Share Archived Profile'),
+                content: const Text(
+                  'Archived horse profiles cannot be shared publicly.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+          if (!horse.isPublic) {
+            final enableAndShare = await showAppGlassDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AppGlassDialog(
+                key: const Key('horseSharePrivateDialog'),
+                title: const Text('Horse Profile is Private'),
+                content: Text(
+                  isOwner
+                      ? 'Public sharing must be enabled before sharing '
+                            'this profile link.'
+                      : 'This horse profile is private. Only the owner can '
+                            'enable public sharing.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(isOwner ? 'Cancel' : 'Close'),
+                  ),
+                  if (isOwner)
+                    FilledButton(
+                      key: const Key('horseEnablePublicAndShareButton'),
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text('Enable & Share'),
+                    ),
+                ],
+              ),
+            );
+            if (enableAndShare != true || !isOwner || !context.mounted) {
+              return;
+            }
+            await cubit.setHorsePublicSharing(horse, isPublic: true);
+            if (!context.mounted) return;
+          }
+          await shareAppLink(
+            context,
+            title: "${horse.name} — Horse & Rider's Companion",
+            dialogTitle: 'Share Horse Profile',
+            url: buildHorseShareUrl(horse.id),
+          );
+          return;
+        }
         if ([
           'listing',
           'unlist',
