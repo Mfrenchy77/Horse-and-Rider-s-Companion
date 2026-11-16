@@ -149,7 +149,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   }
 
   Future<void> _discardDraft() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppGlassDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Discard Curriculum Draft?'),
@@ -204,7 +204,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           families: List<SkillFamily>.from(effectiveState.families),
           skills: List<CurriculumSkill>.from(effectiveState.skills),
         );
-    final result = await showDialog<SkillFamily>(
+    final result = await showAppGlassDialog<SkillFamily>(
       context: context,
       builder: (_) => EditSkillFamilyDialog(
         initialFamily: initial,
@@ -252,7 +252,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         );
     final familySkillCount =
         draft.skills.where((s) => s.familyId == family.id).length;
-    final result = await showDialog<CurriculumSkill>(
+    final result = await showAppGlassDialog<CurriculumSkill>(
       context: context,
       builder: (_) => EditCurriculumSkillDialog(
         initialSkill: initial,
@@ -291,7 +291,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   Future<void> _openDraftPreview(SkillTreeV2State publishedState) async {
     final draft = _draft;
     if (draft == null) return;
-    await showDialog<void>(
+    await showAppGlassDialog<void>(
       context: context,
       builder: (_) => DraftPreviewDialog(
         publishedFamilies: publishedState.families,
@@ -786,7 +786,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           Future<void> editResourceFn(Resource resource) async {
             final profile = appState.usersProfile;
             if (profile == null) return;
-            await showDialog<void>(
+            await showAppGlassDialog<void>(
               context: context,
               builder: (_) => CreateResourcDialog(
                 skills: appState.allSkills,
@@ -796,7 +796,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
             );
           }
           Future<void> linkResourceSkillsFn(Resource resource) async {
-            await showDialog<void>(
+            await showAppGlassDialog<void>(
               context: context,
               builder: (_) => UpdateResourceSkills(resource: resource),
             );

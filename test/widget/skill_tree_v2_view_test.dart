@@ -1230,4 +1230,106 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'Resource Edit & Link Skills respect ownership/editor permissions and '
+    'Associated Skills modal uses blurred glass barrier',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final otherResource = Resource(
+        id: 'res-other',
+        name: 'Other Author Guide',
+        url: 'https://example.com/other',
+        type: ResourceType.link,
+        rating: 4,
+        numberOfRates: 1,
+        authorId: 'other@example.com',
+        skillTreeIds: const ['rider.husbandry.safe_handling'],
+      );
+      final ownResource = Resource(
+        id: 'res-own',
+        name: 'Alex Handling Guide',
+        url: 'https://example.com/own',
+        type: ResourceType.link,
+        rating: 5,
+        numberOfRates: 2,
+        authorId: 'alex@example.com',
+        skillTreeIds: const ['rider.husbandry.safe_handling'],
+      );
+
+      final mockAppCubit = _MockAppCubit();
+      final baseState = authenticatedRiderState().copyWith(
+        hasResourceCatalogue: true,
+        resources: [otherResource, ownResource],
+      );
+      when(() => mockAppCubit.state).thenReturn(baseState);
+      when(() => mockAppCubit.isNewResource(any())).thenReturn(false);
+      when(() => mockAppCubit.isRatingPositive(any())).thenReturn(false);
+      when(() => mockAppCubit.isRatingNegative(any())).thenReturn(false);
+      when(() => mockAppCubit.canEditResource(any())).thenAnswer(
+        (invocation) =>
+            (invocation.positionalArguments.first as Resource).id == 'res-own',
+      );
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<ResourcesStore?>.value(value: null),
+            RepositoryProvider<ResourcesRepository?>.value(value: null),
+          ],
+          child: wrapV2(appCubit: mockAppCubit),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('skillCard_rider.husbandry.safe_handling')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Related Resources (2)'), findsOneWidget);
+      expect(find.text('Alex Handling Guide'), findsOneWidget);
+
+      // Cannot edit/link another author's resource.
+      expect(
+        find.byKey(const Key('linkResourceSkillsButton_res-other')),
+        findsNothing,
+      );
+
+      // Can edit/link own resource, and Link Skills opens blurred glass modal.
+      final linkOwnBtn = find.byKey(
+        const Key('linkResourceSkillsButton_res-own'),
+      );
+      await tester.ensureVisible(linkOwnBtn);
+      await tester.pumpAndSettle();
+      expect(linkOwnBtn, findsOneWidget);
+
+      await tester.tap(linkOwnBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Associated skills'), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsWidgets);
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      // Ordinary user cannot see admin curriculum edit controls in overflow menu.
+      await tester.tap(
+        find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('skillTreeV2MenuToggleAdminEdit')),
+        findsNothing,
+      );
+    },
+  );
 }

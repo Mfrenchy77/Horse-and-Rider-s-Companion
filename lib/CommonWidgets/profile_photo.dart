@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -62,7 +63,7 @@ Future<void> showProfilePhoto(
   BuildContext context,
   String url, {
   String? heroTag,
-}) => showDialog<void>(
+}) => showAppGlassDialog<void>(
   context: context,
   builder: (context) => Scaffold(
     backgroundColor: Colors.transparent,

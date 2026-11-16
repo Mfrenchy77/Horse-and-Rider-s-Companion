@@ -1,6 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -60,7 +61,7 @@ Future<SkillTreeSuggestion?> showSuggestImprovementDialog(
 }) async {
   final appState = context.read<AppCubit>().state;
   if (appState.isGuest || appState.user.isEmpty) {
-    await showDialog<void>(
+    await showAppGlassDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sign In Required'),
@@ -79,7 +80,7 @@ Future<SkillTreeSuggestion?> showSuggestImprovementDialog(
     return null;
   }
   if (!appState.user.emailVerified) {
-    await showDialog<void>(
+    await showAppGlassDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Email Verification Required'),
@@ -99,7 +100,7 @@ Future<SkillTreeSuggestion?> showSuggestImprovementDialog(
   }
 
   final resolvedRepo = _resolveSuggestionsRepo(context, repository);
-  return showDialog<SkillTreeSuggestion>(
+  return showAppGlassDialog<SkillTreeSuggestion>(
     context: context,
     builder: (ctx) => _SuggestImprovementDialog(
       repository: resolvedRepo,
@@ -132,7 +133,7 @@ Future<void> showMySuggestionsDialog(
   }
 
   final resolvedRepo = _resolveSuggestionsRepo(context, repository);
-  await showDialog<void>(
+  await showAppGlassDialog<void>(
     context: context,
     builder: (ctx) => _MySuggestionsDialog(
       repository: resolvedRepo,
