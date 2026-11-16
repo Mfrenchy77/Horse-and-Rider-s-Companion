@@ -1073,4 +1073,161 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'Desktop resets only detail scroll on related-skill navigation and '
+    'preserves scroll on same-skill assessment updates',
+    (tester) async {
+      const surfaceSize = Size(1200, 520);
+      await tester.binding.setSurfaceSize(surfaceSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final mockAppCubit = _MockAppCubit();
+      when(() => mockAppCubit.state).thenReturn(authenticatedRiderState());
+      await tester.pumpWidget(
+        wrapV2(appCubit: mockAppCubit, surfaceSize: surfaceSize),
+      );
+      await tester.pumpAndSettle();
+
+      // Expand the first family in Husbandry so the list is scrollable.
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final listScrollFinder = find.byKey(const Key('skillTreeV2ListScroll'));
+      final detailScrollFinder = find.byKey(
+        const Key('skillTreeV2DetailScroll'),
+      );
+      expect(listScrollFinder, findsOneWidget);
+      expect(detailScrollFinder, findsOneWidget);
+
+      final listScroll = tester.widget<SingleChildScrollView>(listScrollFinder);
+      final detailScroll = tester.widget<SingleChildScrollView>(
+        detailScrollFinder,
+      );
+
+      // Scroll the left skill list down independently.
+      listScroll.controller!.jumpTo(40);
+      await tester.pump();
+      expect(listScroll.controller!.offset, greaterThan(0));
+
+      // Scroll the right detail panel down toward Related skills.
+      final maxDetail = detailScroll.controller!.position.maxScrollExtent;
+      expect(maxDetail, greaterThan(0));
+      detailScroll.controller!.jumpTo(maxDetail);
+      await tester.pump();
+      expect(detailScroll.controller!.offset, greaterThan(0));
+
+      // Tap a Related Skill ActionChip inside the detail panel.
+      final firstChip = find
+          .descendant(
+            of: detailScrollFinder,
+            matching: find.byType(ActionChip),
+          )
+          .first;
+      await tester.ensureVisible(firstChip);
+      await tester.pumpAndSettle();
+      expect(detailScroll.controller!.offset, greaterThan(0));
+      await tester.tap(firstChip);
+      await tester.pumpAndSettle();
+
+      // Detail scroll resets to 0 while list scroll stays at its offset.
+      expect(detailScroll.controller!.offset, 0);
+      expect(listScroll.controller!.offset, greaterThan(0));
+
+      // Scroll detail down again and update assessment on the same skill;
+      // scroll position must NOT reset.
+      final newMaxDetail = detailScroll.controller!.position.maxScrollExtent;
+      if (newMaxDetail > 0) {
+        detailScroll.controller!.jumpTo(newMaxDetail);
+        await tester.pump();
+        final beforeAssess = detailScroll.controller!.offset;
+        expect(beforeAssess, greaterThan(0));
+
+        await tester.ensureVisible(find.text('Learning'));
+        await tester.pumpAndSettle();
+        final afterEnsure = detailScroll.controller!.offset;
+        await tester.tap(find.text('Learning'));
+        await tester.pumpAndSettle();
+
+        expect(detailScroll.controller!.offset, afterEnsure);
+      }
+
+      // Rapid consecutive related-skill taps stay at top with no glitches.
+      for (var i = 0; i < 2; i++) {
+        final chip = find.descendant(
+          of: detailScrollFinder,
+          matching: find.byType(ActionChip),
+        );
+        if (chip.evaluate().isNotEmpty) {
+          await tester.ensureVisible(chip.first);
+          await tester.pump();
+          await tester.tap(chip.first);
+          await tester.pump();
+        }
+      }
+      await tester.pumpAndSettle();
+      expect(detailScroll.controller!.offset, 0);
+    },
+  );
+
+  testWidgets(
+    'Mobile resets detail scroll to top when navigating via Related skills',
+    (tester) async {
+      const surfaceSize = Size(390, 600);
+      await tester.binding.setSurfaceSize(surfaceSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final mockAppCubit = _MockAppCubit();
+      when(() => mockAppCubit.state).thenReturn(authenticatedRiderState());
+      await tester.pumpWidget(
+        wrapV2(appCubit: mockAppCubit, surfaceSize: surfaceSize),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Safe Handling & Restraint'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Safe Handling & Restraint'));
+      await tester.pumpAndSettle();
+
+      final mobileScrollFinder = find.byKey(const Key('skillTreeV2View'));
+      final mobileScroll = tester.widget<SingleChildScrollView>(
+        mobileScrollFinder,
+      );
+      final maxExtent = mobileScroll.controller!.position.maxScrollExtent;
+      expect(maxExtent, greaterThan(0));
+
+      mobileScroll.controller!.jumpTo(maxExtent);
+      await tester.pump();
+      expect(mobileScroll.controller!.offset, greaterThan(0));
+
+      final relatedChip = find
+          .descendant(
+            of: mobileScrollFinder,
+            matching: find.byType(ActionChip),
+          )
+          .first;
+      await tester.ensureVisible(relatedChip);
+      await tester.pumpAndSettle();
+      expect(mobileScroll.controller!.offset, greaterThan(0));
+      await tester.tap(relatedChip);
+      await tester.pumpAndSettle();
+
+      expect(mobileScroll.controller!.offset, 0);
+      expect(
+        find.byKey(const Key('skillDetailV2BackButton')),
+        findsOneWidget,
+      );
+    },
+  );
 }
