@@ -19,6 +19,7 @@ const {
   saveCurriculumDraftHandler,
   discardCurriculumDraftHandler,
 } = require('./curriculum_drafts');
+const {sharePreviewHandler} = require('./share_preview');
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},
@@ -53,6 +54,11 @@ exports.saveSkillTreeCurriculumDraft = onCall(
 exports.discardSkillTreeCurriculumDraft = onCall(
     {region: 'us-central1'},
     (request) => discardCurriculumDraftHandler(admin.firestore())(request),
+);
+
+exports.sharePreview = onRequest(
+    {region: 'us-central1', timeoutSeconds: 15, memory: '256MiB'},
+    sharePreviewHandler(admin.firestore()),
 );
 
 /** ------------------------------------------------------------------------ */

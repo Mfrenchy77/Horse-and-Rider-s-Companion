@@ -9,6 +9,7 @@
     "auth": { "host": "127.0.0.1", "port": 9099 },
     "firestore": { "host": "127.0.0.1", "port": 8080 },
     "functions": { "host": "127.0.0.1", "port": 5001 },
+    "hosting": { "host": "127.0.0.1", "port": 5000 },
     "storage": { "host": "127.0.0.1", "port": 9199 }
   },
   "hosting": {
@@ -19,6 +20,14 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/SkillTree",
+        "function": "sharePreview"
+      },
+      {
+        "source": "/SkillTree/**",
+        "function": "sharePreview"
+      },
       {
         "source": "**",
         "destination": "/index.html"
