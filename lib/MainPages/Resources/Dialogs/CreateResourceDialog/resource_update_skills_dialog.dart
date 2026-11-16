@@ -7,9 +7,14 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class UpdateResourceSkills extends StatefulWidget {
-  const UpdateResourceSkills({super.key, required this.resource});
+  const UpdateResourceSkills({
+    super.key,
+    required this.resource,
+    this.initialManageMode = false,
+  });
 
   final Resource resource;
+  final bool initialManageMode;
 
   @override
   State<UpdateResourceSkills> createState() => _UpdateResourceSkillsState();
@@ -18,6 +23,7 @@ class UpdateResourceSkills extends StatefulWidget {
 class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
   late final _original = widget.resource.skillTreeIds.toSet();
   late final _selected = {..._original};
+  late bool _isManaging = widget.initialManageMode;
   String _query = '';
   String? _error;
   bool _saving = false;
@@ -86,6 +92,20 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
     final changed =
         _selected.length != _original.length ||
         !_selected.containsAll(_original);
+    final isEditingLinks = canEdit && _isManaging;
+
+    void cancelManaging() {
+      setState(() {
+        _selected
+          ..clear()
+          ..addAll(_original);
+        _query = '';
+        _category = null;
+        _difficulty = null;
+        _error = null;
+        _isManaging = false;
+      });
+    }
 
     return PopScope(
       canPop: !_saving,
@@ -132,7 +152,7 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
                     onTap: _saving ? null : () => _openSkill(skill),
                   ),
                 ),
-            if (canEdit) ...[
+            if (isEditingLinks) ...[
               const Divider(),
               Text('Manage links', style: theme.textTheme.titleSmall),
               TextField(
@@ -199,27 +219,36 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
                           });
                         },
                 ),
-            ] else
-              Text(
-                'Resource owners and editors can change skill links.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
+            ],
             if (_error != null)
               Text(_error!, style: TextStyle(color: colors.error)),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: _saving ? null : () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-          if (canEdit)
+          if (isEditingLinks) ...[
+            TextButton(
+              onPressed: _saving ? null : cancelManaging,
+              child: Text(changed ? 'Cancel' : 'Done'),
+            ),
             FilledButton(
               onPressed: changed && !_saving ? _save : null,
               child: Text(_saving ? 'Saving…' : 'Update'),
             ),
+          ] else ...[
+            TextButton(
+              onPressed: _saving ? null : () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            if (canEdit)
+              FilledButton.tonalIcon(
+                key: const Key('manageSkillLinksButton'),
+                onPressed: _saving
+                    ? null
+                    : () => setState(() => _isManaging = true),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Manage Links'),
+              ),
+          ],
         ],
       ),
     );

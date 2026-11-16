@@ -1298,30 +1298,55 @@ void main() {
       expect(find.text('Related Resources (2)'), findsOneWidget);
       expect(find.text('Alex Handling Guide'), findsOneWidget);
 
-      // Cannot edit/link another author's resource.
+      // Standalone Link Skills buttons beneath Resource cards are gone.
       expect(
         find.byKey(const Key('linkResourceSkillsButton_res-other')),
         findsNothing,
       );
-
-      // Can edit/link own resource, and Link Skills opens blurred glass modal.
-      final linkOwnBtn = find.byKey(
-        const Key('linkResourceSkillsButton_res-own'),
+      expect(
+        find.byKey(const Key('linkResourceSkillsButton_res-own')),
+        findsNothing,
       );
-      await tester.ensureVisible(linkOwnBtn);
-      await tester.pumpAndSettle();
-      expect(linkOwnBtn, findsOneWidget);
+      expect(
+        find.byKey(const Key('editResourceButton_res-other')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('editResourceButton_res-own')),
+        findsOneWidget,
+      );
 
-      await tester.tap(linkOwnBtn);
+      // Unauthorized resource overflow menu hides Manage Skill Links.
+      final otherMenu = find.byKey(
+        const Key('resourceOverflowMenu_res-other'),
+      );
+      await tester.ensureVisible(otherMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(otherMenu);
+      await tester.pumpAndSettle();
+      expect(find.text('Manage Skill Links'), findsNothing);
+      await tester.tapAt(const Offset(600, 10));
+      await tester.pumpAndSettle();
+
+      // Authorized resource overflow menu opens blurred Associated skills.
+      final ownMenu = find.byKey(const Key('resourceOverflowMenu_res-own'));
+      await tester.ensureVisible(ownMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(ownMenu);
+      await tester.pumpAndSettle();
+      expect(find.text('Manage Skill Links'), findsOneWidget);
+      await tester.tap(find.text('Manage Skill Links'));
       await tester.pumpAndSettle();
 
       expect(find.text('Associated skills'), findsOneWidget);
       expect(find.byType(BackdropFilter), findsWidgets);
 
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
 
-      // Ordinary user cannot see admin curriculum edit controls in overflow menu.
+      // Ordinary user cannot see admin curriculum edit controls in menu.
       await tester.tap(
         find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
       );

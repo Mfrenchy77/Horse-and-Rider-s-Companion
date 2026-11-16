@@ -536,29 +536,16 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
                       isResourceList: true,
                       fromSkillTree: true,
                     ),
-                    if (widget.canEditResource?.call(resource) ?? false)
-                      Wrap(
-                        spacing: AppTokens.spaceXs,
-                        children: [
-                          if (widget.onEditResource != null)
-                            TextButton.icon(
-                              key: Key('editResourceButton_${resource.id}'),
-                              onPressed: () =>
-                                  widget.onEditResource!(resource),
-                              icon: const Icon(Icons.edit_outlined, size: 16),
-                              label: const Text('Edit Resource'),
-                            ),
-                          if (widget.onLinkResourceSkills != null)
-                            TextButton.icon(
-                              key: Key(
-                                'linkResourceSkillsButton_${resource.id}',
-                              ),
-                              onPressed: () =>
-                                  widget.onLinkResourceSkills!(resource),
-                              icon: const Icon(Icons.link_outlined, size: 16),
-                              label: const Text('Link Skills'),
-                            ),
-                        ],
+                    if ((widget.canEditResource?.call(resource) ?? false) &&
+                        widget.onEditResource != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          key: Key('editResourceButton_${resource.id}'),
+                          onPressed: () => widget.onEditResource!(resource),
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          label: const Text('Edit Resource'),
+                        ),
                       ),
                   ],
                 ),

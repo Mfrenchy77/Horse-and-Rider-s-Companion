@@ -84,6 +84,16 @@ void main() {
       find.descendant(of: linkedRow, matching: find.text('Lead at the walk')),
       findsOneWidget,
     );
+    // Starts in compact read-only state (editing controls hidden).
+    expect(find.text('Search skills'), findsNothing);
+    expect(find.byKey(const ValueKey('resource-skill-leading')), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Update'), findsNothing);
+    expect(find.byKey(const Key('manageSkillLinksButton')), findsOneWidget);
+
+    // Selecting Manage Links reveals editing controls.
+    await tester.tap(find.byKey(const Key('manageSkillLinksButton')));
+    await tester.pumpAndSettle();
+
     final link = find.byKey(const ValueKey('resource-skill-leading'));
     expect(link, findsOneWidget);
     expect(
@@ -91,6 +101,12 @@ void main() {
       findsOneWidget,
     );
     expect(tester.widget<CheckboxListTile>(link).value, isTrue);
+
+    // Done returns to the compact read-only state.
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('resource-skill-leading')), findsNothing);
+    expect(find.byKey(const Key('manageSkillLinksButton')), findsOneWidget);
   });
 
   testWidgets('resource owner can link a skill from the comments dialog', (
@@ -147,6 +163,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Associated skills'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('manageSkillLinksButton')));
     await tester.pumpAndSettle();
     final update = find.widgetWithText(FilledButton, 'Update');
     expect(tester.widget<FilledButton>(update).onPressed, isNull);
@@ -253,4 +271,141 @@ void main() {
 
     expectSkillOpen();
   });
+
+  testWidgets(
+    'unauthorized viewer cannot access Manage Links and owner can cancel '
+    'or remove links from three-dot menu',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final resource = Resource(
+        id: 'guide',
+        name: 'Leading guide',
+        authorId: 'owner@example.com',
+        skillTreeIds: ['leading'],
+      );
+      final skill = Skill(
+        id: 'leading',
+        rider: true,
+        position: 0,
+        skillName: 'Lead at the walk',
+        lastEditBy: 'editor',
+        lastEditDate: DateTime.utc(2025),
+        description: '',
+        learningDescription: '',
+        proficientDescription: '',
+      );
+      final app = harness.cubit;
+      app.emit(
+        app.state.copyWith(
+          isGuest: false,
+          usersProfile: RiderProfile(
+            id: 'viewer',
+            email: 'viewer@example.com',
+            name: 'Viewer',
+          ),
+          allSkills: [skill],
+          resource: resource,
+          resources: [resource],
+        ),
+      );
+      when(
+        () => harness.resources.updateSkillLinks(
+          id: 'guide',
+          added: any(named: 'added'),
+          removed: any(named: 'removed'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        RepositoryProvider<ResourcesRepository>.value(
+          value: harness.resources,
+          child: BlocProvider.value(
+            value: app,
+            child: const MaterialApp(home: ResourceCommentPage(id: 'guide')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Unauthorized user does not see Manage Skill Links in three-dot menu.
+      await tester.tap(
+        find.byKey(const Key('resourceOverflowMenu_guide')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Manage Skill Links'), findsNothing);
+      expect(find.text('Report'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      // Unauthorized user sees compact read-only dialog with no Manage Links.
+      await tester.tap(find.byTooltip('Associated skills'));
+      await tester.pumpAndSettle();
+      expect(
+        find.widgetWithText(ListTile, 'Lead at the walk'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('manageSkillLinksButton')), findsNothing);
+      expect(find.text('Search skills'), findsNothing);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      // Switch to resource owner: three-dot menu exposes Manage Skill Links.
+      app.emit(
+        app.state.copyWith(
+          usersProfile: RiderProfile(
+            id: 'owner',
+            email: 'owner@example.com',
+            name: 'Owner',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('resourceOverflowMenu_guide')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Manage Skill Links'), findsOneWidget);
+      await tester.tap(find.text('Manage Skill Links'));
+      await tester.pumpAndSettle();
+
+      // Uncheck skill, then Cancel returns to compact view without saving.
+      final skillCheckbox = find.byKey(
+        const ValueKey('resource-skill-leading'),
+      );
+      await tester.ensureVisible(skillCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(skillCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manageSkillLinksButton')), findsOneWidget);
+      verifyNever(
+        () => harness.resources.updateSkillLinks(
+          id: any(named: 'id'),
+          added: any(named: 'added'),
+          removed: any(named: 'removed'),
+        ),
+      );
+
+      // Re-enter Manage Links, remove link, and Update.
+      await tester.tap(find.byKey(const Key('manageSkillLinksButton')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(skillCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(skillCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Update'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => harness.resources.updateSkillLinks(
+          id: 'guide',
+          added: {},
+          removed: {'leading'},
+        ),
+      ).called(1);
+    },
+  );
 }

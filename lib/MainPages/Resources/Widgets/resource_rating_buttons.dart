@@ -123,13 +123,25 @@ class ResourceRatingButtons extends StatelessWidget {
                 color: muted,
               ),
             ),
-            // pop up overflow menu with the option to report the resource
+            // pop up overflow menu with resource actions
             Visibility(
               visible: !state.isGuest,
               child: PopupMenuButton<String>(
+                key: Key(
+                  'resourceOverflowMenu_${resource.id ?? 'unknown'}',
+                ),
                 icon: Icon(Icons.more_vert, color: muted),
                 onSelected: (value) {
                   switch (value) {
+                    case 'ManageSkillLinks':
+                      showAppGlassDialog<void>(
+                        context: context,
+                        builder: (_) => UpdateResourceSkills(
+                          resource: resource,
+                          initialManageMode: true,
+                        ),
+                      );
+                      break;
                     case 'Report':
                       debugPrint('Report: ${resource.name}');
                       showAppGlassDialog<void>(
@@ -140,7 +152,19 @@ class ResourceRatingButtons extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) {
+                  final canManageSkillLinks =
+                      !state.isGuest &&
+                      (resource.id?.isNotEmpty ?? false) &&
+                      (state.isAdmin ||
+                          state.isEditor ||
+                          (state.usersProfile?.editor ?? false) ||
+                          cubit.canEditResource(resource));
                   return <PopupMenuEntry<String>>[
+                    if (canManageSkillLinks)
+                      const PopupMenuItem<String>(
+                        value: 'ManageSkillLinks',
+                        child: Text('Manage Skill Links'),
+                      ),
                     const PopupMenuItem<String>(
                       value: 'Report',
                       child: Text('Report'),
