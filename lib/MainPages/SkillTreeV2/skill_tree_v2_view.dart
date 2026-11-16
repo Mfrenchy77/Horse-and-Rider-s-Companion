@@ -20,6 +20,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_fami
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_tree_v2_header.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/suggest_improvement_dialog.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class SkillTreeV2View extends StatefulWidget {
@@ -1374,7 +1375,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 ),
               ],
             ),
-            body: AppScaffoldBackdrop(child: body),
+            body: SizedBox.expand(
+              child: AppScaffoldBackdrop(
+                baseGradient: isOceanCoralDarkTheme(context)
+                    ? OceanCoralGradients.background
+                    : null,
+                child: body,
+              ),
+            ),
           );
         },
         ),
