@@ -29,6 +29,10 @@
         "function": "sharePreview"
       },
       {
+        "source": "/Profile/Horse_Profile/**",
+        "function": "sharePreview"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

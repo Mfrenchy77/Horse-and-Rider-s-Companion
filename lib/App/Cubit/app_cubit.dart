@@ -1163,6 +1163,20 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Updates whether [horseProfile] is publicly shareable.
+  Future<void> setHorsePublicSharing(
+    HorseProfile horseProfile, {
+    required bool isPublic,
+  }) async {
+    final updatedHorseProfile = horseProfile.copyWith(
+      isPublic: isPublic,
+      lastEditDate: DateTime.now(),
+      lastEditBy: state.usersProfile?.name,
+    );
+    emit(state.copyWith(horseProfile: updatedHorseProfile));
+    await _persistHorseProfileChanges(updatedHorseProfile);
+  }
+
   void _updateHorseSkillLevel(
     HorseProfile horseProfile,
     LevelState levelState,

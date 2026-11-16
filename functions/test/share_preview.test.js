@@ -4,9 +4,23 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {sharePreviewHandler} = require('../share_preview');
 
-function fakeDb(docsById) {
+function fakeDb(docsById, horsesById = {}) {
   return {
     collection(name) {
+      if (name === 'Horse_Profile') {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = horsesById[id];
+                return data
+                  ? {exists: true, id, data: () => data}
+                  : {exists: false, id, data: () => undefined};
+              },
+            };
+          },
+        };
+      }
       assert.equal(name, 'SkillsV2');
       return {
         doc(id) {
@@ -134,4 +148,109 @@ test('sharePreview resolves legacy skill ID to canonical og:url and hides draft 
   assert.equal(resDraft.statusCode, 200);
   assert.doesNotMatch(resDraft.body, /Secret Draft/);
   assert.match(resDraft.body, /Skill Tree 2\.0/);
+});
+
+test('sharePreview serves public active horse metadata without leaking private fields', async () => {
+  const db = fakeDb({}, {
+    'horse-1': {
+      isPublic: true,
+      archiveStatus: 'active',
+      name: 'Starlight',
+      breed: 'Quarter Horse',
+      gender: 'Mare',
+      color: 'Bay',
+      locationName: 'Austin, TX',
+      picUrl: 'https://firebasestorage.googleapis.com/v0/b/demo/o/Horses_Photo%2Fhorse-1?alt=media',
+      currentOwnerId: 'owner@example.com',
+      currentOwnerName: 'Secret Owner',
+      purchasePrice: 12000,
+      notes: [{id: 'n1', name: 'Private vet note'}],
+      instructors: [{id: 'trainer@example.com', name: 'Trainer Bob'}],
+    },
+    'horse-sale': {
+      isPublic: true,
+      archiveStatus: 'active',
+      name: 'Comet',
+      breed: 'Morgan',
+      saleListing: {
+        price: 9500,
+        location: 'Dallas, TX',
+        description: 'Calm trail partner with solid groundwork.',
+      },
+      currentOwnerId: 'owner@example.com',
+    },
+  });
+  const handler = sharePreviewHandler(db, {
+    fetchFn: async () => ({ok: false}),
+  });
+
+  const resPublic = makeRes();
+  await handler(
+      {
+        headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'},
+        path: '/Profile/Horse_Profile/horse-1',
+        query: {},
+      },
+      resPublic,
+  );
+  assert.equal(resPublic.statusCode, 200);
+  assert.match(resPublic.body, /<meta property="og:title" content="Starlight — Horse &amp; Rider&#39;s Companion">/);
+  assert.match(resPublic.body, /<meta property="og:description" content="Quarter Horse · Mare · Bay · Austin, TX">/);
+  assert.match(resPublic.body, /<meta property="og:image" content="https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/demo\/o\/Horses_Photo%2Fhorse-1\?alt=media">/);
+  assert.match(resPublic.body, /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app\/Profile\/Horse_Profile\/horse-1">/);
+  assert.doesNotMatch(resPublic.body, /Secret Owner|owner@example\.com|12000|Private vet note|Trainer Bob/);
+
+  const resSale = makeRes();
+  await handler(
+      {
+        headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'},
+        path: '/Profile/Horse_Profile/horse-sale',
+        query: {},
+      },
+      resSale,
+  );
+  assert.equal(resSale.statusCode, 200);
+  assert.match(resSale.body, /<meta property="og:title" content="Comet \(For Sale\) — Horse &amp; Rider&#39;s Companion">/);
+  assert.match(resSale.body, /<meta property="og:description" content="Calm trail partner with solid groundwork\.">/);
+  assert.match(resSale.body, /<meta property="og:image" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app\/icons\/Icon-512\.png">/);
+});
+
+test('sharePreview hides private, archived, and missing horse profiles', async () => {
+  const db = fakeDb({}, {
+    'horse-private': {
+      isPublic: false,
+      archiveStatus: 'active',
+      name: 'Hidden Horse',
+      breed: 'Arabian',
+    },
+    'horse-default': {
+      archiveStatus: 'active',
+      name: 'Default Private Horse',
+    },
+    'horse-archived': {
+      isPublic: true,
+      archiveStatus: 'archived',
+      name: 'Archived Horse',
+    },
+  });
+  const handler = sharePreviewHandler(db, {
+    fetchFn: async () => ({ok: false}),
+  });
+
+  for (const id of ['horse-private', 'horse-default', 'horse-archived', 'horse-missing']) {
+    const res = makeRes();
+    await handler(
+        {
+          headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'},
+          path: `/Profile/Horse_Profile/${id}`,
+          query: {},
+        },
+        res,
+    );
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
+    assert.doesNotMatch(res.body, /Hidden Horse|Default Private Horse|Archived Horse|Arabian/);
+    assert.match(res.body, /<meta property="og:title" content="Horse &amp; Rider&#39;s Companion">/);
+    assert.match(res.body, /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app">/);
+  }
 });

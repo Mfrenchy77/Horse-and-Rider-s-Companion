@@ -88,6 +88,7 @@ class HorseProfileFirestoreMapper {
     return {
       'id': horseProfile.id,
       'name': horseProfile.name,
+      'isPublic': horseProfile.isPublic,
       'currentOwnerId': horseProfile.currentOwnerId,
       if (horseProfile.color != null) 'color': horseProfile.color,
       if (horseProfile.breed != null) 'breed': horseProfile.breed,

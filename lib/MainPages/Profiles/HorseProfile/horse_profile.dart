@@ -18,46 +18,63 @@ class HorseProfileView extends StatelessWidget {
   final HorseProfile horseProfile;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: ThemedAppBar(
-      title: const Text('Horse profile'),
-      actions: const [
-        ProfileSearchButton(key: Key('HorseSearchButton')),
-        HorseProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
-      ],
-    ),
-    body: AppScaffoldBackdrop(
-      child: ProfileLayout(
-        wideKey: const Key('horseProfileWide'),
-        compactKey: const Key('horseProfileCompact'),
-        identity: HorseProfilePrimaryView(
-          horseProfile: horseProfile,
-          key: const Key('HorseProfilePrimaryView'),
-        ),
-        skills: AppSurfaceCard(
-          key: const Key('horseSkills'),
-          padding: const EdgeInsets.all(AppTokens.spaceMd),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppSectionHeader(
-                title: 'Skills',
-                actionLabel: 'Explore Skill Tree',
-                showArrow: true,
-                onAction: () {
-                  context.read<AppCubit>().navigateToSkillsList();
-                  context.goNamed(SkillTreePage.name);
-                },
-              ),
-              const SizedBox(height: 8),
-              ProfileSkills(
-                key: const Key('ProfileSkills'),
-                skillLevels: horseProfile.skillLevels,
-              ),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) {
+    final appState = context.select((AppCubit cubit) => cubit.state);
+    final isOwnerOrLinked = canViewPrivateHorseDetails(appState, horseProfile);
+    return Scaffold(
+      appBar: ThemedAppBar(
+        title: const Text('Horse profile'),
+        actions: const [
+          ProfileSearchButton(key: Key('HorseSearchButton')),
+          HorseProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
+        ],
       ),
-    ),
-  );
+      body: AppScaffoldBackdrop(
+        child: isOwnerOrLinked
+            ? ProfileLayout(
+                wideKey: const Key('horseProfileWide'),
+                compactKey: const Key('horseProfileCompact'),
+                identity: HorseProfilePrimaryView(
+                  horseProfile: horseProfile,
+                  key: const Key('HorseProfilePrimaryView'),
+                ),
+                skills: AppSurfaceCard(
+                  key: const Key('horseSkills'),
+                  padding: const EdgeInsets.all(AppTokens.spaceMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppSectionHeader(
+                        title: 'Skills',
+                        actionLabel: 'Explore Skill Tree',
+                        showArrow: true,
+                        onAction: () {
+                          context.read<AppCubit>().navigateToSkillsList();
+                          context.goNamed(SkillTreePage.name);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ProfileSkills(
+                        key: const Key('ProfileSkills'),
+                        skillLevels: horseProfile.skillLevels,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: HorseProfilePrimaryView(
+                      horseProfile: horseProfile,
+                      key: const Key('HorseProfilePrimaryView'),
+                    ),
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
 }

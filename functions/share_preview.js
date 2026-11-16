@@ -99,32 +99,119 @@ async function resolvePublicSkill(db, rawSkillId) {
   return null;
 }
 
+function safeDecodeURIComponent(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (_) {
+    return value;
+  }
+}
+
+async function resolvePublicHorse(db, rawHorseId) {
+  const horseId = typeof rawHorseId === 'string' ? rawHorseId.trim() : '';
+  if (!horseId || !DOC_ID_REGEX.test(horseId)) return null;
+
+  const snap = await db.collection('Horse_Profile').doc(horseId).get();
+  if (!snap.exists) return null;
+
+  const data = snap.data() || {};
+  const archiveStatus = data.archiveStatus || 'active';
+  if (data.isPublic !== true || archiveStatus !== 'active') {
+    return null;
+  }
+
+  return {
+    id: snap.id,
+    name: typeof data.name === 'string' ? data.name.trim() : '',
+    breed: typeof data.breed === 'string' ? data.breed.trim() : '',
+    gender: typeof data.gender === 'string' ? data.gender.trim() : '',
+    color: typeof data.color === 'string' ? data.color.trim() : '',
+    locationName: typeof data.locationName === 'string' ? data.locationName.trim() : '',
+    picUrl: typeof data.picUrl === 'string' ? data.picUrl.trim() : '',
+    saleListing: data.saleListing && typeof data.saleListing === 'object' ? {
+      description: typeof data.saleListing.description === 'string' ?
+        data.saleListing.description.trim() :
+        '',
+    } : null,
+  };
+}
+
+function buildHorsePreviewMeta(origin, horse) {
+  if (!horse) {
+    return {
+      title: DEFAULT_TITLE,
+      description: DEFAULT_DESCRIPTION,
+      image: `${origin}${DEFAULT_IMAGE_PATH}`,
+      url: origin,
+    };
+  }
+
+  const horseName = horse.name || 'Horse Profile';
+  const summaryParts = [
+    horse.breed,
+    horse.gender,
+    horse.color,
+    horse.locationName,
+  ].filter(Boolean);
+  const description = (horse.saleListing && horse.saleListing.description) ||
+    (summaryParts.length ? summaryParts.join(' · ') : DEFAULT_DESCRIPTION);
+  const image = /^https?:\/\//i.test(horse.picUrl) ?
+    horse.picUrl :
+    `${origin}${DEFAULT_IMAGE_PATH}`;
+
+  return {
+    title: horse.saleListing ?
+      `${horseName} (For Sale) — ${DEFAULT_TITLE}` :
+      `${horseName} — ${DEFAULT_TITLE}`,
+    description,
+    image,
+    url: `${origin}/Profile/Horse_Profile/${encodeURIComponent(horse.id)}`,
+  };
+}
+
 function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
   return async (req, res) => {
     try {
       const origin = resolveRequestOrigin(req);
-      const rawSkillId = req.query?.skillId || '';
-      const skill = await resolvePublicSkill(db, rawSkillId);
+      const reqPath = typeof req.path === 'string' ?
+        req.path :
+        (typeof req.url === 'string' ? req.url.split('?')[0] : '');
+      const horseMatch = reqPath.match(/^\/Profile\/Horse_Profile\/([^/]+)\/?$/);
 
-      const canonicalPath = skill ?
-        `/SkillTree?skillId=${encodeURIComponent(skill.id)}` :
-        '/SkillTree';
-      const subjectLabel = skill ?
-        (skill.subject === 'horse' ? 'Horse Skill' : 'Rider Skill') :
-        '';
-      const meta = skill ?
-        {
-          title: `${skill.name} (${subjectLabel}) — ${DEFAULT_TITLE}`,
-          description: skill.summary || skill.purpose || DEFAULT_DESCRIPTION,
-          image: `${origin}${DEFAULT_IMAGE_PATH}`,
-          url: `${origin}${canonicalPath}`,
-        } :
-        {
-          title: `Skill Tree 2.0 — ${DEFAULT_TITLE}`,
-          description: DEFAULT_DESCRIPTION,
-          image: `${origin}${DEFAULT_IMAGE_PATH}`,
-          url: `${origin}${canonicalPath}`,
-        };
+      let meta;
+      let cacheControl = 'public, max-age=300, s-maxage=600';
+
+      if (horseMatch) {
+        const rawHorseId = safeDecodeURIComponent(horseMatch[1]);
+        const horse = await resolvePublicHorse(db, rawHorseId);
+        meta = buildHorsePreviewMeta(origin, horse);
+        if (!horse) {
+          cacheControl = 'no-store';
+        }
+      } else {
+        const rawSkillId = req.query?.skillId || '';
+        const skill = await resolvePublicSkill(db, rawSkillId);
+
+        const canonicalPath = skill ?
+          `/SkillTree?skillId=${encodeURIComponent(skill.id)}` :
+          '/SkillTree';
+        const subjectLabel = skill ?
+          (skill.subject === 'horse' ? 'Horse Skill' : 'Rider Skill') :
+          '';
+        meta = skill ?
+          {
+            title: `${skill.name} (${subjectLabel}) — ${DEFAULT_TITLE}`,
+            description: skill.summary || skill.purpose || DEFAULT_DESCRIPTION,
+            image: `${origin}${DEFAULT_IMAGE_PATH}`,
+            url: `${origin}${canonicalPath}`,
+          } :
+          {
+            title: `Skill Tree 2.0 — ${DEFAULT_TITLE}`,
+            description: DEFAULT_DESCRIPTION,
+            image: `${origin}${DEFAULT_IMAGE_PATH}`,
+            url: `${origin}${canonicalPath}`,
+          };
+      }
 
       let baseHtml = '';
       try {
@@ -141,7 +228,7 @@ function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
         fallbackHtmlShell(meta);
 
       res.set('Content-Type', 'text/html; charset=utf-8');
-      res.set('Cache-Control', 'public, max-age=300, s-maxage=600');
+      res.set('Cache-Control', cacheControl);
       res.status(200).send(html);
     } catch (err) {
       res.status(500).send(`Preview error: ${escapeHtml(err.message || err)}`);
@@ -153,6 +240,7 @@ module.exports = {
   buildMetaTagsHtml,
   escapeHtml,
   injectMetaIntoHtml,
+  resolvePublicHorse,
   resolvePublicSkill,
   resolveRequestOrigin,
   sharePreviewHandler,

@@ -47,6 +47,7 @@ class HorseProfile {
     this.lastEditDate,
     this.purchasePrice,
     required this.name,
+    this.isPublic = false,
     this.dateOfPurchase,
     this.archiveStatus = 'active',
     this.saleListing,
@@ -90,6 +91,9 @@ class HorseProfile {
 
   /// the horse's location state name
   String? locationName;
+
+  /// Whether this horse profile is publicly shareable.
+  final bool isPublic;
 
   /// Current archive status, managed by the coaching callable.
   final String archiveStatus;
@@ -170,6 +174,7 @@ class HorseProfile {
       countryName: data['countryName'] as String?,
       purchasePrice: data['purchasePrice'] as int?,
       locationName: data['locationName'] as String?,
+      isPublic: data['isPublic'] == true,
       archiveStatus: data['archiveStatus'] as String? ?? 'active',
       saleListing: _saleListing(data['saleListing']),
       transferRequestId: data['transferRequestId'] as String?,
@@ -196,6 +201,7 @@ class HorseProfile {
     return {
       'id': id,
       'name': name,
+      'isPublic': isPublic,
       'currentOwnerId': currentOwnerId,
       'archiveStatus': archiveStatus,
       if (saleListing != null)
@@ -263,6 +269,7 @@ class HorseProfile {
     String? countryIso,
     String? countryName,
     String? locationName,
+    bool? isPublic,
     DateTime? dateOfBirth,
     DateTime? lastEditDate,
     String? currentOwnerId,
@@ -295,6 +302,7 @@ class HorseProfile {
       lastEditDate: lastEditDate ?? this.lastEditDate,
       locationName: locationName ?? this.locationName,
       purchasePrice: purchasePrice ?? this.purchasePrice,
+      isPublic: isPublic ?? this.isPublic,
       archiveStatus: archiveStatus,
       saleListing: saleListing,
       transferRequestId: transferRequestId,

@@ -14,6 +14,24 @@ import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
 import 'package:super_banners/super_banners.dart';
 
+/// Returns whether the current [state] user can view private details
+/// for [horse].
+bool canViewPrivateHorseDetails(AppState state, HorseProfile horse) {
+  if (state.isGuest) return false;
+  final viewer = state.usersProfile;
+  if (viewer == null) return false;
+  if (state.isAdmin) return true;
+  final viewerEmail = viewer.email.trim().toLowerCase();
+  if (viewerEmail.isEmpty) return false;
+  if (horse.currentOwnerId.trim().toLowerCase() == viewerEmail) {
+    return true;
+  }
+  final instructors = horse.instructors ?? const <BaseListItem>[];
+  return instructors.any(
+    (instructor) => (instructor.id ?? '').trim().toLowerCase() == viewerEmail,
+  );
+}
+
 class HorseProfilePrimaryView extends StatelessWidget {
   const HorseProfilePrimaryView({super.key, required this.horseProfile});
 
@@ -21,6 +39,29 @@ class HorseProfilePrimaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.select((AppCubit cubit) => cubit.state);
+    final isOwnerOrLinked = canViewPrivateHorseDetails(appState, horseProfile);
+    if (!isOwnerOrLinked && !horseProfile.isPublic) {
+      return AppSurfaceCard(
+        key: const Key('horsePrivateNotice'),
+        padding: const EdgeInsets.all(AppTokens.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
+          children: [
+            const AppSectionHeader(title: 'Private Horse Profile'),
+            Text(
+              'This horse profile is private. Ask the owner to enable '
+              'public sharing to view it.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final instructors = horseProfile.instructors ?? const <BaseListItem>[];
     final forSale =
         !horseProfile.isArchived && horseProfile.saleListing != null;
@@ -58,17 +99,22 @@ class HorseProfilePrimaryView extends StatelessWidget {
                 )
               : null,
         ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: LogBookButton(
-            profile: null,
-            horseProfile: horseProfile,
-            key: const Key('logBookButton'),
+        if (isOwnerOrLinked)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: LogBookButton(
+              profile: null,
+              horseProfile: horseProfile,
+              key: const Key('logBookButton'),
+            ),
           ),
-        ),
         if (forSale) HorseSalePanel(horse: horseProfile),
-        _HorseDetails(key: ValueKey(horseProfile.id), horse: horseProfile),
-        if (instructors.isNotEmpty)
+        _HorseDetails(
+          key: ValueKey(horseProfile.id),
+          horse: horseProfile,
+          showOwner: isOwnerOrLinked,
+        ),
+        if (isOwnerOrLinked && instructors.isNotEmpty)
           AppSurfaceCard(
             padding: const EdgeInsets.all(AppTokens.spaceMd),
             child: Column(
@@ -87,16 +133,21 @@ class HorseProfilePrimaryView extends StatelessWidget {
               ],
             ),
           ),
-        ConnectionPanel(horse: horseProfile),
+        if (isOwnerOrLinked) ConnectionPanel(horse: horseProfile),
       ],
     );
   }
 }
 
 class _HorseDetails extends StatefulWidget {
-  const _HorseDetails({required this.horse, super.key});
+  const _HorseDetails({
+    required this.horse,
+    required this.showOwner,
+    super.key,
+  });
 
   final HorseProfile horse;
+  final bool showOwner;
 
   @override
   State<_HorseDetails> createState() => _HorseDetailsState();
@@ -164,6 +215,7 @@ class _HorseDetailsState extends State<_HorseDetails> {
           ),
     ];
     final hasOwner =
+        widget.showOwner &&
         ownerId.isNotEmpty &&
         ownerId != 'NONE' &&
         owner.isNotEmpty &&

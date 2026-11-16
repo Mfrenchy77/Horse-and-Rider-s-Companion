@@ -74,6 +74,12 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           if (confirmed != true) return;
           await cubit.submitHorseManageAction(horse: horse, action: 'unlist');
           return;
+        case 'toggle_public':
+          await cubit.setHorsePublicSharing(
+            horse,
+            isPublic: !horse.isPublic,
+          );
+          return;
         default:
           final transfer = action == 'transfer';
           final email = await showAppGlassDialog<String>(
@@ -95,6 +101,14 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
         if (!horse.isArchived)
           const PopupMenuItem(value: 'edit', child: Text('Edit')),
         if (canManage) ...[
+          PopupMenuItem(
+            value: 'toggle_public',
+            child: Text(
+              horse.isPublic
+                  ? 'Make profile private'
+                  : 'Enable public sharing',
+            ),
+          ),
           PopupMenuItem(
             value: 'listing',
             child: Text(
@@ -121,7 +135,13 @@ class HorseProfileOverFlowMenu extends StatelessWidget {
           ),
       ],
       onSelected: (value) async {
-        if (['listing', 'unlist', 'transfer', 'invite'].contains(value)) {
+        if ([
+          'listing',
+          'unlist',
+          'transfer',
+          'invite',
+          'toggle_public',
+        ].contains(value)) {
           await manage(value);
           return;
         }
