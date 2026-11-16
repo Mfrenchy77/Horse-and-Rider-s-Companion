@@ -697,40 +697,92 @@ class _LevelDetailSection extends StatelessWidget {
               ],
             ),
           ],
-          if (definition.components.isNotEmpty) ...[
-            const Divider(),
-            Text(
-              'Educational components (guidance only, not separate checkoffs)',
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          if (definition.components.isNotEmpty)
+            _EducationalComponentsSection(
+              key: ValueKey('educationalComponents_${skill.id}_${level.name}'),
+              definition: definition,
             ),
-            for (final component in definition.components)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '• ${component.title}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (component.description.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Text(
-                          component.description,
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-          ],
         ],
       ),
+    );
+  }
+}
+
+class _EducationalComponentsSection extends StatefulWidget {
+  const _EducationalComponentsSection({
+    required this.definition,
+    super.key,
+  });
+
+  final SkillLevelDefinition definition;
+
+  @override
+  State<_EducationalComponentsSection> createState() =>
+      _EducationalComponentsSectionState();
+}
+
+class _EducationalComponentsSectionState
+    extends State<_EducationalComponentsSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(),
+        InkWell(
+          key: const Key('educationalComponentsToggle'),
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Educational components '
+                    '(guidance only, not separate checkoffs)',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTokens.spaceXs),
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  color: AppTokens.secondaryTextColor(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded)
+          for (final component in widget.definition.components)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '• ${component.title}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (component.description.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        component.description,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+      ],
     );
   }
 }

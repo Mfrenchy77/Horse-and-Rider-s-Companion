@@ -1321,18 +1321,20 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem<String>(
-                      key: Key('skillTreeV2MenuSuggestImprovement'),
-                      value: 'suggest',
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.lightbulb_outline, size: 18),
-                          SizedBox(width: AppTokens.spaceSm),
-                          Flexible(child: Text('Suggest an Improvement')),
-                        ],
+                    if (!(_mobileShowingDetail &&
+                        effectiveState.selectedSkill != null))
+                      const PopupMenuItem<String>(
+                        key: Key('skillTreeV2MenuSuggestImprovement'),
+                        value: 'suggest',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.lightbulb_outline, size: 18),
+                            SizedBox(width: AppTokens.spaceSm),
+                            Flexible(child: Text('Suggest an Improvement')),
+                          ],
+                        ),
                       ),
-                    ),
                     if (!appState.isGuest && appState.user.emailVerified)
                       const PopupMenuItem<String>(
                         key: Key('skillTreeV2MenuMySuggestions'),
