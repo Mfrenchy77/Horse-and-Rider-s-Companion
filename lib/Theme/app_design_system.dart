@@ -139,14 +139,9 @@ class AppTokens {
 
 /// Atmospheric midnight-teal backdrop for dark-themed pages.
 class AppScaffoldBackdrop extends StatelessWidget {
-  const AppScaffoldBackdrop({
-    super.key,
-    required this.child,
-    this.baseGradient,
-  });
+  const AppScaffoldBackdrop({super.key, required this.child});
 
   final Widget child;
-  final Gradient? baseGradient;
 
   @override
   Widget build(BuildContext context) {
@@ -154,9 +149,7 @@ class AppScaffoldBackdrop extends StatelessWidget {
       return child;
     }
     return DecoratedBox(
-      decoration: baseGradient == null
-          ? AppTokens.midnightBackdrop
-          : BoxDecoration(gradient: baseGradient),
+      decoration: AppTokens.midnightBackdrop,
       child: DecoratedBox(
         decoration: AppTokens.atmosphericOverlay(context),
         child: child,

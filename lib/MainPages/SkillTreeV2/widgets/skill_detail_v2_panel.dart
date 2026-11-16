@@ -576,12 +576,31 @@ class _LevelDetailSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isVerified = verification != null;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(AppTokens.spaceMd),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: isDark ? null : theme.colorScheme.surfaceContainerLow,
+        gradient: isDark
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.alphaBlend(
+                    AppTokens.coralAccent.withValues(alpha: 0.16),
+                    AppTokens.midnightCardTop,
+                  ),
+                  AppTokens.midnightCardTop,
+                  AppTokens.midnightCardBottom,
+                ],
+                stops: const [0, 0.42, 1],
+              )
+            : null,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: isDark
+            ? Border.all(color: AppTokens.coralAccent, width: 1.4)
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
