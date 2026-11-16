@@ -304,11 +304,30 @@ class Routes {
                     GoRoute(
                       path: SkillTreeView.skillsListPath,
                       name: SkillTreeView.skillsListName,
+                      redirect: (_, __) => settingsContoller.skillTreeV2Enabled
+                          ? SkillTreePage.path
+                          : null,
                       builder: (context, state) => const SkillTreeView(),
                       routes: [
                         GoRoute(
                           path: SkillTreeView.skillLevelPath,
                           name: SkillTreeView.skillLevelName,
+                          redirect: (_, state) {
+                            if (!settingsContoller.skillTreeV2Enabled) {
+                              return null;
+                            }
+                            final id = state
+                                .pathParameters[SkillTreeView.skillPathParam];
+                            if (id == null || id.isEmpty) {
+                              return SkillTreePage.path;
+                            }
+                            return Uri(
+                              path: SkillTreePage.path,
+                              queryParameters: {
+                                SkillTreeView.skillPathParam: id,
+                              },
+                            ).toString();
+                          },
                           pageBuilder: (context, state) {
                             final id = state
                                 .pathParameters[SkillTreeView.skillPathParam]!;
