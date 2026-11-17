@@ -51,6 +51,7 @@ dependencies:
   image_picker: ^1.2.4
   intl: ^0.20.3
   numberpicker: ^2.1.2
+  overmark: ^0.2.0
   photo_view: ^0.15.0
   scrollable_positioned_list: ^0.3.8
   shared_preferences: ^2.5.6

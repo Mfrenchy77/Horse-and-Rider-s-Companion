@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -70,7 +71,7 @@ class SkillFamilyListV2 extends StatelessWidget {
         final isExpanded =
             isSearching || state.expandedFamilyIds.contains(family.id);
 
-        return RepaintBoundary(
+        final card = RepaintBoundary(
           child: AppSurfaceCard(
             key: Key('skillFamily_${family.id}'),
             padding: const EdgeInsets.all(AppTokens.spaceMd),
@@ -191,6 +192,12 @@ class SkillFamilyListV2 extends StatelessWidget {
           ),
         ),
         );
+        return index == 0
+            ? KeyedSubtree(
+                key: GuestSpotlightTour.skillTreeFamilyKey,
+                child: card,
+              )
+            : card;
       },
     );
   }

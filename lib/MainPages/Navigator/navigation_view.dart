@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/ocean_coral.dart';
@@ -232,6 +233,7 @@ class _NavigationViewState extends State<NavigationView> {
                   child: NavigationRail(
                     selectedIndex: widget.child.currentIndex,
                     onDestinationSelected: (index) {
+                      GuestSpotlightTour.notifyNavBranchSelected(index);
                       if (index == widget.child.currentIndex) return;
                       // Trigger the branch slide immediately on tap.
                       // The BlocListener below still handles programmatic
@@ -271,6 +273,7 @@ class _NavigationViewState extends State<NavigationView> {
                   child: BottomNavigationBar(
                     currentIndex: widget.child.currentIndex,
                     onTap: (index) {
+                      GuestSpotlightTour.notifyNavBranchSelected(index);
                       if (index == widget.child.currentIndex) return;
                       widget.child.goBranch(index);
                       context.read<AppCubit>().changeIndex(index);
@@ -327,18 +330,20 @@ List<NavigationRailDestination> _buildNavigationRailDestinations({
     label: Text(isForRider ? 'Profile' : 'Horse Profile'),
   ),
   NavigationRailDestination(
-    icon: isForRider
-        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-        : const Icon(HorseAndRiderIcons.horseSkillIcon),
-    selectedIcon: isForRider
-        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-        : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    icon: KeyedSubtree(
+      key: GuestSpotlightTour.skillTreeNavKey,
+      child: isForRider
+          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    ),
     label: const Text('Skill Tree'),
   ),
-  const NavigationRailDestination(
-    icon: Icon(HorseAndRiderIcons.resourcesIcon),
-    selectedIcon: Icon(HorseAndRiderIcons.resourcesIcon),
-    label: Text('Resources'),
+  NavigationRailDestination(
+    icon: KeyedSubtree(
+      key: GuestSpotlightTour.resourcesNavKey,
+      child: const Icon(HorseAndRiderIcons.resourcesIcon),
+    ),
+    label: const Text('Resources'),
   ),
 ];
 
@@ -352,13 +357,19 @@ List<BottomNavigationBarItem> _buildBottomNavigationBarItems({
     label: isForRider ? 'Profile' : 'Horse Profile',
   ),
   BottomNavigationBarItem(
-    icon: isForRider
-        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-        : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    icon: KeyedSubtree(
+      key: GuestSpotlightTour.skillTreeNavKey,
+      child: isForRider
+          ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+          : const Icon(HorseAndRiderIcons.horseSkillIcon),
+    ),
     label: 'Skill Tree',
   ),
-  const BottomNavigationBarItem(
-    icon: Icon(HorseAndRiderIcons.resourcesIcon),
+  BottomNavigationBarItem(
+    icon: KeyedSubtree(
+      key: GuestSpotlightTour.resourcesNavKey,
+      child: const Icon(HorseAndRiderIcons.resourcesIcon),
+    ),
     label: 'Resources',
   ),
 ];

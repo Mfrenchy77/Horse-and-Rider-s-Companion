@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
@@ -35,7 +36,13 @@ class GuestProfile extends StatelessWidget {
             key: const Key('GuestTutorialButton'),
             tooltip: 'Tutorial',
             icon: const Icon(Icons.school),
-            onPressed: () => context.read<AppCubit>().showOnboardingNow(),
+            onPressed: () {
+              if (GuestSpotlightTour.skillTreeNavKey.currentContext != null) {
+                GuestSpotlightTour.start(context);
+              } else {
+                context.read<AppCubit>().showOnboardingNow();
+              }
+            },
           ),
         ],
       ),

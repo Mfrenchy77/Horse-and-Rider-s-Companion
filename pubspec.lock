@@ -1281,6 +1281,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
+  overmark:
+    dependency: "direct main"
+    description:
+      name: overmark
+      sha256: b4031cc712b8598b2c58d21920b99c2f5b11d5fa42d10374c934ccddf8d6f88d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
   package_config:
     dependency: transitive
     description:

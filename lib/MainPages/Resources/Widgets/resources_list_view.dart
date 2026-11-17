@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_item_placeholder.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/resources_sort_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -235,7 +236,12 @@ class ResourcesListView extends StatelessWidget {
                   slivers: [
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                      sliver: SliverToBoxAdapter(child: header),
+                      sliver: SliverToBoxAdapter(
+                        child: KeyedSubtree(
+                          key: GuestSpotlightTour.resourcesHeaderKey,
+                          child: header,
+                        ),
+                      ),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
