@@ -62,6 +62,7 @@ class _CreateCommentDialogBody extends StatefulWidget {
 
 class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
   late final quill.QuillController _controller;
+  final _editorFocus = FocusNode();
   bool _canSend = false;
 
   @override
@@ -117,6 +118,7 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
     _controller
       ..removeListener(_onDocChanged)
       ..dispose();
+    _editorFocus.dispose();
     super.dispose();
   }
 
@@ -205,11 +207,23 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
 
             // Editor
             Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              child: ListenableBuilder(
+                listenable: _editorFocus,
+                builder: (context, child) {
+                  final theme = Theme.of(context);
+                  final radius = BorderRadius.circular(AppTokens.radiusSm);
+                  final selected = _editorFocus.hasFocus &&
+                      theme.brightness == Brightness.dark;
+                  return DecoratedBox(
+                    decoration: selected
+                        ? AppTokens.selectedSurfaceDecoration(radius)
+                        : BoxDecoration(
+                            border: Border.all(color: theme.dividerColor),
+                            borderRadius: radius,
+                          ),
+                    child: child,
+                  );
+                },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -217,6 +231,7 @@ class _CreateCommentDialogBodyState extends State<_CreateCommentDialogBody> {
                   ),
                   child: quill.QuillEditor.basic(
                     controller: _controller,
+                    focusNode: _editorFocus,
                     config: quill.QuillEditorConfig(
                       placeholder: widget.comment == null
                           ? 'Enter your comment...'

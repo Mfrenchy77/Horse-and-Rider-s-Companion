@@ -116,6 +116,7 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
       canPop: !_saving,
       child: AppGlassDialog(
         title: const Text('Associated skills'),
+        highlightFocusedFields: isEditingLinks,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

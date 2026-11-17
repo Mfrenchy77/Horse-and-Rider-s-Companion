@@ -136,6 +136,7 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                       child: AppGlassSurface(
                         padding: const EdgeInsets.all(16),
                         density: AppGlassDensity.frosted,
+                        highlightFocusedFields: true,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,6 +415,7 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
                                             Skill? skill,
                                           ) {
                                             return SkillSelectChip(
+                                              key: ValueKey(skill?.id),
                                               trailingIcon: SkillTypeIcon(
                                                 difficulty: skill?.difficulty,
                                                 isRider: skill?.rider ?? true,

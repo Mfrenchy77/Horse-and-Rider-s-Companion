@@ -90,6 +90,21 @@ class AppTokens {
     );
   }
 
+  static ThemeData withSelectionFields(ThemeData theme) {
+    if (theme.brightness != Brightness.dark) return theme;
+
+    return theme.copyWith(
+      inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+        focusedBorder: const _SelectionInputBorder(
+          borderSide: BorderSide(color: coralAccent, width: 1.4),
+        ),
+        focusedErrorBorder: const _SelectionInputBorder(
+          borderSide: BorderSide(color: errorDark, width: 1.4),
+        ),
+      ),
+    );
+  }
+
   static BoxDecoration atmosphericOverlay(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (!isDark) {
@@ -155,6 +170,53 @@ class AppTokens {
     return theme.brightness == Brightness.dark
         ? coralAccent
         : theme.colorScheme.primary;
+  }
+
+  static Color hoverOverlay(BuildContext context) =>
+      accentColor(context).withValues(alpha: 0.06);
+
+  static Color pressOverlay(BuildContext context) =>
+      accentColor(context).withValues(alpha: 0.12);
+
+  static Color focusOverlay(BuildContext context) =>
+      accentColor(context).withValues(alpha: 0.16);
+
+  static Duration motionDuration(
+    BuildContext context, [
+    Duration normal = const Duration(milliseconds: 180),
+  ]) => MediaQuery.disableAnimationsOf(context) ? Duration.zero : normal;
+}
+
+/// Paints the selection gradient inside the input, above any validation text.
+class _SelectionInputBorder extends OutlineInputBorder {
+  const _SelectionInputBorder({required super.borderSide})
+    : super(
+        borderRadius: const BorderRadius.all(
+          Radius.circular(AppTokens.radiusMd),
+        ),
+      );
+
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    double? gapStart,
+    double gapExtent = 0,
+    double gapPercentage = 0,
+    TextDirection? textDirection,
+  }) {
+    canvas.drawPath(
+      getOuterPath(rect, textDirection: textDirection),
+      Paint()..shader = AppTokens.selectedSurfaceGradient.createShader(rect),
+    );
+    super.paint(
+      canvas,
+      rect,
+      gapStart: gapStart,
+      gapExtent: gapExtent,
+      gapPercentage: gapPercentage,
+      textDirection: textDirection,
+    );
   }
 }
 
@@ -332,6 +394,7 @@ class AppGlassSurface extends StatelessWidget {
     this.borderRadius = AppTokens.radiusXl,
     this.customBorderRadius,
     this.density = AppGlassDensity.standard,
+    this.highlightFocusedFields = false,
   });
 
   final Widget child;
@@ -339,6 +402,7 @@ class AppGlassSurface extends StatelessWidget {
   final double borderRadius;
   final BorderRadius? customBorderRadius;
   final AppGlassDensity density;
+  final bool highlightFocusedFields;
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +476,15 @@ class AppGlassSurface extends StatelessWidget {
             ),
             child: Material(
               type: MaterialType.transparency,
-              child: Padding(padding: padding, child: child),
+              child: Padding(
+                padding: padding,
+                child: highlightFocusedFields
+                    ? Theme(
+                        data: AppTokens.withSelectionFields(theme),
+                        child: child,
+                      )
+                    : child,
+              ),
             ),
           ),
         ),
@@ -436,6 +508,7 @@ class AppGlassDialog extends StatelessWidget {
     this.padding = const EdgeInsets.all(AppTokens.spaceXl),
     this.scrollable = true,
     this.density = AppGlassDensity.standard,
+    this.highlightFocusedFields = false,
   });
 
   final Widget? title;
@@ -446,6 +519,7 @@ class AppGlassDialog extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final bool scrollable;
   final AppGlassDensity density;
+  final bool highlightFocusedFields;
 
   @override
   Widget build(BuildContext context) {
@@ -479,6 +553,7 @@ class AppGlassDialog extends StatelessWidget {
         child: AppGlassSurface(
           padding: padding,
           density: density,
+          highlightFocusedFields: highlightFocusedFields,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

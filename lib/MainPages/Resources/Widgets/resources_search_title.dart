@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 class ResourcesSearchTitle extends StatelessWidget {
@@ -44,6 +45,7 @@ class ResourcesSearchTitle extends StatelessWidget {
             // Seed controller with current query (optional).
             // textController.text = state.currentSearchQuery ?? '';
 
+            final fieldTheme = AppTokens.withSelectionFields(Theme.of(context));
             return TextField(
               controller: textController,
               focusNode: focusNode,
@@ -63,6 +65,7 @@ class ResourcesSearchTitle extends StatelessWidget {
                 fillColor:
                     HorseAndRidersTheme().getTheme().scaffoldBackgroundColor,
                 hintText: 'Search Resources',
+                focusedBorder: fieldTheme.inputDecorationTheme.focusedBorder,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(40)),
                 ),

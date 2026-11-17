@@ -31,8 +31,10 @@ class ResourcesView extends StatelessWidget {
           ResourcesOverflowMenu(key: Key('resourcesOverflowMenu')),
         ],
       ),
-      body: const AppScaffoldBackdrop(
-        child: ResourcesListView(key: Key('resourcesListView')),
+      body: const SizedBox.expand(
+        child: AppScaffoldBackdrop(
+          child: ResourcesListView(key: Key('resourcesListView')),
+        ),
       ),
     );
   }

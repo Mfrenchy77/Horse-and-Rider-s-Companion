@@ -27,9 +27,12 @@ class ResourcesSortDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: ResourcesSortStatus.values
               .map(
-                (status) => RadioListTile<ResourcesSortStatus>(
-                  title: Text(_getSortOptionLabel(status)),
-                  value: status,
+                (status) => AppSelectionHighlight(
+                  selected: status == selected,
+                  child: RadioListTile<ResourcesSortStatus>(
+                    title: Text(_getSortOptionLabel(status)),
+                    value: status,
+                  ),
                 ),
               )
               .toList(),

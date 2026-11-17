@@ -29,21 +29,7 @@ class AuthView extends StatelessWidget {
     final theme = Theme.of(context);
     final gradients = theme.extension<SurfaceGradients>();
     final isDark = theme.brightness == Brightness.dark;
-    final formTheme = isDark
-        ? theme.copyWith(
-            inputDecorationTheme: theme.inputDecorationTheme.copyWith(
-              focusedBorder: const _AuthFocusBorder(
-                borderSide: BorderSide(
-                  color: AppTokens.coralAccent,
-                  width: 1.4,
-                ),
-              ),
-              focusedErrorBorder: const _AuthFocusBorder(
-                borderSide: BorderSide(color: AppTokens.errorDark, width: 1.4),
-              ),
-            ),
-          )
-        : theme;
+    final formTheme = AppTokens.withSelectionFields(theme);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       backgroundColor: gradients != null
@@ -162,39 +148,6 @@ class AuthView extends StatelessWidget {
           },
         ),
       ),
-    );
-  }
-}
-
-/// Paints the selection gradient inside the input, above any validation text.
-class _AuthFocusBorder extends OutlineInputBorder {
-  const _AuthFocusBorder({required super.borderSide})
-    : super(
-        borderRadius: const BorderRadius.all(
-          Radius.circular(AppTokens.radiusMd),
-        ),
-      );
-
-  @override
-  void paint(
-    Canvas canvas,
-    Rect rect, {
-    double? gapStart,
-    double gapExtent = 0,
-    double gapPercentage = 0,
-    TextDirection? textDirection,
-  }) {
-    canvas.drawPath(
-      getOuterPath(rect, textDirection: textDirection),
-      Paint()..shader = AppTokens.selectedSurfaceGradient.createShader(rect),
-    );
-    super.paint(
-      canvas,
-      rect,
-      gapStart: gapStart,
-      gapExtent: gapExtent,
-      gapPercentage: gapPercentage,
-      textDirection: textDirection,
     );
   }
 }
