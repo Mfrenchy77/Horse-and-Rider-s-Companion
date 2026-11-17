@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +25,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class Routes {
   GoRouter router({
@@ -460,6 +463,7 @@ class BranchSlideContainer extends StatefulWidget {
 class _BranchSlideContainerState extends State<BranchSlideContainer> {
   late int _currentIndex;
   final Set<int> _temporarilyVisible = <int>{};
+  Timer? _cleanupTimer;
 
   @override
   void initState() {
@@ -469,17 +473,31 @@ class _BranchSlideContainerState extends State<BranchSlideContainer> {
   }
 
   @override
+  void dispose() {
+    _cleanupTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant BranchSlideContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
     final newIndex = widget.navigationShell.currentIndex;
     if (newIndex != _currentIndex) {
+      _cleanupTimer?.cancel();
       final prev = _currentIndex;
       _currentIndex = newIndex;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _temporarilyVisible
+          ..clear()
+          ..add(newIndex);
+        setState(() {});
+        return;
+      }
       _temporarilyVisible
         ..add(prev)
         ..add(newIndex);
 
-      Future.delayed(const Duration(milliseconds: 320), () {
+      _cleanupTimer = Timer(const Duration(milliseconds: 250), () {
         if (!mounted) return;
         setState(
           () => _temporarilyVisible.removeWhere((i) => i != _currentIndex),
@@ -492,6 +510,10 @@ class _BranchSlideContainerState extends State<BranchSlideContainer> {
   @override
   Widget build(BuildContext context) {
     final curr = _currentIndex;
+    final duration = AppTokens.motionDuration(
+      context,
+      const Duration(milliseconds: 240),
+    );
 
     // Clip so slides never cover the rail on larger screens.
     return ClipRect(
@@ -508,13 +530,18 @@ class _BranchSlideContainerState extends State<BranchSlideContainer> {
 
           return AnimatedSlide(
             offset: targetOffset,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: Offstage(
-              offstage: !show,
-              child: IgnorePointer(
-                ignoring: index != curr,
-                child: TickerMode(enabled: index == curr, child: navigator),
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: AnimatedOpacity(
+              opacity: index == curr ? 1.0 : 0.88,
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              child: Offstage(
+                offstage: !show,
+                child: IgnorePointer(
+                  ignoring: index != curr,
+                  child: TickerMode(enabled: index == curr, child: navigator),
+                ),
               ),
             ),
           );
