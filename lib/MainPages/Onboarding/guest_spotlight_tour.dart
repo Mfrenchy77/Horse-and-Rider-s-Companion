@@ -92,6 +92,11 @@ class GuestSpotlightTour {
       scrimColor: AppTokens.midnightDeep.withValues(alpha: 0.78),
       spotlightBorderColor: AppTokens.coralAccent,
       spotlightRadius: AppTokens.radiusLg,
+      // Keep secondaryFocus cutouts 100% clear so each step can use
+      // SpotlightPainter's saveLayer + BlendMode.clear path on Flutter Web,
+      // where Path.combine(PathOperation.difference, ...) can leave the hole
+      // dimmed.
+      secondaryHoleStrength: 1,
       cardMotion: reducedMotion
           ? OvermarkCardMotion.none
           : OvermarkCardMotion.fadeSlide,
@@ -114,6 +119,12 @@ class GuestSpotlightTour {
         anchorKey: skillTreeNavKey,
         shape: OvermarkShape.circle,
         gate: OvermarkStepGate.action,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: skillTreeNavKey,
+            shape: OvermarkShape.circle,
+          ),
+        ],
         title: 'Explore Skill Tree',
         message:
             'Browse structured horsemanship skills for Rider and Horse and '
@@ -131,6 +142,13 @@ class GuestSpotlightTour {
         anchorKey: skillTreeFamilyKey,
         shape: OvermarkShape.rrect,
         radius: AppTokens.radiusLg,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: skillTreeFamilyKey,
+            shape: OvermarkShape.rrect,
+            radius: AppTokens.radiusLg,
+          ),
+        ],
         prepare: (_) => goToBranch(1),
         title: 'Families & Skills',
         message:
@@ -145,6 +163,12 @@ class GuestSpotlightTour {
         anchorKey: resourcesNavKey,
         shape: OvermarkShape.circle,
         gate: OvermarkStepGate.action,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: resourcesNavKey,
+            shape: OvermarkShape.circle,
+          ),
+        ],
         prepare: (_) => goToBranch(1),
         title: 'Discover Resources',
         message:
@@ -162,6 +186,13 @@ class GuestSpotlightTour {
         anchorKey: resourcesHeaderKey,
         shape: OvermarkShape.rrect,
         radius: AppTokens.radiusMd,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: resourcesHeaderKey,
+            shape: OvermarkShape.rrect,
+            radius: AppTokens.radiusMd,
+          ),
+        ],
         prepare: (_) => goToBranch(2),
         title: 'You’re Ready to Explore',
         message:
