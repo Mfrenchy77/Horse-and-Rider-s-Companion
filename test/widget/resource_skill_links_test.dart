@@ -8,16 +8,27 @@ import 'package:horseandriderscompanion/App/Routes/routes.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/app_test_harness.dart';
 
 void main() {
+  late SkillTreeV2Repository v2Repo;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await SharedPrefs().init();
+    final v2Store = await const AssetCurriculumV2Loader().loadInMemoryStore();
+    v2Repo = SkillTreeV2Repository(store: v2Store);
+  });
   testWidgets('empty associated skills show a single message', (tester) async {
     final harness = await AppTestHarness.create();
     addTearDown(harness.close);
@@ -46,7 +57,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Associated skills'));
+      await tester.tap(find.byTooltip('Associated skills').last);
       await tester.pumpAndSettle();
 
       expect(
@@ -111,7 +122,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Associated skills'));
+    await tester.tap(find.byTooltip('Associated skills').last);
     await tester.pump();
     final surface = find.byType(AppGlassSurface);
     expect(surface, findsOneWidget);
@@ -208,7 +219,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Associated skills'));
+    await tester.tap(find.byTooltip('Associated skills').last);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('manageSkillLinksButton')));
     await tester.pumpAndSettle();
@@ -246,13 +257,13 @@ void main() {
     final resource = Resource(
       id: 'guide',
       name: 'Leading guide',
-      skillTreeIds: ['leading'],
+      skillTreeIds: ['rider.in_hand.leading'],
     );
     final skill = Skill(
-      id: 'leading',
+      id: 'rider.in_hand.leading',
       rider: true,
       position: 0,
-      skillName: 'Lead at the walk',
+      skillName: 'Leading',
       lastEditBy: null,
       lastEditDate: null,
       description: 'Linked skill description',
@@ -269,53 +280,66 @@ void main() {
     );
 
     when(
-      () => harness.resources.getResourcesForSkill(skillId: skill.id),
+      () => harness.resources.getResourcesForSkill(
+        skillId: any(named: 'skillId'),
+      ),
     ).thenAnswer((_) => const Stream.empty());
     router.goNamed(SkillTreePage.name);
     await tester.pumpWidget(
-      RepositoryProvider<ResourcesRepository>.value(
-        value: harness.resources,
-        child: BlocProvider.value(
-          value: app,
-          child: MaterialApp.router(routerConfig: router),
+      SettingsControllerScope(
+        controller: settings,
+        child: MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<ResourcesRepository>.value(
+              value: harness.resources,
+            ),
+            RepositoryProvider<SkillTreeV2Repository>.value(value: v2Repo),
+          ],
+          child: BlocProvider.value(
+            value: app,
+            child: MaterialApp.router(routerConfig: router),
+          ),
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     router.goNamed(ResourcesPage.name);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.tap(find.widgetWithText(ActionChip, skill.skillName));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     void expectSkillOpen() {
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        router.namedLocation(
-          SkillTreeView.skillLevelName,
-          pathParameters: {SkillTreeView.skillPathParam: skill.id},
-        ),
-      );
-      expect(app.state.index, 1);
-      expect(find.text('Close details'), findsOneWidget);
-      expect(app.state.skill?.id, skill.id);
+      final uri = router.routeInformationProvider.value.uri;
+      expect(uri.path, SkillTreePage.path);
+      expect(uri.queryParameters['skillId'], skill.id);
+      expect(find.byKey(Key('skillDetailV2_${skill.id}')), findsOneWidget);
     }
 
     expectSkillOpen();
     router.goNamed(ResourcesPage.name);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     unawaited(
       router.pushNamed<void>(
         ResourceCommentPage.name,
         pathParameters: {ResourceCommentPage.pathParams: 'guide'},
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Associated skills'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byTooltip('Associated skills').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.tap(find.widgetWithText(ListTile, skill.skillName));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
 
     expectSkillOpen();
+    await tester.pump(const Duration(milliseconds: 400));
   });
 
   testWidgets(
@@ -386,7 +410,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Unauthorized user sees compact read-only dialog with no Manage Links.
-      await tester.tap(find.byTooltip('Associated skills'));
+      await tester.tap(find.byTooltip('Associated skills').last);
       await tester.pumpAndSettle();
       expect(
         find.widgetWithText(ListTile, 'Lead at the walk'),
@@ -419,7 +443,7 @@ void main() {
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Associated skills'));
+      await tester.tap(find.byTooltip('Associated skills').last);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('manageSkillLinksButton')));
       await tester.pumpAndSettle();

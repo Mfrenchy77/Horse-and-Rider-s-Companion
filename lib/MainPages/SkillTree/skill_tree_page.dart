@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/Settings/feature_flags.dart';
@@ -27,8 +28,15 @@ class SkillTreePage extends StatelessWidget {
         SettingsControllerScope.maybeOf(context)?.skillTreeV2Enabled ??
         FeatureFlags.kSkillTreeV2Default;
     if (useV2) {
+      SkillTreeV2Repository? repository;
+      try {
+        repository = context.read<SkillTreeV2Repository?>();
+      } on ProviderNotFoundException {
+        repository = null;
+      }
       return SkillTreeV2View(
         key: const Key('skillTreeV2PageView'),
+        repository: repository,
         initialSkillId: initialSkillId,
         initialLevel: initialLevel,
       );
