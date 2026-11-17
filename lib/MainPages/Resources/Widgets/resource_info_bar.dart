@@ -159,6 +159,10 @@ class ResourceInfoBar extends StatelessWidget {
             final canOpenImage = !_isArticle || canOpenArticle;
             final image = InkWell(
               key: const Key('ResourceImage'),
+              hoverColor: AppTokens.hoverOverlay(context),
+              highlightColor: AppTokens.pressOverlay(context),
+              focusColor: AppTokens.focusOverlay(context),
+              splashColor: AppTokens.pressOverlay(context),
               onLongPress: () => cubit.openResource(url: resource.url),
               onTap: canOpenImage ? () => _openLinkOrArticle(context) : null,
               child: Tooltip(

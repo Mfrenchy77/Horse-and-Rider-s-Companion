@@ -87,6 +87,10 @@ class SkillFamilyListV2 extends StatelessWidget {
                   child: InkWell(
                     key: Key('skillFamilyHeader_${family.id}'),
                     borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    hoverColor: AppTokens.hoverOverlay(context),
+                    highlightColor: AppTokens.pressOverlay(context),
+                    focusColor: AppTokens.focusOverlay(context),
+                    splashColor: AppTokens.pressOverlay(context),
                     onTap: isSearching ? null : () => onToggleFamily(family.id),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -127,9 +131,14 @@ class SkillFamilyListV2 extends StatelessWidget {
                               visualDensity: VisualDensity.compact,
                               onPressed: () => onEditFamily!(family),
                             ),
-                          Icon(
-                            isExpanded ? Icons.expand_less : Icons.expand_more,
-                            color: AppTokens.secondaryTextColor(context),
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0.0,
+                            duration: AppTokens.motionDuration(context),
+                            curve: Curves.easeOutCubic,
+                            child: Icon(
+                              Icons.expand_more,
+                              color: AppTokens.secondaryTextColor(context),
+                            ),
                           ),
                         ],
                       ),
@@ -137,29 +146,47 @@ class SkillFamilyListV2 extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isExpanded) ...[
-                for (final skill in familySkills)
-                  _SkillRowCard(
-                    skill: skill,
-                    subtitle: isSearching
-                        ? realmDisplayLabel(skill.realm)
-                        : null,
-                    isSelected: skill.id == state.selectedSkillId,
-                    progress: state.progressBySkillId[skill.id],
-                    verification: state.verificationsBySkillId[skill.id],
-                    onTap: () => onSelectSkill(skill),
+              ClipRect(
+                child: AnimatedSize(
+                  duration: AppTokens.motionDuration(context),
+                  reverseDuration: AppTokens.motionDuration(
+                    context,
+                    const Duration(milliseconds: 150),
                   ),
-                if (isAdminEditMode && onAddSkillToFamily != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      key: Key('addSkillButton_${family.id}'),
-                      onPressed: () => onAddSkillToFamily!(family),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add Skill'),
-                    ),
-                  ),
-              ],
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: isExpanded
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: AppTokens.spaceSm,
+                          children: [
+                            for (final skill in familySkills)
+                              _SkillRowCard(
+                                skill: skill,
+                                subtitle: isSearching
+                                    ? realmDisplayLabel(skill.realm)
+                                    : null,
+                                isSelected: skill.id == state.selectedSkillId,
+                                progress: state.progressBySkillId[skill.id],
+                                verification:
+                                    state.verificationsBySkillId[skill.id],
+                                onTap: () => onSelectSkill(skill),
+                              ),
+                            if (isAdminEditMode && onAddSkillToFamily != null)
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  key: Key('addSkillButton_${family.id}'),
+                                  onPressed: () => onAddSkillToFamily!(family),
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('Add Skill'),
+                                ),
+                              ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
             ],
           ),
         ),
@@ -212,6 +239,10 @@ class _SkillRowCard extends StatelessWidget {
         child: InkWell(
           key: Key('skillCard_${skill.id}'),
           borderRadius: radius,
+          hoverColor: AppTokens.hoverOverlay(context),
+          highlightColor: AppTokens.pressOverlay(context),
+          focusColor: AppTokens.focusOverlay(context),
+          splashColor: AppTokens.pressOverlay(context),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(

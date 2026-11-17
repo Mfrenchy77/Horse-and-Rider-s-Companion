@@ -77,6 +77,10 @@ class ResourcesItem extends StatelessWidget {
             children: [
               InkWell(
                 borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                hoverColor: AppTokens.hoverOverlay(context),
+                highlightColor: AppTokens.pressOverlay(context),
+                focusColor: AppTokens.focusOverlay(context),
+                splashColor: AppTokens.pressOverlay(context),
                 onTap: isVideo
                     ? () => cubit.openResource(url: resource.url)
                     : openComments,

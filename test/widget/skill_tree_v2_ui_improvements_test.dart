@@ -94,10 +94,11 @@ void main() {
       await tester.ensureVisible(find.text(sampleFamily.name));
       await tester.tap(find.text(sampleFamily.name));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
       await tester.ensureVisible(find.text(sampleSkill.name));
       await tester.tap(find.text(sampleSkill.name));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 220));
 
       // Contextual Suggest Improvement for This Skill is shown.
       expect(
@@ -116,10 +117,12 @@ void main() {
       await tester.ensureVisible(toggleFinder);
       await tester.tap(toggleFinder);
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
       expect(find.textContaining(firstComponent.title), findsOneWidget);
 
       await tester.tap(toggleFinder);
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
       expect(find.textContaining(firstComponent.title), findsNothing);
 
       // Duplicate general Suggest an Improvement is hidden in mobile detail.

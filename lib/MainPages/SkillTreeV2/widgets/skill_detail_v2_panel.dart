@@ -737,56 +737,87 @@ class _EducationalComponentsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Divider(),
-        InkWell(
-          key: const Key('educationalComponentsToggle'),
-          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Educational components '
-                    '(guidance only, not separate checkoffs)',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppTokens.spaceXs),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  color: AppTokens.secondaryTextColor(context),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_expanded)
-          for (final component in widget.definition.components)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        Semantics(
+          button: true,
+          expanded: _expanded,
+          label: 'Educational components',
+          child: InkWell(
+            key: const Key('educationalComponentsToggle'),
+            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+            hoverColor: AppTokens.hoverOverlay(context),
+            highlightColor: AppTokens.pressOverlay(context),
+            focusColor: AppTokens.focusOverlay(context),
+            splashColor: AppTokens.pressOverlay(context),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
                 children: [
-                  Text(
-                    '• ${component.title}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (component.description.trim().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
-                        component.description,
-                        style: theme.textTheme.bodySmall,
+                  Expanded(
+                    child: Text(
+                      'Educational components '
+                      '(guidance only, not separate checkoffs)',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
+                  const SizedBox(width: AppTokens.spaceXs),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0.0,
+                    duration: AppTokens.motionDuration(context),
+                    curve: Curves.easeOutCubic,
+                    child: Icon(
+                      Icons.expand_more,
+                      color: AppTokens.secondaryTextColor(context),
+                    ),
+                  ),
                 ],
               ),
             ),
+          ),
+        ),
+        ClipRect(
+          child: AnimatedSize(
+            duration: AppTokens.motionDuration(context),
+            reverseDuration: AppTokens.motionDuration(
+              context,
+              const Duration(milliseconds: 150),
+            ),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: _expanded
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final component in widget.definition.components)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                '• ${component.title}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (component.description.trim().isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12),
+                                  child: Text(
+                                    component.description,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
       ],
     );
   }
