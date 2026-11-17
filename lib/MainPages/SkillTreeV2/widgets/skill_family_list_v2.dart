@@ -147,31 +147,43 @@ class SkillFamilyListV2 extends StatelessWidget {
                   ),
                 ),
               ),
-              ClipRect(
-                child: AnimatedSize(
-                  duration: AppTokens.motionDuration(context),
-                  reverseDuration: AppTokens.motionDuration(
-                    context,
-                    const Duration(milliseconds: 150),
-                  ),
-                  curve: Curves.easeOutCubic,
-                  alignment: Alignment.topCenter,
-                  child: isExpanded
+              Builder(
+                builder: (context) {
+                  final expandDuration = AppTokens.motionDuration(context);
+                  final expandedContent = isExpanded
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           spacing: AppTokens.spaceSm,
                           children: [
-                            for (final skill in familySkills)
-                              _SkillRowCard(
-                                skill: skill,
-                                subtitle: isSearching
-                                    ? realmDisplayLabel(skill.realm)
-                                    : null,
-                                isSelected: skill.id == state.selectedSkillId,
-                                progress: state.progressBySkillId[skill.id],
-                                verification:
-                                    state.verificationsBySkillId[skill.id],
-                                onTap: () => onSelectSkill(skill),
+                            for (var skillIdx = 0;
+                                skillIdx < familySkills.length;
+                                skillIdx++)
+                              Builder(
+                                builder: (context) {
+                                  final skill = familySkills[skillIdx];
+                                  final row = _SkillRowCard(
+                                    skill: skill,
+                                    subtitle: isSearching
+                                        ? realmDisplayLabel(skill.realm)
+                                        : null,
+                                    isSelected:
+                                        skill.id == state.selectedSkillId,
+                                    progress: state.progressBySkillId[skill.id],
+                                    verification:
+                                        state.verificationsBySkillId[skill.id],
+                                    onTap: () {
+                                      onSelectSkill(skill);
+                                      GuestSpotlightTour.notifySkillSelected();
+                                    },
+                                  );
+                                  return index == 0 && skillIdx == 0
+                                      ? KeyedSubtree(
+                                          key: GuestSpotlightTour
+                                              .skillTreeSkillRowKey,
+                                          child: row,
+                                        )
+                                      : row;
+                                },
                               ),
                             if (isAdminEditMode && onAddSkillToFamily != null)
                               Align(
@@ -185,8 +197,23 @@ class SkillFamilyListV2 extends StatelessWidget {
                               ),
                           ],
                         )
-                      : const SizedBox.shrink(),
-                ),
+                      : const SizedBox.shrink();
+                  if (expandDuration == Duration.zero) {
+                    return expandedContent;
+                  }
+                  return ClipRect(
+                    child: AnimatedSize(
+                      duration: expandDuration,
+                      reverseDuration: AppTokens.motionDuration(
+                        context,
+                        const Duration(milliseconds: 150),
+                      ),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.topCenter,
+                      child: expandedContent,
+                    ),
+                  );
+                },
               ),
             ],
           ),

@@ -8,15 +8,38 @@ import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:overmark/overmark.dart';
 
-/// Coordinates the optional, manually triggered Guest Spotlight Tour.
+/// Hooks registered by Skill Tree 2.0 so the Guest Discovery Tour can expand
+/// a family, open a skill, or return to the family list on narrow screens.
+class GuestSpotlightSkillTreeHooks {
+  const GuestSpotlightSkillTreeHooks({
+    required this.expandFirstFamily,
+    required this.ensureSkillSelected,
+    required this.showFamilyList,
+  });
+
+  final VoidCallback expandFirstFamily;
+  final VoidCallback ensureSkillSelected;
+  final VoidCallback showFamilyList;
+}
+
+/// Coordinates the optional, manually triggered Guest Discovery Tour.
 class GuestSpotlightTour {
   const GuestSpotlightTour._();
 
+  static final GlobalKey profileNavKey = GlobalKey(
+    debugLabel: 'tourProfileNav',
+  );
   static final GlobalKey skillTreeNavKey = GlobalKey(
     debugLabel: 'tourSkillTreeNav',
   );
   static final GlobalKey skillTreeFamilyKey = GlobalKey(
     debugLabel: 'tourSkillTreeFamily',
+  );
+  static final GlobalKey skillTreeSkillRowKey = GlobalKey(
+    debugLabel: 'tourSkillTreeSkillRow',
+  );
+  static final GlobalKey skillTreeDifficultyKey = GlobalKey(
+    debugLabel: 'tourSkillTreeDifficulty',
   );
   static final GlobalKey resourcesNavKey = GlobalKey(
     debugLabel: 'tourResourcesNav',
@@ -24,6 +47,16 @@ class GuestSpotlightTour {
   static final GlobalKey resourcesHeaderKey = GlobalKey(
     debugLabel: 'tourResourcesHeader',
   );
+
+  static GuestSpotlightSkillTreeHooks? skillTreeHooks;
+
+  /// Broadcasts the active step index (or `null` when closed) so widgets
+  /// inside `AnimatedSwitcher` only attach tour `GlobalKey`s on their step.
+  static final ValueNotifier<int?> activeStep = ValueNotifier<int?>(null);
+
+  /// The currently active skill ID in Skill Tree 2.0, preventing outgoing
+  /// `AnimatedSwitcher` panels from claiming `skillTreeDifficultyKey`.
+  static String? activeDifficultySkillId;
 
   static final OvermarkController controller = OvermarkController();
 
@@ -34,7 +67,16 @@ class GuestSpotlightTour {
     final stepIndex = controller.currentStep;
     if (stepIndex == 0 && branchIndex == 1) {
       controller.completeAction();
-    } else if (stepIndex == 2 && branchIndex == 2) {
+    } else if (stepIndex == 4 && branchIndex == 2) {
+      controller.completeAction();
+    }
+  }
+
+  /// Completes the skill-row action gate when the user taps a skill during
+  /// Step 3 (Explore an Individual Skill).
+  static void notifySkillSelected() {
+    if (!controller.isShowing || !controller.isAwaitingAction) return;
+    if (controller.currentStep == 2) {
       controller.completeAction();
     }
   }
@@ -64,7 +106,11 @@ class GuestSpotlightTour {
             ? Duration.zero
             : const Duration(milliseconds: 260));
 
+    var currentBranch = cubit?.state.index ?? 0;
+
     Future<void> goToBranch(int branchIndex) async {
+      final changed = currentBranch != branchIndex;
+      currentBranch = branchIndex;
       if (cubit != null) {
         switch (branchIndex) {
           case 0:
@@ -75,7 +121,7 @@ class GuestSpotlightTour {
             cubit.setResourcesList();
         }
       }
-      if (router != null) {
+      if (router != null && changed) {
         final targetRoute = switch (branchIndex) {
           0 => ProfilePage.name,
           1 => SkillTreePage.name,
@@ -83,7 +129,7 @@ class GuestSpotlightTour {
         };
         router.goNamed(targetRoute);
       }
-      if (settle > Duration.zero) {
+      if (changed && settle > Duration.zero) {
         await Future<void>.delayed(settle);
       }
     }
@@ -125,11 +171,11 @@ class GuestSpotlightTour {
             shape: OvermarkShape.circle,
           ),
         ],
+        prepare: (_) => goToBranch(0),
         title: 'Explore Skill Tree',
         message:
-            'Browse structured horsemanship skills for Rider and Horse and '
-            'track learning progress. Tap the highlighted Skill Tree button '
-            'to continue.',
+            'Browse structured horsemanship skills for Rider and Horse. '
+            'Tap the highlighted Skill Tree button or press Next to continue.',
         cardBuilder: (ctx, details) => _TourCard(
           details: details,
           onPrimaryPressed: () async {
@@ -149,11 +195,77 @@ class GuestSpotlightTour {
             radius: AppTokens.radiusLg,
           ),
         ],
-        prepare: (_) => goToBranch(1),
-        title: 'Families & Skills',
+        prepare: (_) async {
+          await goToBranch(1);
+          skillTreeHooks?.showFamilyList();
+        },
+        title: 'Skill Families',
         message:
-            'Skills are organized into Skill Families. Open any family to '
-            'view difficulty-level standards, guidance, and linked resources.',
+            'Skills are grouped into Skill Families across Husbandry, '
+            'In-Hand, Mounted, and Theory & Knowledge.',
+        cardBuilder: (ctx, details) => _TourCard(
+          details: details,
+          onPrimaryPressed: details.next,
+        ),
+      ),
+      OvermarkStep(
+        anchorKey: skillTreeSkillRowKey,
+        shape: OvermarkShape.rrect,
+        radius: AppTokens.radiusSm,
+        gate: OvermarkStepGate.action,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: skillTreeSkillRowKey,
+            shape: OvermarkShape.rrect,
+            radius: AppTokens.radiusSm,
+          ),
+        ],
+        prepare: (_) async {
+          await goToBranch(1);
+          skillTreeHooks?.showFamilyList();
+          skillTreeHooks?.expandFirstFamily();
+          if (settle > Duration.zero) {
+            await Future<void>.delayed(settle);
+          }
+        },
+        title: 'Explore an Individual Skill',
+        message:
+            'Expand any family to browse its skills. Tap the highlighted '
+            'skill—or press Next—to open its full standards and guidance.',
+        cardBuilder: (ctx, details) => _TourCard(
+          details: details,
+          onPrimaryPressed: () async {
+            skillTreeHooks?.ensureSkillSelected();
+            if (settle > Duration.zero) {
+              await Future<void>.delayed(settle);
+            }
+            details.completeAction();
+          },
+        ),
+      ),
+      OvermarkStep(
+        anchorKey: skillTreeDifficultyKey,
+        shape: OvermarkShape.rrect,
+        radius: AppTokens.radiusMd,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: skillTreeDifficultyKey,
+            shape: OvermarkShape.rrect,
+            radius: AppTokens.radiusMd,
+          ),
+        ],
+        prepare: (_) async {
+          await goToBranch(1);
+          skillTreeHooks?.ensureSkillSelected();
+          if (settle > Duration.zero) {
+            await Future<void>.delayed(settle);
+          }
+        },
+        title: 'Understand Difficulty Levels',
+        message:
+            'Switch between progressive difficulty levels to view clear '
+            'criteria. Sign in anytime to record Learning or Proficient '
+            'progress.',
         cardBuilder: (ctx, details) => _TourCard(
           details: details,
           onPrimaryPressed: details.next,
@@ -170,10 +282,10 @@ class GuestSpotlightTour {
           ),
         ],
         prepare: (_) => goToBranch(1),
-        title: 'Discover Resources',
+        title: 'Find Educational Resources',
         message:
-            'Educational articles, videos, and training guides are connected '
-            'to skills. Tap the highlighted Resources button to continue.',
+            'Explore curated articles, videos, and training guides. Tap the '
+            'highlighted Resources button or press Next to continue.',
         cardBuilder: (ctx, details) => _TourCard(
           details: details,
           onPrimaryPressed: () async {
@@ -194,10 +306,29 @@ class GuestSpotlightTour {
           ),
         ],
         prepare: (_) => goToBranch(2),
+        title: 'Browse Resources',
+        message:
+            'Sort and browse resources linked directly to skills—tap any '
+            'skill chip on a resource card to jump straight to that skill.',
+        cardBuilder: (ctx, details) => _TourCard(
+          details: details,
+          onPrimaryPressed: details.next,
+        ),
+      ),
+      OvermarkStep(
+        anchorKey: profileNavKey,
+        shape: OvermarkShape.circle,
+        secondaryFocus: <OvermarkFocus>[
+          OvermarkFocus(
+            anchorKey: profileNavKey,
+            shape: OvermarkShape.circle,
+          ),
+        ],
+        prepare: (_) => goToBranch(2),
         title: 'You’re Ready to Explore',
         message:
-            'Filter, rate, and open any resource—or tap a linked skill chip '
-            'to jump straight to that skill.',
+            'Explore skills and resources freely as a guest, or visit Profile '
+            'to create an account for progress tracking and horse records.',
         cardBuilder: (ctx, details) => _TourCard(
           details: details,
           onPrimaryPressed: details.next,
@@ -205,14 +336,20 @@ class GuestSpotlightTour {
       ),
     ];
 
-    return Overmark.show(
-      context,
-      steps: steps,
-      theme: theme,
-      config: config,
-      controller: controller,
-      routeSettings: const RouteSettings(name: 'guest_spotlight_tour'),
-    );
+    activeStep.value = 0;
+    try {
+      return await Overmark.show(
+        context,
+        steps: steps,
+        theme: theme,
+        config: config,
+        controller: controller,
+        onStepChanged: (index) => activeStep.value = index,
+        routeSettings: const RouteSettings(name: 'guest_spotlight_tour'),
+      );
+    } finally {
+      activeStep.value = null;
+    }
   }
 }
 
@@ -297,7 +434,7 @@ class _TourCard extends StatelessWidget {
                 FilledButton(
                   key: const Key('tourNextButton'),
                   onPressed: onPrimaryPressed,
-                  child: Text(details.isLast ? 'Got it' : 'Next'),
+                  child: Text(details.isLast ? 'Finish' : 'Next'),
                 ),
               ],
             ),

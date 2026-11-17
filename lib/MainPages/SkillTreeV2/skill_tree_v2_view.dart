@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
@@ -423,6 +424,11 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         initialSubject: initialSubject,
         profileDocId: _profileDocIdFor(appState, initialSubject),
       );
+    GuestSpotlightTour.skillTreeHooks = GuestSpotlightSkillTreeHooks(
+      expandFirstFamily: _expandFirstFamilyForTour,
+      ensureSkillSelected: _ensureSkillSelectedForTour,
+      showFamilyList: _showFamilyListForTour,
+    );
   }
 
   @override
@@ -502,12 +508,61 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
 
   @override
   void dispose() {
+    GuestSpotlightTour.skillTreeHooks = null;
     _localHistoryEntry = null;
     _scrollController.dispose();
     _listScrollController.dispose();
     _detailScrollController.dispose();
     _cubit.close();
     super.dispose();
+  }
+
+  void _expandFirstFamilyForTour() {
+    if (!mounted) return;
+    final state = _cubit.state;
+    final visible = state.visibleSkills;
+    for (final family in state.realmFamilies) {
+      final hasSkills = visible.any((s) => s.familyId == family.id);
+      if (!hasSkills) continue;
+      if (!state.expandedFamilyIds.contains(family.id)) {
+        _cubit.toggleFamilyExpanded(family.id);
+      }
+      return;
+    }
+  }
+
+  void _ensureSkillSelectedForTour() {
+    if (!mounted) return;
+    final state = _cubit.state;
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
+    if (!isWide && _mobileShowingDetail) return;
+    if (isWide && state.selectedSkill != null) return;
+
+    final visible = state.visibleSkills;
+    for (final family in state.realmFamilies) {
+      final familySkills = visible
+          .where((s) => s.familyId == family.id)
+          .toList()
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      if (familySkills.isEmpty) continue;
+      if (!state.expandedFamilyIds.contains(family.id)) {
+        _cubit.toggleFamilyExpanded(family.id);
+      }
+      final firstSkill = familySkills.first;
+      if (isWide) {
+        _cubit.selectSkill(firstSkill.id);
+      } else {
+        _openMobileDetail(firstSkill.id);
+      }
+      return;
+    }
+  }
+
+  void _showFamilyListForTour() {
+    if (!mounted) return;
+    if (_mobileShowingDetail) {
+      _returnToBrowsingList();
+    }
   }
 
   void _resetDetailScrollToTop() {
@@ -877,6 +932,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           final isAdminEditActive = isVerifiedAdmin && _isAdminEditMode;
           final publishedState = state;
           final effectiveState = _effectiveState(publishedState);
+          GuestSpotlightTour.activeDifficultySkillId =
+              effectiveState.selectedSkill?.id;
           final appCubit = context.read<AppCubit>();
           bool canEditResourceFn(Resource resource) =>
               !appState.isGuest &&

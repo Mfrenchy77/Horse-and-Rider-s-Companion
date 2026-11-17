@@ -4,6 +4,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
@@ -160,21 +161,31 @@ class SkillDetailV2Panel extends StatelessWidget {
               ),
             ),
           if (skill.availableLevels.isNotEmpty) ...[
-            Wrap(
-              spacing: AppTokens.spaceXs,
-              runSpacing: AppTokens.spaceXs,
-              children: [
-                for (final level in skill.availableLevels)
-                  _buildLevelChoiceChip(
-                    context: context,
-                    skill: skill,
-                    level: level,
-                    selected: selectedLevel == level,
-                    selfState: progress?.levels[level]?.state,
-                    isVerified:
-                        verification?.levels.containsKey(level) ?? false,
-                  ),
-              ],
+            ValueListenableBuilder<int?>(
+              valueListenable: GuestSpotlightTour.activeStep,
+              builder: (context, tourStep, child) => KeyedSubtree(
+                key: tourStep == 3 &&
+                        skill.id == GuestSpotlightTour.activeDifficultySkillId
+                    ? GuestSpotlightTour.skillTreeDifficultyKey
+                    : null,
+                child: child!,
+              ),
+              child: Wrap(
+                spacing: AppTokens.spaceXs,
+                runSpacing: AppTokens.spaceXs,
+                children: [
+                  for (final level in skill.availableLevels)
+                    _buildLevelChoiceChip(
+                      context: context,
+                      skill: skill,
+                      level: level,
+                      selected: selectedLevel == level,
+                      selfState: progress?.levels[level]?.state,
+                      isVerified:
+                          verification?.levels.containsKey(level) ?? false,
+                    ),
+                ],
+              ),
             ),
           ],
           if (selectedLevel != null && levelDef != null) ...[

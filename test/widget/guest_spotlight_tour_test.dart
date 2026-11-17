@@ -119,7 +119,7 @@ void main() {
         }
 
         expect(find.byKey(const Key('tourStepCard_1')), findsOneWidget);
-        expect(find.text('Families & Skills'), findsOneWidget);
+        expect(find.text('Skill Families'), findsOneWidget);
 
         // Back returns to Step 1, Next advances again.
         await tester.tap(find.byKey(const Key('tourBackButton')));
@@ -134,26 +134,62 @@ void main() {
         }
         expect(find.byKey(const Key('tourStepCard_1')), findsOneWidget);
 
-        // Next -> Step 3 (Discover Resources).
+        // Next -> Step 3 (Explore an Individual Skill) expands first family.
+        await tester.tap(find.byKey(const Key('tourNextButton')));
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 80));
+        }
+        expect(find.byKey(const Key('tourStepCard_2')), findsOneWidget);
+        expect(find.text('Explore an Individual Skill'), findsOneWidget);
+        expect(
+          find.byKey(GuestSpotlightTour.skillTreeSkillRowKey),
+          findsOneWidget,
+        );
+
+        // Tap the highlighted skill row -> Step 4 (Understand Difficulty Levels).
+        await tester.tapAt(
+          tester.getCenter(
+            find.byKey(GuestSpotlightTour.skillTreeSkillRowKey),
+          ),
+        );
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 80));
+        }
+        expect(find.byKey(const Key('tourStepCard_3')), findsOneWidget);
+        expect(find.text('Understand Difficulty Levels'), findsOneWidget);
+        expect(
+          find.byKey(GuestSpotlightTour.skillTreeDifficultyKey),
+          findsOneWidget,
+        );
+
+        // Next -> Step 5 (Find Educational Resources).
         await tester.tap(find.byKey(const Key('tourNextButton')));
         for (var i = 0; i < 8; i++) {
           await tester.pump(const Duration(milliseconds: 80));
         }
-        expect(find.byKey(const Key('tourStepCard_2')), findsOneWidget);
-        expect(find.text('Discover Resources'), findsOneWidget);
+        expect(find.byKey(const Key('tourStepCard_4')), findsOneWidget);
+        expect(find.text('Find Educational Resources'), findsOneWidget);
 
-        // Tap the highlighted Resources navigation destination to advance.
+        // Tap the highlighted Resources navigation destination -> Step 6.
         await tester.tapAt(
           tester.getCenter(find.byKey(GuestSpotlightTour.resourcesNavKey)),
         );
         for (var i = 0; i < 12; i++) {
           await tester.pump(const Duration(milliseconds: 80));
         }
+        expect(find.byKey(const Key('tourStepCard_5')), findsOneWidget);
+        expect(find.text('Browse Resources'), findsOneWidget);
 
-        expect(find.byKey(const Key('tourStepCard_3')), findsOneWidget);
+        // Next -> Step 7 (Finish).
+        await tester.tap(find.byKey(const Key('tourNextButton')));
+        for (var i = 0; i < 8; i++) {
+          await tester.pump(const Duration(milliseconds: 80));
+        }
+        expect(find.byKey(const Key('tourStepCard_6')), findsOneWidget);
         expect(find.text('You’re Ready to Explore'), findsOneWidget);
+        expect(find.text('Finish'), findsOneWidget);
 
-        // Done finishes tour and leaves visitor on Resources.
+        // Finish closes tour and leaves visitor on Resources.
         await tester.tap(find.byKey(const Key('tourNextButton')));
         for (var i = 0; i < 6; i++) {
           await tester.pump(const Duration(milliseconds: 60));
@@ -255,6 +291,29 @@ void main() {
           await tester.pump(const Duration(milliseconds: 60));
         }
         expect(find.byKey(const Key('tourStepCard_1')), findsOneWidget);
+
+        // Next -> Step 3 (Explore an Individual Skill) on mobile.
+        await tester.tap(find.byKey(const Key('tourNextButton')));
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 60));
+        }
+        expect(find.byKey(const Key('tourStepCard_2')), findsOneWidget);
+
+        // Tap skill row -> opens mobile detail view for Step 4.
+        await tester.tapAt(
+          tester.getCenter(find.byKey(GuestSpotlightTour.skillTreeSkillRowKey)),
+        );
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 60));
+        }
+        expect(find.byKey(const Key('tourStepCard_3')), findsOneWidget);
+
+        // Back returns to mobile family list on Step 3.
+        await tester.tap(find.byKey(const Key('tourBackButton')));
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 60));
+        }
+        expect(find.byKey(const Key('tourStepCard_2')), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('tourSkipButton')));
         await tester.pump();
@@ -370,12 +429,13 @@ void main() {
         expect(find.byKey(const Key('tourStepCard_0')), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('tourNextButton')));
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < 20; i++) {
           await tester.pump(const Duration(milliseconds: 50));
         }
-        // Step 1 (skillTreeFamilyKey) is absent in emptyV2Repo, so Overmark
-        // skips directly to Step 2 (Discover Resources).
-        expect(find.byKey(const Key('tourStepCard_2')), findsOneWidget);
+        // Steps 1..3 (Skill Tree family/row/difficulty) are absent in
+        // emptyV2Repo, so Overmark skips directly to Step 5 (index 4: Find
+        // Educational Resources).
+        expect(find.byKey(const Key('tourStepCard_4')), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('tourSkipButton')));
         await tester.pump();

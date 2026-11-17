@@ -321,9 +321,12 @@ List<NavigationRailDestination> _buildNavigationRailDestinations({
   required bool isForRider,
 }) => [
   NavigationRailDestination(
-    icon: isForRider
-        ? const Icon(Icons.person_outline)
-        : const Icon(HorseAndRiderIcons.horseIcon),
+    icon: KeyedSubtree(
+      key: GuestSpotlightTour.profileNavKey,
+      child: isForRider
+          ? const Icon(Icons.person_outline)
+          : const Icon(HorseAndRiderIcons.horseIcon),
+    ),
     selectedIcon: isForRider
         ? const Icon(Icons.person)
         : const Icon(HorseAndRiderIcons.horseIconCircle),
@@ -351,9 +354,12 @@ List<BottomNavigationBarItem> _buildBottomNavigationBarItems({
   required bool isForRider,
 }) => [
   BottomNavigationBarItem(
-    icon: isForRider
-        ? const Icon(Icons.person_outline)
-        : const Icon(HorseAndRiderIcons.horseIcon),
+    icon: KeyedSubtree(
+      key: GuestSpotlightTour.profileNavKey,
+      child: isForRider
+          ? const Icon(Icons.person_outline)
+          : const Icon(HorseAndRiderIcons.horseIcon),
+    ),
     label: isForRider ? 'Profile' : 'Horse Profile',
   ),
   BottomNavigationBarItem(
