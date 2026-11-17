@@ -148,4 +148,107 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'Desktop and mobile skill navigation transitions are keyed by skill ID '
+    'and respect reduced motion',
+    (tester) async {
+      final families = (await store.fetchFamilies())
+          .where((f) => f.subject == SkillSubject.rider)
+          .toList();
+      final defaultRealm = families.first.realm;
+      final skills = (await store.fetchSkills())
+          .where((s) => s.subject == SkillSubject.rider && s.realm == defaultRealm)
+          .toList();
+      final firstSkill = skills.first;
+      final firstFamily = families.firstWhere(
+        (f) => f.id == firstSkill.familyId,
+      );
+
+      final settings = SettingsController(SettingsService());
+      await settings.loadSettings();
+      addTearDown(settings.dispose);
+
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+
+      // 1. Desktop with reduced motion enabled: duration is Duration.zero.
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 860);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(1280, 860),
+            disableAnimations: true,
+          ),
+          child: SettingsControllerScope(
+            controller: settings,
+            child: BlocProvider<AppCubit>.value(
+              value: harness.cubit,
+              child: MaterialApp(
+                theme: mainThemeDark,
+                home: SkillTreeV2View(repository: repository),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final desktopSwitcher = tester.widget<AnimatedSwitcher>(
+        find.ancestor(
+          of: find.byKey(ValueKey('desktopDetail_${firstSkill.id}')),
+          matching: find.byType(AnimatedSwitcher),
+        ),
+      );
+      expect(desktopSwitcher.duration, Duration.zero);
+
+      // 2. Mobile with normal motion: forward + back transitions work cleanly.
+      tester.view.physicalSize = const Size(420, 840);
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(size: Size(420, 840)),
+          child: SettingsControllerScope(
+            controller: settings,
+            child: BlocProvider<AppCubit>.value(
+              value: harness.cubit,
+              child: MaterialApp(
+                theme: mainThemeDark,
+                home: SkillTreeV2View(repository: repository),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.byKey(const ValueKey('mobileFamilyList')), findsOneWidget);
+
+      await tester.ensureVisible(find.text(firstFamily.name));
+      await tester.tap(find.text(firstFamily.name));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      await tester.ensureVisible(find.text(firstSkill.name));
+      await tester.tap(find.text(firstSkill.name));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 260));
+
+      expect(
+        find.byKey(ValueKey('mobileDetail_${firstSkill.id}')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('skillTreeV2AppBarBackButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 240));
+
+      expect(find.byKey(const ValueKey('mobileFamilyList')), findsOneWidget);
+    },
+  );
 }
