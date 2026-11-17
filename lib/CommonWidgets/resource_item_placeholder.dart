@@ -1,52 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:shimmer/shimmer.dart';
 
-/// Item placeholder for resources, with a shimmer effect.
+/// Lightweight static skeleton card for resources while initial data loads.
 class ResourceItemPlaceholder extends StatelessWidget {
   const ResourceItemPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? AppTokens.midnightCardTop : Colors.grey.shade300;
-    final highlightColor = isDark
-        ? AppTokens.midnightButtonFill
-        : Colors.grey.shade100;
-    final boxColor = isDark ? AppTokens.midnightCardTop : Colors.grey;
+    final fill = isDark
+        ? AppTokens.midnightButtonFill.withValues(alpha: 0.65)
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
+    final subtleFill = isDark
+        ? AppTokens.midnightInputFill
+        : Theme.of(context).colorScheme.surfaceContainerHigh;
 
-    Widget shimmerBox({double? height, double radius = 10}) =>
-        Shimmer.fromColors(
-          baseColor: baseColor,
-          highlightColor: highlightColor,
-          child: Container(
-            height: height,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(radius),
-              color: boxColor,
-            ),
-          ),
-        );
+    Widget bar({
+      required double height,
+      double? width,
+      double radius = AppTokens.radiusSm,
+      Color? color,
+    }) => Container(
+      height: height,
+      width: width,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        color: color ?? fill,
+      ),
+    );
 
     return AppSurfaceCard(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          shimmerBox(height: 168, radius: 0),
+          Container(
+            height: 168,
+            color: subtleFill,
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.image_outlined,
+              size: 32,
+              color: AppTokens.secondaryTextColor(
+                context,
+              ).withValues(alpha: 0.45),
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.spaceMd,
+              AppTokens.spaceMd,
+              AppTokens.spaceMd,
+              AppTokens.spaceSm,
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                shimmerBox(height: 22),
-                const SizedBox(height: 10),
-                shimmerBox(height: 14),
+                bar(height: 20),
                 const SizedBox(height: 8),
-                shimmerBox(height: 48),
-                const SizedBox(height: 14),
-                shimmerBox(height: 28),
+                bar(height: 12, width: 140),
+                const SizedBox(height: 10),
+                bar(height: 14),
+                const SizedBox(height: 6),
+                bar(height: 14, width: 220),
+                const SizedBox(height: 12),
+                Row(
+                  spacing: 6,
+                  children: [
+                    bar(height: 24, width: 88, radius: 999),
+                    bar(height: 24, width: 72, radius: 999),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.spaceMd,
+              0,
+              AppTokens.spaceMd,
+              AppTokens.spaceSm + 4,
+            ),
+            child: Column(
+              children: [
+                const Divider(height: AppTokens.spaceMd),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    bar(height: 14, width: 42),
+                    bar(height: 14, width: 110),
+                    bar(height: 14, width: 54),
+                  ],
+                ),
               ],
             ),
           ),

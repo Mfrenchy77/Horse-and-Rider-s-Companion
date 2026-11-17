@@ -1587,6 +1587,9 @@ class AppCubit extends Cubit<AppState> {
 
   void loadResourcesIfNeeded() {
     if (_resourcesStream != null) return;
+    if (state.isError) {
+      emit(state.copyWith(isError: false));
+    }
     debugPrint('Listening for resource updates after entering Resources');
     _resourcesStream = _resourcesRepository.getResources().listen(
       (resources) {
@@ -1601,6 +1604,7 @@ class AppCubit extends Cubit<AppState> {
           state.copyWith(
             resources: resources,
             hasResourceCatalogue: true,
+            isError: false,
             resource: selected,
             resourceComments: selected == null
                 ? state.resourceComments
@@ -1610,7 +1614,13 @@ class AppCubit extends Cubit<AppState> {
       },
       onError: (Object error) {
         _resourcesStream = null;
-        emit(state.copyWith(hasResourceCatalogue: false));
+        emit(
+          state.copyWith(
+            hasResourceCatalogue: false,
+            isError: true,
+            errorMessage: 'Unable to load resources.',
+          ),
+        );
         debugPrint('Failed to listen for resource updates: $error');
       },
       cancelOnError: true,

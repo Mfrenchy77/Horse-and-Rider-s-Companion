@@ -24,7 +24,9 @@ class ResourcesListView extends StatelessWidget {
       buildWhen: (previous, current) =>
           previous.resourcesSortStatus != current.resourcesSortStatus ||
           previous.savedResources != current.savedResources ||
-          previous.resources != current.resources,
+          previous.resources != current.resources ||
+          previous.hasResourceCatalogue != current.hasResourceCatalogue ||
+          previous.isError != current.isError,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
         final isSavedView =
@@ -116,72 +118,130 @@ class ResourcesListView extends StatelessWidget {
               ],
             );
 
-            Widget buildGrid(List<Widget> cards) {
+            Widget buildLazyRows(
+              int itemCount,
+              Widget Function(int) itemBuilder,
+            ) {
               if (columns == 1) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 12,
-                  children: cards,
+                return SliverList.separated(
+                  itemCount: itemCount,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) => itemBuilder(index),
                 );
               }
-              final rows = <Widget>[];
-              for (var i = 0; i < cards.length; i += columns) {
-                final slice = cards.sublist(
-                  i,
-                  (i + columns) > cards.length ? cards.length : i + columns,
-                );
-                rows.add(
-                  Row(
+              final rowCount = (itemCount + columns - 1) ~/ columns;
+              return SliverList.separated(
+                itemCount: rowCount,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (_, rowIndex) {
+                  final start = rowIndex * columns;
+                  final end = (start + columns) > itemCount
+                      ? itemCount
+                      : start + columns;
+                  final sliceCount = end - start;
+                  return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 16,
                     children: [
-                      for (final card in slice) Expanded(child: card),
-                      for (var pad = slice.length; pad < columns; pad++)
+                      for (var i = start; i < end; i++)
+                        Expanded(child: itemBuilder(i)),
+                      for (var pad = sliceCount; pad < columns; pad++)
                         const Expanded(child: SizedBox.shrink()),
                     ],
-                  ),
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 16,
-                children: rows,
+                  );
+                },
               );
             }
 
-            final Widget content;
+            final isLoading =
+                !state.hasResourceCatalogue &&
+                items.isEmpty &&
+                !state.isError;
+            final isFailed = state.isError && items.isEmpty;
+
+            final Widget sliverContent;
             if (isSavedView && items.isEmpty) {
-              content = const Padding(
-                padding: EdgeInsets.only(top: 24),
-                child: AppEmptyState(
-                  icon: Icons.bookmark_border_rounded,
-                  title: 'No saved resources yet',
-                  description:
-                      'Tap the heart on any resource to save it here for '
-                      'quick access.',
+              sliverContent = const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: AppEmptyState(
+                    icon: Icons.bookmark_border_rounded,
+                    title: 'No saved resources yet',
+                    description:
+                        'Tap the heart on any resource to save it here for '
+                        'quick access.',
+                  ),
                 ),
               );
+            } else if (isFailed) {
+              sliverContent = SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: Column(
+                    spacing: AppTokens.spaceMd,
+                    children: [
+                      const AppEmptyState(
+                        icon: Icons.cloud_off_rounded,
+                        title: 'Unable to load resources',
+                        description:
+                            'Check your connection and try loading resources '
+                            'again.',
+                      ),
+                      FilledButton.icon(
+                        key: const Key('resourcesRetryButton'),
+                        onPressed: cubit.loadResourcesIfNeeded,
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else if (isLoading) {
+              final skeletonCount = columns == 1 ? 3 : columns * 2;
+              sliverContent = buildLazyRows(
+                skeletonCount,
+                (_) => const ResourceItemPlaceholder(),
+              );
             } else if (items.isEmpty) {
-              content = buildGrid(
-                List.generate(
-                  columns == 1 ? 3 : columns * 2,
-                  (_) => const ResourceItemPlaceholder(),
+              sliverContent = const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: AppEmptyState(
+                    icon: Icons.menu_book_outlined,
+                    title: 'No resources yet',
+                    description:
+                        'Educational articles, videos, and links added by '
+                        'the community will appear here.',
+                  ),
                 ),
               );
             } else {
-              content = buildGrid([
-                for (final resource in items)
-                  ResourcesItem(resource: resource, isResourceList: true),
-              ]);
+              sliverContent = buildLazyRows(
+                items.length,
+                (index) => ResourcesItem(
+                  key: ValueKey(items[index].id ?? index),
+                  resource: items[index],
+                  isResourceList: true,
+                ),
+              );
             }
 
             return Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                  children: [header, const SizedBox(height: 16), content],
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      sliver: SliverToBoxAdapter(child: header),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                      sliver: sliverContent,
+                    ),
+                  ],
                 ),
               ),
             );
