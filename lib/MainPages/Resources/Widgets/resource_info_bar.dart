@@ -197,7 +197,12 @@ class ResourceInfoBar extends StatelessWidget {
             );
             final isDark = Theme.of(context).brightness == Brightness.dark;
             final details = Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.spaceMd,
+                AppTokens.spaceMd,
+                AppTokens.spaceMd,
+                AppTokens.spaceSm,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -286,8 +291,20 @@ class ResourceInfoBar extends StatelessWidget {
                       ],
                     ),
                   ],
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: AppTokens.spaceSm),
+                    Text(
+                      description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                   if (skills.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppTokens.spaceSm),
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -331,18 +348,6 @@ class ResourceInfoBar extends StatelessWidget {
                             visualDensity: VisualDensity.compact,
                           ),
                       ],
-                    ),
-                  ],
-                  if (description.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTokens.secondaryTextColor(context),
-                        height: 1.4,
-                      ),
                     ),
                   ],
                 ],

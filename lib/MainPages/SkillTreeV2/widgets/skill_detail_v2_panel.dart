@@ -69,8 +69,13 @@ class SkillDetailV2Panel extends StatelessWidget {
         .where((e) => e.skillId == skill.id)
         .toList();
 
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
+
     return AppSurfaceCard(
       key: Key('skillDetailV2_${skill.id}'),
+      padding: EdgeInsets.all(
+        isCompact ? AppTokens.spaceMd : AppTokens.spaceLg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppTokens.spaceMd,
@@ -93,8 +98,8 @@ class SkillDetailV2Panel extends StatelessWidget {
                 '${subjectDisplayLabel(skill.subject)} · '
                 '${realmDisplayLabel(skill.realm)}'
                 '${family == null ? '' : ' · ${family.name}'}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: AppTokens.accentColor(context),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -193,7 +198,7 @@ class SkillDetailV2Panel extends StatelessWidget {
             Text(
               'Related skills',
               style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
             ),
             Wrap(
@@ -485,7 +490,7 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
             Text(
               'Related Resources (${relatedResources.length})',
               style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
             ),
             SegmentedButton<SkillTreeV2ResourceSort>(
@@ -597,7 +602,7 @@ class _LevelDetailSection extends StatelessWidget {
                 child: Text(
                   '${difficultyDisplayLabel(level)} Standard',
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -745,7 +750,7 @@ class _EducationalComponentsSectionState
                     'Educational components '
                     '(guidance only, not separate checkoffs)',
                     style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

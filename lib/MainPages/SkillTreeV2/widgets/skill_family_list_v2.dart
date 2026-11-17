@@ -73,6 +73,7 @@ class SkillFamilyListV2 extends StatelessWidget {
         return RepaintBoundary(
           child: AppSurfaceCard(
             key: Key('skillFamily_${family.id}'),
+            padding: const EdgeInsets.all(AppTokens.spaceMd),
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppTokens.spaceSm,
@@ -101,9 +102,9 @@ class SkillFamilyListV2 extends StatelessWidget {
                               children: [
                                 Text(
                                   family.name,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  style: AppTokens.sectionTitleStyle(
+                                    context,
+                                  ).copyWith(fontSize: 18, height: 1.25),
                                 ),
                                 if (family.description.trim().isNotEmpty)
                                   Text(
@@ -188,17 +189,35 @@ class _SkillRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(AppTokens.radiusSm);
     return AppSelectionHighlight(
       selected: isSelected,
       backgroundColor: isSelected
           ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
-          : theme.colorScheme.surfaceContainerLow,
-      child: InkWell(
-        key: Key('skillCard_${skill.id}'),
-        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppTokens.spaceMd),
+          : (isDark
+                ? AppTokens.midnightInputFill
+                : theme.colorScheme.surfaceContainerLow),
+      child: DecoratedBox(
+        decoration: isSelected
+            ? const BoxDecoration()
+            : BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: isDark
+                      ? AppTokens.cardBorderDark.withValues(alpha: 0.55)
+                      : theme.dividerColor.withValues(alpha: 0.4),
+                ),
+              ),
+        child: InkWell(
+          key: Key('skillCard_${skill.id}'),
+          borderRadius: radius,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.spaceMd,
+              vertical: AppTokens.spaceSm + 4,
+            ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppTokens.spaceXs,
@@ -248,6 +267,7 @@ class _SkillRowCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -302,6 +322,9 @@ class _LevelStatusPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppTokens.cardBorderDark.withValues(alpha: 0.45),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

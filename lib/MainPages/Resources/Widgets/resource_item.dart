@@ -90,10 +90,15 @@ class ResourcesItem extends StatelessWidget {
                     ),
                     if (isResourceList)
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppTokens.spaceMd,
+                          0,
+                          AppTokens.spaceMd,
+                          AppTokens.spaceSm + 4,
+                        ),
                         child: Column(
                           children: [
-                            const Divider(height: 16),
+                            const Divider(height: AppTokens.spaceMd),
                             RatingsBar(isNew: isNew, resource: resourceForUi),
                             ResourceRatingButtons(
                               key: const Key('ResourceRatingButtons'),
