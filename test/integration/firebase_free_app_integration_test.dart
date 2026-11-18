@@ -66,6 +66,10 @@ class _InMemoryRiderProfileStore implements RiderProfileStore {
   }
 
   @override
+  Stream<RiderProfile?> getPublicRiderProfile({required String email}) =>
+      getRiderProfile(email: email);
+
+  @override
   Future<void> addOrUpdateOwnedHorse({
     required RiderProfile? riderProfile,
     required String? horseId,

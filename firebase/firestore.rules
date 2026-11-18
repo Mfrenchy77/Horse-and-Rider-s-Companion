@@ -82,10 +82,27 @@ service cloud.firestore {
         && validSkillProgressLevel(skillDoc.data, data.levels, 'advanced');
     }
 
+    function isAuthorizedHorseReader(horseData) {
+      return horseData != null && (
+        isProfileOwner(horseData, horseData.get('currentOwnerId', ''))
+        || (verifiedAuth() && request.auth.uid in horseData.get('instructorUids', []))
+        || isAdmin()
+      );
+    }
+
+    function isAuthorizedRiderReader(riderData) {
+      return riderData != null && (
+        isProfileOwner(riderData, riderData.get('email', ''))
+        || (verifiedAuth() && request.auth.uid in riderData.get('instructorUids', []))
+        || isAdmin()
+      );
+    }
+
     function canReadVerificationEvent(ownerUid) {
       return verifiedAuth()
         && (
           request.auth.uid == ownerUid
+          || isAdmin()
           || (
             resource.data.connectionId is string
             && exists(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId))
@@ -188,23 +205,26 @@ service cloud.firestore {
     }
 
     match /Horse_Profile/{horseId} {
-      allow read: if verifiedAuth();
+      allow get: if (resource == null && verifiedAuth())
+        || (resource != null && isAuthorizedHorseReader(resource.data));
+      allow list: if isAuthorizedHorseReader(resource.data);
       allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
         && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
         && request.resource.data.get('archiveStatus', 'active') == 'active'
         && !request.resource.data.keys().hasAny([
-          'saleListing', 'transferRequestId', 'ownershipVersion'
+          'saleListing', 'transferRequestId', 'ownershipVersion', 'instructorUids'
         ]);
       allow update: if isProfileOwner(resource.data, resource.data.currentOwnerId)
         && request.resource.data.currentOwnerId == resource.data.currentOwnerId
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'ownerUid', 'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion'
+          'ownerUid', 'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion', 'instructorUids'
         ]);
       // Keep the horse ID reserved for its shared history when archived.
       allow delete: if false;
 
       match /SkillProgress/{skillId} {
-        allow read: if verifiedAuth();
+        allow read: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+          && isAuthorizedHorseReader(get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data);
         allow create, update: if verifiedAuth()
           && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
           && validSkillProgressDoc(skillId, 'horse');
@@ -213,7 +233,8 @@ service cloud.firestore {
       }
 
       match /SkillVerifications/{skillId} {
-        allow read: if verifiedAuth();
+        allow read: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+          && isAuthorizedHorseReader(get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data);
         allow write: if false;
       }
 
@@ -227,27 +248,35 @@ service cloud.firestore {
 
     match /Public_Horse_Profile/{horseId} {
       allow get: if true;
-      allow list: if false;
+      allow list: if verifiedAuth();
+      allow write: if false;
+    }
+
+    match /Public_Rider_Profile/{riderId} {
+      allow read: if verifiedAuth();
       allow write: if false;
     }
 
     match /Rider_Profile/{riderId} {
-      allow read: if true;
+      allow get: if (resource == null && verifiedAuth())
+        || (resource != null && isAuthorizedRiderReader(resource.data));
+      allow list: if isAuthorizedRiderReader(resource.data);
       allow create: if verifiedEmailIs(request.resource.data.email)
         && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
         && request.resource.data.get('editor', false) == false
         && request.resource.data.get('archivedHorses', []) == []
-        && !request.resource.data.keys().hasAny(['ownershipRosterVersion']);
+        && !request.resource.data.keys().hasAny(['ownershipRosterVersion', 'instructorUids']);
       allow update: if isProfileOwner(resource.data, resource.data.email)
         && request.resource.data.email == resource.data.email
         && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', [])
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'ownerUid', 'editor', 'ownershipRosterVersion'
+          'ownerUid', 'editor', 'ownershipRosterVersion', 'instructorUids'
         ]);
       allow delete: if isProfileOwner(resource.data, resource.data.email);
 
       match /SkillProgress/{skillId} {
-        allow read: if verifiedAuth();
+        allow read: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+          && isAuthorizedRiderReader(get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data);
         allow create, update: if verifiedAuth()
           && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
           && validSkillProgressDoc(skillId, 'rider');
@@ -256,7 +285,8 @@ service cloud.firestore {
       }
 
       match /SkillVerifications/{skillId} {
-        allow read: if verifiedAuth();
+        allow read: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+          && isAuthorizedRiderReader(get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data);
         allow write: if false;
       }
 

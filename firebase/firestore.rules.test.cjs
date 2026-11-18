@@ -38,7 +38,7 @@ before(async () => {
 
 after(async () => environment?.cleanup());
 
-test('guest can read profiles while only the verified owner can change them', async () => {
+test('guest cannot read private profiles while only the verified owner can change them', async () => {
   const guest = environment.unauthenticatedContext().firestore();
   const owner = environment.authenticatedContext('owner', verified).firestore();
   const other = environment.authenticatedContext('other', {
@@ -47,9 +47,16 @@ test('guest can read profiles while only the verified owner can change them', as
   const unverified = environment.authenticatedContext('owner', {
     ...verified, email_verified: false,
   }).firestore();
-  await assertSucceeds(getDoc(doc(guest, 'Horse_Profile/atlas')));
+  await assertFails(getDoc(doc(guest, 'Horse_Profile/atlas')));
+  await assertFails(getDoc(doc(other, 'Horse_Profile/atlas')));
+  await assertFails(getDoc(doc(guest, 'Rider_Profile/owner')));
+  await assertFails(getDoc(doc(other, 'Rider_Profile/owner')));
+  await assertSucceeds(getDoc(doc(owner, 'Horse_Profile/atlas')));
+  await assertSucceeds(getDoc(doc(owner, 'Rider_Profile/owner')));
   await assertSucceeds(updateDoc(doc(owner, 'Rider_Profile/owner'), {name: 'New name'}));
   await assertSucceeds(updateDoc(doc(owner, 'Horse_Profile/atlas'), {name: 'Atlas II'}));
+  await assertFails(updateDoc(doc(owner, 'Horse_Profile/atlas'), {instructorUids: ['other']}));
+  await assertFails(updateDoc(doc(owner, 'Rider_Profile/owner'), {instructorUids: ['other']}));
   await assertFails(updateDoc(doc(other, 'Rider_Profile/owner'), {name: 'Changed'}));
   await assertFails(updateDoc(doc(unverified, 'Horse_Profile/atlas'), {name: 'Changed'}));
   await assertFails(updateDoc(doc(other, 'Horse_Profile/atlas'), {instructors: [{id: 'other@example.com'}]}));

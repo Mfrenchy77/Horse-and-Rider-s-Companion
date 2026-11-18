@@ -12,6 +12,16 @@ const journalRef = (db, riderUid, id) => db.collection(journalCollection).doc(ke
 const terminal = new Set(['declined', 'cancelled', 'revoked']);
 const emailKey = (email) => email.toLowerCase();
 
+function addUid(list, uid) {
+  const existing = Array.isArray(list) ? list.filter((item) => typeof item === 'string' && item) : [];
+  return uid && !existing.includes(uid) ? [...existing, uid] : existing;
+}
+
+function removeUid(list, uid) {
+  const existing = Array.isArray(list) ? list.filter((item) => typeof item === 'string' && item) : [];
+  return existing.filter((item) => item !== uid);
+}
+
 function text(value, max, field, optional = false) {
   if (optional && (value == null || value === '')) return '';
   if (typeof value !== 'string' || !value.trim() || value.trim().length > max) {
@@ -195,7 +205,8 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     throw new HttpsError('invalid-argument', 'Choose a connection type.');
   }
   const horseId = kind === 'horse' ? documentId(data.horseId, 'horse ID') : null;
-  const targetHorse = horseId ? (await horse(tx, db, horseId)).profile : null;
+  const targetHorseRecord = horseId ? await horse(tx, db, horseId) : null;
+  const targetHorse = targetHorseRecord ? targetHorseRecord.profile : null;
   if (targetHorse && isArchived(targetHorse)) {
     throw new HttpsError('failed-precondition', 'Restore this horse to request coaching.');
   }
@@ -246,12 +257,21 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     }),
   ]);
   const existing = existingSnap.data();
+  const grantInstructorUid = () => {
+    const authTarget = kind === 'horse' ? targetHorseRecord : learnerRecord;
+    if (!authTarget) return;
+    tx.update(authTarget.ref, {
+      instructorUids: addUid(authTarget.profile.instructorUids, coachUid),
+      ...(authTarget.profile.ownerUid ? {} : {ownerUid: learnerUid}),
+    });
+  };
   if (existing && !terminal.has(existing.status) &&
       (existing.ownershipVersion ?? null) === (targetHorse?.ownershipVersion ?? null)) {
     if (reqRecord) {
       if (existing.status !== 'accepted') {
         tx.update(ref, {status: 'accepted', updatedAt: now});
       }
+      grantInstructorUid();
       writeRequestResolution(tx, reqRecord, 'accepted', id, now);
       return {id, status: 'accepted', incoming: false};
     }
@@ -279,6 +299,9 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     status: targetStatus,
     updatedAt: now,
   });
+  if (targetStatus === 'accepted') {
+    grantInstructorUid();
+  }
   writeRequestResolution(tx, reqRecord, 'accepted', id, now);
   return {id, status: targetStatus, incoming: false};
 }
@@ -543,6 +566,7 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
       transferRequestId: null,
       saleListing: null,
       instructors: [],
+      instructorUids: [],
       lastEditBy: recipient.profile.name || recipient.profile.email,
       lastEditDate: now,
     });
@@ -1107,13 +1131,34 @@ function connectionHandler(db, auth) {
               allowFallbackQuery: true,
             },
         );
+      let targetRecord = null;
       if (status === 'accepted' && status !== link.status) {
-        const record = await target(tx, db, link);
-        if (link.kind === 'horse' && isArchived(record.profile)) {
+        targetRecord = await target(tx, db, link);
+        if (link.kind === 'horse' && isArchived(targetRecord.profile)) {
           throw new HttpsError('failed-precondition', 'This horse is archived.');
         }
+      } else if (status === 'revoked' && status !== link.status) {
+        try {
+          targetRecord = await target(tx, db, link);
+        } catch (error) {
+          if (!['not-found', 'failed-precondition'].includes(error.code)) {
+            throw error;
+          }
+        }
       }
-      if (status !== link.status) tx.update(ref, {status, updatedAt: now});
+      if (status !== link.status) {
+        tx.update(ref, {status, updatedAt: now});
+        if (targetRecord && status === 'accepted') {
+          tx.update(targetRecord.ref, {
+            instructorUids: addUid(targetRecord.profile.instructorUids, link.coachUid),
+            ...(targetRecord.profile.ownerUid ? {} : {ownerUid: link.learnerUid}),
+          });
+        } else if (targetRecord && status === 'revoked') {
+          tx.update(targetRecord.ref, {
+            instructorUids: removeUid(targetRecord.profile.instructorUids, link.coachUid),
+          });
+        }
+      }
       writeRequestResolution(tx, reqRecord, status, id, now);
       return {id, status};
     });

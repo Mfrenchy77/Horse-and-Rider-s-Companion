@@ -21,6 +21,7 @@ const {
 } = require('./curriculum_drafts');
 const {sharePreviewHandler} = require('./share_preview');
 const {syncPublicHorseProfileHandler} = require('./public_horse_profile');
+const {syncPublicRiderProfileHandler} = require('./public_rider_profile');
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},
@@ -65,6 +66,11 @@ exports.sharePreview = onRequest(
 exports.syncPublicHorseProfile = onDocumentWritten(
     {document: 'Horse_Profile/{horseId}', region: 'us-central1'},
     syncPublicHorseProfileHandler(admin.firestore()),
+);
+
+exports.syncPublicRiderProfile = onDocumentWritten(
+    {document: 'Rider_Profile/{riderId}', region: 'us-central1'},
+    syncPublicRiderProfileHandler(admin.firestore()),
 );
 
 /** ------------------------------------------------------------------------ */

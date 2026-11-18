@@ -258,16 +258,27 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// Method to fetch rider profile from the database
+  /// Method to fetch rider profile from the database.
+  ///
+  /// Attempts the authorized private `Rider_Profile` document first (succeeds
+  /// for the owner, accepted instructors, and admins) and falls back to the
+  /// sanitized `Public_Rider_Profile` projection for unrelated viewers.
   Future<RiderProfile?> _fetchRiderProfile(String email) async {
     debugPrint('Fetching Rider Profile for $email');
     try {
       final profile = await _riderProfileRepository
           .getRiderProfile(email: email)
           .first;
-      return profile;
+      if (profile != null) return profile;
     } catch (e) {
-      debugPrint('Error fetching rider profile: $e');
+      debugPrint('Private rider profile unavailable for $email: $e');
+    }
+    try {
+      return await _riderProfileRepository
+          .getPublicRiderProfile(email: email)
+          .first;
+    } catch (e) {
+      debugPrint('Error fetching public rider profile: $e');
       return null;
     }
   }
@@ -1106,42 +1117,77 @@ class AppCubit extends Cubit<AppState> {
       debugPrint('Horse Profile not retrieved, getting now');
       // Cancel any existing listener before subscribing to a new horse
       await _horseProfileSubscription?.cancel();
-      final stream = state.isGuest
-          ? _horseProfileRepository.getPublicHorseProfileById(id: id)
-          : _horseProfileRepository.getHorseProfileById(id: id);
-      _horseProfileSubscription = stream.listen(
-        (horseProfile) {
-          if (horseProfile != null) {
-            debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
 
-            if (!state.isGuest) {
-              _checkAndSetOwnerProfile(horseProfile);
-            }
-            emit(
-              state.copyWith(
-                horseId: horseProfile.id,
-                horseProfile: horseProfile,
-              ),
+      void subscribePublicFallback() {
+        _horseProfileSubscription?.cancel();
+        _horseProfileSubscription = _horseProfileRepository
+            .getPublicHorseProfileById(id: id)
+            .listen(
+              (publicHorse) {
+                if (isClosed) return;
+                if (publicHorse != null) {
+                  emit(
+                    state.copyWith(
+                      horseId: publicHorse.id,
+                      horseProfile: publicHorse,
+                      pageStatus: AppPageStatus.loaded,
+                    ),
+                  );
+                } else {
+                  emit(
+                    state.copyWith(
+                      pageStatus: AppPageStatus.error,
+                      errorMessage: 'Failed to retrieve horse profile',
+                    ),
+                  );
+                }
+              },
+              onError: (Object error) {
+                if (isClosed) return;
+                debugPrint('Failed to retrieve public horse profile: $error');
+                emit(
+                  state.copyWith(
+                    pageStatus: AppPageStatus.error,
+                    errorMessage: 'Failed to retrieve horse profile',
+                  ),
+                );
+              },
             );
-          } else {
-            emit(
-              state.copyWith(
-                pageStatus: AppPageStatus.error,
-                errorMessage: 'Failed to retrieve horse profile',
-              ),
-            );
-          }
-        },
-        onError: (Object error) {
-          debugPrint('Failed to retrieve horse profile: $error');
-          emit(
-            state.copyWith(
-              pageStatus: AppPageStatus.error,
-              errorMessage: 'Failed to retrieve horse profile',
-            ),
+      }
+
+      if (state.isGuest) {
+        subscribePublicFallback();
+        return;
+      }
+
+      _horseProfileSubscription = _horseProfileRepository
+          .getHorseProfileById(id: id)
+          .listen(
+            (horseProfile) {
+              if (isClosed) return;
+              if (horseProfile != null) {
+                debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
+                _checkAndSetOwnerProfile(horseProfile);
+                emit(
+                  state.copyWith(
+                    horseId: horseProfile.id,
+                    horseProfile: horseProfile,
+                    pageStatus: AppPageStatus.loaded,
+                  ),
+                );
+              } else {
+                subscribePublicFallback();
+              }
+            },
+            onError: (Object error) {
+              if (isClosed) return;
+              debugPrint(
+                'Private horse profile unavailable ($error); '
+                'falling back to Public_Horse_Profile',
+              );
+              subscribePublicFallback();
+            },
           );
-        },
-      );
     }
   }
 

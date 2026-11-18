@@ -30,6 +30,7 @@ function buildPublicHorseProfile(id, data) {
     'color',
     'nickname',
     'locationName',
+    'zipCode',
     'picUrl',
   ]) {
     const val = nonEmptyString(data[field]);

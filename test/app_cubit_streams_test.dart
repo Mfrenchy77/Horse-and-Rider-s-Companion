@@ -76,6 +76,10 @@ void main() {
             .thenAnswer((_) => controllerA.stream);
         when(() => horseRepo.getHorseProfileById(id: 'B'))
             .thenAnswer((_) => controllerB.stream);
+        when(() => horseRepo.getPublicHorseProfileById(id: 'A'))
+            .thenAnswer((_) => controllerA.stream);
+        when(() => horseRepo.getPublicHorseProfileById(id: 'B'))
+            .thenAnswer((_) => controllerB.stream);
 
         final cubit = AppCubit(
           messagesRepository: messagesRepo,
@@ -131,7 +135,7 @@ void main() {
         };
 
         when(
-          () => riderRepo.getRiderProfile(email: any(named: 'email')),
+          () => riderRepo.getPublicRiderProfile(email: any(named: 'email')),
         ).thenAnswer((_) => emailController.stream);
         when(
           () => horseRepo.getHorseByName(name: any(named: 'name')),

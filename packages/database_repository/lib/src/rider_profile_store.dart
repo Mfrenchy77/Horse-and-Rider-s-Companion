@@ -25,6 +25,9 @@ abstract interface class RiderProfileStore
   /// Streams the rider profile for [email].
   Stream<RiderProfile?> getRiderProfile({required String email});
 
+  /// Streams the sanitized public rider profile projection for [email].
+  Stream<RiderProfile?> getPublicRiderProfile({required String email});
+
   /// Streams the first rider profile matching [name].
   Stream<RiderProfile?> getProfileByName({required String name});
 

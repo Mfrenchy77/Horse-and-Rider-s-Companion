@@ -306,6 +306,10 @@ class _StubRiderProfileStore implements RiderProfileStore {
       );
 
   @override
+  Stream<RiderProfile?> getPublicRiderProfile({required String email}) =>
+      getRiderProfile(email: email);
+
+  @override
   Future<RiderProfile?> getRiderProfileByEmail({
     required String email,
     bool serverOnly = false,

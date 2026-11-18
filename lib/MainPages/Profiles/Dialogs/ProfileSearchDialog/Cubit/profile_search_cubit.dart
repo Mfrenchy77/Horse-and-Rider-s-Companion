@@ -175,17 +175,20 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     emit(state.copyWith(status: FormStatus.submitting));
     final profileResults = <RiderProfile>[];
     _cancelSearchSubscriptions();
+    final targetEmail = state.email.value.trim().toLowerCase();
     try {
       _searchSubscription = _riderProfileRepository
-          .getRiderProfile(email: state.email.value.trim().toLowerCase())
-          .listen((profile) {
-            if (isClosed) return;
-            if (profile != null) {
-              profileResults.add(profile);
-              if (profileResults.isNotEmpty) {
+          .getPublicRiderProfile(email: targetEmail)
+          .listen(
+            (profile) {
+              if (isClosed) return;
+              if (profile != null) {
+                profileResults
+                  ..clear()
+                  ..add(profile);
                 emit(
                   state.copyWith(
-                    riderProfiles: profileResults,
+                    riderProfiles: List<RiderProfile>.of(profileResults),
                     status: FormStatus.success,
                   ),
                 );
@@ -197,12 +200,14 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
                   ),
                 );
               }
-            } else {
+            },
+            onError: (Object error) {
+              if (isClosed) return;
               emit(
                 state.copyWith(status: FormStatus.failure, error: 'No Results'),
               );
-            }
-          });
+            },
+          );
     } on RepositoryException catch (e) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
 
@@ -307,35 +312,55 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Search for Horse by Id
   void searchForHorseById() {
     emit(state.copyWith(status: FormStatus.submitting));
-    final horseProfileResults = <HorseProfile>[];
     _cancelSearchSubscriptions();
-    if (state.searchValue.value.isNotEmpty) {
-      try {
+    final targetId = state.searchValue.value.toLowerCase().trim();
+    if (targetId.isNotEmpty) {
+      void emitResult(HorseProfile? horseProfile) {
+        if (isClosed) return;
+        if (horseProfile != null) {
+          emit(
+            state.copyWith(
+              horseProfiles: [horseProfile],
+              status: FormStatus.success,
+            ),
+          );
+        } else {
+          emit(state.copyWith(status: FormStatus.failure, error: 'No Results'));
+        }
+      }
+
+      void searchPublicFallback() {
+        _searchSubscription?.cancel();
         _searchSubscription = _horseProfileRepository
-            .getHorseProfileById(
-              id: state.searchValue.value.toLowerCase().trim(),
-            )
-            .listen((horseProfile) {
-              if (isClosed) return;
-              if (horseProfile != null) {
-                horseProfileResults.add(horseProfile);
-              }
-              if (horseProfileResults.isNotEmpty) {
-                emit(
-                  state.copyWith(
-                    horseProfiles: horseProfileResults,
-                    status: FormStatus.success,
-                  ),
-                );
-              } else {
+            .getPublicHorseProfileById(id: targetId)
+            .listen(
+              emitResult,
+              onError: (_) {
+                if (isClosed) return;
                 emit(
                   state.copyWith(
                     status: FormStatus.failure,
                     error: 'No Results',
                   ),
                 );
-              }
-            });
+              },
+            );
+      }
+
+      try {
+        _searchSubscription = _horseProfileRepository
+            .getHorseProfileById(id: targetId)
+            .listen(
+              (horseProfile) {
+                if (isClosed) return;
+                if (horseProfile != null) {
+                  emitResult(horseProfile);
+                } else {
+                  searchPublicFallback();
+                }
+              },
+              onError: (_) => searchPublicFallback(),
+            );
       } on RepositoryException catch (e) {
         emit(state.copyWith(status: FormStatus.failure, error: e.message));
 

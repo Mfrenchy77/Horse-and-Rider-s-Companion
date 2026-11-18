@@ -9,10 +9,16 @@ import 'package:database_repository/src/repository_exception.dart';
 ///Interface between Horse and Riders and Firebase
 class HorseProfileRepository implements HorseProfileStore {
   HorseProfileRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        _horseProfiledatabaseReference =
+      : _horseProfiledatabaseReference =
             (firestore ?? FirebaseFirestore.instance)
                 .collection(HORSE_PROFILE)
+                .withConverter<HorseProfile>(
+                  fromFirestore: HorseProfileFirestoreMapper.fromFirestore,
+                  toFirestore: HorseProfileFirestoreMapper.toFirestore,
+                ),
+        _publicHorseProfileDatabaseReference =
+            (firestore ?? FirebaseFirestore.instance)
+                .collection(PUBLIC_HORSE_PROFILE)
                 .withConverter<HorseProfile>(
                   fromFirestore: HorseProfileFirestoreMapper.fromFirestore,
                   toFirestore: HorseProfileFirestoreMapper.toFirestore,
@@ -21,8 +27,8 @@ class HorseProfileRepository implements HorseProfileStore {
   static const String HORSE_PROFILE = 'Horse_Profile';
   static const String PUBLIC_HORSE_PROFILE = 'Public_Horse_Profile';
 
-  final FirebaseFirestore _firestore;
   final CollectionReference<HorseProfile> _horseProfiledatabaseReference;
+  final CollectionReference<HorseProfile> _publicHorseProfileDatabaseReference;
 
   ///create or update [horseProfile]
   @override
@@ -61,23 +67,16 @@ class HorseProfileRepository implements HorseProfileStore {
   /// retrieve a sanitized public horse profile by its [id]
   @override
   Stream<HorseProfile?> getPublicHorseProfileById({required String id}) {
-    return _firestore
-        .collection(PUBLIC_HORSE_PROFILE)
-        .withConverter<HorseProfile>(
-          fromFirestore: HorseProfileFirestoreMapper.fromFirestore,
-          toFirestore: HorseProfileFirestoreMapper.toFirestore,
-        )
+    return _publicHorseProfileDatabaseReference
         .doc(id)
         .snapshots()
         .map((snap) => snap.data());
   }
 
-  ///retrieve all horse profiles for  [name]
+  ///retrieve all public horse profiles for [name]
   @override
   Stream<List<HorseProfile>> getHorseByName({required String name}) {
-    //retrieve horse with name from database
-
-    return _horseProfiledatabaseReference
+    return _publicHorseProfileDatabaseReference
         .where('name', isGreaterThanOrEqualTo: name)
         .where(
           'name',
@@ -87,12 +86,10 @@ class HorseProfileRepository implements HorseProfileStore {
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
-  ///retrieve all horse profiles for  [nickName]
+  ///retrieve all public horse profiles for [nickName]
   @override
   Stream<List<HorseProfile>> getHorseByNickName({required String nickName}) {
-    //retrieve horse with name from database
-
-    return _horseProfiledatabaseReference
+    return _publicHorseProfileDatabaseReference
         .where('nickname', isGreaterThanOrEqualTo: nickName)
         .where(
           'nickname',
@@ -111,10 +108,10 @@ class HorseProfileRepository implements HorseProfileStore {
         .map((snap) => snap.data());
   }
 
-  /// Retrieve all horse profiles for a zip code
+  /// Retrieve all public horse profiles for a zip code
   @override
   Stream<List<HorseProfile>> getHorseByZipCode({required String zipCode}) {
-    return _horseProfiledatabaseReference
+    return _publicHorseProfileDatabaseReference
         .where('zipCode', isEqualTo: zipCode)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());

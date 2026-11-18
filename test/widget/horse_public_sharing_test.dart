@@ -3,6 +3,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
@@ -219,6 +220,52 @@ void main() {
 
       expect(harness.cubit.state.horseProfile?.isPublic, isTrue);
       expect(harness.cubit.state.horseProfile?.saleListing, isNotNull);
+    },
+  );
+
+  testWidgets(
+    'signed-in non-owner falls back to Public_Horse_Profile when private '
+    'Horse_Profile read is denied',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+
+      final publicHorse = _buildHorse(isPublic: true);
+      final viewer = RiderProfile(
+        id: 'visitor@example.com',
+        email: 'visitor@example.com',
+        name: 'Visitor Rider',
+      );
+      const authUser = User(
+        id: 'visitor-uid',
+        name: 'Visitor Rider',
+        email: 'visitor@example.com',
+        emailVerified: true,
+      );
+
+      when(
+        () => harness.horses.getHorseProfileById(id: publicHorse.id),
+      ).thenAnswer((_) => Stream<HorseProfile?>.error(Exception('denied')));
+      when(
+        () => harness.horses.getPublicHorseProfileById(id: publicHorse.id),
+      ).thenAnswer((_) => Stream.value(publicHorse));
+
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          user: authUser,
+          usersProfile: viewer,
+          isGuest: false,
+        ),
+      );
+
+      await harness.cubit.getHorseProfile(id: publicHorse.id);
+      await tester.pump();
+      await tester.pump();
+
+      expect(harness.cubit.state.horseProfile?.id, publicHorse.id);
+      expect(harness.cubit.state.horseProfile?.isPublic, isTrue);
+      expect(harness.cubit.state.pageStatus, AppPageStatus.loaded);
     },
   );
 }

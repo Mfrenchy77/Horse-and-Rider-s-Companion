@@ -218,6 +218,11 @@ class _InMemoryRiderProfileStore implements RiderProfileStore {
   }
 
   @override
+  Stream<RiderProfile?> getPublicRiderProfile({required String email}) {
+    return Stream.value(_profiles[email]);
+  }
+
+  @override
   Future<RiderProfile?> getRiderProfileByEmail({
     required String email,
     bool serverOnly = false,

@@ -16,11 +16,20 @@ class RiderProfileRepository implements RiderProfileStore {
           .withConverter<RiderProfile>(
             fromFirestore: RiderProfileFirestoreMapper.fromFirestore,
             toFirestore: RiderProfileFirestoreMapper.toFirestore,
-          );
+          ),
+      _publicRiderProfileDatabaseReference =
+          (firestore ?? FirebaseFirestore.instance)
+              .collection(PUBLIC_RIDER_PROFILE)
+              .withConverter<RiderProfile>(
+                fromFirestore: RiderProfileFirestoreMapper.fromFirestore,
+                toFirestore: RiderProfileFirestoreMapper.toFirestore,
+              );
 
   static const String RIDER_PROFILE = 'Rider_Profile';
+  static const String PUBLIC_RIDER_PROFILE = 'Public_Rider_Profile';
   static const String OWNED_HORSES = 'ownedHorses';
   final CollectionReference<RiderProfile> _riderProfileDatabaseReference;
+  final CollectionReference<RiderProfile> _publicRiderProfileDatabaseReference;
 
   ///create or update [riderProfile] for user
 
@@ -158,10 +167,28 @@ class RiderProfileRepository implements RiderProfileStore {
     return snap.data();
   }
 
-  ///Retrive a single profile by [name]
+  /// Retrieve the sanitized public rider profile using [email]
+  @override
+  Stream<RiderProfile?> getPublicRiderProfile({required String email}) {
+    return _publicRiderProfileDatabaseReference
+        .doc(_convertEmailToPath(email: email))
+        .snapshots()
+        .map((snap) => snap.data())
+        .handleError((Object error) {
+          if (error is FirebaseException) {
+            handleFirebaseException(error);
+          } else {
+            debugPrint(
+              'An unknown error occurred in getPublicRiderProfile: $error',
+            );
+          }
+        });
+  }
+
+  ///Retrieve a single public rider profile by [name]
   @override
   Stream<RiderProfile?> getProfileByName({required String name}) {
-    return _riderProfileDatabaseReference
+    return _publicRiderProfileDatabaseReference
         .where('name', isEqualTo: name)
         .get()
         .asStream()
@@ -175,10 +202,10 @@ class RiderProfileRepository implements RiderProfileStore {
         });
   }
 
-  /// Retrieve all profile for [name]
+  /// Retrieve all public rider profiles for [name]
   @override
   Stream<List<RiderProfile>> getProfilesByName({required String name}) {
-    return _riderProfileDatabaseReference
+    return _publicRiderProfileDatabaseReference
         .where('name', isGreaterThanOrEqualTo: name)
         .where('name', isLessThanOrEqualTo: '$name\uf8ff')
         .snapshots()
@@ -194,10 +221,10 @@ class RiderProfileRepository implements RiderProfileStore {
         });
   }
 
-  /// Retrieve all profiles for zipcode
+  /// Retrieve all public rider profiles for zipcode
   @override
   Stream<List<RiderProfile>> getProfilesByZipcode({required String zipcode}) {
-    return _riderProfileDatabaseReference
+    return _publicRiderProfileDatabaseReference
         .where('zipCode', isEqualTo: zipcode)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList())

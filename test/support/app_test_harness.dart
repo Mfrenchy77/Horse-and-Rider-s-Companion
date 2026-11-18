@@ -58,6 +58,12 @@ class AppTestHarness {
         status: AccountDeletionStatus.completed,
       ),
     );
+    when(
+      () => harness.riders.getPublicRiderProfile(email: any(named: 'email')),
+    ).thenAnswer((_) => Stream.value(null));
+    when(
+      () => harness.horses.getPublicHorseProfileById(id: any(named: 'id')),
+    ).thenAnswer((_) => Stream.value(null));
     when(harness.skills.getSkills).thenAnswer((_) => const Stream.empty());
     when(
       harness.resources.getResources,
