@@ -40,7 +40,8 @@ class SkillFamilyListV2 extends StatelessWidget {
             ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)))
         : state.realmFamilies;
 
-    if (visible.isEmpty && !(isAdminEditMode && !isSearching && families.isNotEmpty)) {
+    if (visible.isEmpty &&
+        !(isAdminEditMode && !isSearching && families.isNotEmpty)) {
       return AppSurfaceCard(
         child: Padding(
           padding: const EdgeInsets.all(AppTokens.spaceMd),
@@ -76,148 +77,156 @@ class SkillFamilyListV2 extends StatelessWidget {
             key: Key('skillFamily_${family.id}'),
             padding: const EdgeInsets.all(AppTokens.spaceMd),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppTokens.spaceSm,
-            children: [
-              Semantics(
-                button: true,
-                expanded: isExpanded,
-                label: family.name,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    key: Key('skillFamilyHeader_${family.id}'),
-                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                    hoverColor: AppTokens.hoverOverlay(context),
-                    highlightColor: AppTokens.pressOverlay(context),
-                    focusColor: AppTokens.focusOverlay(context),
-                    splashColor: AppTokens.pressOverlay(context),
-                    onTap: isSearching ? null : () => onToggleFamily(family.id),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppTokens.spaceXs,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              spacing: AppTokens.spaceXs,
-                              children: [
-                                Text(
-                                  family.name,
-                                  style: AppTokens.sectionTitleStyle(
-                                    context,
-                                  ).copyWith(fontSize: 18, height: 1.25),
-                                ),
-                                if (family.description.trim().isNotEmpty)
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceSm,
+              children: [
+                Semantics(
+                  button: true,
+                  expanded: isExpanded,
+                  label: family.name,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: Key('skillFamilyHeader_${family.id}'),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                      hoverColor: AppTokens.hoverOverlay(context),
+                      highlightColor: AppTokens.pressOverlay(context),
+                      focusColor: AppTokens.focusOverlay(context),
+                      splashColor: AppTokens.pressOverlay(context),
+                      onTap: isSearching
+                          ? null
+                          : () => onToggleFamily(family.id),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppTokens.spaceXs,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: AppTokens.spaceXs,
+                                children: [
                                   Text(
-                                    family.description,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: AppTokens.secondaryTextColor(
-                                        context,
-                                      ),
-                                    ),
+                                    family.name,
+                                    style: AppTokens.sectionTitleStyle(
+                                      context,
+                                    ).copyWith(fontSize: 18, height: 1.25),
                                   ),
-                              ],
+                                  if (family.description.trim().isNotEmpty)
+                                    Text(
+                                      family.description,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: AppTokens.secondaryTextColor(
+                                              context,
+                                            ),
+                                          ),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: AppTokens.spaceSm),
-                          if (isAdminEditMode && onEditFamily != null)
-                            IconButton(
-                              key: Key('editFamilyButton_${family.id}'),
-                              tooltip: 'Edit Skill Family',
-                              icon: const Icon(Icons.edit_outlined, size: 18),
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () => onEditFamily!(family),
+                            const SizedBox(width: AppTokens.spaceSm),
+                            if (isAdminEditMode && onEditFamily != null)
+                              IconButton(
+                                key: Key('editFamilyButton_${family.id}'),
+                                tooltip: 'Edit Skill Family',
+                                icon: const Icon(Icons.edit_outlined, size: 18),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => onEditFamily!(family),
+                              ),
+                            AnimatedRotation(
+                              turns: isExpanded ? 0.5 : 0.0,
+                              duration: AppTokens.motionDuration(context),
+                              curve: Curves.easeOutCubic,
+                              child: Icon(
+                                Icons.expand_more,
+                                color: AppTokens.secondaryTextColor(context),
+                              ),
                             ),
-                          AnimatedRotation(
-                            turns: isExpanded ? 0.5 : 0.0,
-                            duration: AppTokens.motionDuration(context),
-                            curve: Curves.easeOutCubic,
-                            child: Icon(
-                              Icons.expand_more,
-                              color: AppTokens.secondaryTextColor(context),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Builder(
-                builder: (context) {
-                  final expandDuration = AppTokens.motionDuration(context);
-                  final expandedContent = isExpanded
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          spacing: AppTokens.spaceSm,
-                          children: [
-                            for (var skillIdx = 0;
+                Builder(
+                  builder: (context) {
+                    final expandDuration = AppTokens.motionDuration(context);
+                    final expandedContent = isExpanded
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: AppTokens.spaceSm,
+                            children: [
+                              for (
+                                var skillIdx = 0;
                                 skillIdx < familySkills.length;
-                                skillIdx++)
-                              Builder(
-                                builder: (context) {
-                                  final skill = familySkills[skillIdx];
-                                  final row = _SkillRowCard(
-                                    skill: skill,
-                                    subtitle: isSearching
-                                        ? realmDisplayLabel(skill.realm)
-                                        : null,
-                                    isSelected:
-                                        skill.id == state.selectedSkillId,
-                                    progress: state.progressBySkillId[skill.id],
-                                    verification:
-                                        state.verificationsBySkillId[skill.id],
-                                    onTap: () {
-                                      onSelectSkill(skill);
-                                      GuestSpotlightTour.notifySkillSelected();
-                                    },
-                                  );
-                                  return index == 0 && skillIdx == 0
-                                      ? KeyedSubtree(
-                                          key: GuestSpotlightTour
-                                              .skillTreeSkillRowKey,
-                                          child: row,
-                                        )
-                                      : row;
-                                },
-                              ),
-                            if (isAdminEditMode && onAddSkillToFamily != null)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  key: Key('addSkillButton_${family.id}'),
-                                  onPressed: () => onAddSkillToFamily!(family),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Add Skill'),
+                                skillIdx++
+                              )
+                                Builder(
+                                  builder: (context) {
+                                    final skill = familySkills[skillIdx];
+                                    final row = _SkillRowCard(
+                                      skill: skill,
+                                      subtitle: isSearching
+                                          ? realmDisplayLabel(skill.realm)
+                                          : null,
+                                      isSelected:
+                                          skill.id == state.selectedSkillId,
+                                      progress:
+                                          state.progressBySkillId[skill.id],
+                                      verification: state
+                                          .verificationsBySkillId[skill.id],
+                                      onTap: () {
+                                        onSelectSkill(skill);
+                                        // ignore: lines_longer_than_80_chars
+                                        GuestSpotlightTour.notifySkillSelected();
+                                      },
+                                    );
+                                    return index == 0 && skillIdx == 0
+                                        ? KeyedSubtree(
+                                            key: GuestSpotlightTour
+                                                .skillTreeSkillRowKey,
+                                            child: row,
+                                          )
+                                        : row;
+                                  },
                                 ),
-                              ),
-                          ],
-                        )
-                      : const SizedBox.shrink();
-                  if (expandDuration == Duration.zero) {
-                    return expandedContent;
-                  }
-                  return ClipRect(
-                    child: AnimatedSize(
-                      duration: expandDuration,
-                      reverseDuration: AppTokens.motionDuration(
-                        context,
-                        const Duration(milliseconds: 150),
+                              if (isAdminEditMode && onAddSkillToFamily != null)
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton.icon(
+                                    key: Key('addSkillButton_${family.id}'),
+                                    onPressed: () =>
+                                        onAddSkillToFamily!(family),
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: const Text('Add Skill'),
+                                  ),
+                                ),
+                            ],
+                          )
+                        : const SizedBox.shrink();
+                    if (expandDuration == Duration.zero) {
+                      return expandedContent;
+                    }
+                    return ClipRect(
+                      child: AnimatedSize(
+                        duration: expandDuration,
+                        reverseDuration: AppTokens.motionDuration(
+                          context,
+                          const Duration(milliseconds: 150),
+                        ),
+                        curve: Curves.easeOutCubic,
+                        alignment: Alignment.topCenter,
+                        child: expandedContent,
                       ),
-                      curve: Curves.easeOutCubic,
-                      alignment: Alignment.topCenter,
-                      child: expandedContent,
-                    ),
-                  );
-                },
-              ),
-            ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
         );
         return index == 0
             ? KeyedSubtree(
@@ -283,56 +292,56 @@ class _SkillRowCard extends StatelessWidget {
               horizontal: AppTokens.spaceMd,
               vertical: AppTokens.spaceSm + 4,
             ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppTokens.spaceXs,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      skill.name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceXs,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        skill.name,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle!,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppTokens.secondaryTextColor(context),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                        ),
                       ),
-                    ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right, size: 18),
-                ],
-              ),
-              if (skill.summary.trim().isNotEmpty)
-                Text(
-                  skill.summary,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppTokens.secondaryTextColor(context),
-                  ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right, size: 18),
+                  ],
                 ),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
-                  for (final level in skill.availableLevels)
-                    _LevelStatusPill(
-                      level: level,
-                      selfState: progress?.levels[level]?.state,
-                      isVerified:
-                          verification?.levels.containsKey(level) ?? false,
+                if (skill.summary.trim().isNotEmpty)
+                  Text(
+                    skill.summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTokens.secondaryTextColor(context),
                     ),
-                ],
-              ),
-            ],
+                  ),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final level in skill.availableLevels)
+                      _LevelStatusPill(
+                        level: level,
+                        selfState: progress?.levels[level]?.state,
+                        isVerified:
+                            verification?.levels.containsKey(level) ?? false,
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );

@@ -24,11 +24,7 @@ void main() {
   setUp(() async {
     SkillTreeV2View.resetPreviewStoreForTest();
     harness = await AppTestHarness.create();
-    draftStore = InMemorySkillTreeDraftStore(
-      actorUid: 'admin-1',
-      actorName: 'Admin One',
-      actorIsAdmin: true,
-    );
+    draftStore = InMemorySkillTreeDraftStore(actorName: 'Admin One');
     draftRepo = SkillTreeDraftRepository(store: draftStore);
     suggestionsStore = InMemorySkillTreeSuggestionsStore(
       actorUid: 'admin-1',
@@ -100,13 +96,17 @@ void main() {
         await tester.pumpAndSettle();
 
         // Enter Draft Mode via overflow menu.
-        await tester.tap(find.byKey(const Key('skillTreeV2AppBarOverflowMenu')));
+        await tester.tap(
+          find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
+        );
         await tester.pumpAndSettle();
         expect(
           find.byKey(const Key('skillTreeV2MenuAdminEditDraft')),
           findsOneWidget,
         );
-        await tester.tap(find.byKey(const Key('skillTreeV2MenuAdminEditDraft')));
+        await tester.tap(
+          find.byKey(const Key('skillTreeV2MenuAdminEditDraft')),
+        );
         await tester.pumpAndSettle();
 
         expect(
@@ -205,10 +205,7 @@ void main() {
         // Published curriculum remains untouched.
         final publishedFamiliesAfter = await v2Repo.fetchFamilies();
         final publishedSkillsAfter = await v2Repo.fetchSkills();
-        expect(
-          publishedFamiliesAfter.length,
-          publishedFamiliesBefore.length,
-        );
+        expect(publishedFamiliesAfter.length, publishedFamiliesBefore.length);
         expect(publishedSkillsAfter.length, publishedSkillsBefore.length);
 
         // Discard draft and confirm.
@@ -371,9 +368,7 @@ void main() {
 
         expect(find.text('Profile Shell Page'), findsOneWidget);
 
-        await tester.tap(
-          find.byKey(const Key('openCreateProfileDialogBtn')),
-        );
+        await tester.tap(find.byKey(const Key('openCreateProfileDialogBtn')));
         await tester.pumpAndSettle();
 
         // Submit the prefilled profile dialog.
@@ -400,17 +395,18 @@ void main() {
       description: 'Core rider balance.',
     );
 
-    final longNamedOtherSkill = CurriculumSkill(
+    const longNamedOtherSkill = CurriculumSkill(
       id: 'rider.mounted.very_long_other_skill',
       subject: SkillSubject.rider,
       realm: SkillCategory.Mounted,
       familyId: 'rider.mounted.balance',
-      name: 'Very Long Skill Name That Previously Caused RenderFlex Overflow '
+      name:
+          'Very Long Skill Name That Previously Caused RenderFlex Overflow '
           'On Mobile Viewports',
       summary: 'Summary',
       purpose: 'Purpose',
-      availableLevels: const [DifficultyState.Introductory],
-      levels: const {
+      availableLevels: [DifficultyState.Introductory],
+      levels: {
         DifficultyState.Introductory: SkillLevelDefinition(
           overview: 'Intro overview',
           learning: 'Intro learning',
@@ -419,7 +415,7 @@ void main() {
       },
     );
 
-    final secondOtherSkill = CurriculumSkill(
+    const secondOtherSkill = CurriculumSkill(
       id: 'rider.mounted.second_other_skill',
       subject: SkillSubject.rider,
       realm: SkillCategory.Mounted,
@@ -427,8 +423,8 @@ void main() {
       name: 'Half Halt',
       summary: 'Summary',
       purpose: 'Purpose',
-      availableLevels: const [DifficultyState.Introductory],
-      levels: const {
+      availableLevels: [DifficultyState.Introductory],
+      levels: {
         DifficultyState.Introductory: SkillLevelDefinition(
           overview: 'Intro overview',
           learning: 'Intro learning',
@@ -437,7 +433,7 @@ void main() {
       },
     );
 
-    final multiLevelSkill = CurriculumSkill(
+    const multiLevelSkill = CurriculumSkill(
       id: 'rider.mounted.neutral_pelvis',
       subject: SkillSubject.rider,
       realm: SkillCategory.Mounted,
@@ -445,12 +441,12 @@ void main() {
       name: 'Neutral Pelvis',
       summary: 'Maintain neutral pelvis.',
       purpose: 'Allows independent aids.',
-      availableLevels: const [
+      availableLevels: [
         DifficultyState.Introductory,
         DifficultyState.Intermediate,
         DifficultyState.Advanced,
       ],
-      levels: const {
+      levels: {
         DifficultyState.Introductory: SkillLevelDefinition(
           overview: 'Intro overview',
           learning: 'Intro learning',
@@ -491,7 +487,7 @@ void main() {
                     onPressed: () async {
                       savedResult = await showDialog<CurriculumSkill>(
                         context: context,
-                        builder: (_) => EditCurriculumSkillDialog(
+                        builder: (_) => const EditCurriculumSkillDialog(
                           initialSkill: CurriculumSkill(
                             id: 'rider.mounted.target',
                             subject: SkillSubject.rider,
@@ -500,21 +496,19 @@ void main() {
                             name: 'Target Skill',
                             summary: 'Summary',
                             purpose: 'Purpose',
-                            availableLevels: const [
-                              DifficultyState.Introductory,
-                            ],
-                            levels: const {
+                            availableLevels: [DifficultyState.Introductory],
+                            levels: {
                               DifficultyState.Introductory:
                                   SkillLevelDefinition(
-                                overview: 'Intro overview',
-                                learning: 'Intro learning',
-                                proficient: 'Intro proficient',
-                              ),
+                                    overview: 'Intro overview',
+                                    learning: 'Intro learning',
+                                    proficient: 'Intro proficient',
+                                  ),
                             },
                           ),
                           family: testFamily,
                           allSkills: [longNamedOtherSkill, secondOtherSkill],
-                          existingSkillIds: const {'rider.mounted.target'},
+                          existingSkillIds: {'rider.mounted.target'},
                         ),
                       );
                     },
@@ -529,9 +523,7 @@ void main() {
           await tester.tap(find.text('Open Editor'));
           await tester.pumpAndSettle();
 
-          final addRelatedBtn = find.byKey(
-            const Key('addRelatedSkillButton'),
-          );
+          final addRelatedBtn = find.byKey(const Key('addRelatedSkillButton'));
           await tester.ensureVisible(addRelatedBtn);
           await tester.tap(addRelatedBtn);
           await tester.pumpAndSettle();
@@ -595,11 +587,11 @@ void main() {
                   onPressed: () async {
                     savedResult = await showDialog<CurriculumSkill>(
                       context: context,
-                      builder: (_) => EditCurriculumSkillDialog(
+                      builder: (_) => const EditCurriculumSkillDialog(
                         initialSkill: multiLevelSkill,
                         family: testFamily,
                         allSkills: [multiLevelSkill, secondOtherSkill],
-                        existingSkillIds: const {'rider.mounted.neutral_pelvis'},
+                        existingSkillIds: {'rider.mounted.neutral_pelvis'},
                         initialExpandedLevel: DifficultyState.Intermediate,
                       ),
                     );
@@ -615,7 +607,8 @@ void main() {
         await tester.tap(find.text('Open MultiLevel'));
         await tester.pumpAndSettle();
 
-        // Intermediate is expanded initially; Introductory and Advanced are collapsed.
+        // Intermediate is expanded initially;
+        // Introductory and Advanced are collapsed.
         expect(find.text('Intermediate overview'), findsOneWidget);
         expect(find.text('Intro overview'), findsNothing);
         expect(find.text('Advanced overview'), findsNothing);

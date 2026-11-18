@@ -1,3 +1,5 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -5,7 +7,7 @@ final RegExp _draftDocIdRegex = RegExp(r'^[A-Za-z0-9._-]{1,120}$');
 
 String _slugify(String input) {
   final lower = input.trim().toLowerCase();
-  final replaced = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+  final replaced = lower.replaceAll(RegExp('[^a-z0-9]+'), '_');
   final collapsed = replaced.replaceAll(RegExp(r'^_+|_+$'), '');
   return collapsed.isEmpty ? 'item' : collapsed;
 }
@@ -74,8 +76,9 @@ class _EditSkillFamilyDialogState extends State<EditSkillFamilyDialog> {
     final initial = widget.initialFamily;
     _idController = TextEditingController(text: initial?.id ?? '');
     _nameController = TextEditingController(text: initial?.name ?? '');
-    _descriptionController =
-        TextEditingController(text: initial?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: initial?.description ?? '',
+    );
     _sortOrderController = TextEditingController(
       text: (initial?.sortOrder ?? widget.defaultSortOrder).toString(),
     );
@@ -155,7 +158,7 @@ class _EditSkillFamilyDialogState extends State<EditSkillFamilyDialog> {
                   validator: (value) {
                     final trimmed = value?.trim() ?? '';
                     if (!_draftDocIdRegex.hasMatch(trimmed)) {
-                      return 'ID must match ^[A-Za-z0-9._-]{1,120}\$.';
+                      return r'ID must match ^[A-Za-z0-9._-]{1,120}$.';
                     }
                     if (!_isEditing &&
                         widget.existingFamilyIds.contains(trimmed)) {
@@ -211,8 +214,8 @@ class _EditSkillFamilyDialogState extends State<EditSkillFamilyDialog> {
 
 class _EditableComponent {
   _EditableComponent({String title = '', String description = ''})
-      : titleController = TextEditingController(text: title),
-        descriptionController = TextEditingController(text: description);
+    : titleController = TextEditingController(text: title),
+      descriptionController = TextEditingController(text: description);
 
   final TextEditingController titleController;
   final TextEditingController descriptionController;
@@ -225,22 +228,19 @@ class _EditableComponent {
 
 class _EditableLevelFields {
   _EditableLevelFields({SkillLevelDefinition? initial})
-      : overviewController =
-            TextEditingController(text: initial?.overview ?? ''),
-        learningController =
-            TextEditingController(text: initial?.learning ?? ''),
-        proficientController =
-            TextEditingController(text: initial?.proficient ?? ''),
-        standardVersion = initial?.standardVersion ?? 1,
-        standardUpdatedAt = initial?.standardUpdatedAt,
-        components = (initial?.components ?? const [])
-            .map(
-              (c) => _EditableComponent(
-                title: c.title,
-                description: c.description,
-              ),
-            )
-            .toList();
+    : overviewController = TextEditingController(text: initial?.overview ?? ''),
+      learningController = TextEditingController(text: initial?.learning ?? ''),
+      proficientController = TextEditingController(
+        text: initial?.proficient ?? '',
+      ),
+      standardVersion = initial?.standardVersion ?? 1,
+      standardUpdatedAt = initial?.standardUpdatedAt,
+      components = (initial?.components ?? const [])
+          .map(
+            (c) =>
+                _EditableComponent(title: c.title, description: c.description),
+          )
+          .toList();
 
   final TextEditingController overviewController;
   final TextEditingController learningController;
@@ -437,8 +437,9 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
     }
 
     final initial = widget.initialSkill;
-    final orderedLevels =
-        _editableLevels.where(_selectedLevels.contains).toList();
+    final orderedLevels = _editableLevels
+        .where(_selectedLevels.contains)
+        .toList();
     final levelsMap = <DifficultyState, SkillLevelDefinition>{};
     for (final level in orderedLevels) {
       final fields = _levelFields[level]!;
@@ -500,10 +501,9 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentId = widget.initialSkill?.id ?? _idController.text.trim();
-    final selectableRelated = widget.allSkills
-        .where((s) => s.id != currentId)
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final selectableRelated =
+        widget.allSkills.where((s) => s.id != currentId).toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -553,7 +553,7 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                   validator: (value) {
                     final trimmed = value?.trim() ?? '';
                     if (!_draftDocIdRegex.hasMatch(trimmed)) {
-                      return 'ID must match ^[A-Za-z0-9._-]{1,120}\$.';
+                      return r'ID must match ^[A-Za-z0-9._-]{1,120}$.';
                     }
                     if (!_isEditing &&
                         widget.existingSkillIds.contains(trimmed)) {
@@ -776,9 +776,7 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                       ),
                       const SizedBox(width: 6),
                     ],
-                    Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                    ),
+                    Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
                   ],
                 ),
               ),
@@ -791,126 +789,127 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                 children: [
                   const SizedBox(height: 8),
                   TextFormField(
-              controller: fields.overviewController,
-              minLines: 2,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Level Overview *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Overview is required for ${_difficultyLabel(level)}.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: fields.learningController,
-              minLines: 2,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Learning Standard *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Learning standard is required for ${_difficultyLabel(level)}.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: fields.proficientController,
-              minLines: 2,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Proficient Standard *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Proficient standard is required for ${_difficultyLabel(level)}.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              children: [
-                Text(
-                  'Educational Components',
-                  style: theme.textTheme.labelLarge,
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      fields.components.add(_EditableComponent());
-                    });
-                  },
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Add Component'),
-                ),
-              ],
-            ),
-            for (var i = 0; i < fields.components.length; i++) ...[
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
+                    controller: fields.overviewController,
+                    minLines: 2,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Level Overview *',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Overview is required for ${_difficultyLabel(level)}.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: fields.learningController,
+                    minLines: 2,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Learning Standard *',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Learning standard is required for ${_difficultyLabel(level)}.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: fields.proficientController,
+                    minLines: 2,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Proficient Standard *',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Proficient standard is required for ${_difficultyLabel(level)}.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    children: [
+                      Text(
+                        'Educational Components',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            fields.components.add(_EditableComponent());
+                          });
+                        },
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Add Component'),
+                      ),
+                    ],
+                  ),
+                  for (var i = 0; i < fields.components.length; i++) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextFormField(
-                          controller: fields.components[i].titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'Component Title *',
-                            border: OutlineInputBorder(),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                controller:
+                                    fields.components[i].titleController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Component Title *',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Component title is required.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller:
+                                    fields.components[i].descriptionController,
+                                minLines: 1,
+                                maxLines: 3,
+                                decoration: const InputDecoration(
+                                  labelText: 'Component Description *',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Component description is required.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
                           ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Component title is required.';
-                            }
-                            return null;
-                          },
                         ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: fields.components[i].descriptionController,
-                          minLines: 1,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Component Description *',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Component description is required.';
-                            }
-                            return null;
+                        IconButton(
+                          tooltip: 'Remove component',
+                          onPressed: () {
+                            setState(() {
+                              fields.components.removeAt(i).dispose();
+                            });
                           },
+                          icon: const Icon(Icons.delete_outline),
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'Remove component',
-                    onPressed: () {
-                      setState(() {
-                        final removed = fields.components.removeAt(i);
-                        removed.dispose();
-                      });
-                    },
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                ],
-              ),
-            ],
+                  ],
                 ],
               ),
             ),
@@ -926,11 +925,7 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
   ) {
     final item = _relatedSkills[index];
     final hasCurrent = selectableRelated.any((s) => s.id == item.skillId);
-    final options = hasCurrent
-        ? selectableRelated
-        : [
-            ...selectableRelated,
-          ];
+    final options = hasCurrent ? selectableRelated : [...selectableRelated];
 
     Widget buildSkillDropdown() => DropdownButtonFormField<String>(
       key: Key('relatedSkillDropdown_$index'),
@@ -944,10 +939,7 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
           .map(
             (s) => DropdownMenuItem<String>(
               value: s.id,
-              child: Text(
-                s.name,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(s.name, overflow: TextOverflow.ellipsis),
             ),
           )
           .toList(),
@@ -959,32 +951,33 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
       },
     );
 
-    Widget buildRelationDropdown() => DropdownButtonFormField<SkillRelationType>(
-      key: Key('relatedRelationDropdown_$index'),
-      isExpanded: true,
-      initialValue: item.relation,
-      decoration: const InputDecoration(
-        labelText: 'Relation',
-        border: OutlineInputBorder(),
-      ),
-      items: SkillRelationType.values
-          .map(
-            (r) => DropdownMenuItem<SkillRelationType>(
-              value: r,
-              child: Text(
-                _relationLabel(r),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (value) {
-        if (value == null) return;
-        setState(() {
-          item.relation = value;
-        });
-      },
-    );
+    Widget buildRelationDropdown() =>
+        DropdownButtonFormField<SkillRelationType>(
+          key: Key('relatedRelationDropdown_$index'),
+          isExpanded: true,
+          initialValue: item.relation,
+          decoration: const InputDecoration(
+            labelText: 'Relation',
+            border: OutlineInputBorder(),
+          ),
+          items: SkillRelationType.values
+              .map(
+                (r) => DropdownMenuItem<SkillRelationType>(
+                  value: r,
+                  child: Text(
+                    _relationLabel(r),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              item.relation = value;
+            });
+          },
+        );
 
     Widget buildRemoveButton() => IconButton(
       key: Key('removeRelatedSkillButton_$index'),
@@ -1053,8 +1046,9 @@ class DraftPreviewDialog extends StatelessWidget {
     final pubFamilyMap = {for (final f in publishedFamilies) f.id: f};
     final pubSkillMap = {for (final s in publishedSkills) s.id: s};
 
-    final addedFamilies =
-        draftFamilies.where((f) => !pubFamilyMap.containsKey(f.id)).toList();
+    final addedFamilies = draftFamilies
+        .where((f) => !pubFamilyMap.containsKey(f.id))
+        .toList();
     final modifiedFamilies = draftFamilies.where((f) {
       final pub = pubFamilyMap[f.id];
       if (pub == null) return false;
@@ -1063,15 +1057,17 @@ class DraftPreviewDialog extends StatelessWidget {
           pub.sortOrder != f.sortOrder;
     }).toList();
 
-    final addedSkills =
-        draftSkills.where((s) => !pubSkillMap.containsKey(s.id)).toList();
+    final addedSkills = draftSkills
+        .where((s) => !pubSkillMap.containsKey(s.id))
+        .toList();
     final modifiedSkills = draftSkills.where((s) {
       final pub = pubSkillMap[s.id];
       if (pub == null) return false;
       return pub.toMap().toString() != s.toMap().toString();
     }).toList();
 
-    final hasChanges = addedFamilies.isNotEmpty ||
+    final hasChanges =
+        addedFamilies.isNotEmpty ||
         modifiedFamilies.isNotEmpty ||
         addedSkills.isNotEmpty ||
         modifiedSkills.isNotEmpty;
@@ -1107,7 +1103,10 @@ class DraftPreviewDialog extends StatelessWidget {
                 )
               else ...[
                 if (addedFamilies.isNotEmpty) ...[
-                  _sectionTitle(context, 'Added Families (${addedFamilies.length})'),
+                  _sectionTitle(
+                    context,
+                    'Added Families (${addedFamilies.length})',
+                  ),
                   for (final f in addedFamilies) Text('• ${f.name} (${f.id})'),
                   const SizedBox(height: 10),
                 ],
@@ -1121,7 +1120,10 @@ class DraftPreviewDialog extends StatelessWidget {
                   const SizedBox(height: 10),
                 ],
                 if (addedSkills.isNotEmpty) ...[
-                  _sectionTitle(context, 'Added Skills (${addedSkills.length})'),
+                  _sectionTitle(
+                    context,
+                    'Added Skills (${addedSkills.length})',
+                  ),
                   for (final s in addedSkills) Text('• ${s.name} (${s.id})'),
                   const SizedBox(height: 10),
                 ],
@@ -1151,9 +1153,9 @@ class DraftPreviewDialog extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }

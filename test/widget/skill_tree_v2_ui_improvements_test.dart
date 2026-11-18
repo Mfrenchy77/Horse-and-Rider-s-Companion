@@ -158,7 +158,9 @@ void main() {
           .toList();
       final defaultRealm = families.first.realm;
       final skills = (await store.fetchSkills())
-          .where((s) => s.subject == SkillSubject.rider && s.realm == defaultRealm)
+          .where(
+            (s) => s.subject == SkillSubject.rider && s.realm == defaultRealm,
+          )
           .toList();
       final firstSkill = skills.first;
       final firstFamily = families.firstWhere(
