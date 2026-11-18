@@ -15,6 +15,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_sync.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/ability_summary_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_draft_dialogs.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/instructor_ability_matrix_v2_view.dart';
@@ -776,6 +777,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           subject: skill.subject,
           profileDocId: profileDocId,
         );
+        SkillTreeV2Sync.notifyProgressChanged();
       }
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

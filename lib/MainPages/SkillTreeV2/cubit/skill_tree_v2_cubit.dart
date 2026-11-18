@@ -3,6 +3,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_sync.dart';
 
 class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
   SkillTreeV2Cubit({
@@ -299,6 +300,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         _ => 'Self-assessment cleared.',
       };
       emit(state.copyWith(isSubmitting: false, actionMessage: label));
+      SkillTreeV2Sync.notifyProgressChanged();
       return true;
     } catch (e) {
       emit(
@@ -343,6 +345,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
             : 'Verification revoked.',
       ),
     );
+    SkillTreeV2Sync.notifyProgressChanged();
     return true;
   }
 

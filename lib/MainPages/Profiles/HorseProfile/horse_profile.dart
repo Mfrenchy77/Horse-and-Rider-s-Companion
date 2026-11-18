@@ -57,6 +57,8 @@ class HorseProfileView extends StatelessWidget {
                       ProfileSkills(
                         key: const Key('ProfileSkills'),
                         skillLevels: horseProfile.skillLevels,
+                        subject: SkillSubject.horse,
+                        profileDocId: horseProfile.id,
                       ),
                     ],
                   ),

@@ -123,6 +123,8 @@ class _RiderProfileViewState extends State<RiderProfileView>
                     _DeprecatedSkillsCleanupCard(profile: profile),
                     ProfileSkills(
                       skillLevels: profile.skillLevels,
+                      subject: SkillSubject.rider,
+                      profileDocId: profile.email,
                       key: const Key('ProfileSkills'),
                     ),
                   ],
