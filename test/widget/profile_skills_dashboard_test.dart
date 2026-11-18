@@ -212,6 +212,44 @@ void main() {
       expect(sameFamilyDash.suggestion?.skill.familyId, target.familyId);
       expect(sameFamilyDash.suggestion?.skill.id, isNot(target.id));
     });
+
+    test(
+      'maps legacy skillLevels onto V2 dashboard when V2 progress is empty',
+      () {
+      final legacyTarget = allCurriculumSkills.firstWhere(
+        (s) => s.subject == SkillSubject.rider && s.legacyIds.isNotEmpty,
+      );
+      final progress = <String, SkillProgressRecord>{};
+      final verifs = <String, SkillVerificationRecord>{};
+
+      mergeLegacySkillLevelsIntoV2(
+        subject: SkillSubject.rider,
+        legacySkillLevels: [
+          SkillLevel(
+            skillId: legacyTarget.legacyIds.first,
+            skillName: legacyTarget.name,
+            lastEditBy: 'Coach Sam',
+            lastEditDate: DateTime.utc(2026, 11, 5),
+            levelState: LevelState.PROFICIENT,
+            verified: true,
+          ),
+        ],
+        legacyCatalog: const [],
+        v2Skills: allCurriculumSkills,
+        progressBySkill: progress,
+        verificationsBySkill: verifs,
+      );
+
+      final dash = buildProfileSkillsDashboard(
+        subject: SkillSubject.rider,
+        allSkills: allCurriculumSkills,
+        progressBySkill: progress,
+        verificationsBySkill: verifs,
+      );
+      expect(dash.proficientLevelCount, 1);
+      expect(dash.verifiedLevelCount, 1);
+      expect(dash.proficientEntries.single.skill.id, legacyTarget.id);
+    });
   });
 
   testWidgets(

@@ -153,9 +153,32 @@ class _ProfileSkillsState extends State<ProfileSkills> {
       if (!mounted || requestId != _requestId) return;
 
       final allSkills = results[0] as List<CurriculumSkill>;
-      final progressBySkill = results[1] as Map<String, SkillProgressRecord>;
-      final verificationsBySkill =
-          results[2] as Map<String, SkillVerificationRecord>;
+      final progressBySkill = Map<String, SkillProgressRecord>.from(
+        results[1] as Map<String, SkillProgressRecord>,
+      );
+      final verificationsBySkill = Map<String, SkillVerificationRecord>.from(
+        results[2] as Map<String, SkillVerificationRecord>,
+      );
+
+      if (progressBySkill.isEmpty &&
+          verificationsBySkill.isEmpty &&
+          (widget.skillLevels?.isNotEmpty ?? false)) {
+        var legacyCatalog = const <Skill?>[];
+        try {
+          legacyCatalog =
+              context.read<AppCubit?>()?.state.allSkills ?? const [];
+        } catch (_) {
+          // Optional in isolated widget tests.
+        }
+        mergeLegacySkillLevelsIntoV2(
+          subject: subject,
+          legacySkillLevels: widget.skillLevels!,
+          legacyCatalog: legacyCatalog,
+          v2Skills: allSkills,
+          progressBySkill: progressBySkill,
+          verificationsBySkill: verificationsBySkill,
+        );
+      }
 
       final dashboard = buildProfileSkillsDashboard(
         subject: subject,
@@ -449,6 +472,79 @@ class SuggestedNextSkill {
 }
 
 enum SuggestedNextKind { continueLearning, nextAvailableLevel, sameFamilySkill }
+
+/// Maps historical legacy [SkillLevel] records onto V2 [CurriculumSkill]
+/// progress/verification maps when a profile has not yet written V2 docs.
+void mergeLegacySkillLevelsIntoV2({
+  required SkillSubject subject,
+  required List<SkillLevel> legacySkillLevels,
+  required List<Skill?> legacyCatalog,
+  required List<CurriculumSkill> v2Skills,
+  required Map<String, SkillProgressRecord> progressBySkill,
+  required Map<String, SkillVerificationRecord> verificationsBySkill,
+}) {
+  final legacyById = <String, Skill>{
+    for (final skill in legacyCatalog.whereType<Skill>()) skill.id: skill,
+  };
+  final subjectV2 = v2Skills.where((s) => s.subject == subject).toList();
+
+  for (final legacy in legacySkillLevels) {
+    final isVerified =
+        legacy.verified || legacy.levelState == LevelState.VERIFIED;
+    final isProficient = legacy.levelState == LevelState.PROFICIENT;
+    final isLearning = legacy.levelState == LevelState.LEARNING;
+    if (!isVerified && !isProficient && !isLearning) continue;
+
+    final matched = subjectV2.where(
+      (s) => s.id == legacy.skillId || s.legacyIds.contains(legacy.skillId),
+    );
+    if (matched.isEmpty) continue;
+    final targetSkill = matched.first;
+    final ordered = _orderedLevelsFor(targetSkill);
+    final legacyDifficulty = legacyById[legacy.skillId]?.difficulty;
+    final targetLevel =
+        (legacyDifficulty != null &&
+            legacyDifficulty != DifficultyState.All &&
+            ordered.contains(legacyDifficulty))
+        ? legacyDifficulty
+        : ordered.first;
+
+    final existingProgress = progressBySkill[targetSkill.id];
+    final nextLevels = Map<DifficultyState, LevelProgress>.from(
+      existingProgress?.levels ?? const {},
+    );
+    final mappedState = (isVerified || isProficient)
+        ? LevelState.PROFICIENT
+        : LevelState.LEARNING;
+    nextLevels[targetLevel] = LevelProgress(
+      state: mappedState,
+      updatedAt: legacy.lastEditDate,
+      updatedByName: legacy.lastEditBy,
+    );
+    progressBySkill[targetSkill.id] = SkillProgressRecord(
+      skillId: targetSkill.id,
+      subject: subject,
+      levels: nextLevels,
+      updatedAt: legacy.lastEditDate,
+    );
+
+    if (isVerified) {
+      final existingVerif = verificationsBySkill[targetSkill.id];
+      final nextVerifLevels = Map<DifficultyState, LevelVerification>.from(
+        existingVerif?.levels ?? const {},
+      );
+      nextVerifLevels[targetLevel] = LevelVerification(
+        verifiedByName: legacy.lastEditBy ?? 'Instructor',
+        verifiedAt: legacy.lastEditDate,
+      );
+      verificationsBySkill[targetSkill.id] = SkillVerificationRecord(
+        skillId: targetSkill.id,
+        levels: nextVerifLevels,
+        updatedAt: legacy.lastEditDate,
+      );
+    }
+  }
+}
 
 /// Builds dashboard metrics, sorted previews, and one deterministic next-skill
 /// recommendation from real curriculum standards and recorded progress.
