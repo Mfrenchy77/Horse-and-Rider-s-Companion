@@ -129,6 +129,17 @@ class ResourcesSpotlightTour {
       return list.where((r) => r.id?.trim().isNotEmpty ?? false).firstOrNull;
     }
 
+    Future<void> waitForNextFrame() async {
+      final completer = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!completer.isCompleted) completer.complete();
+      });
+      await completer.future.timeout(
+        const Duration(milliseconds: 100),
+        onTimeout: () {},
+      );
+    }
+
     Future<bool> enterFirstResourceDetail() async {
       final resource = firstAvailableResource();
       final id = resource?.id?.trim() ?? '';
@@ -143,10 +154,35 @@ class ResourcesSpotlightTour {
         );
         if (settle > Duration.zero) {
           await Future<void>.delayed(settle);
+          await waitForNextFrame();
         }
       }
       return true;
     }
+
+    // Ensure we are on Resources and give the catalogue stream a brief moment
+    // to populate if the tour was launched from Profile or Skill Tree.
+    await ensureOnResourcesList();
+    if (cubit != null &&
+        firstAvailableResource() == null &&
+        !cubit.state.hasResourceCatalogue) {
+      try {
+        final waitLimit = readinessTimeout < const Duration(milliseconds: 600)
+            ? readinessTimeout
+            : const Duration(milliseconds: 600);
+        await cubit.stream
+            .firstWhere(
+              (s) =>
+                  s.hasResourceCatalogue ||
+                  s.resources.any((r) => r.id?.trim().isNotEmpty ?? false),
+            )
+            .timeout(waitLimit);
+      } catch (_) {
+        // Empty library or offline: Overmark will gracefully skip detail steps
+        // whose target keys are not mounted.
+      }
+    }
+    if (!context.mounted) return OvermarkOutcome.notShown;
 
     final theme = OvermarkTheme(
       scrimColor: AppTokens.midnightDeep.withValues(alpha: 0.78),
@@ -202,7 +238,6 @@ class ResourcesSpotlightTour {
       );
     }
 
-    final hasSampleResource = firstAvailableResource() != null;
     final isGuest = cubit?.state.isGuest ?? true;
 
     final steps = <OvermarkStep>[
@@ -236,24 +271,20 @@ class ResourcesSpotlightTour {
         },
       ),
       step(
-        anchorKey: hasSampleResource ? detailHeaderKey : libraryListKey,
+        anchorKey: detailHeaderKey,
         title: 'Open a Resource',
         message:
             'Open any Resource to read its title, description, and source, '
             'and use the viewing or saving controls.',
         radius: AppTokens.radiusLg,
         prepare: (_) async {
-          if (hasSampleResource) {
-            await enterFirstResourceDetail();
+          if (await enterFirstResourceDetail()) {
             await _ensureVisible(detailHeaderKey, reducedMotion: reducedMotion);
-          } else {
-            await ensureOnResourcesList();
-            await _ensureVisible(libraryListKey, reducedMotion: reducedMotion);
           }
         },
       ),
       step(
-        anchorKey: hasSampleResource ? ratingButtonsKey : sortControlKey,
+        anchorKey: ratingButtonsKey,
         title: 'Community Ratings',
         message: isGuest
             ? 'Signed-in members can rate resources with Recommend and '
@@ -265,15 +296,11 @@ class ResourcesSpotlightTour {
                   'feedback helps other riders discover useful learning '
                   'material.',
         prepare: (_) async {
-          if (hasSampleResource) {
-            await enterFirstResourceDetail();
+          if (await enterFirstResourceDetail()) {
             await _ensureVisible(
               ratingButtonsKey,
               reducedMotion: reducedMotion,
             );
-          } else {
-            await ensureOnResourcesList();
-            await _ensureVisible(sortControlKey, reducedMotion: reducedMotion);
           }
         },
       ),
@@ -291,26 +318,13 @@ class ResourcesSpotlightTour {
             anchorKey: associatedSkillsButtonKey,
             shape: OvermarkShape.circle,
           ),
-          OvermarkFocus(
-            anchorKey: detailHeaderKey,
-            shape: OvermarkShape.rrect,
-            radius: AppTokens.radiusLg,
-          ),
-          OvermarkFocus(
-            anchorKey: libraryListKey,
-            shape: OvermarkShape.rrect,
-            radius: AppTokens.radiusLg,
-          ),
         ],
         prepare: (_) async {
-          if (hasSampleResource) {
-            await enterFirstResourceDetail();
+          if (await enterFirstResourceDetail()) {
             final target = associatedSkillsKey.currentContext != null
                 ? associatedSkillsKey
                 : associatedSkillsButtonKey;
             await _ensureVisible(target, reducedMotion: reducedMotion);
-          } else {
-            await ensureOnResourcesList();
           }
         },
         title: 'Associated Skills',
@@ -327,26 +341,26 @@ class ResourcesSpotlightTour {
           nextKey: const Key('resourcesTourNextButton'),
         ),
       ),
-      if (hasSampleResource)
-        step(
-          anchorKey: commentsAreaKey,
-          title: 'Comments and Discussion',
-          message:
-              'Ask questions, discuss ideas, and share experiences with '
-              'fellow riders, horse owners, and instructors—or sort comments '
-              'to follow the conversation.',
-          extraFocus: [
-            OvermarkFocus(
-              anchorKey: commentThreadKey,
-              shape: OvermarkShape.rrect,
-              radius: AppTokens.radiusMd,
-            ),
-          ],
-          prepare: (_) async {
-            await enterFirstResourceDetail();
+      step(
+        anchorKey: commentsAreaKey,
+        title: 'Comments and Discussion',
+        message:
+            'Ask questions, discuss ideas, and share experiences with '
+            'fellow riders, horse owners, and instructors—or sort comments '
+            'to follow the conversation.',
+        extraFocus: [
+          OvermarkFocus(
+            anchorKey: commentThreadKey,
+            shape: OvermarkShape.rrect,
+            radius: AppTokens.radiusMd,
+          ),
+        ],
+        prepare: (_) async {
+          if (await enterFirstResourceDetail()) {
             await _ensureVisible(commentsAreaKey, reducedMotion: reducedMotion);
-          },
-        ),
+          }
+        },
+      ),
       OvermarkStep(
         anchorKey: contributeFabKey,
         shape: OvermarkShape.circle,

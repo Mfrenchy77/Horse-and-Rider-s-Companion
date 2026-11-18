@@ -324,6 +324,19 @@ void main() {
           find.descendant(of: card, matching: find.text(expectedTitles[i])),
           findsOneWidget,
         );
+        expect(
+          find.descendant(
+            of: card,
+            matching: find.text('Resources · ${i + 1}/7'),
+          ),
+          findsOneWidget,
+        );
+        if (i == 3) {
+          expect(
+            ResourcesSpotlightTour.ratingButtonsKey.currentContext,
+            isNotNull,
+          );
+        }
         // Verify the tooltip card and Next/Finish button stay inside viewport.
         final cardRect = tester.getRect(card);
         expect(cardRect.top, greaterThanOrEqualTo(0));
