@@ -265,6 +265,7 @@ test('backfillProfilePrivacy is dry-run by default and idempotent on apply', asy
       name: 'Private Horse',
       currentOwnerId: 'owner@example.com',
       isPublic: false,
+      instructors: [{id: 'legacy-trainer@example.com', name: 'Legacy Trainer'}],
     },
     'Public_Horse_Profile/h_stale': {id: 'h_stale', name: 'Stale'},
     'CoachingConnections/c1': {
@@ -284,6 +285,7 @@ test('backfillProfilePrivacy is dry-run by default and idempotent on apply', asy
   const auth = {
     async getUserByEmail(email) {
       if (email === 'owner@example.com') return {uid: 'uid-owner'};
+      if (email === 'legacy-trainer@example.com') return {uid: 'uid-legacy'};
       return null;
     },
   };
@@ -302,6 +304,8 @@ test('backfillProfilePrivacy is dry-run by default and idempotent on apply', asy
   assert.equal(db.store.get('Rider_Profile/r_owner').ownerUid, 'uid-owner');
   assert.deepEqual(db.store.get('Rider_Profile/r_owner').instructorUids, ['uid-coach']);
   assert.deepEqual(db.store.get('Horse_Profile/h_pub').instructorUids, ['uid-coach']);
+  assert.deepEqual(db.store.get('Horse_Profile/h_priv').instructorUids, ['uid-legacy']);
+  assert.equal(applied.legacyInstructorsResolved, 1);
   assert.equal(db.store.get('Public_Rider_Profile/r_owner').notes, undefined);
   assert.equal(db.store.get('Public_Horse_Profile/h_pub').notes, undefined);
   assert.equal(db.store.has('Public_Horse_Profile/h_priv'), false);

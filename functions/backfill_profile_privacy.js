@@ -103,15 +103,35 @@ async function backfillProfilePrivacy(db, {apply = false, auth = null} = {}) {
     horsesUpdated: 0,
     publicHorsesUpserted: 0,
     publicHorsesDeleted: 0,
+    legacyInstructorsResolved: 0,
+    unresolvedOwnerUids: 0,
   };
+
+  async function resolveLegacyInstructorUids(instructorsList) {
+    const uids = [];
+    if (!Array.isArray(instructorsList)) return uids;
+    for (const item of instructorsList) {
+      const email = emailKey(item?.id);
+      if (!email) continue;
+      const uid = await resolveUid(email);
+      if (uid) uids.push(uid);
+    }
+    return uids;
+  }
 
   const validRiderIds = new Set();
   for (const doc of riderSnap.docs) {
     validRiderIds.add(doc.id);
     const data = doc.data() || {};
     const key = emailKey(data.email);
-    const desiredUids = sortedUnique(riderCoachUids.get(key) || []);
+    const connUids = riderCoachUids.get(key) || [];
+    const legacyUids = await resolveLegacyInstructorUids(data.instructors);
+    for (const uid of legacyUids) {
+      if (!connUids.includes(uid)) summary.legacyInstructorsResolved++;
+    }
+    const desiredUids = sortedUnique([...connUids, ...legacyUids]);
     const ownerUid = data.ownerUid || (await resolveUid(key));
+    if (!ownerUid) summary.unresolvedOwnerUids++;
 
     const updates = {};
     if (ownerUid && data.ownerUid !== ownerUid) {
@@ -151,6 +171,7 @@ async function backfillProfilePrivacy(db, {apply = false, auth = null} = {}) {
     const data = doc.data() || {};
     const ownerEmail = emailKey(data.currentOwnerId);
     const ownerUid = data.ownerUid || (await resolveUid(ownerEmail));
+    if (!ownerUid) summary.unresolvedOwnerUids++;
     const ownershipVersion = data.ownershipVersion ?? null;
 
     const matchingCoachUids = (horseCoachLinks.get(doc.id) || [])
@@ -160,7 +181,11 @@ async function backfillProfilePrivacy(db, {apply = false, auth = null} = {}) {
               (link.ownershipVersion ?? null) === ownershipVersion;
         })
         .map((link) => link.coachUid);
-    const desiredUids = sortedUnique(matchingCoachUids);
+    const legacyHorseUids = await resolveLegacyInstructorUids(data.instructors);
+    for (const uid of legacyHorseUids) {
+      if (!matchingCoachUids.includes(uid)) summary.legacyInstructorsResolved++;
+    }
+    const desiredUids = sortedUnique([...matchingCoachUids, ...legacyHorseUids]);
 
     const updates = {};
     if (ownerUid && data.ownerUid !== ownerUid) {
