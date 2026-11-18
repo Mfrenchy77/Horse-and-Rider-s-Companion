@@ -133,7 +133,12 @@ class HorseProfilePrimaryView extends StatelessWidget {
               ],
             ),
           ),
-        if (isOwnerOrLinked) ConnectionPanel(horse: horseProfile),
+        if (isOwnerOrLinked ||
+            (!appState.isGuest &&
+                (appState.usersProfile?.isTrainer ?? false) &&
+                !horseProfile.isArchived &&
+                horseProfile.isPublic))
+          ConnectionPanel(horse: horseProfile),
       ],
     );
   }

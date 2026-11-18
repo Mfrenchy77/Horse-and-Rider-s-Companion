@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
@@ -907,11 +908,18 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
             final horse = appState.horseProfile;
             final profileLabel = isRiderSubject ? rider?.name : horse?.name;
 
+            final userEmailLower = appState.usersProfile?.email.toLowerCase();
+            final isHorseOwner =
+                horse != null &&
+                userEmailLower != null &&
+                horse.currentOwnerId.toLowerCase() == userEmailLower;
             final canSelfAssess =
                 !appState.isGuest &&
                 profileDocId != null &&
                 profileDocId.isNotEmpty &&
-                (isRiderSubject ? !appState.isViewing : horse != null);
+                (isRiderSubject
+                    ? !appState.isViewing
+                    : isHorseOwner && !horse.isArchived);
 
             final selfAssessDisabledReason = canSelfAssess
                 ? null
@@ -921,6 +929,10 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 ? 'Viewing another rider profile (read-only self-assessment).'
                 : !isRiderSubject && horse == null
                 ? 'Select or add a horse profile to record Horse progress.'
+                : !isRiderSubject && horse != null && horse.isArchived
+                ? 'Archived horses are read-only.'
+                : !isRiderSubject && !isHorseOwner
+                ? 'Only the horse owner can record self-assessments.'
                 : 'Select a profile to record progress.';
 
             final coachingLink = _activeCoachingLink(
@@ -1027,6 +1039,16 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                     _syncLocalHistoryEntry();
                   },
                 ),
+                if (!isRiderSubject &&
+                    horse == null &&
+                    !appState.isGuest &&
+                    appState.usersProfile != null)
+                  _buildHorseSelectorBanner(
+                    context,
+                    userProfile: appState.usersProfile!,
+                    onSelectHorse: (horseId) =>
+                        appCubit.getHorseProfile(id: horseId),
+                  ),
               ];
 
               if (isWide &&
@@ -1637,6 +1659,90 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildHorseSelectorBanner(
+    BuildContext context, {
+    required RiderProfile userProfile,
+    required void Function(String horseId) onSelectHorse,
+  }) {
+    final theme = Theme.of(context);
+    final horsesById = <String, BaseListItem>{};
+    for (final item in <BaseListItem>[
+      ...?userProfile.ownedHorses,
+      ...?userProfile.studentHorses,
+    ]) {
+      final id = item.id?.trim() ?? '';
+      if (id.isNotEmpty) {
+        horsesById.putIfAbsent(id, () => item);
+      }
+    }
+    final horses = horsesById.values.toList();
+
+    return AppSurfaceCard(
+      key: const Key('skillTreeHorseSelectorCard'),
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  horses.isEmpty
+                      ? 'Add a horse profile to track Horse skills'
+                      : 'Select a horse to track Horse skills',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              AppOutlinedButton(
+                key: const Key('skillTreeAddHorseButton'),
+                icon: Icons.add,
+                label: 'Add Horse',
+                onPressed: () {
+                  showAppGlassDialog<void>(
+                    context: context,
+                    builder: (_) => AddHorseDialog(
+                      editProfile: false,
+                      userProfile: userProfile,
+                      horseProfile: null,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          if (horses.isEmpty) ...[
+            const SizedBox(height: AppTokens.spaceXs),
+            Text(
+              'You can browse all Horse skills now, or add a horse to record progress and training milestones.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: AppTokens.spaceSm),
+            Wrap(
+              spacing: AppTokens.spaceSm,
+              runSpacing: AppTokens.spaceXs,
+              children: horses
+                  .map(
+                    (horseItem) => ActionChip(
+                      key: Key('skillTreeSelectHorse_${horseItem.id}'),
+                      avatar: const Icon(Icons.pets_outlined, size: 16),
+                      label: Text(horseItem.name ?? 'Horse'),
+                      onPressed: () => onSelectHorse(horseItem.id!),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
       ),
     );
   }

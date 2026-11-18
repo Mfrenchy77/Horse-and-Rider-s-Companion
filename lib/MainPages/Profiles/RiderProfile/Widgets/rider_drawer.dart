@@ -49,7 +49,7 @@ class UserProfileDrawer extends StatelessWidget {
                     ),
 
                     accountName: Text(
-                      state.usersProfile!.name,
+                      state.usersProfile?.name ?? '',
                       style: TextStyle(
                         color: SharedPrefs().isDarkMode
                             ? Colors.white

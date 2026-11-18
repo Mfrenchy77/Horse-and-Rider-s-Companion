@@ -64,6 +64,7 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   break;
                 case 2:
                   // Log out
+                  context.read<AppCubit>().logOutRequested();
                   break;
                 case 3:
                   RiderLogbookPage.open(context);

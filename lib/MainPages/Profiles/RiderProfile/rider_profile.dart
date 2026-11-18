@@ -56,11 +56,22 @@ class _RiderProfileViewState extends State<RiderProfileView>
     final instructor = connections?.instructorFor(profile.email);
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
+        final viewerEmail = state.usersProfile?.email;
+        final isOwnProfile =
+            !state.isGuest &&
+            viewerEmail != null &&
+            viewerEmail.toLowerCase() == profile.email.toLowerCase();
+        final isCoachViewingStudent =
+            !isOwnProfile &&
+            !state.isGuest &&
+            viewerEmail != null &&
+            instructor != null &&
+            instructor.coach == viewerEmail.toLowerCase();
         final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
           backgroundColor: isDarkTheme ? ProfileTokens.midnightBase : null,
           appBar: ThemedAppBar(
-            leading: profile.email == state.usersProfile?.email
+            leading: isOwnProfile
                 ? Builder(
                     builder: (context) => IconButton(
                       icon: AnimatedIcon(
@@ -80,14 +91,13 @@ class _RiderProfileViewState extends State<RiderProfileView>
                     ),
                   )
                 : null,
-            title: Text(
-              profile.email == state.usersProfile?.email
-                  ? 'My profile'
-                  : 'Rider profile',
-            ),
-            actions: const [
-              ProfileSearchButton(key: Key('RiderSearchButton')),
-              RiderProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
+            title: Text(isOwnProfile ? 'My profile' : 'Rider profile'),
+            actions: [
+              const ProfileSearchButton(key: Key('RiderSearchButton')),
+              if (isOwnProfile)
+                const RiderProfileOverFlowMenu(
+                  key: Key('RiderProfileOverFlowMenu'),
+                ),
             ],
           ),
           // synchronize icon animation with drawer open/close (including
@@ -99,9 +109,7 @@ class _RiderProfileViewState extends State<RiderProfileView>
               _iconController.reverse();
             }
           },
-          drawer: profile.email == state.usersProfile?.email
-              ? const UserProfileDrawer()
-              : null,
+          drawer: isOwnProfile ? const UserProfileDrawer() : null,
           body: Builder(
             builder: (context) {
               final theme = Theme.of(context);
@@ -113,11 +121,16 @@ class _RiderProfileViewState extends State<RiderProfileView>
                   children: [
                     ProfileSectionHeader(
                       title: 'Skills',
-                      actionLabel: instructor == null
-                          ? 'Explore Skill Tree'
-                          : 'Open student Skill Tree',
+                      actionLabel: isCoachViewingStudent
+                          ? 'Open student Skill Tree'
+                          : 'Explore Skill Tree',
                       showArrow: true,
-                      onAction: () => context.goNamed(SkillTreePage.name),
+                      onAction: () {
+                        context.read<AppCubit>()
+                          ..setSkillSubject(isForRider: true)
+                          ..navigateToSkillsList();
+                        context.goNamed(SkillTreePage.name);
+                      },
                     ),
                     const SizedBox(height: 8),
                     _DeprecatedSkillsCleanupCard(profile: profile),

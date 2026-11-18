@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDi
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/cancel_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/name.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/profile_photo.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/rider_location.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/rider_website.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/submit_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/Widgets/trainer_question.dart';
@@ -90,6 +91,8 @@ class EditRiderProfileDialog extends StatelessWidget {
                   const RiderName(key: Key('riderName')),
                   gap(),
                   const RiderBio(key: Key('riderBio')),
+                  gap(),
+                  const RiderLocation(key: Key('riderLocation')),
                   gap(),
                   const RiderWebsite(key: Key('riderWebsite')),
                   gap(),

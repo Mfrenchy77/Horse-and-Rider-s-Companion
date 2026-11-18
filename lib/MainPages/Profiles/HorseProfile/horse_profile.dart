@@ -26,7 +26,7 @@ class HorseProfileView extends StatelessWidget {
         title: const Text('Horse profile'),
         actions: const [
           ProfileSearchButton(key: Key('HorseSearchButton')),
-          HorseProfileOverFlowMenu(key: Key('RiderProfileOverFlowMenu')),
+          HorseProfileOverFlowMenu(key: Key('HorseProfileOverFlowMenu')),
         ],
       ),
       body: AppScaffoldBackdrop(

@@ -442,6 +442,8 @@ class AppCubit extends Cubit<AppState> {
         isForRider: true,
         viewingProfielEmail: email,
         clearViewingProfile: !isSameViewingProfile,
+        isError: false,
+        errorMessage: '',
       ),
     );
     if (state.usersProfile?.email != email) {
@@ -458,11 +460,17 @@ class AppCubit extends Cubit<AppState> {
               viewingProfielEmail: email,
               viewingProfile: viewingProfile,
               pageStatus: AppPageStatus.loaded,
+              isError: false,
+              errorMessage: '',
             ),
           );
         } else {
           emit(
-            state.copyWith(isError: true, errorMessage: 'Profile Not Found'),
+            state.copyWith(
+              isError: true,
+              errorMessage: 'Profile Not Found',
+              pageStatus: AppPageStatus.error,
+            ),
           );
         }
       });

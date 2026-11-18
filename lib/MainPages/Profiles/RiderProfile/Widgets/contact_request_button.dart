@@ -27,10 +27,13 @@ class ContactRequestButton extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        // Determine if the profile is already a contact
+        // Determine if the viewed rider is already in the signed-in user's
+        // saved contacts list.
+        final viewedEmail = profile.email.trim().toLowerCase();
         final isAlreadyContact =
-            profile.savedProfilesList?.any(
-              (element) => element.id == state.usersProfile!.email,
+            state.usersProfile!.savedProfilesList?.any(
+              (element) =>
+                  (element.id ?? '').trim().toLowerCase() == viewedEmail,
             ) ??
             false;
 

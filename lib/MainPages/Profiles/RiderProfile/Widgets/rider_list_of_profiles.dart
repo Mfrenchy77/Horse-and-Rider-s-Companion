@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -27,13 +28,56 @@ class RiderListOfProfiles extends StatelessWidget {
     final studentHorses = profile.studentHorses ?? const <BaseListItem>[];
     final instructors = profile.instructors ?? const <BaseListItem>[];
 
+    void openAddHorseDialog() {
+      final userProfile = app.usersProfile;
+      if (userProfile == null) return;
+      showAppGlassDialog<AddHorseDialog>(
+        context: context,
+        builder: (_) => AddHorseDialog(
+          horseProfile: null,
+          userProfile: userProfile,
+          editProfile: false,
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (ownedHorses.isNotEmpty) ...[
           _HorsePhotoSection(
+            key: const Key('riderHorsesSection'),
             title: 'Owned horses',
             horses: ownedHorses,
+            onAddHorse: isOwnProfile ? openAddHorseDialog : null,
+          ),
+          const SizedBox(height: 16),
+        ] else if (isOwnProfile) ...[
+          AppSurfaceCard(
+            key: const Key('riderHorsesSection'),
+            padding: const EdgeInsets.all(AppTokens.spaceMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppTokens.spaceSm,
+              children: [
+                const AppSectionHeader(title: 'Horses'),
+                Text(
+                  'Add a horse profile to track training history, logbook '
+                  'entries, and Horse Skill Tree progress.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTokens.secondaryTextColor(context),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: AppTokens.spaceXs),
+                FilledButton.icon(
+                  key: const Key('riderAddHorseButton'),
+                  onPressed: openAddHorseDialog,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Horse'),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
         ],
@@ -72,12 +116,15 @@ class RiderListOfProfiles extends StatelessWidget {
 
 class _HorsePhotoSection extends StatelessWidget {
   const _HorsePhotoSection({
+    super.key,
     required this.title,
     required this.horses,
+    this.onAddHorse,
   });
 
   final String title;
   final List<BaseListItem> horses;
+  final VoidCallback? onAddHorse;
 
   @override
   Widget build(BuildContext context) {
@@ -87,18 +134,33 @@ class _HorsePhotoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ProfileSectionHeader(
-            title: title,
-            actionLabel: horses.length > 3 ? 'View All' : null,
-            showArrow: true,
-            onAction: horses.length > 3
-                ? () => _showAllDialog(
-                      context,
-                      title: title,
-                      items: horses,
-                      isHorse: true,
-                    )
-                : null,
+          Row(
+            children: [
+              Expanded(
+                child: ProfileSectionHeader(
+                  title: title,
+                  actionLabel: horses.length > 3 ? 'View All' : null,
+                  showArrow: true,
+                  onAction: horses.length > 3
+                      ? () => _showAllDialog(
+                            context,
+                            title: title,
+                            items: horses,
+                            isHorse: true,
+                          )
+                      : null,
+                ),
+              ),
+              if (onAddHorse != null) ...[
+                const SizedBox(width: AppTokens.spaceXs),
+                TextButton.icon(
+                  key: const Key('riderAddHorseButton'),
+                  onPressed: onAddHorse,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Horse'),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 10),
           if (preview.isEmpty)

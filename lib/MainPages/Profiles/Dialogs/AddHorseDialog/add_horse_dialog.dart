@@ -86,14 +86,21 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
             context.read<RiderProfileRepository?>() ??
             RiderProfileRepository(),
       ),
-      child: BlocBuilder<AddHorseDialogCubit, AddHorseDialogState>(
-        builder: (context, state) {
-          final cubit = context.read<AddHorseDialogCubit>();
-          if (state.status == FormStatus.success) {
+      child: BlocListener<AddHorseDialogCubit, AddHorseDialogState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status &&
+            current.status == FormStatus.success,
+        listener: (context, state) {
+          final route = ModalRoute.of(context);
+          if (route?.isCurrent ?? false) {
             Navigator.of(context).pop();
           }
+        },
+        child: BlocBuilder<AddHorseDialogCubit, AddHorseDialogState>(
+          builder: (context, state) {
+            final cubit = context.read<AddHorseDialogCubit>();
 
-          _syncController(_breedController, state.breed.value);
+            _syncController(_breedController, state.breed.value);
           _syncController(
             _dobController,
             state.dateOfBirth != null
@@ -209,7 +216,8 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
               ),
             ],
           );
-        },
+          },
+        ),
       ),
     );
   }
