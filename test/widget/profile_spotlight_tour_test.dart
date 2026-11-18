@@ -548,7 +548,7 @@ void main() {
       expect(find.byKey(const Key('tutorialSelectProfile')), findsOneWidget);
       expect(find.byKey(const Key('tutorialSelectSkillTree')), findsOneWidget);
       expect(find.byKey(const Key('tutorialSelectResources')), findsOneWidget);
-      expect(find.text('Coming soon'), findsNWidgets(2));
+      expect(find.text('Available'), findsNWidgets(3));
 
       // Launch Profile tour from selector.
       await tester.tap(find.byKey(const Key('tutorialSelectProfile')));

@@ -7,6 +7,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/loading_page.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_item.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/scroll_button.dart';
@@ -278,13 +279,27 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                           padding: const EdgeInsets.only(bottom: 88),
                           child: Column(
                             children: [
-                              CommentPageHeader(
-                                resource: resource,
-                                key: const Key('CommentPageHeader'),
+                              ValueListenableBuilder<bool>(
+                                valueListenable:
+                                    ResourcesSpotlightTour.isTourActive,
+                                builder: (context, tourActive, child) =>
+                                    KeyedSubtree(
+                                      key: tourActive
+                                          ? ResourcesSpotlightTour
+                                                .detailHeaderKey
+                                          : null,
+                                      child: child!,
+                                    ),
+                                child: CommentPageHeader(
+                                  resource: resource,
+                                  key: const Key('CommentPageHeader'),
+                                ),
                               ),
                               gap(),
                               const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 child: AppEmptyState(
                                   icon: Icons.chat_bubble_outline_rounded,
                                   title: 'No Comments Yet',
@@ -303,9 +318,21 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                             final item = _listItems[index];
                             switch (item.type) {
                               case _ListItemType.header:
-                                return CommentPageHeader(
-                                  resource: resource,
-                                  key: const Key('CommentPageHeader'),
+                                return ValueListenableBuilder<bool>(
+                                  valueListenable:
+                                      ResourcesSpotlightTour.isTourActive,
+                                  builder: (context, tourActive, child) =>
+                                      KeyedSubtree(
+                                        key: tourActive
+                                            ? ResourcesSpotlightTour
+                                                  .detailHeaderKey
+                                            : null,
+                                        child: child!,
+                                      ),
+                                  child: CommentPageHeader(
+                                    resource: resource,
+                                    key: const Key('CommentPageHeader'),
+                                  ),
                                 );
                               case _ListItemType.parentComment:
                                 final activeIndex =

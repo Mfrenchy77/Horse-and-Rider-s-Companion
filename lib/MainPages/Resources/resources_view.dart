@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/app_bar_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_floating_action_button.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_list_view.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resources_overflow_menu.dart';
@@ -17,8 +18,15 @@ class ResourcesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: const ResourcesFloatingActionButton(
-        key: Key('resourcesFloatingActionButton'),
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: ResourcesSpotlightTour.isTourActive,
+        builder: (context, tourActive, child) => KeyedSubtree(
+          key: tourActive ? ResourcesSpotlightTour.contributeFabKey : null,
+          child: child!,
+        ),
+        child: const ResourcesFloatingActionButton(
+          key: Key('resourcesFloatingActionButton'),
+        ),
       ),
       appBar: ThemedAppBar(
         leading: BackButton(
@@ -26,9 +34,25 @@ class ResourcesView extends StatelessWidget {
         ),
         centerTitle: true,
         title: const ResourcesSearchTitle(key: Key('resourcesSearchTitle')),
-        actions: const [
-          AppBarSearchButton(key: Key('appBarSearchButton')),
-          ResourcesOverflowMenu(key: Key('resourcesOverflowMenu')),
+        actions: [
+          ValueListenableBuilder<bool>(
+            valueListenable: ResourcesSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive ? ResourcesSpotlightTour.searchButtonKey : null,
+              child: child!,
+            ),
+            child: const AppBarSearchButton(key: Key('appBarSearchButton')),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: ResourcesSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive ? ResourcesSpotlightTour.overflowMenuKey : null,
+              child: child!,
+            ),
+            child: const ResourcesOverflowMenu(
+              key: Key('resourcesOverflowMenu'),
+            ),
+          ),
         ],
       ),
       body: const SizedBox.expand(

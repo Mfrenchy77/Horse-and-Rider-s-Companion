@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
@@ -438,6 +439,13 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
       ensureSkillSelected: _ensureSkillSelectedForTour,
       showFamilyList: _showFamilyListForTour,
     );
+    SkillTreeSpotlightTour.hooks = SkillTreeSpotlightHooks(
+      showFamilyList: _showFamilyListForTour,
+      expandFirstFamily: _expandFirstFamilyForTour,
+      ensureSkillSelected: _ensureSkillSelectedForTour,
+      selectSecondLevelIfAvailable: _selectSecondLevelForTour,
+      expandGuidance: () {},
+    );
   }
 
   @override
@@ -518,6 +526,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   @override
   void dispose() {
     GuestSpotlightTour.skillTreeHooks = null;
+    SkillTreeSpotlightTour.hooks = null;
     _localHistoryEntry = null;
     _scrollController.dispose();
     _listScrollController.dispose();
@@ -571,6 +580,13 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     if (_mobileShowingDetail) {
       _returnToBrowsingList();
     }
+  }
+
+  void _selectSecondLevelForTour() {
+    if (!mounted) return;
+    final skill = _cubit.state.selectedSkill;
+    if (skill == null || skill.availableLevels.length < 2) return;
+    _cubit.selectLevel(skill.availableLevels[1]);
   }
 
   void _resetDetailScrollToTop() {
@@ -952,6 +968,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
             final publishedState = state;
             final effectiveState = _effectiveState(publishedState);
             GuestSpotlightTour.activeDifficultySkillId =
+                effectiveState.selectedSkill?.id;
+            SkillTreeSpotlightTour.activeSkillId =
                 effectiveState.selectedSkill?.id;
             final appCubit = context.read<AppCubit>();
             bool canEditResourceFn(Resource resource) =>
@@ -1552,8 +1570,16 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 ),
                 title: const Text('Skill Tree'),
                 actions: [
-                  PopupMenuButton<String>(
-                    key: const Key('skillTreeV2AppBarOverflowMenu'),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: SkillTreeSpotlightTour.isTourActive,
+                    builder: (context, tourActive, child) => KeyedSubtree(
+                      key: tourActive
+                          ? SkillTreeSpotlightTour.overflowMenuKey
+                          : null,
+                      child: child!,
+                    ),
+                    child: PopupMenuButton<String>(
+                      key: const Key('skillTreeV2AppBarOverflowMenu'),
                     tooltip: 'More options',
                     onSelected: (value) async {
                       if (value == 'share_skill' &&
@@ -1653,6 +1679,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                           ),
                         ),
                     ],
+                  ),
                   ),
                 ],
               ),

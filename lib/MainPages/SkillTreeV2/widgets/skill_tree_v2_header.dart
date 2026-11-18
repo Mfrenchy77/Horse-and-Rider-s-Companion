@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -71,27 +72,34 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
           crossAxisAlignment: WrapCrossAlignment.center,
           alignment: WrapAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isHorse
-                      ? HorseAndRiderIcons.horseIcon
-                      : Icons.person_outline,
-                  size: 20,
-                  color: AppTokens.accentColor(context),
-                ),
-                const SizedBox(width: AppTokens.spaceXs),
-                Flexible(
-                  child: Text(
-                    contextTitle,
-                    key: const Key('skillTreeV2ContextTitle'),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+            ValueListenableBuilder<bool>(
+              valueListenable: SkillTreeSpotlightTour.isTourActive,
+              builder: (context, tourActive, child) => KeyedSubtree(
+                key: tourActive ? SkillTreeSpotlightTour.subjectKey : null,
+                child: child!,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isHorse
+                        ? HorseAndRiderIcons.horseIcon
+                        : Icons.person_outline,
+                    size: 20,
+                    color: AppTokens.accentColor(context),
+                  ),
+                  const SizedBox(width: AppTokens.spaceXs),
+                  Flexible(
+                    child: Text(
+                      contextTitle,
+                      key: const Key('skillTreeV2ContextTitle'),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             SegmentedButton<SkillTreeV2ViewMode>(
               key: const Key('skillTreeV2ViewModeSelector'),
@@ -145,21 +153,28 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
             ),
           ),
         if (state.viewMode == SkillTreeV2ViewMode.browse) ...[
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              spacing: AppTokens.spaceXs,
-              children: [
-                for (final realm in state.availableRealms)
-                  ChoiceChip(
-                    key: Key('skillTreeV2Realm_${realm.name}'),
-                    label: Text(realmDisplayLabel(realm)),
-                    selected:
-                        state.searchQuery.trim().isEmpty &&
-                        state.realm == realm,
-                    onSelected: (_) => widget.onSelectRealm(realm),
-                  ),
-              ],
+          ValueListenableBuilder<bool>(
+            valueListenable: SkillTreeSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive ? SkillTreeSpotlightTour.categoriesKey : null,
+              child: child!,
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                spacing: AppTokens.spaceXs,
+                children: [
+                  for (final realm in state.availableRealms)
+                    ChoiceChip(
+                      key: Key('skillTreeV2Realm_${realm.name}'),
+                      label: Text(realmDisplayLabel(realm)),
+                      selected:
+                          state.searchQuery.trim().isEmpty &&
+                          state.realm == realm,
+                      onSelected: (_) => widget.onSelectRealm(realm),
+                    ),
+                ],
+              ),
             ),
           ),
           TextField(

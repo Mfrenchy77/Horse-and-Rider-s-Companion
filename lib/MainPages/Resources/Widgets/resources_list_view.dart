@@ -4,6 +4,7 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_item_placeholder.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/resources_sort_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -61,57 +62,66 @@ class ResourcesListView extends StatelessWidget {
                     ).copyWith(fontSize: 26),
                   ),
                 ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                  onTap: () => showAppGlassDialog<void>(
-                    context: context,
-                    builder: (context) => const ResourcesSortDialog(
-                      key: Key('resources_sort_dialog'),
-                    ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ResourcesSpotlightTour.isTourActive,
+                  builder: (context, tourActive, child) => KeyedSubtree(
+                    key: tourActive
+                        ? ResourcesSpotlightTour.sortControlKey
+                        : null,
+                    child: child!,
                   ),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppTokens.midnightButtonFill
-                          : Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                      border: Border.all(
-                        color: isDark
-                            ? AppTokens.midnightButtonBorder
-                            : Theme.of(context).colorScheme.outlineVariant,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                    onTap: () => showAppGlassDialog<void>(
+                      context: context,
+                      builder: (context) => const ResourcesSortDialog(
+                        key: Key('resources_sort_dialog'),
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppTokens.midnightButtonFill
+                            : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                        border: Border.all(
+                          color: isDark
+                              ? AppTokens.midnightButtonBorder
+                              : Theme.of(context).colorScheme.outlineVariant,
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.sort_rounded,
-                            size: 18,
-                            color: AppTokens.accentColor(context),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _sortLabel(state.resourcesSortStatus),
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: AppTokens.primaryTextColor(context),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 18,
-                            color: AppTokens.secondaryTextColor(context),
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.sort_rounded,
+                              size: 18,
+                              color: AppTokens.accentColor(context),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _sortLabel(state.resourcesSortStatus),
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: AppTokens.primaryTextColor(context),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 18,
+                              color: AppTokens.secondaryTextColor(context),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -232,7 +242,15 @@ class ResourcesListView extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
-                child: CustomScrollView(
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: ResourcesSpotlightTour.isTourActive,
+                  builder: (context, tourActive, child) => KeyedSubtree(
+                    key: tourActive
+                        ? ResourcesSpotlightTour.libraryListKey
+                        : null,
+                    child: child!,
+                  ),
+                  child: CustomScrollView(
                   slivers: [
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -248,6 +266,7 @@ class ResourcesListView extends StatelessWidget {
                       sliver: sliverContent,
                     ),
                   ],
+                ),
                 ),
               ),
             );

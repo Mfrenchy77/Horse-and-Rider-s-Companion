@@ -7,7 +7,11 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
+import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 /// Frosted-glass selector allowing signed-in users to launch or restart
@@ -44,6 +48,14 @@ class TutorialSelectorDialog extends StatelessWidget {
     final userKey = appState.usersProfile?.email ?? appState.user.id;
     final profileCompleted = OnboardingPrefs.isCompleted(
       tour: OnboardingTourId.profile,
+      userKey: userKey,
+    );
+    final skillTreeCompleted = OnboardingPrefs.isCompleted(
+      tour: OnboardingTourId.skillTree,
+      userKey: userKey,
+    );
+    final resourcesCompleted = OnboardingPrefs.isCompleted(
+      tour: OnboardingTourId.resources,
       userKey: userKey,
     );
 
@@ -84,25 +96,49 @@ class TutorialSelectorDialog extends StatelessWidget {
               });
             },
           ),
-          const _TourOptionTile(
-            key: Key('tutorialSelectSkillTree'),
+          _TourOptionTile(
+            key: const Key('tutorialSelectSkillTree'),
             icon: Icons.account_tree_outlined,
             title: 'Skill Tree',
             subtitle:
-                'Guided walkthrough for signed-in skill assessments and '
-                'verification.',
-            badgeLabel: 'Coming soon',
-            badgeTone: AppStatusTone.neutral,
+                'Categories, skill families, difficulty levels, '
+                'self-assessment, and instructor verification.',
+            badgeLabel: skillTreeCompleted ? 'Completed' : 'Available',
+            badgeTone: skillTreeCompleted
+                ? AppStatusTone.success
+                : AppStatusTone.coral,
+            onTap: () {
+              Navigator.of(context).pop();
+              cubit.setSkillTree();
+              router?.goNamed(SkillTreePage.name);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final navContext = rootNavigator.context;
+                if (!navContext.mounted) return;
+                unawaited(SkillTreeSpotlightTour.start(navContext));
+              });
+            },
           ),
-          const _TourOptionTile(
-            key: Key('tutorialSelectResources'),
+          _TourOptionTile(
+            key: const Key('tutorialSelectResources'),
             icon: Icons.menu_book_outlined,
             title: 'Resources',
             subtitle:
-                'Guided walkthrough for saving, organizing, and linking '
-                'resources.',
-            badgeLabel: 'Coming soon',
-            badgeTone: AppStatusTone.neutral,
+                'Library discovery, sorting, linked skills, comments, and '
+                'contributing material.',
+            badgeLabel: resourcesCompleted ? 'Completed' : 'Available',
+            badgeTone: resourcesCompleted
+                ? AppStatusTone.success
+                : AppStatusTone.coral,
+            onTap: () {
+              Navigator.of(context).pop();
+              cubit.setResourcesList();
+              router?.goNamed(ResourcesPage.name);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final navContext = rootNavigator.context;
+                if (!navContext.mounted) return;
+                unawaited(ResourcesSpotlightTour.start(navContext));
+              });
+            },
           ),
         ],
       ),

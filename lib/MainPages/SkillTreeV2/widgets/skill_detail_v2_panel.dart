@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
@@ -124,19 +125,35 @@ class SkillDetailV2Panel extends StatelessWidget {
                     ),
                 ],
               ),
-              if (skill.summary.trim().isNotEmpty) Text(skill.summary),
-              if (skill.purpose.trim().isNotEmpty)
-                Text(
-                  'Purpose: ${skill.purpose}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppTokens.secondaryTextColor(context),
+          ValueListenableBuilder<bool>(
+            valueListenable: SkillTreeSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive &&
+                      skill.id == SkillTreeSpotlightTour.activeSkillId
+                  ? SkillTreeSpotlightTour.descriptionKey
+                  : null,
+              child: child!,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceXs,
+              children: [
+                if (skill.summary.trim().isNotEmpty) Text(skill.summary),
+                if (skill.purpose.trim().isNotEmpty)
+                  Text(
+                    'Purpose: ${skill.purpose}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTokens.secondaryTextColor(context),
+                    ),
                   ),
-                ),
-              ..._buildAliasesSection(context, skill),
+                ..._buildAliasesSection(context, skill),
+              ],
+            ),
+          ),
             ],
           ),
-          if (skill.safety.isNotEmpty)
-            Container(
+              if (skill.safety.isNotEmpty)
+                Container(
               padding: const EdgeInsets.all(AppTokens.spaceSm),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.35),
@@ -161,15 +178,25 @@ class SkillDetailV2Panel extends StatelessWidget {
               ),
             ),
           if (skill.availableLevels.isNotEmpty) ...[
-            ValueListenableBuilder<int?>(
-              valueListenable: GuestSpotlightTour.activeStep,
-              builder: (context, tourStep, child) => KeyedSubtree(
-                key: tourStep == 3 &&
-                        skill.id == GuestSpotlightTour.activeDifficultySkillId
-                    ? GuestSpotlightTour.skillTreeDifficultyKey
-                    : null,
-                child: child!,
-              ),
+            ValueListenableBuilder<bool>(
+              valueListenable: SkillTreeSpotlightTour.isTourActive,
+              builder: (context, skillTourActive, child) =>
+                  ValueListenableBuilder<int?>(
+                    valueListenable: GuestSpotlightTour.activeStep,
+                    builder: (context, tourStep, innerChild) => KeyedSubtree(
+                      key: skillTourActive &&
+                              skill.id == SkillTreeSpotlightTour.activeSkillId
+                          ? SkillTreeSpotlightTour.difficultyKey
+                          : (tourStep == 3 &&
+                                    skill.id ==
+                                        GuestSpotlightTour
+                                            .activeDifficultySkillId
+                                ? GuestSpotlightTour.skillTreeDifficultyKey
+                                : null),
+                      child: innerChild!,
+                    ),
+                    child: child,
+                  ),
               child: Wrap(
                 spacing: AppTokens.spaceXs,
                 runSpacing: AppTokens.spaceXs,
@@ -260,11 +287,21 @@ class SkillDetailV2Panel extends StatelessWidget {
           if (onSuggestForSkill != null)
             Align(
               alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                key: const Key('skillDetailV2SuggestButton'),
-                onPressed: onSuggestForSkill,
-                icon: const Icon(Icons.lightbulb_outline, size: 18),
-                label: const Text('Suggest Improvement for This Skill'),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: SkillTreeSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key: tourActive &&
+                          skill.id == SkillTreeSpotlightTour.activeSkillId
+                      ? SkillTreeSpotlightTour.suggestKey
+                      : null,
+                  child: child!,
+                ),
+                child: OutlinedButton.icon(
+                  key: const Key('skillDetailV2SuggestButton'),
+                  onPressed: onSuggestForSkill,
+                  icon: const Icon(Icons.lightbulb_outline, size: 18),
+                  label: const Text('Suggest Improvement for This Skill'),
+                ),
               ),
             ),
         ],
@@ -627,96 +664,173 @@ class _LevelDetailSection extends StatelessWidget {
                 ),
             ],
           ),
-          if (definition.overview.trim().isNotEmpty) Text(definition.overview),
-          _CriteriaBlock(
-            title: 'Learning criteria',
-            body: definition.learning,
-          ),
-          _CriteriaBlock(
-            title: 'Proficient criteria',
-            body: definition.proficient,
+          ValueListenableBuilder<bool>(
+            valueListenable: SkillTreeSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive &&
+                      skill.id == SkillTreeSpotlightTour.activeSkillId
+                  ? SkillTreeSpotlightTour.criteriaKey
+                  : null,
+              child: child!,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceSm,
+              children: [
+                if (definition.overview.trim().isNotEmpty)
+                  Text(definition.overview),
+                _CriteriaBlock(
+                  title: 'Learning criteria',
+                  body: definition.learning,
+                ),
+                _CriteriaBlock(
+                  title: 'Proficient criteria',
+                  body: definition.proficient,
+                ),
+              ],
+            ),
           ),
           const Divider(),
-          Text(
-            'Self-assessment',
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
+          ValueListenableBuilder<bool>(
+            valueListenable: SkillTreeSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive &&
+                      skill.id == SkillTreeSpotlightTour.activeSkillId
+                  ? SkillTreeSpotlightTour.selfAssessKey
+                  : null,
+              child: child!,
             ),
-          ),
-          Wrap(
-            spacing: AppTokens.spaceXs,
-            runSpacing: AppTokens.spaceXs,
-            children: [
-              ChoiceChip(
-                key: Key('assessLearning_${skill.id}_${level.name}'),
-                label: const Text('Learning'),
-                selected: selfState == LevelState.LEARNING,
-                onSelected: canSelfAssess && !isSubmitting
-                    ? (_) => onSelfAssess(LevelState.LEARNING)
-                    : null,
-              ),
-              ChoiceChip(
-                key: Key('assessProficient_${skill.id}_${level.name}'),
-                label: const Text('Proficient'),
-                selected: selfState == LevelState.PROFICIENT,
-                onSelected: canSelfAssess && !isSubmitting
-                    ? (_) => onSelfAssess(LevelState.PROFICIENT)
-                    : null,
-              ),
-              if (selfState != null)
-                ActionChip(
-                  key: Key('assessClear_${skill.id}_${level.name}'),
-                  label: const Text('Clear'),
-                  onPressed: canSelfAssess && !isSubmitting
-                      ? () => onSelfAssess(null)
-                      : null,
-                ),
-            ],
-          ),
-          if (!canSelfAssess && selfAssessDisabledReason != null)
-            Text(
-              selfAssessDisabledReason!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppTokens.secondaryTextColor(context),
-              ),
-            ),
-          if (canVerify) ...[
-            const Divider(),
-            Text(
-              'Instructor verification',
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Wrap(
-              spacing: AppTokens.spaceXs,
-              runSpacing: AppTokens.spaceXs,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceSm,
               children: [
-                if (!isVerified)
-                  FilledButton.tonalIcon(
-                    key: Key('verifyLevel_${skill.id}_${level.name}'),
-                    onPressed: isSubmitting
-                        ? null
-                        : () => onVerifyLevel(verified: true),
-                    icon: const Icon(Icons.verified_outlined),
-                    label: const Text('Verify Proficient'),
+                Text(
+                  'Self-assessment',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                if (isVerified)
-                  OutlinedButton.icon(
-                    key: Key('revokeLevel_${skill.id}_${level.name}'),
-                    onPressed: isSubmitting
-                        ? null
-                        : () => onVerifyLevel(verified: false),
-                    icon: const Icon(Icons.remove_circle_outline),
-                    label: const Text('Revoke verification'),
+                ),
+                Wrap(
+                  spacing: AppTokens.spaceXs,
+                  runSpacing: AppTokens.spaceXs,
+                  children: [
+                    ChoiceChip(
+                      key: Key('assessLearning_${skill.id}_${level.name}'),
+                      label: const Text('Learning'),
+                      selected: selfState == LevelState.LEARNING,
+                      onSelected: canSelfAssess && !isSubmitting
+                          ? (_) => onSelfAssess(LevelState.LEARNING)
+                          : null,
+                    ),
+                    ChoiceChip(
+                      key: Key('assessProficient_${skill.id}_${level.name}'),
+                      label: const Text('Proficient'),
+                      selected: selfState == LevelState.PROFICIENT,
+                      onSelected: canSelfAssess && !isSubmitting
+                          ? (_) => onSelfAssess(LevelState.PROFICIENT)
+                          : null,
+                    ),
+                    if (selfState != null)
+                      ActionChip(
+                        key: Key('assessClear_${skill.id}_${level.name}'),
+                        label: const Text('Clear'),
+                        onPressed: canSelfAssess && !isSubmitting
+                            ? () => onSelfAssess(null)
+                            : null,
+                      ),
+                  ],
+                ),
+                if (!canSelfAssess && selfAssessDisabledReason != null)
+                  Text(
+                    selfAssessDisabledReason!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTokens.secondaryTextColor(context),
+                    ),
                   ),
               ],
             ),
-          ],
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: SkillTreeSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive &&
+                      skill.id == SkillTreeSpotlightTour.activeSkillId
+                  ? SkillTreeSpotlightTour.verificationKey
+                  : null,
+              child: child!,
+            ),
+            child: canVerify
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: AppTokens.spaceSm,
+                    children: [
+                      const Divider(),
+                      Text(
+                        'Instructor verification',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Wrap(
+                        spacing: AppTokens.spaceXs,
+                        runSpacing: AppTokens.spaceXs,
+                        children: [
+                          if (!isVerified)
+                            FilledButton.tonalIcon(
+                              key: Key(
+                                'verifyLevel_${skill.id}_${level.name}',
+                              ),
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () => onVerifyLevel(verified: true),
+                              icon: const Icon(Icons.verified_outlined),
+                              label: const Text('Verify Proficient'),
+                            ),
+                          if (isVerified)
+                            OutlinedButton.icon(
+                              key: Key(
+                                'revokeLevel_${skill.id}_${level.name}',
+                              ),
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () => onVerifyLevel(verified: false),
+                              icon: const Icon(Icons.remove_circle_outline),
+                              label: const Text('Revoke verification'),
+                            ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      isVerified
+                          ? 'Instructor verified by '
+                                '${verification?.verifiedByName ?? 'Coach'}.'
+                          : 'Instructor verification is recorded by a '
+                                'connected instructor.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                      ),
+                    ),
+                  ),
+          ),
           if (definition.components.isNotEmpty)
-            _EducationalComponentsSection(
-              key: ValueKey('educationalComponents_${skill.id}_${level.name}'),
-              definition: definition,
+            ValueListenableBuilder<bool>(
+              valueListenable: SkillTreeSpotlightTour.isTourActive,
+              builder: (context, tourActive, child) => KeyedSubtree(
+                key: tourActive &&
+                        skill.id == SkillTreeSpotlightTour.activeSkillId
+                    ? SkillTreeSpotlightTour.guidanceKey
+                    : null,
+                child: child!,
+              ),
+              child: _EducationalComponentsSection(
+                key: ValueKey(
+                  'educationalComponents_${skill.id}_${level.name}',
+                ),
+                definition: definition,
+              ),
             ),
         ],
       ),
@@ -742,8 +856,56 @@ class _EducationalComponentsSectionState
   bool _expanded = false;
 
   @override
+  void initState() {
+    super.initState();
+    SkillTreeSpotlightTour.expandGuidanceRevision.addListener(_onTourExpand);
+  }
+
+  @override
+  void dispose() {
+    SkillTreeSpotlightTour.expandGuidanceRevision.removeListener(_onTourExpand);
+    super.dispose();
+  }
+
+  void _onTourExpand() {
+    if (!mounted || _expanded) return;
+    setState(() => _expanded = true);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final expandDuration = AppTokens.motionDuration(context);
+    final expandedContent = _expanded
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final component in widget.definition.components)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '• ${component.title}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (component.description.trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: Text(
+                            component.description,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          )
+        : const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -776,7 +938,7 @@ class _EducationalComponentsSectionState
                   const SizedBox(width: AppTokens.spaceXs),
                   AnimatedRotation(
                     turns: _expanded ? 0.5 : 0.0,
-                    duration: AppTokens.motionDuration(context),
+                    duration: expandDuration,
                     curve: Curves.easeOutCubic,
                     child: Icon(
                       Icons.expand_more,
@@ -788,47 +950,21 @@ class _EducationalComponentsSectionState
             ),
           ),
         ),
-        ClipRect(
-          child: AnimatedSize(
-            duration: AppTokens.motionDuration(context),
-            reverseDuration: AppTokens.motionDuration(
-              context,
-              const Duration(milliseconds: 150),
+        if (expandDuration == Duration.zero)
+          expandedContent
+        else
+          ClipRect(
+            child: AnimatedSize(
+              duration: expandDuration,
+              reverseDuration: AppTokens.motionDuration(
+                context,
+                const Duration(milliseconds: 150),
+              ),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: expandedContent,
             ),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            child: _expanded
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final component in widget.definition.components)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                '• ${component.title}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (component.description.trim().isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 12),
-                                  child: Text(
-                                    component.description,
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
           ),
-        ),
       ],
     );
   }

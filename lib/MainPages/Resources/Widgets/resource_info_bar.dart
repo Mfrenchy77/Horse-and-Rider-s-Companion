@@ -7,6 +7,7 @@ import 'package:flutter_quill/flutter_quill.dart' show Document;
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_image.dart';
@@ -29,15 +30,27 @@ String resourceInfoHeroTag(Resource resource) {
   return 'resource-info-${resource.id ?? resource.url ?? title ?? 'untitled'}';
 }
 
+class _HeroFlightScope extends InheritedWidget {
+  const _HeroFlightScope({required super.child});
+
+  static bool isInFlight(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_HeroFlightScope>() != null;
+
+  @override
+  bool updateShouldNotify(_HeroFlightScope oldWidget) => false;
+}
+
 class ResourceInfoBar extends StatelessWidget {
   const ResourceInfoBar({
     super.key,
     required this.resource,
     this.canOpenArticle = true,
+    this.isDetailHeader = false,
   });
 
   final Resource resource;
   final bool canOpenArticle;
+  final bool isDetailHeader;
 
   bool get _isArticle => resource.type == ResourceType.article;
 
@@ -128,11 +141,13 @@ class ResourceInfoBar extends StatelessWidget {
             flightDirection,
             fromHeroContext,
             toHeroContext,
-          ) => Material(
-            type: MaterialType.transparency,
-            child: SingleChildScrollView(
-              physics: const NeverScrollableScrollPhysics(),
-              child: (toHeroContext.widget as Hero).child,
+          ) => _HeroFlightScope(
+            child: Material(
+              type: MaterialType.transparency,
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: (toHeroContext.widget as Hero).child,
+              ),
             ),
           ),
       child: Material(
@@ -200,7 +215,9 @@ class ResourceInfoBar extends StatelessWidget {
               ),
             );
             final isDark = Theme.of(context).brightness == Brightness.dark;
-            final details = Padding(
+            final canAttachTourSkillKey =
+                isDetailHeader && !_HeroFlightScope.isInFlight(context);
+            final detailsContent = Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppTokens.spaceMd,
                 AppTokens.spaceMd,
@@ -309,54 +326,90 @@ class ResourceInfoBar extends StatelessWidget {
                   ],
                   if (skills.isNotEmpty) ...[
                     const SizedBox(height: AppTokens.spaceSm),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        for (final skill in skills)
-                          ActionChip(
-                            avatar: Icon(
-                              Icons.link,
-                              size: 15,
-                              color: AppTokens.accentColor(context),
-                            ),
-                            tooltip: 'Open ${skill.skillName} in Skill Tree',
-                            backgroundColor: isDark
-                                ? AppTokens.midnightButtonFill
+                    Builder(
+                      builder: (context) {
+                        final chips = Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            for (final skill in skills)
+                              ActionChip(
+                                avatar: Icon(
+                                  Icons.link,
+                                  size: 15,
+                                  color: AppTokens.accentColor(context),
+                                ),
+                                tooltip:
+                                    'Open ${skill.skillName} in Skill Tree',
+                                backgroundColor: isDark
+                                    ? AppTokens.midnightButtonFill
+                                    : null,
+                                side: isDark
+                                    ? const BorderSide(
+                                        color: AppTokens.midnightButtonBorder,
+                                      )
+                                    : null,
+                                onPressed: () => SkillTreeView.openSkill(
+                                  GoRouter.of(context),
+                                  skill.id,
+                                  useV2:
+                                      SettingsControllerScope.maybeOf(
+                                        context,
+                                      )?.skillTreeV2Enabled ??
+                                      FeatureFlags.kSkillTreeV2Default,
+                                  level: skill.difficulty == DifficultyState.All
+                                      ? null
+                                      : skill.difficulty,
+                                ),
+                                label: Text(
+                                  skill.skillName,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.labelMedium
+                                      ?.copyWith(
+                                        color: AppTokens.primaryTextColor(
+                                          context,
+                                        ),
+                                      ),
+                                ),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                          ],
+                        );
+                        if (!canAttachTourSkillKey) return chips;
+                        return ValueListenableBuilder<bool>(
+                          valueListenable: ResourcesSpotlightTour.isTourActive,
+                          builder: (context, tourActive, child) => KeyedSubtree(
+                            key: tourActive &&
+                                    resource.id ==
+                                        ResourcesSpotlightTour
+                                            .activeDetailResourceId
+                                ? ResourcesSpotlightTour.associatedSkillsKey
                                 : null,
-                            side: isDark
-                                ? const BorderSide(
-                                    color: AppTokens.midnightButtonBorder,
-                                  )
-                                : null,
-                            onPressed: () => SkillTreeView.openSkill(
-                              GoRouter.of(context),
-                              skill.id,
-                              useV2:
-                                  SettingsControllerScope.maybeOf(
-                                    context,
-                                  )?.skillTreeV2Enabled ??
-                                  FeatureFlags.kSkillTreeV2Default,
-                              level: skill.difficulty == DifficultyState.All
-                                  ? null
-                                  : skill.difficulty,
-                            ),
-                            label: Text(
-                              skill.skillName,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    color: AppTokens.primaryTextColor(context),
-                                  ),
-                            ),
-                            visualDensity: VisualDensity.compact,
+                            child: child!,
                           ),
-                      ],
+                          child: chips,
+                        );
+                      },
                     ),
                   ],
                 ],
               ),
             );
+
+            final details = skills.isNotEmpty || !canAttachTourSkillKey
+                ? detailsContent
+                : ValueListenableBuilder<bool>(
+                    valueListenable: ResourcesSpotlightTour.isTourActive,
+                    builder: (context, tourActive, child) => KeyedSubtree(
+                      key: tourActive &&
+                              resource.id ==
+                                  ResourcesSpotlightTour.activeDetailResourceId
+                          ? ResourcesSpotlightTour.associatedSkillsKey
+                          : null,
+                      child: child!,
+                    ),
+                    child: detailsContent,
+                  );
 
             final layout = ResourceLayoutScope.of(context);
             return LayoutBuilder(

@@ -1,6 +1,7 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -185,9 +186,25 @@ class SkillFamilyListV2 extends StatelessWidget {
                                       },
                                     );
                                     return index == 0 && skillIdx == 0
-                                        ? KeyedSubtree(
-                                            key: GuestSpotlightTour
-                                                .skillTreeSkillRowKey,
+                                        ? ValueListenableBuilder<bool>(
+                                            valueListenable:
+                                                SkillTreeSpotlightTour
+                                                    .isTourActive,
+                                            builder: (
+                                              context,
+                                              tourActive,
+                                              child,
+                                            ) {
+                                              final key = tourActive
+                                                  ? SkillTreeSpotlightTour
+                                                        .skillRowKey
+                                                  : GuestSpotlightTour
+                                                        .skillTreeSkillRowKey;
+                                              return KeyedSubtree(
+                                                key: key,
+                                                child: child!,
+                                              );
+                                            },
                                             child: row,
                                           )
                                         : row;
@@ -229,8 +246,14 @@ class SkillFamilyListV2 extends StatelessWidget {
           ),
         );
         return index == 0
-            ? KeyedSubtree(
-                key: GuestSpotlightTour.skillTreeFamilyKey,
+            ? ValueListenableBuilder<bool>(
+                valueListenable: SkillTreeSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key: tourActive
+                      ? SkillTreeSpotlightTour.familyKey
+                      : GuestSpotlightTour.skillTreeFamilyKey,
+                  child: child!,
+                ),
                 child: card,
               )
             : card;
