@@ -64,7 +64,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       emit(
         state.copyWith(
           isLoading: false,
-          errorMessage: 'Unable to load Skill Tree 2.0 curriculum.',
+          errorMessage: 'Unable to load the Skill Tree.',
         ),
       );
     }

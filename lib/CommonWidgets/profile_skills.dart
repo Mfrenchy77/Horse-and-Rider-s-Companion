@@ -680,7 +680,7 @@ SuggestedNextSkill? _computeSuggestedNextSkill({
         skill: entry.skill,
         level: entry.level,
         reason: entry.updatedAt != null
-            ? 'Recently marked Learning — continue practicing this standard.'
+            ? 'Recently marked Learning — continue practicing this skill.'
             : 'Currently marked Learning — pick up where you left off.',
         kind: SuggestedNextKind.continueLearning,
       );

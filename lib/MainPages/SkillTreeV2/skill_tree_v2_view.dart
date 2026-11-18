@@ -1145,8 +1145,9 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                                     'desktopDetail_empty',
                                                   ),
                                                   child: Text(
-                                                    'Select a skill to view '
-                                                    'standards.',
+                                                    'Select a skill to see '
+                                                    'what you should be able '
+                                                    'to demonstrate.',
                                                   ),
                                                 )
                                               : KeyedSubtree(

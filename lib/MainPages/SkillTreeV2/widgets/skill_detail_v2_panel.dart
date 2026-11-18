@@ -611,7 +611,7 @@ class _LevelDetailSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${difficultyDisplayLabel(level)} Standard',
+                  '${difficultyDisplayLabel(level)} Level',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

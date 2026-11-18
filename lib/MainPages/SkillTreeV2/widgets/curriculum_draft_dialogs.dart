@@ -1083,7 +1083,7 @@ class DraftPreviewDialog extends StatelessWidget {
             children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Preview Draft in Skill Tree 2.0'),
+                title: const Text('Preview Draft in Skill Tree'),
                 subtitle: const Text(
                   'Toggle off to compare with the published curriculum.',
                 ),

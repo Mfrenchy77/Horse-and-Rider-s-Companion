@@ -405,8 +405,9 @@ class ProfileSpotlightTour {
         chapter: 'Chapter 3 · Training and Progress',
         title: 'Skills & Progress',
         message:
-            'See your Learning, Proficient, and Instructor Verified counts at '
-            'a glance, and jump directly into any Skill Tree 2.0 standard.',
+            "See what you're learning, what you've become proficient in, and "
+            'which skills an instructor has verified. Select any skill to '
+            'explore it in the Skill Tree.',
         prepare: (_) async {
           await ensureOnRiderProfile();
           await _ensureVisible(
@@ -470,7 +471,7 @@ class ProfileSpotlightTour {
         title: 'Tutorial and Help',
         message:
             'You can reopen guided tours anytime from Tutorial. Start '
-            'exploring Skill Tree 2.0 and tracking your progress whenever '
+            'exploring the Skill Tree and tracking your progress whenever '
             'you are ready!',
         radius: AppTokens.radiusSm,
         prepare: (_) async {

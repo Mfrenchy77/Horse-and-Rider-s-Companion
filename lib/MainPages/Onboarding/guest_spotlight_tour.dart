@@ -231,7 +231,7 @@ class GuestSpotlightTour {
         title: 'Explore an Individual Skill',
         message:
             'Expand any family to browse its skills. Tap the highlighted '
-            'skill—or press Next—to open its full standards and guidance.',
+            'skill—or press Next—to see what to practice and demonstrate.',
         cardBuilder: (ctx, details) => _TourCard(
           details: details,
           onPrimaryPressed: () async {
@@ -263,9 +263,9 @@ class GuestSpotlightTour {
         },
         title: 'Understand Difficulty Levels',
         message:
-            'Switch between progressive difficulty levels to view clear '
-            'criteria. Sign in anytime to record Learning or Proficient '
-            'progress.',
+            'Switch between difficulty levels to see what you should be able '
+            'to demonstrate at each level. Sign in anytime to record Learning '
+            'or Proficient progress.',
         cardBuilder: (ctx, details) => _TourCard(
           details: details,
           onPrimaryPressed: details.next,
