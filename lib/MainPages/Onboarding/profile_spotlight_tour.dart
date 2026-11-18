@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/spotlight_tour_card.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -97,9 +98,15 @@ class ProfileSpotlightTour {
   }) async {
     final ctx = key.currentContext;
     if (ctx == null || !ctx.mounted) return;
+    final box = ctx.findRenderObject();
+    final viewportHeight = MediaQuery.sizeOf(ctx).height;
+    final isTallTarget =
+        box is RenderBox &&
+        box.hasSize &&
+        box.size.height > viewportHeight * 0.45;
     await Scrollable.ensureVisible(
       ctx,
-      alignment: 0.25,
+      alignment: isTallTarget ? 0.05 : 0.25,
       duration: reducedMotion
           ? Duration.zero
           : const Duration(milliseconds: 220),
@@ -186,6 +193,7 @@ class ProfileSpotlightTour {
       scrimColor: AppTokens.midnightDeep.withValues(alpha: 0.78),
       spotlightBorderColor: AppTokens.coralAccent,
       spotlightRadius: AppTokens.radiusLg,
+      cardMargin: SpotlightTourCard.themeCardMargin(context),
       secondaryHoleStrength: 1,
       cardMotion: reducedMotion
           ? OvermarkCardMotion.none
@@ -533,87 +541,13 @@ class _ProfileTourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = AppTokens.accentColor(context);
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 360),
-      child: AppSurfaceCard(
-        key: Key('profileTourStepCard_${details.index}'),
-        useDoubleGradient: true,
-        padding: const EdgeInsets.all(AppTokens.spaceMd),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTokens.spaceSm,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '$chapter · ${details.index + 1}/${details.stepCount}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppTokens.spaceXs),
-                if (!details.isLast)
-                  TextButton(
-                    key: const Key('profileTourSkipButton'),
-                    onPressed: details.skip,
-                    child: const Text('Skip'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppTokens.spaceSm),
-            Text(
-              details.step.title ?? '',
-              style: AppTokens.sectionTitleStyle(
-                context,
-              ).copyWith(fontSize: 18),
-            ),
-            const SizedBox(height: AppTokens.spaceXs),
-            Text(
-              details.step.message ?? '',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppTokens.secondaryTextColor(context),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: AppTokens.spaceMd),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              spacing: AppTokens.spaceSm,
-              children: [
-                if (!details.isFirst)
-                  OutlinedButton(
-                    key: const Key('profileTourBackButton'),
-                    onPressed: details.previous,
-                    child: const Text('Back'),
-                  ),
-                FilledButton(
-                  key: const Key('profileTourNextButton'),
-                  onPressed: details.next,
-                  child: Text(details.isLast ? 'Finish' : 'Next'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return SpotlightTourCard(
+      badgeLabel: '$chapter · ${details.index + 1}/${details.stepCount}',
+      details: details,
+      cardKey: Key('profileTourStepCard_${details.index}'),
+      skipKey: const Key('profileTourSkipButton'),
+      backKey: const Key('profileTourBackButton'),
+      nextKey: const Key('profileTourNextButton'),
     );
   }
 }

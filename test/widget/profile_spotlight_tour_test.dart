@@ -317,6 +317,111 @@ void main() {
   );
 
   testWidgets(
+    'Narrow mobile tour keeps Back and Next buttons inside viewport even on '
+    'tall ProfileSkills dashboard target',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final repo = SkillTreeV2Repository(store: v2Store);
+      final connRepo = _MockConnectionRepository();
+      when(
+        () => connRepo.watch('uid-tall'),
+      ).thenAnswer((_) => Stream.value(const <CoachingConnection>[]));
+      final connCubit = ConnectionsCubit(connRepo, harness.cubit);
+      addTearDown(connCubit.close);
+
+      // Seed multiple Learning skills so ProfileSkills dashboard is tall.
+      final riderSkills = (await repo.fetchSkills())
+          .where((s) => s.subject == SkillSubject.rider)
+          .take(4)
+          .toList();
+      for (final skill in riderSkills) {
+        await repo.setLevelProgress(
+          subject: SkillSubject.rider,
+          profileDocId: 'tall@example.com',
+          skillId: skill.id,
+          level: skill.availableLevels.first,
+          state: LevelState.LEARNING,
+          actorUid: 'uid-tall',
+        );
+      }
+
+      final rider = RiderProfile(
+        id: 'tall@example.com',
+        email: 'tall@example.com',
+        name: 'Tall Profile Rider',
+      );
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          user: const User(
+            id: 'uid-tall',
+            name: 'Tall Profile Rider',
+            email: 'tall@example.com',
+            emailVerified: true,
+          ),
+          usersProfile: rider,
+          isGuest: false,
+          status: AppStatus.authenticated,
+          pageStatus: AppPageStatus.loaded,
+        ),
+      );
+
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        RepositoryProvider<SkillTreeV2Repository>.value(
+          value: repo,
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AppCubit>.value(value: harness.cubit),
+              BlocProvider<ConnectionsCubit>.value(value: connCubit),
+            ],
+            child: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(360, 640),
+                disableAnimations: true,
+              ),
+              child: MaterialApp(
+                theme: mainThemeDark,
+                home: RiderProfileView(profile: rider),
+              ),
+            ),
+          ),
+        ),
+      );
+      await _pumpFrames(tester);
+
+      await tester.tap(find.byKey(const Key('profileTourInviteAccept')));
+      await _pumpFrames(tester);
+
+      // Walk to Step 9 (Skills & Progress, index 8 on no-horse profile).
+      for (var i = 0; i < 8; i++) {
+        await tester.tap(find.byKey(const Key('profileTourNextButton')));
+        await _pumpFrames(tester);
+      }
+      expect(find.text('Skills & Progress'), findsOneWidget);
+
+      final nextRect = tester.getRect(
+        find.byKey(const Key('profileTourNextButton')),
+      );
+      final backRect = tester.getRect(
+        find.byKey(const Key('profileTourBackButton')),
+      );
+      // Must stay well above bottom nav reserve and inside 640px height.
+      expect(nextRect.bottom, lessThanOrEqualTo(640 - 88));
+      expect(backRect.bottom, lessThanOrEqualTo(640 - 88));
+      expect(nextRect.top, greaterThanOrEqualTo(0));
+
+      await tester.tap(find.byKey(const Key('profileTourSkipButton')));
+      await _pumpFrames(tester);
+    },
+  );
+
+  testWidgets(
     'Desktop Rider with horses, Skill Tree progress, and connections visits '
     'Horse Profile during tour and can restart via Tutorial selector',
     (tester) async {

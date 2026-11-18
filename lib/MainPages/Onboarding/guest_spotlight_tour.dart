@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/spotlight_tour_card.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
@@ -138,6 +139,7 @@ class GuestSpotlightTour {
       scrimColor: AppTokens.midnightDeep.withValues(alpha: 0.78),
       spotlightBorderColor: AppTokens.coralAccent,
       spotlightRadius: AppTokens.radiusLg,
+      cardMargin: SpotlightTourCard.themeCardMargin(context),
       // Keep secondaryFocus cutouts 100% clear so each step can use
       // SpotlightPainter's saveLayer + BlendMode.clear path on Flutter Web,
       // where Path.combine(PathOperation.difference, ...) can leave the hole
@@ -364,83 +366,14 @@ class _TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = AppTokens.accentColor(context);
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 360),
-      child: AppSurfaceCard(
-        key: Key('tourStepCard_${details.index}'),
-        useDoubleGradient: true,
-        padding: const EdgeInsets.all(AppTokens.spaceMd),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTokens.spaceSm,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'Step ${details.index + 1} of ${details.stepCount}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: accent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                if (!details.isLast)
-                  TextButton(
-                    key: const Key('tourSkipButton'),
-                    onPressed: details.skip,
-                    child: const Text('Skip'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppTokens.spaceSm),
-            Text(
-              details.step.title ?? '',
-              style: AppTokens.sectionTitleStyle(
-                context,
-              ).copyWith(fontSize: 18),
-            ),
-            const SizedBox(height: AppTokens.spaceXs),
-            Text(
-              details.step.message ?? '',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppTokens.secondaryTextColor(context),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: AppTokens.spaceMd),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              spacing: AppTokens.spaceSm,
-              children: [
-                if (!details.isFirst)
-                  OutlinedButton(
-                    key: const Key('tourBackButton'),
-                    onPressed: details.previous,
-                    child: const Text('Back'),
-                  ),
-                FilledButton(
-                  key: const Key('tourNextButton'),
-                  onPressed: onPrimaryPressed,
-                  child: Text(details.isLast ? 'Finish' : 'Next'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return SpotlightTourCard(
+      badgeLabel: 'Step ${details.index + 1} of ${details.stepCount}',
+      details: details,
+      onPrimaryPressed: onPrimaryPressed,
+      cardKey: Key('tourStepCard_${details.index}'),
+      skipKey: const Key('tourSkipButton'),
+      backKey: const Key('tourBackButton'),
+      nextKey: const Key('tourNextButton'),
     );
   }
 }
