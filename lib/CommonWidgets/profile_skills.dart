@@ -5,8 +5,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
@@ -17,9 +19,9 @@ import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
-/// Displays recorded Skill Tree 2.0 progress and instructor verifications on
-/// Rider and Horse profiles, falling back to historical legacy `skillLevels`
-/// only when V2 has no recorded entries for the profile.
+/// Displays a compact Skill Tree 2.0 progress dashboard on Rider and Horse
+/// profiles, falling back to historical legacy `skillLevels` only when V2 has
+/// no recorded entries for the profile.
 class ProfileSkills extends StatefulWidget {
   const ProfileSkills({
     super.key,
@@ -39,10 +41,13 @@ class ProfileSkills extends StatefulWidget {
 }
 
 class _ProfileSkillsState extends State<ProfileSkills> {
+  static const int _learningPreviewLimit = 4;
+  static const int _proficientPreviewLimit = 5;
+
   bool _loading = false;
   bool _hasError = false;
   bool _hasV2Source = false;
-  List<_V2ProfileSkillEntry> _v2Entries = const [];
+  ProfileSkillsDashboardData? _dashboard;
   int _requestId = 0;
 
   bool get _canQueryV2 =>
@@ -111,7 +116,7 @@ class _ProfileSkillsState extends State<ProfileSkills> {
           _hasV2Source = false;
           _loading = false;
           _hasError = false;
-          _v2Entries = const [];
+          _dashboard = null;
         });
       }
       return;
@@ -124,7 +129,7 @@ class _ProfileSkillsState extends State<ProfileSkills> {
           _hasV2Source = false;
           _loading = false;
           _hasError = false;
-          _v2Entries = const [];
+          _dashboard = null;
         });
       }
       return;
@@ -152,49 +157,15 @@ class _ProfileSkillsState extends State<ProfileSkills> {
       final verificationsBySkill =
           results[2] as Map<String, SkillVerificationRecord>;
 
-      final subjectSkills =
-          allSkills.where((s) => s.subject == subject).toList()
-            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-
-      final entries = <_V2ProfileSkillEntry>[];
-      for (final skill in subjectSkills) {
-        final progress = progressBySkill[skill.id];
-        final verification = verificationsBySkill[skill.id];
-        if (progress == null && verification == null) continue;
-
-        final orderedLevels = skill.availableLevels.isNotEmpty
-            ? skill.availableLevels
-            : const [
-                DifficultyState.Introductory,
-                DifficultyState.Intermediate,
-                DifficultyState.Advanced,
-              ];
-        for (final level in orderedLevels) {
-          final selfState = progress?.levels[level]?.state;
-          final levelVerif = verification?.levels[level];
-          final hasSelf =
-              selfState == LevelState.LEARNING ||
-              selfState == LevelState.PROFICIENT;
-          final isVerified = levelVerif != null;
-          if (!hasSelf && !isVerified) continue;
-
-          final effectiveState = isVerified
-              ? LevelState.PROFICIENT
-              : selfState!;
-          entries.add(
-            _V2ProfileSkillEntry(
-              skill: skill,
-              level: level,
-              levelState: effectiveState,
-              verified: isVerified,
-              verifiedByName: levelVerif?.verifiedByName,
-            ),
-          );
-        }
-      }
+      final dashboard = buildProfileSkillsDashboard(
+        subject: subject,
+        allSkills: allSkills,
+        progressBySkill: progressBySkill,
+        verificationsBySkill: verificationsBySkill,
+      );
 
       setState(() {
-        _v2Entries = entries;
+        _dashboard = dashboard;
         _loading = false;
         _hasError = false;
       });
@@ -203,11 +174,72 @@ class _ProfileSkillsState extends State<ProfileSkills> {
       final message = error.toString().toLowerCase();
       final isPermissionDenied = message.contains('permission-denied');
       setState(() {
-        _v2Entries = const [];
+        _dashboard = null;
         _loading = false;
         _hasError = !isPermissionDenied;
       });
     }
+  }
+
+  void _openSkill(CurriculumSkill skill, DifficultyState level) {
+    context.read<AppCubit>()
+      ..setSkillSubject(isForRider: skill.subject == SkillSubject.rider)
+      ..setSkillTree();
+    SkillTreeView.openSkill(
+      GoRouter.of(context),
+      skill.id,
+      useV2:
+          SettingsControllerScope.maybeOf(context)?.skillTreeV2Enabled ??
+          FeatureFlags.kSkillTreeV2Default,
+      level: level,
+    );
+  }
+
+  void _exploreSkillTree() {
+    final isForRider = widget.subject != SkillSubject.horse;
+    context.read<AppCubit>()
+      ..setSkillSubject(isForRider: isForRider)
+      ..navigateToSkillsList();
+    context.goNamed(SkillTreePage.name);
+  }
+
+  Future<void> _showAllEntriesDialog({
+    required String title,
+    required List<ProfileSkillEntry> entries,
+    required bool allowTap,
+  }) async {
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (dialogContext) => AppGlassDialog(
+        key: const Key('profileSkillsAllDialog'),
+        maxWidth: 580,
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppTokens.spaceSm,
+          children: [
+            for (final entry in entries)
+              _ProfileV2SkillRow(
+                entry: entry,
+                keyPrefix: 'profileSkillAll',
+                onTap: !allowTap
+                    ? null
+                    : () {
+                        Navigator.of(dialogContext).pop();
+                        _openSkill(entry.skill, entry.level);
+                      },
+              ),
+          ],
+        ),
+        actions: [
+          AppOutlinedButton(
+            label: 'Close',
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -215,8 +247,9 @@ class _ProfileSkillsState extends State<ProfileSkills> {
     final theme = Theme.of(context);
     final isGuest = context.select((AppCubit c) => c.state.isGuest);
 
-    if (_hasV2Source && _loading && _v2Entries.isEmpty) {
+    if (_hasV2Source && _loading && _dashboard == null) {
       return const Padding(
+        key: Key('profileSkillsLoading'),
         padding: EdgeInsets.symmetric(vertical: AppTokens.spaceMd),
         child: Center(
           child: SizedBox(
@@ -228,7 +261,7 @@ class _ProfileSkillsState extends State<ProfileSkills> {
       );
     }
 
-    if (_hasV2Source && _hasError && _v2Entries.isEmpty) {
+    if (_hasV2Source && _hasError && _dashboard == null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppTokens.spaceSm),
         child: Row(
@@ -251,66 +284,91 @@ class _ProfileSkillsState extends State<ProfileSkills> {
       );
     }
 
-    if (_v2Entries.isNotEmpty) {
-      final learningCount = _v2Entries
-          .where((e) => !e.verified && e.levelState == LevelState.LEARNING)
-          .length;
-      final proficientCount = _v2Entries
-          .where((e) => e.levelState == LevelState.PROFICIENT)
-          .length;
-      final verifiedCount = _v2Entries.where((e) => e.verified).length;
+    final dashboard = _dashboard;
+    if (dashboard != null && dashboard.hasRecordedProgress) {
+      final learningPreview = dashboard.learningEntries
+          .take(_learningPreviewLimit)
+          .toList();
+      final proficientPreview = dashboard.proficientEntries
+          .take(_proficientPreviewLimit)
+          .toList();
+      final suggestion = dashboard.suggestion;
 
       return Column(
         key: const Key('profileSkillsV2List'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: AppTokens.spaceSm,
+        spacing: AppTokens.spaceMd,
         children: [
-          Wrap(
-            spacing: AppTokens.spaceXs,
-            runSpacing: AppTokens.spaceXs,
-            children: [
-              if (learningCount > 0)
-                AppStatusBadge(
-                  label: '$learningCount Learning',
-                  icon: Icons.school_outlined,
-                  tone: AppStatusTone.coral,
+          _SummaryMetricsRow(dashboard: dashboard),
+          if (learningPreview.isNotEmpty)
+            Column(
+              key: const Key('profileSkillsLearningSection'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceSm,
+              children: [
+                _SectionSubheader(
+                  title: 'Currently Learning',
+                  actionLabel:
+                      dashboard.learningEntries.length > _learningPreviewLimit
+                      ? 'View All (${dashboard.learningEntries.length})'
+                      : null,
+                  actionKey: const Key('profileSkillsLearningViewAll'),
+                  onAction: () => _showAllEntriesDialog(
+                    title: 'Currently Learning',
+                    entries: dashboard.learningEntries,
+                    allowTap: !isGuest,
+                  ),
                 ),
-              if (proficientCount > 0)
-                AppStatusBadge(
-                  label: '$proficientCount Proficient',
-                  icon: Icons.check_circle_outline,
-                  tone: AppStatusTone.success,
+                for (final entry in learningPreview)
+                  _ProfileV2SkillRow(
+                    entry: entry,
+                    onTap: isGuest
+                        ? null
+                        : () => _openSkill(entry.skill, entry.level),
+                  ),
+              ],
+            ),
+          if (proficientPreview.isNotEmpty)
+            Column(
+              key: const Key('profileSkillsProficientSection'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppTokens.spaceSm,
+              children: [
+                _SectionSubheader(
+                  title: 'Proficient Skills',
+                  actionLabel:
+                      dashboard.proficientEntries.length >
+                          _proficientPreviewLimit
+                      ? 'View All (${dashboard.proficientEntries.length})'
+                      : null,
+                  actionKey: const Key('profileSkillsProficientViewAll'),
+                  onAction: () => _showAllEntriesDialog(
+                    title: 'Proficient Skills',
+                    entries: dashboard.proficientEntries,
+                    allowTap: !isGuest,
+                  ),
                 ),
-              if (verifiedCount > 0)
-                AppStatusBadge(
-                  label: '$verifiedCount Verified',
-                  icon: Icons.verified,
-                  tone: AppStatusTone.warning,
+                Wrap(
+                  spacing: AppTokens.spaceSm,
+                  runSpacing: AppTokens.spaceSm,
+                  children: [
+                    for (final entry in proficientPreview)
+                      _ProficientSkillChip(
+                        entry: entry,
+                        onTap: isGuest
+                            ? null
+                            : () => _openSkill(entry.skill, entry.level),
+                      ),
+                  ],
                 ),
-            ],
-          ),
-          for (final entry in _v2Entries)
-            _ProfileV2SkillRow(
-              entry: entry,
+              ],
+            ),
+          if (suggestion != null)
+            _SuggestedNextSkillCard(
+              suggestion: suggestion,
               onTap: isGuest
                   ? null
-                  : () {
-                      context.read<AppCubit>()
-                        ..setSkillSubject(
-                          isForRider: entry.skill.subject == SkillSubject.rider,
-                        )
-                        ..setSkillTree();
-                      SkillTreeView.openSkill(
-                        GoRouter.of(context),
-                        entry.skill.id,
-                        useV2:
-                            SettingsControllerScope.maybeOf(
-                              context,
-                            )?.skillTreeV2Enabled ??
-                            FeatureFlags.kSkillTreeV2Default,
-                        level: entry.level,
-                      );
-                    },
+                  : () => _openSkill(suggestion.skill, suggestion.level),
             ),
         ],
       );
@@ -319,31 +377,632 @@ class _ProfileSkillsState extends State<ProfileSkills> {
     return _LegacyProfileSkillsFallback(
       skillLevels: widget.skillLevels,
       subject: widget.subject,
+      onExploreSkillTree: _exploreSkillTree,
     );
   }
 }
 
-class _V2ProfileSkillEntry {
-  const _V2ProfileSkillEntry({
+/// Deterministic dashboard data derived from Skill Tree 2.0 curriculum,
+/// self-assessment progress, and instructor verifications.
+class ProfileSkillsDashboardData {
+  const ProfileSkillsDashboardData({
+    required this.learningEntries,
+    required this.proficientEntries,
+    required this.learningLevelCount,
+    required this.learningSkillCount,
+    required this.proficientLevelCount,
+    required this.proficientSkillCount,
+    required this.verifiedLevelCount,
+    required this.verifiedSkillCount,
+    required this.suggestion,
+  });
+
+  final List<ProfileSkillEntry> learningEntries;
+  final List<ProfileSkillEntry> proficientEntries;
+  final int learningLevelCount;
+  final int learningSkillCount;
+  final int proficientLevelCount;
+  final int proficientSkillCount;
+  final int verifiedLevelCount;
+  final int verifiedSkillCount;
+  final SuggestedNextSkill? suggestion;
+
+  bool get hasRecordedProgress =>
+      learningEntries.isNotEmpty || proficientEntries.isNotEmpty;
+}
+
+/// Single skill + difficulty level progress entry shown on a Profile.
+class ProfileSkillEntry {
+  const ProfileSkillEntry({
     required this.skill,
     required this.level,
-    required this.levelState,
+    required this.selfState,
     required this.verified,
     this.verifiedByName,
+    this.updatedAt,
   });
 
   final CurriculumSkill skill;
   final DifficultyState level;
-  final LevelState levelState;
+  final LevelState? selfState;
   final bool verified;
   final String? verifiedByName;
+  final DateTime? updatedAt;
+
+  LevelState get effectiveState =>
+      verified ? LevelState.PROFICIENT : (selfState ?? LevelState.LEARNING);
+}
+
+/// Deterministic, explainable next-skill recommendation.
+class SuggestedNextSkill {
+  const SuggestedNextSkill({
+    required this.skill,
+    required this.level,
+    required this.reason,
+    required this.kind,
+  });
+
+  final CurriculumSkill skill;
+  final DifficultyState level;
+  final String reason;
+  final SuggestedNextKind kind;
+}
+
+enum SuggestedNextKind { continueLearning, nextAvailableLevel, sameFamilySkill }
+
+/// Builds dashboard metrics, sorted previews, and one deterministic next-skill
+/// recommendation from real curriculum standards and recorded progress.
+ProfileSkillsDashboardData buildProfileSkillsDashboard({
+  required SkillSubject subject,
+  required List<CurriculumSkill> allSkills,
+  required Map<String, SkillProgressRecord> progressBySkill,
+  required Map<String, SkillVerificationRecord> verificationsBySkill,
+}) {
+  final subjectSkills = allSkills.where((s) => s.subject == subject).toList()
+    ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  final activeSkills = subjectSkills
+      .where((s) => s.status == CurriculumSkillStatus.active)
+      .toList();
+
+  final learningEntries = <ProfileSkillEntry>[];
+  final proficientEntries = <ProfileSkillEntry>[];
+  final learningSkillIds = <String>{};
+  final proficientSkillIds = <String>{};
+  final verifiedSkillIds = <String>{};
+  var verifiedLevelCount = 0;
+
+  for (final skill in subjectSkills) {
+    final progress = progressBySkill[skill.id];
+    final verification = verificationsBySkill[skill.id];
+    if (progress == null && verification == null) continue;
+
+    final orderedLevels = _orderedLevelsFor(skill);
+    for (final level in orderedLevels) {
+      final levelProgress = progress?.levels[level];
+      final selfState = levelProgress?.state;
+      final levelVerif = verification?.levels[level];
+      final hasSelf =
+          selfState == LevelState.LEARNING ||
+          selfState == LevelState.PROFICIENT;
+      final isVerified = levelVerif != null;
+      if (!hasSelf && !isVerified) continue;
+
+      final updatedAt =
+          levelProgress?.updatedAt ??
+          progress?.updatedAt ??
+          levelVerif?.verifiedAt;
+      final entry = ProfileSkillEntry(
+        skill: skill,
+        level: level,
+        selfState: selfState,
+        verified: isVerified,
+        verifiedByName: levelVerif?.verifiedByName,
+        updatedAt: updatedAt,
+      );
+
+      if (isVerified) {
+        verifiedLevelCount++;
+        verifiedSkillIds.add(skill.id);
+      }
+
+      if (selfState == LevelState.PROFICIENT || isVerified) {
+        proficientEntries.add(entry);
+        proficientSkillIds.add(skill.id);
+      } else if (selfState == LevelState.LEARNING) {
+        learningEntries.add(entry);
+        learningSkillIds.add(skill.id);
+      }
+    }
+  }
+
+  int compareByRecencyThenSort(ProfileSkillEntry a, ProfileSkillEntry b) {
+    final aTime = a.updatedAt;
+    final bTime = b.updatedAt;
+    if (aTime != null && bTime != null) {
+      final cmp = bTime.compareTo(aTime);
+      if (cmp != 0) return cmp;
+    } else if (aTime != null) {
+      return -1;
+    } else if (bTime != null) {
+      return 1;
+    }
+    final sortCmp = a.skill.sortOrder.compareTo(b.skill.sortOrder);
+    if (sortCmp != 0) return sortCmp;
+    return a.level.index.compareTo(b.level.index);
+  }
+
+  learningEntries.sort(compareByRecencyThenSort);
+  proficientEntries.sort(compareByRecencyThenSort);
+
+  final suggestion = _computeSuggestedNextSkill(
+    activeSkills: activeSkills,
+    learningEntries: learningEntries,
+    proficientEntries: proficientEntries,
+    progressBySkill: progressBySkill,
+    verificationsBySkill: verificationsBySkill,
+  );
+
+  return ProfileSkillsDashboardData(
+    learningEntries: learningEntries,
+    proficientEntries: proficientEntries,
+    learningLevelCount: learningEntries.length,
+    learningSkillCount: learningSkillIds.length,
+    proficientLevelCount: proficientEntries.length,
+    proficientSkillCount: proficientSkillIds.length,
+    verifiedLevelCount: verifiedLevelCount,
+    verifiedSkillCount: verifiedSkillIds.length,
+    suggestion: suggestion,
+  );
+}
+
+List<DifficultyState> _orderedLevelsFor(CurriculumSkill skill) {
+  if (skill.availableLevels.isNotEmpty) return skill.availableLevels;
+  return kOrderedDifficultyLevels;
+}
+
+SuggestedNextSkill? _computeSuggestedNextSkill({
+  required List<CurriculumSkill> activeSkills,
+  required List<ProfileSkillEntry> learningEntries,
+  required List<ProfileSkillEntry> proficientEntries,
+  required Map<String, SkillProgressRecord> progressBySkill,
+  required Map<String, SkillVerificationRecord> verificationsBySkill,
+}) {
+  // 1. Continue a Learning skill (most recently updated first).
+  for (final entry in learningEntries) {
+    if (entry.skill.status == CurriculumSkillStatus.active) {
+      return SuggestedNextSkill(
+        skill: entry.skill,
+        level: entry.level,
+        reason: entry.updatedAt != null
+            ? 'Recently marked Learning — continue practicing this standard.'
+            : 'Currently marked Learning — pick up where you left off.',
+        kind: SuggestedNextKind.continueLearning,
+      );
+    }
+  }
+
+  bool isLevelRecorded(String skillId, DifficultyState level) {
+    final self = progressBySkill[skillId]?.levels[level]?.state;
+    final verif = verificationsBySkill[skillId]?.levels[level];
+    return self == LevelState.LEARNING ||
+        self == LevelState.PROFICIENT ||
+        verif != null;
+  }
+
+  // 2. Explore the next available difficulty level after a Proficient skill.
+  for (final entry in proficientEntries) {
+    if (entry.skill.status != CurriculumSkillStatus.active) continue;
+    final levels = _orderedLevelsFor(entry.skill);
+    final currentIndex = levels.indexOf(entry.level);
+    if (currentIndex < 0) continue;
+    for (var i = currentIndex + 1; i < levels.length; i++) {
+      final nextLevel = levels[i];
+      if (!isLevelRecorded(entry.skill.id, nextLevel)) {
+        return SuggestedNextSkill(
+          skill: entry.skill,
+          level: nextLevel,
+          reason:
+              '${difficultyDisplayLabel(entry.level)} is complete — '
+              '${difficultyDisplayLabel(nextLevel)} is available to explore.',
+          kind: SuggestedNextKind.nextAvailableLevel,
+        );
+      }
+    }
+  }
+
+  // 3. Explore an unstarted active skill from the same family.
+  bool hasAnyRecordedLevel(CurriculumSkill skill) {
+    return _orderedLevelsFor(
+      skill,
+    ).any((level) => isLevelRecorded(skill.id, level));
+  }
+
+  final anchorSkill = proficientEntries.isNotEmpty
+      ? proficientEntries.first.skill
+      : null;
+  if (anchorSkill != null) {
+    for (final candidate in activeSkills) {
+      if (candidate.id == anchorSkill.id) continue;
+      if (candidate.familyId == anchorSkill.familyId &&
+          !hasAnyRecordedLevel(candidate)) {
+        final targetLevel = _orderedLevelsFor(candidate).first;
+        return SuggestedNextSkill(
+          skill: candidate,
+          level: targetLevel,
+          reason:
+              'In the same skill family as ${anchorSkill.name} — '
+              'a related topic to explore next.',
+          kind: SuggestedNextKind.sameFamilySkill,
+        );
+      }
+    }
+  }
+
+  // 4. Fallback: first unstarted active skill in the curriculum.
+  for (final candidate in activeSkills) {
+    if (!hasAnyRecordedLevel(candidate)) {
+      final targetLevel = _orderedLevelsFor(candidate).first;
+      return SuggestedNextSkill(
+        skill: candidate,
+        level: targetLevel,
+        reason:
+            'An unstarted ${realmDisplayLabel(candidate.realm)} skill to '
+            'explore next.',
+        kind: SuggestedNextKind.sameFamilySkill,
+      );
+    }
+  }
+
+  return null;
+}
+
+class _SummaryMetricsRow extends StatelessWidget {
+  const _SummaryMetricsRow({required this.dashboard});
+
+  final ProfileSkillsDashboardData dashboard;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      key: const Key('profileSkillsSummary'),
+      spacing: AppTokens.spaceSm,
+      runSpacing: AppTokens.spaceSm,
+      children: [
+        _MetricPill(
+          key: const Key('profileSkillsLearningMetric'),
+          primaryLabel: '${dashboard.learningLevelCount} Learning',
+          detailLabel: _countDetail(
+            skills: dashboard.learningSkillCount,
+            levels: dashboard.learningLevelCount,
+          ),
+          icon: Icons.school_outlined,
+          tone: AppStatusTone.coral,
+        ),
+        _MetricPill(
+          key: const Key('profileSkillsProficientMetric'),
+          primaryLabel: '${dashboard.proficientLevelCount} Proficient',
+          detailLabel: _countDetail(
+            skills: dashboard.proficientSkillCount,
+            levels: dashboard.proficientLevelCount,
+          ),
+          icon: Icons.check_circle_outline,
+          tone: AppStatusTone.success,
+        ),
+        _MetricPill(
+          key: const Key('profileSkillsVerifiedMetric'),
+          primaryLabel: '${dashboard.verifiedLevelCount} Verified',
+          detailLabel: dashboard.verifiedLevelCount == 0
+              ? 'Instructor verified'
+              : '${_countDetail(
+                  skills: dashboard.verifiedSkillCount,
+                  levels: dashboard.verifiedLevelCount,
+                )} · Instructor',
+          icon: Icons.verified_outlined,
+          tone: AppStatusTone.warning,
+        ),
+      ],
+    );
+  }
+
+  String _countDetail({required int skills, required int levels}) {
+    final skillWord = skills == 1 ? 'skill' : 'skills';
+    final levelWord = levels == 1 ? 'level' : 'levels';
+    return '$skills $skillWord · $levels $levelWord';
+  }
+}
+
+class _MetricPill extends StatelessWidget {
+  const _MetricPill({
+    super.key,
+    required this.primaryLabel,
+    required this.detailLabel,
+    required this.icon,
+    required this.tone,
+  });
+
+  final String primaryLabel;
+  final String detailLabel;
+  final IconData icon;
+  final AppStatusTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final color = switch (tone) {
+      AppStatusTone.coral => AppTokens.accentColor(context),
+      AppStatusTone.success =>
+        isDark ? AppTokens.successDark : const Color(0xFF2E7D32),
+      AppStatusTone.warning =>
+        isDark ? AppTokens.warningDark : const Color(0xFFED6C02),
+      AppStatusTone.error => theme.colorScheme.error,
+      AppStatusTone.info =>
+        isDark ? AppTokens.infoDark : theme.colorScheme.primary,
+      AppStatusTone.neutral => AppTokens.secondaryTextColor(context),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTokens.spaceSm + 4,
+        vertical: AppTokens.spaceSm,
+      ),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppTokens.midnightInputFill
+            : theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: AppTokens.spaceSm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                primaryLabel,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppTokens.primaryTextColor(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                detailLabel,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionSubheader extends StatelessWidget {
+  const _SectionSubheader({
+    required this.title,
+    this.actionLabel,
+    this.actionKey,
+    this.onAction,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final Key? actionKey;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppTokens.secondaryTextColor(context),
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        if (actionLabel != null && onAction != null)
+          TextButton(
+            key: actionKey,
+            onPressed: onAction,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: const Size(40, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(actionLabel!),
+          ),
+      ],
+    );
+  }
+}
+
+class _ProficientSkillChip extends StatelessWidget {
+  const _ProficientSkillChip({required this.entry, required this.onTap});
+
+  final ProfileSkillEntry entry;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colors = theme.colorScheme;
+    final radius = BorderRadius.circular(AppTokens.radiusSm);
+    final checkColor = isDark
+        ? AppTokens.successDark
+        : const Color(0xFF2E7D32);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppTokens.midnightInputFill
+            : colors.surfaceContainerLow,
+        borderRadius: radius,
+        border: Border.all(
+          color: entry.verified
+              ? AppTokens.warningDark.withValues(alpha: 0.5)
+              : isDark
+              ? AppTokens.cardBorderDark.withValues(alpha: 0.65)
+              : colors.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: Key('profileSkillV2_${entry.skill.id}_${entry.level.name}'),
+          borderRadius: radius,
+          hoverColor: AppTokens.hoverOverlay(context),
+          highlightColor: AppTokens.pressOverlay(context),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  entry.verified
+                      ? Icons.verified
+                      : Icons.check_circle_outline,
+                  size: 16,
+                  color: entry.verified
+                      ? (isDark
+                            ? AppTokens.warningDark
+                            : const Color(0xFFED6C02))
+                      : checkColor,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    '${entry.skill.name} · '
+                    '${difficultyDisplayLabel(entry.level)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTokens.primaryTextColor(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestedNextSkillCard extends StatelessWidget {
+  const _SuggestedNextSkillCard({
+    required this.suggestion,
+    required this.onTap,
+  });
+
+  final SuggestedNextSkill suggestion;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(AppTokens.radiusMd);
+    final accent = AppTokens.accentColor(context);
+
+    return DecoratedBox(
+      key: const Key('profileSkillsSuggestedNext'),
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        gradient: isDark
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTokens.midnightCardTop.withValues(alpha: 0.92),
+                  AppTokens.midnightInputFill,
+                ],
+              )
+            : null,
+        color: isDark ? null : theme.colorScheme.surfaceContainerLow,
+        border: Border.all(color: accent.withValues(alpha: 0.45)),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: const Key('profileSkillsSuggestedNextButton'),
+          borderRadius: radius,
+          hoverColor: AppTokens.hoverOverlay(context),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppTokens.spaceSm + 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.explore_outlined, size: 20, color: accent),
+                const SizedBox(width: AppTokens.spaceSm + 2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 3,
+                    children: [
+                      Text(
+                        'Suggested Next Skill',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: accent,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${suggestion.skill.name} · '
+                        '${difficultyDisplayLabel(suggestion.level)}',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: AppTokens.primaryTextColor(context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        suggestion.reason,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (onTap != null)
+                  Icon(
+                    Icons.chevron_right,
+                    color: AppTokens.secondaryTextColor(context),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ProfileV2SkillRow extends StatelessWidget {
-  const _ProfileV2SkillRow({required this.entry, required this.onTap});
+  const _ProfileV2SkillRow({
+    required this.entry,
+    required this.onTap,
+    this.keyPrefix = 'profileSkillV2',
+  });
 
-  final _V2ProfileSkillEntry entry;
+  final ProfileSkillEntry entry;
   final VoidCallback? onTap;
+  final String keyPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +1032,7 @@ class _ProfileV2SkillRow extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          key: Key('profileSkillV2_${entry.skill.id}_${entry.level.name}'),
+          key: Key('${keyPrefix}_${entry.skill.id}_${entry.level.name}'),
           borderRadius: radius,
           hoverColor: AppTokens.hoverOverlay(context),
           highlightColor: AppTokens.pressOverlay(context),
@@ -430,7 +1089,7 @@ class _ProfileV2SkillRow extends StatelessWidget {
                             ),
                           ),
                           SkillProgressBadge(
-                            level: entry.levelState,
+                            level: entry.effectiveState,
                             verified: entry.verified,
                           ),
                         ],
@@ -456,28 +1115,27 @@ class _LegacyProfileSkillsFallback extends StatelessWidget {
   const _LegacyProfileSkillsFallback({
     required this.skillLevels,
     required this.subject,
+    required this.onExploreSkillTree,
   });
 
   final List<SkillLevel>? skillLevels;
   final SkillSubject? subject;
+  final VoidCallback onExploreSkillTree;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final emptyMessage = subject == SkillSubject.horse
         ? 'No skills recorded yet. Open Skill Tree to track this horse’s '
               'Learning and Proficient milestones.'
         : 'No skills recorded yet. Open Skill Tree to track Learning and '
               'Proficient milestones.';
-    final empty = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(
-        emptyMessage,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: AppTokens.secondaryTextColor(context),
-          height: 1.4,
-        ),
-      ),
+    final empty = AppEmptyState(
+      key: const Key('profileSkillsEmptyState'),
+      icon: Icons.account_tree_outlined,
+      title: 'Start tracking skills',
+      description: emptyMessage,
+      actionLabel: 'Explore Skill Tree',
+      onAction: onExploreSkillTree,
     );
     if (skillLevels?.isNotEmpty != true) return empty;
 

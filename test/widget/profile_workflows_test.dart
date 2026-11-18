@@ -94,7 +94,7 @@ void main() {
 
       expect(find.byKey(const Key('riderHorsesSection')), findsOneWidget);
       expect(find.byKey(const Key('riderAddHorseButton')), findsOneWidget);
-      expect(find.text('Explore Skill Tree'), findsOneWidget);
+      expect(find.text('Explore Skill Tree'), findsAtLeastNWidgets(1));
       expect(find.text('Open student Skill Tree'), findsNothing);
 
       final overflow = find.byKey(const Key('RiderProfileOverFlowMenu'));
