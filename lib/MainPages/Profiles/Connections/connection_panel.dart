@@ -6,7 +6,6 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
-import 'package:horseandriderscompanion/Theme/card_gradient.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 class ConnectionPanel extends StatelessWidget {
@@ -113,41 +112,44 @@ class ConnectionPanel extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return GradientCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 10,
-          children: [
-            Text(
-              pending == 0
-                  ? 'Connections and requests'
-                  : 'Connections and requests ($pending new)',
-              style: Theme.of(context).textTheme.titleMedium,
+    return AppSurfaceCard(
+      key: const Key('profileConnectionsSection'),
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 10,
+        children: [
+          AppSectionHeader(
+            title: pending == 0
+                ? 'Connections and requests'
+                : 'Connections and requests ($pending new)',
+          ),
+          if (actions.isNotEmpty)
+            Wrap(spacing: 8, runSpacing: 8, children: actions),
+          if (state.loading) const LinearProgressIndicator(),
+          if (state.error)
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text('Connections could not be loaded.'),
+                TextButton(
+                  onPressed: cubit!.retry,
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
-            if (actions.isNotEmpty)
-              Wrap(spacing: 8, runSpacing: 8, children: actions),
-            if (state.loading) const LinearProgressIndicator(),
-            if (state.error)
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  const Text('Connections could not be loaded.'),
-                  TextButton(
-                    onPressed: cubit!.retry,
-                    child: const Text('Retry'),
-                  ),
-                ],
+          if (ownProfile && !state.loading && !state.error && links.isEmpty)
+            Text(
+              'No active connections or pending requests.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
               ),
-            if (ownProfile && !state.loading && !state.error && links.isEmpty)
-              const Text('No active connections or pending requests.'),
-            for (final link in links)
-              _connection(context, link, email, saving, cubit!, horse),
-            if (state.actionFeedback != null)
-              Semantics(liveRegion: true, child: Text(state.actionFeedback!)),
-          ],
-        ),
+            ),
+          for (final link in links)
+            _connection(context, link, email, saving, cubit!, horse),
+          if (state.actionFeedback != null)
+            Semantics(liveRegion: true, child: Text(state.actionFeedback!)),
+        ],
       ),
     );
   }

@@ -49,7 +49,9 @@ class HorseProfileView extends StatelessWidget {
                         actionLabel: 'Explore Skill Tree',
                         showArrow: true,
                         onAction: () {
-                          context.read<AppCubit>().navigateToSkillsList();
+                          context.read<AppCubit>()
+                            ..setSkillSubject(isForRider: false)
+                            ..navigateToSkillsList();
                           context.goNamed(SkillTreePage.name);
                         },
                       ),

@@ -65,6 +65,11 @@ class HorseProfilePrimaryView extends StatelessWidget {
     final instructors = horseProfile.instructors ?? const <BaseListItem>[];
     final forSale =
         !horseProfile.isArchived && horseProfile.saleListing != null;
+    final viewerEmail = appState.usersProfile?.email.trim().toLowerCase() ?? '';
+    final isOwner =
+        !appState.isGuest &&
+        viewerEmail.isNotEmpty &&
+        horseProfile.currentOwnerId.trim().toLowerCase() == viewerEmail;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 12,
@@ -99,6 +104,20 @@ class HorseProfilePrimaryView extends StatelessWidget {
                 )
               : null,
         ),
+        if (isOwner)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppStatusBadge(
+              key: const Key('horseVisibilityBadge'),
+              label: horseProfile.isPublic
+                  ? 'Public profile'
+                  : 'Private profile',
+              icon: horseProfile.isPublic ? Icons.public : Icons.lock_outline,
+              tone: horseProfile.isPublic
+                  ? AppStatusTone.info
+                  : AppStatusTone.neutral,
+            ),
+          ),
         if (isOwnerOrLinked)
           Align(
             alignment: Alignment.centerLeft,
@@ -172,7 +191,7 @@ class _HorseDetailsState extends State<_HorseDetails> {
     final summary = <String, String?>{
       'Breed': horse.breed,
       'Gender': horse.gender,
-      'Age': birth == null ? null : '${DateTime.now().year - birth.year} years',
+      'Age': birth == null ? null : formatHorseAge(birth),
     };
     final additional = <String, String?>{
       'Nickname': horse.nickname,
@@ -292,4 +311,26 @@ class _HorseDetailsState extends State<_HorseDetails> {
       ),
     );
   }
+}
+
+/// Formats a horse's age accounting for whether its birthday has passed.
+String formatHorseAge(DateTime birth, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  var years = current.year - birth.year;
+  final hadBirthday =
+      current.month > birth.month ||
+      (current.month == birth.month && current.day >= birth.day);
+  if (!hadBirthday) {
+    years -= 1;
+  }
+  if (years <= 0) {
+    var months =
+        (current.year - birth.year) * 12 + (current.month - birth.month);
+    if (current.day < birth.day) {
+      months -= 1;
+    }
+    if (months <= 0) return 'Under 1 month';
+    return months == 1 ? '1 month' : '$months months';
+  }
+  return years == 1 ? '1 year' : '$years years';
 }

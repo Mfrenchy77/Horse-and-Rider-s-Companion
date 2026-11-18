@@ -13,6 +13,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/profile_design_tokens.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 
@@ -103,7 +104,9 @@ class _RiderProfileViewState extends State<RiderProfileView>
           // synchronize icon animation with drawer open/close (including
           // user drag) via onDrawerChanged
           onDrawerChanged: (isOpen) {
-            if (isOpen) {
+            if (MediaQuery.disableAnimationsOf(context)) {
+              _iconController.value = isOpen ? 1.0 : 0.0;
+            } else if (isOpen) {
               _iconController.forward();
             } else {
               _iconController.reverse();
@@ -112,8 +115,6 @@ class _RiderProfileViewState extends State<RiderProfileView>
           drawer: isOwnProfile ? const UserProfileDrawer() : null,
           body: Builder(
             builder: (context) {
-              final theme = Theme.of(context);
-              final isDark = theme.brightness == Brightness.dark;
               final skills = ProfileSurfaceCard(
                 key: const Key('riderSkills'),
                 child: Column(
@@ -211,15 +212,7 @@ class _RiderProfileViewState extends State<RiderProfileView>
                 },
               );
 
-              if (!isDark) return content;
-
-              return DecoratedBox(
-                decoration: ProfileTokens.midnightBackdrop,
-                child: DecoratedBox(
-                  decoration: ProfileTokens.atmosphericOverlay(context),
-                  child: content,
-                ),
-              );
+              return AppScaffoldBackdrop(child: content);
             },
           ),
         );

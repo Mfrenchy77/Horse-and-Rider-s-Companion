@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connectio
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 ///{@template log_book_button}
@@ -41,6 +42,37 @@ class LogBookButton extends StatelessWidget {
           previous.isForRider != current.isForRider,
       builder: (context, state) {
         final cubit = context.read<AppCubit>();
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final outlinedStyle = OutlinedButton.styleFrom(
+          foregroundColor: isDark
+              ? AppTokens.primaryTextDark
+              : theme.colorScheme.onSurface,
+          backgroundColor: isDark
+              ? AppTokens.midnightButtonFill
+              : theme.colorScheme.surface.withValues(alpha: 0.7),
+          side: BorderSide(
+            color: isDark
+                ? AppTokens.midnightButtonBorder
+                : theme.colorScheme.outline,
+          ),
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          ),
+        );
+        final filledStyle = FilledButton.styleFrom(
+          backgroundColor: AppTokens.accentColor(context),
+          foregroundColor: isDark
+              ? AppTokens.coralText
+              : theme.colorScheme.onPrimary,
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          ),
+        );
 
         if (horseProfile == null) {
           final rider = state.usersProfile;
@@ -60,26 +92,28 @@ class LogBookButton extends StatelessWidget {
           }
 
           return Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              FilledButton.tonalIcon(
+              OutlinedButton.icon(
+                style: outlinedStyle,
                 onPressed: ownProfile
                     ? () => RiderLogbookPage.open(context)
                     : () => ConnectionPanel.openHistory(context, student!),
-                icon: const Icon(HorseAndRiderIcons.riderLogIcon),
+                icon: const Icon(HorseAndRiderIcons.riderLogIcon, size: 18),
                 label: Text(
                   ownProfile ? "Rider's Log Book" : 'Student logbook',
                 ),
               ),
               FilledButton.icon(
+                style: filledStyle,
                 onPressed: saving
                     ? null
                     : ownProfile
                     ? () => RiderLogbookPage.addEntry(context)
                     : () => RiderLogbookPage.addLessonFor(context, student!),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add, size: 18),
                 label: Text(ownProfile ? 'Add entry' : 'Add lesson record'),
               ),
             ],
@@ -89,14 +123,15 @@ class LogBookButton extends StatelessWidget {
         return !cubit.isAuthorized() || state.isGuest
             ? const SizedBox.shrink()
             : Wrap(
-                alignment: WrapAlignment.center,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 10,
+                runSpacing: 10,
                 children: [
                   Tooltip(
                     message: 'Open the Log Book',
-                    child: FilledButton.tonalIcon(
+                    child: OutlinedButton.icon(
+                      key: const Key('horseLogBookButton'),
+                      style: outlinedStyle,
                       onPressed: () {
                         Navigator.of(context, rootNavigator: true).push<void>(
                           MaterialPageRoute(
@@ -111,13 +146,18 @@ class LogBookButton extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(HorseAndRiderIcons.riderLogIcon),
+                      icon: const Icon(
+                        HorseAndRiderIcons.riderLogIcon,
+                        size: 18,
+                      ),
                       label: const Text("Horse's Log Book"),
                     ),
                   ),
                   if (!horseProfile!.isArchived &&
                       cubit.canWriteProfileRecords())
                     FilledButton.icon(
+                      key: const Key('horseAddEntryButton'),
+                      style: filledStyle,
                       onPressed: () {
                         showAppGlassDialog<AddLogEntryDialog>(
                           context: context,
@@ -127,7 +167,7 @@ class LogBookButton extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(Icons.add, size: 18),
                       label: const Text('Add entry'),
                     ),
                 ],
