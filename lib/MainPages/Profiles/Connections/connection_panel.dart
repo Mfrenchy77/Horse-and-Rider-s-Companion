@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -112,9 +113,17 @@ class ConnectionPanel extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return AppSurfaceCard(
-      key: const Key('profileConnectionsSection'),
-      padding: const EdgeInsets.all(AppTokens.spaceMd),
+    return ValueListenableBuilder<bool>(
+      valueListenable: ProfileSpotlightTour.isTourActive,
+      builder: (context, tourActive, child) => KeyedSubtree(
+        key: (ownProfile && tourActive)
+            ? ProfileSpotlightTour.connectionsSectionKey
+            : null,
+        child: child!,
+      ),
+      child: AppSurfaceCard(
+        key: const Key('profileConnectionsSection'),
+        padding: const EdgeInsets.all(AppTokens.spaceMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 10,
@@ -150,6 +159,7 @@ class ConnectionPanel extends StatelessWidget {
           if (state.actionFeedback != null)
             Semantics(liveRegion: true, child: Text(state.actionFeedback!)),
         ],
+      ),
       ),
     );
   }

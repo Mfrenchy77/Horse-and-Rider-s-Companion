@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
@@ -80,39 +81,57 @@ class RiderActionBar extends StatelessWidget {
           if (showLogbook) ...[
             _ActionButtonShell(
               expand: !useWrap,
-              child: OutlinedButton(
-                key: const Key('LogBookButton'),
-                style: outlinedStyle,
-                onPressed: ownProfile
-                    ? () => RiderLogbookPage.open(context)
-                    : () => ConnectionPanel.openHistory(
-                        context,
-                        studentConnection!,
-                      ),
-                child: _ButtonContent(
-                  icon: HorseAndRiderIcons.riderLogIcon,
-                  label: logLabel,
-                  stacked: compact && !useWrap,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: ProfileSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key: (ownProfile && tourActive)
+                      ? ProfileSpotlightTour.riderLogBookButtonKey
+                      : null,
+                  child: child!,
+                ),
+                child: OutlinedButton(
+                  key: const Key('LogBookButton'),
+                  style: outlinedStyle,
+                  onPressed: ownProfile
+                      ? () => RiderLogbookPage.open(context)
+                      : () => ConnectionPanel.openHistory(
+                          context,
+                          studentConnection!,
+                        ),
+                  child: _ButtonContent(
+                    icon: HorseAndRiderIcons.riderLogIcon,
+                    label: logLabel,
+                    stacked: compact && !useWrap,
+                  ),
                 ),
               ),
             ),
             _ActionButtonShell(
               expand: !useWrap,
-              child: FilledButton(
-                key: const Key('AddEntryButton'),
-                style: filledStyle,
-                onPressed: saving
-                    ? null
-                    : ownProfile
-                    ? () => RiderLogbookPage.addEntry(context)
-                    : () => RiderLogbookPage.addLessonFor(
-                        context,
-                        studentConnection!,
-                      ),
-                child: _ButtonContent(
-                  icon: Icons.add,
-                  label: addLabel,
-                  stacked: compact && !useWrap,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: ProfileSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key: (ownProfile && tourActive)
+                      ? ProfileSpotlightTour.riderAddEntryButtonKey
+                      : null,
+                  child: child!,
+                ),
+                child: FilledButton(
+                  key: const Key('AddEntryButton'),
+                  style: filledStyle,
+                  onPressed: saving
+                      ? null
+                      : ownProfile
+                      ? () => RiderLogbookPage.addEntry(context)
+                      : () => RiderLogbookPage.addLessonFor(
+                          context,
+                          studentConnection!,
+                        ),
+                  child: _ButtonContent(
+                    icon: Icons.add,
+                    label: addLabel,
+                    stacked: compact && !useWrap,
+                  ),
                 ),
               ),
             ),

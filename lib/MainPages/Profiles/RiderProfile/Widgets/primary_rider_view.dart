@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/contact_request_button.dart';
@@ -54,7 +55,16 @@ class PrimaryRiderView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
-        _RiderAbout(key: ValueKey(profile.email), bio: profile.bio),
+        ValueListenableBuilder<bool>(
+          valueListenable: ProfileSpotlightTour.isTourActive,
+          builder: (context, tourActive, child) => KeyedSubtree(
+            key: (ownProfile && tourActive)
+                ? ProfileSpotlightTour.riderAboutKey
+                : null,
+            child: child!,
+          ),
+          child: _RiderAbout(key: ValueKey(profile.email), bio: profile.bio),
+        ),
         if (includeLists) ...[
           const SizedBox(height: 16),
           RiderListOfProfiles(
@@ -75,14 +85,23 @@ class PrimaryRiderView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ProfileCover(
-          key: const Key('riderIdentity'),
-          name: profile.name,
-          photoUrl: profile.picUrl,
-          locationName: profile.locationName,
-          subtitle: subtitle,
-          photoKey: const Key('riderCoverPhoto'),
-          edgeToEdge: edgeToEdgeCover,
+        ValueListenableBuilder<bool>(
+          valueListenable: ProfileSpotlightTour.isTourActive,
+          builder: (context, tourActive, child) => KeyedSubtree(
+            key: (ownProfile && tourActive)
+                ? ProfileSpotlightTour.riderIdentityKey
+                : null,
+            child: child!,
+          ),
+          child: ProfileCover(
+            key: const Key('riderIdentity'),
+            name: profile.name,
+            photoUrl: profile.picUrl,
+            locationName: profile.locationName,
+            subtitle: subtitle,
+            photoKey: const Key('riderCoverPhoto'),
+            edgeToEdge: edgeToEdgeCover,
+          ),
         ),
         SizedBox(height: edgeToEdgeCover ? 8 : 16),
         if (edgeToEdgeCover)

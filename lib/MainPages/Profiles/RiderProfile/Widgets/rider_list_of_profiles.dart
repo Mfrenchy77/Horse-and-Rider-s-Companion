@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
@@ -45,38 +46,66 @@ class RiderListOfProfiles extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (ownedHorses.isNotEmpty) ...[
-          _HorsePhotoSection(
-            key: const Key('riderHorsesSection'),
-            title: 'Owned horses',
-            horses: ownedHorses,
-            onAddHorse: isOwnProfile ? openAddHorseDialog : null,
+          ValueListenableBuilder<bool>(
+            valueListenable: ProfileSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: (isOwnProfile && tourActive)
+                  ? ProfileSpotlightTour.riderHorsesSectionKey
+                  : null,
+              child: child!,
+            ),
+            child: _HorsePhotoSection(
+              key: const Key('riderHorsesSection'),
+              title: 'Owned horses',
+              horses: ownedHorses,
+              onAddHorse: isOwnProfile ? openAddHorseDialog : null,
+              attachTourKeys: isOwnProfile,
+            ),
           ),
           const SizedBox(height: 16),
         ] else if (isOwnProfile) ...[
-          AppSurfaceCard(
-            key: const Key('riderHorsesSection'),
-            padding: const EdgeInsets.all(AppTokens.spaceMd),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: AppTokens.spaceSm,
-              children: [
-                const AppSectionHeader(title: 'Horses'),
-                Text(
-                  'Add a horse profile to track training history, logbook '
-                  'entries, and Horse Skill Tree progress.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTokens.secondaryTextColor(context),
-                    height: 1.4,
+          ValueListenableBuilder<bool>(
+            valueListenable: ProfileSpotlightTour.isTourActive,
+            builder: (context, tourActive, child) => KeyedSubtree(
+              key: tourActive
+                  ? ProfileSpotlightTour.riderHorsesSectionKey
+                  : null,
+              child: child!,
+            ),
+            child: AppSurfaceCard(
+              key: const Key('riderHorsesSection'),
+              padding: const EdgeInsets.all(AppTokens.spaceMd),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppTokens.spaceSm,
+                children: [
+                  const AppSectionHeader(title: 'Horses'),
+                  Text(
+                    'Add a horse profile to track training history, logbook '
+                    'entries, and Horse Skill Tree progress.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTokens.secondaryTextColor(context),
+                      height: 1.4,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppTokens.spaceXs),
-                FilledButton.icon(
-                  key: const Key('riderAddHorseButton'),
-                  onPressed: openAddHorseDialog,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Horse'),
-                ),
-              ],
+                  const SizedBox(height: AppTokens.spaceXs),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ProfileSpotlightTour.isTourActive,
+                    builder: (context, tourActive, child) => KeyedSubtree(
+                      key: tourActive
+                          ? ProfileSpotlightTour.riderAddHorseButtonKey
+                          : null,
+                      child: child!,
+                    ),
+                    child: FilledButton.icon(
+                      key: const Key('riderAddHorseButton'),
+                      onPressed: openAddHorseDialog,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Horse'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -120,11 +149,13 @@ class _HorsePhotoSection extends StatelessWidget {
     required this.title,
     required this.horses,
     this.onAddHorse,
+    this.attachTourKeys = false,
   });
 
   final String title;
   final List<BaseListItem> horses;
   final VoidCallback? onAddHorse;
+  final bool attachTourKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -153,11 +184,20 @@ class _HorsePhotoSection extends StatelessWidget {
               ),
               if (onAddHorse != null) ...[
                 const SizedBox(width: AppTokens.spaceXs),
-                TextButton.icon(
-                  key: const Key('riderAddHorseButton'),
-                  onPressed: onAddHorse,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Horse'),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProfileSpotlightTour.isTourActive,
+                  builder: (context, tourActive, child) => KeyedSubtree(
+                    key: (attachTourKeys && tourActive)
+                        ? ProfileSpotlightTour.riderAddHorseButtonKey
+                        : null,
+                    child: child!,
+                  ),
+                  child: TextButton.icon(
+                    key: const Key('riderAddHorseButton'),
+                    onPressed: onAddHorse,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add Horse'),
+                  ),
                 ),
               ],
             ],

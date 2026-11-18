@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,11 +8,14 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_search_button.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_skills.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_list_of_profiles.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/profile_layout.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -32,6 +37,10 @@ class RiderProfileView extends StatefulWidget {
 class _RiderProfileViewState extends State<RiderProfileView>
     with SingleTickerProviderStateMixin {
   late final AnimationController _iconController;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final MenuController _overflowMenuController = MenuController();
+  late final ProfileSpotlightHooks _tourHooks;
+  bool _inviteDismissedInSession = false;
 
   @override
   void initState() {
@@ -40,10 +49,35 @@ class _RiderProfileViewState extends State<RiderProfileView>
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
+    _tourHooks = ProfileSpotlightHooks(
+      openOverflowMenu: () {
+        if (mounted && !_overflowMenuController.isOpen) {
+          _overflowMenuController.open();
+        }
+      },
+      closeOverflowMenu: () {
+        if (mounted && _overflowMenuController.isOpen) {
+          _overflowMenuController.close();
+        }
+      },
+      openDrawer: () {
+        if (mounted && !(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
+          _scaffoldKey.currentState?.openDrawer();
+        }
+      },
+      closeDrawer: () {
+        if (mounted && (_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
+          _scaffoldKey.currentState?.closeDrawer();
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
+    if (identical(ProfileSpotlightTour.riderHooks, _tourHooks)) {
+      ProfileSpotlightTour.riderHooks = null;
+    }
     _iconController.dispose();
     super.dispose();
   }
@@ -68,8 +102,31 @@ class _RiderProfileViewState extends State<RiderProfileView>
             viewerEmail != null &&
             instructor != null &&
             instructor.coach == viewerEmail.toLowerCase();
+        if (isOwnProfile) {
+          ProfileSpotlightTour.riderHooks = _tourHooks;
+        }
+        final userKey = viewerEmail ?? state.user.id;
+        String? routePath;
+        try {
+          routePath = GoRouterState.of(context).uri.path;
+        } catch (_) {
+          routePath = null;
+        }
+        final isRootProfileRoute =
+            routePath == null || routePath == ProfilePage.path;
+        final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+        final showInvitation =
+            isOwnProfile &&
+            !_inviteDismissedInSession &&
+            isRootProfileRoute &&
+            isCurrentRoute &&
+            OnboardingPrefs.shouldShowProfileInvitation(
+              profile: profile,
+              userKey: userKey,
+            );
         final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: isDarkTheme ? ProfileTokens.midnightBase : null,
           appBar: ThemedAppBar(
             leading: isOwnProfile
@@ -94,10 +151,20 @@ class _RiderProfileViewState extends State<RiderProfileView>
                 : null,
             title: Text(isOwnProfile ? 'My profile' : 'Rider profile'),
             actions: [
-              const ProfileSearchButton(key: Key('RiderSearchButton')),
+              ValueListenableBuilder<bool>(
+                valueListenable: ProfileSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key: (isOwnProfile && tourActive)
+                      ? ProfileSpotlightTour.riderSearchButtonKey
+                      : null,
+                  child: child!,
+                ),
+                child: const ProfileSearchButton(key: Key('RiderSearchButton')),
+              ),
               if (isOwnProfile)
-                const RiderProfileOverFlowMenu(
-                  key: Key('RiderProfileOverFlowMenu'),
+                RiderProfileOverFlowMenu(
+                  key: const Key('RiderProfileOverFlowMenu'),
+                  menuController: _overflowMenuController,
                 ),
             ],
           ),
@@ -115,35 +182,76 @@ class _RiderProfileViewState extends State<RiderProfileView>
           drawer: isOwnProfile ? const UserProfileDrawer() : null,
           body: Builder(
             builder: (context) {
-              final skills = ProfileSurfaceCard(
-                key: const Key('riderSkills'),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ProfileSectionHeader(
-                      title: 'Skills',
-                      actionLabel: isCoachViewingStudent
-                          ? 'Open student Skill Tree'
-                          : 'Explore Skill Tree',
-                      showArrow: true,
-                      onAction: () {
-                        context.read<AppCubit>()
-                          ..setSkillSubject(isForRider: true)
-                          ..navigateToSkillsList();
-                        context.goNamed(SkillTreePage.name);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _DeprecatedSkillsCleanupCard(profile: profile),
-                    ProfileSkills(
-                      skillLevels: profile.skillLevels,
-                      subject: SkillSubject.rider,
-                      profileDocId: profile.email,
-                      key: const Key('ProfileSkills'),
-                    ),
-                  ],
+              final skills = ValueListenableBuilder<bool>(
+                valueListenable: ProfileSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key: (isOwnProfile && tourActive)
+                      ? ProfileSpotlightTour.riderSkillsSectionKey
+                      : null,
+                  child: child!,
+                ),
+                child: ProfileSurfaceCard(
+                  key: const Key('riderSkills'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ProfileSectionHeader(
+                        title: 'Skills',
+                        actionLabel: isCoachViewingStudent
+                            ? 'Open student Skill Tree'
+                            : 'Explore Skill Tree',
+                        showArrow: true,
+                        onAction: () {
+                          context.read<AppCubit>()
+                            ..setSkillSubject(isForRider: true)
+                            ..navigateToSkillsList();
+                          context.goNamed(SkillTreePage.name);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _DeprecatedSkillsCleanupCard(profile: profile),
+                      ProfileSkills(
+                        skillLevels: profile.skillLevels,
+                        subject: SkillSubject.rider,
+                        profileDocId: profile.email,
+                        key: const Key('ProfileSkills'),
+                      ),
+                    ],
+                  ),
                 ),
               );
+
+              final invitationBanner = showInvitation
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _ProfileTourInvitationCard(
+                        onStartTour: () {
+                          unawaited(
+                            OnboardingPrefs.setInviteState(
+                              tour: OnboardingTourId.profile,
+                              userKey: userKey,
+                              state: OnboardingInviteState.accepted,
+                            ),
+                          );
+                          setState(() => _inviteDismissedInSession = true);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            unawaited(ProfileSpotlightTour.start(context));
+                          });
+                        },
+                        onDismiss: () {
+                          unawaited(
+                            OnboardingPrefs.setInviteState(
+                              tour: OnboardingTourId.profile,
+                              userKey: userKey,
+                              state: OnboardingInviteState.deferred,
+                            ),
+                          );
+                          setState(() => _inviteDismissedInSession = true);
+                        },
+                      ),
+                    )
+                  : const SizedBox.shrink();
 
               final content = LayoutBuilder(
                 builder: (context, constraints) {
@@ -155,33 +263,39 @@ class _RiderProfileViewState extends State<RiderProfileView>
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 1320),
-                          child: Row(
-                            key: const Key('riderProfileWide'),
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(
-                                flex: 5,
-                                child: PrimaryRiderView(
-                                  profile: profile,
-                                  key: const Key('ProfileView'),
-                                  includeLists: false,
-                                ),
-                              ),
-                              const SizedBox(width: 24),
-                              Expanded(
-                                flex: 6,
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    skills,
-                                    const SizedBox(height: 16),
-                                    RiderListOfProfiles(
+                              invitationBanner,
+                              Row(
+                                key: const Key('riderProfileWide'),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: PrimaryRiderView(
                                       profile: profile,
-                                      key: const Key('RiderListOfProfiles'),
+                                      key: const Key('ProfileView'),
+                                      includeLists: false,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    flex: 6,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        skills,
+                                        const SizedBox(height: 16),
+                                        RiderListOfProfiles(
+                                          profile: profile,
+                                          key: const Key('RiderListOfProfiles'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -196,6 +310,11 @@ class _RiderProfileViewState extends State<RiderProfileView>
                       key: const Key('riderProfileCompact'),
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (showInvitation)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: invitationBanner,
+                          ),
                         PrimaryRiderView(
                           profile: profile,
                           key: const Key('ProfileView'),
@@ -217,6 +336,72 @@ class _RiderProfileViewState extends State<RiderProfileView>
           ),
         );
       },
+    );
+  }
+}
+
+class _ProfileTourInvitationCard extends StatelessWidget {
+  const _ProfileTourInvitationCard({
+    required this.onStartTour,
+    required this.onDismiss,
+  });
+
+  final VoidCallback onStartTour;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = AppTokens.accentColor(context);
+
+    return AppSurfaceCard(
+      key: const Key('profileTourInvitationCard'),
+      useDoubleGradient: true,
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTokens.spaceSm,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.explore_outlined, size: 20, color: accent),
+              const SizedBox(width: AppTokens.spaceSm),
+              Expanded(
+                child: Text(
+                  'Make the most of your profile',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppTokens.primaryTextColor(context),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            'Your profile brings your riding progress, horses, training '
+            'records, and connections together. Want a quick guided tour?',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTokens.secondaryTextColor(context),
+            ),
+          ),
+          Wrap(
+            spacing: AppTokens.spaceSm,
+            runSpacing: AppTokens.spaceSm,
+            children: [
+              FilledButton(
+                key: const Key('profileTourInviteAccept'),
+                onPressed: onStartTour,
+                child: const Text('Show me around'),
+              ),
+              AppOutlinedButton(
+                key: const Key('profileTourInviteDismiss'),
+                label: 'Not now',
+                onPressed: onDismiss,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

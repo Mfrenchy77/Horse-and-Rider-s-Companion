@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/log_book_button.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/Widgets/horse_sale_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_card.dart';
@@ -74,35 +75,42 @@ class HorseProfilePrimaryView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 12,
       children: [
-        ProfileCover(
-          key: const Key('horseIdentity'),
-          name: horseProfile.name,
-          photoUrl: horseProfile.picUrl,
-          locationName: horseProfile.locationName,
-          photoKey: const Key('horseCoverPhoto'),
-          status: switch (horseProfile.archiveStatus) {
-            'deceased' => 'Archived · Deceased',
-            'archived' => 'Archived',
-            _ => null,
-          },
-          ribbon: forSale
-              ? const CornerBanner(
-                  bannerColor: Color(0xFF1565C0),
-                  elevation: 4,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    child: Text(
-                      'FOR SALE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: .8,
+        ValueListenableBuilder<bool>(
+          valueListenable: ProfileSpotlightTour.isTourActive,
+          builder: (context, tourActive, child) => KeyedSubtree(
+            key: tourActive ? ProfileSpotlightTour.horseIdentityKey : null,
+            child: child!,
+          ),
+          child: ProfileCover(
+            key: const Key('horseIdentity'),
+            name: horseProfile.name,
+            photoUrl: horseProfile.picUrl,
+            locationName: horseProfile.locationName,
+            photoKey: const Key('horseCoverPhoto'),
+            status: switch (horseProfile.archiveStatus) {
+              'deceased' => 'Archived · Deceased',
+              'archived' => 'Archived',
+              _ => null,
+            },
+            ribbon: forSale
+                ? const CornerBanner(
+                    bannerColor: Color(0xFF1565C0),
+                    elevation: 4,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      child: Text(
+                        'FOR SALE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .8,
+                        ),
                       ),
                     ),
-                  ),
-                )
-              : null,
+                  )
+                : null,
+          ),
         ),
         if (isOwner)
           Align(

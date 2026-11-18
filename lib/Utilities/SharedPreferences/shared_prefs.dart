@@ -53,6 +53,16 @@ class SharedPrefs {
     _sharedPrefs = await SharedPreferences.getInstance();
   }
 
+  String? getString(String key) => _sharedPrefs.getString(key);
+
+  Future<bool> setString(String key, String value) =>
+      _sharedPrefs.setString(key, value);
+
+  bool? getBool(String key) => _sharedPrefs.getBool(key);
+
+  Future<bool> setBool(String key, {required bool value}) =>
+      _sharedPrefs.setBool(key, value);
+
   /// Retrieves the user's preference for seasonal mode.
   /// Returns `true` if seasonal mode is enabled, `false` otherwise.
   /// Defaults to `true` if the preference has not been set.

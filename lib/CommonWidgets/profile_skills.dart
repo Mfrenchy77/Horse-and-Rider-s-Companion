@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
@@ -387,11 +388,20 @@ class _ProfileSkillsState extends State<ProfileSkills> {
               ],
             ),
           if (suggestion != null)
-            _SuggestedNextSkillCard(
-              suggestion: suggestion,
-              onTap: isGuest
-                  ? null
-                  : () => _openSkill(suggestion.skill, suggestion.level),
+            ValueListenableBuilder<bool>(
+              valueListenable: ProfileSpotlightTour.isTourActive,
+              builder: (context, tourActive, child) => KeyedSubtree(
+                key: (widget.subject == SkillSubject.rider && tourActive)
+                    ? ProfileSpotlightTour.suggestedNextSkillKey
+                    : null,
+                child: child!,
+              ),
+              child: _SuggestedNextSkillCard(
+                suggestion: suggestion,
+                onTap: isGuest
+                    ? null
+                    : () => _openSkill(suggestion.skill, suggestion.level),
+              ),
             ),
         ],
       );
@@ -1225,13 +1235,22 @@ class _LegacyProfileSkillsFallback extends StatelessWidget {
               'Learning and Proficient milestones.'
         : 'No skills recorded yet. Open Skill Tree to track Learning and '
               'Proficient milestones.';
-    final empty = AppEmptyState(
-      key: const Key('profileSkillsEmptyState'),
-      icon: Icons.account_tree_outlined,
-      title: 'Start tracking skills',
-      description: emptyMessage,
-      actionLabel: 'Explore Skill Tree',
-      onAction: onExploreSkillTree,
+    final empty = ValueListenableBuilder<bool>(
+      valueListenable: ProfileSpotlightTour.isTourActive,
+      builder: (context, tourActive, child) => KeyedSubtree(
+        key: (subject == SkillSubject.rider && tourActive)
+            ? ProfileSpotlightTour.suggestedNextSkillKey
+            : null,
+        child: child!,
+      ),
+      child: AppEmptyState(
+        key: const Key('profileSkillsEmptyState'),
+        icon: Icons.account_tree_outlined,
+        title: 'Start tracking skills',
+        description: emptyMessage,
+        actionLabel: 'Explore Skill Tree',
+        onAction: onExploreSkillTree,
+      ),
     );
     if (skillLevels?.isNotEmpty != true) return empty;
 

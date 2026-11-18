@@ -4,52 +4,35 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 
 class RiderProfileOverFlowMenu extends StatelessWidget {
-  const RiderProfileOverFlowMenu({super.key});
+  const RiderProfileOverFlowMenu({super.key, this.menuController});
+
+  final MenuController? menuController;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        if (state.usersProfile != null) {
-          return PopupMenuButton<int>(
-            itemBuilder: (context) => <PopupMenuEntry<int>>[
-              const PopupMenuItem<int>(
-                value: 0,
-                child: Text('Edit Profile'),
-              ),
-              const PopupMenuItem<int>(
-                value: 3,
-                child: Text('Log Book'),
-              ),
-              const PopupMenuItem<int>(
-                value: 4,
-                child: Text('Add Horse'),
-              ),
-              if (state.canAccessAdministration)
-                const PopupMenuItem<int>(
-                  key: Key('overflowAdministrationItem'),
-                  value: 5,
-                  child: Text('Administration'),
-                ),
-              const PopupMenuItem<int>(
-                value: 1,
-                child: Text('Settings'),
-              ),
-              const PopupMenuItem<int>(
-                value: 2,
-                child: Text('Log Out'),
-              ),
-            ],
-            onSelected: (value) {
-              switch (value) {
-                case 0:
-                  // Navigate to the edit profile page
+        if (state.usersProfile == null) {
+          return const SizedBox();
+        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: ProfileSpotlightTour.isTourActive,
+          builder: (context, tourActive, _) => MenuAnchor(
+            controller: menuController,
+            menuChildren: [
+              MenuItemButton(
+                key: tourActive
+                    ? ProfileSpotlightTour.editProfileMenuItemKey
+                    : const Key('overflowEditProfileItem'),
+                onPressed: () {
+                  if (tourActive) return;
                   showAppGlassDialog<EditRiderProfileDialog>(
                     context: context,
                     builder: (context) => EditRiderProfileDialog(
@@ -57,20 +40,19 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                       riderProfile: state.usersProfile,
                     ),
                   );
-                  break;
-                case 1:
-                  // Navigate to the settings page
-                  context.goNamed(SettingsView.name);
-                  break;
-                case 2:
-                  // Log out
-                  context.read<AppCubit>().logOutRequested();
-                  break;
-                case 3:
+                },
+                child: const Text('Edit Profile'),
+              ),
+              MenuItemButton(
+                onPressed: () {
+                  if (tourActive) return;
                   RiderLogbookPage.open(context);
-                  break;
-                case 4:
-                  // Navigate to the add horse page
+                },
+                child: const Text('Log Book'),
+              ),
+              MenuItemButton(
+                onPressed: () {
+                  if (tourActive) return;
                   if (state.usersProfile != null) {
                     showAppGlassDialog<AddHorseDialog>(
                       context: context,
@@ -83,18 +65,48 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   } else {
                     debugPrint('Can not add horse, user profile is null');
                   }
-                  break;
-                case 5:
-                  if (state.canAccessAdministration) {
-                    context.goNamed(AdministrationPage.name);
-                  }
-                  break;
-              }
-            },
-          );
-        } else {
-          return const SizedBox();
-        }
+                },
+                child: const Text('Add Horse'),
+              ),
+              if (state.canAccessAdministration)
+                MenuItemButton(
+                  key: const Key('overflowAdministrationItem'),
+                  onPressed: () {
+                    if (tourActive) return;
+                    if (state.canAccessAdministration) {
+                      context.goNamed(AdministrationPage.name);
+                    }
+                  },
+                  child: const Text('Administration'),
+                ),
+              MenuItemButton(
+                onPressed: () {
+                  if (tourActive) return;
+                  context.goNamed(SettingsView.name);
+                },
+                child: const Text('Settings'),
+              ),
+              MenuItemButton(
+                onPressed: () {
+                  if (tourActive) return;
+                  context.read<AppCubit>().logOutRequested();
+                },
+                child: const Text('Log Out'),
+              ),
+            ],
+            builder: (context, controller, child) => IconButton(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'More options',
+              onPressed: () {
+                if (controller.isOpen) {
+                  controller.close();
+                } else {
+                  controller.open();
+                }
+              },
+            ),
+          ),
+        );
       },
     );
   }

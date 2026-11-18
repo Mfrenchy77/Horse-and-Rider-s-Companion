@@ -8,6 +8,8 @@ import 'package:horseandriderscompanion/CommonWidgets/seasonal_decoration.dart';
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/tutorial_selector_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearchDialog/profile_search_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
@@ -132,8 +134,13 @@ class UserProfileDrawer extends StatelessWidget {
                   ),
                 ],
               ),
-              Column(
-                children: [
+              ValueListenableBuilder<bool>(
+                valueListenable: ProfileSpotlightTour.isTourActive,
+                builder: (context, tourActive, _) => Column(
+                  key: tourActive
+                      ? ProfileSpotlightTour.drawerNavListKey
+                      : null,
+                  children: [
                   ///   Sign Out
                   ListTile(
                     leading: const Icon(Icons.close),
@@ -263,13 +270,24 @@ class UserProfileDrawer extends StatelessWidget {
                   ),
 
                   // Tutorial (Onboarding)
-                  ListTile(
-                    leading: const Icon(Icons.school),
-                    title: const Text('Tutorial'),
-                    onTap: () {
-                      onClose?.call();
-                      context.read<AppCubit>().showOnboardingNow();
-                    },
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ProfileSpotlightTour.isTourActive,
+                    builder: (context, tourActive, child) => KeyedSubtree(
+                      key: tourActive
+                          ? ProfileSpotlightTour.drawerTutorialTileKey
+                          : null,
+                      child: child!,
+                    ),
+                    child: ListTile(
+                      key: const Key('drawerTutorialTile'),
+                      leading: const Icon(Icons.school),
+                      title: const Text('Tutorial'),
+                      onTap: () {
+                        onClose?.call();
+                        Scaffold.maybeOf(context)?.closeDrawer();
+                        TutorialSelectorDialog.show(context);
+                      },
+                    ),
                   ),
 
                   // About
@@ -318,6 +336,7 @@ class UserProfileDrawer extends StatelessWidget {
                     child: const Text('Privacy Policy'),
                   ),
                 ],
+                ),
               ),
             ],
           );
