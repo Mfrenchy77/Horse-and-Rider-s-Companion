@@ -238,6 +238,13 @@ class ResourcesSpotlightTour {
       );
     }
 
+    final firstResource = firstAvailableResource();
+    final hasLinkedSkillChips =
+        firstResource != null &&
+        (cubit?.state.allSkills.whereType<Skill>().any(
+              (s) => firstResource.skillTreeIds.contains(s.id),
+            ) ??
+            false);
     final isGuest = cubit?.state.isGuest ?? true;
 
     final steps = <OvermarkStep>[
@@ -305,15 +312,20 @@ class ResourcesSpotlightTour {
         },
       ),
       OvermarkStep(
-        anchorKey: associatedSkillsKey,
-        shape: OvermarkShape.rrect,
+        anchorKey: hasLinkedSkillChips
+            ? associatedSkillsKey
+            : associatedSkillsButtonKey,
+        shape: hasLinkedSkillChips
+            ? OvermarkShape.rrect
+            : OvermarkShape.circle,
         radius: AppTokens.radiusSm,
         secondaryFocus: [
-          OvermarkFocus(
-            anchorKey: associatedSkillsKey,
-            shape: OvermarkShape.rrect,
-            radius: AppTokens.radiusSm,
-          ),
+          if (hasLinkedSkillChips)
+            OvermarkFocus(
+              anchorKey: associatedSkillsKey,
+              shape: OvermarkShape.rrect,
+              radius: AppTokens.radiusSm,
+            ),
           OvermarkFocus(
             anchorKey: associatedSkillsButtonKey,
             shape: OvermarkShape.circle,
@@ -321,17 +333,22 @@ class ResourcesSpotlightTour {
         ],
         prepare: (_) async {
           if (await enterFirstResourceDetail()) {
-            final target = associatedSkillsKey.currentContext != null
+            final target = hasLinkedSkillChips &&
+                    associatedSkillsKey.currentContext != null
                 ? associatedSkillsKey
                 : associatedSkillsButtonKey;
             await _ensureVisible(target, reducedMotion: reducedMotion);
           }
         },
         title: 'Associated Skills',
-        message:
-            'Resources can be connected to relevant skills so educational '
-            'content is discoverable directly from the Skill Tree. Members '
-            'with permission can manage those connections anytime.',
+        message: hasLinkedSkillChips
+            ? 'Resources can be connected to relevant skills so educational '
+                  'content is discoverable directly from the Skill Tree. '
+                  'Members with permission can manage those connections '
+                  'anytime.'
+            : 'This Resource has no linked skills yet. Use the Associated '
+                  'Skills button to view or manage connections so helpful '
+                  'material appears directly in the Skill Tree.',
         cardBuilder: (ctx, details) => SpotlightTourCard(
           badgeLabel: 'Resources · ${details.index + 1}/${details.stepCount}',
           details: details,

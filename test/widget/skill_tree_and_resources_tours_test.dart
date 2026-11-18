@@ -238,6 +238,18 @@ void main() {
         harness.resources.getResources,
       ).thenAnswer((_) => Stream.value([sampleResource]));
 
+      final linkedSkill = Skill(
+        id: 'rider.mounted.halt',
+        skillName: 'Balanced Halt',
+        rider: true,
+        position: 1,
+        description: '',
+        learningDescription: '',
+        proficientDescription: '',
+        lastEditBy: 'admin',
+        lastEditDate: DateTime.utc(2026),
+      );
+
       final rider = RiderProfile(
         id: 'alex@example.com',
         email: 'alex@example.com',
@@ -253,6 +265,7 @@ void main() {
             emailVerified: true,
           ),
           usersProfile: rider,
+          allSkills: [linkedSkill],
           resources: [sampleResource],
           hasResourceCatalogue: true,
           isGuest: false,
@@ -335,6 +348,26 @@ void main() {
           expect(
             ResourcesSpotlightTour.ratingButtonsKey.currentContext,
             isNotNull,
+          );
+        }
+        if (i == 4) {
+          expect(
+            ResourcesSpotlightTour.associatedSkillsKey.currentContext,
+            isNotNull,
+          );
+          final chipsWrap = find.byKey(
+            ResourcesSpotlightTour.associatedSkillsKey,
+          );
+          expect(
+            find.descendant(
+              of: chipsWrap,
+              matching: find.text('Balanced Halt'),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            tester.getRect(card).overlaps(tester.getRect(chipsWrap)),
+            isFalse,
           );
         }
         // Verify the tooltip card and Next/Finish button stay inside viewport.
@@ -583,6 +616,25 @@ void main() {
             find.descendant(
               of: card,
               matching: find.textContaining('Signed-in members can rate'),
+            ),
+            findsOneWidget,
+          );
+        }
+        if (i == 4) {
+          expect(
+            ResourcesSpotlightTour.associatedSkillsKey.currentContext,
+            isNull,
+          );
+          expect(
+            ResourcesSpotlightTour.associatedSkillsButtonKey.currentContext,
+            isNotNull,
+          );
+          expect(
+            find.descendant(
+              of: card,
+              matching: find.textContaining(
+                'This Resource has no linked skills yet.',
+              ),
             ),
             findsOneWidget,
           );

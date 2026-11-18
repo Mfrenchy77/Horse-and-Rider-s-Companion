@@ -396,20 +396,7 @@ class ResourceInfoBar extends StatelessWidget {
               ),
             );
 
-            final details = skills.isNotEmpty || !canAttachTourSkillKey
-                ? detailsContent
-                : ValueListenableBuilder<bool>(
-                    valueListenable: ResourcesSpotlightTour.isTourActive,
-                    builder: (context, tourActive, child) => KeyedSubtree(
-                      key: tourActive &&
-                              resource.id ==
-                                  ResourcesSpotlightTour.activeDetailResourceId
-                          ? ResourcesSpotlightTour.associatedSkillsKey
-                          : null,
-                      child: child!,
-                    ),
-                    child: detailsContent,
-                  );
+            final details = detailsContent;
 
             final layout = ResourceLayoutScope.of(context);
             return LayoutBuilder(
