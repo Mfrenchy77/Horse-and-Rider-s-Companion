@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
@@ -116,18 +117,34 @@ class ResourceRatingButtons extends StatelessWidget {
             // Assosiated Skills Button
             Expanded(
               flex: 5,
-              child: IconButton(
-                tooltip: 'Associated skills',
-                onPressed: () {
-                  showAppGlassDialog<void>(
-                    context: context,
-                    builder: (_) => UpdateResourceSkills(resource: resource),
+              child: Builder(
+                builder: (context) {
+                  final button = IconButton(
+                    tooltip: 'Associated skills',
+                    onPressed: () {
+                      showAppGlassDialog<void>(
+                        context: context,
+                        builder: (_) =>
+                            UpdateResourceSkills(resource: resource),
+                      );
+                    },
+                    icon: state.horseProfile == null
+                        ? const Icon(HorseAndRiderIcons.riderSkillIcon)
+                        : const Icon(HorseAndRiderIcons.horseSkillIcon),
+                    color: muted,
+                  );
+                  if (canOpenComments) return button;
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: ResourcesSpotlightTour.isTourActive,
+                    builder: (context, tourActive, child) => KeyedSubtree(
+                      key: tourActive
+                          ? ResourcesSpotlightTour.associatedSkillsButtonKey
+                          : null,
+                      child: child!,
+                    ),
+                    child: button,
                   );
                 },
-                icon: state.horseProfile == null
-                    ? const Icon(HorseAndRiderIcons.riderSkillIcon)
-                    : const Icon(HorseAndRiderIcons.horseSkillIcon),
-                color: muted,
               ),
             ),
             // pop up overflow menu with resource actions

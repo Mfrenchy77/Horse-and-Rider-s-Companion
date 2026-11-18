@@ -26,7 +26,17 @@ class CommentPageHeader extends StatelessWidget {
             ),
           ),
         ),
-        ResourceRatingButtons(resource: resource, canOpenComments: false),
+        ValueListenableBuilder<bool>(
+          valueListenable: ResourcesSpotlightTour.isTourActive,
+          builder: (context, tourActive, child) => KeyedSubtree(
+            key: tourActive ? ResourcesSpotlightTour.ratingButtonsKey : null,
+            child: child!,
+          ),
+          child: ResourceRatingButtons(
+            resource: resource,
+            canOpenComments: false,
+          ),
+        ),
         smallGap(),
         Divider(color: Theme.of(context).primaryColor, endIndent: 5, indent: 5),
         ValueListenableBuilder<bool>(

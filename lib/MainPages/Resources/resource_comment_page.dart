@@ -296,14 +296,26 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                                 ),
                               ),
                               gap(),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
-                                child: AppEmptyState(
-                                  icon: Icons.chat_bubble_outline_rounded,
-                                  title: 'No Comments Yet',
-                                  description: 'Start the Conversation',
+                                child: ValueListenableBuilder<bool>(
+                                  valueListenable:
+                                      ResourcesSpotlightTour.isTourActive,
+                                  builder: (context, tourActive, child) =>
+                                      KeyedSubtree(
+                                        key: tourActive
+                                            ? ResourcesSpotlightTour
+                                                  .commentThreadKey
+                                            : null,
+                                        child: child!,
+                                      ),
+                                  child: const AppEmptyState(
+                                    icon: Icons.chat_bubble_outline_rounded,
+                                    title: 'No Comments Yet',
+                                    description: 'Start the Conversation',
+                                  ),
                                 ),
                               ),
                             ],
@@ -342,7 +354,10 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                                     ? _parentCommentIndexes[_currentParentIndex]
                                     : -1;
                                 final isCurrent = activeIndex == index;
-                                return ColoredBox(
+                                final isFirstComment =
+                                    _parentCommentIndexes.isNotEmpty &&
+                                    _parentCommentIndexes.first == index;
+                                final itemChild = ColoredBox(
                                   color: isCurrent
                                       ? AppTokens.coralAccent.withValues(
                                           alpha: 0.1,
@@ -353,6 +368,21 @@ class _ResourceCommentPageState extends State<ResourceCommentPage> {
                                     comment: item.comment!,
                                   ),
                                 );
+                                return isFirstComment
+                                    ? ValueListenableBuilder<bool>(
+                                        valueListenable:
+                                            ResourcesSpotlightTour.isTourActive,
+                                        builder: (context, tourActive, child) =>
+                                            KeyedSubtree(
+                                              key: tourActive
+                                                  ? ResourcesSpotlightTour
+                                                        .commentThreadKey
+                                                  : null,
+                                              child: child!,
+                                            ),
+                                        child: itemChild,
+                                      )
+                                    : itemChild;
                               case _ListItemType.padding:
                                 return const SizedBox(height: 500);
                             }

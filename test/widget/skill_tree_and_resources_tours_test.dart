@@ -36,6 +36,7 @@ void main() {
   late InMemorySkillTreeV2Store v2Store;
 
   setUpAll(() async {
+    registerFallbackValue(Resource());
     v2Store = await const AssetCurriculumV2Loader().loadInMemoryStore();
   });
 
@@ -190,8 +191,8 @@ void main() {
   );
 
   testWidgets(
-    'Resources Tutorial walks all 6 steps including Resource detail, '
-    'Associated Skills, and Comments on desktop',
+    'Resources Tutorial walks all 7 steps including Community Ratings, '
+    'Associated Skills, and Comments on desktop and mobile',
     (tester) async {
       final harness = await AppTestHarness.create();
       addTearDown(harness.close);
@@ -310,6 +311,7 @@ void main() {
         'Resource Library',
         'Sorting and Filtering',
         'Open a Resource',
+        'Community Ratings',
         'Associated Skills',
         'Comments and Discussion',
         'Contribute to the Library',
@@ -322,9 +324,23 @@ void main() {
           find.descendant(of: card, matching: find.text(expectedTitles[i])),
           findsOneWidget,
         );
-        await tester.tap(find.byKey(const Key('resourcesTourNextButton')));
+        // Verify the tooltip card and Next/Finish button stay inside viewport.
+        final cardRect = tester.getRect(card);
+        expect(cardRect.top, greaterThanOrEqualTo(0));
+        expect(cardRect.bottom, lessThanOrEqualTo(900));
+        final nextBtn = find.byKey(const Key('resourcesTourNextButton'));
+        expect(nextBtn, findsOneWidget);
+        expect(tester.getRect(nextBtn).bottom, lessThanOrEqualTo(900));
+        await tester.tap(nextBtn);
         await _pumpFrames(tester, count: 16);
       }
+
+      // Verify no ratings or comments were submitted during the tour.
+      verifyNever(
+        () => harness.resources.createOrUpdateResource(
+          resource: any<Resource>(named: 'resource'),
+        ),
+      );
 
       expect(
         OnboardingPrefs.isCompleted(
@@ -453,6 +469,117 @@ void main() {
       await tester.tap(find.byKey(const Key('resourcesTourSkipButton')));
       await _pumpFrames(tester, count: 16);
       expect(find.byKey(const Key('resourcesTourStepCard_0')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Resources Tutorial on narrow mobile (390x844) in guest mode keeps all '
+    '7 tooltip cards and navigation controls inside viewport',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      final repo = SkillTreeV2Repository(store: v2Store);
+
+      final sampleResource = Resource(
+        id: 'res-mobile',
+        name: 'Groundwork Basics',
+        url: 'https://example.com/groundwork',
+        description: 'Clear cues on the ground for calm communication.',
+        lastEditBy: 'Coach Sam',
+        lastEditDate: DateTime.utc(2026, 11),
+        skillTreeIds: const ['rider.mounted.halt'],
+        usersWhoRated: const [],
+        comments: const [],
+      );
+
+      when(
+        harness.resources.getResources,
+      ).thenAnswer((_) => Stream.value([sampleResource]));
+      when(
+        () => harness.resources.getResourcesForSkill(
+          skillId: any(named: 'skillId'),
+        ),
+      ).thenAnswer((_) => Stream.value(const []));
+
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          user: User.empty,
+          resources: [sampleResource],
+          hasResourceCatalogue: true,
+          isGuest: true,
+          isProfileSetup: false,
+          status: AppStatus.unauthenticated,
+          pageStatus: AppPageStatus.loaded,
+        ),
+      );
+
+      final settings = SettingsController(SettingsService());
+      await settings.loadSettings();
+      addTearDown(settings.dispose);
+
+      final router = Routes().router(
+        settingsContoller: settings,
+        appCubit: harness.cubit,
+      );
+      addTearDown(router.dispose);
+
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        SettingsControllerScope(
+          controller: settings,
+          child: MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ResourcesRepository>.value(
+                value: harness.resources,
+              ),
+              RepositoryProvider<SkillTreeV2Repository>.value(value: repo),
+            ],
+            child: BlocProvider<AppCubit>.value(
+              value: harness.cubit,
+              child: MaterialApp.router(
+                theme: mainThemeDark,
+                routerConfig: router,
+              ),
+            ),
+          ),
+        ),
+      );
+      await _pumpFrames(tester);
+
+      final navContext = tester.element(find.byType(Navigator).first);
+      // ignore: unawaited_futures
+      ResourcesSpotlightTour.start(
+        navContext,
+        settleDelay: Duration.zero,
+      );
+      await _pumpFrames(tester, count: 16);
+
+      for (var i = 0; i < 7; i++) {
+        final card = find.byKey(Key('resourcesTourStepCard_$i'));
+        expect(card, findsOneWidget);
+        final cardRect = tester.getRect(card);
+        expect(cardRect.top, greaterThanOrEqualTo(0));
+        expect(cardRect.bottom, lessThanOrEqualTo(844));
+        if (i == 3) {
+          expect(
+            find.descendant(
+              of: card,
+              matching: find.textContaining('Signed-in members can rate'),
+            ),
+            findsOneWidget,
+          );
+        }
+        final nextBtn = find.byKey(const Key('resourcesTourNextButton'));
+        expect(nextBtn, findsOneWidget);
+        expect(tester.getRect(nextBtn).bottom, lessThanOrEqualTo(844));
+        await tester.tap(nextBtn);
+        await _pumpFrames(tester, count: 16);
+      }
     },
   );
 }

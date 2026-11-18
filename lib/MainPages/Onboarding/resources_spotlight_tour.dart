@@ -12,7 +12,7 @@ import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart'
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:overmark/overmark.dart';
 
-/// Coordinates the 6-step interactive Resources tutorial using Overmark.
+/// Coordinates the 7-step interactive Resources tutorial using Overmark.
 class ResourcesSpotlightTour {
   const ResourcesSpotlightTour._();
 
@@ -31,11 +31,20 @@ class ResourcesSpotlightTour {
   static final GlobalKey detailHeaderKey = GlobalKey(
     debugLabel: 'resourcesTourDetailHeader',
   );
+  static final GlobalKey ratingButtonsKey = GlobalKey(
+    debugLabel: 'resourcesTourRatingButtons',
+  );
   static final GlobalKey associatedSkillsKey = GlobalKey(
     debugLabel: 'resourcesTourAssociatedSkills',
   );
+  static final GlobalKey associatedSkillsButtonKey = GlobalKey(
+    debugLabel: 'resourcesTourAssociatedSkillsButton',
+  );
   static final GlobalKey commentsAreaKey = GlobalKey(
     debugLabel: 'resourcesTourCommentsArea',
+  );
+  static final GlobalKey commentThreadKey = GlobalKey(
+    debugLabel: 'resourcesTourCommentThread',
   );
   static final GlobalKey contributeFabKey = GlobalKey(
     debugLabel: 'resourcesTourContributeFab',
@@ -194,6 +203,7 @@ class ResourcesSpotlightTour {
     }
 
     final hasSampleResource = firstAvailableResource() != null;
+    final isGuest = cubit?.state.isGuest ?? true;
 
     final steps = <OvermarkStep>[
       step(
@@ -242,6 +252,31 @@ class ResourcesSpotlightTour {
           }
         },
       ),
+      step(
+        anchorKey: hasSampleResource ? ratingButtonsKey : sortControlKey,
+        title: 'Community Ratings',
+        message: isGuest
+            ? 'Signed-in members can rate resources with Recommend and '
+                  "Don't Recommend, or Save them for later. Community "
+                  'feedback helps riders discover useful learning material '
+                  'when sorting by Most Recommended.'
+            : 'Rate resources you find helpful using Recommend and '
+                  "Don't Recommend, or Save them for later. Community "
+                  'feedback helps other riders discover useful learning '
+                  'material.',
+        prepare: (_) async {
+          if (hasSampleResource) {
+            await enterFirstResourceDetail();
+            await _ensureVisible(
+              ratingButtonsKey,
+              reducedMotion: reducedMotion,
+            );
+          } else {
+            await ensureOnResourcesList();
+            await _ensureVisible(sortControlKey, reducedMotion: reducedMotion);
+          }
+        },
+      ),
       OvermarkStep(
         anchorKey: associatedSkillsKey,
         shape: OvermarkShape.rrect,
@@ -251,6 +286,10 @@ class ResourcesSpotlightTour {
             anchorKey: associatedSkillsKey,
             shape: OvermarkShape.rrect,
             radius: AppTokens.radiusSm,
+          ),
+          OvermarkFocus(
+            anchorKey: associatedSkillsButtonKey,
+            shape: OvermarkShape.circle,
           ),
           OvermarkFocus(
             anchorKey: detailHeaderKey,
@@ -268,7 +307,7 @@ class ResourcesSpotlightTour {
             await enterFirstResourceDetail();
             final target = associatedSkillsKey.currentContext != null
                 ? associatedSkillsKey
-                : detailHeaderKey;
+                : associatedSkillsButtonKey;
             await _ensureVisible(target, reducedMotion: reducedMotion);
           } else {
             await ensureOnResourcesList();
@@ -276,9 +315,9 @@ class ResourcesSpotlightTour {
         },
         title: 'Associated Skills',
         message:
-            'Linking a Resource to skills makes it discoverable directly from '
-            'those skills in the Skill Tree. Contributors can update links '
-            'anytime using Manage Links.',
+            'Resources can be connected to relevant skills so educational '
+            'content is discoverable directly from the Skill Tree. Members '
+            'with permission can manage those connections anytime.',
         cardBuilder: (ctx, details) => SpotlightTourCard(
           badgeLabel: 'Resources · ${details.index + 1}/${details.stepCount}',
           details: details,
@@ -293,8 +332,16 @@ class ResourcesSpotlightTour {
           anchorKey: commentsAreaKey,
           title: 'Comments and Discussion',
           message:
-              'Discuss takeaways, ask questions, and share helpful context '
-              'with fellow riders, horse owners, and instructors.',
+              'Ask questions, discuss ideas, and share experiences with '
+              'fellow riders, horse owners, and instructors—or sort comments '
+              'to follow the conversation.',
+          extraFocus: [
+            OvermarkFocus(
+              anchorKey: commentThreadKey,
+              shape: OvermarkShape.rrect,
+              radius: AppTokens.radiusMd,
+            ),
+          ],
           prepare: (_) async {
             await enterFirstResourceDetail();
             await _ensureVisible(commentsAreaKey, reducedMotion: reducedMotion);
