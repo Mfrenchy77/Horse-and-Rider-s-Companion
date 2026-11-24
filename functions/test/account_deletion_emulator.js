@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const admin = require('firebase-admin');
 const {DEFAULT_ADMIN_ACCOUNT_EMAIL, profileId} = require('../account_deletion');
+const {retireLegacyMessaging} = require('../retire_legacy_messaging');
 
 const PROJECT_ID = process.env.GCLOUD_PROJECT || 'demo-account-deletion';
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
@@ -253,6 +254,49 @@ async function main() {
   });
   await db.collection('RiderProfiles').doc(departing.email).collection('tokens').doc('fcm-1').set({token: 'fcm-1'});
 
+  // Legacy Conversations/Messages (shared with surviving trainer + solo/already-deleted)
+  await db.collection('Conversations').doc('conv-shared').set({
+    id: 'conv-shared',
+    partiesIds: [departing.email, trainer.email],
+    parties: ['Departing Rider', 'Coach Taylor'],
+    createdBy: 'Departing Rider',
+    lastEditBy: departing.email,
+    recentMessage: {
+      sender: 'Departing Rider',
+      senderId: departing.email,
+      senderProfilePicUrl: 'https://example.com/rider.jpg',
+      message: 'Private chat from departing rider',
+      messageType: 'CHAT',
+      recipients: ['Coach Taylor'],
+    },
+  });
+  await db.collection('Conversations/conv-shared/Messages').doc('m-dep').set({
+    sender: 'Departing Rider',
+    senderId: departing.email,
+    senderProfilePicUrl: 'https://example.com/rider.jpg',
+    message: 'Private chat from departing rider',
+    messageType: 'CHAT',
+    recipients: ['Coach Taylor'],
+  });
+  await db.collection('Conversations/conv-shared/Messages').doc('m-tr').set({
+    sender: 'Coach Taylor',
+    senderId: trainer.email,
+    message: 'Trainer note remains intact',
+    messageType: 'CHAT',
+    recipients: ['Departing Rider'],
+  });
+  await db.collection('Conversations').doc('conv-solo').set({
+    id: 'conv-solo',
+    partiesIds: [departing.email, 'deleted:u-old'],
+    parties: ['Departing Rider', 'Deleted User'],
+  });
+  await db.collection('Conversations/conv-solo/Messages').doc('m-solo').set({
+    sender: 'Departing Rider',
+    senderId: departing.email,
+    message: 'Solo message deleted',
+    messageType: 'CHAT',
+  });
+
   const bucket = admin.storage().bucket(`${PROJECT_ID}.appspot.com`);
   const riderPhotoPath = `Riders_Photo/${profileId(departing.email)}`;
   const coverPath = `covers/${departing.email}/cover.jpg`;
@@ -326,6 +370,28 @@ async function main() {
     assert.equal(job.status, 'completed');
     assert.equal(job.email, undefined);
     assert.equal(job.horsesTransferredCount, 3);
+
+    // Legacy Conversations/Messages anonymized for departing user without erasing trainer's message
+    const convShared = (await db.collection('Conversations').doc('conv-shared').get()).data();
+    assert.deepEqual(convShared.partiesIds, [`deleted:${departing.uid}`, trainer.email]);
+    assert.deepEqual(convShared.parties, ['Deleted User', 'Coach Taylor']);
+    assert.equal(convShared.createdBy, 'Deleted User');
+    assert.equal(convShared.recentMessage.sender, 'Deleted User');
+    assert.equal(convShared.recentMessage.message, '[Message removed — account deleted]');
+    const mDep = (await db.collection('Conversations/conv-shared/Messages').doc('m-dep').get()).data();
+    assert.equal(mDep.sender, 'Deleted User');
+    assert.equal(mDep.senderId, `deleted:${departing.uid}`);
+    assert.equal(mDep.senderProfilePicUrl, '');
+    const mTr = (await db.collection('Conversations/conv-shared/Messages').doc('m-tr').get()).data();
+    assert.equal(mTr.sender, 'Coach Taylor');
+    assert.equal(mTr.message, 'Trainer note remains intact');
+    assert.equal((await db.collection('Conversations').doc('conv-solo').get()).exists, false);
+    assert.equal((await db.collection('Conversations/conv-solo/Messages').doc('m-solo').get()).exists, false);
+
+    // Dry-run retirement migration check against emulator
+    const dryRetire = await retireLegacyMessaging(db, {projectId: PROJECT_ID, dryRun: true});
+    assert.equal(dryRetire.scannedConversations, 1);
+    assert.equal(dryRetire.anonymizedConversations, 0);
   });
 
   await runTest('Post-deletion Firestore security rules block unauthorized access while allowing admin transfer', async () => {

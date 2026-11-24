@@ -311,13 +311,44 @@ test('transfers multiple active/archived/for-sale/private horses, preserves hist
     }],
     ['Conversations/conv-shared', {
       partiesIds: [riderEmail, coachEmail],
-      parties: [{id: riderEmail}, {id: coachEmail}],
-      createdBy: riderEmail,
+      parties: ['Rider', 'Coach'],
+      createdBy: 'Rider',
+      lastEditBy: riderEmail,
+      recentMessage: {
+        sender: 'Rider',
+        senderId: riderEmail,
+        senderProfilePicUrl: 'https://example.com/pic.jpg',
+        message: 'Private chat text from departing user',
+        messageType: 'CHAT',
+        recipients: ['Coach'],
+      },
     }],
     ['Conversations/conv-shared/Messages/m1', {
       sender: 'Rider',
       senderId: riderEmail,
       senderProfilePicUrl: 'https://example.com/pic.jpg',
+      message: 'Private chat text from departing user',
+      messageType: 'CHAT',
+      recipients: ['Coach'],
+    }],
+    ['Conversations/conv-shared/Messages/m2', {
+      sender: 'Coach',
+      senderId: coachEmail,
+      senderProfilePicUrl: 'https://example.com/coach.jpg',
+      message: 'Coach message should remain readable by Coach',
+      messageType: 'CHAT',
+      recipients: ['Rider'],
+    }],
+    ['Conversations/conv-solo', {
+      partiesIds: [riderEmail, 'deleted:u-old'],
+      parties: ['Rider', DELETED_NAME],
+      createdBy: riderEmail,
+    }],
+    ['Conversations/conv-solo/Messages/ms1', {
+      sender: 'Rider',
+      senderId: riderEmail,
+      message: 'Should be deleted with solo conversation',
+      messageType: 'CHAT',
     }],
     ['Resources/res-1', {
       authorId: 'u-rider',
@@ -435,8 +466,32 @@ test('transfers multiple active/archived/for-sale/private horses, preserves hist
   assert.deepEqual(otherHorse.instructorUids, ['u-coach']);
   assert.deepEqual(otherHorse.instructors.map((i) => i.id), [coachEmail]);
 
-  // Legacy Conversations/Messages remain untouched pending discontinuation policy
-  assert.deepEqual(db.docs.get('Conversations/conv-shared').partiesIds, [riderEmail, coachEmail]);
+  // Legacy Conversations/Messages anonymize departing user while preserving surviving user's messages;
+  // solo/all-deleted conversations are removed completely.
+  const sharedConv = db.docs.get('Conversations/conv-shared');
+  assert.deepEqual(sharedConv.partiesIds, ['deleted:u-rider', coachEmail]);
+  assert.deepEqual(sharedConv.parties, [DELETED_NAME, 'Coach']);
+  assert.equal(sharedConv.createdBy, DELETED_NAME);
+  assert.equal(sharedConv.lastEditBy, DELETED_NAME);
+  assert.equal(sharedConv.recentMessage.sender, DELETED_NAME);
+  assert.equal(sharedConv.recentMessage.senderId, 'deleted:u-rider');
+  assert.equal(sharedConv.recentMessage.senderProfilePicUrl, '');
+  assert.equal(sharedConv.recentMessage.message, '[Message removed — account deleted]');
+
+  const sharedMsg1 = db.docs.get('Conversations/conv-shared/Messages/m1');
+  assert.equal(sharedMsg1.sender, DELETED_NAME);
+  assert.equal(sharedMsg1.senderId, 'deleted:u-rider');
+  assert.equal(sharedMsg1.senderProfilePicUrl, '');
+  assert.equal(sharedMsg1.message, '[Message removed — account deleted]');
+
+  const sharedMsg2 = db.docs.get('Conversations/conv-shared/Messages/m2');
+  assert.equal(sharedMsg2.sender, 'Coach');
+  assert.equal(sharedMsg2.senderId, coachEmail);
+  assert.equal(sharedMsg2.message, 'Coach message should remain readable by Coach');
+  assert.deepEqual(sharedMsg2.recipients, [DELETED_NAME]);
+
+  assert.equal(db.docs.has('Conversations/conv-solo'), false);
+  assert.equal(db.docs.has('Conversations/conv-solo/Messages/ms1'), false);
 
   const res = db.docs.get('Resources/res-1');
   assert.equal(res.authorName, DELETED_NAME);

@@ -484,6 +484,148 @@ async function cleanupJournalEntries(db, uid) {
   }
 }
 
+function anonymizeMessageData(msg, uid, emailSet, departingName) {
+  if (!msg || typeof msg !== 'object') return {changed: false, next: msg};
+  const marker = deletedMarker(uid);
+  const next = {...msg};
+  let changed = false;
+
+  const senderIdStr = typeof next.senderId === 'string' ? next.senderId : '';
+  const senderStr = typeof next.sender === 'string' ? next.sender : '';
+  const isAuthoredByDeparting = senderIdStr === uid ||
+    emailSet.has(emailKey(senderIdStr)) ||
+    emailSet.has(emailKey(senderStr)) ||
+    (Boolean(departingName) && senderStr === departingName && !senderIdStr);
+
+  if (isAuthoredByDeparting) {
+    next.sender = DELETED_NAME;
+    next.senderId = marker;
+    next.senderProfilePicUrl = '';
+    const mType = typeof next.messageType === 'string' ? next.messageType : '';
+    if (!mType || ['CHAT', 'MESSAGE', 'GENERAL', 'SUPPORT'].includes(mType)) {
+      next.message = '[Message removed — account deleted]';
+      next.subject = '';
+    }
+    changed = true;
+  }
+
+  if (Array.isArray(next.recipients)) {
+    const updatedRecipients = next.recipients.map((entry) => {
+      if (typeof entry !== 'string') return entry;
+      if (emailSet.has(emailKey(entry)) || (departingName && entry === departingName)) {
+        changed = true;
+        return DELETED_NAME;
+      }
+      return entry;
+    });
+    next.recipients = updatedRecipients;
+  }
+
+  if (next.requestItem && typeof next.requestItem === 'object') {
+    const reqItem = {...next.requestItem};
+    const itemId = typeof reqItem.id === 'string' ? reqItem.id : '';
+    const itemExtra = typeof reqItem.extra === 'string' ? reqItem.extra : '';
+    const itemName = typeof reqItem.name === 'string' ? reqItem.name : '';
+    if (emailSet.has(emailKey(itemId)) || emailSet.has(emailKey(itemExtra)) ||
+        (departingName && itemName === departingName)) {
+      if (emailSet.has(emailKey(itemId))) reqItem.id = marker;
+      if (emailSet.has(emailKey(itemExtra))) reqItem.extra = '';
+      reqItem.name = DELETED_NAME;
+      reqItem.imageUrl = '';
+      next.requestItem = reqItem;
+      changed = true;
+    }
+  }
+
+  return {changed, next};
+}
+
+async function cleanupLegacyMessaging(db, uid, email, emailSet, departingName) {
+  const convDocs = [];
+  const seenConvIds = new Set();
+  for (const candidate of new Set([email, emailKey(email)].filter(Boolean))) {
+    const snap = await db.collection('Conversations')
+        .where('partiesIds', 'array-contains', candidate).get();
+    for (const doc of snap.docs) {
+      if (seenConvIds.has(doc.id)) continue;
+      seenConvIds.add(doc.id);
+      convDocs.push(doc);
+    }
+  }
+  if (convDocs.length === 0) return;
+
+  const marker = deletedMarker(uid);
+  for (const convDoc of convDocs) {
+    const data = convDoc.data() || {};
+    const partiesIds = Array.isArray(data.partiesIds) ? data.partiesIds : [];
+    const parties = Array.isArray(data.parties) ? data.parties : [];
+    const survivingIds = partiesIds.filter((id) => {
+      const key = emailKey(id);
+      return key && !emailSet.has(key) && !String(id).startsWith('deleted:');
+    });
+
+    if (survivingIds.length === 0) {
+      await deleteSubcollectionDocs(convDoc.ref, 'Messages');
+      await convDoc.ref.delete();
+      continue;
+    }
+
+    if (typeof convDoc.ref.collection === 'function') {
+      const msgSnap = await convDoc.ref.collection('Messages').get();
+      for (const msgDoc of msgSnap.docs) {
+        const msgData = msgDoc.data() || {};
+        const {changed, next} = anonymizeMessageData(msgData, uid, emailSet, departingName);
+        if (changed) {
+          await msgDoc.ref.update(next);
+        }
+      }
+    }
+
+    const removedIndices = new Set();
+    const nextPartiesIds = partiesIds.map((id, index) => {
+      if (emailSet.has(emailKey(id))) {
+        removedIndices.add(index);
+        return marker;
+      }
+      return id;
+    });
+    const nextParties = parties.map((entry, index) => {
+      if (
+        removedIndices.has(index) ||
+        (typeof entry === 'string' &&
+          (emailSet.has(emailKey(entry)) || (departingName && entry === departingName)))
+      ) {
+        return DELETED_NAME;
+      }
+      return entry;
+    });
+
+    const patch = {
+      partiesIds: nextPartiesIds,
+      parties: nextParties,
+    };
+    if (
+      typeof data.createdBy === 'string' &&
+      (emailSet.has(emailKey(data.createdBy)) || (departingName && data.createdBy === departingName))
+    ) {
+      patch.createdBy = DELETED_NAME;
+    }
+    if (
+      typeof data.lastEditBy === 'string' &&
+      (emailSet.has(emailKey(data.lastEditBy)) || (departingName && data.lastEditBy === departingName))
+    ) {
+      patch.lastEditBy = DELETED_NAME;
+    }
+    if (data.recentMessage && typeof data.recentMessage === 'object') {
+      const recent = anonymizeMessageData(data.recentMessage, uid, emailSet, departingName);
+      if (recent.changed) {
+        patch.recentMessage = recent.next;
+      }
+    }
+    await convDoc.ref.update(patch);
+  }
+}
+
 async function cleanupResourcesAndSuggestions(db, uid, email, emailSet) {
   const marker = deletedMarker(uid);
   const allSnap = await db.collection('Resources').get();
@@ -772,10 +914,16 @@ function accountDeletionHandler(db, auth, bucket = null, options = {}) {
         await discoverOwnedHorses(db, uid, email, emailSet) :
         [];
       const relatedEmails = [];
+      let departingName = typeof request.auth?.token?.name === 'string' ?
+        request.auth.token.name.trim() :
+        '';
       for (const pid of new Set([profileId(email), profileId(emailKey(email))])) {
         const pSnap = await db.collection('Rider_Profile').doc(pid).get();
         if (!pSnap.exists) continue;
         const pData = pSnap.data() || {};
+        if (!departingName && typeof pData.name === 'string' && pData.name.trim()) {
+          departingName = pData.name.trim();
+        }
         for (const item of [...(pData.students || []), ...(pData.instructors || [])]) {
           if (typeof item?.id === 'string') relatedEmails.push(item.id);
         }
@@ -810,7 +958,9 @@ function accountDeletionHandler(db, auth, bucket = null, options = {}) {
       );
       await runStep('requests', () => cleanupRequests(db, email, nowSeconds));
       await runStep('journal', () => cleanupJournalEntries(db, uid));
-      // Legacy Conversations/Messages remain untouched until messaging retirement is approved.
+      await runStep('legacyMessaging', () =>
+        cleanupLegacyMessaging(db, uid, email, emailSet, departingName),
+      );
       await runStep('resources', () => cleanupResourcesAndSuggestions(db, uid, email, emailSet));
       await runStep('profileAndTokens', () => cleanupProfileAndTokens(db, uid, email));
       await runStep('storage', () => cleanupStorage(bucket, uid, email));

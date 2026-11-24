@@ -35,7 +35,10 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
     'firebase-admin': admin,
     'firebase-functions/logger': {error: (...args) => errors.push(args), info() {}},
     'firebase-functions/v2/https': {onRequest: (_, handler) => handler, onCall: (_, handler) => handler},
-    'firebase-functions/v2/firestore': {onDocumentCreated: (_, handler) => handler},
+    'firebase-functions/v2/firestore': {
+      onDocumentCreated: (_, handler) => handler,
+      onDocumentWritten: (_, handler) => handler,
+    },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8'), {
     exports, URL, AbortSignal,
@@ -43,7 +46,11 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
     require: (id) => mocks[id] ||
       (id === './connections' ? require('../connections') :
       id === './account_deletion' ? require('../account_deletion') :
-      id === './suggestions' ? require('../suggestions') : require(id)),
+      id === './suggestions' ? require('../suggestions') :
+      id === './curriculum_drafts' ? require('../curriculum_drafts') :
+      id === './share_preview' ? require('../share_preview') :
+      id === './public_horse_profile' ? require('../public_horse_profile') :
+      id === './public_rider_profile' ? require('../public_rider_profile') : require(id)),
   }, {filename: 'index.js'});
   return {handlers: exports, pushes, errors, tokenOwners};
 }
@@ -205,26 +212,9 @@ test('resolveImage reports pages with no image', async () => {
   assert.equal((await request(handlers.resolveImage, {body: {url: 'https://stable.example'}})).status, 404);
 });
 
-test('notification trigger ignores missing events and ordinary chats', async () => {
+test('retired onMessageCreated trigger is no longer exported', () => {
   const h = harness();
-  await h.handlers.onMessageCreated({});
-  await h.handlers.onMessageCreated({data: {data: () => ({messageType: 'CHAT'})}, params: {convId: 'c'}});
-  assert.equal(h.pushes.length, 0);
-});
-
-test('notification trigger excludes sender case-insensitively and deduplicates tokens', async () => {
-  const h = harness({conversation: {
-    parties: ['Rider', 'Trainer'], partiesIds: ['rider@example.com', 'trainer@example.com'],
-  }, tokens: ['token-1', 'token-1']});
-  await h.handlers.onMessageCreated({params: {convId: 'c'}, data: {data: () => ({
-    messageType: 'INSTRUCTOR_REQUEST', sender: 'Rider', senderId: 'Rider@Example.com',
-    subject: 'Training request', message: 'Please teach me',
-  })}});
-  assert.deepEqual(h.tokenOwners, ['trainer@example.com']);
-  assert.equal(h.pushes.length, 1);
-  assert.deepEqual(Array.from(h.pushes[0].tokens), ['token-1']);
-  assert.equal(h.pushes[0].data.convId, 'c');
-  assert.equal(h.errors.length, 0);
+  assert.equal(h.handlers.onMessageCreated, undefined);
 });
 
 test('onRequestCreated ignores missing events, non-pending, and migrated legacy requests', async () => {
@@ -268,20 +258,5 @@ test('onRequestCreated notifies recipients, excludes sender case-insensitively, 
   assert.equal(h.pushes.length, 1);
   assert.deepEqual(Array.from(h.pushes[0].tokens), ['token-1']);
   assert.equal(h.pushes[0].data.requestId, 'req-42');
-  assert.equal(h.errors.length, 0);
-});
-
-test('onMessageCreated skips mirrored or already-migrated Requests to prevent duplicate notifications', async () => {
-  const conv = {parties: ['Rider', 'Trainer'], partiesIds: ['rider@example.com', 'trainer@example.com']};
-  const h = harness({conversation: conv, existingRequestIds: ['c1_m1']});
-  await h.handlers.onMessageCreated({
-    params: {convId: 'c1', messageId: 'm1'},
-    data: {data: () => ({messageType: 'INSTRUCTOR_REQUEST', senderId: 'rider@example.com'})},
-  });
-  await h.handlers.onMessageCreated({
-    params: {convId: 'c2', messageId: 'm2'},
-    data: {data: () => ({messageType: 'INSTRUCTOR_REQUEST', senderId: 'rider@example.com', mirroredFromRequests: true})},
-  });
-  assert.equal(h.pushes.length, 0);
   assert.equal(h.errors.length, 0);
 });
