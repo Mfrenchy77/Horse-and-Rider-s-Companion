@@ -10,7 +10,6 @@ import 'package:horseandriderscompanion/bootstrap.dart';
 Future<void> main() async {
   await bootstrap(() async {
     // Create repositories
-    final messagesRepository = MessagesRepository();
     final skillTreeRepository = SkillTreeRepository();
     final resourcesRepository = ResourcesRepository();
     final riderProfileRepository = RiderProfileRepository();
@@ -27,7 +26,6 @@ Future<void> main() async {
 
     // Build the root widget
     return App(
-      messagesRepository: messagesRepository,
       settingsController: settingsController,
       skillTreeRepository: skillTreeRepository,
       resourcesRepository: resourcesRepository,

@@ -125,8 +125,11 @@ class _DeletePageState extends State<DeletePage> {
                     body:
                         'Shared Resources, comments, and Skill Tree '
                         'suggestions remain available with your name and '
-                        'email anonymized as "Deleted User." Your Resource '
-                        'ratings are removed. Active connections are ended.',
+                        'email anonymized as "Deleted User." Any remaining '
+                        'legacy conversation records involving your account '
+                        'are anonymized (or deleted if no active member '
+                        'remains). Your Resource ratings are removed, and '
+                        'active connections are ended.',
                     textStyle: secondaryTextStyle,
                   ),
                   const SizedBox(height: AppTokens.spaceMd),

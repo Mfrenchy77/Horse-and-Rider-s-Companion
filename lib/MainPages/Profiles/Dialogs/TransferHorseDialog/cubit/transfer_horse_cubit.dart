@@ -21,7 +21,11 @@ class TransferHorseCubit extends Cubit<TransferHorseState> {
     submitCoachingAction,
   }) : _requestRepository =
            requestRepository ??
-           FirebaseConnectionRequestStore(messagesStore: messagesRepository),
+           (messagesRepository != null
+               ? FirebaseConnectionRequestStore(
+                   messagesStore: messagesRepository,
+                 )
+               : FirestoreConnectionRequestStore()),
        // ignore: prefer_initializing_formals
        _submitCoachingAction = submitCoachingAction,
        super(const TransferHorseState()) {

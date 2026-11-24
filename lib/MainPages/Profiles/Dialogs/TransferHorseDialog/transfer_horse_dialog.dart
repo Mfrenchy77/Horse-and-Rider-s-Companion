@@ -27,11 +27,7 @@ class TransferHorseDialog extends StatelessWidget {
         horseProfile: horseProfile,
         requestRepository:
             context.read<ConnectionRequestStore?>() ??
-            FirebaseConnectionRequestStore(
-              messagesStore:
-                  context.read<MessagesStore?>() ??
-                  context.read<MessagesRepository?>(),
-            ),
+            FirestoreConnectionRequestStore(),
         riderProfileRepository:
             context.read<RiderProfileStore?>() ??
             context.read<RiderProfileRepository?>() ??

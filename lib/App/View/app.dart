@@ -21,7 +21,7 @@ class App extends StatefulWidget {
   const App({
     super.key,
     required this.settingsController,
-    required this._messagesRepository,
+    MessagesStore? messagesRepository,
     required this._skillTreeRepository,
     required this._resourcesRepository,
     required this._riderProfileRepository,
@@ -34,13 +34,11 @@ class App extends StatefulWidget {
     this.useCompositeRequestStore = kUseCompositeRequestStore,
     this.mirrorRequestWritesToLegacy = kMirrorRequestWritesToLegacy,
     this._firestore,
-  });
+  // ignore: prefer_initializing_formals
+  }) : _messagesRepository = messagesRepository;
 
   /// Opt-in flag for dual-reading `Requests` alongside legacy
   /// `Conversations`/`Messages` during the migration window.
-  ///
-  /// Disabled by default until `Requests` security rules and backfill are
-  /// deployed to production.
   static const bool kUseCompositeRequestStore = bool.fromEnvironment(
     'USE_COMPOSITE_REQUEST_STORE',
   );
@@ -52,7 +50,7 @@ class App extends StatefulWidget {
   );
 
   final SettingsController settingsController;
-  final MessagesStore _messagesRepository;
+  final MessagesStore? _messagesRepository;
   final SkillTreeStore _skillTreeRepository;
   final ResourcesStore _resourcesRepository;
   final RiderProfileStore _riderProfileRepository;
@@ -109,7 +107,7 @@ class _AppState extends State<App> {
       );
   late final ConnectionRequestStore _connectionRequestStore =
       widget._connectionRequestStore ??
-      (widget.useCompositeRequestStore
+      (widget.useCompositeRequestStore && widget._messagesRepository != null
           ? CompositeConnectionRequestStore(
               primary: FirestoreConnectionRequestStore(
                 firestore: widget._firestore,
@@ -119,9 +117,7 @@ class _AppState extends State<App> {
               ),
               mirrorWritesToLegacy: widget.mirrorRequestWritesToLegacy,
             )
-          : FirebaseConnectionRequestStore(
-              messagesStore: widget._messagesRepository,
-            ));
+          : FirestoreConnectionRequestStore(firestore: widget._firestore));
   late final GoRouter _router;
 
   @override
@@ -174,9 +170,8 @@ class _AppState extends State<App> {
         RepositoryProvider<ApiKeyProvider>(
           create: (_) => widget._keysRepository ?? KeysRepository(),
         ),
-        RepositoryProvider<MessagesStore>.value(
-          value: widget._messagesRepository,
-        ),
+        if (widget._messagesRepository case final MessagesStore store)
+          RepositoryProvider<MessagesStore>.value(value: store),
         RepositoryProvider<ConnectionRequestStore>.value(
           value: _connectionRequestStore,
         ),

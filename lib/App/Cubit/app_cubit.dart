@@ -24,7 +24,7 @@ part 'app_state.dart';
 
 class AppCubit extends Cubit<AppState> {
   AppCubit({
-    required MessagesStore messagesRepository,
+    MessagesStore? messagesRepository,
     ConnectionRequestStore? connectionRequestRepository,
     required this._skillTreeRepository,
     required this._resourcesRepository,
@@ -35,10 +35,13 @@ class AppCubit extends Cubit<AppState> {
     PushNotificationService? pushNotificationService,
     this._submitCoachingAction,
     this._fetchConnection,
-  }) : _messagesRepository = messagesRepository,
-       _connectionRequestRepository =
+  }) : _connectionRequestRepository =
            connectionRequestRepository ??
-           FirebaseConnectionRequestStore(messagesStore: messagesRepository),
+           (messagesRepository != null
+               ? FirebaseConnectionRequestStore(
+                   messagesStore: messagesRepository,
+                 )
+               : FirestoreConnectionRequestStore()),
        _authenticationRepository = authenticationRepository,
        _pushNotificationService = pushNotificationService ?? const FcmService(),
        super(
@@ -50,7 +53,6 @@ class AppCubit extends Cubit<AppState> {
   }
 
   /// Repositories
-  final MessagesStore _messagesRepository;
   final ConnectionRequestStore _connectionRequestRepository;
   final SkillTreeStore _skillTreeRepository;
   final ResourcesStore _resourcesRepository;
@@ -2927,79 +2929,46 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(errorMessage: value));
   }
 
-  void sendMessageToSupport() {
+  Future<void> sendMessageToSupport() async {
+    final body = state.errorMessage.trim();
+    if (body.isEmpty) {
+      emit(
+        state.copyWith(
+          messageToSupportStatus: MessageToSupportStatus.initial,
+          isError: true,
+          errorMessage: 'Message is empty',
+        ),
+      );
+      return;
+    }
     emit(
       state.copyWith(messageToSupportStatus: MessageToSupportStatus.sending),
     );
-    if (state.errorMessage.isEmpty) {
-      emit(state.copyWith(isError: true, errorMessage: 'Message is empty'));
-      return;
-    } else {
-      final emails = <String>[
-        state.usersProfile?.email.toLowerCase() as String,
-        StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
-      ]..sort();
-
-      final idbuff = StringBuffer()..write(emails.join('_'));
-      final id = convertEmailToPath(idbuff.toString());
-      final recipients = <String>[
-        state.usersProfile?.email.toLowerCase() as String,
-        StringConstants.HORSEANDRIDERCOMPANIONEMAIL.toLowerCase(),
-      ];
-
-      final memberNames = <String>[
-        state.usersProfile?.name as String,
-        StringConstants.HORSEANDRIDERCOMPANIONNAME,
-      ];
-
-      final supportMessage = Message(
-        id: id,
-        date: DateTime.now(),
-        recipients: memberNames,
-        subject: 'Support Message',
-        message: state.errorMessage,
-        messageType: MessageType.SUPPORT,
-        senderId: state.usersProfile?.email.toLowerCase(),
-        sender: state.usersProfile!.name,
-        senderProfilePicUrl: state.usersProfile?.picUrl,
-        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-      );
-
-      final conversation = Conversation(
-        id: id,
-        parties: memberNames,
-        partiesIds: recipients,
-        createdBy: state.usersProfile?.name as String,
-        createdOn: DateTime.now(),
-        lastEditBy: state.usersProfile?.name as String,
-        lastEditDate: DateTime.now(),
-        recentMessage: supportMessage,
-      );
-      try {
-        _messagesRepository
-          ..createOrUpdateConversation(conversation: conversation)
-          ..createOrUpdateMessage(message: supportMessage);
-        emit(
-          state.copyWith(
-            messageToSupportStatus: MessageToSupportStatus.success,
-            isMessage: true,
-            errorMessage:
-                'Sent Message to the '
-                "Horse & Rider's Companion Support Team",
-          ),
-        );
-      } on RepositoryException catch (e) {
-        emit(
-          state.copyWith(
-            messageToSupportStatus: MessageToSupportStatus.initial,
-            isError: true,
-            errorMessage: e.message,
-          ),
-        );
-
-        debugPrint("Failed with error '${e.code}': ${e.message}");
-      }
+    final senderName = state.usersProfile?.name.trim();
+    final subject = (senderName != null && senderName.isNotEmpty)
+        ? 'Support Request from $senderName'
+        : 'Support Request';
+    final mailto = Uri(
+      scheme: 'mailto',
+      path: StringConstants.HORSEANDRIDERCOMPANIONEMAIL,
+      queryParameters: {'subject': subject, 'body': body},
+    );
+    var launched = false;
+    try {
+      launched = await launchUrl(mailto);
+    } catch (_) {
+      launched = false;
     }
+    emit(
+      state.copyWith(
+        messageToSupportStatus: MessageToSupportStatus.success,
+        isMessage: true,
+        errorMessage: launched
+            ? 'Opened your email app to contact Support.'
+            : 'Please email support at '
+                  '${StringConstants.HORSEANDRIDERCOMPANIONEMAIL}.',
+      ),
+    );
   }
 
   /// Loads the connection/transfer requests for the user
@@ -3180,33 +3149,19 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// Deny/Decline a pending request message and convert it to a chat entry
+  /// Deny/Decline a pending legacy request via [ConnectionRequestStore].
   Future<void> denyRequest({required Message message}) async {
     final request = ConnectionRequest.fromLegacyMessage(message);
     if (request != null) {
       await denyConnectionRequest(request);
       return;
     }
-    try {
-      message
-        ..message = 'Request dismissed'
-        ..messageType = MessageType.CHAT;
-      await _persistMessage(message);
-      emit(
-        state.copyWith(
-          isMessage: true,
-          errorMessage: 'Request denied',
-          acceptStatus: AcceptStatus.waiting,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          isError: true,
-          errorMessage: 'Failed to deny request: $e',
-        ),
-      );
-    }
+    emit(
+      state.copyWith(
+        isError: true,
+        errorMessage: 'Legacy message replies are no longer supported.',
+      ),
+    );
   }
 
   /// Denies/dismisses a pending [ConnectionRequest].
@@ -3274,29 +3229,6 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
-  /// Handle transfer horse request
-  void _handleTransferHorseRequest() {
-    emit(
-      state.copyWith(
-        acceptStatus: AcceptStatus.waiting,
-        isError: true,
-        errorMessage: 'Accepting horse transfers is not implemented yet.',
-      ),
-    );
-  }
-
-  /// returns the color for the group text based on the messageState
-  Color groupTextColor({required Conversation conversation}) {
-    final isDark = SharedPrefs().isDarkMode;
-    return conversation.messageState == MessageState.UNREAD
-        ? isDark
-              ? Colors.white
-              : Colors.black
-        : isDark
-        ? Colors.grey.shade400
-        : Colors.grey.shade600;
-  }
-
   /// Returns true if the message is a pending request for the current user
   bool _isPendingRequestForUser(Message? m) {
     if (m == null) return false;
@@ -3334,7 +3266,7 @@ class AppCubit extends Cubit<AppState> {
     ];
   }
 
-  /// Pending request conversations derived from recentMessage only
+  /// Pending request conversations derived from recentMessage only.
   List<Conversation> pendingRequestConversations() {
     final cons = state.conversations ?? const <Conversation>[];
     return cons
@@ -3342,62 +3274,17 @@ class AppCubit extends Cubit<AppState> {
         .toList();
   }
 
-  /// Count of pending requests
+  /// Count of pending requests.
   int pendingRequestCount() => pendingConnectionRequests().length;
 
-  /// Save a messaged to the database
-  Future<void> _persistMessage(Message message) async {
-    try {
-      await _messagesRepository.createOrUpdateMessage(message: message);
-    } on RepositoryException catch (e) {
-      emit(state.copyWith(isError: true, errorMessage: 'Failed: ${e.message}'));
-      debugPrint(e.toString());
-    }
-  }
-
-  /// Determines if the message request should be visible
-  /// if the sender in not the current user
-  /// and if the request is not already accepted
-  /// returns true if the request should be visible
-  bool isRequestVisible({required Message message}) {
-    final isCurrentUser = message.sender == state.usersProfile?.name;
-    final isMessageTypeValid =
-        message.messageType == MessageType.INSTRUCTOR_REQUEST ||
-        message.messageType == MessageType.STUDENT_HORSE_REQUEST ||
-        message.messageType == MessageType.STUDENT_REQUEST;
-
-    return !isCurrentUser &&
-        isMessageTypeValid &&
-        message.requestItem?.id != state.usersProfile?.email;
-  }
-
-  ///   method that checks if the request is accepted
-  Future<bool> isRequestAccepted({required Message message}) async {
-    debugPrint('messageSender: ${message.sender}');
-    if (message.messageType == MessageType.INSTRUCTOR_REQUEST) {
-      debugPrint(
-        'Instructor/Student List: ${state.usersProfile?.instructors?.map((e) => e.name)}',
-      );
-      return state.usersProfile?.instructors?.any(
-            (element) => element.name == message.sender,
-          ) ??
-          false;
-    } else if (message.messageType == MessageType.STUDENT_HORSE_REQUEST) {
-      final senderProfile = await _fetchRiderProfile(
-        message.requestItem!.extra!,
-      );
-
-      debugPrint(
-        'StudentHorses: ${senderProfile?.studentHorses?.map((e) => e.name)}',
-      );
-      debugPrint('message.requestItem?.name: ${message.requestItem?.name}');
-      return senderProfile?.studentHorses?.any(
-            (element) => element.name == message.requestItem?.name,
-          ) ??
-          false;
-    }
-
-    return false;
+  void _handleTransferHorseRequest() {
+    emit(
+      state.copyWith(
+        acceptStatus: AcceptStatus.waiting,
+        isError: true,
+        errorMessage: 'Accepting horse transfers is not implemented yet.',
+      ),
+    );
   }
 
   /* **************************************************************
