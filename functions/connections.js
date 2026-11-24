@@ -562,6 +562,7 @@ async function resolveTransfer(tx, db, link, ref, id, actor, action, now, reques
       currentOwnerId: recipient.profile.email,
       currentOwnerName: recipient.profile.name || recipient.profile.email,
       ownerUid: link.coachUid,
+      administrativeHold: false,
       ownershipVersion: link.version,
       transferRequestId: null,
       saleListing: null,

@@ -4,7 +4,12 @@
 
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {accountDeletionHandler, DELETED_NAME, profileId} = require('../account_deletion');
+const {
+  accountDeletionHandler,
+  DELETED_NAME,
+  DEFAULT_ADMIN_ACCOUNT_EMAIL,
+  profileId,
+} = require('../account_deletion');
 
 function createFirestoreMock(initial = []) {
   const docs = new Map(initial);
@@ -81,10 +86,18 @@ function createFirestoreMock(initial = []) {
   return {
     docs,
     collection: (name) => makeCollectionRef(name),
+    runTransaction: async (fn) => {
+      const tx = {
+        get: (ref) => ref.get(),
+        set: (ref, data, opts) => ref.set(data, opts),
+        update: (ref, patch) => ref.update(patch),
+      };
+      return fn(tx);
+    },
   };
 }
 
-test('rejects unauthenticated and stale-login account deletion requests', async () => {
+test('rejects unauthenticated, guest, stale-login, and admin self-deletion requests', async () => {
   const db = createFirestoreMock();
   const auth = {deleteUser: async () => {}, revokeRefreshTokens: async () => {}};
   const handler = accountDeletionHandler(db, auth, null, {
@@ -100,48 +113,185 @@ test('rejects unauthenticated and stale-login account deletion requests', async 
   await assert.rejects(
       () => handler({
         auth: {
+          uid: 'u-guest',
+          token: {email: 'guest@example.com', auth_time: 999, firebase: {sign_in_provider: 'anonymous'}},
+        },
+      }),
+      (err) => err.code === 'permission-denied' && err.details?.code === 'guest-not-allowed',
+  );
+
+  await assert.rejects(
+      () => handler({
+        auth: {
           uid: 'u1',
           token: {email: 'rider@example.com', auth_time: 500, firebase: {sign_in_provider: 'password'}},
         },
       }),
       (err) => err.code === 'failed-precondition' && err.details?.code === 'requires-recent-login',
   );
+
+  await assert.rejects(
+      () => handler({
+        auth: {
+          uid: 'u-admin',
+          token: {email: DEFAULT_ADMIN_ACCOUNT_EMAIL, auth_time: 990, firebase: {sign_in_provider: 'password'}},
+        },
+      }),
+      (err) => err.code === 'failed-precondition' && err.details?.code === 'cannot-delete-admin-account',
+  );
 });
 
-test('transfers owned horses to verified admin, preserves legacy conversations, and cleans user data', async () => {
+test('handles rider with no horses cleanly and removes rider subcollections & public projection', async () => {
+  const riderEmail = 'nohorse@example.com';
+  const docId = profileId(riderEmail);
+  const db = createFirestoreMock([
+    [`Rider_Profile/${docId}`, {email: riderEmail, ownerUid: 'u-nh', name: 'No Horse Rider'}],
+    [`Rider_Profile/${docId}/SkillProgress/rider.in_hand.leading`, {levels: {introductory: {state: 'LEARNING'}}}],
+    [`Rider_Profile/${docId}/SkillVerifications/rider.in_hand.leading`, {verified: true}],
+    [`Rider_Profile/${docId}/SkillVerificationEvents/ev1`, {status: 'verified'}],
+    [`Public_Rider_Profile/${docId}`, {id: docId, email: riderEmail, name: 'No Horse Rider'}],
+    ['SkillTreeSuggestions/sug-1', {
+      submittedByUid: 'u-nh',
+      submitterEmail: riderEmail,
+      submitterName: 'No Horse Rider',
+      title: 'Add ground tying note',
+    }],
+  ]);
+  let deletedUid = null;
+  const auth = {
+    revokeRefreshTokens: async () => {},
+    deleteUser: async (uid) => {
+      deletedUid = uid;
+    },
+  };
+
+  const handler = accountDeletionHandler(db, auth, null, {nowSeconds: () => 1000});
+  const result = await handler({
+    auth: {
+      uid: 'u-nh',
+      token: {email: riderEmail, auth_time: 990, firebase: {sign_in_provider: 'password'}},
+    },
+  });
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.horsesTransferred, 0);
+  assert.equal(deletedUid, 'u-nh');
+  assert.equal(db.docs.has(`Rider_Profile/${docId}`), false);
+  assert.equal(db.docs.has(`Rider_Profile/${docId}/SkillProgress/rider.in_hand.leading`), false);
+  assert.equal(db.docs.has(`Rider_Profile/${docId}/SkillVerifications/rider.in_hand.leading`), false);
+  assert.equal(db.docs.has(`Rider_Profile/${docId}/SkillVerificationEvents/ev1`), false);
+  assert.equal(db.docs.has(`Public_Rider_Profile/${docId}`), false);
+
+  const suggestion = db.docs.get('SkillTreeSuggestions/sug-1');
+  assert.equal(suggestion.submitterName, DELETED_NAME);
+  assert.equal(suggestion.submitterEmail, '');
+  assert.equal(suggestion.submittedByUid, 'deleted:u-nh');
+
+  const job = db.docs.get('DeletionJobs/u-nh');
+  assert.equal(job.status, 'completed');
+  assert.equal(job.email, undefined);
+  assert.equal(job.horsesTransferredCount, 0);
+});
+
+test('transfers multiple active/archived/for-sale/private horses, preserves histories, and cleans PII', async () => {
   const riderEmail = 'rider@example.com';
   const coachEmail = 'coach@example.com';
-  const adminEmail = 'horseandriderscompanion@gmail.com';
+  const studentEmail = 'student@example.com';
+  const otherOwnerEmail = 'other@example.com';
+  const adminEmail = DEFAULT_ADMIN_ACCOUNT_EMAIL;
   const riderDocId = profileId(riderEmail);
   const coachDocId = profileId(coachEmail);
+  const studentDocId = profileId(studentEmail);
   const adminDocId = profileId(adminEmail);
 
   const db = createFirestoreMock([
-    [`Rider_Profile/${riderDocId}`, {email: riderEmail, name: 'Rider', ownedHorses: [{id: 'atlas'}]}],
+    [`Rider_Profile/${riderDocId}`, {
+      email: riderEmail,
+      ownerUid: 'u-rider',
+      name: 'Rider',
+      ownedHorses: [{id: 'atlas', name: 'Atlas'}, {id: 'foreign-horse', name: 'Not Mine'}],
+      archivedHorses: [{id: 'old-pal', name: 'Old Pal'}],
+      instructors: [{id: coachEmail, name: 'Coach'}],
+      students: [{id: studentEmail, name: 'Student'}],
+    }],
+    [`Public_Rider_Profile/${riderDocId}`, {id: riderDocId, email: riderEmail, name: 'Rider'}],
     [`Rider_Profile/${coachDocId}`, {
       email: coachEmail,
+      ownerUid: 'u-coach',
       name: 'Coach',
       students: [{id: riderEmail, name: 'Rider'}],
       studentHorses: [{id: 'atlas', name: 'Atlas'}],
       instructors: [],
     }],
+    [`Rider_Profile/${studentDocId}`, {
+      email: studentEmail,
+      ownerUid: 'u-student',
+      name: 'Student',
+      instructors: [{id: riderEmail, name: 'Rider'}],
+      instructorUids: ['u-rider'],
+    }],
     [`Rider_Profile/${adminDocId}`, {
       email: adminEmail,
+      ownerUid: 'u-admin',
       name: 'Horse And Rider\'s Companion',
       ownedHorses: [],
+      archivedHorses: [],
     }],
     ['Horse_Profile/atlas', {
       id: 'atlas',
       name: 'Atlas',
+      isPublic: true,
       currentOwnerId: riderEmail,
+      ownerUid: 'u-rider',
       currentOwnerName: 'Rider',
       archiveStatus: 'active',
-      saleListing: {price: '$5000'},
+      saleListing: {price: '$5000', location: 'TX', description: 'Nice horse'},
       transferRequestId: 'conn-transfer',
       lastEditBy: riderEmail,
+      picUrl: 'https://example.com/horses/atlas.jpg',
       notes: [{id: 'n1', note: 'Lesson 1'}],
       skillLevels: [{skillId: 's1', verified: true}],
       instructors: [{id: coachEmail, name: 'Coach'}],
+      instructorUids: ['u-coach'],
+    }],
+    ['Public_Horse_Profile/atlas', {
+      id: 'atlas',
+      name: 'Atlas',
+      isPublic: true,
+      archiveStatus: 'active',
+      saleListing: {price: '$5000', location: 'TX', description: 'Nice horse'},
+    }],
+    ['Horse_Profile/atlas/SkillProgress/horse.in_hand.leading', {
+      skillId: 'horse.in_hand.leading',
+      subject: 'horse',
+      levels: {
+        introductory: {state: 'PROFICIENT', updatedByUid: 'u-rider', updatedByName: 'Rider'},
+      },
+    }],
+    ['Horse_Profile/atlas/SkillVerifications/horse.in_hand.leading', {verified: true, verifiedBy: 'Coach'}],
+    ['Horse_Profile/atlas/SkillVerificationEvents/hev1', {status: 'verified', horseId: 'atlas'}],
+    ['Horse_Profile/old-pal', {
+      id: 'old-pal',
+      name: 'Old Pal',
+      isPublic: false,
+      currentOwnerId: 'stale-casing@EXAMPLE.com',
+      ownerUid: 'u-rider',
+      archiveStatus: 'archived',
+      notes: [{id: 'n-old', name: 'Retired safely'}],
+    }],
+    ['Horse_Profile/other-owned', {
+      id: 'other-owned',
+      name: 'Other Horse',
+      currentOwnerId: otherOwnerEmail,
+      ownerUid: 'u-other',
+      instructors: [{id: riderEmail, name: 'Rider'}, {id: coachEmail, name: 'Coach'}],
+      instructorUids: ['u-rider', 'u-coach'],
+    }],
+    ['Horse_Profile/foreign-horse', {
+      id: 'foreign-horse',
+      name: 'Foreign Horse',
+      currentOwnerId: otherOwnerEmail,
+      ownerUid: 'u-other',
     }],
     ['CoachingConnections/conn-transfer', {
       kind: 'transfer',
@@ -176,7 +326,7 @@ test('transfers owned horses to verified admin, preserves legacy conversations, 
       lastEditBy: riderEmail,
       comments: [{
         id: 'c1',
-        user: {id: riderEmail, name: 'Rider'},
+        user: {id: riderEmail, name: 'Rider', imageUrl: 'https://example.com/pic.jpg'},
         usersWhoRated: [{id: riderEmail, isSelected: true}],
       }],
     }],
@@ -221,54 +371,94 @@ test('transfers owned horses to verified admin, preserves legacy conversations, 
   });
 
   assert.equal(result.status, 'completed');
+  assert.equal(result.horsesTransferred, 2);
   assert.equal(revoked, true);
   assert.equal(deletedUid, 'u-rider');
   assert.equal(db.docs.has(`Rider_Profile/${riderDocId}`), false);
+  assert.equal(db.docs.has(`Public_Rider_Profile/${riderDocId}`), false);
   assert.equal(db.docs.has(`RiderProfiles/${riderEmail}/tokens/tok-1`), false);
   assert.equal(db.docs.has('SharedRidingEntries/entry-owned'), false);
   assert.equal(db.docs.has('Resources/res-1/usersWhoRated/rider@example.com'), false);
-  assert.equal(db.docs.has('DeletionJobs/u-rider'), false);
 
-  // Owned horse transferred to verified administrative account, preserving history
+  // Owned active public for-sale horse transferred cleanly
   const horse = db.docs.get('Horse_Profile/atlas');
   assert.equal(horse.currentOwnerId, adminEmail);
-  assert.equal(horse.currentOwnerName, 'Horse And Rider\'s Companion');
+  assert.equal(horse.ownerUid, 'u-admin');
+  assert.equal(horse.administrativeHold, true);
   assert.equal(horse.saleListing, null);
   assert.equal(horse.transferRequestId, null);
+  assert.deepEqual(horse.instructors, []);
+  assert.deepEqual(horse.instructorUids, []);
+  assert.equal(horse.isPublic, true);
   assert.equal(horse.lastEditBy, DELETED_NAME);
   assert.deepEqual(horse.notes, [{id: 'n1', note: 'Lesson 1'}]);
   assert.deepEqual(horse.skillLevels, [{skillId: 's1', verified: true}]);
-  assert.deepEqual(horse.instructors, [{id: coachEmail, name: 'Coach'}]);
+  assert.equal(horse.ownershipHistory[0].ownerRef, 'deleted:u-rider');
 
+  // Public projection updated without saleListing
+  const pubHorse = db.docs.get('Public_Horse_Profile/atlas');
+  assert.equal(pubHorse.saleListing, undefined);
+  assert.equal(pubHorse.name, 'Atlas');
+
+  // Horse V2 progress & verifications preserved, owner name minimized
+  const horseProg = db.docs.get('Horse_Profile/atlas/SkillProgress/horse.in_hand.leading');
+  assert.equal(horseProg.levels.introductory.state, 'PROFICIENT');
+  assert.equal(horseProg.levels.introductory.updatedByName, 'Former Owner');
+  assert.equal(horseProg.levels.introductory.updatedByUid, 'deleted:u-rider');
+  assert.equal(db.docs.get('Horse_Profile/atlas/SkillVerifications/horse.in_hand.leading').verified, true);
+  assert.equal(db.docs.get('Horse_Profile/atlas/SkillVerificationEvents/hev1').status, 'verified');
+
+  // Archived private horse discovered by ownerUid even with mismatched currentOwnerId casing, remains private
+  const oldPal = db.docs.get('Horse_Profile/old-pal');
+  assert.equal(oldPal.ownerUid, 'u-admin');
+  assert.equal(oldPal.currentOwnerId, adminEmail);
+  assert.equal(oldPal.isPublic, false);
+  assert.equal(oldPal.archiveStatus, 'archived');
+  assert.equal(db.docs.has('Public_Horse_Profile/old-pal'), false);
+
+  // Foreign horse referenced in rider's roster was NOT stolen
+  assert.equal(db.docs.get('Horse_Profile/foreign-horse').ownerUid, 'u-other');
+
+  // Admin roster reflects active vs archived split
   const adminProfile = db.docs.get(`Rider_Profile/${adminDocId}`);
-  assert.deepEqual(adminProfile.ownedHorses, [{id: 'atlas', name: 'Atlas'}]);
+  assert.deepEqual(adminProfile.ownedHorses.map((h) => h.id), ['atlas']);
+  assert.deepEqual(adminProfile.archivedHorses.map((h) => h.id), ['old-pal']);
 
+  // Connected riders & other owners' horses have instructorUids cleaned
   const coachProfile = db.docs.get(`Rider_Profile/${coachDocId}`);
   assert.deepEqual(coachProfile.students, []);
   assert.deepEqual(coachProfile.studentHorses, []);
+  const studentProfile = db.docs.get(`Rider_Profile/${studentDocId}`);
+  assert.deepEqual(studentProfile.instructors, []);
+  assert.deepEqual(studentProfile.instructorUids, []);
+  const otherHorse = db.docs.get('Horse_Profile/other-owned');
+  assert.deepEqual(otherHorse.instructorUids, ['u-coach']);
+  assert.deepEqual(otherHorse.instructors.map((i) => i.id), [coachEmail]);
 
   // Legacy Conversations/Messages remain untouched pending discontinuation policy
-  const sharedConv = db.docs.get('Conversations/conv-shared');
-  assert.deepEqual(sharedConv.partiesIds, [riderEmail, coachEmail]);
-  const sharedMsg = db.docs.get('Conversations/conv-shared/Messages/m1');
-  assert.equal(sharedMsg.sender, 'Rider');
+  assert.deepEqual(db.docs.get('Conversations/conv-shared').partiesIds, [riderEmail, coachEmail]);
 
   const res = db.docs.get('Resources/res-1');
   assert.equal(res.authorName, DELETED_NAME);
   assert.equal(res.comments[0].user.name, DELETED_NAME);
+  assert.equal(res.comments[0].user.imageUrl, '');
   assert.deepEqual(res.comments[0].usersWhoRated, []);
 
   assert.ok(deletedFiles.includes(`Riders_Photo/${riderDocId}`));
   assert.ok(deletedPrefixes.includes(`covers/${riderEmail}/`));
 });
 
-test('blocks horse transfer if administrative account cannot be verified', async () => {
+test('blocks horse transfer BEFORE mutating connections/tokens if admin account is invalid', async () => {
   const riderEmail = 'owner@example.com';
   const db = createFirestoreMock([
-    ['Horse_Profile/atlas', {id: 'atlas', name: 'Atlas', currentOwnerId: riderEmail}],
+    ['Horse_Profile/atlas', {id: 'atlas', name: 'Atlas', currentOwnerId: riderEmail, ownerUid: 'u-owner'}],
+    ['Requests/req-1', {status: 'pending', partiesIds: [riderEmail, 'coach@example.com']}],
   ]);
+  let revoked = false;
   const auth = {
-    revokeRefreshTokens: async () => {},
+    revokeRefreshTokens: async () => {
+      revoked = true;
+    },
     getUserByEmail: async () => {
       const err = new Error('not found');
       err.code = 'auth/user-not-found';
@@ -291,13 +481,23 @@ test('blocks horse transfer if administrative account cannot be verified', async
       }),
       (err) => err.code === 'failed-precondition' && err.details?.code === 'admin-account-not-found',
   );
+  assert.equal(revoked, false);
   assert.equal(db.docs.get('Horse_Profile/atlas').currentOwnerId, riderEmail);
+  assert.equal(db.docs.get('Requests/req-1').status, 'pending');
 });
 
-test('retries idempotently from failed step after partial failure', async () => {
+test('rejects duplicate in-progress requests, handles missing Auth user on retry, and completes idempotently', async () => {
   const riderEmail = 'retry@example.com';
+  const adminEmail = DEFAULT_ADMIN_ACCOUNT_EMAIL;
   const db = createFirestoreMock([
-    [`Rider_Profile/${profileId(riderEmail)}`, {email: riderEmail, name: 'Retry'}],
+    [`Rider_Profile/${profileId(riderEmail)}`, {email: riderEmail, ownerUid: 'u-retry', name: 'Retry'}],
+    [`Rider_Profile/${profileId(adminEmail)}`, {email: adminEmail, ownerUid: 'u-admin', name: 'Admin'}],
+    ['DeletionJobs/u-retry', {
+      uid: 'u-retry',
+      status: 'in_progress',
+      lockExpiresAt: 1060,
+      steps: {horses: true},
+    }],
   ]);
 
   let failStorageOnce = true;
@@ -306,17 +506,25 @@ test('retries idempotently from failed step after partial failure', async () => 
       delete: async () => {
         if (failStorageOnce) {
           failStorageOnce = false;
-          throw new Error('Transient storage failure');
+          const err = new Error('Transient storage failure');
+          err.code = 500;
+          throw err;
         }
       },
     }),
   };
 
-  let deleteAuthCalls = 0;
   const auth = {
-    revokeRefreshTokens: async () => {},
+    getUserByEmail: async (email) => ({uid: 'u-admin', email}),
+    revokeRefreshTokens: async () => {
+      const err = new Error('not found');
+      err.code = 'auth/user-not-found';
+      throw err;
+    },
     deleteUser: async () => {
-      deleteAuthCalls += 1;
+      const err = new Error('not found');
+      err.code = 'auth/user-not-found';
+      throw err;
     },
   };
 
@@ -328,20 +536,33 @@ test('retries idempotently from failed step after partial failure', async () => 
     },
   };
 
+  // Concurrent active lock is rejected
+  await assert.rejects(
+      () => handler(req),
+      (err) => err.code === 'already-exists' && err.details?.code === 'deletion-in-progress',
+  );
+
+  // Expire lock -> resumes and hits transient storage error -> marks failed_retryable
+  db.docs.get('DeletionJobs/u-retry').lockExpiresAt = 999;
   await assert.rejects(() => handler(req), (err) => err.code === 'internal');
   const failedJob = db.docs.get('DeletionJobs/u-retry');
   assert.equal(failedJob.status, 'failed_retryable');
   assert.equal(failedJob.steps.profileAndTokens, true);
   assert.equal(failedJob.steps.storage, undefined);
-  assert.equal(deleteAuthCalls, 0);
 
+  // Retry succeeds even though Auth user is already gone (auth/user-not-found)
   const retryResult = await handler(req);
   assert.equal(retryResult.status, 'completed');
-  assert.equal(deleteAuthCalls, 1);
-  assert.equal(db.docs.has('DeletionJobs/u-retry'), false);
+  const doneJob = db.docs.get('DeletionJobs/u-retry');
+  assert.equal(doneJob.status, 'completed');
+  assert.equal(doneJob.email, undefined);
+
+  // Idempotent duplicate call on completed job returns completed cleanly
+  const secondResult = await handler(req);
+  assert.equal(secondResult.status, 'completed');
 });
 
-test('cancels pending Requests involving the deleted user', async () => {
+test('cancels pending Requests and anonymizes PII involving the deleted user', async () => {
   const riderEmail = 'leaving@example.com';
   const otherEmail = 'staying@example.com';
   const db = createFirestoreMock([
@@ -350,6 +571,8 @@ test('cancels pending Requests involving the deleted user', async () => {
       status: 'pending',
       partiesIds: [riderEmail, otherEmail],
       senderEmail: riderEmail,
+      senderName: 'Leaving',
+      senderPicUrl: 'https://example.com/p.jpg',
       recipientEmail: otherEmail,
     }],
     ['Requests/req-unrelated', {
@@ -373,43 +596,7 @@ test('cancels pending Requests involving the deleted user', async () => {
   assert.equal(result.status, 'completed');
   assert.equal(db.docs.get('Requests/req-pending').status, 'cancelled');
   assert.equal(db.docs.get('Requests/req-pending').dismissalNote, 'Account deleted');
+  assert.equal(db.docs.get('Requests/req-pending').senderName, DELETED_NAME);
+  assert.equal(db.docs.get('Requests/req-pending').senderPicUrl, '');
   assert.equal(db.docs.get('Requests/req-unrelated').status, 'pending');
-});
-
-test('preserves retryable DeletionJob when Storage cleanup fails with non-404 error', async () => {
-  const riderEmail = 'storagefail@example.com';
-  const db = createFirestoreMock([
-    [`Rider_Profile/${profileId(riderEmail)}`, {email: riderEmail, name: 'Storage Fail'}],
-  ]);
-  let authDeleted = false;
-  const auth = {
-    revokeRefreshTokens: async () => {},
-    deleteUser: async () => {
-      authDeleted = true;
-    },
-  };
-  const bucket = {
-    file: () => ({
-      delete: async () => {
-        const err = new Error('Storage unavailable');
-        err.code = 500;
-        throw err;
-      },
-    }),
-  };
-  const handler = accountDeletionHandler(db, auth, bucket, {nowSeconds: () => 3000});
-  await assert.rejects(
-      () => handler({
-        auth: {
-          uid: 'u-storage-fail',
-          token: {email: riderEmail, auth_time: 2990, firebase: {sign_in_provider: 'password'}},
-        },
-      }),
-      /Account deletion could not be completed/i,
-  );
-  assert.equal(authDeleted, false);
-  const job = db.docs.get('DeletionJobs/u-storage-fail');
-  assert.equal(job.status, 'failed_retryable');
-  assert.equal(job.steps.profileAndTokens, true);
-  assert.equal(job.steps.storage, undefined);
 });

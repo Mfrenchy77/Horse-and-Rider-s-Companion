@@ -900,9 +900,11 @@ async function main() {
     assert.equal(studentProfile.exists, true);
     assert.equal(studentProfile.data().email, student.email);
 
-    // DeletionJob is cleaned up on completion and Auth user is deleted after cleanup
+    // DeletionJob records minimal non-PII completion status and Auth user is deleted after cleanup
     const job = await db.collection('DeletionJobs').doc(recipient.uid).get();
-    assert.equal(job.exists, false);
+    assert.equal(job.exists, true);
+    assert.equal(job.data().status, 'completed');
+    assert.equal(job.data().email, undefined);
     await assert.rejects(() => auth.getUser(recipient.uid), /user-not-found|no user record/i);
 
     // Interrupted/failed DeletionJob recovery: seed failed_retryable job and resume
@@ -912,15 +914,15 @@ async function main() {
     await seedRiderProfile(retryUser.email, 'Retry Delete');
     await db.collection('DeletionJobs').doc(retryUser.uid).set({
       uid: retryUser.uid,
-      email: retryUser.email,
       status: 'failed_retryable',
-      steps: {revokeTokens: true, connections: true, requests: true},
+      steps: {connections: true, requests: true},
     });
     const retryRes = await callFunction('requestAccountDeletion', {}, retryUser.idToken);
     assert.equal(retryRes.ok, true, JSON.stringify(retryRes.body));
     assert.equal(retryRes.body.result.status, 'completed');
     const recoveredJob = await db.collection('DeletionJobs').doc(retryUser.uid).get();
-    assert.equal(recoveredJob.exists, false);
+    assert.equal(recoveredJob.exists, true);
+    assert.equal(recoveredJob.data().status, 'completed');
     await assert.rejects(() => auth.getUser(retryUser.uid), /user-not-found|no user record/i);
   });
 

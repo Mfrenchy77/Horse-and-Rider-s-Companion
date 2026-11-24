@@ -13,7 +13,7 @@ const admin = require('firebase-admin');
 try { admin.app(); } catch { admin.initializeApp(); }
 const logger = require('firebase-functions/logger');
 const {connectionHandler} = require('./connections');
-const {accountDeletionHandler} = require('./account_deletion');
+const {accountDeletionHandler, DEFAULT_ADMIN_ACCOUNT_EMAIL} = require('./account_deletion');
 const {submitSuggestionHandler, reviewSuggestionHandler} = require('./suggestions');
 const {
   saveCurriculumDraftHandler,
@@ -34,7 +34,7 @@ exports.requestAccountDeletion = onCall(
         admin.firestore(),
         admin.auth(),
         admin.storage().bucket(),
-        {adminEmail: process.env.ADMIN_ACCOUNT_EMAIL},
+        {adminEmail: process.env.ADMIN_ACCOUNT_EMAIL || DEFAULT_ADMIN_ACCOUNT_EMAIL},
     )(request),
 );
 
