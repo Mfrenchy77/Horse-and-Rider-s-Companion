@@ -564,6 +564,13 @@ async function main() {
     assert.equal((await fsGet('Requests/req-accepted-horse', reregistered.idToken)).status, 403);
     assert.equal((await fsGet('Requests/req-trainer-other', reregistered.idToken)).status, 403);
 
+    // Retired legacy Conversations/Messages deny reads to guest, unrelated user,
+    // surviving former participant, and re-registered user.
+    for (const token of [null, unrelated.idToken, trainer.idToken, reregistered.idToken]) {
+      assert.equal((await fsGet('Conversations/conv-shared', token)).status, 403);
+      assert.equal((await fsGet('Conversations/conv-shared/Messages/m-tr', token)).status, 403);
+    }
+
     // Public active transferred horse remains readable via Public_Horse_Profile
     const pubRes = await fsGet('Public_Horse_Profile/horse-sale', null);
     assert.equal(pubRes.status, 200);

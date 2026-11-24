@@ -423,22 +423,10 @@ service cloud.firestore {
     }
 
     match /Conversations/{conversationId} {
-      allow read: if request.auth != null
-        && (
-          request.auth.token.email in resource.data.partiesIds
-          || verifiedLowerEmail() in resource.data.partiesIds
-        );
-      allow create, update, delete: if false;
+      allow read, write: if false;
 
       match /Messages/{messageId} {
-        allow read: if request.auth != null
-          && (
-            request.auth.token.email in
-              get(/databases/$(database)/documents/Conversations/$(conversationId)).data.partiesIds
-            || verifiedLowerEmail() in
-              get(/databases/$(database)/documents/Conversations/$(conversationId)).data.partiesIds
-          );
-        allow create, update, delete: if false;
+        allow read, write: if false;
       }
     }
 
