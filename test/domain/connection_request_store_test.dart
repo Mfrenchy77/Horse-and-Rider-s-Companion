@@ -8,8 +8,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/TransferHorseDialog/cubit/transfer_horse_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
+import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/notifications/push_notification_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _NoOpPushService implements PushNotificationService {
+  @override
+  Future<void> ensureRegistered(String userEmail) async {}
+}
 
 class _MockMessagesStore extends Mock implements MessagesStore {}
 
@@ -671,5 +678,90 @@ void main() {
         unawaited(compositeCubit.close());
       },
     );
+
+    test(
+      'AppCubit automatically watches Requests on profile load and retries',
+      () async {
+        TestWidgetsFlutterBinding.ensureInitialized();
+        SharedPreferences.setMockInitialValues({'isFirstLaunch': false});
+        await SharedPrefs().init();
+        final reqController = StreamController<List<ConnectionRequest>>();
+        addTearDown(reqController.close);
+        final mockStore = _MockConnectionRequestStore();
+        var watchCalls = 0;
+        when(() => mockStore.watchRequests(userEmail: recipient.email))
+            .thenAnswer((_) {
+          watchCalls++;
+          if (watchCalls == 1) {
+            return Stream<List<ConnectionRequest>>.error(
+              Exception('temporary failure'),
+            );
+          }
+          return reqController.stream;
+        });
+
+        final profileController = StreamController<RiderProfile?>();
+        addTearDown(profileController.close);
+        final authEvents = StreamController<User?>();
+        addTearDown(authEvents.close);
+        when(() => authGateway.user).thenAnswer((_) => authEvents.stream);
+        when(
+          () => riderProfileStore.getRiderProfile(email: recipient.email),
+        ).thenAnswer((_) => profileController.stream);
+
+        final cubit = AppCubit(
+          authenticationRepository: authGateway,
+          skillTreeRepository: skillTreeStore,
+          resourcesRepository: resourcesStore,
+          riderProfileRepository: riderProfileStore,
+          horseProfileRepository: horseProfileStore,
+          connectionRequestRepository: mockStore,
+          pushNotificationService: _NoOpPushService(),
+        );
+        addTearDown(cubit.close);
+
+        authEvents.add(
+          User(
+            id: 'u-recip',
+            email: recipient.email,
+            name: recipient.name,
+            isGuest: false,
+            emailVerified: true,
+          ),
+        );
+        await pumpEventQueue();
+        profileController.add(recipient);
+        await pumpEventQueue();
+
+        expect(watchCalls, 1);
+        expect(cubit.state.conversationsState, ConversationsState.error);
+
+        cubit.retryRequests();
+        expect(watchCalls, 2);
+        reqController.add([
+          ConnectionRequest(
+            id: 'r1',
+            messageId: 'm1',
+            kind: ConnectionRequestKind.student,
+            senderEmail: owner.email,
+            senderName: owner.name,
+            recipientEmail: recipient.email,
+            recipientName: recipient.name,
+            title: 'Student Request',
+            summary: 'Owner wants to join',
+            parties: [owner.name, recipient.name],
+            partiesIds: [owner.email, recipient.email],
+            createdAt: DateTime(2026, 6),
+          ),
+        ]);
+        await pumpEventQueue();
+
+        expect(cubit.state.conversationsState, ConversationsState.loaded);
+        expect(cubit.pendingRequestCount(), 1);
+      },
+    );
   });
 }
+
+class _MockConnectionRequestStore extends Mock
+    implements ConnectionRequestStore {}

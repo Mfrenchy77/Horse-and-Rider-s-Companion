@@ -577,4 +577,129 @@ void main() {
     expect(FcmService.platformName(TargetPlatform.linux), 'other');
     expect(FcmService.platformName(TargetPlatform.macOS), 'other');
   });
+
+  testWidgets(
+    'ConnectionPanel shows pending Requests, error retry, and relationship '
+    'distinction on empty pending state',
+    (tester) async {
+      final harness = await AppTestHarness.create();
+      addTearDown(harness.close);
+      const email = 'coach@example.com';
+      final coach = RiderProfile(
+        id: 'coach',
+        email: email,
+        name: 'Coach',
+        isTrainer: true,
+        students: [BaseListItem(id: 'stud@example.com', name: 'Student One')],
+      );
+      final repo = _Repository();
+      when(
+        () => repo.watch('coach'),
+      ).thenAnswer((_) => Stream.value(const <CoachingConnection>[]));
+      final connections = ConnectionsCubit(repo, harness.cubit);
+      addTearDown(connections.close);
+
+      final incoming = ConnectionRequest(
+        id: 'req_1',
+        messageId: 'm_req_1',
+        kind: ConnectionRequestKind.studentHorse,
+        senderEmail: 'owner@example.com',
+        senderName: 'Owner',
+        recipientEmail: email,
+        recipientName: 'Coach',
+        title: 'Student Horse Request',
+        summary: 'Owner requested Comet as a student horse',
+        parties: const ['Owner', 'Coach'],
+        partiesIds: const ['owner@example.com', email],
+        createdAt: DateTime(2026, 6),
+        horseId: 'comet',
+        horseName: 'Comet',
+      );
+      final outgoing = ConnectionRequest(
+        id: 'req_2',
+        messageId: 'm_req_2',
+        kind: ConnectionRequestKind.student,
+        senderEmail: email,
+        senderName: 'Coach',
+        recipientEmail: 'new@example.com',
+        recipientName: 'New Rider',
+        title: 'Student Request',
+        summary: 'Coach invited New Rider',
+        parties: const ['Coach', 'New Rider'],
+        partiesIds: const [email, 'new@example.com'],
+        createdAt: DateTime(2026, 6),
+      );
+
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          isGuest: false,
+          usersProfile: coach,
+          user: const User(
+            id: 'coach',
+            email: email,
+            name: 'Coach',
+            isGuest: false,
+          ),
+          connectionRequests: [incoming, outgoing],
+          conversationsState: ConversationsState.loaded,
+        ),
+      );
+
+      await tester.pumpWidget(
+        RepositoryProvider<ConnectionRepository>.value(
+          value: repo,
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: harness.cubit),
+              BlocProvider.value(value: connections),
+            ],
+            child: MaterialApp(
+              home: Scaffold(body: ConnectionPanel(rider: coach)),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connections and requests (1 new)'), findsOneWidget);
+      expect(
+        find.text('Owner requested Comet as a student horse'),
+        findsOneWidget,
+      );
+      expect(find.text('Coach invited New Rider'), findsOneWidget);
+      expect(find.text('Awaiting response'), findsOneWidget);
+      expect(find.text('Cancel request'), findsOneWidget);
+
+      // Error state renders Retry
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          connectionRequests: const [],
+          conversationsState: ConversationsState.error,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Requests could not be loaded.'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+
+      // Empty loaded state with existing profile relationships distinguishes
+      // accepted profile lists from pending requests.
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
+          connectionRequests: const [],
+          conversationsState: ConversationsState.loaded,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'No pending requests. Existing students, instructors, '
+          'and student horses appear in your profile lists.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 }

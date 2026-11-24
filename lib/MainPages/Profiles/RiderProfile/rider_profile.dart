@@ -12,6 +12,7 @@ import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.da
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/primary_rider_view.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_drawer.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_list_of_profiles.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/rider_profile_overflow_menu.dart';
@@ -161,6 +162,7 @@ class _RiderProfileViewState extends State<RiderProfileView>
                 ),
                 child: const ProfileSearchButton(key: Key('RiderSearchButton')),
               ),
+              if (isOwnProfile) const RequestsBadgeButton(),
               if (isOwnProfile)
                 RiderProfileOverFlowMenu(
                   key: const Key('RiderProfileOverFlowMenu'),

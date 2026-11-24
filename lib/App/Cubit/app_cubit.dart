@@ -73,6 +73,7 @@ class AppCubit extends Cubit<AppState> {
   StreamSubscription<List<ConnectionRequest>>? _conversationsStream;
   StreamSubscription<RiderProfile?>? _usersProfileSubscription;
   StreamSubscription<HorseProfile?>? _horseProfileSubscription;
+  String? _requestsSubscriptionEmail;
 
   Timer? _emailVerificationTimer;
 
@@ -127,6 +128,7 @@ class AppCubit extends Cubit<AppState> {
     unawaited(_horseProfileSubscription?.cancel());
     _usersProfileSubscription = null;
     _conversationsStream = null;
+    _requestsSubscriptionEmail = null;
     _horseProfileSubscription = null;
     emit(
       const AppState.unauthenticated().copyWith(
@@ -257,6 +259,9 @@ class AppCubit extends Cubit<AppState> {
                 pageStatus: AppPageStatus.loaded,
               ),
             );
+            if (profile != null) {
+              getConversations();
+            }
           });
     }
   }
@@ -2971,15 +2976,28 @@ class AppCubit extends Cubit<AppState> {
     );
   }
 
-  /// Loads the connection/transfer requests for the user
+  /// Loads the connection/transfer requests for the user.
   void getConversations() {
-    if (state.connectionRequests == null && _conversationsStream == null) {
-      emit(state.copyWith(conversationsState: ConversationsState.loading));
-      debugPrint('getConversations');
-      if (state.usersProfile != null) {
-        _conversationsStream = _connectionRequestRepository
-            .watchRequests(userEmail: state.usersProfile!.email)
-            .listen((requestsList) {
+    final profile = state.usersProfile;
+    final email = profile?.email.trim().toLowerCase() ?? '';
+    if (email.isEmpty) {
+      debugPrint('User Profile is null');
+      return;
+    }
+    if (_conversationsStream != null && _requestsSubscriptionEmail == email) {
+      debugPrint('Conversations already retrieved');
+      return;
+    }
+    unawaited(_conversationsStream?.cancel());
+    _conversationsStream = null;
+    _requestsSubscriptionEmail = email;
+    emit(state.copyWith(conversationsState: ConversationsState.loading));
+    debugPrint('getConversations');
+    try {
+      _conversationsStream = _connectionRequestRepository
+          .watchRequests(userEmail: profile!.email)
+          .listen(
+            (requestsList) {
               final requests = requestsList.toList()
                 ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
               emit(
@@ -2988,13 +3006,30 @@ class AppCubit extends Cubit<AppState> {
                   conversationsState: ConversationsState.loaded,
                 ),
               );
-            });
-      } else {
-        debugPrint('User Profile is null');
-      }
-    } else {
-      debugPrint('Conversations already retrieved');
+            },
+            onError: (Object error) {
+              debugPrint('Requests stream error: $error');
+              _conversationsStream = null;
+              _requestsSubscriptionEmail = null;
+              emit(
+                state.copyWith(conversationsState: ConversationsState.error),
+              );
+            },
+          );
+    } catch (error) {
+      debugPrint('Failed to watch requests: $error');
+      _conversationsStream = null;
+      _requestsSubscriptionEmail = null;
+      emit(state.copyWith(conversationsState: ConversationsState.error));
     }
+  }
+
+  /// Retries loading the user's connection and transfer requests stream.
+  void retryRequests() {
+    unawaited(_conversationsStream?.cancel());
+    _conversationsStream = null;
+    _requestsSubscriptionEmail = null;
+    getConversations();
   }
 
   /// Reissues a legacy message as a connection requiring fresh consent.
@@ -3266,6 +3301,30 @@ class AppCubit extends Cubit<AppState> {
     ];
   }
 
+  /// Outgoing pending connection requests sent by the current user.
+  List<ConnectionRequest> outgoingConnectionRequests() {
+    final requests = state.connectionRequests;
+    final myEmail = state.usersProfile?.email.trim().toLowerCase();
+    if (requests == null || myEmail == null || myEmail.isEmpty) {
+      return const <ConnectionRequest>[];
+    }
+    return requests
+        .where(
+          (r) =>
+              !r.isAccepted &&
+              r.status == 'pending' &&
+              r.senderEmail.trim().toLowerCase() == myEmail,
+        )
+        .toList();
+  }
+
+  /// All pending connection requests involving the current user
+  /// (incoming first, then outgoing).
+  List<ConnectionRequest> allPendingConnectionRequests() => [
+    ...pendingConnectionRequests(),
+    ...outgoingConnectionRequests(),
+  ];
+
   /// Pending request conversations derived from recentMessage only.
   List<Conversation> pendingRequestConversations() {
     final cons = state.conversations ?? const <Conversation>[];
@@ -3516,6 +3575,7 @@ class AppCubit extends Cubit<AppState> {
     _emailVerificationTimer?.cancel();
     _userSubscription.cancel();
     _conversationsStream?.cancel();
+    _requestsSubscriptionEmail = null;
     _resourcesStream?.cancel();
     _skillsSubscription?.cancel();
     _horseProfileSubscription?.cancel();

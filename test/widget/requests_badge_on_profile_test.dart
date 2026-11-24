@@ -131,5 +131,75 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const Key('RequestsBadgeButton')), findsNothing);
     });
+
+    testWidgets(
+      'shows RequestsBadgeButton on own profile for incoming '
+      'ConnectionRequests and exposes Requests tile in drawer',
+      (tester) async {
+        final cubit = AppCubit(
+          messagesRepository: messagesRepo,
+          skillTreeRepository: skillRepo,
+          resourcesRepository: resourcesRepo,
+          riderProfileRepository: riderRepo,
+          horseProfileRepository: horseRepo,
+          authenticationRepository: authRepo,
+        );
+        addTearDown(cubit.close);
+
+        final me = RiderProfile(
+          id: 'me',
+          name: 'Me',
+          email: 'me@example.com',
+        );
+        final incoming = ConnectionRequest(
+          id: 'c_1_m_1',
+          messageId: 'm_1',
+          kind: ConnectionRequestKind.studentHorse,
+          senderEmail: 'coach@example.com',
+          senderName: 'Coach',
+          recipientEmail: 'me@example.com',
+          recipientName: 'Me',
+          title: 'Student Horse Request',
+          summary: 'Coach requested Comet as a student horse',
+          parties: const ['Coach', 'Me'],
+          partiesIds: const ['coach@example.com', 'me@example.com'],
+          createdAt: DateTime(2026, 5),
+        );
+        cubit.emit(
+          cubit.state.copyWith(
+            isGuest: false,
+            usersProfile: me,
+            connectionRequests: [incoming],
+          ),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: BlocProvider.value(
+              value: cubit,
+              child: RiderProfileView(profile: me),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byKey(const Key('RequestsBadgeButton')), findsOneWidget);
+
+        // Open drawer and confirm Requests tile opens the Requests sheet.
+        await tester.tap(find.byKey(const Key('HamburgerIcon')));
+        await tester.pumpAndSettle();
+        final drawerTile = find.byKey(const Key('drawerRequestsTile'));
+        expect(drawerTile, findsOneWidget);
+        expect(find.text('Requests'), findsWidgets);
+
+        await tester.tap(drawerTile);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Coach requested Comet as a student horse'),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('Accept_m_1')), findsOneWidget);
+        expect(find.byKey(const Key('DenyRequestButton')), findsOneWidget);
+      },
+    );
   });
 }

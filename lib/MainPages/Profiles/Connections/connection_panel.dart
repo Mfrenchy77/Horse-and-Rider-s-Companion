@@ -33,6 +33,8 @@ class ConnectionPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isGuest = context.select((AppCubit c) => c.state.isGuest);
     final profile = context.select((AppCubit c) => c.state.usersProfile);
+    final appState = context.watch<AppCubit>().state;
+    final appCubit = context.read<AppCubit>();
     final cubit = context.watch<ConnectionsCubit?>();
     final state = cubit?.state;
     if (isGuest || profile == null || state == null) {
@@ -65,11 +67,32 @@ class ConnectionPanel extends StatelessWidget {
             return link.kind == 'rider' &&
                 (link.learner == viewed || link.coach == viewed);
           }).toList();
-    final pending = links
+    final linkIds = {for (final link in links) link.id};
+    final pendingRequests = ownProfile
+        ? appCubit.allPendingConnectionRequests().where((req) {
+            final cid = req.connectionId;
+            return cid == null || !linkIds.contains(cid);
+          }).toList()
+        : const <ConnectionRequest>[];
+    final pendingConnections = links
         .where((link) => link.status == 'pending' && link.recipient == email)
         .length;
+    final incomingRequests = ownProfile
+        ? pendingRequests
+              .where((req) => req.senderEmail.toLowerCase() != email)
+              .length
+        : 0;
+    final pending = pendingConnections + incomingRequests;
+    final requestsError =
+        ownProfile && appState.conversationsState == ConversationsState.error;
+    final hasProfileRelationships =
+        ownProfile &&
+        ((rider?.students?.isNotEmpty ?? false) ||
+            (rider?.instructors?.isNotEmpty ?? false) ||
+            (rider?.studentHorses?.isNotEmpty ?? false));
 
     final saving = state.actionInProgress;
+    final requestActionBusy = appState.acceptStatus == AcceptStatus.loading;
 
     final actions = <Widget>[
       if (horse != null &&
@@ -147,15 +170,43 @@ class ConnectionPanel extends StatelessWidget {
                 ),
               ],
             ),
-          if (ownProfile && !state.loading && !state.error && links.isEmpty)
+          if (requestsError)
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text('Requests could not be loaded.'),
+                TextButton(
+                  onPressed: appCubit.retryRequests,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          if (ownProfile &&
+              !state.loading &&
+              !state.error &&
+              !requestsError &&
+              links.isEmpty &&
+              pendingRequests.isEmpty)
             Text(
-              'No active connections or pending requests.',
+              hasProfileRelationships
+                  ? 'No pending requests. Existing students, instructors, '
+                        'and student horses appear in your profile lists.'
+                  : 'No active connections or pending requests.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTokens.secondaryTextColor(context),
               ),
             ),
           for (final link in links)
             _connection(context, link, email, saving, cubit!, horse),
+          for (final req in pendingRequests)
+            _pendingRequest(
+              context,
+              req,
+              email,
+              profile.name,
+              requestActionBusy,
+              appCubit,
+            ),
           if (state.actionFeedback != null)
             Semantics(liveRegion: true, child: Text(state.actionFeedback!)),
         ],
@@ -271,6 +322,74 @@ class ConnectionPanel extends StatelessWidget {
               TextButton(
                 onPressed: saving ? null : () => cubit.change(link, 'revoke'),
                 child: const Text('End connection'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _pendingRequest(
+    BuildContext context,
+    ConnectionRequest req,
+    String email,
+    String ownName,
+    bool busy,
+    AppCubit appCubit,
+  ) {
+    final incoming = req.senderEmail.toLowerCase() != email;
+    final otherNames = List<String>.from(req.parties)..remove(ownName);
+    final other = otherNames.isNotEmpty
+        ? otherNames.join(', ')
+        : (incoming ? req.senderName : req.recipientName);
+    final roleLabel = switch (req.kind) {
+      ConnectionRequestKind.transferHorse =>
+        '${req.horseName ?? 'Horse'} ownership transfer',
+      ConnectionRequestKind.studentHorse =>
+        '${req.horseName ?? 'Horse'} student horse request',
+      ConnectionRequestKind.instructor => 'Instructor request',
+      ConnectionRequestKind.student => 'Student request',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 4,
+      children: [
+        const Divider(),
+        Text(
+          other.isNotEmpty ? '$other · $roleLabel' : roleLabel,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        if (req.summary.isNotEmpty) Text(req.summary),
+        Text(
+          incoming ? 'Requested by ${req.senderName}' : 'Awaiting response',
+        ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            if (incoming) ...[
+              FilledButton(
+                onPressed: busy
+                    ? null
+                    : () => appCubit.acceptConnectionRequest(req),
+                child: Text(
+                  req.kind == ConnectionRequestKind.transferHorse
+                      ? 'Accept transfer'
+                      : 'Accept',
+                ),
+              ),
+              TextButton(
+                onPressed: busy
+                    ? null
+                    : () => appCubit.denyConnectionRequest(req),
+                child: const Text('Decline'),
+              ),
+            ] else
+              TextButton(
+                onPressed: busy
+                    ? null
+                    : () => appCubit.denyConnectionRequest(req),
+                child: const Text('Cancel request'),
               ),
           ],
         ),

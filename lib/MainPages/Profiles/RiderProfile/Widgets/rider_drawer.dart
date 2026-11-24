@@ -15,6 +15,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/ProfileSearch
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/profile_list.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Widgets/requests_badge_button.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
@@ -152,6 +153,37 @@ class UserProfileDrawer extends StatelessWidget {
                     leading: const Icon(HorseAndRiderIcons.riderLogIcon),
                     title: const Text('Log Book'),
                     onTap: () => RiderLogbookPage.open(context),
+                  ),
+
+                  // Requests List Tile
+                  ListTile(
+                    key: const Key('drawerRequestsTile'),
+                    leading: const Icon(Icons.notifications_outlined),
+                    title: const Text('Requests'),
+                    trailing: cubit.pendingRequestCount() > 0
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${cubit.pendingRequestCount()}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        : null,
+                    onTap: () {
+                      onClose?.call();
+                      Scaffold.maybeOf(context)?.closeDrawer();
+                      RequestsBadgeButton.showRequestsSheet(context);
+                    },
                   ),
 
                   //  saved profile list
