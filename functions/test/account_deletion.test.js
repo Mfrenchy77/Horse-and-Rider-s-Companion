@@ -617,24 +617,78 @@ test('rejects duplicate in-progress requests, handles missing Auth user on retry
   assert.equal(secondResult.status, 'completed');
 });
 
-test('cancels pending Requests and anonymizes PII involving the deleted user', async () => {
-  const riderEmail = 'leaving@example.com';
-  const otherEmail = 'staying@example.com';
+test('cancels pending Requests, scrubs PII, preserves surviving access, and deletes orphaned Requests', async () => {
+  const riderEmail = 'Al@example.com';
+  const riderLower = 'al@example.com';
+  const otherEmail = 'alice@example.com';
+  const thirdEmail = 'third@example.com';
   const db = createFirestoreMock([
-    [`Rider_Profile/${profileId(riderEmail)}`, {email: riderEmail, name: 'Leaving'}],
-    ['Requests/req-pending', {
+    [`Rider_Profile/${profileId(riderLower)}`, {email: riderLower, name: 'Al'}],
+    ['Requests/req-pending-out', {
+      id: 'req-pending-out',
+      kind: 'instructor',
       status: 'pending',
-      partiesIds: [riderEmail, otherEmail],
-      senderEmail: riderEmail,
-      senderName: 'Leaving',
+      isAccepted: false,
+      partiesIds: [riderLower, otherEmail],
+      parties: ['Al', 'Alice'],
+      senderEmail: riderLower,
+      senderName: 'Al',
       senderPicUrl: 'https://example.com/p.jpg',
       recipientEmail: otherEmail,
+      recipientName: 'Alice',
+      title: 'Instructor Request from Al',
+      summary: 'Al (al@example.com) has requested Alice to be their Instructor',
+    }],
+    ['Requests/req-accepted-horse', {
+      id: 'req-accepted-horse',
+      kind: 'studentHorse',
+      status: 'accepted',
+      isAccepted: true,
+      partiesIds: [otherEmail, riderLower],
+      parties: ['Alice', 'Al'],
+      senderEmail: otherEmail,
+      senderName: 'Alice',
+      senderPicUrl: 'https://example.com/alice.jpg',
+      recipientEmail: riderLower,
+      recipientName: 'Al',
+      horseId: 'horse-1',
+      horseName: 'Comet',
+      horseOwnerId: riderEmail,
+      horseOwnerName: 'Al',
+      title: 'Student Horse Request',
+      summary: 'Alice requested Comet owned by Al',
+    }],
+    ['Requests/req-declined', {
+      id: 'req-declined',
+      kind: 'student',
+      status: 'declined',
+      isAccepted: false,
+      partiesIds: [otherEmail, riderLower],
+      parties: ['Alice', 'Al'],
+      senderEmail: otherEmail,
+      senderName: 'Alice',
+      recipientEmail: riderLower,
+      recipientName: 'Al',
+      dismissalNote: 'Declined by Al',
+    }],
+    ['Requests/req-both-deleted', {
+      id: 'req-both-deleted',
+      kind: 'instructor',
+      status: 'cancelled',
+      partiesIds: [riderLower, 'deleted:u-old'],
+      parties: ['Al', DELETED_NAME],
+      senderEmail: riderLower,
+      recipientEmail: 'deleted:u-old',
     }],
     ['Requests/req-unrelated', {
+      id: 'req-unrelated',
       status: 'pending',
-      partiesIds: ['a@example.com', otherEmail],
-      senderEmail: 'a@example.com',
+      partiesIds: [thirdEmail, otherEmail],
+      parties: ['Third', 'Alice'],
+      senderEmail: thirdEmail,
+      senderName: 'Third',
       recipientEmail: otherEmail,
+      recipientName: 'Alice',
     }],
   ]);
   const auth = {
@@ -645,13 +699,58 @@ test('cancels pending Requests and anonymizes PII involving the deleted user', a
   const result = await handler({
     auth: {
       uid: 'u-leaving',
-      token: {email: riderEmail, auth_time: 1990, firebase: {sign_in_provider: 'password'}},
+      token: {email: riderLower, name: 'Al', auth_time: 1990, firebase: {sign_in_provider: 'password'}},
     },
   });
   assert.equal(result.status, 'completed');
-  assert.equal(db.docs.get('Requests/req-pending').status, 'cancelled');
-  assert.equal(db.docs.get('Requests/req-pending').dismissalNote, 'Account deleted');
-  assert.equal(db.docs.get('Requests/req-pending').senderName, DELETED_NAME);
-  assert.equal(db.docs.get('Requests/req-pending').senderPicUrl, '');
-  assert.equal(db.docs.get('Requests/req-unrelated').status, 'pending');
+
+  const pendingOut = db.docs.get('Requests/req-pending-out');
+  assert.equal(pendingOut.status, 'cancelled');
+  assert.equal(pendingOut.isAccepted, false);
+  assert.equal(pendingOut.dismissalNote, 'Account deleted');
+  assert.deepEqual(pendingOut.partiesIds, ['deleted:u-leaving', otherEmail]);
+  assert.deepEqual(pendingOut.parties, [DELETED_NAME, 'Alice']);
+  assert.equal(pendingOut.senderEmail, 'deleted:u-leaving');
+  assert.equal(pendingOut.senderName, DELETED_NAME);
+  assert.equal(pendingOut.senderPicUrl, '');
+  assert.equal(pendingOut.recipientEmail, otherEmail);
+  assert.equal(pendingOut.recipientName, 'Alice');
+  assert.equal(pendingOut.title, 'Instructor Request from Deleted User');
+  assert.equal(
+      pendingOut.summary,
+      'Deleted User (Deleted User) has requested Alice to be their Instructor',
+  );
+
+  const acceptedHorse = db.docs.get('Requests/req-accepted-horse');
+  assert.equal(acceptedHorse.status, 'accepted');
+  assert.equal(acceptedHorse.isAccepted, true);
+  assert.deepEqual(acceptedHorse.partiesIds, [otherEmail, 'deleted:u-leaving']);
+  assert.deepEqual(acceptedHorse.parties, ['Alice', DELETED_NAME]);
+  assert.equal(acceptedHorse.senderEmail, otherEmail);
+  assert.equal(acceptedHorse.senderName, 'Alice');
+  assert.equal(acceptedHorse.recipientEmail, 'deleted:u-leaving');
+  assert.equal(acceptedHorse.recipientName, DELETED_NAME);
+  assert.equal(acceptedHorse.horseOwnerId, 'deleted:u-leaving');
+  assert.equal(acceptedHorse.horseOwnerName, DELETED_NAME);
+  assert.equal(acceptedHorse.summary, 'Alice requested Comet owned by Deleted User');
+
+  const declined = db.docs.get('Requests/req-declined');
+  assert.equal(declined.status, 'declined');
+  assert.equal(declined.dismissalNote, 'Declined by Deleted User');
+  assert.equal(declined.recipientEmail, 'deleted:u-leaving');
+
+  assert.equal(db.docs.has('Requests/req-both-deleted'), false);
+
+  const unrelated = db.docs.get('Requests/req-unrelated');
+  assert.equal(unrelated.status, 'pending');
+  assert.deepEqual(unrelated.partiesIds, [thirdEmail, otherEmail]);
+
+  // Idempotent duplicate / retry call preserves final scrubbed state cleanly.
+  const retryResult = await handler({
+    auth: {
+      uid: 'u-leaving',
+      token: {email: riderLower, name: 'Al', auth_time: 1995, firebase: {sign_in_provider: 'password'}},
+    },
+  });
+  assert.equal(retryResult.status, 'completed');
 });

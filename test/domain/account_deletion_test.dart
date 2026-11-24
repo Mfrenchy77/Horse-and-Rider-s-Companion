@@ -523,4 +523,38 @@ void main() {
     expect(find.text('Owned horses preserved'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  test(
+    'ConnectionRequest parses scrubbed Requests after account deletion',
+    () {
+      final request = ConnectionRequest.fromMap(const {
+        'id': 'conv_1_m1',
+        'messageId': 'm1',
+        'kind': 'studentHorse',
+        'senderEmail': 'trainer@example.com',
+        'senderName': 'Coach Taylor',
+        'recipientEmail': 'deleted:u-1',
+        'recipientName': 'Deleted User',
+        'parties': ['Coach Taylor', 'Deleted User'],
+        'partiesIds': ['trainer@example.com', 'deleted:u-1'],
+        'title': 'Student Horse Request',
+        'summary': 'Coach Taylor requested to add Shadow.',
+        'status': 'cancelled',
+        'isAccepted': false,
+        'horseId': 'horse-priv',
+        'horseName': 'Shadow',
+        'horseOwnerId': 'deleted:u-1',
+        'horseOwnerName': 'Deleted User',
+        'createdAt': '2026-11-23T10:00:00.000Z',
+      });
+
+      expect(request.status, 'cancelled');
+      expect(request.isAccepted, isFalse);
+      expect(request.partiesIds, ['trainer@example.com', 'deleted:u-1']);
+      expect(request.recipientEmail, 'deleted:u-1');
+      expect(request.recipientName, 'Deleted User');
+      expect(request.horseOwnerId, 'deleted:u-1');
+      expect(request.horseOwnerName, 'Deleted User');
+    },
+  );
 }

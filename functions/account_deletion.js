@@ -27,6 +27,27 @@ function deletedMarker(uid) {
   return `deleted:${uid}`;
 }
 
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function redactTextForDepartingUser(text, emailSet, namesToRedact) {
+  if (typeof text !== 'string' || !text) return text;
+  let result = text;
+  for (const addr of emailSet) {
+    if (!addr) continue;
+    result = result.replace(new RegExp(escapeRegExp(addr), 'gi'), DELETED_NAME);
+  }
+  const names = Array.isArray(namesToRedact) ? namesToRedact : [namesToRedact];
+  for (const rawName of names) {
+    const trimmed = typeof rawName === 'string' ? rawName.trim() : '';
+    if (!trimmed) continue;
+    const pattern = new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(trimmed)}(?![A-Za-z0-9])`, 'gi');
+    result = result.replace(pattern, DELETED_NAME);
+  }
+  return result;
+}
+
 function withoutParty(list, emailSet) {
   if (!Array.isArray(list)) return [];
   return list.filter((item) => {
@@ -430,28 +451,122 @@ async function cleanupConnections(db, uid, email, emailSet, ownedHorseIds = [], 
   }
 }
 
-async function cleanupRequests(db, email, nowSeconds) {
-  const normalized = emailKey(email);
-  const snap = await db.collection('Requests')
-      .where('partiesIds', 'array-contains', normalized)
-      .get();
-  for (const doc of snap.docs) {
+async function cleanupRequests(db, uid, email, emailSet, departingName, nowSeconds) {
+  const marker = deletedMarker(uid);
+  const candidates = new Set([email, emailKey(email)].filter(Boolean));
+  const queries = [];
+  for (const candidate of candidates) {
+    queries.push(db.collection('Requests').where('partiesIds', 'array-contains', candidate).get());
+    queries.push(db.collection('Requests').where('senderEmail', '==', candidate).get());
+    queries.push(db.collection('Requests').where('recipientEmail', '==', candidate).get());
+    queries.push(db.collection('Requests').where('horseOwnerId', '==', candidate).get());
+  }
+  queries.push(db.collection('Requests').where('partiesIds', 'array-contains', marker).get());
+
+  const snaps = await Promise.all(queries);
+  const matchedDocs = new Map();
+  for (const snap of snaps) {
+    for (const doc of snap.docs) {
+      if (!matchedDocs.has(doc.id)) {
+        matchedDocs.set(doc.id, doc);
+      }
+    }
+  }
+
+  for (const doc of matchedDocs.values()) {
     const data = doc.data() || {};
+    const partiesIds = Array.isArray(data.partiesIds) ? data.partiesIds : [];
+    const candidateParticipants = new Set(
+        [...partiesIds, data.senderEmail, data.recipientEmail]
+            .filter((id) => typeof id === 'string' && id.trim()),
+    );
+    const survivingIds = [...candidateParticipants].filter((id) => {
+      const key = emailKey(id);
+      return key && !emailSet.has(key) && !key.startsWith('deleted:');
+    });
+
+    if (survivingIds.length === 0) {
+      await doc.ref.delete();
+      continue;
+    }
+
     const patch = {};
-    if (data.status === 'pending') {
+    if ((data.status || 'pending') === 'pending') {
       patch.status = 'cancelled';
+      patch.isAccepted = false;
       patch.dismissalNote = 'Account deleted';
       patch.updatedAt = nowSeconds();
     }
-    if (emailKey(data.senderEmail || '') === normalized &&
-        (data.senderName !== DELETED_NAME || data.senderPicUrl !== '')) {
-      patch.senderName = DELETED_NAME;
-      patch.senderPicUrl = '';
+
+    const senderIsDeparting = emailSet.has(emailKey(data.senderEmail || '')) || data.senderEmail === marker;
+    const recipientIsDeparting = emailSet.has(emailKey(data.recipientEmail || '')) || data.recipientEmail === marker;
+    const ownerIsDeparting = emailSet.has(emailKey(data.horseOwnerId || '')) || data.horseOwnerId === marker;
+    const namesToRedact = Array.from(new Set([
+      departingName,
+      senderIsDeparting ? data.senderName : '',
+      recipientIsDeparting ? data.recipientName : '',
+      ownerIsDeparting ? data.horseOwnerName : '',
+    ].map((n) => (typeof n === 'string' ? n.trim() : ''))
+        .filter((n) => n && emailKey(n) !== emailKey(DELETED_NAME))));
+
+    const removedIndices = new Set();
+    let partiesIdsChanged = false;
+    const nextPartiesIds = partiesIds.map((id, index) => {
+      if (emailSet.has(emailKey(id))) {
+        removedIndices.add(index);
+        partiesIdsChanged = true;
+        return marker;
+      }
+      return id;
+    });
+    if (partiesIdsChanged) {
+      patch.partiesIds = nextPartiesIds;
     }
-    if (emailKey(data.recipientEmail || '') === normalized &&
-        data.recipientName !== DELETED_NAME) {
-      patch.recipientName = DELETED_NAME;
+
+    if (Array.isArray(data.parties)) {
+      const redactNameKeys = new Set(namesToRedact.map(emailKey));
+      let partiesChanged = false;
+      const nextParties = data.parties.map((entry, index) => {
+        if (
+          removedIndices.has(index) ||
+          (typeof entry === 'string' &&
+            (emailSet.has(emailKey(entry)) || redactNameKeys.has(emailKey(entry))))
+        ) {
+          if (entry !== DELETED_NAME) partiesChanged = true;
+          return DELETED_NAME;
+        }
+        return entry;
+      });
+      if (partiesChanged) {
+        patch.parties = nextParties;
+      }
     }
+
+    if (senderIsDeparting) {
+      if (data.senderEmail !== marker) patch.senderEmail = marker;
+      if (data.senderName !== DELETED_NAME) patch.senderName = DELETED_NAME;
+      if (data.senderPicUrl !== '') patch.senderPicUrl = '';
+    }
+    if (recipientIsDeparting) {
+      if (data.recipientEmail !== marker) patch.recipientEmail = marker;
+      if (data.recipientName !== DELETED_NAME) patch.recipientName = DELETED_NAME;
+    }
+    if (ownerIsDeparting) {
+      if (data.horseOwnerId !== marker) patch.horseOwnerId = marker;
+      if ('horseOwnerName' in data && data.horseOwnerName !== DELETED_NAME) {
+        patch.horseOwnerName = DELETED_NAME;
+      }
+    }
+
+    for (const field of ['summary', 'title', 'dismissalNote']) {
+      if (field === 'dismissalNote' && patch.dismissalNote !== undefined) continue;
+      if (typeof data[field] !== 'string' || !data[field]) continue;
+      const redacted = redactTextForDepartingUser(data[field], emailSet, namesToRedact);
+      if (redacted !== data[field]) {
+        patch[field] = redacted;
+      }
+    }
+
     if (Object.keys(patch).length > 0) {
       await doc.ref.update(patch);
     }
@@ -956,7 +1071,7 @@ function accountDeletionHandler(db, auth, bucket = null, options = {}) {
       await runStep('connections', () =>
         cleanupConnections(db, uid, email, emailSet, transferredHorseIds, relatedEmails),
       );
-      await runStep('requests', () => cleanupRequests(db, email, nowSeconds));
+      await runStep('requests', () => cleanupRequests(db, uid, email, emailSet, departingName, nowSeconds));
       await runStep('journal', () => cleanupJournalEntries(db, uid));
       await runStep('legacyMessaging', () =>
         cleanupLegacyMessaging(db, uid, email, emailSet, departingName),

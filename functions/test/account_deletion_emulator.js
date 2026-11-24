@@ -87,6 +87,30 @@ async function fsGet(docPath, idToken = null) {
   return {status: res.status, ok: res.ok, body};
 }
 
+async function fsRunQuery(collectionId, field, op, value, idToken = null) {
+  const headers = {'Content-Type': 'application/json'};
+  if (idToken) headers.Authorization = `Bearer ${idToken}`;
+  const url = `http://${FIRESTORE_HOST}/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{collectionId}],
+        where: {
+          fieldFilter: {
+            field: {fieldPath: field},
+            op,
+            value: {stringValue: value},
+          },
+        },
+      },
+    }),
+  });
+  const body = await res.json();
+  return {status: res.status, ok: res.ok, body};
+}
+
 async function runTest(name, fn) {
   await fn();
   console.log(`PASS: ${name}`);
@@ -104,6 +128,7 @@ async function main() {
   });
   const departing = await createAndSignIn('departing@example.com', {displayName: 'Departing Rider'});
   const trainer = await createAndSignIn('trainer@example.com', {displayName: 'Coach Taylor'});
+  const otherActive = await createAndSignIn('active-student@example.com', {displayName: 'Active Student'});
   const unrelated = await createAndSignIn('stranger@example.com', {displayName: 'Unrelated User'});
 
   await db.collection('Rider_Profile').doc(profileId(adminUser.email)).set({
@@ -120,9 +145,21 @@ async function main() {
     email: trainer.email,
     ownerUid: trainer.uid,
     name: 'Coach Taylor',
-    students: [{id: departing.email, name: 'Departing Rider'}],
+    students: [
+      {id: departing.email, name: 'Departing Rider'},
+      {id: otherActive.email, name: 'Active Student'},
+    ],
     studentHorses: [{id: 'horse-priv', name: 'Shadow'}, {id: 'horse-sale', name: 'Comet'}],
     instructors: [],
+  });
+
+  await db.collection('Rider_Profile').doc(profileId(otherActive.email)).set({
+    id: profileId(otherActive.email),
+    email: otherActive.email,
+    ownerUid: otherActive.uid,
+    name: 'Active Student',
+    instructors: [{id: trainer.email, name: 'Coach Taylor'}],
+    instructorUids: [trainer.uid],
   });
 
   await db.collection('Rider_Profile').doc(profileId(departing.email)).set({
@@ -222,15 +259,77 @@ async function main() {
     coachEmail: trainer.email,
     coachUid: trainer.uid,
   });
+  await db.collection('CoachingConnections').doc('conn-trainer-other').set({
+    kind: 'rider',
+    status: 'accepted',
+    participantUids: [otherActive.uid, trainer.uid],
+    learnerEmail: otherActive.email,
+    learnerUid: otherActive.uid,
+    coachEmail: trainer.email,
+    coachUid: trainer.uid,
+  });
   await db.collection('Requests').doc('req-pending').set({
     id: 'req-pending',
+    messageId: 'm-req-pending',
     kind: 'instructor',
     senderEmail: departing.email,
     senderName: 'Departing Rider',
+    senderPicUrl: 'https://example.com/rider.jpg',
     recipientEmail: trainer.email,
     recipientName: 'Coach Taylor',
+    parties: ['Departing Rider', 'Coach Taylor'],
     partiesIds: [departing.email, trainer.email],
+    title: 'Instructor Request from Departing Rider',
+    summary: 'Departing Rider (departing@example.com) has requested Coach Taylor to be their Instructor',
     status: 'pending',
+    isAccepted: false,
+  });
+  await db.collection('Requests').doc('req-accepted-horse').set({
+    id: 'req-accepted-horse',
+    messageId: 'm-req-accepted',
+    kind: 'studentHorse',
+    senderEmail: trainer.email,
+    senderName: 'Coach Taylor',
+    recipientEmail: departing.email,
+    recipientName: 'Departing Rider',
+    parties: ['Coach Taylor', 'Departing Rider'],
+    partiesIds: [trainer.email, departing.email],
+    horseId: 'horse-priv',
+    horseName: 'Shadow',
+    horseOwnerId: departing.email,
+    horseOwnerName: 'Departing Rider',
+    title: 'Student Horse Request',
+    summary: 'Coach Taylor requested Shadow owned by Departing Rider',
+    status: 'accepted',
+    isAccepted: true,
+  });
+  await db.collection('Requests').doc('req-both-deleted').set({
+    id: 'req-both-deleted',
+    messageId: 'm-req-old',
+    kind: 'student',
+    senderEmail: 'deleted:u-old',
+    senderName: 'Deleted User',
+    recipientEmail: departing.email,
+    recipientName: 'Departing Rider',
+    parties: ['Deleted User', 'Departing Rider'],
+    partiesIds: ['deleted:u-old', departing.email],
+    status: 'cancelled',
+    isAccepted: false,
+  });
+  await db.collection('Requests').doc('req-trainer-other').set({
+    id: 'req-trainer-other',
+    messageId: 'm-req-other',
+    kind: 'instructor',
+    senderEmail: otherActive.email,
+    senderName: 'Active Student',
+    recipientEmail: trainer.email,
+    recipientName: 'Coach Taylor',
+    parties: ['Active Student', 'Coach Taylor'],
+    partiesIds: [otherActive.email, trainer.email],
+    title: 'Instructor Request',
+    summary: 'Active Student has requested Coach Taylor to be their Instructor',
+    status: 'pending',
+    isAccepted: false,
   });
   await db.collection('SharedRidingEntries').doc('entry-owned').set({
     riderUid: departing.uid,
@@ -371,6 +470,43 @@ async function main() {
     assert.equal(job.email, undefined);
     assert.equal(job.horsesTransferredCount, 3);
 
+    // Requests privacy cleanup: pending cancelled + scrubbed, accepted preserved & scrubbed,
+    // all-deleted orphaned Request removed, unrelated surviving requests/connections intact.
+    const reqPending = (await db.collection('Requests').doc('req-pending').get()).data();
+    assert.equal(reqPending.status, 'cancelled');
+    assert.equal(reqPending.isAccepted, false);
+    assert.equal(reqPending.dismissalNote, 'Account deleted');
+    assert.deepEqual(reqPending.partiesIds, [`deleted:${departing.uid}`, trainer.email]);
+    assert.deepEqual(reqPending.parties, ['Deleted User', 'Coach Taylor']);
+    assert.equal(reqPending.senderEmail, `deleted:${departing.uid}`);
+    assert.equal(reqPending.senderName, 'Deleted User');
+    assert.equal(reqPending.senderPicUrl, '');
+    assert.equal(reqPending.recipientEmail, trainer.email);
+    assert.equal(JSON.stringify(reqPending).includes(departing.email), false);
+    assert.equal(JSON.stringify(reqPending).includes('Departing Rider'), false);
+
+    const reqAccepted = (await db.collection('Requests').doc('req-accepted-horse').get()).data();
+    assert.equal(reqAccepted.status, 'accepted');
+    assert.equal(reqAccepted.isAccepted, true);
+    assert.deepEqual(reqAccepted.partiesIds, [trainer.email, `deleted:${departing.uid}`]);
+    assert.deepEqual(reqAccepted.parties, ['Coach Taylor', 'Deleted User']);
+    assert.equal(reqAccepted.recipientEmail, `deleted:${departing.uid}`);
+    assert.equal(reqAccepted.recipientName, 'Deleted User');
+    assert.equal(reqAccepted.horseOwnerId, `deleted:${departing.uid}`);
+    assert.equal(reqAccepted.horseOwnerName, 'Deleted User');
+    assert.equal(JSON.stringify(reqAccepted).includes(departing.email), false);
+    assert.equal(JSON.stringify(reqAccepted).includes('Departing Rider'), false);
+
+    assert.equal((await db.collection('Requests').doc('req-both-deleted').get()).exists, false);
+
+    const reqOther = (await db.collection('Requests').doc('req-trainer-other').get()).data();
+    assert.equal(reqOther.status, 'pending');
+    assert.deepEqual(reqOther.partiesIds, [otherActive.email, trainer.email]);
+
+    const trainerProfAfter = (await db.collection('Rider_Profile').doc(profileId(trainer.email)).get()).data();
+    assert.deepEqual(trainerProfAfter.students.map((s) => s.id), [otherActive.email]);
+    assert.equal((await db.collection('CoachingConnections').doc('conn-trainer-other').get()).data().status, 'accepted');
+
     // Legacy Conversations/Messages anonymized for departing user without erasing trainer's message
     const convShared = (await db.collection('Conversations').doc('conv-shared').get()).data();
     assert.deepEqual(convShared.partiesIds, [`deleted:${departing.uid}`, trainer.email]);
@@ -405,6 +541,28 @@ async function main() {
       );
       assert.equal((await fsGet(`DeletionJobs/${departing.uid}`, token)).status, 403);
     }
+
+    // Surviving trainer can still read and list-query their Requests; unrelated user is blocked.
+    assert.equal((await fsGet('Requests/req-pending', trainer.idToken)).status, 200);
+    assert.equal((await fsGet('Requests/req-accepted-horse', trainer.idToken)).status, 200);
+    assert.equal((await fsGet('Requests/req-trainer-other', trainer.idToken)).status, 200);
+    const trainerQuery = await fsRunQuery('Requests', 'partiesIds', 'ARRAY_CONTAINS', trainer.email, trainer.idToken);
+    assert.equal(trainerQuery.status, 200);
+    const trainerDocNames = (Array.isArray(trainerQuery.body) ? trainerQuery.body : [])
+        .map((row) => row.document?.name?.split('/').pop())
+        .filter(Boolean)
+        .sort();
+    assert.deepEqual(trainerDocNames, ['req-accepted-horse', 'req-pending', 'req-trainer-other']);
+
+    assert.equal((await fsGet('Requests/req-pending', unrelated.idToken)).status, 403);
+    assert.equal((await fsGet('Requests/req-accepted-horse', unrelated.idToken)).status, 403);
+    assert.equal((await fsGet('Requests/req-trainer-other', unrelated.idToken)).status, 403);
+
+    // Re-registering the same email address after deletion cannot read historical Requests.
+    const reregistered = await createAndSignIn(departing.email, {displayName: 'New Claimant'});
+    assert.equal((await fsGet('Requests/req-pending', reregistered.idToken)).status, 403);
+    assert.equal((await fsGet('Requests/req-accepted-horse', reregistered.idToken)).status, 403);
+    assert.equal((await fsGet('Requests/req-trainer-other', reregistered.idToken)).status, 403);
 
     // Public active transferred horse remains readable via Public_Horse_Profile
     const pubRes = await fsGet('Public_Horse_Profile/horse-sale', null);
