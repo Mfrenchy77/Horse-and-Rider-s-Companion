@@ -3,6 +3,8 @@
 
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
+const {spawnSync} = require('node:child_process');
+const path = require('node:path');
 const {
   backfillRequests,
   mapLegacyMessageToRequest,
@@ -376,4 +378,30 @@ test('NEW-LOW-1: backfill skips canonical Requests/{messageId} for mirrored tran
   assert.equal(secondRun.skippedExisting, 2);
   assert.equal(db._store.Requests.size, 2);
   assert.deepEqual(secondRun.reconciliation.mismatchedUsers, []);
+});
+
+test('CLI entry point executes validation instead of silently exiting with code 0', () => {
+  const scriptPath = path.resolve(__dirname, '../backfill_requests.js');
+  const cleanEnv = {...process.env};
+  delete cleanEnv.GCLOUD_PROJECT;
+  delete cleanEnv.GOOGLE_CLOUD_PROJECT;
+  delete cleanEnv.FIRESTORE_EMULATOR_HOST;
+
+  const missingProject = spawnSync(process.execPath, [scriptPath], {
+    encoding: 'utf8',
+    env: cleanEnv,
+  });
+  assert.notEqual(missingProject.status, 0);
+  assert.match(missingProject.stderr, /Explicit projectId is required/);
+
+  const unconfirmedExecute = spawnSync(
+      process.execPath,
+      [scriptPath, '--project', 'demo-test', '--execute'],
+      {
+        encoding: 'utf8',
+        env: cleanEnv,
+      },
+  );
+  assert.notEqual(unconfirmedExecute.status, 0);
+  assert.match(unconfirmedExecute.stderr, /--confirm-production/);
 });
