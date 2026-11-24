@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
@@ -198,6 +202,7 @@ class SettingsView extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const _SettingsAccountSection(),
                     ],
                   ),
                 ),
@@ -206,6 +211,57 @@ class SettingsView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SettingsAccountSection extends StatelessWidget {
+  const _SettingsAccountSection();
+
+  @override
+  Widget build(BuildContext context) {
+    AppCubit? cubit;
+    try {
+      cubit = context.read<AppCubit>();
+    } catch (_) {
+      cubit = null;
+    }
+    if (cubit == null) return const SizedBox.shrink();
+
+    return BlocBuilder<AppCubit, AppState>(
+      bloc: cubit,
+      builder: (context, state) {
+        if (state.isGuest || state.user.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppTokens.spaceLg),
+            const AppSectionHeader(title: 'Account'),
+            const SizedBox(height: AppTokens.spaceSm),
+            AppSurfaceCard(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: Colors.redAccent,
+                ),
+                title: const Text('Delete Account'),
+                subtitle: const Text(
+                  'Permanently delete your rider account while preserving '
+                  'horse records.',
+                ),
+                trailing: AppDestructiveButton(
+                  key: const Key('settingsDeleteAccountButton'),
+                  label: 'Delete Account',
+                  onPressed: () => context.goNamed(DeletePage.name),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

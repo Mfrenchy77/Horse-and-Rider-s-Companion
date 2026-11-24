@@ -65,16 +65,28 @@ class FirebaseAccountDeletionRepository implements AccountDeletionRepository {
         final result = body['result'];
         if (result is Map) {
           final status = result['status'];
+          final rawTransferred = result['horsesTransferred'];
+          final horsesTransferred = rawTransferred is int
+              ? rawTransferred
+              : (rawTransferred is num ? rawTransferred.toInt() : 0);
           if (status == 'scheduled') {
-            return const AccountDeletionResult(
+            return AccountDeletionResult(
               status: AccountDeletionStatus.scheduled,
+              horsesTransferred: horsesTransferred,
               message:
-                  'Your account deletion is scheduled and will finish shortly.',
+                  'Your account deletion is scheduled and will finish '
+                  'shortly. Your login will stop working once finalized.',
             );
           }
-          return const AccountDeletionResult(
+          final summary = horsesTransferred > 0
+              ? 'Account deleted. $horsesTransferred '
+                    '${horsesTransferred == 1 ? 'horse' : 'horses'} '
+                    "transferred to Horse & Rider's Companion."
+              : 'Account deleted.';
+          return AccountDeletionResult(
             status: AccountDeletionStatus.completed,
-            message: 'Account Deleted',
+            horsesTransferred: horsesTransferred,
+            message: summary,
           );
         }
 
@@ -84,6 +96,7 @@ class FirebaseAccountDeletionRepository implements AccountDeletionRepository {
           final detailsCode = details is Map
               ? details['code'] as String?
               : null;
+          final errorStatus = error['status'] as String?;
           final message = error['message'] as String?;
           if (detailsCode == 'requires-recent-login') {
             return AccountDeletionResult(
@@ -91,6 +104,19 @@ class FirebaseAccountDeletionRepository implements AccountDeletionRepository {
               message:
                   message ??
                   'Please reauthenticate before deleting your account.',
+            );
+          }
+          if (detailsCode == 'deletion-in-progress' ||
+              errorStatus == 'ALREADY_EXISTS') {
+            throw AccountDeletionFailure(
+              message ??
+                  'An account deletion request is already in progress. '
+                      'Please wait and try again.',
+            );
+          }
+          if (detailsCode == 'cannot-delete-admin-account') {
+            throw AccountDeletionFailure(
+              message ?? 'The administrative account cannot be deleted.',
             );
           }
           if (message != null && message.isNotEmpty) {

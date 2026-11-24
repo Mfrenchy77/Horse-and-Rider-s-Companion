@@ -16,6 +16,7 @@ class AccountDeletionResult {
   const AccountDeletionResult({
     required this.status,
     this.message,
+    this.horsesTransferred = 0,
   });
 
   /// Outcome status of the deletion request.
@@ -23,6 +24,9 @@ class AccountDeletionResult {
 
   /// Optional human-readable status message.
   final String? message;
+
+  /// Number of owned horses transferred to the administrative account.
+  final int horsesTransferred;
 }
 
 /// Backend-neutral failure thrown when account deletion fails.

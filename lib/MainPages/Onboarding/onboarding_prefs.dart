@@ -97,4 +97,12 @@ class OnboardingPrefs {
     }
     return isLikelyNewProfile(profile);
   }
+
+  /// Clears per-user onboarding state (e.g., on account deletion).
+  static Future<void> clearForUser(String? userKey) async {
+    for (final tour in OnboardingTourId.values) {
+      await SharedPrefs().remove(_inviteKey(tour, userKey));
+      await SharedPrefs().remove(_completedKey(tour, userKey));
+    }
+  }
 }

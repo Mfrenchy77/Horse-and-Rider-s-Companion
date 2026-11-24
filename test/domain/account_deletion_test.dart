@@ -9,6 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/firebase_account_deletion_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/settings_service.dart';
+import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/notifications/push_notification_service.dart';
 import 'package:http/http.dart' as http;
@@ -198,6 +203,11 @@ void main() {
       });
 
       cubit.emailChanged('rider@example.com');
+      await OnboardingPrefs.setCompleted(
+        tour: OnboardingTourId.profile,
+        userKey: 'rider@example.com',
+        completed: true,
+      );
       await cubit.deleteAccount();
 
       expect(
@@ -219,6 +229,13 @@ void main() {
       expect(cubit.state.status, AppStatus.unauthenticated);
       expect(cubit.state.user, User.empty);
       expect(auth.loggedOut, isTrue);
+      expect(
+        OnboardingPrefs.isCompleted(
+          tour: OnboardingTourId.profile,
+          userKey: 'rider@example.com',
+        ),
+        isFalse,
+      );
     },
   );
 
@@ -236,6 +253,14 @@ void main() {
     );
 
     final cubit = _buildCubit(auth: auth, deletionRepo: deletionRepo);
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    cubit.emit(
+      cubit.state.copyWith(
+        user: user,
+        isGuest: false,
+        status: AppStatus.authenticated,
+      ),
+    );
     addTearDown(() async {
       await cubit.close();
       await auth.dispose();
@@ -280,7 +305,7 @@ void main() {
         }
         return http.Response(
           jsonEncode({
-            'result': {'status': 'completed'},
+            'result': {'status': 'completed', 'horsesTransferred': 2},
           }),
           200,
         );
@@ -298,12 +323,15 @@ void main() {
       mode = 'ok';
       final okResult = await repo.deleteCurrentAccount();
       expect(okResult.status, AccountDeletionStatus.completed);
+      expect(okResult.horsesTransferred, 2);
+      expect(okResult.message, contains('2 horses transferred'));
     },
   );
 
-  testWidgets('DeletePage shows reauth UI and closes only on completion', (
-    tester,
-  ) async {
+  testWidgets(
+    'DeletePage requires email + checkbox, shows horse preservation, '
+    'and handles reauth',
+    (tester) async {
     const user = User(
       id: 'u1',
       email: 'rider@example.com',
@@ -322,9 +350,18 @@ void main() {
       }
       return const AccountDeletionResult(
         status: AccountDeletionStatus.completed,
+        horsesTransferred: 1,
       );
     });
     final cubit = _buildCubit(auth: auth, deletionRepo: deletionRepo);
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    cubit.emit(
+      cubit.state.copyWith(
+        user: user,
+        isGuest: false,
+        status: AppStatus.authenticated,
+      ),
+    );
     addTearDown(() async {
       await cubit.close();
       await auth.dispose();
@@ -353,20 +390,137 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Delete Account'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).first, 'rider@example.com');
+    expect(find.text('Owned horses preserved'), findsOneWidget);
+
+    // Entering email alone is insufficient until acknowledgement is checked.
+    await tester.enterText(
+      find.byKey(const Key('deleteAccountEmailField')),
+      'rider@example.com',
+    );
     await tester.pump();
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.byKey(const Key('deleteAccountConfirmButton')));
+    await tester.pump();
+    expect(deletionRepo.calls, 0);
+
+    final checkbox = find.byKey(const Key('deleteAccountAcknowledgeCheckbox'));
+    await tester.ensureVisible(checkbox);
+    await tester.tap(checkbox);
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('deleteAccountConfirmButton')));
     await tester.pumpAndSettle();
 
     expect(find.text('Verify Password'), findsOneWidget);
     expect(find.text('Delete Account'), findsOneWidget);
 
     requireReauth = false;
-    await tester.enterText(find.byType(TextField).at(1), 'secret123');
+    final passwordField = find.byKey(const Key('deleteAccountPasswordField'));
+    await tester.ensureVisible(passwordField);
+    await tester.enterText(passwordField, 'secret123');
     await tester.ensureVisible(find.text('Verify Password'));
     await tester.tap(find.text('Verify Password'));
     await tester.pumpAndSettle();
 
     expect(find.text('Delete Account'), findsNothing);
+  });
+
+  testWidgets('SettingsView shows Delete Account only when signed in', (
+    tester,
+  ) async {
+    const user = User(
+      id: 'u1',
+      email: 'rider@example.com',
+      name: 'Rider',
+      isGuest: false,
+      emailVerified: true,
+    );
+    final auth = _FakeAuthGateway(user);
+    final deletionRepo = _FakeAccountDeletionRepository(
+      () async => const AccountDeletionResult(
+        status: AccountDeletionStatus.completed,
+      ),
+    );
+    final cubit = _buildCubit(auth: auth, deletionRepo: deletionRepo);
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    cubit.emit(
+      cubit.state.copyWith(
+        user: user,
+        isGuest: false,
+        status: AppStatus.authenticated,
+      ),
+    );
+    final settings = SettingsController(SettingsService());
+    await settings.loadSettings();
+    addTearDown(() async {
+      settings.dispose();
+      await cubit.close();
+      await auth.dispose();
+    });
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: cubit,
+        child: MaterialApp(home: SettingsView(controller: settings)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settingsDeleteAccountButton')),
+      200,
+    );
+    expect(
+      find.byKey(const Key('settingsDeleteAccountButton')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'DeletePage renders cleanly without overflow on narrow mobile (390x844)',
+    (tester) async {
+    const user = User(
+      id: 'u1',
+      email: 'rider@example.com',
+      name: 'Rider',
+      isGuest: false,
+      emailVerified: true,
+    );
+    final auth = _FakeAuthGateway(user);
+    final deletionRepo = _FakeAccountDeletionRepository(
+      () async => const AccountDeletionResult(
+        status: AccountDeletionStatus.completed,
+      ),
+    );
+    final cubit = _buildCubit(auth: auth, deletionRepo: deletionRepo);
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    cubit.emit(
+      cubit.state.copyWith(
+        user: user,
+        isGuest: false,
+        status: AppStatus.authenticated,
+      ),
+    );
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(() async {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+      await cubit.close();
+      await auth.dispose();
+    });
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: cubit,
+        child: const MaterialApp(
+          home: Scaffold(body: Center(child: DeletePage())),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppGlassDialog), findsOneWidget);
+    expect(find.text('Owned horses preserved'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

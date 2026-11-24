@@ -10,6 +10,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_failure.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
@@ -1059,6 +1060,11 @@ class AppCubit extends Cubit<AppState> {
       unawaited(_horseProfileSubscription?.cancel());
       _usersProfileSubscription = null;
       _horseProfileSubscription = null;
+      try {
+        await OnboardingPrefs.clearForUser(expectedEmail);
+      } catch (_) {
+        // Preferences may not be initialized in headless unit tests.
+      }
       try {
         await _authenticationRepository.logOut();
       } catch (_) {
