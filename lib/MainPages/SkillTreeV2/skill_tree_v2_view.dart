@@ -265,6 +265,9 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           families: List<SkillFamily>.from(effectiveState.families),
           skills: List<CurriculumSkill>.from(effectiveState.skills),
         );
+    final publishedSkill = initial == null
+        ? null
+        : _cubit.state.skills.where((s) => s.id == initial.id).firstOrNull;
     final familySkillCount = draft.skills
         .where((s) => s.familyId == family.id)
         .length;
@@ -272,6 +275,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
       context: context,
       builder: (_) => EditCurriculumSkillDialog(
         initialSkill: initial,
+        publishedSkill: publishedSkill,
         family: family,
         allSkills: draft.skills,
         existingSkillIds: draft.skills.map((s) => s.id).toSet(),
@@ -967,6 +971,15 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
             final isAdminEditActive = isVerifiedAdmin && _isAdminEditMode;
             final publishedState = state;
             final effectiveState = _effectiveState(publishedState);
+            final isSelectedSkillRetired =
+                effectiveState.selectedSkill?.status ==
+                CurriculumSkillStatus.retired;
+            final effectiveCanSelfAssess =
+                canSelfAssess && !isSelectedSkillRetired;
+            final effectiveSelfAssessDisabledReason = isSelectedSkillRetired
+                ? 'This skill has been retired. Historical progress is preserved.'
+                : selfAssessDisabledReason;
+            final effectiveCanVerify = canVerify && !isSelectedSkillRetired;
             GuestSpotlightTour.activeDifficultySkillId =
                 effectiveState.selectedSkill?.id;
             SkillTreeSpotlightTour.activeSkillId =
@@ -1180,10 +1193,11 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                                     allResources:
                                                         appState.resources,
                                                     canSelfAssess:
-                                                        canSelfAssess,
+                                                        effectiveCanSelfAssess,
                                                     selfAssessDisabledReason:
-                                                        selfAssessDisabledReason,
-                                                    canVerify: canVerify,
+                                                        effectiveSelfAssessDisabledReason,
+                                                    canVerify:
+                                                        effectiveCanVerify,
                                                     isAdminEditMode:
                                                         isAdminEditActive,
                                                     onEditSkill: () {
@@ -1435,10 +1449,11 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                             skill:
                                                 effectiveState.selectedSkill!,
                                             allResources: appState.resources,
-                                            canSelfAssess: canSelfAssess,
+                                            canSelfAssess:
+                                                effectiveCanSelfAssess,
                                             selfAssessDisabledReason:
-                                                selfAssessDisabledReason,
-                                            canVerify: canVerify,
+                                                effectiveSelfAssessDisabledReason,
+                                            canVerify: effectiveCanVerify,
                                             isAdminEditMode: isAdminEditActive,
                                             onEditSkill: () {
                                               final selected =

@@ -70,6 +70,10 @@ class SkillDetailV2Panel extends StatelessWidget {
     final skillEvents = state.verificationEvents
         .where((e) => e.skillId == skill.id)
         .toList();
+    final isRetired = skill.status == CurriculumSkillStatus.retired;
+    final replacementSkill = skill.replacedBy == null
+        ? null
+        : state.skills.where((s) => s.id == skill.replacedBy).firstOrNull;
 
     final isCompact = MediaQuery.sizeOf(context).width < 600;
 
@@ -152,6 +156,52 @@ class SkillDetailV2Panel extends StatelessWidget {
           ),
             ],
           ),
+              if (isRetired)
+                Container(
+                  key: const Key('retiredSkillBanner'),
+                  padding: const EdgeInsets.all(AppTokens.spaceSm),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: AppTokens.spaceXs,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.archive_outlined,
+                            size: 18,
+                            color: theme.colorScheme.onSecondaryContainer,
+                          ),
+                          const SizedBox(width: AppTokens.spaceSm),
+                          Expanded(
+                            child: Text(
+                              'This skill has been retired. Historical '
+                              'progress and instructor verifications remain '
+                              'preserved.',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (replacementSkill != null)
+                        OutlinedButton.icon(
+                          key: const Key('retiredSkillReplacementButton'),
+                          onPressed: () =>
+                              onSelectRelatedSkill(replacementSkill.id),
+                          icon: const Icon(Icons.arrow_forward, size: 16),
+                          label: Text(
+                            'View replacement: ${replacementSkill.name}',
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               if (skill.safety.isNotEmpty)
                 Container(
               padding: const EdgeInsets.all(AppTokens.spaceSm),
@@ -664,6 +714,16 @@ class _LevelDetailSection extends StatelessWidget {
                 ),
             ],
           ),
+          if (isVerified &&
+              verification!.standardVersion < definition.standardVersion)
+            Text(
+              'Verified under Standard v${verification!.standardVersion} '
+              '(current: v${definition.standardVersion}).',
+              key: const Key('verificationEarlierStandardNote'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
+              ),
+            ),
           ValueListenableBuilder<bool>(
             valueListenable: SkillTreeSpotlightTour.isTourActive,
             builder: (context, tourActive, child) => KeyedSubtree(

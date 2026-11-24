@@ -392,15 +392,18 @@ Evolving the curriculum over years must **never** corrupt or silently invalidate
 ### 8.6 Validation & Publication Safeguards
 Before any curriculum change is merged or published:
 1. Run `node tool/validate_curriculum_v2.js` and `flutter test test/domain/curriculum_v2_validation_test.dart`.
-2. Automated validation enforces:
+2. Automated validation lives in the shared [curriculum_validator.js](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/functions/curriculum_validator.js) module—reused by both `tool/validate_curriculum_v2.js` and the server-side `saveSkillTreeCurriculumDraft` Cloud Function—enforcing:
    - Unique `familyId`s and `skillId`s (`schemaVersion === 2`).
    - Valid `subject` and `realm` combinations (`Horse` may only use `In_Hand` and `Mounted`).
    - Every skill references an existing `familyId` with matching `subject` and `realm`.
    - `availableLevels` contains 1 to 3 levels in strict `["introductory", "intermediate", "advanced"]` order, matching `Object.keys(levels)`.
-   - Every level defines non-empty `overview`, `learning`, `proficient`, and `standardVersion >= 1`.
-   - Every `relatedSkills` entry resolves to a valid skill; `"counterpart"` links cross subjects and are 100% symmetric; `"foundation"` links contain **zero cycles**.
-   - All 84 legacy IDs in `migrate_working_dir/skills_snapshot.json` are mapped **exactly once** across `legacyIds[]` and `legacy_mapping.json`.
-3. Production publication (`SkillFamilies` and `SkillsV2`) is performed **only** via the Admin SDK script (dry-run by default, checksummed against backup, never mutating `Rider_Profile`, `Horse_Profile`, or `Resources`).
+   - Every level defines non-empty `overview`, `learning`, `proficient`, and `standardVersion >= 1` (preserving `standardUpdatedAt`).
+   - Every `relatedSkills` entry resolves to a valid skill with no self-references or duplicates; `"counterpart"` links cross subjects and are 100% symmetric; `"foundation"` links contain **zero cycles**.
+   - Valid retirement state: `replacedBy` is permitted only on `retired` skills and must point to an `active` skill of the same `subject`.
+   - Published identity & progress protection: published skill IDs cannot be deleted (`status: "retired"` required), `subject` and published `availableLevels` cannot be removed, published `legacyIds` cannot be dropped, and material `proficient` standard edits require incrementing `standardVersion`.
+   - All 84 legacy IDs in `migrate_working_dir/skills_snapshot.json` remain mapped **exactly once** across `legacyIds[]` and `legacy_mapping.json` (verified by CLI validation).
+   - Single-document draft size monitoring: warns above `700 KB` and blocks saves above `900 KB` (current baseline `~174.5 KB`) ahead of Firestore's `1 MiB` document limit.
+3. Production publication (`SkillFamilies` and `SkillsV2`) continues to use the Admin SDK CLI pipeline ([publish_curriculum_v2.js](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/tool/publish_curriculum_v2.js), dry-run by default, never mutating `Rider_Profile`, `Horse_Profile`, or `Resources`) until Phase 2B revision-based publishing is enabled.
 
 ---
 

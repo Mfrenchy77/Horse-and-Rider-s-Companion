@@ -165,6 +165,7 @@ SubjectAbilitySummary computeAbilitySummary({
     final realmSkills = subjectSkills
         .where((s) => s.realm == realm)
         .toList();
+    var skillCount = 0;
     var levels = 0;
     var learning = 0;
     var proficient = 0;
@@ -173,10 +174,19 @@ SubjectAbilitySummary computeAbilitySummary({
     DifficultyState? highestVerified;
 
     for (final skill in realmSkills) {
+      final isActive = skill.status == CurriculumSkillStatus.active;
+      if (isActive) {
+        skillCount++;
+        levels += skill.availableLevels.length;
+      }
       final progress = progressBySkillId[skill.id];
       final verification = verificationsBySkillId[skill.id];
-      for (final level in skill.availableLevels) {
-        levels++;
+      final trackedLevels = <DifficultyState>{
+        ...skill.availableLevels,
+        ...?progress?.levels.keys,
+        ...?verification?.levels.keys,
+      };
+      for (final level in trackedLevels) {
         final selfState = progress?.levels[level]?.state;
         final isVerified = verification?.levels.containsKey(level) ?? false;
         if (selfState == LevelState.LEARNING) learning++;
@@ -191,7 +201,7 @@ SubjectAbilitySummary computeAbilitySummary({
       }
     }
 
-    totalSkills += realmSkills.length;
+    totalSkills += skillCount;
     totalLevels += levels;
     totalLearning += learning;
     totalProficient += proficient;
@@ -200,7 +210,7 @@ SubjectAbilitySummary computeAbilitySummary({
     realmSummaries.add(
       RealmAbilitySummary(
         realm: realm,
-        totalSkills: realmSkills.length,
+        totalSkills: skillCount,
         totalLevels: levels,
         learningLevels: learning,
         proficientLevels: proficient,

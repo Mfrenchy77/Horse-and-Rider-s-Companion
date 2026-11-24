@@ -1,3 +1,5 @@
+/* eslint-disable require-jsdoc */
+/* eslint max-len: ["error", {"code": 120}] */
 'use strict';
 
 const test = require('node:test');
@@ -33,6 +35,20 @@ function createFakeFirestore() {
     return {
       doc(id) {
         return docRef(`${colPath}/${id}`);
+      },
+      async get() {
+        const prefix = `${colPath}/`;
+        const docs = [];
+        for (const [docPath, value] of store.entries()) {
+          if (!docPath.startsWith(prefix)) continue;
+          const rest = docPath.slice(prefix.length);
+          if (rest.includes('/')) continue;
+          docs.push({
+            id: rest,
+            data: () => structuredClone(value),
+          });
+        }
+        return {docs};
       },
     };
   }
@@ -113,20 +129,20 @@ test('saveCurriculumDraftHandler rejects unauthenticated, unverified, user, and 
   const payload = validDraftPayload();
 
   await assert.rejects(
-    () => handler({auth: null, data: payload}),
-    (err) => err.code === 'unauthenticated',
+      () => handler({auth: null, data: payload}),
+      (err) => err.code === 'unauthenticated',
   );
   await assert.rejects(
-    () => handler({auth: {uid: 'u1', token: {email_verified: false, admin: true}}, data: payload}),
-    (err) => err.code === 'failed-precondition',
+      () => handler({auth: {uid: 'u1', token: {email_verified: false, admin: true}}, data: payload}),
+      (err) => err.code === 'failed-precondition',
   );
   await assert.rejects(
-    () => handler({auth: {uid: 'u2', token: {email_verified: true}}, data: payload}),
-    (err) => err.code === 'permission-denied',
+      () => handler({auth: {uid: 'u2', token: {email_verified: true}}, data: payload}),
+      (err) => err.code === 'permission-denied',
   );
   await assert.rejects(
-    () => handler({auth: {uid: 'm1', token: {email_verified: true, moderator: true}}, data: payload}),
-    (err) => err.code === 'permission-denied',
+      () => handler({auth: {uid: 'm1', token: {email_verified: true, moderator: true}}, data: payload}),
+      (err) => err.code === 'permission-denied',
   );
 });
 
@@ -135,33 +151,137 @@ test('discardCurriculumDraftHandler rejects moderator and ordinary user', async 
   const handler = discardCurriculumDraftHandler(db);
 
   await assert.rejects(
-    () => handler({auth: {uid: 'm1', token: {email_verified: true, moderator: true}}, data: {}}),
-    (err) => err.code === 'permission-denied',
+      () => handler({auth: {uid: 'm1', token: {email_verified: true, moderator: true}}, data: {}}),
+      (err) => err.code === 'permission-denied',
   );
   await assert.rejects(
-    () => handler({auth: {uid: 'u1', token: {email_verified: true}}, data: {}}),
-    (err) => err.code === 'permission-denied',
+      () => handler({auth: {uid: 'u1', token: {email_verified: true}}, data: {}}),
+      (err) => err.code === 'permission-denied',
   );
 });
 
-test('saveCurriculumDraftHandler validates V2 schema', async () => {
+test('saveCurriculumDraftHandler validates V2 schema and references', async () => {
   const db = createFakeFirestore();
   const handler = saveCurriculumDraftHandler(db);
   const adminAuth = {uid: 'admin1', token: {email_verified: true, admin: true, name: 'Admin'}};
 
-  const badPayload = validDraftPayload();
-  badPayload.skills[0].id = 'bad id with spaces';
+  const badIdPayload = validDraftPayload();
+  badIdPayload.skills[0].id = 'bad id with spaces';
+  await assert.rejects(
+      () => handler({auth: adminAuth, data: badIdPayload}),
+      (err) => err.code === 'invalid-argument',
+  );
+
+  const missingFamilyPayload = validDraftPayload();
+  missingFamilyPayload.skills[0].familyId = 'rider.mounted.does_not_exist';
+  await assert.rejects(
+      () => handler({auth: adminAuth, data: missingFamilyPayload}),
+      (err) => err.code === 'invalid-argument' && err.message.includes('unknown familyId'),
+  );
+});
+
+test('invalid draft never overwrites an existing valid saved draft', async () => {
+  const db = createFakeFirestore();
+  const fixedNow = new Date('2026-11-23T06:00:00.000Z');
+  let seq = 0;
+  const saveHandler = saveCurriculumDraftHandler(db, {
+    now: () => fixedNow,
+    uuid: () => `evt_${++seq}`,
+  });
+  const adminAuth = {uid: 'admin1', token: {email_verified: true, admin: true, name: 'Admin'}};
+
+  await saveHandler({auth: adminAuth, data: validDraftPayload()});
+  const draftKey = `${DRAFTS_COLLECTION}/${DEFAULT_DRAFT_ID}`;
+  const savedBefore = structuredClone(db._store.get(draftKey));
+
+  const invalidPayload = validDraftPayload();
+  invalidPayload.skills[0].relatedSkills = [{skillId: 'nonexistent.skill', relation: 'foundation'}];
 
   await assert.rejects(
-    () => handler({auth: adminAuth, data: badPayload}),
-    (err) => err.code === 'invalid-argument',
+      () => saveHandler({auth: adminAuth, data: invalidPayload}),
+      (err) => err.code === 'invalid-argument',
   );
+
+  assert.deepEqual(db._store.get(draftKey), savedBefore);
+  assert.equal(db._store.has(`${draftKey}/AuditEvents/evt_2`), false);
+});
+
+test('saveCurriculumDraftHandler enforces published skill and level preservation and preserves metadata', async () => {
+  const db = createFakeFirestore();
+  const publishedSkill = structuredClone(validDraftPayload().skills[0]);
+  publishedSkill.availableLevels = ['introductory', 'intermediate'];
+  publishedSkill.levels.intermediate = {
+    overview: 'Int overview.',
+    components: [],
+    learning: 'Int learning.',
+    proficient: 'Int proficient.',
+    standardVersion: 1,
+  };
+  db._store.set('SkillsV2/rider.mounted.neutral_pelvis', publishedSkill);
+  db._store.set('SkillFamilies/rider.mounted.balance', validDraftPayload().families[0]);
+
+  const saveHandler = saveCurriculumDraftHandler(db);
+  const adminAuth = {uid: 'admin1', token: {email_verified: true, admin: true, name: 'Admin'}};
+
+  // Deleting a published difficulty level is rejected.
+  const dropLevelPayload = validDraftPayload();
+  await assert.rejects(
+      () => saveHandler({auth: adminAuth, data: dropLevelPayload}),
+      (err) => err.code === 'invalid-argument' && err.message.includes('cannot be deleted'),
+  );
+
+  // Deleting a published skill ID is rejected.
+  const dropSkillPayload = validDraftPayload();
+  dropSkillPayload.skills = [];
+  await assert.rejects(
+      () => saveHandler({auth: adminAuth, data: dropSkillPayload}),
+      (err) => err.code === 'invalid-argument' && err.message.includes('cannot be deleted'),
+  );
+
+  // Valid retirement with replacedBy and metadata preserved succeeds.
+  const retirePayload = {
+    families: validDraftPayload().families,
+    skills: [
+      {
+        ...publishedSkill,
+        status: 'retired',
+        replacedBy: 'rider.mounted.replacement_skill',
+        updatedBy: 'admin1',
+        levels: {
+          ...publishedSkill.levels,
+          introductory: {
+            ...publishedSkill.levels.introductory,
+            standardVersion: 2,
+            standardUpdatedAt: '2026-11-23T05:00:00.000Z',
+          },
+        },
+      },
+      {
+        ...validDraftPayload().skills[0],
+        id: 'rider.mounted.replacement_skill',
+        name: 'Replacement Pelvis Skill',
+        legacyIds: [],
+      },
+    ],
+  };
+
+  const saved = await saveHandler({auth: adminAuth, data: retirePayload});
+  const retired = saved.draft.skills.find((s) => s.id === 'rider.mounted.neutral_pelvis');
+  assert.equal(retired.replacedBy, 'rider.mounted.replacement_skill');
+  assert.equal(retired.updatedBy, 'admin1');
+  assert.equal(retired.levels.introductory.standardVersion, 2);
+  assert.equal(retired.levels.introductory.standardUpdatedAt, '2026-11-23T05:00:00.000Z');
 });
 
 test('verified admin can save and discard draft without touching published collections', async () => {
   const db = createFakeFirestore();
-  db._store.set('SkillsV2/rider.mounted.neutral_pelvis', {name: 'Published'});
-  db._store.set('SkillFamilies/rider.mounted.balance', {name: 'Published Family'});
+  const publishedSkill = structuredClone(validDraftPayload().skills[0]);
+  publishedSkill.name = 'Published';
+  db._store.set('SkillsV2/rider.mounted.neutral_pelvis', publishedSkill);
+  db._store.set('SkillFamilies/rider.mounted.balance', {
+    ...validDraftPayload().families[0],
+    name: 'Published Family',
+  });
 
   const fixedNow = new Date('2026-11-15T06:00:00.000Z');
   let seq = 0;

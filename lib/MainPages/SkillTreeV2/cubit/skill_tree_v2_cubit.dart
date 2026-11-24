@@ -225,8 +225,12 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
   void setSearchQuery(String query) {
     final trimmed = query.trim();
     final filtered = trimmed.isEmpty
-        ? state.subjectSkills.where((s) => s.realm == state.realm).toList()
-        : state.subjectSkills.where((s) => s.matchesQuery(trimmed)).toList();
+        ? state.activeSubjectSkills
+              .where((s) => s.realm == state.realm)
+              .toList()
+        : state.activeSubjectSkills
+              .where((s) => s.matchesQuery(trimmed))
+              .toList();
     final keepSelected = filtered.any((s) => s.id == state.selectedSkillId);
     final nextSkill = keepSelected
         ? state.selectedSkill
@@ -362,7 +366,12 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
   ) {
     final matching =
         skills
-            .where((s) => s.subject == subject && s.realm == realm)
+            .where(
+              (s) =>
+                  s.status == CurriculumSkillStatus.active &&
+                  s.subject == subject &&
+                  s.realm == realm,
+            )
             .toList()
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return matching.firstOrNull;

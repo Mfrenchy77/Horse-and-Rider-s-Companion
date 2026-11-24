@@ -66,7 +66,7 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
   Future<List<CurriculumSkill>> fetchSkills() async {
     final snap = await _firestore
         .collection('SkillsV2')
-        .where('status', isEqualTo: 'active')
+        .where('status', whereIn: ['active', 'retired'])
         .get();
     final list = snap.docs
         .map((d) => CurriculumSkillFirestoreMapper.fromFirestore(d, null))

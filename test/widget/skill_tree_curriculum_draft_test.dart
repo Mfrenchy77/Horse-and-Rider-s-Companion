@@ -682,5 +682,134 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'locks published difficulty levels, auto-bumps standardVersion on '
+      'Proficient changes, and DraftPreviewDialog ignores timestamps',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final publishedSkill = CurriculumSkill(
+          id: 'rider.mounted.neutral_pelvis',
+          subject: SkillSubject.rider,
+          realm: SkillCategory.Mounted,
+          familyId: 'rider.mounted.balance',
+          name: 'Neutral Pelvis',
+          summary: 'Summary',
+          purpose: 'Purpose',
+          availableLevels: const [DifficultyState.Introductory],
+            levels: {
+              DifficultyState.Introductory: SkillLevelDefinition(
+                overview: 'Intro overview',
+                learning: 'Intro learning',
+                proficient: 'Original proficient criteria',
+                standardUpdatedAt: DateTime.utc(2026, 11),
+              ),
+            },
+            updatedAt: DateTime.utc(2026, 11),
+            updatedBy: 'release-v1',
+        );
+
+        CurriculumSkill? editedResult;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        editedResult = await showDialog<CurriculumSkill>(
+                          context: context,
+                          builder: (_) => EditCurriculumSkillDialog(
+                            initialSkill: publishedSkill,
+                            publishedSkill: publishedSkill,
+                            family: testFamily,
+                            allSkills: [publishedSkill],
+                            existingSkillIds: {publishedSkill.id},
+                          ),
+                        );
+                      },
+                      child: const Text('Open Published Editor'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final draftCopy = CurriculumSkill.fromMap({
+                          ...publishedSkill.toMap(),
+                          'updatedAt': '2026-11-23T10:00:00.000Z',
+                          'updatedBy': 'admin-ui',
+                        });
+                        await showDialog<void>(
+                          context: context,
+                          builder: (_) => DraftPreviewDialog(
+                            publishedFamilies: const [testFamily],
+                            publishedSkills: [publishedSkill],
+                            draftFamilies: const [testFamily],
+                            draftSkills: [draftCopy],
+                            isPreviewingDraft: true,
+                            onTogglePreview: (_) {},
+                          ),
+                        );
+                      },
+                      child: const Text('Open Unchanged Preview'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Preview dialog ignores updatedAt/updatedBy differences.
+        await tester.tap(find.text('Open Unchanged Preview'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text(
+            'No differences between the draft and published curriculum.',
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.widgetWithText(TextButton, 'Close'));
+        await tester.pumpAndSettle();
+
+        // Published editor locks Introductory level & bumps standardVersion.
+        await tester.tap(find.text('Open Published Editor'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('lockedLevelsHelperText')), findsOneWidget);
+        final introChip = tester.widget<FilterChip>(
+          find.byKey(const Key('levelSelectChip_Introductory')),
+        );
+        expect(introChip.onSelected, isNull);
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Original proficient criteria'),
+          'Revised proficient criteria',
+        );
+        await tester.pumpAndSettle();
+
+        final applyBtn = find.widgetWithText(FilledButton, 'Apply to Draft');
+        await tester.ensureVisible(applyBtn);
+        await tester.tap(applyBtn);
+        await tester.pumpAndSettle();
+
+        expect(editedResult, isNotNull);
+        expect(
+          editedResult!.levels[DifficultyState.Introductory]?.standardVersion,
+          2,
+        );
+        expect(
+          editedResult!.levels[DifficultyState.Introductory]?.standardUpdatedAt,
+          isNotNull,
+        );
+      },
+    );
   });
 }

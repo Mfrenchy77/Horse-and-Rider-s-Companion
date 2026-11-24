@@ -242,7 +242,7 @@ class CloudSkillTreeDraftStore implements SkillTreeDraftStore {
         await _firestore.collection(_collection).doc(_defaultDocId).get();
     final data = snap.data();
     if (!snap.exists || data == null) return null;
-    return SkillTreeCurriculumDraft.fromMap(data);
+    return SkillTreeCurriculumDraft.fromMap(normalizeFirestoreTimestamps(data));
   }
 
   @override

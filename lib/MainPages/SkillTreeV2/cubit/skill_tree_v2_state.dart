@@ -54,6 +54,10 @@ class SkillTreeV2State extends Equatable {
   List<CurriculumSkill> get subjectSkills =>
       skills.where((s) => s.subject == subject).toList();
 
+  List<CurriculumSkill> get activeSubjectSkills => subjectSkills
+      .where((s) => s.status == CurriculumSkillStatus.active)
+      .toList();
+
   List<SkillFamily> get realmFamilies =>
       families
           .where((f) => f.subject == subject && f.realm == realm)
@@ -63,10 +67,10 @@ class SkillTreeV2State extends Equatable {
   List<CurriculumSkill> get visibleSkills {
     final trimmed = searchQuery.trim();
     if (trimmed.isNotEmpty) {
-      return subjectSkills.where((s) => s.matchesQuery(trimmed)).toList()
+      return activeSubjectSkills.where((s) => s.matchesQuery(trimmed)).toList()
         ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     }
-    return subjectSkills.where((s) => s.realm == realm).toList()
+    return activeSubjectSkills.where((s) => s.realm == realm).toList()
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   }
 

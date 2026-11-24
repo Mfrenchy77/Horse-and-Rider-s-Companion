@@ -248,6 +248,7 @@ class _EditableLevelFields {
   final int standardVersion;
   final DateTime? standardUpdatedAt;
   final List<_EditableComponent> components;
+  bool markRevisedStandard = false;
 
   void dispose() {
     overviewController.dispose();
@@ -277,6 +278,7 @@ class EditCurriculumSkillDialog extends StatefulWidget {
   const EditCurriculumSkillDialog({
     super.key,
     this.initialSkill,
+    this.publishedSkill,
     required this.family,
     required this.allSkills,
     required this.existingSkillIds,
@@ -285,6 +287,7 @@ class EditCurriculumSkillDialog extends StatefulWidget {
   });
 
   final CurriculumSkill? initialSkill;
+  final CurriculumSkill? publishedSkill;
   final SkillFamily family;
   final List<CurriculumSkill> allSkills;
   final Set<String> existingSkillIds;
@@ -321,6 +324,16 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
   String? _levelsError;
 
   bool get _isEditing => widget.initialSkill != null;
+
+  Set<DifficultyState> get _lockedLevels =>
+      widget.publishedSkill?.availableLevels.toSet() ?? const {};
+
+  bool _isPublishedProficientModified(DifficultyState level) {
+    final pubDef = widget.publishedSkill?.levels[level];
+    final fields = _levelFields[level];
+    if (pubDef == null || fields == null) return false;
+    return fields.proficientController.text.trim() != pubDef.proficient.trim();
+  }
 
   @override
   void initState() {
@@ -452,13 +465,27 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
           )
           .where((c) => c.title.isNotEmpty || c.description.isNotEmpty)
           .toList();
+      final pubLevel = widget.publishedSkill?.levels[level];
+      final proficientChanged =
+          pubLevel != null &&
+          fields.proficientController.text.trim() != pubLevel.proficient.trim();
+      final shouldBumpVersion =
+          pubLevel != null &&
+          fields.standardVersion <= pubLevel.standardVersion &&
+          (proficientChanged || fields.markRevisedStandard);
+      final nextStandardVersion = shouldBumpVersion
+          ? pubLevel.standardVersion + 1
+          : fields.standardVersion;
+      final nextStandardUpdatedAt = shouldBumpVersion
+          ? DateTime.now().toUtc()
+          : fields.standardUpdatedAt;
       levelsMap[level] = SkillLevelDefinition(
         overview: fields.overviewController.text.trim(),
         components: components,
         learning: fields.learningController.text.trim(),
         proficient: fields.proficientController.text.trim(),
-        standardVersion: fields.standardVersion,
-        standardUpdatedAt: fields.standardUpdatedAt,
+        standardVersion: nextStandardVersion,
+        standardUpdatedAt: nextStandardUpdatedAt,
       );
     }
 
@@ -640,21 +667,45 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                   spacing: 8,
                   children: _editableLevels.map((level) {
                     final selected = _selectedLevels.contains(level);
-                    return FilterChip(
-                      label: Text(_difficultyLabel(level)),
-                      selected: selected,
-                      onSelected: (value) {
-                        setState(() {
-                          if (value) {
-                            _selectedLevels.add(level);
-                          } else {
-                            _selectedLevels.remove(level);
-                          }
-                        });
-                      },
+                    final isLocked = _lockedLevels.contains(level);
+                    return Tooltip(
+                      message: isLocked
+                          ? 'Published difficulty level cannot be removed.'
+                          : 'Toggle ${_difficultyLabel(level)} standard',
+                      child: FilterChip(
+                        key: Key('levelSelectChip_${level.name}'),
+                        avatar: isLocked
+                            ? const Icon(Icons.lock_outline, size: 16)
+                            : null,
+                        label: Text(_difficultyLabel(level)),
+                        selected: selected,
+                        onSelected: isLocked
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  if (value) {
+                                    _selectedLevels.add(level);
+                                    _expandedLevels.add(level);
+                                  } else {
+                                    _selectedLevels.remove(level);
+                                  }
+                                });
+                              },
+                      ),
                     );
                   }).toList(),
                 ),
+                if (_lockedLevels.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Published difficulty levels cannot be removed to preserve '
+                    'existing rider and horse progress.',
+                    key: const Key('lockedLevelsHelperText'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 if (_levelsError != null) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -753,7 +804,8 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                   children: [
                     Expanded(
                       child: Text(
-                        '${_difficultyLabel(level)} Standard',
+                        '${_difficultyLabel(level)} Standard · '
+                        'v${fields.standardVersion}',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -828,6 +880,9 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                       labelText: 'Proficient Standard *',
                       border: OutlineInputBorder(),
                     ),
+                    onChanged: widget.publishedSkill?.levels[level] == null
+                        ? null
+                        : (_) => setState(() {}),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Proficient standard is required for ${_difficultyLabel(level)}.';
@@ -835,6 +890,48 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
                       return null;
                     },
                   ),
+                  if (widget.publishedSkill?.levels[level]
+                      case final pubLevel?) ...[
+                    const SizedBox(height: 4),
+                    Builder(
+                      builder: (context) {
+                        final autoRevised = _isPublishedProficientModified(
+                          level,
+                        );
+                        final checked =
+                            autoRevised || fields.markRevisedStandard;
+                        final nextVer =
+                            fields.standardVersion <= pubLevel.standardVersion
+                            ? pubLevel.standardVersion + 1
+                            : fields.standardVersion;
+                        return CheckboxListTile(
+                          key: Key('bumpStandardVersion_${level.name}'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(
+                            'Mark as revised standard '
+                            '(v${fields.standardVersion} → v$nextVer)',
+                          ),
+                          subtitle: const Text(
+                            'Automatically enabled when Proficient criteria '
+                            'change; existing verifications stay intact.',
+                          ),
+                          value: checked,
+                          onChanged:
+                              autoRevised ||
+                                  fields.standardVersion >
+                                      pubLevel.standardVersion
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    fields.markRevisedStandard = value ?? false;
+                                  });
+                                },
+                        );
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Wrap(
                     alignment: WrapAlignment.spaceBetween,
@@ -1043,34 +1140,12 @@ class DraftPreviewDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pubFamilyMap = {for (final f in publishedFamilies) f.id: f};
-    final pubSkillMap = {for (final s in publishedSkills) s.id: s};
-
-    final addedFamilies = draftFamilies
-        .where((f) => !pubFamilyMap.containsKey(f.id))
-        .toList();
-    final modifiedFamilies = draftFamilies.where((f) {
-      final pub = pubFamilyMap[f.id];
-      if (pub == null) return false;
-      return pub.name != f.name ||
-          pub.description != f.description ||
-          pub.sortOrder != f.sortOrder;
-    }).toList();
-
-    final addedSkills = draftSkills
-        .where((s) => !pubSkillMap.containsKey(s.id))
-        .toList();
-    final modifiedSkills = draftSkills.where((s) {
-      final pub = pubSkillMap[s.id];
-      if (pub == null) return false;
-      return pub.toMap().toString() != s.toMap().toString();
-    }).toList();
-
-    final hasChanges =
-        addedFamilies.isNotEmpty ||
-        modifiedFamilies.isNotEmpty ||
-        addedSkills.isNotEmpty ||
-        modifiedSkills.isNotEmpty;
+    final diff = CurriculumDraftDiff.compute(
+      publishedFamilies: publishedFamilies,
+      publishedSkills: publishedSkills,
+      draftFamilies: draftFamilies,
+      draftSkills: draftSkills,
+    );
 
     return AlertDialog(
       title: const Text('Curriculum Draft Preview'),
@@ -1094,7 +1169,7 @@ class DraftPreviewDialog extends StatelessWidget {
                 },
               ),
               const Divider(),
-              if (!hasChanges)
+              if (!diff.hasChanges)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Text(
@@ -1102,37 +1177,67 @@ class DraftPreviewDialog extends StatelessWidget {
                   ),
                 )
               else ...[
-                if (addedFamilies.isNotEmpty) ...[
+                if (diff.addedFamilies.isNotEmpty) ...[
                   _sectionTitle(
                     context,
-                    'Added Families (${addedFamilies.length})',
+                    'Added Families (${diff.addedFamilies.length})',
                   ),
-                  for (final f in addedFamilies) Text('• ${f.name} (${f.id})'),
-                  const SizedBox(height: 10),
-                ],
-                if (modifiedFamilies.isNotEmpty) ...[
-                  _sectionTitle(
-                    context,
-                    'Modified Families (${modifiedFamilies.length})',
-                  ),
-                  for (final f in modifiedFamilies)
+                  for (final f in diff.addedFamilies)
                     Text('• ${f.name} (${f.id})'),
                   const SizedBox(height: 10),
                 ],
-                if (addedSkills.isNotEmpty) ...[
+                if (diff.modifiedFamilies.isNotEmpty) ...[
                   _sectionTitle(
                     context,
-                    'Added Skills (${addedSkills.length})',
+                    'Modified Families (${diff.modifiedFamilies.length})',
                   ),
-                  for (final s in addedSkills) Text('• ${s.name} (${s.id})'),
+                  for (final item in diff.modifiedFamilies)
+                    Text(
+                      '• ${item.family.name} (${item.family.id}) — '
+                      '${item.changedFields.join(', ')}',
+                    ),
                   const SizedBox(height: 10),
                 ],
-                if (modifiedSkills.isNotEmpty) ...[
+                if (diff.addedSkills.isNotEmpty) ...[
                   _sectionTitle(
                     context,
-                    'Modified Skills (${modifiedSkills.length})',
+                    'Added Skills (${diff.addedSkills.length})',
                   ),
-                  for (final s in modifiedSkills) Text('• ${s.name} (${s.id})'),
+                  for (final s in diff.addedSkills)
+                    Text('• ${s.name} (${s.id})'),
+                  const SizedBox(height: 10),
+                ],
+                if (diff.modifiedSkills.isNotEmpty) ...[
+                  _sectionTitle(
+                    context,
+                    'Modified Skills (${diff.modifiedSkills.length})',
+                  ),
+                  for (final item in diff.modifiedSkills)
+                    Text(
+                      '• ${item.skill.name} (${item.skill.id}) — '
+                      '${item.changedFields.join(', ')}',
+                    ),
+                  const SizedBox(height: 10),
+                ],
+                if (diff.retiredSkills.isNotEmpty) ...[
+                  _sectionTitle(
+                    context,
+                    'Retired Skills (${diff.retiredSkills.length})',
+                  ),
+                  for (final s in diff.retiredSkills)
+                    Text(
+                      '• ${s.name} (${s.id})'
+                      '${s.replacedBy == null ? '' : ' → ${s.replacedBy}'}',
+                    ),
+                  const SizedBox(height: 10),
+                ],
+                if (diff.removedSkills.isNotEmpty) ...[
+                  _sectionTitle(
+                    context,
+                    'Removed Published Skills (${diff.removedSkills.length}) — Blocked',
+                  ),
+                  for (final s in diff.removedSkills)
+                    Text('• ${s.name} (${s.id})'),
                 ],
               ],
             ],

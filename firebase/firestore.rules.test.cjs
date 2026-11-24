@@ -553,6 +553,11 @@ test('SkillTreeCurriculumDrafts allows admin read only and denies all client wri
     email_verified: true,
     admin: true,
   }).firestore();
+  const unverifiedAdminDb = environment.authenticatedContext('unv-admin-draft', {
+    email: 'unv-admin@example.com',
+    email_verified: false,
+    admin: true,
+  }).firestore();
   const modDb = environment.authenticatedContext('mod-draft', {
     email: 'mod-draft@example.com',
     email_verified: true,
@@ -562,17 +567,102 @@ test('SkillTreeCurriculumDrafts allows admin read only and denies all client wri
     email: 'user-draft@example.com',
     email_verified: true,
   }).firestore();
+  const guestDb = environment.unauthenticatedContext().firestore();
 
   await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default')));
   await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default/AuditEvents/evt-1')));
 
+  await assertFails(getDoc(doc(unverifiedAdminDb, 'SkillTreeCurriculumDrafts/default')));
   await assertFails(getDoc(doc(modDb, 'SkillTreeCurriculumDrafts/default')));
   await assertFails(getDoc(doc(modDb, 'SkillTreeCurriculumDrafts/default/AuditEvents/evt-1')));
   await assertFails(getDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default')));
+  await assertFails(getDoc(doc(guestDb, 'SkillTreeCurriculumDrafts/default')));
 
   await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
+  await assertFails(updateDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default'), {published: true}));
+  await assertFails(deleteDoc(doc(adminDb, 'SkillTreeCurriculumDrafts/default')));
   await assertFails(setDoc(doc(modDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
   await assertFails(setDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
+});
+
+test('Retired skills preserve existing SkillProgress/Verifications reads and block new retired progress writes', async () => {
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'Rider_Profile/ret-rider@example.com'), {
+      email: 'ret-rider@example.com',
+      ownerUid: 'uid-ret-rider',
+      instructorUids: ['uid-ret-coach'],
+    });
+    await setDoc(doc(db, 'SkillsV2/rider.mounted.retired_skill'), {
+      id: 'rider.mounted.retired_skill',
+      status: 'retired',
+      subject: 'rider',
+      availableLevels: ['introductory'],
+    });
+    await setDoc(doc(db, 'SkillsV2/rider.mounted.active_legacy_level'), {
+      id: 'rider.mounted.active_legacy_level',
+      status: 'active',
+      subject: 'rider',
+      // Simulate only introductory currently listed while an existing record holds untouched intermediate.
+      availableLevels: ['introductory'],
+    });
+    await setDoc(doc(db, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill'), {
+      skillId: 'rider.mounted.retired_skill',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {
+        introductory: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider'},
+      },
+    });
+    await setDoc(doc(db, 'Rider_Profile/ret-rider@example.com/SkillVerifications/rider.mounted.retired_skill'), {
+      skillId: 'rider.mounted.retired_skill',
+      levels: {
+        introductory: {verifiedState: 'PROFICIENT', verifiedByName: 'Coach'},
+      },
+    });
+    await setDoc(doc(db, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+      skillId: 'rider.mounted.active_legacy_level',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {
+        intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      },
+    });
+  });
+
+  const ownerDb = environment.authenticatedContext('uid-ret-rider', {
+    email: 'ret-rider@example.com',
+    email_verified: true,
+  }).firestore();
+  const coachDb = environment.authenticatedContext('uid-ret-coach', {
+    email: 'ret-coach@example.com',
+    email_verified: true,
+  }).firestore();
+
+  // Historical retired progress & verifications remain readable by owner and instructor.
+  await assertSucceeds(getDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill')));
+  await assertSucceeds(getDoc(doc(coachDb, 'Rider_Profile/ret-rider@example.com/SkillVerifications/rider.mounted.retired_skill')));
+
+  // New writes on retired skills are denied.
+  await assertFails(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill'), {
+    skillId: 'rider.mounted.retired_skill',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'LEARNING', updatedByUid: 'uid-ret-rider'},
+    },
+  }));
+
+  // Updating an active level succeeds without breaking an untouched pre-existing historical level key.
+  await assertSucceeds(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+    skillId: 'rider.mounted.active_legacy_level',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
 });
 
 test('Resources allows verified admin writes while denying moderator and unrelated users', async () => {

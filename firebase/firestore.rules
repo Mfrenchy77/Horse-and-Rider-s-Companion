@@ -50,15 +50,22 @@ service cloud.firestore {
     }
 
     function validSkillProgressLevel(skillData, levelsMap, levelKey) {
-      return !(levelKey in levelsMap) || (
-        levelKey in skillData.availableLevels
-        && levelsMap[levelKey] is map
-        && levelsMap[levelKey].keys().hasOnly([
-          'state', 'updatedAt', 'updatedByUid', 'updatedByName'
-        ])
-        && levelsMap[levelKey].state in ['LEARNING', 'PROFICIENT']
-        && levelsMap[levelKey].get('updatedByUid', '') == request.auth.uid
-      );
+      return !(levelKey in levelsMap)
+        || (
+          resource != null
+          && resource.data.levels is map
+          && levelKey in resource.data.levels
+          && levelsMap[levelKey] == resource.data.levels[levelKey]
+        )
+        || (
+          levelKey in skillData.availableLevels
+          && levelsMap[levelKey] is map
+          && levelsMap[levelKey].keys().hasOnly([
+            'state', 'updatedAt', 'updatedByUid', 'updatedByName'
+          ])
+          && levelsMap[levelKey].state in ['LEARNING', 'PROFICIENT']
+          && levelsMap[levelKey].get('updatedByUid', '') == request.auth.uid
+        );
     }
 
     function validSkillProgressDoc(skillId, expectedSubject) {

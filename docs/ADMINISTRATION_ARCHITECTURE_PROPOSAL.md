@@ -250,3 +250,20 @@ Consistent with [skill_tree_v2_repository.dart](file:///home/matteo/Pictures/Pro
 3. **Rate Limit & Submitter Visibility:** Approve limiting community suggestions (e.g., max 5 open `submitted` items / 10 per 24 hours per user) and allowing submitters to see their own suggestions' `status` and `publicResolutionNote`?
 4. **Admin Notifications:** Should new suggestions trigger an FCM push / email notification to administrators (reusing the `index.js` pattern), or rely solely on the in-app inbox at first?
 5. **Administration Entry Placement on Desktop:** Is placing the `Administration` link in `RiderDrawer` + `RiderProfileOverFlowMenu` sufficient for Phase 1, or would you also like a conditional 4th `NavigationRail` destination shown only to Admins/Moderators?
+
+---
+
+## 12. Phase 2A Implementation Status & Phase 2B Readiness
+
+Phase 2A hardened curriculum draft integrity and progress preservation locally (without enabling UI publishing yet):
+
+### Delivered in Phase 2A
+1. **Shared Validator Consolidation:** [curriculum_validator.js](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/functions/curriculum_validator.js) unifies CLI (`tool/validate_curriculum_v2.js`) and Cloud Function (`saveSkillTreeCurriculumDraft`) validation—checking duplicate IDs, missing families, subject/realm alignment, related-skill references, self-links, counterpart symmetry, `foundation` cycles, valid `retired`/`replacedBy` links, and published skill/level/`legacyIds`/`standardVersion` preservation.
+2. **Atomic Draft Integrity & Metadata Parity:** `saveSkillTreeCurriculumDraft` validates against live `SkillsV2` before writing to `SkillTreeCurriculumDrafts/default` (invalid payloads never overwrite a valid saved draft) and preserves `replacedBy`, `standardVersion`, `standardUpdatedAt`, `updatedAt`, and `updatedBy`. Single-document payload size (`~174.5 KB` baseline vs. `1 MiB` Firestore ceiling) warns above `700 KB` and blocks above `900 KB`.
+3. **Zero False-Positive Diff Preview:** [curriculum_draft_diff.dart](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/packages/database_repository/lib/src/models/curriculum_draft_diff.dart) powers `DraftPreviewDialog`, ignoring transient timestamp/editor metadata and listing field-level edits, standard version increments, and retired/removed warnings.
+4. **Progress & Verification Protection:** `EditCurriculumSkillDialog` locks published difficulty levels and auto-increments `standardVersion` when `Proficient` criteria change; `SkillDetailV2Panel` displays a read-only banner + replacement link for `retired` skills and notes earlier-standard verifications without revoking them; `FirestoreSkillTreeV2Store` loads `active` and `retired` skills so `My Skills` (`AbilitySummaryV2View`) and `Profile` retain historical progress; `firebase/firestore.rules` preserves untouched historical level entries during `SkillProgress` updates.
+
+### Remaining Design Decisions Before Phase 2B (Publishing, Revision History & Rollback)
+1. **Revision Snapshot Storage Ceiling:** As curriculum size grows beyond ~250 skills (or if drafts exceed `900 KB`), decide whether `SkillTreeCurriculumRevisions` should store per-skill revision deltas or chunked/Cloud Storage snapshots alongside document metadata.
+2. **Contributor Attribution Opt-In Mechanism:** Define where submitter display consent is captured (`SuggestImprovementDialog` opt-in toggle vs. account setting) and whether attribution lists display names on skill details when consent is granted.
+3. **JSON Git Sync Workflow:** Confirm whether Phase 2B should pair a `tool/export_curriculum_v2.js` Admin SDK CLI exporter with an in-app Admin JSON export download to keep `curriculum/v2/*.json` synchronized after UI publishes.

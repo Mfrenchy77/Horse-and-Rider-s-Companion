@@ -186,8 +186,15 @@ class AbilitySummaryV2View extends StatelessWidget {
       for (final skill in realmSkills) {
         final progress = state.progressBySkillId[skill.id];
         final verification = state.verificationsBySkillId[skill.id];
+        final orderedLevels = [
+          for (final lvl in kOrderedDifficultyLevels)
+            if (skill.availableLevels.contains(lvl) ||
+                (progress?.levels.containsKey(lvl) ?? false) ||
+                (verification?.levels.containsKey(lvl) ?? false))
+              lvl,
+        ];
         final startedLevels = <_StartedLevelStatus>[];
-        for (final level in skill.availableLevels) {
+        for (final level in orderedLevels) {
           final selfState = progress?.levels[level]?.state;
           final isVerified = verification?.levels.containsKey(level) ?? false;
           if (selfState != null || isVerified) {
@@ -265,6 +272,26 @@ class _StartedSkillTile extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (item.skill.status == CurriculumSkillStatus.retired) ...[
+                    Container(
+                      key: Key('retiredBadge_${item.skill.id}'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Retired',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                   const Icon(Icons.chevron_right, size: 18),
                 ],
               ),
