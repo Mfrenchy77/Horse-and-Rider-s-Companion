@@ -292,3 +292,24 @@ Phase 2B introduces atomic, versioned curriculum publishing so riders and instru
 1. Deploy updated Firestore security rules (`SkillTreeCurriculumPublic/active` + active-revision chunk read rule) and Cloud Functions with `CURRICULUM_PUBLISHING_ENABLED=false`.
 2. Deploy updated Flutter Web/mobile clients (`FirestoreSkillTreeV2Store` reads `SkillTreeCurriculumPublic/active` first with strict completeness checks and clean fallback to `SkillFamilies`/`SkillsV2` and bundled `curriculum/v2/*.json`).
 3. Enable `CURRICULUM_PUBLISHING_ENABLED=true` and `ENABLE_CURRICULUM_PUBLISHING=true` only after explicit owner approval. Legacy clients continue working seamlessly via Stage 5 mirroring.
+
+---
+
+## 14. Phase 2C Complete Skill Tree Administration & Bundled Sync Runbook
+
+### Community Suggestions → Draft & Contributor Recognition
+- **Suggestion Incorporation:** Verified administrators can select **Incorporate into Draft** on any suggestion in `AdministrationPage`, apply edits to existing skills, new skills, or families in `SkillTreeCurriculumDrafts/default` without auto-publishing, and mark the suggestion `incorporated`. Repeated incorporation attempts show an explicit notice to prevent duplicate edits.
+- **Consent-Gated Privacy:** `SuggestImprovementDialog` provides an opt-in checkbox (**"Credit me if my suggestion is used"**, default unchecked). `submitSuggestionHandler` stores `creditConsent` immutably; `reviewSuggestionHandler` rejects `grantPublicCredit: true` if `creditConsent !== true` and never publishes email addresses, UIDs, or suggestion text. Approved display names are stored separately in `SkillTreeCurriculumPublic/contributors` (`{ names, updatedAt }`, public read, server-only write) and rendered subtly at the bottom of the Skill Tree browse list.
+
+### Updating Bundled Offline Curriculum (`curriculum/v2/*.json`)
+After publishing a curriculum update in production:
+1. Preview differences (read-only, never writes to Firestore):
+   `node tool/export_curriculum_v2.js --project horse-and-riders-compani-d2bd4 --dry-run`
+2. Write deterministic JSON files into `curriculum/v2/`:
+   `node tool/export_curriculum_v2.js --project horse-and-riders-compani-d2bd4 --write`
+3. Verify schema integrity:
+   `node tool/validate_curriculum_v2.js`
+4. Review `git diff curriculum/v2/`, commit locally, and include in the next client release so offline fallbacks stay synchronized.
+
+### Older-Client Atomic Compatibility Limitation
+Clients built before Phase 2B read `SkillFamilies` and `SkillsV2` directly rather than `SkillTreeCurriculumPublic/active`. During Stage 5 (`syncing_legacy`), a very old client reading in the exact sub-second window while legacy documents are mirrored could observe a transient mixed state. **Safe rollout strategy:** deploy Firestore rules + Cloud Functions (publishing disabled) → deploy updated Flutter Web/mobile clients (which read `SkillTreeCurriculumPublic/active` atomically with strict mid-read revision-switch retry and bundled offline fallback) → wait for web/mobile adoption → enable `CURRICULUM_PUBLISHING_ENABLED=true` and `ENABLE_CURRICULUM_PUBLISHING=true`.

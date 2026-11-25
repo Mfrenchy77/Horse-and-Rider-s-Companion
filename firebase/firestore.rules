@@ -156,7 +156,7 @@ service cloud.firestore {
     }
 
     match /SkillTreeCurriculumPublic/{docId} {
-      allow read: if docId == 'active';
+      allow read: if docId == 'active' || docId == 'contributors';
       allow write: if false;
     }
 

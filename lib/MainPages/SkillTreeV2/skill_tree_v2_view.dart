@@ -78,6 +78,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   CurriculumPublicationStatus _publicationStatus =
       CurriculumPublicationStatus.idle;
   bool _isRecoveryBusy = false;
+  List<String> _contributorNames = const [];
   late final SkillTreeV2Repository _repository;
 
   bool _isVerifiedAdmin(AppState appState) =>
@@ -89,6 +90,18 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
       store.invalidateCache();
     } else if (store is HybridCurriculumSkillTreeV2Store) {
       store.invalidateCache();
+    }
+  }
+
+  Future<void> _loadContributorNames() async {
+    try {
+      final repo = context.read<SkillTreeSuggestionsRepository?>();
+      if (repo == null) return;
+      final names = await repo.fetchPublicContributorNames();
+      if (!mounted || names.isEmpty) return;
+      setState(() => _contributorNames = names);
+    } catch (_) {
+      // Non-blocking community recognition load.
     }
   }
 
@@ -510,6 +523,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         onRestored: (_) {
           _invalidateCurriculumCache();
           _loadPublicationStatus();
+    _loadContributorNames();
           _cubit.initialize(
             initialSubject: _cubit.state.subject,
             profileDocId: _profileDocIdFor(
@@ -674,6 +688,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         profileDocId: _profileDocIdFor(appState, initialSubject),
       );
     _loadPublicationStatus();
+    _loadContributorNames();
     GuestSpotlightTour.skillTreeHooks = GuestSpotlightSkillTreeHooks(
       expandFirstFamily: _expandFirstFamilyForTour,
       ensureSkillSelected: _ensureSkillSelectedForTour,
@@ -1345,6 +1360,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                       child: SkillFamilyListV2(
                                         state: effectiveState,
                                         isAdminEditMode: isAdminEditActive,
+                                        contributorNames: _contributorNames,
                                         onSelectSkill: (skill) =>
                                             _cubit.selectSkill(skill.id),
                                         onToggleFamily:
@@ -1786,6 +1802,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                           child: SkillFamilyListV2(
                                             state: effectiveState,
                                             isAdminEditMode: isAdminEditActive,
+                                            contributorNames: _contributorNames,
                                             onSelectSkill: (skill) =>
                                                 _openMobileDetail(skill.id),
                                             onToggleFamily:

@@ -595,6 +595,9 @@ test('SkillTreeCurriculumPublic, Revisions, and Meta enforce atomic public reads
       activeRevisionNumber: 1,
       chunkCount: 1,
     });
+    await setDoc(doc(db, 'SkillTreeCurriculumPublic/contributors'), {
+      names: ['Jane Smith'],
+    });
     await setDoc(doc(db, 'SkillTreeCurriculumPublic/private_other'), {
       secret: true,
     });
@@ -660,6 +663,7 @@ test('SkillTreeCurriculumPublic, Revisions, and Meta enforce atomic public reads
   // Staged/historical revision chunks (rev_000002), revision headers, and Meta remain denied!
   for (const db of [unverifiedAdminDb, modDb, userDb, guestDb]) {
     await assertSucceeds(getDoc(doc(db, 'SkillTreeCurriculumPublic/active')));
+    await assertSucceeds(getDoc(doc(db, 'SkillTreeCurriculumPublic/contributors')));
     await assertSucceeds(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000')));
     await assertFails(getDoc(doc(db, 'SkillTreeCurriculumPublic/private_other')));
     await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001')));
@@ -670,6 +674,7 @@ test('SkillTreeCurriculumPublic, Revisions, and Meta enforce atomic public reads
 
   // All client writes/updates/deletes are denied (even for verified admins).
   await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumPublic/active'), {activeRevisionId: 'rev_000002'}));
+  await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumPublic/contributors'), {names: ['Spoofed']}));
   await assertFails(updateDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001'), {notes: 'Tampered'}));
   await assertFails(deleteDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001')));
   await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000'), {payload: 'tampered'}));

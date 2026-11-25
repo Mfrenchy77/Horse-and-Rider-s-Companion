@@ -15,6 +15,7 @@ class SkillFamilyListV2 extends StatelessWidget {
     this.isAdminEditMode = false,
     this.onEditFamily,
     this.onAddSkillToFamily,
+    this.contributorNames = const [],
   });
 
   final SkillTreeV2State state;
@@ -23,6 +24,7 @@ class SkillFamilyListV2 extends StatelessWidget {
   final bool isAdminEditMode;
   final ValueChanged<SkillFamily>? onEditFamily;
   final ValueChanged<SkillFamily>? onAddSkillToFamily;
+  final List<String> contributorNames;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,7 @@ class SkillFamilyListV2 extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
+    final list = ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: families.length,
@@ -258,6 +260,45 @@ class SkillFamilyListV2 extends StatelessWidget {
               )
             : card;
       },
+    );
+
+    if (contributorNames.isEmpty) return list;
+
+    final displayedNames = contributorNames.take(3).toList();
+    final namesLine = displayedNames.length == 1
+        ? 'With contributions from ${displayedNames.first} and other members '
+              'of our community.'
+        : 'With contributions from ${displayedNames.join(', ')} and other '
+              'members of our community.';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppTokens.spaceMd,
+      children: [
+        list,
+        AppSurfaceCard(
+          key: const Key('communityContributorsCard'),
+          padding: const EdgeInsets.all(AppTokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 4,
+            children: [
+              Text(
+                'Community Contributors',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                namesLine,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

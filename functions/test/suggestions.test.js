@@ -273,3 +273,99 @@ test('reviewSuggestionHandler enforces moderator vs admin permissions and record
       false,
   );
 });
+
+test('contributor consent is opt-in, preserved, and never exposes emails or UIDs publicly', async () => {
+  const db = createFakeFirestore();
+  let counter = 0;
+  const now = () => new Date(Date.UTC(2026, 10, 24, 15, 0, 0));
+  const submit = submitSuggestionHandler(db, {now, uuid: () => `c-${++counter}`});
+  const review = reviewSuggestionHandler(db, {now, uuid: () => `c-${++counter}`});
+
+  const adminAuth = {
+    uid: 'admin-1',
+    token: {email: 'admin@example.com', name: 'Admin', email_verified: true, admin: true},
+  };
+  const modAuth = {
+    uid: 'mod-1',
+    token: {email: 'mod@example.com', name: 'Mod', email_verified: true, moderator: true},
+  };
+
+  // 1. Default submission without creditConsent -> creditConsent is false.
+  const noConsent = await submit({
+    auth: {uid: 'u-no', token: {email: 'private@example.com', name: 'Private Rider', email_verified: true}},
+    data: validPayload({title: 'No consent suggestion'}),
+  });
+  assert.equal(noConsent.suggestion.creditConsent, false);
+
+  // Admin CANNOT grant public credit when contributor did not opt in.
+  await assert.rejects(
+      () => review({
+        auth: adminAuth,
+        data: {
+          suggestionId: noConsent.suggestion.id,
+          status: 'incorporated',
+          grantPublicCredit: true,
+        },
+      }),
+      (err) => err.code === 'failed-precondition',
+  );
+  // Admin CAN incorporate without granting public credit.
+  const incorporatedNoCredit = await review({
+    auth: adminAuth,
+    data: {
+      suggestionId: noConsent.suggestion.id,
+      status: 'incorporated',
+    },
+  });
+  assert.equal(incorporatedNoCredit.suggestion.status, 'incorporated');
+  assert.equal(incorporatedNoCredit.suggestion.creditGranted, false);
+  assert.equal(db._store.has('SkillTreeCurriculumPublic/contributors'), false);
+
+  // Moderator cannot mark incorporated or grant credit.
+  await assert.rejects(
+      () => review({
+        auth: modAuth,
+        data: {suggestionId: noConsent.suggestion.id, status: 'incorporated'},
+      }),
+      (err) => err.code === 'permission-denied',
+  );
+
+  // 2. Submission with creditConsent: true -> admin may grant public credit.
+  const withConsent = await submit({
+    auth: {uid: 'u-yes', token: {email: 'jane@example.com', name: 'Jane Smith', email_verified: true}},
+    data: validPayload({title: 'Opted-in suggestion', creditConsent: true}),
+  });
+  assert.equal(withConsent.suggestion.creditConsent, true);
+
+  const credited = await review({
+    auth: adminAuth,
+    data: {
+      suggestionId: withConsent.suggestion.id,
+      status: 'incorporated',
+      grantPublicCredit: true,
+    },
+  });
+  assert.equal(credited.suggestion.creditGranted, true);
+  assert.equal(credited.suggestion.creditConsent, true);
+
+  const publicContributors = db._store.get('SkillTreeCurriculumPublic/contributors');
+  assert.deepEqual(publicContributors.names, ['Jane Smith']);
+  assert.equal(JSON.stringify(publicContributors).includes('jane@example.com'), false);
+  assert.equal(JSON.stringify(publicContributors).includes('u-yes'), false);
+
+  // 3. Submitter with no display name (only email) never leaks email into public contributors.
+  const emailOnly = await submit({
+    auth: {uid: 'u-email', token: {email: 'secret@example.com', email_verified: true}},
+    data: validPayload({title: 'Email-only opted-in suggestion', creditConsent: true}),
+  });
+  await review({
+    auth: adminAuth,
+    data: {
+      suggestionId: emailOnly.suggestion.id,
+      status: 'incorporated',
+      grantPublicCredit: true,
+    },
+  });
+  const afterEmailOnly = db._store.get('SkillTreeCurriculumPublic/contributors');
+  assert.deepEqual(afterEmailOnly.names, ['Jane Smith']);
+});

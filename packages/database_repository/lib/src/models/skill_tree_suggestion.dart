@@ -59,6 +59,7 @@ enum SuggestionStatus {
     'Approved (New Skill)',
     isAdminOnly: true,
   ),
+  incorporated('incorporated', 'Incorporated', isAdminOnly: true),
   published('published', 'Published', isAdminOnly: true),
   declinedAlreadyCovered(
     'declined_already_covered',
@@ -110,6 +111,7 @@ class SkillTreeSuggestionDraft {
     this.targetLevel,
     this.rationale,
     this.proposedAlias,
+    this.creditConsent = false,
   });
 
   final SuggestionCategory contributionCategory;
@@ -123,6 +125,7 @@ class SkillTreeSuggestionDraft {
   final String description;
   final String? rationale;
   final String? proposedAlias;
+  final bool creditConsent;
 
   /// Converts this draft to the Cloud Function payload map.
   Map<String, dynamic> toPayload() => {
@@ -137,6 +140,7 @@ class SkillTreeSuggestionDraft {
         'description': description,
         'rationale': rationale,
         'proposedAlias': proposedAlias,
+        'creditConsent': creditConsent,
       };
 }
 
@@ -151,6 +155,7 @@ class SuggestionReviewUpdate {
     this.publicResolutionNote,
     this.includePublicResolutionNote = false,
     this.privateNote,
+    this.grantPublicCredit,
   });
 
   final String suggestionId;
@@ -160,6 +165,7 @@ class SuggestionReviewUpdate {
   final String? publicResolutionNote;
   final bool includePublicResolutionNote;
   final String? privateNote;
+  final bool? grantPublicCredit;
 
   /// Converts this update to the Cloud Function payload map.
   Map<String, dynamic> toPayload() {
@@ -177,6 +183,9 @@ class SuggestionReviewUpdate {
     }
     if (privateNote != null && privateNote!.trim().isNotEmpty) {
       payload['privateNote'] = privateNote!.trim();
+    }
+    if (grantPublicCredit != null) {
+      payload['grantPublicCredit'] = grantPublicCredit;
     }
     return payload;
   }
@@ -204,11 +213,14 @@ class SkillTreeSuggestion extends Equatable {
     this.targetLevel,
     this.rationale,
     this.proposedAlias,
+    this.creditConsent = false,
+    this.creditGranted = false,
     this.assignedToUid,
     this.publicResolutionNote,
     this.reviewedByUid,
     this.reviewedByName,
     this.reviewedAt,
+    this.incorporatedAt,
   });
 
   /// Creates a [SkillTreeSuggestion] from a Firestore or JSON map.
@@ -231,6 +243,8 @@ class SkillTreeSuggestion extends Equatable {
       description: map['description'] as String? ?? '',
       rationale: map['rationale'] as String?,
       proposedAlias: map['proposedAlias'] as String?,
+      creditConsent: map['creditConsent'] == true,
+      creditGranted: map['creditGranted'] == true,
       status: SuggestionStatus.fromWire(map['status'] as String?),
       assignedToUid: map['assignedToUid'] as String?,
       publicResolutionNote: map['publicResolutionNote'] as String?,
@@ -239,6 +253,7 @@ class SkillTreeSuggestion extends Equatable {
       createdAt: _parseDate(map['createdAt']) ?? DateTime.now().toUtc(),
       updatedAt: _parseDate(map['updatedAt']) ?? DateTime.now().toUtc(),
       reviewedAt: _parseDate(map['reviewedAt']),
+      incorporatedAt: _parseDate(map['incorporatedAt']),
     );
   }
 
@@ -257,6 +272,8 @@ class SkillTreeSuggestion extends Equatable {
   final String description;
   final String? rationale;
   final String? proposedAlias;
+  final bool creditConsent;
+  final bool creditGranted;
   final SuggestionStatus status;
   final String? assignedToUid;
   final String? publicResolutionNote;
@@ -265,6 +282,7 @@ class SkillTreeSuggestion extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? reviewedAt;
+  final DateTime? incorporatedAt;
 
   @override
   List<Object?> get props => [
@@ -283,6 +301,8 @@ class SkillTreeSuggestion extends Equatable {
         description,
         rationale,
         proposedAlias,
+        creditConsent,
+        creditGranted,
         status,
         assignedToUid,
         publicResolutionNote,
@@ -291,6 +311,7 @@ class SkillTreeSuggestion extends Equatable {
         createdAt,
         updatedAt,
         reviewedAt,
+        incorporatedAt,
       ];
 }
 

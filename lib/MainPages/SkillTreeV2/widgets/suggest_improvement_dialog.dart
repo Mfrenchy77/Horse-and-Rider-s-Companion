@@ -173,6 +173,7 @@ class _SuggestImprovementDialogState extends State<_SuggestImprovementDialog> {
   late SuggestionCategory _category = widget.targetSkill == null
       ? SuggestionCategory.newSkillProposal
       : SuggestionCategory.componentOrExample;
+  bool _creditConsent = false;
   bool _submitting = false;
   String? _error;
 
@@ -209,6 +210,7 @@ class _SuggestImprovementDialogState extends State<_SuggestImprovementDialog> {
           proposedAlias: _aliasController.text.trim().isEmpty
               ? null
               : _aliasController.text.trim(),
+          creditConsent: _creditConsent,
         ),
       );
       if (!mounted) return;
@@ -346,6 +348,22 @@ class _SuggestImprovementDialogState extends State<_SuggestImprovementDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Why this helps riders or horses (optional)',
                     border: OutlineInputBorder(),
+                  ),
+                ),
+                CheckboxListTile(
+                  key: const Key('suggestionCreditConsentCheckbox'),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: _creditConsent,
+                  onChanged: _submitting
+                      ? null
+                      : (value) => setState(
+                          () => _creditConsent = value ?? false,
+                        ),
+                  title: const Text('Credit me if my suggestion is used'),
+                  subtitle: const Text(
+                    'If your suggestion helps improve the Skill Tree, we may '
+                    'acknowledge your contribution.',
                   ),
                 ),
                 if (_error != null)

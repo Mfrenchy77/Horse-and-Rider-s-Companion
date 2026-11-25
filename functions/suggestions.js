@@ -7,6 +7,8 @@ const {HttpsError} = require('firebase-functions/v2/https');
 
 const SUGGESTIONS_COLLECTION = 'SkillTreeSuggestions';
 const AUDIT_SUBCOLLECTION = 'AuditEvents';
+const PUBLIC_CURRICULUM_COLLECTION = 'SkillTreeCurriculumPublic';
+const PUBLIC_CONTRIBUTORS_DOC_ID = 'contributors';
 const MAX_SUBMISSIONS_PER_24H = 10;
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
@@ -32,6 +34,7 @@ const ADMIN_ONLY_STATUSES = new Set([
   'approved_as_alias_or_component',
   'approved_as_level',
   'approved_as_new_skill',
+  'incorporated',
   'published',
   'declined_already_covered',
   'declined_out_of_scope',
@@ -131,12 +134,25 @@ function serializeSuggestion(data) {
   const createdMs = toMillis(data.createdAt);
   const updatedMs = toMillis(data.updatedAt);
   const reviewedMs = toMillis(data.reviewedAt);
+  const incorporatedMs = toMillis(data.incorporatedAt);
   return {
     ...data,
+    creditConsent: data.creditConsent === true,
+    creditGranted: data.creditGranted === true,
     createdAt: createdMs != null ? new Date(createdMs).toISOString() : null,
     updatedAt: updatedMs != null ? new Date(updatedMs).toISOString() : null,
     reviewedAt: reviewedMs != null ? new Date(reviewedMs).toISOString() : null,
+    incorporatedAt: incorporatedMs != null ? new Date(incorporatedMs).toISOString() : null,
   };
+}
+
+function safePublicContributorName(rawName) {
+  if (typeof rawName !== 'string') return null;
+  const trimmed = rawName.trim();
+  if (!trimmed || trimmed.length > 80) return null;
+  // Never expose email addresses as public contributor names.
+  if (trimmed.includes('@')) return null;
+  return trimmed;
 }
 
 function submitSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID} = {}) {
@@ -162,6 +178,7 @@ function submitSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
     const description = requiredText(data.description, 10, 2000, 'description');
     const rationale = optionalText(data.rationale, 1000, 'rationale');
     const proposedAlias = optionalText(data.proposedAlias, 120, 'proposedAlias');
+    const creditConsent = data.creditConsent === true;
 
     const nowDate = now();
     const nowMs = nowDate.getTime();
@@ -191,16 +208,18 @@ function submitSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
     const suggestionId = uuid();
     const eventId = uuid();
     const submitterEmail = typeof token.email === 'string' ? token.email.toLowerCase() : '';
+    const contributorDisplayName = safePublicContributorName(token.name);
     const submitterName =
-      typeof token.name === 'string' && token.name.trim() ?
-        token.name.trim() :
-        (submitterEmail || 'Community Member');
+      contributorDisplayName || (submitterEmail || 'Community Member');
 
     const suggestionDoc = {
       id: suggestionId,
       submittedByUid: uid,
       submitterEmail,
       submitterName,
+      contributorDisplayName,
+      creditConsent,
+      creditGranted: false,
       contributionCategory,
       subject,
       realm,
@@ -217,6 +236,8 @@ function submitSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
       publicResolutionNote: null,
       reviewedByUid: null,
       reviewedByName: null,
+      incorporatedByUid: null,
+      incorporatedAt: null,
       createdAt: nowDate,
       updatedAt: nowDate,
       reviewedAt: null,
@@ -286,11 +307,21 @@ function reviewSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
 
     const privateNote = optionalText(data.privateNote, 2000, 'privateNote');
 
+    const hasGrantCredit = Object.prototype.hasOwnProperty.call(data, 'grantPublicCredit');
+    const grantPublicCredit = hasGrantCredit ? data.grantPublicCredit === true : undefined;
+    if (hasGrantCredit && !actorIsAdmin) {
+      throw new HttpsError(
+          'permission-denied',
+          'Only administrators may manage contributor recognition.',
+      );
+    }
+
     if (!nextStatus && nextAssignedToUid === undefined &&
-        nextPublicNote === undefined && !privateNote) {
+        nextPublicNote === undefined && !privateNote &&
+        grantPublicCredit === undefined) {
       throw new HttpsError(
           'invalid-argument',
-          'Provide at least one update (status, assignment, public note, or private note).',
+          'Provide at least one update (status, assignment, public note, private note, or credit).',
       );
     }
 
@@ -302,6 +333,9 @@ function reviewSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
         (actorEmail || actorRole);
 
     const suggestionRef = db.collection(SUGGESTIONS_COLLECTION).doc(suggestionId);
+    const contributorsRef = db
+        .collection(PUBLIC_CURRICULUM_COLLECTION)
+        .doc(PUBLIC_CONTRIBUTORS_DOC_ID);
     const nowDate = now();
 
     const updatedSuggestion = await db.runTransaction(async (tx) => {
@@ -315,6 +349,18 @@ function reviewSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
       const toStatus = nextStatus || fromStatus;
       const statusChanged = toStatus !== fromStatus;
 
+      if (grantPublicCredit === true && current.creditConsent !== true) {
+        throw new HttpsError(
+            'failed-precondition',
+            'Contributor did not opt into public credit for this suggestion.',
+        );
+      }
+
+      let contributorsSnap = null;
+      if (grantPublicCredit === true) {
+        contributorsSnap = await tx.get(contributorsRef);
+      }
+
       const patch = {
         updatedAt: nowDate,
       };
@@ -323,12 +369,37 @@ function reviewSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
         patch.reviewedAt = nowDate;
         patch.reviewedByUid = uid;
         patch.reviewedByName = actorName;
+        if (nextStatus === 'incorporated') {
+          patch.incorporatedAt = current.incorporatedAt || nowDate;
+          patch.incorporatedByUid = current.incorporatedByUid || uid;
+        }
       }
       if (nextAssignedToUid !== undefined) {
         patch.assignedToUid = nextAssignedToUid;
       }
       if (nextPublicNote !== undefined) {
         patch.publicResolutionNote = nextPublicNote;
+      }
+      if (grantPublicCredit !== undefined) {
+        patch.creditGranted = grantPublicCredit;
+      }
+
+      if (grantPublicCredit === true) {
+        const publicName = safePublicContributorName(
+            current.contributorDisplayName || current.submitterName,
+        );
+        if (publicName) {
+          const existingNames = contributorsSnap && contributorsSnap.exists &&
+              Array.isArray(contributorsSnap.data()?.names) ?
+            contributorsSnap.data().names.filter((n) => typeof n === 'string' && n.trim()) :
+            [];
+          const mergedSet = new Set([...existingNames, publicName]);
+          const sortedNames = [...mergedSet].sort((a, b) => a.localeCompare(b));
+          tx.set(contributorsRef, {
+            names: sortedNames,
+            updatedAt: nowDate,
+          }, {merge: true});
+        }
       }
 
       let eventType = 'note_added';
@@ -370,11 +441,14 @@ function reviewSuggestionHandler(db, {now = () => new Date(), uuid = randomUUID}
 module.exports = {
   SUGGESTIONS_COLLECTION,
   AUDIT_SUBCOLLECTION,
+  PUBLIC_CURRICULUM_COLLECTION,
+  PUBLIC_CONTRIBUTORS_DOC_ID,
   MAX_SUBMISSIONS_PER_24H,
   CONTRIBUTION_CATEGORIES,
   MODERATOR_STATUSES,
   ADMIN_ONLY_STATUSES,
   ALL_STATUSES,
+  safePublicContributorName,
   submitSuggestionHandler,
   reviewSuggestionHandler,
 };

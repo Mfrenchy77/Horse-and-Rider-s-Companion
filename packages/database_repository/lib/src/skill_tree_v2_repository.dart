@@ -12,6 +12,18 @@ import 'package:database_repository/src/models/skill_family.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 import 'package:database_repository/src/models/skill_progress_v2.dart';
 
+/// Thrown when an active versioned curriculum snapshot is incomplete or
+/// corrupt and cannot be safely served.
+class CurriculumLoadException implements Exception {
+  CurriculumLoadException(this.message, {this.revisionId});
+
+  final String message;
+  final String? revisionId;
+
+  @override
+  String toString() => message;
+}
+
 class _AtomicCurriculumSnapshot {
   const _AtomicCurriculumSnapshot({
     required this.revisionId,
@@ -75,10 +87,12 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
 
   final FirebaseFirestore _firestore;
   _AtomicCurriculumSnapshot? _cachedSnapshot;
+  _AtomicCurriculumSnapshot? _lastVerifiedSnapshot;
   Future<_AtomicCurriculumSnapshot?>? _inFlightSnapshot;
 
-  /// Clears the in-memory atomic snapshot cache so subsequent reads re-check
-  /// `SkillTreeCurriculumPublic/active`.
+  /// Clears the active in-memory snapshot cache so subsequent reads re-check
+  /// `SkillTreeCurriculumPublic/active` while keeping `_lastVerifiedSnapshot`
+  /// as a safe fallback if a newly activated revision is temporarily corrupt.
   void invalidateCache() {
     _cachedSnapshot = null;
     _inFlightSnapshot = null;
@@ -101,100 +115,177 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
   }
 
   Future<_AtomicCurriculumSnapshot?> _fetchAndVerifyAtomicSnapshot() async {
-    try {
-      final activeSnap = await _firestore
-          .collection(_publicCollection)
-          .doc(_publicActiveDocId)
-          .get();
-      final activeData = activeSnap.data();
-      if (!activeSnap.exists || activeData == null) return null;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final DocumentSnapshot<Map<String, dynamic>> activeSnap;
+      try {
+        activeSnap = await _firestore
+            .collection(_publicCollection)
+            .doc(_publicActiveDocId)
+            .get();
+      } catch (_) {
+        if (_lastVerifiedSnapshot != null) return _lastVerifiedSnapshot;
+        rethrow;
+      }
 
-      final activeRevisionId = activeData['activeRevisionId'] as String? ?? '';
-      final expectedChunkCount = (activeData['chunkCount'] as num?)?.toInt() ?? 0;
+      // Pre-versioned environment: active pointer does not exist yet.
+      if (!activeSnap.exists) return null;
+
+      final activeData = activeSnap.data();
+      final activeRevisionId = activeData?['activeRevisionId'] as String? ?? '';
+      final expectedChunkCount =
+          (activeData?['chunkCount'] as num?)?.toInt() ?? 0;
       final expectedFamilyCount =
-          (activeData['familyCount'] as num?)?.toInt() ?? 0;
+          (activeData?['familyCount'] as num?)?.toInt() ?? 0;
       final expectedSkillCount =
-          (activeData['skillCount'] as num?)?.toInt() ?? 0;
-      if (activeRevisionId.isEmpty || expectedChunkCount <= 0) return null;
+          (activeData?['skillCount'] as num?)?.toInt() ?? 0;
+
+      if (activeRevisionId.isEmpty || expectedChunkCount <= 0) {
+        if (_lastVerifiedSnapshot != null) return _lastVerifiedSnapshot;
+        throw CurriculumLoadException(
+          'Active curriculum pointer is invalid or incomplete.',
+          revisionId: activeRevisionId,
+        );
+      }
 
       final cached = _cachedSnapshot;
       if (cached != null && cached.revisionId == activeRevisionId) {
         return cached;
       }
 
-      final chunksSnap = await _firestore
-          .collection(_revisionsCollection)
-          .doc(activeRevisionId)
-          .collection(_chunksSubcollection)
-          .orderBy('index')
-          .get();
+      try {
+        final chunksSnap = await _firestore
+            .collection(_revisionsCollection)
+            .doc(activeRevisionId)
+            .collection(_chunksSubcollection)
+            .orderBy('index')
+            .get();
 
-      if (chunksSnap.docs.length != expectedChunkCount) {
-        return null;
-      }
-
-      final buffer = StringBuffer();
-      for (var i = 0; i < expectedChunkCount; i++) {
-        final data = chunksSnap.docs[i].data();
-        final index = (data['index'] as num?)?.toInt();
-        final payload = data['payload'] as String?;
-        if (index != i || payload == null || payload.isEmpty) {
-          return null;
+        // Detect revision switching mid-read: re-check active pointer.
+        final recheckSnap = await _firestore
+            .collection(_publicCollection)
+            .doc(_publicActiveDocId)
+            .get();
+        final recheckId =
+            recheckSnap.data()?['activeRevisionId'] as String? ?? '';
+        if (recheckId.isNotEmpty && recheckId != activeRevisionId) {
+          if (attempt == 0) continue;
+          if (_lastVerifiedSnapshot != null) return _lastVerifiedSnapshot;
+          throw CurriculumLoadException(
+            'Active curriculum revision changed while loading.',
+            revisionId: recheckId,
+          );
         }
-        buffer.write(payload);
+
+        if (chunksSnap.docs.length != expectedChunkCount) {
+          throw CurriculumLoadException(
+            'Active curriculum revision "$activeRevisionId" is missing chunks.',
+            revisionId: activeRevisionId,
+          );
+        }
+
+        final buffer = StringBuffer();
+        for (var i = 0; i < expectedChunkCount; i++) {
+          final data = chunksSnap.docs[i].data();
+          final index = (data['index'] as num?)?.toInt();
+          final payload = data['payload'] as String?;
+          if (index != i || payload == null || payload.isEmpty) {
+            throw CurriculumLoadException(
+              'Active curriculum revision "$activeRevisionId" has corrupt chunk '
+              'data.',
+              revisionId: activeRevisionId,
+            );
+          }
+          buffer.write(payload);
+        }
+
+        final decoded = jsonDecode(buffer.toString());
+        if (decoded is! Map<String, dynamic>) {
+          throw CurriculumLoadException(
+            'Active curriculum revision "$activeRevisionId" could not be decoded.',
+            revisionId: activeRevisionId,
+          );
+        }
+
+        final rawFamilies = decoded['families'];
+        final rawSkills = decoded['skills'];
+        if (rawFamilies is! List || rawSkills is! List) {
+          throw CurriculumLoadException(
+            'Active curriculum revision "$activeRevisionId" is malformed.',
+            revisionId: activeRevisionId,
+          );
+        }
+
+        final families = rawFamilies
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => SkillFamily.fromMap(Map<String, dynamic>.from(e)))
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+        final allSkills = rawSkills
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => CurriculumSkill.fromMap(Map<String, dynamic>.from(e)))
+            .toList();
+
+        if (expectedFamilyCount > 0 && families.length != expectedFamilyCount) {
+          throw CurriculumLoadException(
+            'Active curriculum revision "$activeRevisionId" family count '
+            'mismatch.',
+            revisionId: activeRevisionId,
+          );
+        }
+        if (expectedSkillCount > 0 && allSkills.length != expectedSkillCount) {
+          throw CurriculumLoadException(
+            'Active curriculum revision "$activeRevisionId" skill count mismatch.',
+            revisionId: activeRevisionId,
+          );
+        }
+
+        final visibleSkills = allSkills
+            .where(
+              (s) =>
+                  s.status == CurriculumSkillStatus.active ||
+                  s.status == CurriculumSkillStatus.retired,
+            )
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+        if (families.isEmpty || visibleSkills.isEmpty) {
+          throw CurriculumLoadException(
+            'Active curriculum revision "$activeRevisionId" contains no visible '
+            'curriculum entries.',
+            revisionId: activeRevisionId,
+          );
+        }
+
+        final snapshot = _AtomicCurriculumSnapshot(
+          revisionId: activeRevisionId,
+          families: List<SkillFamily>.unmodifiable(families),
+          skills: List<CurriculumSkill>.unmodifiable(visibleSkills),
+        );
+        _cachedSnapshot = snapshot;
+        _lastVerifiedSnapshot = snapshot;
+        return snapshot;
+      } catch (err) {
+        if (attempt == 0 && err is! CurriculumLoadException) {
+          // Transient permission/network hiccup during revision flip: retry once.
+          continue;
+        }
+        if (_lastVerifiedSnapshot != null) return _lastVerifiedSnapshot;
+        if (err is CurriculumLoadException) rethrow;
+        throw CurriculumLoadException(
+          'Failed to load active curriculum revision "$activeRevisionId": $err',
+          revisionId: activeRevisionId,
+        );
       }
-
-      final decoded = jsonDecode(buffer.toString());
-      if (decoded is! Map<String, dynamic>) return null;
-
-      final rawFamilies = decoded['families'];
-      final rawSkills = decoded['skills'];
-      if (rawFamilies is! List || rawSkills is! List) return null;
-
-      final families = rawFamilies
-          .whereType<Map<dynamic, dynamic>>()
-          .map((e) => SkillFamily.fromMap(Map<String, dynamic>.from(e)))
-          .toList()
-        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-
-      final allSkills = rawSkills
-          .whereType<Map<dynamic, dynamic>>()
-          .map((e) => CurriculumSkill.fromMap(Map<String, dynamic>.from(e)))
-          .toList();
-
-      if (expectedFamilyCount > 0 && families.length != expectedFamilyCount) {
-        return null;
-      }
-      if (expectedSkillCount > 0 && allSkills.length != expectedSkillCount) {
-        return null;
-      }
-
-      final visibleSkills = allSkills
-          .where(
-            (s) =>
-                s.status == CurriculumSkillStatus.active ||
-                s.status == CurriculumSkillStatus.retired,
-          )
-          .toList()
-        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-
-      final snapshot = _AtomicCurriculumSnapshot(
-        revisionId: activeRevisionId,
-        families: List<SkillFamily>.unmodifiable(families),
-        skills: List<CurriculumSkill>.unmodifiable(visibleSkills),
-      );
-      _cachedSnapshot = snapshot;
-      return snapshot;
-    } catch (_) {
-      // Never return a partially loaded snapshot; let caller fall back cleanly.
-      return null;
     }
+    if (_lastVerifiedSnapshot != null) return _lastVerifiedSnapshot;
+    throw CurriculumLoadException('Unable to load verified curriculum revision.');
   }
 
   @override
   Future<List<SkillFamily>> fetchFamilies() async {
     final atomic = await _loadAtomicSnapshot();
-    if (atomic != null && atomic.families.isNotEmpty) {
+    if (atomic != null) {
       return List<SkillFamily>.from(atomic.families);
     }
     final snap = await _firestore.collection('SkillFamilies').get();
@@ -208,7 +299,7 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
   @override
   Future<List<CurriculumSkill>> fetchSkills() async {
     final atomic = await _loadAtomicSnapshot();
-    if (atomic != null && atomic.skills.isNotEmpty) {
+    if (atomic != null) {
       return List<CurriculumSkill>.from(atomic.skills);
     }
     final snap = await _firestore

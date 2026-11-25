@@ -7,7 +7,9 @@ import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/cubit/administration_suggestions_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_export_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_revision_dialogs.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/incorporate_suggestion_dialog.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
@@ -176,31 +178,43 @@ class _AdministrationPageState extends State<AdministrationPage> {
     }
   }
 
+  Future<({List<SkillFamily> families, List<CurriculumSkill> skills})>
+  _loadLiveCurriculum() async {
+    final skillTreeRepo = _resolveSkillTreeRepo();
+    if (skillTreeRepo == null) {
+      return (
+        families: const <SkillFamily>[],
+        skills: const <CurriculumSkill>[],
+      );
+    }
+    try {
+      final results = await Future.wait([
+        skillTreeRepo.fetchFamilies(),
+        skillTreeRepo.fetchSkills(),
+      ]);
+      return (
+        families: results[0] as List<SkillFamily>,
+        skills: results[1] as List<CurriculumSkill>,
+      );
+    } catch (_) {
+      return (
+        families: const <SkillFamily>[],
+        skills: const <CurriculumSkill>[],
+      );
+    }
+  }
+
   Future<void> _openRevisionHistory() async {
     final draftRepo = _resolveDraftRepo();
     if (draftRepo == null) return;
-    var currentFamilies = const <SkillFamily>[];
-    var currentSkills = const <CurriculumSkill>[];
-    final skillTreeRepo = _resolveSkillTreeRepo();
-    if (skillTreeRepo != null) {
-      try {
-        final results = await Future.wait([
-          skillTreeRepo.fetchFamilies(),
-          skillTreeRepo.fetchSkills(),
-        ]);
-        currentFamilies = results[0] as List<SkillFamily>;
-        currentSkills = results[1] as List<CurriculumSkill>;
-      } catch (_) {
-        // Fall back to empty comparison baseline if live curriculum fails.
-      }
-    }
+    final live = await _loadLiveCurriculum();
     if (!mounted) return;
     await showAppGlassDialog<void>(
       context: context,
       builder: (_) => CurriculumRevisionHistoryDialog(
         draftRepository: draftRepo,
-        currentFamilies: currentFamilies,
-        currentSkills: currentSkills,
+        currentFamilies: live.families,
+        currentSkills: live.skills,
         publishingEnabled: widget.enableCurriculumPublishing,
         onRestored: (_) {
           _invalidateSkillTreeCache();
@@ -208,6 +222,67 @@ class _AdministrationPageState extends State<AdministrationPage> {
         },
       ),
     );
+  }
+
+  Future<void> _openDownloadCurriculum() async {
+    final live = await _loadLiveCurriculum();
+    if (!mounted) return;
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (_) => CurriculumExportDialog(
+        families: live.families,
+        skills: live.skills,
+      ),
+    );
+  }
+
+  Future<void> _incorporateSelected(
+    SkillTreeSuggestion suggestion,
+  ) async {
+    final draftRepo = _resolveDraftRepo();
+    if (draftRepo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Curriculum draft service is not available.'),
+        ),
+      );
+      return;
+    }
+    final live = await _loadLiveCurriculum();
+    if (!mounted) return;
+    final result = await showAppGlassDialog<IncorporateSuggestionResult>(
+      context: context,
+      builder: (_) => IncorporateSuggestionDialog(
+        suggestion: suggestion,
+        draftRepository: draftRepo,
+        publishedFamilies: live.families,
+        publishedSkills: live.skills,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    if (result.markIncorporated || result.grantPublicCredit) {
+      await _cubit.submitReview(
+        SuggestionReviewUpdate(
+          suggestionId: suggestion.id,
+          status: result.markIncorporated
+              ? SuggestionStatus.incorporated
+              : null,
+          grantPublicCredit: result.grantPublicCredit ? true : null,
+          privateNote: result.draftSaved
+              ? 'Incorporated into curriculum draft.'
+              : null,
+        ),
+      );
+    } else if (result.draftSaved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Saved suggestion changes to curriculum draft (not yet published).',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -274,13 +349,20 @@ class _AdministrationPageState extends State<AdministrationPage> {
                     : 'Moderation · Suggestions Inbox',
               ),
               actions: [
-                if (appState.isAdmin)
+                if (appState.isAdmin) ...[
+                  IconButton(
+                    key: const Key('adminDownloadCurriculumButton'),
+                    tooltip: 'Download Curriculum',
+                    onPressed: _openDownloadCurriculum,
+                    icon: const Icon(Icons.download_outlined),
+                  ),
                   IconButton(
                     key: const Key('adminRevisionHistoryButton'),
                     tooltip: 'Curriculum Revision History',
                     onPressed: _openRevisionHistory,
                     icon: const Icon(Icons.history_outlined),
                   ),
+                ],
                 IconButton(
                   key: const Key('adminRefreshInboxButton'),
                   tooltip: 'Refresh inbox',
@@ -364,6 +446,12 @@ class _AdministrationPageState extends State<AdministrationPage> {
                                             isSubmitting: state.isSubmitting,
                                             isAdmin: appState.isAdmin,
                                             currentUid: appState.user.id,
+                                            onIncorporateIntoDraft:
+                                                appState.isAdmin
+                                                ? () => _incorporateSelected(
+                                                    state.selectedSuggestion!,
+                                                  )
+                                                : null,
                                             onSubmitReview:
                                                 _cubit.submitReview,
                                           ),
@@ -379,6 +467,11 @@ class _AdministrationPageState extends State<AdministrationPage> {
                                 isSubmitting: state.isSubmitting,
                                 isAdmin: appState.isAdmin,
                                 currentUid: appState.user.id,
+                                onIncorporateIntoDraft: appState.isAdmin
+                                    ? () => _incorporateSelected(
+                                        state.selectedSuggestion!,
+                                      )
+                                    : null,
                                 onBack: () => setState(
                                   () => _mobileShowingDetail = false,
                                 ),
@@ -508,6 +601,7 @@ class _SuggestionDetailPane extends StatefulWidget {
     required this.isAdmin,
     required this.currentUid,
     required this.onSubmitReview,
+    this.onIncorporateIntoDraft,
     this.onBack,
   });
 
@@ -518,6 +612,7 @@ class _SuggestionDetailPane extends StatefulWidget {
   final bool isAdmin;
   final String currentUid;
   final Future<bool> Function(SuggestionReviewUpdate update) onSubmitReview;
+  final VoidCallback? onIncorporateIntoDraft;
   final VoidCallback? onBack;
 
   @override
@@ -631,6 +726,16 @@ class _SuggestionDetailPaneState extends State<_SuggestionDetailPane> {
                   Chip(label: Text('Skill: ${s.targetSkillName}')),
                 if (s.targetLevel != null)
                   Chip(label: Text('Level: ${s.targetLevel}')),
+                if (widget.isAdmin)
+                  Chip(
+                    label: Text(
+                      s.creditConsent
+                          ? (s.creditGranted
+                                ? 'Contributor credit: Granted'
+                                : 'Contributor credit: Opted in')
+                          : 'Contributor credit: Not requested',
+                    ),
+                  ),
               ],
             ),
             Text(
@@ -717,6 +822,15 @@ class _SuggestionDetailPaneState extends State<_SuggestionDetailPane> {
               spacing: AppTokens.spaceSm,
               runSpacing: AppTokens.spaceSm,
               children: [
+                if (widget.isAdmin && widget.onIncorporateIntoDraft != null)
+                  FilledButton.tonalIcon(
+                    key: const Key('adminIncorporateIntoDraftButton'),
+                    onPressed: widget.isSubmitting
+                        ? null
+                        : widget.onIncorporateIntoDraft,
+                    icon: const Icon(Icons.playlist_add_outlined),
+                    label: const Text('Incorporate into Draft'),
+                  ),
                 FilledButton.icon(
                   key: const Key('adminSaveReviewButton'),
                   onPressed: widget.isSubmitting ? null : _saveReview,

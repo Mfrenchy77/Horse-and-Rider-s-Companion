@@ -26,6 +26,9 @@ abstract interface class SkillTreeSuggestionsStore {
 
   /// Applies a staff review update (status, assignment, notes) atomically.
   Future<SkillTreeSuggestion> reviewSuggestion(SuggestionReviewUpdate update);
+
+  /// Fetches consented public contributor display names (no emails or UIDs).
+  Future<List<String>> fetchPublicContributorNames();
 }
 
 /// Deterministic in-memory [SkillTreeSuggestionsStore] for unit/widget tests
@@ -35,6 +38,7 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
   InMemorySkillTreeSuggestionsStore({
     List<SkillTreeSuggestion> initialSuggestions = const [],
     Map<String, List<SuggestionAuditEvent>> initialAuditEvents = const {},
+    List<String> initialContributorNames = const [],
     this.actorUid = 'local-user',
     this.actorEmail = 'local@example.com',
     this.actorName = 'Local User',
@@ -49,6 +53,7 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
     for (final entry in initialAuditEvents.entries) {
       _auditEvents[entry.key] = List<SuggestionAuditEvent>.from(entry.value);
     }
+    _contributorNames.addAll(initialContributorNames);
   }
 
   /// Maximum submissions allowed per 24 hours per user.
@@ -56,6 +61,7 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
 
   final Map<String, SkillTreeSuggestion> _suggestions = {};
   final Map<String, List<SuggestionAuditEvent>> _auditEvents = {};
+  final Set<String> _contributorNames = {};
   final DateTime Function() _now;
   int _counter = 0;
 
@@ -145,6 +151,7 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
       proposedAlias: draft.proposedAlias?.trim().isEmpty ?? true
           ? null
           : draft.proposedAlias!.trim(),
+      creditConsent: draft.creditConsent,
       status: SuggestionStatus.submitted,
       createdAt: current,
       updatedAt: current,
@@ -224,6 +231,12 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
         code: 'permission-denied',
       );
     }
+    if (update.grantPublicCredit != null && !actorIsAdmin) {
+      throw const SkillTreeSuggestionException(
+        'Only administrators may manage contributor recognition.',
+        code: 'permission-denied',
+      );
+    }
     final existing = _suggestions[update.suggestionId];
     if (existing == null) {
       throw const SkillTreeSuggestionException(
@@ -231,9 +244,23 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
         code: 'not-found',
       );
     }
+    if ((update.grantPublicCredit ?? false) && !existing.creditConsent) {
+      throw const SkillTreeSuggestionException(
+        'Contributor did not opt into public credit for this suggestion.',
+        code: 'failed-precondition',
+      );
+    }
 
     final current = _now();
     final nextStatus = update.status ?? existing.status;
+    final nextCreditGranted =
+        update.grantPublicCredit ?? existing.creditGranted;
+    if (update.grantPublicCredit ?? false) {
+      final candidate = existing.submitterName.trim();
+      if (candidate.isNotEmpty && !candidate.contains('@')) {
+        _contributorNames.add(candidate);
+      }
+    }
     final updated = SkillTreeSuggestion(
       id: existing.id,
       submittedByUid: existing.submittedByUid,
@@ -250,6 +277,8 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
       description: existing.description,
       rationale: existing.rationale,
       proposedAlias: existing.proposedAlias,
+      creditConsent: existing.creditConsent,
+      creditGranted: nextCreditGranted,
       status: nextStatus,
       assignedToUid: update.includeAssignedToUid
           ? update.assignedToUid
@@ -263,6 +292,9 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
       createdAt: existing.createdAt,
       updatedAt: current,
       reviewedAt: update.status != null ? current : existing.reviewedAt,
+      incorporatedAt: nextStatus == SuggestionStatus.incorporated
+          ? (existing.incorporatedAt ?? current)
+          : existing.incorporatedAt,
     );
     _suggestions[existing.id] = updated;
 
@@ -285,6 +317,12 @@ class InMemorySkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
       ),
     );
     return updated;
+  }
+
+  @override
+  Future<List<String>> fetchPublicContributorNames() async {
+    final names = _contributorNames.toList()..sort();
+    return names;
   }
 }
 
@@ -468,6 +506,29 @@ class CloudSkillTreeSuggestionsStore implements SkillTreeSuggestionsStore {
     }
     return SkillTreeSuggestion.fromMap(raw);
   }
+
+  @override
+  Future<List<String>> fetchPublicContributorNames() async {
+    try {
+      final snap = await _firestore
+          .collection('SkillTreeCurriculumPublic')
+          .doc('contributors')
+          .get();
+      final data = snap.data();
+      if (!snap.exists || data == null) return const [];
+      final raw = data['names'];
+      if (raw is! List) return const [];
+      final names = raw
+          .whereType<String>()
+          .map((n) => n.trim())
+          .where((n) => n.isNotEmpty && !n.contains('@'))
+          .toList()
+        ..sort();
+      return names;
+    } catch (_) {
+      return const [];
+    }
+  }
 }
 
 /// Repository facade for Skill Tree curriculum suggestions and staff review.
@@ -503,4 +564,8 @@ class SkillTreeSuggestionsRepository {
   /// Submits a staff review decision or note.
   Future<SkillTreeSuggestion> reviewSuggestion(SuggestionReviewUpdate update) =>
       _store.reviewSuggestion(update);
+
+  /// Fetches consented public contributor display names (no emails or UIDs).
+  Future<List<String>> fetchPublicContributorNames() =>
+      _store.fetchPublicContributorNames();
 }
