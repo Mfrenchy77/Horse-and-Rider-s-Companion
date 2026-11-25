@@ -1,10 +1,12 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/cubit/administration_suggestions_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_revision_dialogs.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 
@@ -102,6 +104,25 @@ class _AdministrationPageState extends State<AdministrationPage> {
                     : 'Moderation · Suggestions Inbox',
               ),
               actions: [
+                if (appState.isAdmin)
+                  IconButton(
+                    key: const Key('adminRevisionHistoryButton'),
+                    tooltip: 'Curriculum Revision History',
+                    onPressed: () {
+                      final draftRepo =
+                          context.read<SkillTreeDraftRepository?>();
+                      if (draftRepo == null) return;
+                      showAppGlassDialog<void>(
+                        context: context,
+                        builder: (_) => CurriculumRevisionHistoryDialog(
+                          draftRepository: draftRepo,
+                          currentFamilies: const [],
+                          currentSkills: const [],
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.history_outlined),
+                  ),
                 IconButton(
                   key: const Key('adminRefreshInboxButton'),
                   tooltip: 'Refresh inbox',

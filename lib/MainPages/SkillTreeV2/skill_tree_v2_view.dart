@@ -20,6 +20,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_help
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_sync.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/ability_summary_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_draft_dialogs.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_revision_dialogs.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/instructor_ability_matrix_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_list_v2.dart';
@@ -34,12 +35,14 @@ class SkillTreeV2View extends StatefulWidget {
     super.key,
     this.repository,
     this.enableLocalInstructorPreview = false,
+    this.enableCurriculumPublishing = kEnableCurriculumPublishing,
     this.initialSkillId,
     this.initialLevel,
   });
 
   final SkillTreeV2Repository? repository;
   final bool enableLocalInstructorPreview;
+  final bool enableCurriculumPublishing;
   final String? initialSkillId;
   final DifficultyState? initialLevel;
 
@@ -329,6 +332,73 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     );
   }
 
+  Future<void> _openPublishDialog(SkillTreeV2State publishedState) async {
+    final draft = _draft;
+    final draftRepo = context.read<SkillTreeDraftRepository?>();
+    if (draft == null || draftRepo == null) return;
+    final published = await showAppGlassDialog<CurriculumRevisionSummary>(
+      context: context,
+      builder: (_) => CurriculumPublishDialog(
+        publishedFamilies: publishedState.families,
+        publishedSkills: publishedState.skills,
+        draftFamilies: draft.families,
+        draftSkills: draft.skills,
+        publishingEnabled: widget.enableCurriculumPublishing,
+        onPublish: (notes) async {
+          if (_hasUnsavedDraftChanges) {
+            await draftRepo.saveDraft(draft);
+          }
+          return draftRepo.publishDraft(notes: notes);
+        },
+      ),
+    );
+    if (published == null || !mounted) return;
+    setState(() {
+      _draft = null;
+      _hasUnsavedDraftChanges = false;
+      _isAdminEditMode = false;
+      _isPreviewingDraft = false;
+    });
+    await _cubit.initialize(
+      initialSubject: _cubit.state.subject,
+      profileDocId: _profileDocIdFor(
+        context.read<AppCubit>().state,
+        _cubit.state.subject,
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Published Curriculum Revision #${published.revisionNumber}.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openRevisionHistory(SkillTreeV2State publishedState) async {
+    final draftRepo = context.read<SkillTreeDraftRepository?>();
+    if (draftRepo == null) return;
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (_) => CurriculumRevisionHistoryDialog(
+        draftRepository: draftRepo,
+        currentFamilies: publishedState.families,
+        currentSkills: publishedState.skills,
+        publishingEnabled: widget.enableCurriculumPublishing,
+        onRestored: (_) {
+          _cubit.initialize(
+            initialSubject: _cubit.state.subject,
+            profileDocId: _profileDocIdFor(
+              context.read<AppCubit>().state,
+              _cubit.state.subject,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildAdminDraftBanner(
     BuildContext context,
     SkillTreeV2State publishedState,
@@ -407,15 +477,39 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                 icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                 label: const Text('Discard Changes'),
               ),
-              Tooltip(
-                message: 'Publish via validated JSON/Admin SDK (Future)',
-                child: OutlinedButton.icon(
-                  key: const Key('draftPublishDisabledButton'),
-                  onPressed: null,
-                  icon: const Icon(Icons.publish_outlined, size: 18),
-                  label: const Text('Publish (Future Workflow)'),
-                ),
+              OutlinedButton.icon(
+                key: const Key('draftRevisionHistoryButton'),
+                onPressed: _isDraftBusy
+                    ? null
+                    : () => _openRevisionHistory(publishedState),
+                icon: const Icon(Icons.history_outlined, size: 18),
+                label: const Text('Revision History'),
               ),
+              if (widget.enableCurriculumPublishing)
+                FilledButton.tonalIcon(
+                  key: const Key('draftPublishButton'),
+                  onPressed: _isDraftBusy
+                      ? null
+                      : () => _openPublishDialog(publishedState),
+                  icon: const Icon(Icons.publish_outlined, size: 18),
+                  label: const Text('Publish Curriculum'),
+                )
+              else
+                const Tooltip(
+                  message: 'Publishing is currently disabled in production.',
+                  child: OutlinedButton(
+                    key: Key('draftPublishDisabledButton'),
+                    onPressed: null,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.publish_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Publish (Future Workflow)'),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ],

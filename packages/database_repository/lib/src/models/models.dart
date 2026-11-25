@@ -23,5 +23,6 @@ export 'base_list_item.dart';
 export 'skill_family.dart';
 export 'curriculum_skill.dart';
 export 'curriculum_draft_diff.dart';
+export 'curriculum_revision.dart';
 export 'skill_progress_v2.dart';
 export 'skill_tree_suggestion.dart';

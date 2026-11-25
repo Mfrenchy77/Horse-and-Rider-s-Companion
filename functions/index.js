@@ -19,6 +19,10 @@ const {
   saveCurriculumDraftHandler,
   discardCurriculumDraftHandler,
 } = require('./curriculum_drafts');
+const {
+  publishCurriculumDraftHandler,
+  rollbackCurriculumRevisionHandler,
+} = require('./curriculum_revisions');
 const {sharePreviewHandler} = require('./share_preview');
 const {syncPublicHorseProfileHandler} = require('./public_horse_profile');
 const {syncPublicRiderProfileHandler} = require('./public_rider_profile');
@@ -56,6 +60,20 @@ exports.saveSkillTreeCurriculumDraft = onCall(
 exports.discardSkillTreeCurriculumDraft = onCall(
     {region: 'us-central1'},
     (request) => discardCurriculumDraftHandler(admin.firestore())(request),
+);
+
+exports.publishSkillTreeCurriculumDraft = onCall(
+    {region: 'us-central1', timeoutSeconds: 120},
+    (request) => publishCurriculumDraftHandler(admin.firestore(), {
+      publishingEnabled: process.env.CURRICULUM_PUBLISHING_ENABLED === 'true',
+    })(request),
+);
+
+exports.rollbackSkillTreeCurriculumRevision = onCall(
+    {region: 'us-central1', timeoutSeconds: 120},
+    (request) => rollbackCurriculumRevisionHandler(admin.firestore(), {
+      publishingEnabled: process.env.CURRICULUM_PUBLISHING_ENABLED === 'true',
+    })(request),
 );
 
 exports.sharePreview = onRequest(

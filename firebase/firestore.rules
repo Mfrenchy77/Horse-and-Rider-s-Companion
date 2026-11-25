@@ -155,6 +155,21 @@ service cloud.firestore {
       }
     }
 
+    match /SkillTreeCurriculumRevisions/{revisionId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /Chunks/{chunkId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /SkillTreeCurriculumMeta/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /Skills/{skillId} {
       allow read: if true;
       allow write: if isVerifiedEditor();

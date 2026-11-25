@@ -587,6 +587,66 @@ test('SkillTreeCurriculumDrafts allows admin read only and denies all client wri
   await assertFails(setDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
 });
 
+test('SkillTreeCurriculumRevisions and Meta enforce admin-only reads and immutable server-only writes', async () => {
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001'), {
+      id: 'rev_000001',
+      revisionNumber: 1,
+      status: 'completed',
+      immutable: true,
+    });
+    await setDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000'), {
+      index: 0,
+      payload: '{"families":[],"skills":[]}',
+      chunkChecksum: 'abc',
+    });
+    await setDoc(doc(db, 'SkillTreeCurriculumMeta/current'), {
+      currentRevisionId: 'rev_000001',
+      publicationState: 'idle',
+    });
+  });
+
+  const adminDb = environment.authenticatedContext('admin-rev', {
+    email: 'admin-rev@example.com',
+    email_verified: true,
+    admin: true,
+  }).firestore();
+  const unverifiedAdminDb = environment.authenticatedContext('unv-admin-rev', {
+    email: 'unv-admin-rev@example.com',
+    email_verified: false,
+    admin: true,
+  }).firestore();
+  const modDb = environment.authenticatedContext('mod-rev', {
+    email: 'mod-rev@example.com',
+    email_verified: true,
+    moderator: true,
+  }).firestore();
+  const userDb = environment.authenticatedContext('user-rev', {
+    email: 'user-rev@example.com',
+    email_verified: true,
+  }).firestore();
+  const guestDb = environment.unauthenticatedContext().firestore();
+
+  // Verified admin can read revisions, chunks, and meta.
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001')));
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000')));
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumMeta/current')));
+
+  // Non-admins and unverified admins are denied all reads.
+  for (const db of [unverifiedAdminDb, modDb, userDb, guestDb]) {
+    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001')));
+    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000')));
+    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumMeta/current')));
+  }
+
+  // All client writes/updates/deletes are denied (even for verified admins).
+  await assertFails(updateDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001'), {notes: 'Tampered'}));
+  await assertFails(deleteDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001')));
+  await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000'), {payload: 'tampered'}));
+  await assertFails(updateDoc(doc(adminDb, 'SkillTreeCurriculumMeta/current'), {publicationState: 'idle'}));
+});
+
 test('Retired skills, SkillsV2 visibility, and historical SkillProgress security boundaries', async () => {
   await environment.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();

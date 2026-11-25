@@ -103,6 +103,12 @@ class _AppState extends State<App> {
           discardEndpoint: FirebaseEmulators.enabled
               ? FirebaseEmulators.discardCurriculumDraftEndpoint()
               : null,
+          publishEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.publishCurriculumDraftEndpoint()
+              : null,
+          rollbackEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.rollbackCurriculumRevisionEndpoint()
+              : null,
         ),
       );
   late final ConnectionRequestStore _connectionRequestStore =

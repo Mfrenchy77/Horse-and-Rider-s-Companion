@@ -44,4 +44,14 @@ class FirebaseEmulators {
     '$_host:5001',
     '/$projectId/us-central1/discardSkillTreeCurriculumDraft',
   );
+
+  static Uri publishCurriculumDraftEndpoint() => Uri.http(
+    '$_host:5001',
+    '/$projectId/us-central1/publishSkillTreeCurriculumDraft',
+  );
+
+  static Uri rollbackCurriculumRevisionEndpoint() => Uri.http(
+    '$_host:5001',
+    '/$projectId/us-central1/rollbackSkillTreeCurriculumRevision',
+  );
 }
