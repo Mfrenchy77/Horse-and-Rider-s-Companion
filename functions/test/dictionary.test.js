@@ -145,3 +145,148 @@ test('starter meanings validate, have stable unique slugs, and avoid synonym cop
   assert.equal(seeds.filter((entry) => entry.synonyms.includes('lope')).length, 1);
   assert(!slugs.has('lope'));
 });
+
+test('structured improvements record base revision, validate changes, allow admin proposal edits, and enforce mismatch acknowledgement', async () => {
+  const db = fakeDb();
+  const submit = submitDictionarySuggestion(db, {secret: 'test-secret'});
+  const edit = editDictionary(db);
+  const canterSeed = seeds.find((item) => item.id === 'canter');
+
+  // Unchanged structured fields must be rejected.
+  await assert.rejects(
+      submit(request({
+        submissionId: randomUUID(),
+        term: canterSeed.term,
+        kind: 'correction',
+        termId: canterSeed.id,
+        baseRevision: 0,
+        proposedFields: {
+          definition: canterSeed.definition,
+          explanation: canterSeed.explanation,
+          usage: canterSeed.usage,
+          regionalUsage: canterSeed.regionalUsage,
+          examples: canterSeed.examples,
+          synonyms: canterSeed.synonyms,
+        },
+        recognitionConsent: false,
+      })),
+      {code: 'invalid-argument'},
+  );
+
+  // Email in proposedFields must be rejected.
+  await assert.rejects(
+      submit(request({
+        submissionId: randomUUID(),
+        term: canterSeed.term,
+        kind: 'improvement',
+        termId: canterSeed.id,
+        proposedFields: {
+          definition: 'Contact rider@example.com for lope details.',
+        },
+        recognitionConsent: false,
+      })),
+      {code: 'invalid-argument'},
+  );
+
+  // Guest submits a structured improvement against bundled rev 0.
+  const sugId = randomUUID();
+  await submit(request({
+    submissionId: sugId,
+    term: canterSeed.term,
+    kind: 'correction',
+    termId: canterSeed.id,
+    baseRevision: 0,
+    reason: 'Clarify Western trail rhythm.',
+    proposedFields: {
+      definition: 'A controlled three-beat gait with a moment of suspension.',
+      explanation: canterSeed.explanation,
+      usage: canterSeed.usage,
+      regionalUsage: canterSeed.regionalUsage,
+      examples: [...canterSeed.examples, 'Ask for a calm lope departing from a balanced walk.'],
+      synonyms: canterSeed.synonyms,
+    },
+    recognitionConsent: false,
+  }));
+
+  const stored = db.store.get('DictionarySuggestions/' + sugId);
+  assert.equal(stored.baseRevision, 0);
+  assert.equal(stored.reason, 'Clarify Western trail rhythm.');
+  assert.deepEqual(stored.changedFields, ['definition', 'examples']);
+  assert.equal(stored.baseFields.definition, canterSeed.definition);
+
+  // Administrator edits the proposal before approving, preserving originalProposedFields.
+  await edit(request({
+    action: 'review',
+    id: sugId,
+    status: 'approved',
+    note: 'Tightened wording before publication.',
+    editedFields: {
+      ...stored.proposedFields,
+      definition: 'A balanced, cadenced three-beat gait with a moment of suspension.',
+    },
+  }, admin));
+
+  const afterReview = db.store.get('DictionarySuggestions/' + sugId);
+  assert.equal(afterReview.status, 'approved');
+  assert.equal(
+      afterReview.originalProposedFields.definition,
+      'A controlled three-beat gait with a moment of suspension.',
+  );
+  assert.equal(
+      afterReview.proposedFields.definition,
+      'A balanced, cadenced three-beat gait with a moment of suspension.',
+  );
+
+  // Simulate another administrator publishing an independent edit to 'canter' first (rev -> 1).
+  await edit(request({
+    action: 'publish',
+    id: 'canter',
+    expectedRevision: 0,
+    entry: {
+      ...canterSeed,
+      regionalUsage: 'Called lope in Western disciplines and canter in English and general riding.',
+    },
+  }, admin));
+  assert.equal(db.store.get('DictionaryEntries/canter').revision, 1);
+
+  // Applying the older suggestion without acknowledgeRevisionMismatch must fail!
+  const mergedEntry = {
+    ...db.store.get('DictionaryEntries/canter'),
+    definition: afterReview.proposedFields.definition,
+    examples: afterReview.proposedFields.examples,
+  };
+  await assert.rejects(
+      edit(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 1,
+        suggestionId: sugId,
+        entry: mergedEntry,
+      }, admin)),
+      {code: 'failed-precondition'},
+  );
+
+  // Once the administrator explicitly acknowledges the revision mismatch, publication succeeds
+  // and preserves both revision 1 and revision 2!
+  await edit(request({
+    action: 'publish',
+    id: 'canter',
+    expectedRevision: 1,
+    suggestionId: sugId,
+    acknowledgeRevisionMismatch: true,
+    entry: mergedEntry,
+  }, admin));
+
+  const finalPublished = db.store.get('DictionaryEntries/canter');
+  assert.equal(finalPublished.revision, 2);
+  assert.equal(
+      finalPublished.definition,
+      'A balanced, cadenced three-beat gait with a moment of suspension.',
+  );
+  assert.equal(
+      finalPublished.regionalUsage,
+      'Called lope in Western disciplines and canter in English and general riding.',
+  );
+  assert(db.store.has('DictionaryDrafts/canter/Revisions/1'));
+  assert(db.store.has('DictionaryDrafts/canter/Revisions/2'));
+});

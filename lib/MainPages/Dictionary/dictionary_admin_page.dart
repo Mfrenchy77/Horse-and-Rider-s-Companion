@@ -6,9 +6,43 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_diff.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+
+class _InboxBundle {
+  const _InboxBundle({
+    required this.items,
+    required this.publishedEntries,
+  });
+
+  final List<Map<String, dynamic>> items;
+  final List<DictionaryEntry> publishedEntries;
+}
+
+bool _detectRevisionMismatch({
+  required Map<String, dynamic> suggestion,
+  required DictionaryEntry? currentPublished,
+}) {
+  if (currentPublished == null) return false;
+  final baseRev = suggestion['baseRevision'] as int?;
+  final currentRev = currentPublished.publishedRevision;
+  if (baseRev != null && currentRev != baseRev) {
+    return true;
+  }
+  final rawBase = suggestion['baseFields'];
+  if (rawBase is Map) {
+    final baseFields = DictionaryStructuredFields.fromMap(
+      rawBase.cast<String, dynamic>(),
+    );
+    final liveFields = DictionaryStructuredFields.fromEntry(currentPublished);
+    if (!baseFields.equals(liveFields)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /// Uses the existing verified administrator claims and private suggestion/audit
 /// pattern. Dictionary editors have no direct client write permissions.
@@ -28,19 +62,27 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
   late final DictionaryRepository _repository =
       widget.repository ?? DictionaryRepository(firestore: widget.firestore);
 
-  Future<List<Map<String, dynamic>>>? _items;
+  Future<_InboxBundle>? _inbox;
   String? _statusFilter;
 
-  Future<List<Map<String, dynamic>>> _load() async {
-    final result = await _db
-        .collection('DictionarySuggestions')
-        .orderBy('createdAt', descending: true)
-        .limit(100)
-        .get();
-    return result.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
+  Future<_InboxBundle> _load() async {
+    final results = await Future.wait<dynamic>([
+      _db
+          .collection('DictionarySuggestions')
+          .orderBy('createdAt', descending: true)
+          .limit(100)
+          .get(),
+      _repository.load(),
+    ]);
+    final snap = results[0] as QuerySnapshot<Map<String, dynamic>>;
+    final published = results[1] as List<DictionaryEntry>;
+    return _InboxBundle(
+      items: snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList(),
+      publishedEntries: published,
+    );
   }
 
-  void _refresh() => setState(() => _items = _load());
+  void _refresh() => setState(() => _inbox = _load());
 
   Future<void> _perform(Future<void> Function() operation) async {
     try {
@@ -64,6 +106,17 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
       ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
   }
 
+  DictionaryEntry? _resolveSuggestionTarget(
+    List<DictionaryEntry> entries,
+    Map<String, dynamic> suggestion,
+  ) {
+    final lookup = ((suggestion['termId'] as String?)?.trim().isNotEmpty ?? false)
+        ? suggestion['termId'] as String
+        : (suggestion['term'] as String? ?? '');
+    if (lookup.trim().isEmpty) return null;
+    return DictionaryRepository.resolve(entries, lookup);
+  }
+
   Future<void> _review(Map<String, dynamic> item, String status) async {
     final note = TextEditingController();
     await showAppGlassDialog<void>(
@@ -72,6 +125,21 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
         item: item,
         status: status,
         note: note,
+        repository: _repository,
+      ),
+    );
+    if (mounted) _refresh();
+  }
+
+  Future<void> _editProposal(
+    Map<String, dynamic> item,
+    DictionaryEntry? targetPublished,
+  ) async {
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (_) => _EditProposalDialog(
+        item: item,
+        targetPublished: targetPublished,
         repository: _repository,
       ),
     );
@@ -114,14 +182,22 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 4,
                         children: [
-                          Text(
-                            ((ev['status'] as String?) ?? 'event').replaceAll(
-                              '_',
-                              ' ',
-                            ),
-                            style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Wrap(
+                            spacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                ((ev['status'] as String?) ?? 'event')
+                                    .replaceAll('_', ' '),
+                                style: Theme.of(ctx).textTheme.labelLarge
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              if (ev['proposalEdited'] == true)
+                                const AppStatusBadge(
+                                  label: 'Proposal edited',
+                                  tone: AppStatusTone.info,
+                                ),
+                            ],
                           ),
                           if ((ev['note'] as String?)?.trim().isNotEmpty ??
                               false)
@@ -142,16 +218,23 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
   }
 
   Future<void> _edit({Map<String, dynamic>? suggestion}) async {
-    final allEntries = await _loadAllEntries();
+    final published = await _repository.load();
+    final drafts = await _db.collection('DictionaryDrafts').get();
     if (!mounted) return;
+    final entriesById = {for (final entry in published) entry.id: entry};
+    for (final doc in drafts.docs) {
+      entriesById[doc.id] = DictionaryEntry(doc.data());
+    }
+    final allEntries = entriesById.values.toList()
+      ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
+    final publishedTarget = suggestion == null
+        ? null
+        : _resolveSuggestionTarget(published, suggestion);
     final initial = suggestion == null
         ? null
-        : DictionaryRepository.resolve(
-            allEntries,
-            ((suggestion['termId'] as String?)?.trim().isNotEmpty ?? false)
-                ? suggestion['termId'] as String
-                : (suggestion['term'] as String? ?? ''),
-          );
+        : (publishedTarget != null
+              ? entriesById[publishedTarget.id] ?? publishedTarget
+              : _resolveSuggestionTarget(allEntries, suggestion));
     await showAppGlassDialog<void>(
       context: context,
       builder: (_) => _EntryEditor(
@@ -159,6 +242,7 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
         repository: _repository,
         existingEntries: allEntries,
         initial: initial,
+        publishedTarget: publishedTarget,
         suggestion: suggestion,
       ),
     );
@@ -209,6 +293,103 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     if (mounted) _refresh();
   }
 
+  Widget _buildSuggestionDiffSection(
+    BuildContext context, {
+    required Map<String, dynamic> item,
+    required DictionaryEntry? targetPublished,
+  }) {
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    final rawProposed = item['proposedFields'];
+    final rawBase = item['baseFields'];
+    final reason = (item['reason'] as String?)?.trim() ?? '';
+    final mismatch = _detectRevisionMismatch(
+      suggestion: item,
+      currentPublished: targetPublished,
+    );
+    final baseRev = item['baseRevision'] as int?;
+    final currentRev = targetPublished?.publishedRevision;
+
+    if (rawProposed is! Map) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 8,
+        children: [
+          if (mismatch)
+            AppFeedbackBanner(
+              key: Key('suggestionRevisionMismatch_${item['id']}'),
+              message:
+                  'Published definition changed since this suggestion was '
+                  'submitted (submitted against rev ${baseRev ?? 0}, current '
+                  'rev ${currentRev ?? 0}). Review current wording carefully '
+                  'before applying.',
+              tone: AppStatusTone.warning,
+            ),
+          Text(item['proposal'] as String? ?? ''),
+          if (reason.isNotEmpty)
+            _ReasonCallout(reason: reason, secondaryColor: secondaryColor),
+        ],
+      );
+    }
+
+    final proposed = DictionaryStructuredFields.fromMap(
+      rawProposed.cast<String, dynamic>(),
+    );
+    final base = rawBase is Map
+        ? DictionaryStructuredFields.fromMap(rawBase.cast<String, dynamic>())
+        : (targetPublished != null
+              ? DictionaryStructuredFields.fromEntry(targetPublished)
+              : const DictionaryStructuredFields());
+    final currentFields = targetPublished != null
+        ? DictionaryStructuredFields.fromEntry(targetPublished)
+        : null;
+
+    final keysToShow = <String>{
+      ...proposed.changedKeysAgainst(base),
+      if (mismatch && currentFields != null)
+        ...currentFields.changedKeysAgainst(base),
+    };
+    final orderedKeys = [
+      for (final spec in DictionaryStructuredFields.specs)
+        if (keysToShow.contains(spec.key)) spec.key,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 10,
+      children: [
+        if (mismatch)
+          AppFeedbackBanner(
+            key: Key('suggestionRevisionMismatch_${item['id']}'),
+            message:
+                'Published definition changed while this suggestion was '
+                'pending (submitted against rev ${baseRev ?? 0}, current '
+                'published rev ${currentRev ?? 0}). Old, current, and '
+                'proposed wording are shown below and require explicit '
+                'review before applying.',
+            tone: AppStatusTone.warning,
+          ),
+        const DictionaryDiffLegend(),
+        if (orderedKeys.isEmpty)
+          Text(item['proposal'] as String? ?? '')
+        else
+          for (final key in orderedKeys)
+            DictionaryFieldDiffCard(
+              fieldKey: '${item['id']}_$key',
+              label: DictionaryStructuredFields.labelForKey(key),
+              oldText: base.displayTextFor(key),
+              proposedText: proposed.displayTextFor(key),
+              currentPublishedText: mismatch
+                  ? currentFields?.displayTextFor(key)
+                  : null,
+              baseRevision: baseRev,
+              currentRevision: currentRev,
+            ),
+        if (reason.isNotEmpty)
+          _ReasonCallout(reason: reason, secondaryColor: secondaryColor),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppCubit>().state;
@@ -222,7 +403,7 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
         body: const Center(child: Text('Administrator access required.')),
       );
     }
-    _items ??= _load();
+    _inbox ??= _load();
     return Scaffold(
       appBar: ThemedAppBar(
         title: const Text('Dictionary review'),
@@ -291,8 +472,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    FutureBuilder<List<Map<String, dynamic>>>(
-                      future: _items,
+                    FutureBuilder<_InboxBundle>(
+                      future: _inbox,
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
                           return const AppFeedbackBanner(
@@ -305,7 +486,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                             child: CircularProgressIndicator(),
                           );
                         }
-                        final filtered = snapshot.data!
+                        final bundle = snapshot.data!;
+                        final filtered = bundle.items
                             .where(
                               (item) =>
                                   _statusFilter == null ||
@@ -325,129 +507,183 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                         return Column(
                           children: [
                             for (final item in filtered)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: AppSurfaceCard(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 6,
+                              Builder(
+                                builder: (context) {
+                                  final target = _resolveSuggestionTarget(
+                                    bundle.publishedEntries,
+                                    item,
+                                  );
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: AppSurfaceCard(
+                                      child: Column(
                                         crossAxisAlignment:
-                                            WrapCrossAlignment.center,
+                                            CrossAxisAlignment.stretch,
                                         children: [
-                                          Text(
-                                            item['term'] as String,
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.titleLarge,
-                                          ),
-                                          AppStatusBadge(
-                                            label:
-                                                ((item['status'] as String?) ??
-                                                        'submitted')
-                                                    .replaceAll('_', ' '),
-                                            tone: switch (item['status']) {
-                                              'approved' ||
-                                              'published' =>
-                                                AppStatusTone.success,
-                                              'needs_clarification' =>
-                                                AppStatusTone.warning,
-                                              'rejected' => AppStatusTone.error,
-                                              _ => AppStatusTone.info,
-                                            },
-                                          ),
-                                          if ((item['kind'] as String?)
-                                                  ?.isNotEmpty ??
-                                              false)
-                                            AppStatusBadge(
-                                              label: (item['kind'] as String)
-                                                  .replaceAll('_', ' '),
-                                            ),
-                                          if (item['contributorUid'] != null)
-                                            const AppStatusBadge(
-                                              label: 'Signed-in contributor',
-                                            )
-                                          else
-                                            const AppStatusBadge(
-                                              label: 'Guest contributor',
-                                            ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(item['proposal'] as String),
-                                      const SizedBox(height: 10),
-                                      if (item['recognitionConsent'] == true &&
-                                          ((item['publicName'] as String?)
-                                                  ?.isNotEmpty ??
-                                              false))
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 8,
-                                          ),
-                                          child: Text(
-                                            'Opt-in recognition requested as: '
-                                            '${item['publicName']}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color:
-                                                      AppTokens.secondaryTextColor(
-                                                        context,
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 6,
+                                            crossAxisAlignment:
+                                                WrapCrossAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['term'] as String,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.titleLarge,
+                                              ),
+                                              AppStatusBadge(
+                                                label:
+                                                    ((item['status']
+                                                                as String?) ??
+                                                            'submitted')
+                                                        .replaceAll('_', ' '),
+                                                tone: switch (item['status']) {
+                                                  'approved' || 'published' =>
+                                                    AppStatusTone.success,
+                                                  'needs_clarification' =>
+                                                    AppStatusTone.warning,
+                                                  'rejected' =>
+                                                    AppStatusTone.error,
+                                                  _ => AppStatusTone.info,
+                                                },
+                                              ),
+                                              if ((item['kind'] as String?)
+                                                      ?.isNotEmpty ??
+                                                  false)
+                                                AppStatusBadge(
+                                                  label:
+                                                      dictionaryContributionLabel(
+                                                        item['kind'] as String?,
                                                       ),
                                                 ),
+                                              if (item['contributorUid'] !=
+                                                  null)
+                                                const AppStatusBadge(
+                                                  label:
+                                                      'Signed-in contributor',
+                                                )
+                                              else
+                                                const AppStatusBadge(
+                                                  label: 'Guest contributor',
+                                                ),
+                                              if (item['editedByAdminUid'] !=
+                                                  null)
+                                                const AppStatusBadge(
+                                                  label:
+                                                      'Proposal edited by admin',
+                                                  tone: AppStatusTone.info,
+                                                ),
+                                            ],
                                           ),
-                                        ),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          for (final status in const [
-                                            'under_review',
-                                            'needs_clarification',
-                                            'approved',
-                                            'rejected',
-                                          ])
-                                            TextButton(
-                                              onPressed:
-                                                  item['status'] == 'published'
-                                                  ? null
-                                                  : () => _review(item, status),
+                                          const SizedBox(height: 10),
+                                          _buildSuggestionDiffSection(
+                                            context,
+                                            item: item,
+                                            targetPublished: target,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          if (item['recognitionConsent'] ==
+                                                  true &&
+                                              ((item['publicName'] as String?)
+                                                      ?.isNotEmpty ??
+                                                  false))
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 8,
+                                              ),
                                               child: Text(
-                                                status.replaceAll('_', ' '),
+                                                'Opt-in recognition requested '
+                                                'as: ${item['publicName']}',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color:
+                                                          AppTokens.secondaryTextColor(
+                                                            context,
+                                                          ),
+                                                    ),
                                               ),
                                             ),
-                                          TextButton.icon(
-                                            onPressed: () => _perform(
-                                              () => _showAuditHistory(item),
-                                            ),
-                                            icon: const Icon(
-                                              Icons.history,
-                                              size: 16,
-                                            ),
-                                            label: const Text('History'),
-                                          ),
-                                          OutlinedButton(
-                                            onPressed:
-                                                item['status'] == 'approved'
-                                                ? () => _perform(
-                                                    () => _edit(
-                                                      suggestion: item,
-                                                    ),
-                                                  )
-                                                : null,
-                                            child: const Text(
-                                              'Incorporate wording',
-                                            ),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: [
+                                              for (final status in const [
+                                                'under_review',
+                                                'needs_clarification',
+                                                'approved',
+                                                'rejected',
+                                              ])
+                                                TextButton(
+                                                  onPressed:
+                                                      item['status'] ==
+                                                          'published'
+                                                      ? null
+                                                      : () => _review(
+                                                          item,
+                                                          status,
+                                                        ),
+                                                  child: Text(
+                                                    status.replaceAll('_', ' '),
+                                                  ),
+                                                ),
+                                              TextButton.icon(
+                                                key: Key(
+                                                  'editProposalButton_${item['id']}',
+                                                ),
+                                                onPressed:
+                                                    item['status'] ==
+                                                        'published'
+                                                    ? null
+                                                    : () => _perform(
+                                                        () => _editProposal(
+                                                          item,
+                                                          target,
+                                                        ),
+                                                      ),
+                                                icon: const Icon(
+                                                  Icons.edit_note_outlined,
+                                                  size: 16,
+                                                ),
+                                                label: const Text(
+                                                  'Edit proposal',
+                                                ),
+                                              ),
+                                              TextButton.icon(
+                                                onPressed: () => _perform(
+                                                  () => _showAuditHistory(item),
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.history,
+                                                  size: 16,
+                                                ),
+                                                label: const Text('History'),
+                                              ),
+                                              OutlinedButton(
+                                                key: Key(
+                                                  'incorporateWording_${item['id']}',
+                                                ),
+                                                onPressed:
+                                                    item['status'] == 'approved'
+                                                    ? () => _perform(
+                                                        () => _edit(
+                                                          suggestion: item,
+                                                        ),
+                                                      )
+                                                    : null,
+                                                child: const Text(
+                                                  'Incorporate wording',
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
-                                ),
+                                    ),
+                                  );
+                                },
                               ),
                           ],
                         );
@@ -460,6 +696,240 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ReasonCallout extends StatelessWidget {
+  const _ReasonCallout({required this.reason, required this.secondaryColor});
+
+  final String reason;
+  final Color secondaryColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 4,
+        children: [
+          Text(
+            'Why contributor suggested this change',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: secondaryColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(reason),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditProposalDialog extends StatefulWidget {
+  const _EditProposalDialog({
+    required this.item,
+    required this.targetPublished,
+    required this.repository,
+  });
+
+  final Map<String, dynamic> item;
+  final DictionaryEntry? targetPublished;
+  final DictionaryRepository repository;
+
+  @override
+  State<_EditProposalDialog> createState() => _EditProposalDialogState();
+}
+
+class _EditProposalDialogState extends State<_EditProposalDialog> {
+  final _form = GlobalKey<FormState>();
+  final _controllers = <String, TextEditingController>{};
+  late final TextEditingController _freeTextProposal;
+  final _note = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  bool get _isStructured =>
+      widget.item['proposedFields'] is Map || widget.targetPublished != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final rawProposed = widget.item['proposedFields'];
+    final initialFields = rawProposed is Map
+        ? DictionaryStructuredFields.fromMap(
+            rawProposed.cast<String, dynamic>(),
+          )
+        : (widget.targetPublished != null
+              ? DictionaryStructuredFields.fromEntry(widget.targetPublished!)
+              : const DictionaryStructuredFields());
+    for (final spec in DictionaryStructuredFields.specs) {
+      _controllers[spec.key] = TextEditingController(
+        text: initialFields.displayTextFor(spec.key),
+      );
+    }
+    _freeTextProposal = TextEditingController(
+      text: widget.item['proposal'] as String? ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _freeTextProposal.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  DictionaryStructuredFields _editedStructuredFields() {
+    return DictionaryStructuredFields(
+      definition: _controllers['definition']?.text.trim() ?? '',
+      explanation: _controllers['explanation']?.text.trim() ?? '',
+      usage: _controllers['usage']?.text.trim() ?? '',
+      regionalUsage: _controllers['regionalUsage']?.text.trim() ?? '',
+      examples: DictionaryStructuredFields.normalizeLines(
+        (_controllers['examples']?.text ?? '').split('\n'),
+      ),
+      synonyms: DictionaryStructuredFields.normalizeLines(
+        (_controllers['synonyms']?.text ?? '').split('\n'),
+      ),
+    );
+  }
+
+  Future<void> _save({required bool approve}) async {
+    if (!(_form.currentState?.validate() ?? false) || _busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final status = approve
+          ? 'approved'
+          : ((widget.item['status'] as String?) ?? 'under_review');
+      final payload = <String, dynamic>{
+        'action': 'review',
+        'id': widget.item['id'],
+        'status': status,
+        'note': _note.text.trim(),
+      };
+      if (_isStructured) {
+        payload['editedFields'] = _editedStructuredFields().toMap();
+      } else {
+        payload['editedProposal'] = _freeTextProposal.text.trim();
+      }
+      await widget.repository.call('editDictionary', payload);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error.toString();
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppGlassDialog(
+      maxWidth: 680,
+      title: Text('Edit proposal · ${widget.item['term'] ?? ''}'),
+      content: Form(
+        key: _form,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_isStructured)
+              for (final spec in DictionaryStructuredFields.specs)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TextFormField(
+                    key: Key('adminEditProposal_${spec.key}'),
+                    controller: _controllers[spec.key],
+                    maxLength: spec.maxLength,
+                    minLines: spec.minLines,
+                    maxLines: spec.maxLines,
+                    enabled: !_busy,
+                    decoration: InputDecoration(
+                      labelText: spec.isList
+                          ? '${spec.label} (one per line)'
+                          : spec.label,
+                    ),
+                    validator: (value) {
+                      if (spec.requiredField &&
+                          (value?.trim().isEmpty ?? true)) {
+                        return 'Short definition is required.';
+                      }
+                      return null;
+                    },
+                  ),
+                )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextFormField(
+                  key: const Key('adminEditProposal_freeText'),
+                  controller: _freeTextProposal,
+                  maxLength: 4000,
+                  minLines: 3,
+                  maxLines: 6,
+                  enabled: !_busy,
+                  decoration: const InputDecoration(
+                    labelText: 'Proposed wording',
+                  ),
+                  validator: (value) => (value?.trim().isEmpty ?? true)
+                      ? 'Proposed wording is required.'
+                      : null,
+                ),
+              ),
+            TextFormField(
+              key: const Key('adminEditProposal_note'),
+              controller: _note,
+              maxLength: 2000,
+              minLines: 2,
+              maxLines: 3,
+              enabled: !_busy,
+              decoration: const InputDecoration(
+                labelText: 'Private editorial note (optional)',
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        OutlinedButton(
+          key: const Key('saveEditedProposalButton'),
+          onPressed: _busy ? null : () => _save(approve: false),
+          child: const Text('Save edited proposal'),
+        ),
+        FilledButton(
+          key: const Key('saveAndApproveProposalButton'),
+          onPressed: _busy ? null : () => _save(approve: true),
+          child: const Text('Save & approve'),
+        ),
+      ],
     );
   }
 }
@@ -547,12 +1017,14 @@ class _EntryEditor extends StatefulWidget {
     required this.repository,
     required this.existingEntries,
     this.initial,
+    this.publishedTarget,
     this.suggestion,
   });
   final FirebaseFirestore firestore;
   final DictionaryRepository repository;
   final List<DictionaryEntry> existingEntries;
   final DictionaryEntry? initial;
+  final DictionaryEntry? publishedTarget;
   final Map<String, dynamic>? suggestion;
   @override
   State<_EntryEditor> createState() => _EntryEditorState();
@@ -567,6 +1039,7 @@ class _EntryEditorState extends State<_EntryEditor> {
   String? _error;
   bool _existingDraft = false;
   bool _slugManuallyEdited = false;
+  bool _acknowledgedMismatch = false;
   String? _suggestionId;
 
   static const lists = [
@@ -592,6 +1065,15 @@ class _EntryEditorState extends State<_EntryEditor> {
     'skillIds',
     'resourceIds',
   ];
+
+  bool get _hasRevisionMismatch {
+    final suggestion = widget.suggestion;
+    if (suggestion == null) return false;
+    return _detectRevisionMismatch(
+      suggestion: suggestion,
+      currentPublished: widget.publishedTarget,
+    );
+  }
 
   static String _slugify(String raw) => raw
       .toLowerCase()
@@ -631,17 +1113,38 @@ class _EntryEditorState extends State<_EntryEditor> {
             'term': suggestedTerm,
             'definition': widget.suggestion?['proposal'] ?? '',
           };
-      var data = initial;
+      var data = Map<String, dynamic>.from(initial);
       if (initial['id'] != null && (initial['id'] as String).isNotEmpty) {
         final draft = await widget.firestore
             .collection('DictionaryDrafts')
             .doc(initial['id'] as String)
             .get();
         if (draft.exists) {
-          data = draft.data()!;
+          data = Map<String, dynamic>.from(draft.data()!);
           _existingDraft = true;
         }
       }
+
+      // Apply ONLY the structured fields modified by the suggestion so
+      // unchanged fields on the live/draft entry remain intact.
+      final rawProposed = widget.suggestion?['proposedFields'];
+      if (rawProposed is Map) {
+        final proposed = DictionaryStructuredFields.fromMap(
+          rawProposed.cast<String, dynamic>(),
+        );
+        final rawBase = widget.suggestion?['baseFields'];
+        final base = rawBase is Map
+            ? DictionaryStructuredFields.fromMap(
+                rawBase.cast<String, dynamic>(),
+              )
+            : (widget.publishedTarget != null
+                  ? DictionaryStructuredFields.fromEntry(
+                      widget.publishedTarget!,
+                    )
+                  : const DictionaryStructuredFields());
+        data = proposed.applyChangedFieldsToEntry(data, base: base);
+      }
+
       _revision = _existingDraft || !(widget.initial?.bundled ?? true)
           ? data['revision'] as int? ?? 0
           : 0;
@@ -704,7 +1207,9 @@ class _EntryEditorState extends State<_EntryEditor> {
       context: context,
       builder: (ctx) => AppGlassDialog(
         maxWidth: 620,
-        title: Text('Preview · ${previewEntry.term.isEmpty ? 'Untitled' : previewEntry.term}'),
+        title: Text(
+          'Preview · ${previewEntry.term.isEmpty ? 'Untitled' : previewEntry.term}',
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -730,7 +1235,9 @@ class _EntryEditorState extends State<_EntryEditor> {
               style: Theme.of(ctx).textTheme.titleMedium,
             ),
             if (previewEntry.strings('synonyms').isNotEmpty)
-              Text('Also called: ${previewEntry.strings('synonyms').join(' · ')}'),
+              Text(
+                'Also called: ${previewEntry.strings('synonyms').join(' · ')}',
+              ),
             if (previewEntry.explanation.isNotEmpty)
               DictionaryText(
                 text: previewEntry.explanation,
@@ -741,7 +1248,9 @@ class _EntryEditorState extends State<_EntryEditor> {
             if (previewEntry.text('usage').isNotEmpty)
               Text('Usage: ${previewEntry.text('usage')}'),
             if (previewEntry.text('regionalUsage').isNotEmpty)
-              Text('Regional variations: ${previewEntry.text('regionalUsage')}'),
+              Text(
+                'Regional variations: ${previewEntry.text('regionalUsage')}',
+              ),
             if (previewEntry.strings('examples').isNotEmpty)
               Text('Examples:\n${previewEntry.strings('examples').join('\n')}'),
           ],
@@ -767,8 +1276,9 @@ class _EntryEditorState extends State<_EntryEditor> {
     if (!mounted) return;
     final revisions = snap.docs.map((d) => d.data()).toList()
       ..sort(
-        (a, b) =>
-            ((b['revision'] as int?) ?? 0).compareTo((a['revision'] as int?) ?? 0),
+        (a, b) => ((b['revision'] as int?) ?? 0).compareTo(
+          (a['revision'] as int?) ?? 0,
+        ),
       );
     await showAppGlassDialog<void>(
       context: context,
@@ -808,6 +1318,14 @@ class _EntryEditorState extends State<_EntryEditor> {
 
   Future<void> _save(String action) async {
     if (!_form.currentState!.validate()) return;
+    if (_hasRevisionMismatch && !_acknowledgedMismatch) {
+      setState(() {
+        _error =
+            'Confirm that you reviewed old, current, and proposed wording '
+            'before saving or publishing.';
+      });
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -820,6 +1338,8 @@ class _EntryEditorState extends State<_EntryEditor> {
         'entry': entry,
         'expectedRevision': _revision,
         'suggestionId': _suggestionId,
+        if (_hasRevisionMismatch && _acknowledgedMismatch)
+          'acknowledgeRevisionMismatch': true,
       });
       if (action == 'publish') {
         DictionaryRepository.invalidateCache();
@@ -835,10 +1355,84 @@ class _EntryEditorState extends State<_EntryEditor> {
     }
   }
 
+  Widget _buildMismatchComparisonPanel(BuildContext context) {
+    final suggestion = widget.suggestion!;
+    final currentPublished = widget.publishedTarget!;
+    final baseRev = suggestion['baseRevision'] as int?;
+    final currentRev = currentPublished.publishedRevision;
+    final rawProposed = suggestion['proposedFields'];
+    final rawBase = suggestion['baseFields'];
+
+    final currentFields = DictionaryStructuredFields.fromEntry(
+      currentPublished,
+    );
+    final baseFields = rawBase is Map
+        ? DictionaryStructuredFields.fromMap(rawBase.cast<String, dynamic>())
+        : currentFields;
+    final proposedFields = rawProposed is Map
+        ? DictionaryStructuredFields.fromMap(
+            rawProposed.cast<String, dynamic>(),
+          )
+        : null;
+
+    final keysToShow = <String>{
+      if (proposedFields != null) ...proposedFields.changedKeysAgainst(baseFields),
+      ...currentFields.changedKeysAgainst(baseFields),
+    };
+    final orderedKeys = [
+      for (final spec in DictionaryStructuredFields.specs)
+        if (keysToShow.contains(spec.key)) spec.key,
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 10,
+        children: [
+          AppFeedbackBanner(
+            key: const Key('editorRevisionMismatchWarning'),
+            message:
+                'Revision mismatch: this proposal was submitted against '
+                'revision ${baseRev ?? 0}, while the live published definition '
+                'is now revision $currentRev. Review old, current, and '
+                'proposed wording below before applying.',
+            tone: AppStatusTone.warning,
+          ),
+          if (proposedFields != null)
+            for (final key in orderedKeys)
+              DictionaryFieldDiffCard(
+                fieldKey: 'editor_mismatch_$key',
+                label: DictionaryStructuredFields.labelForKey(key),
+                oldText: baseFields.displayTextFor(key),
+                currentPublishedText: currentFields.displayTextFor(key),
+                proposedText: proposedFields.displayTextFor(key),
+                baseRevision: baseRev,
+                currentRevision: currentRev,
+              ),
+          CheckboxListTile(
+            key: const Key('acknowledgeRevisionMismatchCheckbox'),
+            contentPadding: EdgeInsets.zero,
+            value: _acknowledgedMismatch,
+            onChanged: _busy
+                ? null
+                : (value) =>
+                      setState(() => _acknowledgedMismatch = value ?? false),
+            title: const Text(
+              'I have reviewed the old, current published, and proposed '
+              'wording and confirm applying these changes.',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isNewEntry = widget.initial == null && !_existingDraft;
     final duplicateMatch = _conflictingTermMatch();
+    final canPersist = !_busy && (!_hasRevisionMismatch || _acknowledgedMismatch);
 
     return PopScope(
       canPop: !_busy,
@@ -855,11 +1449,23 @@ class _EntryEditorState extends State<_EntryEditor> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (widget.suggestion != null)
+              if (_hasRevisionMismatch) _buildMismatchComparisonPanel(context),
+              if (widget.suggestion != null && !_hasRevisionMismatch)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     'Submitted wording: ${widget.suggestion!['proposal']}',
+                  ),
+                ),
+              if ((widget.suggestion?['reason'] as String?)
+                      ?.trim()
+                      .isNotEmpty ??
+                  false)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ReasonCallout(
+                    reason: (widget.suggestion!['reason'] as String).trim(),
+                    secondaryColor: AppTokens.secondaryTextColor(context),
                   ),
                 ),
               if (duplicateMatch != null)
@@ -992,11 +1598,13 @@ class _EntryEditorState extends State<_EntryEditor> {
             child: const Text('Cancel'),
           ),
           OutlinedButton(
-            onPressed: _busy ? null : () => _save('save'),
+            key: const Key('dictionarySaveDraftButton'),
+            onPressed: canPersist ? () => _save('save') : null,
             child: const Text('Save draft'),
           ),
           FilledButton(
-            onPressed: _busy ? null : () => _save('publish'),
+            key: const Key('dictionaryPublishButton'),
+            onPressed: canPersist ? () => _save('publish') : null,
             child: const Text('Publish reviewed definition'),
           ),
         ],
