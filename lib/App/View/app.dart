@@ -11,6 +11,7 @@ import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/firebase_account_deletion_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
@@ -31,6 +32,7 @@ class App extends StatefulWidget {
     this._keysRepository,
     this._connectionRequestStore,
     this._skillTreeSuggestionsStore,
+    this._skillTreeV2Repository,
     this.useCompositeRequestStore = kUseCompositeRequestStore,
     this.mirrorRequestWritesToLegacy = kMirrorRequestWritesToLegacy,
     this._firestore,
@@ -60,6 +62,7 @@ class App extends StatefulWidget {
   final ApiKeyProvider? _keysRepository;
   final ConnectionRequestStore? _connectionRequestStore;
   final SkillTreeSuggestionsStore? _skillTreeSuggestionsStore;
+  final SkillTreeV2Repository? _skillTreeV2Repository;
   final bool useCompositeRequestStore;
   final bool mirrorRequestWritesToLegacy;
   final FirebaseFirestore? _firestore;
@@ -109,6 +112,18 @@ class _AppState extends State<App> {
           rollbackEndpoint: FirebaseEmulators.enabled
               ? FirebaseEmulators.rollbackCurriculumRevisionEndpoint()
               : null,
+          abortEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.abortCurriculumPublicationEndpoint()
+              : null,
+        ),
+      );
+  late final SkillTreeV2Repository _skillTreeV2Repository =
+      widget._skillTreeV2Repository ??
+      SkillTreeV2Repository(
+        store: HybridCurriculumSkillTreeV2Store(
+          primaryStore: FirestoreSkillTreeV2Store(
+            firestore: widget._firestore,
+          ),
         ),
       );
   late final ConnectionRequestStore _connectionRequestStore =
@@ -219,6 +234,9 @@ class _AppState extends State<App> {
         ),
         RepositoryProvider<SkillTreeDraftRepository>.value(
           value: _skillTreeDraftRepository,
+        ),
+        RepositoryProvider<SkillTreeV2Repository>.value(
+          value: _skillTreeV2Repository,
         ),
         if (widget._authenticationRepository
             case final AuthenticationRepository repo)

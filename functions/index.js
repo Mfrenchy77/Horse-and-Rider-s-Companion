@@ -21,6 +21,7 @@ const {
 } = require('./curriculum_drafts');
 const {
   publishCurriculumDraftHandler,
+  abortFailedPublicationHandler,
   rollbackCurriculumRevisionHandler,
 } = require('./curriculum_revisions');
 const {sharePreviewHandler} = require('./share_preview');
@@ -72,6 +73,13 @@ exports.publishSkillTreeCurriculumDraft = onCall(
 exports.rollbackSkillTreeCurriculumRevision = onCall(
     {region: 'us-central1', timeoutSeconds: 120},
     (request) => rollbackCurriculumRevisionHandler(admin.firestore(), {
+      publishingEnabled: process.env.CURRICULUM_PUBLISHING_ENABLED === 'true',
+    })(request),
+);
+
+exports.abortSkillTreeCurriculumPublication = onCall(
+    {region: 'us-central1'},
+    (request) => abortFailedPublicationHandler(admin.firestore(), {
       publishingEnabled: process.env.CURRICULUM_PUBLISHING_ENABLED === 'true',
     })(request),
 );

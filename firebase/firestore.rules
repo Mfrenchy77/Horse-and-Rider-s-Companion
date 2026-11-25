@@ -155,12 +155,21 @@ service cloud.firestore {
       }
     }
 
+    match /SkillTreeCurriculumPublic/{docId} {
+      allow read: if docId == 'active';
+      allow write: if false;
+    }
+
     match /SkillTreeCurriculumRevisions/{revisionId} {
       allow read: if isAdmin();
       allow write: if false;
 
       match /Chunks/{chunkId} {
-        allow read: if isAdmin();
+        allow read: if isAdmin()
+          || (
+            exists(/databases/$(database)/documents/SkillTreeCurriculumPublic/active)
+            && get(/databases/$(database)/documents/SkillTreeCurriculumPublic/active).data.activeRevisionId == revisionId
+          );
         allow write: if false;
       }
     }

@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs, lines_longer_than_80_chars
 
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/src/mappers/curriculum_skill_firestore_mapper.dart';
 import 'package:database_repository/src/mappers/skill_family_firestore_mapper.dart';
@@ -9,6 +11,18 @@ import 'package:database_repository/src/models/skill.dart';
 import 'package:database_repository/src/models/skill_family.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 import 'package:database_repository/src/models/skill_progress_v2.dart';
+
+class _AtomicCurriculumSnapshot {
+  const _AtomicCurriculumSnapshot({
+    required this.revisionId,
+    required this.families,
+    required this.skills,
+  });
+
+  final String revisionId;
+  final List<SkillFamily> families;
+  final List<CurriculumSkill> skills;
+}
 
 /// Backend-agnostic store contract for Skill Tree 2.0 data.
 abstract class SkillTreeV2Store {
@@ -43,17 +57,146 @@ abstract class SkillTreeV2Store {
 }
 
 /// Firestore implementation of [SkillTreeV2Store].
+///
+/// Prefers the atomic versioned curriculum pointer at
+/// `SkillTreeCurriculumPublic/active` →
+/// `SkillTreeCurriculumRevisions/{activeRevisionId}/Chunks/*`, verifying full
+/// chunk completeness before exposing data so readers never observe a
+/// partially published revision. Falls back cleanly to `SkillFamilies` /
+/// `SkillsV2` when no active pointer exists yet or if verification fails.
 class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
   FirestoreSkillTreeV2Store({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
+  static const _publicCollection = 'SkillTreeCurriculumPublic';
+  static const _publicActiveDocId = 'active';
+  static const _revisionsCollection = 'SkillTreeCurriculumRevisions';
+  static const _chunksSubcollection = 'Chunks';
+
   final FirebaseFirestore _firestore;
+  _AtomicCurriculumSnapshot? _cachedSnapshot;
+  Future<_AtomicCurriculumSnapshot?>? _inFlightSnapshot;
+
+  /// Clears the in-memory atomic snapshot cache so subsequent reads re-check
+  /// `SkillTreeCurriculumPublic/active`.
+  void invalidateCache() {
+    _cachedSnapshot = null;
+    _inFlightSnapshot = null;
+  }
 
   String _profileCollection(SkillSubject subject) =>
       subject == SkillSubject.rider ? 'Rider_Profile' : 'Horse_Profile';
 
+  Future<_AtomicCurriculumSnapshot?> _loadAtomicSnapshot() {
+    final existing = _inFlightSnapshot;
+    if (existing != null) return existing;
+    final future = _fetchAndVerifyAtomicSnapshot();
+    _inFlightSnapshot = future;
+    future.whenComplete(() {
+      if (identical(_inFlightSnapshot, future)) {
+        _inFlightSnapshot = null;
+      }
+    });
+    return future;
+  }
+
+  Future<_AtomicCurriculumSnapshot?> _fetchAndVerifyAtomicSnapshot() async {
+    try {
+      final activeSnap = await _firestore
+          .collection(_publicCollection)
+          .doc(_publicActiveDocId)
+          .get();
+      final activeData = activeSnap.data();
+      if (!activeSnap.exists || activeData == null) return null;
+
+      final activeRevisionId = activeData['activeRevisionId'] as String? ?? '';
+      final expectedChunkCount = (activeData['chunkCount'] as num?)?.toInt() ?? 0;
+      final expectedFamilyCount =
+          (activeData['familyCount'] as num?)?.toInt() ?? 0;
+      final expectedSkillCount =
+          (activeData['skillCount'] as num?)?.toInt() ?? 0;
+      if (activeRevisionId.isEmpty || expectedChunkCount <= 0) return null;
+
+      final cached = _cachedSnapshot;
+      if (cached != null && cached.revisionId == activeRevisionId) {
+        return cached;
+      }
+
+      final chunksSnap = await _firestore
+          .collection(_revisionsCollection)
+          .doc(activeRevisionId)
+          .collection(_chunksSubcollection)
+          .orderBy('index')
+          .get();
+
+      if (chunksSnap.docs.length != expectedChunkCount) {
+        return null;
+      }
+
+      final buffer = StringBuffer();
+      for (var i = 0; i < expectedChunkCount; i++) {
+        final data = chunksSnap.docs[i].data();
+        final index = (data['index'] as num?)?.toInt();
+        final payload = data['payload'] as String?;
+        if (index != i || payload == null || payload.isEmpty) {
+          return null;
+        }
+        buffer.write(payload);
+      }
+
+      final decoded = jsonDecode(buffer.toString());
+      if (decoded is! Map<String, dynamic>) return null;
+
+      final rawFamilies = decoded['families'];
+      final rawSkills = decoded['skills'];
+      if (rawFamilies is! List || rawSkills is! List) return null;
+
+      final families = rawFamilies
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => SkillFamily.fromMap(Map<String, dynamic>.from(e)))
+          .toList()
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+      final allSkills = rawSkills
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => CurriculumSkill.fromMap(Map<String, dynamic>.from(e)))
+          .toList();
+
+      if (expectedFamilyCount > 0 && families.length != expectedFamilyCount) {
+        return null;
+      }
+      if (expectedSkillCount > 0 && allSkills.length != expectedSkillCount) {
+        return null;
+      }
+
+      final visibleSkills = allSkills
+          .where(
+            (s) =>
+                s.status == CurriculumSkillStatus.active ||
+                s.status == CurriculumSkillStatus.retired,
+          )
+          .toList()
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+      final snapshot = _AtomicCurriculumSnapshot(
+        revisionId: activeRevisionId,
+        families: List<SkillFamily>.unmodifiable(families),
+        skills: List<CurriculumSkill>.unmodifiable(visibleSkills),
+      );
+      _cachedSnapshot = snapshot;
+      return snapshot;
+    } catch (_) {
+      // Never return a partially loaded snapshot; let caller fall back cleanly.
+      return null;
+    }
+  }
+
   @override
   Future<List<SkillFamily>> fetchFamilies() async {
+    final atomic = await _loadAtomicSnapshot();
+    if (atomic != null && atomic.families.isNotEmpty) {
+      return List<SkillFamily>.from(atomic.families);
+    }
     final snap = await _firestore.collection('SkillFamilies').get();
     final list = snap.docs
         .map((d) => SkillFamilyFirestoreMapper.fromFirestore(d, null))
@@ -64,6 +207,10 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
 
   @override
   Future<List<CurriculumSkill>> fetchSkills() async {
+    final atomic = await _loadAtomicSnapshot();
+    if (atomic != null && atomic.skills.isNotEmpty) {
+      return List<CurriculumSkill>.from(atomic.skills);
+    }
     final snap = await _firestore
         .collection('SkillsV2')
         .where('status', whereIn: ['active', 'retired'])

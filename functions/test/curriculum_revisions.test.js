@@ -9,11 +9,14 @@ const {
   CHUNKS_SUBCOLLECTION,
   META_COLLECTION,
   META_DOC_ID,
+  PUBLIC_COLLECTION,
+  PUBLIC_ACTIVE_DOC_ID,
   computeCurriculumChecksum,
   splitIntoChunks,
   reassembleAndVerifySnapshot,
   computeCurriculumDiff,
   publishCurriculumDraftHandler,
+  abortFailedPublicationHandler,
   rollbackCurriculumRevisionHandler,
 } = require('../curriculum_revisions');
 const {DRAFTS_COLLECTION, DEFAULT_DRAFT_ID} = require('../curriculum_drafts');
@@ -324,7 +327,102 @@ test('concurrent admin lock collision and invalid draft release lock safely', as
   assert.equal(db._store.has(`${REVISIONS_COLLECTION}/rev_000001`), false);
 });
 
-test('partial publication failure marks state failed and recovers cleanly from verified snapshot', async () => {
+test('atomic pointer stays on previous revision on staging/pre-activation failure and supports resume or abort', async () => {
+  const db = createFakeFirestore();
+  const baseFamily = makeFamily();
+  const baseSkill = makeSkill();
+  db._store.set('SkillFamilies/rider.mounted.balance', baseFamily);
+  db._store.set('SkillsV2/rider.mounted.neutral_pelvis', baseSkill);
+
+  // Publish baseline rev_000001 first so SkillTreeCurriculumPublic/active points to rev_000001.
+  const now = new Date('2026-11-24T18:05:00.000Z');
+  db._store.set(`${DRAFTS_COLLECTION}/${DEFAULT_DRAFT_ID}`, {
+    families: [baseFamily],
+    skills: [makeSkill({name: 'Baseline Published'})],
+  });
+  const normalHandler = publishCurriculumDraftHandler(db, {now: () => now, publishingEnabled: true});
+  const rev1 = await normalHandler({auth: ADMIN_AUTH, data: {notes: 'Baseline', requestId: 'req-rev-1'}});
+  assert.equal(rev1.revision.id, 'rev_000001');
+  assert.equal(db._store.get(`${PUBLIC_COLLECTION}/${PUBLIC_ACTIVE_DOC_ID}`).activeRevisionId, 'rev_000001');
+
+  // Duplicate requestId returns idempotent replay without creating rev_000002.
+  const replay = await normalHandler({auth: ADMIN_AUTH, data: {notes: 'Baseline', requestId: 'req-rev-1'}});
+  assert.equal(replay.idempotentReplay, true);
+  assert.equal(replay.revision.id, 'rev_000001');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).currentRevisionNumber, 1);
+
+  // Stage 2 failure (staging chunk write fails) leaves rev_000001 active and allows clean abort.
+  db._store.set(`${DRAFTS_COLLECTION}/${DEFAULT_DRAFT_ID}`, {
+    families: [baseFamily],
+    skills: [makeSkill({name: 'Staged Failure'})],
+  });
+  const stagingFailHandler = publishCurriculumDraftHandler(db, {
+    now: () => now,
+    publishingEnabled: true,
+    commitBatch: async (_batch, _idx, _count, stage) => {
+      if (stage === 'staging') {
+        throw new Error('Simulated staging write failure');
+      }
+      await _batch.commit();
+    },
+  });
+  await assert.rejects(
+      () => stagingFailHandler({auth: ADMIN_AUTH, data: {notes: 'Will fail staging'}}),
+      (err) => err.code === 'internal' && err.message.includes('staging'),
+  );
+  assert.equal(db._store.get(`${PUBLIC_COLLECTION}/${PUBLIC_ACTIVE_DOC_ID}`).activeRevisionId, 'rev_000001');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).failedStage, 'staging');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).publicationState, 'failed');
+
+  // Abort unpublished failed attempt -> deletes staged rev_000002 and keeps rev_000001 active.
+  const abortHandler = abortFailedPublicationHandler(db, {now: () => now, publishingEnabled: true});
+  const abortRes = await abortHandler({auth: ADMIN_AUTH, data: {}});
+  assert.equal(abortRes.aborted, true);
+  assert.equal(abortRes.revisionId, 'rev_000002');
+  assert.equal(db._store.has(`${REVISIONS_COLLECTION}/rev_000002`), false);
+  assert.equal(db._store.get(`${PUBLIC_COLLECTION}/${PUBLIC_ACTIVE_DOC_ID}`).activeRevisionId, 'rev_000001');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).publicationState, 'idle');
+
+  // Pre-activation interruption (after chunks are written & verified, before pointer flip).
+  db._store.set(`${DRAFTS_COLLECTION}/${DEFAULT_DRAFT_ID}`, {
+    families: [baseFamily],
+    skills: [makeSkill({name: 'Updated After Recovery'})],
+  });
+  const preActivateFailHandler = publishCurriculumDraftHandler(db, {
+    now: () => now,
+    publishingEnabled: true,
+    onBeforeActivate: async () => {
+      throw new Error('Simulated crash before atomic activation');
+    },
+  });
+  await assert.rejects(
+      () => preActivateFailHandler({auth: ADMIN_AUTH, data: {notes: 'Interrupted before activation'}}),
+      (err) => err.code === 'internal',
+  );
+  assert.equal(db._store.get(`${PUBLIC_COLLECTION}/${PUBLIC_ACTIVE_DOC_ID}`).activeRevisionId, 'rev_000001');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).failedStage, 'activating');
+
+  // Starting a brand-new publish without recovery is refused.
+  await assert.rejects(
+      () => normalHandler({auth: ADMIN_AUTH, data: {}}),
+      (err) => err.code === 'failed-precondition' && err.message.includes('interrupted'),
+  );
+
+  // Resuming from the verified snapshot activates rev_000002 atomically!
+  const recovered = await normalHandler({
+    auth: ADMIN_AUTH,
+    data: {resumeFailedPublication: true},
+  });
+  assert.equal(recovered.resumed, true);
+  assert.equal(recovered.revision.id, 'rev_000002');
+  assert.equal(recovered.revision.status, 'completed');
+  assert.equal(recovered.revision.immutable, true);
+  assert.equal(db._store.get(`${PUBLIC_COLLECTION}/${PUBLIC_ACTIVE_DOC_ID}`).activeRevisionId, 'rev_000002');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).publicationState, 'idle');
+  assert.equal(db._store.get('SkillsV2/rider.mounted.neutral_pelvis').name, 'Updated After Recovery');
+});
+
+test('syncing_legacy interruption refuses discard (already active) and completes idempotently on resume', async () => {
   const db = createFakeFirestore();
   const baseFamily = makeFamily();
   const baseSkill = makeSkill();
@@ -332,49 +430,83 @@ test('partial publication failure marks state failed and recovers cleanly from v
   db._store.set('SkillsV2/rider.mounted.neutral_pelvis', baseSkill);
   db._store.set(`${DRAFTS_COLLECTION}/${DEFAULT_DRAFT_ID}`, {
     families: [baseFamily],
-    skills: [makeSkill({name: 'Updated After Recovery'})],
+    skills: [makeSkill({name: 'Live After Legacy Resume'})],
   });
 
-  const now = new Date('2026-11-24T18:05:00.000Z');
-  const failingHandler = publishCurriculumDraftHandler(db, {
+  const now = new Date('2026-11-24T18:10:00.000Z');
+  const legacyFailHandler = publishCurriculumDraftHandler(db, {
     now: () => now,
     publishingEnabled: true,
-    commitBatch: async () => {
-      throw new Error('Simulated transient Firestore write timeout');
+    commitBatch: async (batch, _idx, _count, stage) => {
+      if (stage === 'syncing_legacy') {
+        throw new Error('Simulated legacy mirror timeout');
+      }
+      await batch.commit();
     },
   });
 
   await assert.rejects(
-      () => failingHandler({auth: ADMIN_AUTH, data: {notes: 'Interrupted release'}}),
-      (err) => err.code === 'internal' && err.message.includes('resumeFailedPublication'),
+      () => legacyFailHandler({auth: ADMIN_AUTH, data: {notes: 'Legacy sync hiccup'}}),
+      (err) => err.code === 'internal' && err.message.includes('already') || err.message.includes('active'),
   );
 
-  const metaFailed = db._store.get(`${META_COLLECTION}/${META_DOC_ID}`);
-  assert.equal(metaFailed.publicationState, 'failed');
-  assert.equal(metaFailed.activePublicationId, 'rev_000001');
-  assert.equal(metaFailed.currentRevisionId, null);
-  assert.equal(db._store.get(`${REVISIONS_COLLECTION}/rev_000001`).status, 'failed');
-  assert.equal(db._store.get(`${REVISIONS_COLLECTION}/rev_000001`).immutable, false);
+  // Public pointer IS already active on rev_000001!
+  assert.equal(db._store.get(`${PUBLIC_COLLECTION}/${PUBLIC_ACTIVE_DOC_ID}`).activeRevisionId, 'rev_000001');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).failedStage, 'syncing_legacy');
 
-  // Starting a brand-new publish without recovery is refused.
-  const normalHandler = publishCurriculumDraftHandler(db, {now: () => now, publishingEnabled: true});
+  // Discarding an already-active revision MUST be refused!
+  const abortHandler = abortFailedPublicationHandler(db, {now: () => now, publishingEnabled: true});
   await assert.rejects(
-      () => normalHandler({auth: ADMIN_AUTH, data: {}}),
-      (err) => err.code === 'failed-precondition' && err.message.includes('interrupted'),
+      () => abortHandler({auth: ADMIN_AUTH, data: {}}),
+      (err) => err.code === 'failed-precondition' && err.message.includes('already active'),
   );
 
-  // Resuming from the verified snapshot completes cleanly.
-  const recovered = await normalHandler({
-    auth: ADMIN_AUTH,
-    data: {resumeFailedPublication: true},
-  });
-  assert.equal(recovered.resumed, true);
-  assert.equal(recovered.revision.id, 'rev_000001');
-  assert.equal(recovered.revision.status, 'completed');
-  assert.equal(recovered.revision.immutable, true);
+  // Resuming finishes legacy mirror without creating rev_000002.
+  const normalHandler = publishCurriculumDraftHandler(db, {now: () => now, publishingEnabled: true});
+  const resumed = await normalHandler({auth: ADMIN_AUTH, data: {resumeFailedPublication: true}});
+  assert.equal(resumed.resumed, true);
+  assert.equal(resumed.revision.id, 'rev_000001');
   assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).publicationState, 'idle');
-  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).currentRevisionId, 'rev_000001');
-  assert.equal(db._store.get('SkillsV2/rider.mounted.neutral_pelvis').name, 'Updated After Recovery');
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).currentRevisionNumber, 1);
+  assert.equal(db._store.get('SkillsV2/rider.mounted.neutral_pelvis').name, 'Live After Legacy Resume');
+});
+
+test('expired lease allows recovery and active lock blocks concurrent rollback', async () => {
+  const db = createFakeFirestore();
+  const baseFamily = makeFamily();
+  const baseSkill = makeSkill();
+  db._store.set('SkillFamilies/rider.mounted.balance', baseFamily);
+  db._store.set('SkillsV2/rider.mounted.neutral_pelvis', baseSkill);
+  db._store.set(`${DRAFTS_COLLECTION}/${DEFAULT_DRAFT_ID}`, {
+    families: [baseFamily],
+    skills: [makeSkill({name: 'Rev 1'})],
+  });
+
+  const now = new Date('2026-11-24T18:20:00.000Z');
+  const publish = publishCurriculumDraftHandler(db, {now: () => now, publishingEnabled: true});
+  await publish({auth: ADMIN_AUTH, data: {}});
+
+  // Simulate an active lock blocking concurrent rollback.
+  db._store.set(`${META_COLLECTION}/${META_DOC_ID}`, {
+    ...db._store.get(`${META_COLLECTION}/${META_DOC_ID}`),
+    publicationState: 'staging',
+    activePublicationId: 'rev_000002',
+    lockOwnerUid: 'admin-1',
+    lockOwnerName: 'Admin One',
+    lockExpiresAt: new Date(now.getTime() + 60000),
+  });
+  const rollback = rollbackCurriculumRevisionHandler(db, {now: () => now, publishingEnabled: true});
+  await assert.rejects(
+      () => rollback({auth: ADMIN_AUTH, data: {targetRevisionId: 'rev_000001'}}),
+      (err) => err.code === 'aborted' && err.message.includes('already in progress'),
+  );
+
+  // Once the lease expires, abortFailedPublicationHandler can safely clear it.
+  const afterExpiry = new Date(now.getTime() + 10 * 60 * 1000);
+  const abortHandler = abortFailedPublicationHandler(db, {now: () => afterExpiry, publishingEnabled: true});
+  const aborted = await abortHandler({auth: ADMIN_AUTH, data: {}});
+  assert.equal(aborted.aborted, true);
+  assert.equal(db._store.get(`${META_COLLECTION}/${META_DOC_ID}`).publicationState, 'idle');
 });
 
 test('rollback creates a new forward revision, bumps standardVersion, and refuses incompatible rollbacks', async () => {

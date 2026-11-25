@@ -587,9 +587,17 @@ test('SkillTreeCurriculumDrafts allows admin read only and denies all client wri
   await assertFails(setDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
 });
 
-test('SkillTreeCurriculumRevisions and Meta enforce admin-only reads and immutable server-only writes', async () => {
+test('SkillTreeCurriculumPublic, Revisions, and Meta enforce atomic public reads and admin-only history', async () => {
   await environment.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
+    await setDoc(doc(db, 'SkillTreeCurriculumPublic/active'), {
+      activeRevisionId: 'rev_000001',
+      activeRevisionNumber: 1,
+      chunkCount: 1,
+    });
+    await setDoc(doc(db, 'SkillTreeCurriculumPublic/private_other'), {
+      secret: true,
+    });
     await setDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001'), {
       id: 'rev_000001',
       revisionNumber: 1,
@@ -600,6 +608,17 @@ test('SkillTreeCurriculumRevisions and Meta enforce admin-only reads and immutab
       index: 0,
       payload: '{"families":[],"skills":[]}',
       chunkChecksum: 'abc',
+    });
+    await setDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000002'), {
+      id: 'rev_000002',
+      revisionNumber: 2,
+      status: 'staging',
+      immutable: false,
+    });
+    await setDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000002/Chunks/0000'), {
+      index: 0,
+      payload: '{"families":[],"skills":[]}',
+      chunkChecksum: 'def',
     });
     await setDoc(doc(db, 'SkillTreeCurriculumMeta/current'), {
       currentRevisionId: 'rev_000001',
@@ -628,19 +647,29 @@ test('SkillTreeCurriculumRevisions and Meta enforce admin-only reads and immutab
   }).firestore();
   const guestDb = environment.unauthenticatedContext().firestore();
 
-  // Verified admin can read revisions, chunks, and meta.
+  // Verified admin can read public pointer, all revisions, all chunks, and meta.
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumPublic/active')));
   await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001')));
   await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000')));
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000002')));
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000002/Chunks/0000')));
   await assertSucceeds(getDoc(doc(adminDb, 'SkillTreeCurriculumMeta/current')));
 
-  // Non-admins and unverified admins are denied all reads.
+  // Public readers (guests, users, mods, unverified admins) can read ONLY SkillTreeCurriculumPublic/active
+  // and chunks of the currently active revision (rev_000001).
+  // Staged/historical revision chunks (rev_000002), revision headers, and Meta remain denied!
   for (const db of [unverifiedAdminDb, modDb, userDb, guestDb]) {
+    await assertSucceeds(getDoc(doc(db, 'SkillTreeCurriculumPublic/active')));
+    await assertSucceeds(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000')));
+    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumPublic/private_other')));
     await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001')));
-    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000')));
+    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000002')));
+    await assertFails(getDoc(doc(db, 'SkillTreeCurriculumRevisions/rev_000002/Chunks/0000')));
     await assertFails(getDoc(doc(db, 'SkillTreeCurriculumMeta/current')));
   }
 
   // All client writes/updates/deletes are denied (even for verified admins).
+  await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumPublic/active'), {activeRevisionId: 'rev_000002'}));
   await assertFails(updateDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001'), {notes: 'Tampered'}));
   await assertFails(deleteDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001')));
   await assertFails(setDoc(doc(adminDb, 'SkillTreeCurriculumRevisions/rev_000001/Chunks/0000'), {payload: 'tampered'}));

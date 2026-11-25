@@ -6,6 +6,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/cubit/administration_suggestions_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_revision_dialogs.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -13,7 +14,13 @@ import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dar
 /// Role-gated Administration section housing the Skill Tree Suggestions inbox.
 class AdministrationPage extends StatefulWidget {
   /// Creates an [AdministrationPage].
-  const AdministrationPage({super.key, this.repository});
+  const AdministrationPage({
+    super.key,
+    this.repository,
+    this.draftRepository,
+    this.skillTreeRepository,
+    this.enableCurriculumPublishing = kEnableCurriculumPublishing,
+  });
 
   /// Route name.
   static const String name = 'Administration';
@@ -24,6 +31,15 @@ class AdministrationPage extends StatefulWidget {
   /// Optional repository override for widget tests.
   final SkillTreeSuggestionsRepository? repository;
 
+  /// Optional draft/revision repository override for widget tests.
+  final SkillTreeDraftRepository? draftRepository;
+
+  /// Optional live Skill Tree repository override for widget tests.
+  final SkillTreeV2Repository? skillTreeRepository;
+
+  /// Whether curriculum publishing/recovery/restore actions are enabled.
+  final bool enableCurriculumPublishing;
+
   @override
   State<AdministrationPage> createState() => _AdministrationPageState();
 }
@@ -31,6 +47,9 @@ class AdministrationPage extends StatefulWidget {
 class _AdministrationPageState extends State<AdministrationPage> {
   late final AdministrationSuggestionsCubit _cubit;
   bool _mobileShowingDetail = false;
+  CurriculumPublicationStatus _publicationStatus =
+      CurriculumPublicationStatus.idle;
+  bool _isRecoveryBusy = false;
 
   SkillTreeSuggestionsRepository _resolveRepo() {
     if (widget.repository != null) return widget.repository!;
@@ -41,11 +60,162 @@ class _AdministrationPageState extends State<AdministrationPage> {
     }
   }
 
+  SkillTreeDraftRepository? _resolveDraftRepo() {
+    if (widget.draftRepository != null) return widget.draftRepository;
+    try {
+      return context.read<SkillTreeDraftRepository?>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  SkillTreeV2Repository? _resolveSkillTreeRepo() {
+    if (widget.skillTreeRepository != null) return widget.skillTreeRepository;
+    try {
+      return context.read<SkillTreeV2Repository?>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _invalidateSkillTreeCache() {
+    final store = _resolveSkillTreeRepo()?.store;
+    if (store is FirestoreSkillTreeV2Store) {
+      store.invalidateCache();
+    } else if (store is HybridCurriculumSkillTreeV2Store) {
+      store.invalidateCache();
+    }
+  }
+
+  Future<void> _loadPublicationStatus() async {
+    final appState = context.read<AppCubit>().state;
+    if (!appState.isAdmin) return;
+    final draftRepo = _resolveDraftRepo();
+    if (draftRepo == null) return;
+    try {
+      final status = await draftRepo.fetchPublicationStatus();
+      if (!mounted) return;
+      setState(() => _publicationStatus = status);
+    } catch (_) {
+      // Non-blocking status check for recovery banner.
+    }
+  }
+
+  Future<void> _resumeInterruptedPublication() async {
+    final draftRepo = _resolveDraftRepo();
+    if (draftRepo == null) return;
+    setState(() => _isRecoveryBusy = true);
+    try {
+      final revision = await draftRepo.publishDraft(
+        resumeFailedPublication: true,
+      );
+      _invalidateSkillTreeCache();
+      await _loadPublicationStatus();
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Resumed and completed Curriculum Revision '
+            '#${revision.revisionNumber}.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not resume publication: $e')),
+      );
+    }
+  }
+
+  Future<void> _discardInterruptedPublication() async {
+    final draftRepo = _resolveDraftRepo();
+    if (draftRepo == null) return;
+    final confirmed = await showAppGlassDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AppGlassDialog(
+        title: const Text('Discard Unpublished Changes?'),
+        content: const Text(
+          'This clears the interrupted publication attempt. The live Skill '
+          'Tree and your saved curriculum draft remain intact.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('confirmDiscardInterruptedPublicationButton'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard Unpublished Changes'),
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !mounted) return;
+
+    setState(() => _isRecoveryBusy = true);
+    try {
+      await draftRepo.discardFailedPublication();
+      await _loadPublicationStatus();
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Interrupted publication attempt discarded.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not discard publication: $e')),
+      );
+    }
+  }
+
+  Future<void> _openRevisionHistory() async {
+    final draftRepo = _resolveDraftRepo();
+    if (draftRepo == null) return;
+    var currentFamilies = const <SkillFamily>[];
+    var currentSkills = const <CurriculumSkill>[];
+    final skillTreeRepo = _resolveSkillTreeRepo();
+    if (skillTreeRepo != null) {
+      try {
+        final results = await Future.wait([
+          skillTreeRepo.fetchFamilies(),
+          skillTreeRepo.fetchSkills(),
+        ]);
+        currentFamilies = results[0] as List<SkillFamily>;
+        currentSkills = results[1] as List<CurriculumSkill>;
+      } catch (_) {
+        // Fall back to empty comparison baseline if live curriculum fails.
+      }
+    }
+    if (!mounted) return;
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (_) => CurriculumRevisionHistoryDialog(
+        draftRepository: draftRepo,
+        currentFamilies: currentFamilies,
+        currentSkills: currentSkills,
+        publishingEnabled: widget.enableCurriculumPublishing,
+        onRestored: (_) {
+          _invalidateSkillTreeCache();
+          _loadPublicationStatus();
+        },
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _cubit = AdministrationSuggestionsCubit(repository: _resolveRepo())
       ..loadInbox();
+    _loadPublicationStatus();
   }
 
   @override
@@ -108,19 +278,7 @@ class _AdministrationPageState extends State<AdministrationPage> {
                   IconButton(
                     key: const Key('adminRevisionHistoryButton'),
                     tooltip: 'Curriculum Revision History',
-                    onPressed: () {
-                      final draftRepo =
-                          context.read<SkillTreeDraftRepository?>();
-                      if (draftRepo == null) return;
-                      showAppGlassDialog<void>(
-                        context: context,
-                        builder: (_) => CurriculumRevisionHistoryDialog(
-                          draftRepository: draftRepo,
-                          currentFamilies: const [],
-                          currentSkills: const [],
-                        ),
-                      );
-                    },
+                    onPressed: _openRevisionHistory,
                     icon: const Icon(Icons.history_outlined),
                   ),
                 IconButton(
@@ -128,9 +286,10 @@ class _AdministrationPageState extends State<AdministrationPage> {
                   tooltip: 'Refresh inbox',
                   onPressed: state.isLoading
                       ? null
-                      : () => _cubit.loadInbox(
-                            statusFilter: state.statusFilter,
-                          ),
+                      : () {
+                          _cubit.loadInbox(statusFilter: state.statusFilter);
+                          _loadPublicationStatus();
+                        },
                   icon: const Icon(Icons.refresh),
                 ),
               ],
@@ -144,6 +303,15 @@ class _AdministrationPageState extends State<AdministrationPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: AppTokens.spaceMd,
                     children: [
+                      if (appState.isAdmin &&
+                          _publicationStatus.needsAttention)
+                        CurriculumPublicationRecoveryBanner(
+                          status: _publicationStatus,
+                          publishingEnabled: widget.enableCurriculumPublishing,
+                          isBusy: _isRecoveryBusy,
+                          onResume: _resumeInterruptedPublication,
+                          onDiscard: _discardInterruptedPublication,
+                        ),
                       _StatusFilterBar(
                         selected: state.statusFilter,
                         onSelect: (status) {

@@ -150,3 +150,70 @@ class CurriculumRevisionSnapshot {
   final List<SkillFamily> families;
   final List<CurriculumSkill> skills;
 }
+
+/// Current curriculum publication status from `SkillTreeCurriculumMeta/current`.
+class CurriculumPublicationStatus {
+  const CurriculumPublicationStatus({
+    this.publicationState = 'idle',
+    this.activePublicationId,
+    this.currentRevisionId,
+    this.currentRevisionNumber = 0,
+    this.failedStage,
+    this.lockOwnerUid,
+    this.lockOwnerName,
+    this.lockExpiresAt,
+    this.lastError,
+    this.updatedAt,
+  });
+
+  factory CurriculumPublicationStatus.fromMap(Map<String, dynamic> data) {
+    return CurriculumPublicationStatus(
+      publicationState: data['publicationState'] as String? ?? 'idle',
+      activePublicationId: data['activePublicationId'] as String?,
+      currentRevisionId: data['currentRevisionId'] as String?,
+      currentRevisionNumber:
+          (data['currentRevisionNumber'] as num?)?.toInt() ?? 0,
+      failedStage: data['failedStage'] as String?,
+      lockOwnerUid: data['lockOwnerUid'] as String?,
+      lockOwnerName: data['lockOwnerName'] as String?,
+      lockExpiresAt: parseFlexibleDateTime(data['lockExpiresAt']),
+      lastError: data['lastError'] as String?,
+      updatedAt: parseFlexibleDateTime(data['updatedAt']),
+    );
+  }
+
+  static const idle = CurriculumPublicationStatus();
+
+  final String publicationState;
+  final String? activePublicationId;
+  final String? currentRevisionId;
+  final int currentRevisionNumber;
+  final String? failedStage;
+  final String? lockOwnerUid;
+  final String? lockOwnerName;
+  final DateTime? lockExpiresAt;
+  final String? lastError;
+  final DateTime? updatedAt;
+
+  bool get isIdle => publicationState == 'idle';
+
+  bool get isLeaseExpired =>
+      lockExpiresAt != null &&
+      lockExpiresAt!.isBefore(DateTime.now().toUtc());
+
+  /// True once the atomic public pointer has switched to this revision.
+  bool get isAlreadyActive =>
+      failedStage == 'syncing_legacy' ||
+      publicationState == 'syncing_legacy' ||
+      (activePublicationId != null &&
+          activePublicationId == currentRevisionId);
+
+  /// True when an interrupted or failed publication requires admin recovery.
+  bool get needsAttention =>
+      publicationState == 'failed' ||
+      (publicationState != 'idle' && isLeaseExpired);
+
+  /// Only unpublished revisions (not yet active) may be discarded.
+  bool get canDiscard =>
+      needsAttention && !isAlreadyActive && activePublicationId != null;
+}

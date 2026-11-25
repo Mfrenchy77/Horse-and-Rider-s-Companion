@@ -75,9 +75,125 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
   bool _hasUnsavedDraftChanges = false;
   bool _isDraftBusy = false;
   SkillTreeCurriculumDraft? _draft;
+  CurriculumPublicationStatus _publicationStatus =
+      CurriculumPublicationStatus.idle;
+  bool _isRecoveryBusy = false;
+  late final SkillTreeV2Repository _repository;
 
   bool _isVerifiedAdmin(AppState appState) =>
       !appState.isGuest && appState.user.emailVerified && appState.isAdmin;
+
+  void _invalidateCurriculumCache() {
+    final store = _repository.store;
+    if (store is FirestoreSkillTreeV2Store) {
+      store.invalidateCache();
+    } else if (store is HybridCurriculumSkillTreeV2Store) {
+      store.invalidateCache();
+    }
+  }
+
+  Future<void> _loadPublicationStatus() async {
+    final appState = context.read<AppCubit>().state;
+    if (!_isVerifiedAdmin(appState)) return;
+    try {
+      final draftRepo = context.read<SkillTreeDraftRepository?>();
+      if (draftRepo == null) return;
+      final status = await draftRepo.fetchPublicationStatus();
+      if (!mounted) return;
+      setState(() => _publicationStatus = status);
+    } catch (_) {
+      // Non-blocking status check.
+    }
+  }
+
+  Future<void> _resumeInterruptedPublication() async {
+    final draftRepo = context.read<SkillTreeDraftRepository?>();
+    if (draftRepo == null) return;
+    setState(() => _isRecoveryBusy = true);
+    try {
+      final published = await draftRepo.publishDraft(
+        resumeFailedPublication: true,
+      );
+      _invalidateCurriculumCache();
+      await _loadPublicationStatus();
+      if (!mounted) return;
+      setState(() {
+        _draft = null;
+        _hasUnsavedDraftChanges = false;
+        _isAdminEditMode = false;
+        _isPreviewingDraft = false;
+        _isRecoveryBusy = false;
+      });
+      await _cubit.initialize(
+        initialSubject: _cubit.state.subject,
+        profileDocId: _profileDocIdFor(
+          context.read<AppCubit>().state,
+          _cubit.state.subject,
+        ),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Resumed and completed Curriculum Revision '
+            '#${published.revisionNumber}.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not resume publication: $e')),
+      );
+    }
+  }
+
+  Future<void> _discardInterruptedPublication() async {
+    final draftRepo = context.read<SkillTreeDraftRepository?>();
+    if (draftRepo == null) return;
+    final confirmed = await showAppGlassDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AppGlassDialog(
+        title: const Text('Discard Unpublished Changes?'),
+        content: const Text(
+          'This clears the interrupted publication attempt. The live Skill '
+          'Tree and your saved curriculum draft remain intact.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('confirmDiscardInterruptedPublicationButton'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard Unpublished Changes'),
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !mounted) return;
+
+    setState(() => _isRecoveryBusy = true);
+    try {
+      await draftRepo.discardFailedPublication();
+      await _loadPublicationStatus();
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Interrupted publication attempt discarded.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isRecoveryBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not discard publication: $e')),
+      );
+    }
+  }
 
   SkillTreeV2State _effectiveState(SkillTreeV2State publishedState) {
     final draft = _draft;
@@ -105,8 +221,10 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     try {
       final draftRepo = context.read<SkillTreeDraftRepository?>();
       final remoteDraft = await draftRepo?.fetchDraft();
+      final status = await draftRepo?.fetchPublicationStatus();
       if (!mounted) return;
       setState(() {
+        if (status != null) _publicationStatus = status;
         _draft ??=
             remoteDraft ??
             SkillTreeCurriculumDraft(
@@ -353,6 +471,9 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
       ),
     );
     if (published == null || !mounted) return;
+    _invalidateCurriculumCache();
+    await _loadPublicationStatus();
+    if (!mounted) return;
     setState(() {
       _draft = null;
       _hasUnsavedDraftChanges = false;
@@ -387,6 +508,8 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         currentSkills: publishedState.skills,
         publishingEnabled: widget.enableCurriculumPublishing,
         onRestored: (_) {
+          _invalidateCurriculumCache();
+          _loadPublicationStatus();
           _cubit.initialize(
             initialSubject: _cubit.state.subject,
             profileDocId: _profileDocIdFor(
@@ -419,6 +542,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppTokens.spaceSm,
         children: [
+          if (_publicationStatus.needsAttention)
+            CurriculumPublicationRecoveryBanner(
+              status: _publicationStatus,
+              publishingEnabled: widget.enableCurriculumPublishing,
+              isBusy: _isRecoveryBusy,
+              onResume: _resumeInterruptedPublication,
+              onDiscard: _discardInterruptedPublication,
+            ),
           Row(
             children: [
               const Icon(Icons.edit_note_outlined, size: 20),
@@ -526,12 +657,23 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     final initialSubject = appState.isForRider
         ? SkillSubject.rider
         : SkillSubject.horse;
-    final repo = widget.repository ?? _resolveDefaultRepository();
-    _cubit = SkillTreeV2Cubit(repository: repo, initialSubject: initialSubject)
+    SkillTreeV2Repository? providedRepo;
+    try {
+      providedRepo = context.read<SkillTreeV2Repository?>();
+    } catch (_) {
+      providedRepo = null;
+    }
+    _repository =
+        widget.repository ?? providedRepo ?? _resolveDefaultRepository();
+    _cubit = SkillTreeV2Cubit(
+      repository: _repository,
+      initialSubject: initialSubject,
+    )
       ..initialize(
         initialSubject: initialSubject,
         profileDocId: _profileDocIdFor(appState, initialSubject),
       );
+    _loadPublicationStatus();
     GuestSpotlightTour.skillTreeHooks = GuestSpotlightSkillTreeHooks(
       expandFirstFamily: _expandFirstFamilyForTour,
       ensureSkillSelected: _ensureSkillSelectedForTour,

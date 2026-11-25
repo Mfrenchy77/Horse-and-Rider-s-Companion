@@ -267,3 +267,28 @@ Phase 2A hardened curriculum draft integrity and progress preservation locally (
 1. **Revision Snapshot Storage Ceiling:** As curriculum size grows beyond ~250 skills (or if drafts exceed `900 KB`), decide whether `SkillTreeCurriculumRevisions` should store per-skill revision deltas or chunked/Cloud Storage snapshots alongside document metadata.
 2. **Contributor Attribution Opt-In Mechanism:** Define where submitter display consent is captured (`SuggestImprovementDialog` opt-in toggle vs. account setting) and whether attribution lists display names on skill details when consent is granted.
 3. **JSON Git Sync Workflow:** Confirm whether Phase 2B should pair a `tool/export_curriculum_v2.js` Admin SDK CLI exporter with an in-app Admin JSON export download to keep `curriculum/v2/*.json` synchronized after UI publishes.
+
+---
+
+## 13. Phase 2B Atomic Publishing & Rollback Hardening
+
+Phase 2B introduces atomic, versioned curriculum publishing so riders and instructors never observe a partially published curriculum if a write fails or times out mid-way.
+
+### Atomic Versioned Pointer Architecture
+- **Active Pointer:** `SkillTreeCurriculumPublic/active` (public read, admin/server-only write) stores `{ activeRevisionId, activeRevisionNumber, checksum, chunkCount, familyCount, skillCount, activatedAt }`.
+- **Isolated Revision Snapshots:** Each publication writes deterministic canonical JSON chunks into `SkillTreeCurriculumRevisions/{revId}/Chunks/{0000..N}` while `SkillTreeCurriculumPublic/active` remains pointed at the previous revision.
+- **Explicit State Machine (`SkillTreeCurriculumMeta/current`):**
+  1. `idle` → `preparing`: transactional 5-minute lease lock + `requestId` idempotency check.
+  2. `staging`: writes isolated revision header (`status: 'staging'`) and chunks without touching `SkillTreeCurriculumPublic/active` or live collections.
+  3. `verifying`: reads back all chunks, checks contiguous indices, per-chunk SHA-256, and full snapshot SHA-256 checksum.
+  4. `activating`: **single atomic Firestore transaction** flips `SkillTreeCurriculumPublic/active`, marks `SkillTreeCurriculumRevisions/{revId}` `status: 'completed'` and `immutable: true`, records `lastCompletedRequestId`, and sets `publicationState: 'syncing_legacy'`.
+  5. `syncing_legacy`: mirrors changes into legacy `SkillFamilies` / `SkillsV2` for older deployed clients, `validSkillProgressDoc()` rules, `verifySkillLevel`, and `sharePreview`.
+  6. `idle`: releases lock and clears `SkillTreeCurriculumDrafts/default` (on publish).
+- **Safe Recovery & Abort:**
+  - Interruptions before Stage 4 leave the previous revision live; administrators can **Resume Publication** or **Discard Unpublished Changes** (`abortSkillTreeCurriculumPublication`), which deletes only unpublished staging docs/chunks.
+  - Interruptions during Stage 5 (`syncing_legacy`) cannot be discarded because the new revision is already active; administrators use **Resume Publication** to finish compatibility sync idempotently.
+
+### Older-Client Compatibility & Rollout Order
+1. Deploy updated Firestore security rules (`SkillTreeCurriculumPublic/active` + active-revision chunk read rule) and Cloud Functions with `CURRICULUM_PUBLISHING_ENABLED=false`.
+2. Deploy updated Flutter Web/mobile clients (`FirestoreSkillTreeV2Store` reads `SkillTreeCurriculumPublic/active` first with strict completeness checks and clean fallback to `SkillFamilies`/`SkillsV2` and bundled `curriculum/v2/*.json`).
+3. Enable `CURRICULUM_PUBLISHING_ENABLED=true` and `ENABLE_CURRICULUM_PUBLISHING=true` only after explicit owner approval. Legacy clients continue working seamlessly via Stage 5 mirroring.

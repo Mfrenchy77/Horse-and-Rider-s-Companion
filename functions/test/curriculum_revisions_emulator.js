@@ -12,7 +12,10 @@ const {
   CHUNKS_SUBCOLLECTION,
   META_COLLECTION,
   META_DOC_ID,
+  PUBLIC_COLLECTION,
+  PUBLIC_ACTIVE_DOC_ID,
   publishCurriculumDraftHandler,
+  abortFailedPublicationHandler,
   rollbackCurriculumRevisionHandler,
 } = require('../curriculum_revisions');
 
@@ -92,16 +95,66 @@ async function main() {
       .get();
   assert.equal(chunksSnap.size, rev1.revision.chunkCount);
 
-  // 2. Edit a published skill's proficient standard (with standardVersion bump) and publish rev_000002.
+  const activeAfterRev1 = (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data();
+  assert.equal(activeAfterRev1.activeRevisionId, 'rev_000001');
+  assert.equal(activeAfterRev1.skillCount, 72);
+
+  // 2. Edit a published skill's proficient standard (with standardVersion bump).
+  //    First simulate an interruption right before atomic activation and verify
+  //    SkillTreeCurriculumPublic/active stays on rev_000001 until resumed.
   const editedSkills = structuredClone(skills);
   const target = editedSkills.find((s) => s.id === 'rider.mounted.shoulder_in');
   target.levels.intermediate.proficient = `${target.levels.intermediate.proficient} (Updated in rev 2)`;
   target.levels.intermediate.standardVersion = 2;
 
   await saveDraft({auth: adminAuth, data: {families, skills: editedSkills, note: 'Update shoulder-in'}});
-  const rev2 = await publish({auth: adminAuth, data: {notes: 'Updated shoulder-in intermediate standard'}});
+  const interruptedPublish = publishCurriculumDraftHandler(db, {
+    publishingEnabled: true,
+    chunkByteLimit: 64 * 1024,
+    onBeforeActivate: async () => {
+      throw new Error('Simulated pre-activation interruption');
+    },
+  });
+  await assert.rejects(
+      () => interruptedPublish({auth: adminAuth, data: {notes: 'Updated shoulder-in intermediate standard'}}),
+      (err) => err.code === 'internal',
+  );
+  const activeDuringFailure = (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data();
+  assert.equal(activeDuringFailure.activeRevisionId, 'rev_000001');
+
+  // Resume interrupted publication -> atomically switches pointer to rev_000002.
+  const rev2 = await publish({
+    auth: adminAuth,
+    data: {resumeFailedPublication: true},
+  });
+  assert.equal(rev2.resumed, true);
   assert.equal(rev2.revision.id, 'rev_000002');
   assert.deepEqual(rev2.revision.summary.modifiedSkillIds, ['rider.mounted.shoulder_in']);
+  const activeAfterRev2 = (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data();
+  assert.equal(activeAfterRev2.activeRevisionId, 'rev_000002');
+
+  // Also test aborting an unpublished staging failure leaves rev_000002 active.
+  const editedAgain = structuredClone(editedSkills);
+  editedAgain.find((s) => s.id === 'rider.mounted.shoulder_in').summary = 'Temp aborted summary';
+  await saveDraft({auth: adminAuth, data: {families, skills: editedAgain, note: 'Temp aborted edit'}});
+  const stagingFailPublish = publishCurriculumDraftHandler(db, {
+    publishingEnabled: true,
+    chunkByteLimit: 64 * 1024,
+    commitBatch: async (batch, _idx, _count, stage) => {
+      if (stage === 'staging') {
+        throw new Error('Simulated staging failure');
+      }
+      await batch.commit();
+    },
+  });
+  await assert.rejects(() => stagingFailPublish({auth: adminAuth, data: {}}));
+  const abort = abortFailedPublicationHandler(db, {publishingEnabled: true});
+  const abortRes = await abort({auth: adminAuth, data: {}});
+  assert.equal(abortRes.aborted, true);
+  assert.equal(
+      (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data().activeRevisionId,
+      'rev_000002',
+  );
 
   // 3. Roll back to rev_000001 -> creates rev_000003 with standardVersion bumped to 3.
   const rev3 = await rollback({
@@ -114,6 +167,10 @@ async function main() {
 
   const liveShoulderIn = (await db.doc('SkillsV2/rider.mounted.shoulder_in').get()).data();
   assert.equal(liveShoulderIn.levels.intermediate.standardVersion, 3);
+  assert.equal(
+      (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data().activeRevisionId,
+      'rev_000003',
+  );
 
   // 4. Verify meta pointer, immutable revisions, and untouched user progress/verifications.
   const meta = (await db.collection(META_COLLECTION).doc(META_DOC_ID).get()).data();

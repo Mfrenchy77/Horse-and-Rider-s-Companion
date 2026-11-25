@@ -14,6 +14,8 @@ const REVISIONS_COLLECTION = 'SkillTreeCurriculumRevisions';
 const CHUNKS_SUBCOLLECTION = 'Chunks';
 const META_COLLECTION = 'SkillTreeCurriculumMeta';
 const META_DOC_ID = 'current';
+const PUBLIC_COLLECTION = 'SkillTreeCurriculumPublic';
+const PUBLIC_ACTIVE_DOC_ID = 'active';
 const AUDIT_SUBCOLLECTION = 'AuditEvents';
 
 const DEFAULT_CHUNK_BYTE_LIMIT = 256 * 1024;
@@ -64,6 +66,17 @@ function optionalNotes(value) {
     );
   }
   return trimmed || null;
+}
+
+function optionalRequestId(value) {
+  if (value == null || value === '') return null;
+  if (typeof value !== 'string' || value.trim().length > 120) {
+    throw new HttpsError(
+        'invalid-argument',
+        'requestId must be a string of 120 characters or fewer.',
+    );
+  }
+  return value.trim();
 }
 
 function formatRevisionId(revisionNumber) {
@@ -183,7 +196,6 @@ function splitIntoChunks(serialized, chunkByteLimit = DEFAULT_CHUNK_BYTE_LIMIT) 
   let offset = 0;
   let index = 0;
   while (offset < serialized.length || chunks.length === 0) {
-    // Slice safely on UTF-16 code unit boundaries while keeping UTF-8 byte length <= limit.
     let end = Math.min(serialized.length, offset + limit);
     while (end > offset && Buffer.byteLength(serialized.slice(offset, end), 'utf8') > limit) {
       end -= Math.max(1, Math.floor((end - offset) / 4));
@@ -240,9 +252,29 @@ function reassembleAndVerifySnapshot(header, chunkDocs) {
     );
   }
   const parsed = JSON.parse(serialized);
+  const families = Array.isArray(parsed.families) ? parsed.families : [];
+  const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
+  if (
+    Number.isInteger(header.familyCount) &&
+    families.length !== header.familyCount
+  ) {
+    throw new HttpsError(
+        'data-loss',
+        `Revision ${header.id} family count mismatch (${families.length} vs ${header.familyCount}).`,
+    );
+  }
+  if (
+    Number.isInteger(header.skillCount) &&
+    skills.length !== header.skillCount
+  ) {
+    throw new HttpsError(
+        'data-loss',
+        `Revision ${header.id} skill count mismatch (${skills.length} vs ${header.skillCount}).`,
+    );
+  }
   return {
-    families: parsed.families || [],
-    skills: parsed.skills || [],
+    families,
+    skills,
     checksum: fullChecksum,
     byteLength: Buffer.byteLength(serialized, 'utf8'),
   };
@@ -323,14 +355,27 @@ function computeCurriculumDiff(published, candidate) {
   };
 }
 
-async function fetchPublishedCurriculum(db) {
+async function fetchActivePublishedCurriculum(db) {
+  const activeSnap = await db
+      .collection(PUBLIC_COLLECTION)
+      .doc(PUBLIC_ACTIVE_DOC_ID)
+      .get();
+  if (activeSnap.exists && activeSnap.data() && activeSnap.data().activeRevisionId) {
+    const revId = activeSnap.data().activeRevisionId;
+    const {snapshot} = await loadRevisionWithChunks(db, revId);
+    return {
+      families: snapshot.families,
+      skills: snapshot.skills,
+      sourceRevisionId: revId,
+    };
+  }
   const [famSnap, skillSnap] = await Promise.all([
     db.collection('SkillFamilies').get(),
     db.collection('SkillsV2').get(),
   ]);
   const families = (famSnap.docs || []).map((d) => ({id: d.id, ...(d.data() || {})}));
   const skills = (skillSnap.docs || []).map((d) => ({id: d.id, ...(d.data() || {})}));
-  return {families, skills};
+  return {families, skills, sourceRevisionId: null};
 }
 
 async function loadRevisionWithChunks(db, revisionId) {
@@ -354,10 +399,19 @@ function toDateOrNull(val) {
   return Number.isNaN(parsed) ? null : new Date(parsed);
 }
 
+function serializeRevisionResponse(header, fallbackDate) {
+  return {
+    ...header,
+    createdAt: toDateOrNull(header.createdAt)?.toISOString() || fallbackDate.toISOString(),
+    publishedAt: toDateOrNull(header.publishedAt)?.toISOString() || fallbackDate.toISOString(),
+  };
+}
+
 async function acquirePublicationLock(db, {
   uid,
   actorName,
   nowDate,
+  requestId = null,
   resumeFailedPublication = false,
 }) {
   const metaRef = db.collection(META_COLLECTION).doc(META_DOC_ID);
@@ -372,12 +426,43 @@ async function acquirePublicationLock(db, {
     const lockExpiresAt = toDateOrNull(meta.lockExpiresAt);
     const lockActive = lockExpiresAt != null && lockExpiresAt.getTime() > nowDate.getTime();
 
-    if (state === 'failed' && meta.activePublicationId) {
-      if (!resumeFailedPublication) {
+    // Idempotent retry after an unknown commit outcome (same requestId already activated).
+    if (
+      requestId &&
+      meta.lastCompletedRequestId === requestId &&
+      currentRevisionId &&
+      state === 'idle'
+    ) {
+      return {
+        idempotentReplay: true,
+        resumed: false,
+        revisionId: currentRevisionId,
+        revisionNumber: currentRevisionNumber,
+        previousRevisionId: currentRevisionId,
+      };
+    }
+
+    const isInterrupted =
+      state === 'failed' ||
+      state === 'syncing_legacy' ||
+      (state !== 'idle' && !lockActive);
+
+    if (state !== 'idle' && lockActive && !isInterrupted) {
+      throw new HttpsError(
+          'aborted',
+          `A curriculum publication (${meta.activePublicationId || 'active'}) is already in progress ` +
+          `by ${meta.lockOwnerName || meta.lockOwnerUid || 'another administrator'}.`,
+      );
+    }
+
+    if (isInterrupted && meta.activePublicationId) {
+      // Allow transparent recovery if caller passes resumeFailedPublication OR retries same requestId.
+      const sameRequestRetry = Boolean(requestId && meta.activeRequestId === requestId);
+      if (!resumeFailedPublication && !sameRequestRetry) {
         throw new HttpsError(
             'failed-precondition',
-            `Previous publication "${meta.activePublicationId}" was interrupted. ` +
-            'Recover it with resumeFailedPublication before starting a new publication.',
+            `Previous publication "${meta.activePublicationId}" was interrupted (${meta.failedStage || state}). ` +
+            'Resume or discard the interrupted publication before starting a new one.',
         );
       }
       if (lockActive && meta.lockOwnerUid && meta.lockOwnerUid !== uid) {
@@ -388,9 +473,13 @@ async function acquirePublicationLock(db, {
         );
       }
       const nextLease = new Date(nowDate.getTime() + LOCK_LEASE_MS);
+      const alreadyActivated =
+        meta.failedStage === 'syncing_legacy' ||
+        state === 'syncing_legacy' ||
+        currentRevisionId === meta.activePublicationId;
       tx.set(metaRef, {
         ...meta,
-        publicationState: 'applying',
+        publicationState: alreadyActivated ? 'syncing_legacy' : 'preparing',
         lockOwnerUid: uid,
         lockOwnerName: actorName,
         lockAcquiredAt: nowDate,
@@ -398,29 +487,13 @@ async function acquirePublicationLock(db, {
         updatedAt: nowDate,
       }, {merge: true});
       return {
+        idempotentReplay: false,
         resumed: true,
+        alreadyActivated,
         revisionId: meta.activePublicationId,
-        revisionNumber: currentRevisionNumber + 1,
+        revisionNumber: alreadyActivated ? currentRevisionNumber : currentRevisionNumber + 1,
         previousRevisionId: currentRevisionId,
       };
-    }
-
-    if (state !== 'idle') {
-      if (lockActive) {
-        throw new HttpsError(
-            'aborted',
-            `A curriculum publication (${meta.activePublicationId || 'active'}) is already in progress ` +
-            `by ${meta.lockOwnerName || meta.lockOwnerUid || 'another administrator'}.`,
-        );
-      }
-      // Lease expired on an interrupted pre-apply/applying job: require explicit recovery if applying.
-      if (state === 'applying' && meta.activePublicationId && !resumeFailedPublication) {
-        throw new HttpsError(
-            'failed-precondition',
-            `Previous publication "${meta.activePublicationId}" appears interrupted while applying. ` +
-            'Run recovery with resumeFailedPublication: true.',
-        );
-      }
     }
 
     const nextNumber = currentRevisionNumber + 1;
@@ -432,6 +505,8 @@ async function acquirePublicationLock(db, {
       currentChecksum: meta.currentChecksum || null,
       publicationState: 'preparing',
       activePublicationId: revisionId,
+      activeRequestId: requestId || null,
+      failedStage: null,
       lockOwnerUid: uid,
       lockOwnerName: actorName,
       lockAcquiredAt: nowDate,
@@ -441,7 +516,9 @@ async function acquirePublicationLock(db, {
     }, {merge: true});
 
     return {
+      idempotentReplay: false,
       resumed: false,
+      alreadyActivated: false,
       revisionId,
       revisionNumber: nextNumber,
       previousRevisionId: currentRevisionId,
@@ -449,33 +526,69 @@ async function acquirePublicationLock(db, {
   });
 }
 
-async function releaseLockOnPreApplyError(db, nowDate, errorMessage) {
+async function releaseLockToIdle(db, nowDate, errorMessage = null) {
   const metaRef = db.collection(META_COLLECTION).doc(META_DOC_ID);
   await metaRef.set({
     publicationState: 'idle',
     activePublicationId: null,
+    activeRequestId: null,
+    failedStage: null,
     lockOwnerUid: null,
     lockOwnerName: null,
     lockAcquiredAt: null,
     lockExpiresAt: null,
-    lastError: errorMessage || null,
+    lastError: errorMessage,
     updatedAt: nowDate,
   }, {merge: true});
 }
 
-async function applyCurriculumInBatches(db, {
+async function markPublicationFailed(db, {
+  revisionId,
+  stage,
+  errorMessage,
+  nowDate,
+  touchRevisionDoc = true,
+}) {
+  const metaRef = db.collection(META_COLLECTION).doc(META_DOC_ID);
+  await metaRef.set({
+    publicationState: 'failed',
+    activePublicationId: revisionId,
+    failedStage: stage,
+    lockOwnerUid: null,
+    lockOwnerName: null,
+    lockAcquiredAt: null,
+    lockExpiresAt: null,
+    lastError: errorMessage,
+    updatedAt: nowDate,
+  }, {merge: true});
+  if (touchRevisionDoc && stage !== 'syncing_legacy') {
+    const revRef = db.collection(REVISIONS_COLLECTION).doc(revisionId);
+    await revRef.set({
+      status: 'failed',
+      errorMessage,
+    }, {merge: true});
+  }
+}
+
+async function mirrorToLegacyCollections(db, {
   families,
   skills,
-  publishedFamilies,
-  publishedSkills,
   revisionId,
   revisionNumber,
   actorName,
   nowDate,
   commitBatch,
 }) {
-  const pubFamMap = new Map(publishedFamilies.map((f) => [f.id, f]));
-  const pubSkillMap = new Map(publishedSkills.map((s) => [s.id, s]));
+  const [famSnap, skillSnap] = await Promise.all([
+    db.collection('SkillFamilies').get(),
+    db.collection('SkillsV2').get(),
+  ]);
+  const pubFamMap = new Map(
+      (famSnap.docs || []).map((d) => [d.id, {id: d.id, ...(d.data() || {})}]),
+  );
+  const pubSkillMap = new Map(
+      (skillSnap.docs || []).map((d) => [d.id, {id: d.id, ...(d.data() || {})}]),
+  );
 
   const ops = [];
   for (const fam of families) {
@@ -521,7 +634,7 @@ async function applyCurriculumInBatches(db, {
       batch.set(op.ref, op.data, {merge: true});
     }
     if (typeof commitBatch === 'function') {
-      await commitBatch(batch, batchIndex, slice.length);
+      await commitBatch(batch, batchIndex, slice.length, 'syncing_legacy');
     } else {
       await batch.commit();
     }
@@ -530,11 +643,41 @@ async function applyCurriculumInBatches(db, {
   return ops.length;
 }
 
+async function writeSnapshotChunksInBatches(db, {
+  revRef,
+  revisionHeader,
+  chunks,
+  commitBatch,
+}) {
+  const ops = [
+    {ref: revRef, data: revisionHeader},
+    ...chunks.map((chunk) => ({
+      ref: revRef.collection(CHUNKS_SUBCOLLECTION).doc(chunk.id),
+      data: chunk,
+    })),
+  ];
+  let batchIndex = 0;
+  for (let i = 0; i < ops.length; i += APPLY_BATCH_LIMIT) {
+    const slice = ops.slice(i, i + APPLY_BATCH_LIMIT);
+    const batch = db.batch();
+    for (const op of slice) {
+      batch.set(op.ref, op.data);
+    }
+    if (typeof commitBatch === 'function') {
+      await commitBatch(batch, batchIndex, slice.length, 'staging');
+    } else {
+      await batch.commit();
+    }
+    batchIndex += 1;
+  }
+}
+
 async function executePublicationStateMachine(db, {
   uid,
   actorName,
   kind,
   notes,
+  requestId = null,
   candidateFamilies,
   candidateSkills,
   rollbackOfRevisionId = null,
@@ -543,34 +686,80 @@ async function executePublicationStateMachine(db, {
   uuid,
   chunkByteLimit = DEFAULT_CHUNK_BYTE_LIMIT,
   commitBatch = null,
+  onBeforeActivate = null,
 }) {
   const lock = await acquirePublicationLock(db, {
     uid,
     actorName,
     nowDate,
+    requestId,
     resumeFailedPublication,
   });
 
   const metaRef = db.collection(META_COLLECTION).doc(META_DOC_ID);
+  const publicRef = db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID);
   const revRef = db.collection(REVISIONS_COLLECTION).doc(lock.revisionId);
 
-  let familiesToApply = candidateFamilies;
-  let skillsToApply = candidateSkills;
+  if (lock.idempotentReplay) {
+    const revSnap = await revRef.get();
+    const header = {id: revSnap.id, ...(revSnap.data() || {})};
+    return {
+      revision: serializeRevisionResponse(header, nowDate),
+      resumed: false,
+      idempotentReplay: true,
+    };
+  }
+
   let revisionHeader;
-  let published;
+  let verifiedSnapshot;
 
-  try {
-    published = await fetchPublishedCurriculum(db);
-
+  // Stage 1-3: Prepare, Stage into isolated versioned revision, and Verify integrity.
+  if (lock.alreadyActivated) {
+    const loaded = await loadRevisionWithChunks(db, lock.revisionId);
+    revisionHeader = loaded.header;
+    verifiedSnapshot = loaded.snapshot;
+  } else {
+    let stagedAlready = false;
     if (lock.resumed) {
-      const loaded = await loadRevisionWithChunks(db, lock.revisionId);
-      revisionHeader = loaded.header;
-      familiesToApply = loaded.snapshot.families;
-      skillsToApply = loaded.snapshot.skills;
-    } else {
+      // Check if an existing staged snapshot is already complete & valid.
+      try {
+        const loaded = await loadRevisionWithChunks(db, lock.revisionId);
+        revisionHeader = loaded.header;
+        verifiedSnapshot = loaded.snapshot;
+        stagedAlready = true;
+      } catch (_) {
+        stagedAlready = false;
+      }
+    }
+
+    if (!stagedAlready) {
+      // If resuming a failed staging step without candidate payload, reload saved draft.
+      let familiesInput = candidateFamilies;
+      let skillsInput = candidateSkills;
+      if (lock.resumed && (!Array.isArray(skillsInput) || skillsInput.length === 0)) {
+        const draftSnap = await db.collection(DRAFTS_COLLECTION).doc(DEFAULT_DRAFT_ID).get();
+        if (!draftSnap.exists || !draftSnap.data()) {
+          await releaseLockToIdle(db, nowDate, 'Interrupted staging had no saved draft to resume.');
+          throw new HttpsError(
+              'failed-precondition',
+              'No saved curriculum draft is available to resume the interrupted staging.',
+          );
+        }
+        familiesInput = draftSnap.data().families || [];
+        skillsInput = draftSnap.data().skills || [];
+      }
+
+      let published;
+      try {
+        published = await fetchActivePublishedCurriculum(db);
+      } catch (err) {
+        await releaseLockToIdle(db, nowDate, err.message);
+        throw err;
+      }
+
       const validation = validateCurriculum({
-        families: candidateFamilies,
-        skills: candidateSkills,
+        families: familiesInput,
+        skills: skillsInput,
         publishedFamilies: published.families,
         publishedSkills: published.skills,
         requireFamilyDescription: false,
@@ -578,7 +767,7 @@ async function executePublicationStateMachine(db, {
       });
       if (!validation.ok) {
         const msg = validation.errors.slice(0, 5).join(' ');
-        await releaseLockOnPreApplyError(db, nowDate, msg);
+        await releaseLockToIdle(db, nowDate, msg);
         throw new HttpsError('invalid-argument', msg, {errors: validation.errors});
       }
 
@@ -588,16 +777,12 @@ async function executePublicationStateMachine(db, {
       });
       if (!diff.hasChanges) {
         const msg = 'No curriculum changes detected to publish.';
-        await releaseLockOnPreApplyError(db, nowDate, msg);
+        await releaseLockToIdle(db, nowDate, msg);
         throw new HttpsError('failed-precondition', msg);
       }
 
-      // Transition to snapshotting and write immutable chunks BEFORE mutating live curriculum.
-      await metaRef.set({
-        publicationState: 'snapshotting',
-        updatedAt: nowDate,
-      }, {merge: true});
-
+      // Stage 2: Write isolated versioned chunks (active pointer untouched!).
+      await metaRef.set({publicationState: 'staging', updatedAt: nowDate}, {merge: true});
       const {canonical, serialized, checksum, byteLength} = computeCurriculumChecksum({
         families: validation.families,
         skills: validation.skills,
@@ -608,7 +793,7 @@ async function executePublicationStateMachine(db, {
         id: lock.revisionId,
         revisionNumber: lock.revisionNumber,
         kind,
-        status: 'snapshotting',
+        status: 'staging',
         previousRevisionId: lock.previousRevisionId,
         rollbackOfRevisionId: rollbackOfRevisionId || null,
         createdAt: nowDate,
@@ -640,34 +825,117 @@ async function executePublicationStateMachine(db, {
         errorMessage: null,
       };
 
-      const snapBatch = db.batch();
-      snapBatch.set(revRef, revisionHeader);
-      for (const chunk of chunks) {
-        snapBatch.set(revRef.collection(CHUNKS_SUBCOLLECTION).doc(chunk.id), chunk);
+      try {
+        await writeSnapshotChunksInBatches(db, {
+          revRef,
+          revisionHeader,
+          chunks,
+          commitBatch,
+        });
+      } catch (err) {
+        const errMsg = err && err.message ? err.message : 'Snapshot chunk write failed.';
+        await markPublicationFailed(db, {
+          revisionId: lock.revisionId,
+          stage: 'staging',
+          errorMessage: errMsg,
+          nowDate,
+        });
+        throw new HttpsError(
+            'internal',
+            `Publication "${lock.revisionId}" was interrupted while staging snapshot: ${errMsg}`,
+        );
       }
-      await snapBatch.commit();
 
-      // Read back and verify snapshot integrity before modifying SkillFamilies / SkillsV2.
-      const verified = await loadRevisionWithChunks(db, lock.revisionId);
-      familiesToApply = verified.snapshot.families;
-      skillsToApply = verified.snapshot.skills;
+      // Stage 3: Read back & verify every chunk and full SHA-256 checksum BEFORE activation.
+      await metaRef.set({publicationState: 'verifying', updatedAt: nowDate}, {merge: true});
+      try {
+        const verified = await loadRevisionWithChunks(db, lock.revisionId);
+        revisionHeader = verified.header;
+        verifiedSnapshot = verified.snapshot;
+      } catch (err) {
+        const errMsg = err && err.message ? err.message : 'Snapshot verification failed.';
+        await markPublicationFailed(db, {
+          revisionId: lock.revisionId,
+          stage: 'verifying',
+          errorMessage: errMsg,
+          nowDate,
+        });
+        throw err instanceof HttpsError ? err : new HttpsError('data-loss', errMsg);
+      }
     }
-  } catch (err) {
-    if (err instanceof HttpsError) throw err;
-    await releaseLockOnPreApplyError(db, nowDate, err.message);
-    throw new HttpsError('internal', err.message || 'Failed preparing curriculum publication.');
+
+    // Optional hook for testing failures right before atomic pointer activation.
+    if (typeof onBeforeActivate === 'function') {
+      try {
+        await onBeforeActivate(lock.revisionId);
+      } catch (err) {
+        const errMsg = err && err.message ? err.message : 'Interrupted before activation.';
+        await markPublicationFailed(db, {
+          revisionId: lock.revisionId,
+          stage: 'activating',
+          errorMessage: errMsg,
+          nowDate,
+        });
+        throw new HttpsError('internal', errMsg);
+      }
+    }
+
+    // Stage 4: ATOMIC ACTIVATION TRANSACTION — flips public pointer in one transaction.
+    try {
+      await db.runTransaction(async (tx) => {
+        const metaSnap = await tx.get(metaRef);
+        const curMeta = metaSnap.exists ? (metaSnap.data() || {}) : {};
+        if (curMeta.activePublicationId !== lock.revisionId) {
+          throw new HttpsError(
+              'aborted',
+              'Publication lock ownership changed before activation.',
+          );
+        }
+        tx.set(publicRef, {
+          activeRevisionId: revisionHeader.id,
+          activeRevisionNumber: revisionHeader.revisionNumber,
+          checksum: revisionHeader.checksum,
+          chunkCount: revisionHeader.chunkCount,
+          familyCount: revisionHeader.familyCount,
+          skillCount: revisionHeader.skillCount,
+          activatedAt: nowDate,
+        });
+        tx.set(revRef, {
+          status: 'completed',
+          publishedAt: nowDate,
+          immutable: true,
+          errorMessage: null,
+        }, {merge: true});
+        tx.set(metaRef, {
+          currentRevisionId: revisionHeader.id,
+          currentRevisionNumber: revisionHeader.revisionNumber,
+          currentChecksum: revisionHeader.checksum,
+          publicationState: 'syncing_legacy',
+          activePublicationId: revisionHeader.id,
+          lastCompletedRequestId: requestId || curMeta.activeRequestId || null,
+          failedStage: null,
+          lastError: null,
+          updatedAt: nowDate,
+        }, {merge: true});
+      });
+    } catch (err) {
+      const errMsg = err && err.message ? err.message : 'Active pointer update failed.';
+      await markPublicationFailed(db, {
+        revisionId: lock.revisionId,
+        stage: 'activating',
+        errorMessage: errMsg,
+        nowDate,
+      });
+      throw err instanceof HttpsError ? err : new HttpsError('internal', errMsg);
+    }
   }
 
-  // Transition to applying live curriculum documents.
-  await metaRef.set({publicationState: 'applying', updatedAt: nowDate}, {merge: true});
-  await revRef.set({status: 'applying', errorMessage: null}, {merge: true});
-
+  // Stage 5: Mirror into legacy SkillFamilies & SkillsV2 (for rules/older clients/sharePreview).
+  // Note: New clients already see the complete new revision atomically via SkillTreeCurriculumPublic/active.
   try {
-    await applyCurriculumInBatches(db, {
-      families: familiesToApply,
-      skills: skillsToApply,
-      publishedFamilies: published.families,
-      publishedSkills: published.skills,
+    await mirrorToLegacyCollections(db, {
+      families: verifiedSnapshot.families,
+      skills: verifiedSnapshot.skills,
       revisionId: revisionHeader.id,
       revisionNumber: revisionHeader.revisionNumber,
       actorName,
@@ -675,38 +943,28 @@ async function executePublicationStateMachine(db, {
       commitBatch,
     });
   } catch (err) {
-    const errMsg = err && err.message ? err.message : 'Batch write failed during apply.';
-    await metaRef.set({
-      publicationState: 'failed',
-      activePublicationId: revisionHeader.id,
-      lastError: errMsg,
-      updatedAt: nowDate,
-    }, {merge: true});
-    await revRef.set({
-      status: 'failed',
+    const errMsg = err && err.message ? err.message : 'Legacy mirror sync failed.';
+    await markPublicationFailed(db, {
+      revisionId: revisionHeader.id,
+      stage: 'syncing_legacy',
       errorMessage: errMsg,
-    }, {merge: true});
+      nowDate,
+      touchRevisionDoc: false, // Already completed & immutable!
+    });
     throw new HttpsError(
         'internal',
-        `Publication "${revisionHeader.id}" failed while applying changes: ${errMsg}. ` +
-        'Run recovery with resumeFailedPublication: true to complete safely from the verified snapshot.',
+        `Revision "${revisionHeader.id}" is active, but legacy compatibility sync was interrupted: ${errMsg}. ` +
+        'Resume publication to finish compatibility sync.',
     );
   }
 
-  // Finalize revision as immutable & completed, advance live pointer, and clear draft if publish.
+  // Finalize: release lock to idle and clear working draft on publish.
   const finalBatch = db.batch();
-  finalBatch.set(revRef, {
-    status: 'completed',
-    publishedAt: nowDate,
-    immutable: true,
-    errorMessage: null,
-  }, {merge: true});
   finalBatch.set(metaRef, {
-    currentRevisionId: revisionHeader.id,
-    currentRevisionNumber: revisionHeader.revisionNumber,
-    currentChecksum: revisionHeader.checksum,
     publicationState: 'idle',
     activePublicationId: null,
+    activeRequestId: null,
+    failedStage: null,
     lockOwnerUid: null,
     lockOwnerName: null,
     lockAcquiredAt: null,
@@ -733,14 +991,14 @@ async function executePublicationStateMachine(db, {
   await finalBatch.commit();
 
   return {
-    revision: {
+    revision: serializeRevisionResponse({
       ...revisionHeader,
       status: 'completed',
       immutable: true,
-      createdAt: toDateOrNull(revisionHeader.createdAt)?.toISOString() || nowDate.toISOString(),
-      publishedAt: nowDate.toISOString(),
-    },
+      publishedAt: nowDate,
+    }, nowDate),
     resumed: lock.resumed,
+    idempotentReplay: false,
   };
 }
 
@@ -752,6 +1010,7 @@ function publishCurriculumDraftHandler(
       publishingEnabled = false,
       chunkByteLimit = DEFAULT_CHUNK_BYTE_LIMIT,
       commitBatch = null,
+      onBeforeActivate = null,
     } = {},
 ) {
   return async (request) => {
@@ -765,6 +1024,7 @@ function publishCurriculumDraftHandler(
 
     const data = (request && request.data) || {};
     const notes = optionalNotes(data.notes);
+    const requestId = optionalRequestId(data.requestId);
     const resumeFailedPublication = data.resumeFailedPublication === true;
     const actorName = actorNameFromToken(token);
     const nowDate = now();
@@ -773,15 +1033,16 @@ function publishCurriculumDraftHandler(
     let draftSkills = [];
     if (!resumeFailedPublication) {
       const draftSnap = await db.collection(DRAFTS_COLLECTION).doc(DEFAULT_DRAFT_ID).get();
-      if (!draftSnap.exists || !draftSnap.data()) {
+      if (draftSnap.exists && draftSnap.data()) {
+        const draft = draftSnap.data();
+        draftFamilies = Array.isArray(draft.families) ? draft.families : [];
+        draftSkills = Array.isArray(draft.skills) ? draft.skills : [];
+      } else if (!requestId) {
         throw new HttpsError(
             'failed-precondition',
             'No saved curriculum draft exists to publish.',
         );
       }
-      const draft = draftSnap.data();
-      draftFamilies = Array.isArray(draft.families) ? draft.families : [];
-      draftSkills = Array.isArray(draft.skills) ? draft.skills : [];
     }
 
     return executePublicationStateMachine(db, {
@@ -789,6 +1050,7 @@ function publishCurriculumDraftHandler(
       actorName,
       kind: 'publish',
       notes,
+      requestId,
       candidateFamilies: draftFamilies,
       candidateSkills: draftSkills,
       resumeFailedPublication,
@@ -796,7 +1058,100 @@ function publishCurriculumDraftHandler(
       uuid,
       chunkByteLimit,
       commitBatch,
+      onBeforeActivate,
     });
+  };
+}
+
+function abortFailedPublicationHandler(
+    db,
+    {
+      now = () => new Date(),
+      publishingEnabled = false,
+    } = {},
+) {
+  return async (request) => {
+    requireVerifiedAdmin(request);
+    if (!publishingEnabled) {
+      throw new HttpsError(
+          'failed-precondition',
+          'Curriculum publishing controls are currently disabled in this environment.',
+      );
+    }
+
+    const nowDate = now();
+    const metaRef = db.collection(META_COLLECTION).doc(META_DOC_ID);
+    const publicRef = db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID);
+
+    const outcome = await db.runTransaction(async (tx) => {
+      const [metaSnap, publicSnap] = await Promise.all([
+        tx.get(metaRef),
+        tx.get(publicRef),
+      ]);
+      const meta = metaSnap.exists ? (metaSnap.data() || {}) : {};
+      const activePublicId = publicSnap.exists ?
+        (publicSnap.data()?.activeRevisionId || null) :
+        null;
+      const targetRevId = meta.activePublicationId;
+      const state = meta.publicationState || 'idle';
+
+      if (state === 'idle' || !targetRevId) {
+        return {aborted: false, revisionId: null};
+      }
+
+      // Never discard a revision that has already become active!
+      if (
+        meta.failedStage === 'syncing_legacy' ||
+        state === 'syncing_legacy' ||
+        activePublicId === targetRevId ||
+        meta.currentRevisionId === targetRevId
+      ) {
+        throw new HttpsError(
+            'failed-precondition',
+            `Revision "${targetRevId}" is already active and cannot be discarded. ` +
+            'Use Resume Publication to finish compatibility sync.',
+        );
+      }
+
+      const lockExpiresAt = toDateOrNull(meta.lockExpiresAt);
+      if (state !== 'failed' && lockExpiresAt && lockExpiresAt.getTime() > nowDate.getTime()) {
+        throw new HttpsError(
+            'aborted',
+            'Cannot discard while another administrator is actively publishing.',
+        );
+      }
+
+      tx.set(metaRef, {
+        publicationState: 'idle',
+        activePublicationId: null,
+        activeRequestId: null,
+        failedStage: null,
+        lockOwnerUid: null,
+        lockOwnerName: null,
+        lockAcquiredAt: null,
+        lockExpiresAt: null,
+        lastError: null,
+        updatedAt: nowDate,
+      }, {merge: true});
+      return {aborted: true, revisionId: targetRevId};
+    });
+
+    // Clean up unpublished staging docs/chunks outside transaction.
+    if (outcome.aborted && outcome.revisionId) {
+      const revRef = db.collection(REVISIONS_COLLECTION).doc(outcome.revisionId);
+      const revSnap = await revRef.get();
+      if (revSnap.exists && revSnap.data()?.status !== 'completed') {
+        const chunksSnap = await revRef.collection(CHUNKS_SUBCOLLECTION).get();
+        const batch = db.batch();
+        for (const chunkDoc of chunksSnap.docs || []) {
+          batch.delete(revRef.collection(CHUNKS_SUBCOLLECTION).doc(chunkDoc.id));
+        }
+        batch.delete(revRef);
+        await batch.commit();
+      }
+    }
+
+    return outcome;
   };
 }
 
@@ -842,6 +1197,7 @@ function rollbackCurriculumRevisionHandler(
       publishingEnabled = false,
       chunkByteLimit = DEFAULT_CHUNK_BYTE_LIMIT,
       commitBatch = null,
+      onBeforeActivate = null,
     } = {},
 ) {
   return async (request) => {
@@ -861,6 +1217,7 @@ function rollbackCurriculumRevisionHandler(
       throw new HttpsError('invalid-argument', 'targetRevisionId is required.');
     }
     const notes = optionalNotes(data.notes);
+    const requestId = optionalRequestId(data.requestId);
     const dryRun = data.dryRun === true;
     const actorName = actorNameFromToken(token);
     const nowDate = now();
@@ -873,7 +1230,7 @@ function rollbackCurriculumRevisionHandler(
       );
     }
 
-    const currentPublished = await fetchPublishedCurriculum(db);
+    const currentPublished = await fetchActivePublishedCurriculum(db);
     const candidate = prepareRollbackCandidate(snapshot, currentPublished, nowDate);
     const validation = validateCurriculum({
       families: candidate.families,
@@ -912,6 +1269,7 @@ function rollbackCurriculumRevisionHandler(
       actorName,
       kind: 'rollback',
       notes: notes || `Restored from revision #${header.revisionNumber} (${targetRevisionId}).`,
+      requestId,
       candidateFamilies: validation.families,
       candidateSkills: validation.skills,
       rollbackOfRevisionId: targetRevisionId,
@@ -919,6 +1277,7 @@ function rollbackCurriculumRevisionHandler(
       uuid,
       chunkByteLimit,
       commitBatch,
+      onBeforeActivate,
     });
   };
 }
@@ -928,6 +1287,8 @@ module.exports = {
   CHUNKS_SUBCOLLECTION,
   META_COLLECTION,
   META_DOC_ID,
+  PUBLIC_COLLECTION,
+  PUBLIC_ACTIVE_DOC_ID,
   DEFAULT_CHUNK_BYTE_LIMIT,
   LOCK_LEASE_MS,
   formatRevisionId,
@@ -938,5 +1299,6 @@ module.exports = {
   reassembleAndVerifySnapshot,
   computeCurriculumDiff,
   publishCurriculumDraftHandler,
+  abortFailedPublicationHandler,
   rollbackCurriculumRevisionHandler,
 };

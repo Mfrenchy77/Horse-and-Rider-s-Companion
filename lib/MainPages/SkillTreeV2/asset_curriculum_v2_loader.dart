@@ -72,6 +72,14 @@ class HybridCurriculumSkillTreeV2Store implements SkillTreeV2Store {
   final SkillTreeV2Store primaryStore;
   final AssetCurriculumV2Loader assetLoader;
 
+  /// Clears any cached atomic curriculum revision on the primary store.
+  void invalidateCache() {
+    final store = primaryStore;
+    if (store is FirestoreSkillTreeV2Store) {
+      store.invalidateCache();
+    }
+  }
+
   @override
   Future<List<SkillFamily>> fetchFamilies() async {
     try {

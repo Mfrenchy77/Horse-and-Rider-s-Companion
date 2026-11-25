@@ -586,6 +586,194 @@ class _CurriculumRevisionHistoryDialogState
   }
 }
 
+String _formatFieldLabel(String field) {
+  return switch (field) {
+    'relatedSkills' => 'related skill links',
+    'replacedBy' => 'replacement skill',
+    'availableLevels' => 'difficulty levels',
+    'familyId' => 'skill family',
+    'sortOrder' => 'display order',
+    'legacyIds' => 'legacy links',
+    _ => field,
+  };
+}
+
+String _friendlyRecoveryStage(CurriculumPublicationStatus status) {
+  if (status.isAlreadyActive) {
+    return 'Update is live; finishing compatibility sync';
+  }
+  return switch (status.failedStage ?? status.publicationState) {
+    'preparing' => 'Paused while preparing the update',
+    'staging' => 'Paused while saving the update snapshot',
+    'verifying' => 'Paused while checking update integrity',
+    'activating' => 'Paused right before activating the update',
+    _ => 'Interrupted before going live',
+  };
+}
+
+/// Dark-teal/coral administrator recovery banner shown when a previous
+/// curriculum publication was interrupted or failed.
+class CurriculumPublicationRecoveryBanner extends StatelessWidget {
+  const CurriculumPublicationRecoveryBanner({
+    super.key,
+    required this.status,
+    required this.onResume,
+    required this.onDiscard,
+    this.publishingEnabled = kEnableCurriculumPublishing,
+    this.isBusy = false,
+  });
+
+  final CurriculumPublicationStatus status;
+  final VoidCallback onResume;
+  final VoidCallback onDiscard;
+  final bool publishingEnabled;
+  final bool isBusy;
+
+  Future<void> _showDetails(BuildContext context) async {
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (dialogContext) => AppGlassDialog(
+        title: const Text('Publication Recovery Details'),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppTokens.spaceSm,
+              children: [
+                Text(
+                  status.isAlreadyActive
+                      ? 'The latest Skill Tree update is already active for '
+                            'riders and instructors. Resuming will finish '
+                            'background compatibility sync.'
+                      : 'The previous Skill Tree remains active for all '
+                            'riders and instructors. No partial changes were '
+                            'exposed.',
+                  style: Theme.of(dialogContext).textTheme.bodyMedium,
+                ),
+                const Divider(),
+                Text(
+                  'Status: ${_friendlyRecoveryStage(status)}',
+                  style: Theme.of(dialogContext).textTheme.bodySmall,
+                ),
+                if (status.lockOwnerName != null &&
+                    status.lockOwnerName!.trim().isNotEmpty)
+                  Text(
+                    'Started by: ${status.lockOwnerName}',
+                    style: Theme.of(dialogContext).textTheme.bodySmall,
+                  ),
+                if (status.updatedAt != null)
+                  Text(
+                    'Last updated: ${_formatRevisionDate(status.updatedAt)}',
+                    style: Theme.of(dialogContext).textTheme.bodySmall,
+                  ),
+                if (status.lastError != null &&
+                    status.lastError!.trim().isNotEmpty)
+                  Text(
+                    'Details: ${status.lastError}',
+                    style: Theme.of(dialogContext).textTheme.bodySmall
+                        ?.copyWith(
+                          color: Theme.of(dialogContext).colorScheme.error,
+                        ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.colorScheme.secondary;
+    final bodyCopy = status.isAlreadyActive
+        ? 'Your curriculum update is live, but a final background sync was '
+              'interrupted. Resume publication to finish cleanup.'
+        : 'Your previous curriculum update was interrupted. The current Skill '
+              'Tree is still available to users.';
+
+    return AppSurfaceCard(
+      key: const Key('curriculumPublicationRecoveryBanner'),
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: accent, width: 3)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: AppTokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppTokens.spaceSm,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: accent, size: 22),
+                  const SizedBox(width: AppTokens.spaceSm),
+                  Expanded(
+                    child: Text(
+                      'Publication needs attention',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (isBusy)
+                    const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+              Text(
+                bodyCopy,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTokens.secondaryTextColor(context),
+                ),
+              ),
+              Wrap(
+                spacing: AppTokens.spaceSm,
+                runSpacing: AppTokens.spaceXs,
+                children: [
+                  FilledButton.icon(
+                    key: const Key('recoveryResumePublicationButton'),
+                    onPressed: publishingEnabled && !isBusy ? onResume : null,
+                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                    label: const Text('Resume Publication'),
+                  ),
+                  OutlinedButton.icon(
+                    key: const Key('recoveryViewDetailsButton'),
+                    onPressed: isBusy ? null : () => _showDetails(context),
+                    icon: const Icon(Icons.info_outline, size: 18),
+                    label: const Text('View Details'),
+                  ),
+                  if (status.canDiscard)
+                    TextButton.icon(
+                      key: const Key('recoveryDiscardPublicationButton'),
+                      onPressed: publishingEnabled && !isBusy
+                          ? onDiscard
+                          : null,
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Discard Unpublished Changes'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CurriculumDiffSummaryCard extends StatelessWidget {
   const _CurriculumDiffSummaryCard({required this.diff});
 
@@ -631,7 +819,7 @@ class _CurriculumDiffSummaryCard extends StatelessWidget {
             for (final item in diff.modifiedSkills)
               Text(
                 '• Updated ${item.skill.name}: '
-                '${item.changedFields.join(', ')}',
+                '${item.changedFields.map(_formatFieldLabel).join(', ')}',
                 style: theme.textTheme.bodySmall,
               ),
           if (diff.retiredSkills.isNotEmpty)

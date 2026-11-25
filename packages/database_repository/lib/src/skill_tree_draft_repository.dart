@@ -94,16 +94,24 @@ abstract class SkillTreeDraftStore {
   /// Loads and reconstructs the complete snapshot for [revisionId].
   Future<CurriculumRevisionSnapshot?> fetchRevisionSnapshot(String revisionId);
 
+  /// Fetches the current publication status and recovery state.
+  Future<CurriculumPublicationStatus> fetchPublicationStatus();
+
   /// Publishes the currently saved draft as a new immutable revision.
   Future<CurriculumRevisionSummary> publishDraft({
     String? notes,
     bool resumeFailedPublication = false,
+    String? requestId,
   });
+
+  /// Discards an interrupted, unpublished curriculum publication attempt.
+  Future<void> discardFailedPublication();
 
   /// Restores [targetRevisionId] as a new forward revision (history intact).
   Future<CurriculumRevisionSummary> rollbackToRevision({
     required String targetRevisionId,
     String? notes,
+    String? requestId,
   });
 }
 
@@ -113,15 +121,19 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
   InMemorySkillTreeDraftStore({
     SkillTreeCurriculumDraft? initialDraft,
     List<CurriculumRevisionSnapshot> initialRevisions = const [],
+    CurriculumPublicationStatus initialPublicationStatus =
+        CurriculumPublicationStatus.idle,
     this.actorIsAdmin = true,
     this.actorUid = 'admin-1',
     this.actorName = 'Administrator',
     this.publishingEnabled = false,
   })  : _draft = initialDraft,
-        _revisions = List<CurriculumRevisionSnapshot>.from(initialRevisions);
+        _revisions = List<CurriculumRevisionSnapshot>.from(initialRevisions),
+        _publicationStatus = initialPublicationStatus;
 
   SkillTreeCurriculumDraft? _draft;
   final List<CurriculumRevisionSnapshot> _revisions;
+  CurriculumPublicationStatus _publicationStatus;
 
   /// Simulated admin claim for tests.
   bool actorIsAdmin;
@@ -134,6 +146,38 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
 
   /// Whether publishing/rollback is enabled in this store.
   bool publishingEnabled;
+
+  @override
+  Future<CurriculumPublicationStatus> fetchPublicationStatus() async {
+    if (!actorIsAdmin) return CurriculumPublicationStatus.idle;
+    return _publicationStatus;
+  }
+
+  @override
+  Future<void> discardFailedPublication() async {
+    if (!actorIsAdmin) {
+      throw SkillTreeDraftException(
+        'Administrator privileges are required.',
+        code: 'permission-denied',
+      );
+    }
+    if (!publishingEnabled) {
+      throw SkillTreeDraftException(
+        'Curriculum publishing controls are currently disabled.',
+        code: 'failed-precondition',
+      );
+    }
+    if (_publicationStatus.isAlreadyActive) {
+      throw SkillTreeDraftException(
+        'This curriculum update is already live and cannot be discarded.',
+        code: 'failed-precondition',
+      );
+    }
+    _publicationStatus = CurriculumPublicationStatus(
+      currentRevisionId: _publicationStatus.currentRevisionId,
+      currentRevisionNumber: _publicationStatus.currentRevisionNumber,
+    );
+  }
 
   @override
   Future<SkillTreeCurriculumDraft?> fetchDraft() async {
@@ -196,6 +240,7 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
   Future<CurriculumRevisionSummary> publishDraft({
     String? notes,
     bool resumeFailedPublication = false,
+    String? requestId,
   }) async {
     if (!actorIsAdmin) {
       throw SkillTreeDraftException(
@@ -208,6 +253,18 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
         'Curriculum publishing is currently disabled.',
         code: 'failed-precondition',
       );
+    }
+    if (resumeFailedPublication &&
+        _publicationStatus.needsAttention &&
+        _publicationStatus.isAlreadyActive &&
+        _revisions.isNotEmpty) {
+      final active = _revisions.last.summary;
+      _publicationStatus = CurriculumPublicationStatus(
+        currentRevisionId: active.id,
+        currentRevisionNumber: active.revisionNumber,
+      );
+      _draft = null;
+      return active;
     }
     final draft = _draft;
     if (draft == null) {
@@ -252,6 +309,10 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
         skills: List<CurriculumSkill>.unmodifiable(draft.skills),
       ),
     );
+    _publicationStatus = CurriculumPublicationStatus(
+      currentRevisionId: summary.id,
+      currentRevisionNumber: summary.revisionNumber,
+    );
     _draft = null;
     return summary;
   }
@@ -260,6 +321,7 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
   Future<CurriculumRevisionSummary> rollbackToRevision({
     required String targetRevisionId,
     String? notes,
+    String? requestId,
   }) async {
     if (!actorIsAdmin) {
       throw SkillTreeDraftException(
@@ -314,6 +376,10 @@ class InMemorySkillTreeDraftStore implements SkillTreeDraftStore {
         skills: target.skills,
       ),
     );
+    _publicationStatus = CurriculumPublicationStatus(
+      currentRevisionId: summary.id,
+      currentRevisionNumber: summary.revisionNumber,
+    );
     return summary;
   }
 }
@@ -325,19 +391,36 @@ class CloudSkillTreeDraftStore implements SkillTreeDraftStore {
     FirebaseFirestore? firestore,
     firebase_auth.FirebaseAuth? auth,
     http.Client? httpClient,
-    this._tokenProvider,
-    this._saveEndpoint,
-    this._discardEndpoint,
-    this._publishEndpoint,
-    this._rollbackEndpoint,
-    this._projectId,
+    Future<String?> Function()? tokenProvider,
+    Uri? saveEndpoint,
+    Uri? discardEndpoint,
+    Uri? publishEndpoint,
+    Uri? rollbackEndpoint,
+    Uri? abortEndpoint,
+    String? projectId,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? firebase_auth.FirebaseAuth.instance,
-        _httpClient = httpClient ?? http.Client();
+        _httpClient = httpClient ?? http.Client(),
+        // ignore: prefer_initializing_formals
+        _tokenProvider = tokenProvider,
+        // ignore: prefer_initializing_formals
+        _saveEndpoint = saveEndpoint,
+        // ignore: prefer_initializing_formals
+        _discardEndpoint = discardEndpoint,
+        // ignore: prefer_initializing_formals
+        _publishEndpoint = publishEndpoint,
+        // ignore: prefer_initializing_formals
+        _rollbackEndpoint = rollbackEndpoint,
+        // ignore: prefer_initializing_formals
+        _abortEndpoint = abortEndpoint,
+        // ignore: prefer_initializing_formals
+        _projectId = projectId;
 
   static const _collection = 'SkillTreeCurriculumDrafts';
   static const _revisionsCollection = 'SkillTreeCurriculumRevisions';
   static const _chunksSubcollection = 'Chunks';
+  static const _metaCollection = 'SkillTreeCurriculumMeta';
+  static const _metaDocId = 'current';
   static const _defaultDocId = 'default';
 
   final FirebaseFirestore _firestore;
@@ -348,6 +431,7 @@ class CloudSkillTreeDraftStore implements SkillTreeDraftStore {
   final Uri? _discardEndpoint;
   final Uri? _publishEndpoint;
   final Uri? _rollbackEndpoint;
+  final Uri? _abortEndpoint;
   final String? _projectId;
 
   Uri _endpoint(String name, Uri? override) {
@@ -505,15 +589,33 @@ class CloudSkillTreeDraftStore implements SkillTreeDraftStore {
   }
 
   @override
+  Future<CurriculumPublicationStatus> fetchPublicationStatus() async {
+    final snap = await _firestore
+        .collection(_metaCollection)
+        .doc(_metaDocId)
+        .get();
+    final data = snap.data();
+    if (!snap.exists || data == null) {
+      return CurriculumPublicationStatus.idle;
+    }
+    return CurriculumPublicationStatus.fromMap(
+      normalizeFirestoreTimestamps(data),
+    );
+  }
+
+  @override
   Future<CurriculumRevisionSummary> publishDraft({
     String? notes,
     bool resumeFailedPublication = false,
+    String? requestId,
   }) async {
     final result = await _callFunction(
       _endpoint('publishSkillTreeCurriculumDraft', _publishEndpoint),
       {
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
         if (resumeFailedPublication) 'resumeFailedPublication': true,
+        if (requestId != null && requestId.trim().isNotEmpty)
+          'requestId': requestId.trim(),
       },
     );
     final raw = result['revision'];
@@ -527,15 +629,26 @@ class CloudSkillTreeDraftStore implements SkillTreeDraftStore {
   }
 
   @override
+  Future<void> discardFailedPublication() async {
+    await _callFunction(
+      _endpoint('abortSkillTreeCurriculumPublication', _abortEndpoint),
+      const {},
+    );
+  }
+
+  @override
   Future<CurriculumRevisionSummary> rollbackToRevision({
     required String targetRevisionId,
     String? notes,
+    String? requestId,
   }) async {
     final result = await _callFunction(
       _endpoint('rollbackSkillTreeCurriculumRevision', _rollbackEndpoint),
       {
         'targetRevisionId': targetRevisionId,
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+        if (requestId != null && requestId.trim().isNotEmpty)
+          'requestId': requestId.trim(),
       },
     );
     final raw = result['revision'];
@@ -580,23 +693,34 @@ class SkillTreeDraftRepository {
   ) =>
       _store.fetchRevisionSnapshot(revisionId);
 
+  /// Fetches the current publication status and recovery state.
+  Future<CurriculumPublicationStatus> fetchPublicationStatus() =>
+      _store.fetchPublicationStatus();
+
   /// Publishes the saved draft as a new immutable revision.
   Future<CurriculumRevisionSummary> publishDraft({
     String? notes,
     bool resumeFailedPublication = false,
+    String? requestId,
   }) =>
       _store.publishDraft(
         notes: notes,
         resumeFailedPublication: resumeFailedPublication,
+        requestId: requestId,
       );
+
+  /// Discards an interrupted, unpublished curriculum publication attempt.
+  Future<void> discardFailedPublication() => _store.discardFailedPublication();
 
   /// Restores [targetRevisionId] as a new forward revision.
   Future<CurriculumRevisionSummary> rollbackToRevision({
     required String targetRevisionId,
     String? notes,
+    String? requestId,
   }) =>
       _store.rollbackToRevision(
         targetRevisionId: targetRevisionId,
         notes: notes,
+        requestId: requestId,
       );
 }
