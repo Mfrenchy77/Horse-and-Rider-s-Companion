@@ -156,7 +156,9 @@ test('the callable preserves shared lessons across archive, restore and transfer
       listing: {price: '$5000 USD', location: 'Bend', description: 'School horse'},
     });
     const guest = environment.unauthenticatedContext().firestore();
-    assert.equal((await getDoc(doc(guest, horseRef.path))).data().saleListing.price, '$5000 USD');
+    // Private Horse_Profile docs are denied to guests (public sale data is served via Public_Horse_Profile).
+    await assertFails(getDoc(doc(guest, horseRef.path)));
+    assert.equal((await getDoc(doc(riderClient, horseRef.path))).data().saleListing.price, '$5000 USD');
     const pending = await call(rider, {
       action: 'sendTransfer', horseId: 'lesson-horse', recipientEmail: buyer,
     });
@@ -585,11 +587,18 @@ test('SkillTreeCurriculumDrafts allows admin read only and denies all client wri
   await assertFails(setDoc(doc(userDb, 'SkillTreeCurriculumDrafts/default'), {id: 'default'}));
 });
 
-test('Retired skills preserve existing SkillProgress/Verifications reads and block new retired progress writes', async () => {
+test('Retired skills, SkillsV2 visibility, and historical SkillProgress security boundaries', async () => {
   await environment.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     await setDoc(doc(db, 'Rider_Profile/ret-rider@example.com'), {
       email: 'ret-rider@example.com',
+      ownerUid: 'uid-ret-rider',
+      instructorUids: ['uid-ret-coach'],
+    });
+    await setDoc(doc(db, 'Horse_Profile/ret-horse'), {
+      id: 'ret-horse',
+      name: 'Retired Skill Horse',
+      currentOwnerId: 'ret-rider@example.com',
       ownerUid: 'uid-ret-rider',
       instructorUids: ['uid-ret-coach'],
     });
@@ -599,11 +608,23 @@ test('Retired skills preserve existing SkillProgress/Verifications reads and blo
       subject: 'rider',
       availableLevels: ['introductory'],
     });
+    await setDoc(doc(db, 'SkillsV2/rider.mounted.draft_skill'), {
+      id: 'rider.mounted.draft_skill',
+      status: 'draft',
+      subject: 'rider',
+      availableLevels: ['introductory'],
+    });
     await setDoc(doc(db, 'SkillsV2/rider.mounted.active_legacy_level'), {
       id: 'rider.mounted.active_legacy_level',
       status: 'active',
       subject: 'rider',
       // Simulate only introductory currently listed while an existing record holds untouched intermediate.
+      availableLevels: ['introductory'],
+    });
+    await setDoc(doc(db, 'SkillsV2/horse.mounted.active_legacy_level'), {
+      id: 'horse.mounted.active_legacy_level',
+      status: 'active',
+      subject: 'horse',
       availableLevels: ['introductory'],
     });
     await setDoc(doc(db, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill'), {
@@ -625,11 +646,20 @@ test('Retired skills preserve existing SkillProgress/Verifications reads and blo
       subject: 'rider',
       schemaVersion: 2,
       levels: {
-        intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+        intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      },
+    });
+    await setDoc(doc(db, 'Horse_Profile/ret-horse/SkillProgress/horse.mounted.active_legacy_level'), {
+      skillId: 'horse.mounted.active_legacy_level',
+      subject: 'horse',
+      schemaVersion: 2,
+      levels: {
+        intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
       },
     });
   });
 
+  const guestDb = environment.unauthenticatedContext().firestore();
   const ownerDb = environment.authenticatedContext('uid-ret-rider', {
     email: 'ret-rider@example.com',
     email_verified: true,
@@ -638,12 +668,36 @@ test('Retired skills preserve existing SkillProgress/Verifications reads and blo
     email: 'ret-coach@example.com',
     email_verified: true,
   }).firestore();
+  const otherDb = environment.authenticatedContext('uid-ret-other', {
+    email: 'ret-other@example.com',
+    email_verified: true,
+  }).firestore();
+  const adminDb = environment.authenticatedContext('uid-ret-admin', {
+    email: 'ret-admin@example.com',
+    email_verified: true,
+    admin: true,
+  }).firestore();
 
-  // Historical retired progress & verifications remain readable by owner and instructor.
+  // 1. SkillsV2 visibility: active & retired are publicly readable (get + client whereIn query);
+  //    draft docs in SkillsV2 are readable only by verified admins.
+  await assertSucceeds(getDoc(doc(guestDb, 'SkillsV2/rider.mounted.active_legacy_level')));
+  await assertSucceeds(getDoc(doc(guestDb, 'SkillsV2/rider.mounted.retired_skill')));
+  await assertSucceeds(getDocs(query(
+    collection(guestDb, 'SkillsV2'),
+    where('status', 'in', ['active', 'retired']),
+  )));
+  await assertFails(getDoc(doc(guestDb, 'SkillsV2/rider.mounted.draft_skill')));
+  await assertFails(getDoc(doc(ownerDb, 'SkillsV2/rider.mounted.draft_skill')));
+  await assertSucceeds(getDoc(doc(adminDb, 'SkillsV2/rider.mounted.draft_skill')));
+
+  // 2. Historical retired progress & verifications remain readable only by authorized viewers.
   await assertSucceeds(getDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill')));
   await assertSucceeds(getDoc(doc(coachDb, 'Rider_Profile/ret-rider@example.com/SkillVerifications/rider.mounted.retired_skill')));
+  await assertFails(getDoc(doc(otherDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill')));
+  await assertFails(getDoc(doc(otherDb, 'Rider_Profile/ret-rider@example.com/SkillVerifications/rider.mounted.retired_skill')));
+  await assertFails(getDoc(doc(guestDb, 'Rider_Profile/ret-rider@example.com/SkillVerifications/rider.mounted.retired_skill')));
 
-  // New writes on retired skills are denied.
+  // 3. New writes on retired skills are denied.
   await assertFails(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.retired_skill'), {
     skillId: 'rider.mounted.retired_skill',
     subject: 'rider',
@@ -653,14 +707,86 @@ test('Retired skills preserve existing SkillProgress/Verifications reads and blo
     },
   }));
 
-  // Updating an active level succeeds without breaking an untouched pre-existing historical level key.
+  // 4. Updating an active level succeeds while retaining an untouched pre-existing historical level key.
   await assertSucceeds(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
     skillId: 'rider.mounted.active_legacy_level',
     subject: 'rider',
     schemaVersion: 2,
     levels: {
       introductory: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+
+  // 5. Users cannot modify a grandfathered historical level's achievement (e.g., LEARNING -> PROFICIENT).
+  await assertFails(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+    skillId: 'rider.mounted.active_legacy_level',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
       intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+
+  // 6. Users cannot introduce arbitrary new keys or new unavailable difficulty levels.
+  await assertFails(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+    skillId: 'rider.mounted.active_legacy_level',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      advanced: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+  await assertFails(setDoc(doc(ownerDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+    skillId: 'rider.mounted.active_legacy_level',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      expert: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+
+  // 7. Unauthorized users (other rider and connected coach) cannot modify Rider or Horse SkillProgress.
+  await assertFails(setDoc(doc(otherDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+    skillId: 'rider.mounted.active_legacy_level',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'PROFICIENT', updatedByUid: 'uid-ret-other', updatedByName: 'Other'},
+      intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+  await assertFails(setDoc(doc(coachDb, 'Rider_Profile/ret-rider@example.com/SkillProgress/rider.mounted.active_legacy_level'), {
+    skillId: 'rider.mounted.active_legacy_level',
+    subject: 'rider',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'PROFICIENT', updatedByUid: 'uid-ret-coach', updatedByName: 'Coach'},
+      intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+  await assertFails(setDoc(doc(otherDb, 'Horse_Profile/ret-horse/SkillProgress/horse.mounted.active_legacy_level'), {
+    skillId: 'horse.mounted.active_legacy_level',
+    subject: 'horse',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'PROFICIENT', updatedByUid: 'uid-ret-other', updatedByName: 'Other'},
+      intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+    },
+  }));
+
+  // 8. Legitimate owner progress update on Horse_Profile continues to work while preserving historical key.
+  await assertSucceeds(setDoc(doc(ownerDb, 'Horse_Profile/ret-horse/SkillProgress/horse.mounted.active_legacy_level'), {
+    skillId: 'horse.mounted.active_legacy_level',
+    subject: 'horse',
+    schemaVersion: 2,
+    levels: {
+      introductory: {state: 'PROFICIENT', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
+      intermediate: {state: 'LEARNING', updatedByUid: 'uid-ret-rider', updatedByName: 'Rider'},
     },
   }));
 });

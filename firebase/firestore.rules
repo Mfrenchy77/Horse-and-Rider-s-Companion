@@ -53,7 +53,7 @@ service cloud.firestore {
       return !(levelKey in levelsMap)
         || (
           resource != null
-          && resource.data.levels is map
+          && resource.data.get('levels', null) is map
           && levelKey in resource.data.levels
           && levelsMap[levelKey] == resource.data.levels[levelKey]
         )
@@ -139,7 +139,9 @@ service cloud.firestore {
     }
 
     match /SkillsV2/{skillId} {
-      allow read: if true;
+      allow read: if resource == null
+        || resource.data.status in ['active', 'retired']
+        || isAdmin();
       allow write: if false;
     }
 
