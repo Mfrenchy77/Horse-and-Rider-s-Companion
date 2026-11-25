@@ -5,7 +5,17 @@ import 'dart:convert';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_file_downloader.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+
+/// Generates a clean `.json` filename for downloaded curriculum exports.
+String buildCurriculumExportFileName([DateTime? now]) {
+  final dt = (now ?? DateTime.now()).toUtc();
+  final y = dt.year.toString().padLeft(4, '0');
+  final m = dt.month.toString().padLeft(2, '0');
+  final d = dt.day.toString().padLeft(2, '0');
+  return 'skill_tree_curriculum_$y-$m-$d.json';
+}
 
 /// Builds a deterministic, canonical JSON string of the full published
 /// curriculum matching the backend publishing format.
@@ -82,25 +92,28 @@ class _CurriculumExportDialogState extends State<CurriculumExportDialog> {
       _busy = true;
       _statusMessage = null;
     });
-    const fileName = 'skill_tree_curriculum_export.json';
+    final fileName = buildCurriculumExportFileName();
     try {
-      if (widget.onDownloadFile != null) {
-        await widget.onDownloadFile!(fileName, exportJson);
-      } else {
-        await Clipboard.setData(ClipboardData(text: exportJson));
-      }
+      final downloader = widget.onDownloadFile ?? downloadCurriculumFile;
+      await downloader(fileName, exportJson);
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _statusMessage = widget.onDownloadFile != null
-            ? 'Curriculum download prepared ($fileName).'
-            : 'Curriculum export copied to clipboard ($fileName).';
+        _statusMessage = 'Downloaded $fileName.';
+      });
+    } on CurriculumDownloadUnsupportedException {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _statusMessage =
+            'Direct file download is available on web. Use Copy Export instead.';
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _statusMessage = 'Could not prepare curriculum download.';
+        _statusMessage =
+            'Could not download curriculum file. Try again or use Copy Export.';
       });
     }
   }

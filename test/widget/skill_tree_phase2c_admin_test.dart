@@ -391,5 +391,81 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'CurriculumExportDialog downloads a .json file matching canonical export '
+      'and handles download errors gracefully while keeping Copy Export',
+      (tester) async {
+        String? downloadedName;
+        String? downloadedContent;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CurriculumExportDialog(
+                families: const [family],
+                skills: const [skill],
+                onDownloadFile: (name, content) async {
+                  downloadedName = name;
+                  downloadedContent = content;
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const Key('downloadCurriculumExportButton')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(downloadedName, endsWith('.json'));
+        expect(
+          downloadedContent,
+          equals(
+            buildCanonicalCurriculumExportJson(
+              families: const [family],
+              skills: const [skill],
+            ),
+          ),
+        );
+        expect(
+          find.byKey(const Key('curriculumExportStatusText')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Downloaded '), findsOneWidget);
+
+        // Error handling test: download throws -> graceful error message.
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CurriculumExportDialog(
+                families: const [family],
+                skills: const [skill],
+                onDownloadFile: (_, _) async {
+                  throw Exception('Browser blocked download');
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const Key('downloadCurriculumExportButton')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.textContaining('Could not download curriculum file'),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('copyCurriculumExportButton')),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

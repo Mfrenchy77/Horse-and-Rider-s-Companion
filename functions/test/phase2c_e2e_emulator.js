@@ -85,10 +85,55 @@ async function main() {
   const publish = publishCurriculumDraftHandler(db, {publishingEnabled: true, chunkByteLimit: 64 * 1024});
   const rollback = rollbackCurriculumRevisionHandler(db, {publishingEnabled: true, chunkByteLimit: 64 * 1024});
 
-  // Baseline publish rev_000001.
-  await saveDraft({auth: adminAuth, data: {families, skills, note: 'Baseline'}});
-  const rev1 = await publish({auth: adminAuth, data: {notes: 'Baseline 72-skill publish'}});
+  // Seed production-like baseline: ONLY SkillFamilies (32) and SkillsV2 (72),
+  // with NO SkillTreeCurriculumPublic/active and NO SkillTreeCurriculumMeta/current.
+  const seedBatch = db.batch();
+  for (const f of families) {
+    seedBatch.set(db.collection('SkillFamilies').doc(f.id), f);
+  }
+  for (const s of skills) {
+    seedBatch.set(db.collection('SkillsV2').doc(s.id), s);
+  }
+  await seedBatch.commit();
+
+  // Verify pre-activation read compatibility (legacy fallback when active pointer absent).
+  const preActiveDoc = await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get();
+  assert.equal(preActiveDoc.exists, false);
+  const preExport = await exportCurriculumFromFirestore(db, {
+    outDir: os.tmpdir(),
+    write: false,
+  });
+  assert.equal(preExport.source, 'legacy_collections');
+  assert.equal(preExport.familyCount, 32);
+  assert.equal(preExport.skillCount, 72);
+
+  // Initial revision creation from pre-versioned production baseline:
+  // First simulate interruption before activation -> SkillTreeCurriculumPublic/active MUST stay absent!
+  const initSkills = structuredClone(skills);
+  initSkills[0].summary = `${initSkills[0].summary} (Initial revision baseline)`;
+  await saveDraft({auth: adminAuth, data: {families, skills: initSkills, note: 'Initial revision'}});
+  const interruptedInit = publishCurriculumDraftHandler(db, {
+    publishingEnabled: true,
+    chunkByteLimit: 64 * 1024,
+    onBeforeActivate: async () => {
+      throw new Error('Simulated pre-activation interruption on initial revision');
+    },
+  });
+  await assert.rejects(() => interruptedInit({auth: adminAuth, data: {notes: 'Initial rev 1'}}));
+  assert.equal(
+      (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).exists,
+      false,
+      'No partial initial revision may become publicly visible',
+  );
+
+  // Resume initial revision -> atomically creates rev_000001 preserving all 32 families, 72 skills, and progress.
+  const rev1 = await publish({auth: adminAuth, data: {resumeFailedPublication: true}});
+  assert.equal(rev1.resumed, true);
   assert.equal(rev1.revision.id, 'rev_000001');
+  assert.equal(rev1.revision.familyCount, 32);
+  assert.equal(rev1.revision.skillCount, 72);
+  assert.equal((await progressRef.get()).data().levels.intermediate.state, 'PROFICIENT');
+  assert.equal((await verifRef.get()).data().levels.intermediate.standardVersion, 1);
 
   // 1. Community member submits suggestion with creditConsent: true (and another without consent).
   const {suggestion} = await submitSuggestion({
