@@ -25,6 +25,13 @@ class DictionaryEntry {
   String get explanation => data['explanation'] as String? ?? '';
   bool get published => data['status'] == 'published';
   bool get contextual => data['contextual'] == true;
+  int get publishedRevision {
+    if (bundled) return 0;
+    final rev = data['revision'] as int? ?? 0;
+    if (data['publishedAt'] == null && rev <= 1) return 0;
+    return rev;
+  }
+
   List<String> strings(String field) =>
       (data[field] as List<dynamic>? ?? []).cast<String>();
   String text(String field) => data[field] as String? ?? '';

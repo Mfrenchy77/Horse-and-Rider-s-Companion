@@ -432,12 +432,20 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.byType(TextFormField).at(1),
+      find.byKey(const Key('suggestionField_explanation')),
       'Clarify arena vs trail examples.',
     );
-    await tester.tap(find.byType(CheckboxListTile));
+    await tester.ensureVisible(
+      find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
+    );
+    await tester.tap(
+      find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
+    );
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).at(2), 'Alex R.');
+    await tester.enterText(
+      find.byKey(const Key('dictionaryPublicNameField')),
+      'Alex R.',
+    );
     await _captureView(tester, 'dictionary_signed_in_suggestion.png');
 
     await tester.tap(find.text('Submit suggestion'));

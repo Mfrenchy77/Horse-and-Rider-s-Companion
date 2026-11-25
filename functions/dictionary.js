@@ -7,8 +7,18 @@ const {safePublicContributorName} = require('./suggestions');
 const seed = require('./dictionary_seed.json');
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const KINDS = ['missing_term', 'definition', 'correction', 'regional_usage', 'related_term'];
+const KINDS = ['missing_term', 'definition', 'correction', 'improvement', 'regional_usage', 'related_term'];
 const STATUSES = ['submitted', 'under_review', 'needs_clarification', 'approved', 'rejected', 'published'];
+const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+const STRUCTURED_KEYS = ['definition', 'explanation', 'usage', 'regionalUsage', 'examples', 'synonyms'];
+const FIELD_LABELS = {
+  definition: 'Short definition',
+  explanation: 'Detailed explanation',
+  usage: 'Discipline & general usage',
+  regionalUsage: 'Regional usage',
+  examples: 'Examples',
+  synonyms: 'Synonyms',
+};
 
 function text(value, max, field, required = false) {
   if (value == null && !required) return '';
@@ -24,6 +34,63 @@ function strings(value, field, max = 30) {
     throw new HttpsError('invalid-argument', 'Invalid ' + field + '.');
   }
   return [...new Set(value.map((item) => text(item, 240, field, true)))];
+}
+
+function extractStructuredFields(source) {
+  if (!source || typeof source !== 'object') {
+    return {definition: '', explanation: '', usage: '', regionalUsage: '', examples: [], synonyms: []};
+  }
+  return {
+    definition: text(source.definition, 500, 'definition'),
+    explanation: text(source.explanation, 6000, 'explanation'),
+    usage: text(source.usage, 2000, 'usage'),
+    regionalUsage: text(source.regionalUsage, 2000, 'regional usage'),
+    examples: strings(source.examples, 'examples', 12),
+    synonyms: strings(source.synonyms, 'synonyms', 30),
+  };
+}
+
+function validateStructuredFields(raw, label = 'proposed fields', {requireDefinition = false} = {}) {
+  if (raw == null) return null;
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new HttpsError('invalid-argument', 'Invalid ' + label + '.');
+  }
+  for (const key of Object.keys(raw)) {
+    if (!STRUCTURED_KEYS.includes(key)) {
+      throw new HttpsError('invalid-argument', 'Invalid field in ' + label + '.');
+    }
+  }
+  const normalized = {
+    definition: text(raw.definition, 500, 'definition', requireDefinition),
+    explanation: text(raw.explanation, 6000, 'explanation'),
+    usage: text(raw.usage, 2000, 'usage'),
+    regionalUsage: text(raw.regionalUsage, 2000, 'regional usage'),
+    examples: strings(raw.examples, 'examples', 12),
+    synonyms: strings(raw.synonyms, 'synonyms', 30),
+  };
+  if (EMAIL_PATTERN.test(JSON.stringify(normalized))) {
+    throw new HttpsError('invalid-argument', 'Public definitions must not contain email addresses.');
+  }
+  return normalized;
+}
+
+function computeChangedFields(baseFields, proposedFields) {
+  if (!proposedFields) return [];
+  const base = baseFields || extractStructuredFields(null);
+  return STRUCTURED_KEYS.filter((key) => JSON.stringify(base[key]) !== JSON.stringify(proposedFields[key]));
+}
+
+function summarizeStructuredProposal(changedFields, reason) {
+  const labels = changedFields.map((key) => FIELD_LABELS[key] || key).join(', ');
+  const prefix = labels ? 'Suggested improvement to ' + labels + '.' : 'Suggested improvement.';
+  return reason ? prefix + ' Reason: ' + reason : prefix;
+}
+
+function effectivePublishedRevision(publicSnap) {
+  if (!publicSnap || !publicSnap.exists) return 0;
+  const data = publicSnap.data() || {};
+  if (!data.publishedAt && (data.revision || 0) <= 1) return 0;
+  return typeof data.revision === 'number' ? data.revision : 0;
 }
 
 function validateEntry(raw) {
@@ -53,7 +120,7 @@ function validateEntry(raw) {
       return {url, label: text(item.label, 120, 'media label', true)};
     }),
   };
-  if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(JSON.stringify(entry))) {
+  if (EMAIL_PATTERN.test(JSON.stringify(entry))) {
     throw new HttpsError('invalid-argument', 'Public definitions must not contain email addresses.');
   }
   return entry;
@@ -71,9 +138,21 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
     const raw = request.data || {};
     if (raw.website) throw new HttpsError('invalid-argument', 'Invalid submission.');
     const term = text(raw.term, 120, 'term', true);
-    const proposal = text(raw.proposal, 4000, 'proposal', true);
     const kind = raw.kind;
     if (!KINDS.includes(kind)) throw new HttpsError('invalid-argument', 'Invalid contribution type.');
+    const termId = text(raw.termId, 100, 'term ID');
+    if (termId && !SLUG.test(termId)) throw new HttpsError('invalid-argument', 'Invalid term ID.');
+    const reason = text(raw.reason, 2000, 'reason');
+    const proposedFields = validateStructuredFields(
+        raw.proposedFields,
+        'proposed fields',
+        {requireDefinition: Boolean(termId && raw.proposedFields != null)},
+    );
+    const clientBaseFields = validateStructuredFields(raw.baseFields, 'base fields');
+    if (raw.baseRevision != null && (!Number.isInteger(raw.baseRevision) || raw.baseRevision < 0)) {
+      throw new HttpsError('invalid-argument', 'Invalid base revision.');
+    }
+    const rawProposal = text(raw.proposal, 4000, 'proposal', !proposedFields);
     const recognitionConsent = raw.recognitionConsent === true;
     const publicName = recognitionConsent ? safePublicContributorName(raw.publicName) : null;
     if (recognitionConsent && !publicName) throw new HttpsError('invalid-argument', 'A public name is required.');
@@ -94,6 +173,25 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
     await db.runTransaction(async (tx) => {
       const existing = await tx.get(ref);
       const limits = await Promise.all(buckets.map((bucket) => tx.get(bucket)));
+      const publicSnap = termId ? await tx.get(db.collection('DictionaryEntries').doc(termId)) : null;
+
+      let resolvedBaseRevision = raw.baseRevision ?? null;
+      let resolvedBaseFields = clientBaseFields;
+      if (termId) {
+        const seedMatch = seed.find((item) => item.id === termId || item.slug === termId) || null;
+        const liveData = publicSnap?.exists ? publicSnap.data() : seedMatch;
+        const livePubRev = effectivePublishedRevision(publicSnap);
+        if (resolvedBaseRevision == null) resolvedBaseRevision = livePubRev;
+        if (liveData && (resolvedBaseRevision === livePubRev || !resolvedBaseFields)) {
+          resolvedBaseFields = extractStructuredFields(liveData);
+        }
+      }
+      const changedFields = proposedFields ? computeChangedFields(resolvedBaseFields, proposedFields) : [];
+      if (proposedFields && changedFields.length === 0) {
+        throw new HttpsError('invalid-argument', 'Modify at least one field before submitting.');
+      }
+      const proposal = rawProposal || summarizeStructuredProposal(changedFields, reason);
+
       if (existing.exists) {
         // A retry is accepted only for the same private submission identity and content.
         const data = existing.data();
@@ -106,12 +204,20 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
       for (let i = 0; i < buckets.length; i++) {
         tx.set(buckets[i], {count: (limits[i].data()?.count || 0) + 1, expiresAt: new Date(at + 172800000)});
       }
-      tx.create(ref, {
+      const record = {
         term, proposal, kind, recognitionConsent, publicName,
-        termId: text(raw.termId, 100, 'term ID'),
+        termId,
         contributorUid: request.auth?.uid || null,
         requestKey: digest(ip), status: 'submitted', createdAt: new Date(at),
-      });
+      };
+      if (reason) record.reason = reason;
+      if (resolvedBaseRevision != null) record.baseRevision = resolvedBaseRevision;
+      if (resolvedBaseFields) record.baseFields = resolvedBaseFields;
+      if (proposedFields) {
+        record.proposedFields = proposedFields;
+        record.changedFields = changedFields;
+      }
+      tx.create(ref, record);
     });
     return {id: ref.id, status: 'submitted'};
   };
@@ -126,23 +232,54 @@ function editDictionary(db, {now = () => new Date()} = {}) {
     const id = text(raw.id, 100, 'id', true);
     if (!/^[A-Za-z0-9-]+$/.test(id)) throw new HttpsError('invalid-argument', 'Invalid ID.');
     if (action === 'review') {
-      const status = raw.status;
-      if (!STATUSES.includes(status) || status === 'published') {
-        throw new HttpsError('invalid-argument', 'Invalid review status.');
-      }
+      const editedFields = validateStructuredFields(
+          raw.editedFields,
+          'edited fields',
+          {requireDefinition: raw.editedFields != null && raw.editedFields.definition != null},
+      );
+      const editedProposal = raw.editedProposal != null ? text(raw.editedProposal, 4000, 'proposal', true) : null;
       const ref = db.collection('DictionarySuggestions').doc(id);
+      let nextStatus = null;
       await db.runTransaction(async (tx) => {
         const snapshot = await tx.get(ref);
         if (!snapshot.exists) throw new HttpsError('not-found', 'Suggestion not found.');
-        if (snapshot.data().status === 'published') {
+        const current = snapshot.data();
+        if (current.status === 'published') {
           throw new HttpsError('failed-precondition', 'Published suggestions are immutable.');
         }
-        tx.update(ref, {status, updatedAt: at});
+        const status = raw.status != null ? raw.status : current.status;
+        if (!STATUSES.includes(status) || status === 'published') {
+          throw new HttpsError('invalid-argument', 'Invalid review status.');
+        }
+        nextStatus = status;
+        const patch = {status, updatedAt: at};
+        if (editedFields) {
+          if (!current.originalProposedFields && current.proposedFields) {
+            patch.originalProposedFields = current.proposedFields;
+          }
+          if (!current.originalProposal) patch.originalProposal = current.proposal;
+          const changedFields = computeChangedFields(current.baseFields, editedFields);
+          patch.proposedFields = editedFields;
+          patch.changedFields = changedFields;
+          patch.proposal = editedProposal || summarizeStructuredProposal(changedFields, current.reason || '');
+          patch.editedByAdminUid = request.auth.uid;
+          patch.editedByAdminAt = at;
+        } else if (editedProposal) {
+          if (!current.originalProposal) patch.originalProposal = current.proposal;
+          patch.proposal = editedProposal;
+          patch.editedByAdminUid = request.auth.uid;
+          patch.editedByAdminAt = at;
+        }
+        tx.update(ref, patch);
         tx.create(ref.collection('AuditEvents').doc(), {
-          status, note: text(raw.note, 2000, 'review note'), at, actorUid: request.auth.uid,
+          status,
+          note: text(raw.note, 2000, 'review note'),
+          proposalEdited: Boolean(editedFields || editedProposal),
+          at,
+          actorUid: request.auth.uid,
         });
       });
-      return {id, status};
+      return {id, status: nextStatus};
     }
     if (!['save', 'publish'].includes(action)) throw new HttpsError('invalid-argument', 'Invalid action.');
     const entry = validateEntry(raw.entry);
@@ -174,14 +311,35 @@ function editDictionary(db, {now = () => new Date()} = {}) {
         throw new HttpsError('already-exists', 'This slug belongs to another meaning.');
       }
       if (suggestion && !contribution.exists) throw new HttpsError('not-found', 'Suggestion not found.');
+      if (contribution && contribution.exists) {
+        const contribData = contribution.data();
+        const publishedRev = effectivePublishedRevision(currentPublic);
+        const liveSnapshot = currentPublic.exists ? extractStructuredFields(currentPublic.data()) : null;
+        const baseMismatch = typeof contribData.baseRevision === 'number' && publishedRev !== contribData.baseRevision;
+        const snapshotMismatch = Boolean(
+            contribData.baseFields &&
+            liveSnapshot &&
+            computeChangedFields(contribData.baseFields, liveSnapshot).length > 0,
+        );
+        const previouslyAcked = currentDraft.data()?.acknowledgedPublishedRevision === publishedRev &&
+          currentDraft.data()?.suggestionId === sourceId;
+        if ((baseMismatch || snapshotMismatch) && raw.acknowledgeRevisionMismatch !== true && !previouslyAcked) {
+          throw new HttpsError(
+              'failed-precondition',
+              'Published definition changed since this suggestion was submitted. Review old, current, and proposed wording before applying.',
+          );
+        }
+      }
       if (action === 'publish' && contribution && contribution.data().status !== 'approved') {
         throw new HttpsError('failed-precondition', 'Approve the contribution before publishing.');
       }
       const nextRevision = revision + 1;
+      const publishedRev = effectivePublishedRevision(currentPublic);
       const editor = {updatedAt: at, updatedByUid: request.auth.uid};
       const data = {
         ...entry, revision: nextRevision, status: action === 'publish' ? 'published' : 'draft', ...editor,
         suggestionId: action === 'publish' ? null : sourceId,
+        ...(raw.acknowledgeRevisionMismatch === true && sourceId ? {acknowledgedPublishedRevision: publishedRev} : {}),
       };
       tx.set(draft, data);
       tx.create(draft.collection('Revisions').doc(String(nextRevision)), data);
@@ -223,6 +381,7 @@ async function publicEntry(db, slug) {
 }
 
 module.exports = {
-  validateEntry, requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry,
+  validateEntry, validateStructuredFields, extractStructuredFields, computeChangedFields,
+  effectivePublishedRevision, requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry,
   dictionaryEmulator: process.env.FUNCTIONS_EMULATOR === 'true',
 };
