@@ -10,7 +10,98 @@ const journalCollection = 'SharedRidingEntries';
 const key = (parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex');
 const journalRef = (db, riderUid, id) => db.collection(journalCollection).doc(key([riderUid, id]));
 const terminal = new Set(['declined', 'cancelled', 'revoked']);
+const VALID_FEELS = new Set(['breakthrough', 'steady', 'working', 'recovery']);
+const VALID_SKILL_LEVELS = new Set(['introductory', 'intermediate', 'advanced']);
 const emailKey = (email) => email.toLowerCase();
+
+function sanitizeVideoUrl(value) {
+  if (value == null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new HttpsError('invalid-argument', 'Invalid video URL.');
+  }
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 500) {
+    throw new HttpsError('invalid-argument', 'Video URL must be 500 characters or fewer.');
+  }
+  let parsed;
+  try {
+    parsed = new URL(trimmed);
+  } catch (_) {
+    throw new HttpsError('invalid-argument', 'Enter a valid https:// video link.');
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new HttpsError('invalid-argument', 'Video link must use http:// or https://.');
+  }
+  return trimmed;
+}
+
+function sanitizePracticedSkills(raw) {
+  if (raw == null) return [];
+  if (!Array.isArray(raw)) {
+    throw new HttpsError('invalid-argument', 'practicedSkills must be a list.');
+  }
+  if (raw.length > 12) {
+    throw new HttpsError('invalid-argument', 'You can attach up to 12 practiced skills per entry.');
+  }
+  const seen = new Set();
+  const out = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') {
+      throw new HttpsError('invalid-argument', 'Invalid practiced skill item.');
+    }
+    const skillId = documentId(item.skillId, 'practiced skill ID');
+    const skillName = text(item.skillName || skillId, 160, 'practiced skill name');
+    const subject = item.subject === 'horse' ? 'horse' : 'rider';
+    const rawLevel = typeof item.level === 'string' ? item.level.trim().toLowerCase() : '';
+    if (rawLevel && !VALID_SKILL_LEVELS.has(rawLevel)) {
+      throw new HttpsError('invalid-argument', 'Invalid practiced skill level.');
+    }
+    const dedupeKey = `${subject}:${skillId}:${rawLevel}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    out.push({
+      skillId,
+      skillName,
+      subject,
+      ...(rawLevel ? {level: rawLevel} : {}),
+    });
+  }
+  return out;
+}
+
+function applyStructuredLogFields(details, data) {
+  for (const [field, max] of Object.entries({
+    title: 100,
+    highlights: 4000,
+    focus: 4000,
+    nextSteps: 4000,
+  })) {
+    const value = text(data[field], max, field, true);
+    if (value) details[field] = value;
+  }
+  if (data.feel != null && data.feel !== '') {
+    if (typeof data.feel !== 'string' || !VALID_FEELS.has(data.feel)) {
+      throw new HttpsError('invalid-argument', 'Invalid session feel.');
+    }
+    details.feel = data.feel;
+  }
+  const videoUrl = sanitizeVideoUrl(data.videoUrl);
+  if (videoUrl) details.videoUrl = videoUrl;
+  const practicedSkills = sanitizePracticedSkills(data.practicedSkills);
+  if (practicedSkills.length > 0) details.practicedSkills = practicedSkills;
+}
+
+function hasAnyEntryContent(notes, details) {
+  return Boolean(
+      notes ||
+      details.title ||
+      details.highlights ||
+      details.focus ||
+      details.nextSteps ||
+      (Array.isArray(details.practicedSkills) && details.practicedSkills.length > 0),
+  );
+}
 
 function addUid(list, uid) {
   const existing = Array.isArray(list) ? list.filter((item) => typeof item === 'string' && item) : [];
@@ -659,20 +750,25 @@ async function linkedHorse(tx, db, auth, profile, uid, horseId, allowArchived = 
   const owned = hasHorse(profile.ownedHorses, horseId) ||
       (allowArchived && hasHorse(profile.archivedHorses, horseId));
   const student = hasHorse(profile.studentHorses, horseId);
-  if (!owned && !student) {
-    throw new HttpsError('permission-denied', 'Choose a horse linked to the rider profile.');
-  }
   const {profile: animal} = await horse(tx, db, horseId);
+  const isOwner = owned && emailKey(animal.currentOwnerId) === emailKey(profile.email);
+  const isListedInstructor = (animal.instructors || []).some((instructor) =>
+    typeof instructor.id === 'string' && emailKey(instructor.id) === emailKey(profile.email));
+  const isTrainer = !isOwner && (
+    (student && isListedInstructor) ||
+    (emailKey(animal.currentOwnerId) !== emailKey(profile.email) &&
+      await trainerGrant(tx, db, auth, animal, horseId, uid, profile.email))
+  );
+  if (!isOwner && !isTrainer) {
+    if (!owned && !student) {
+      throw new HttpsError('permission-denied', 'Choose a horse linked to the rider profile.');
+    }
+    throw new HttpsError('permission-denied', 'This horse link is no longer authorized.');
+  }
   if (!allowArchived && isArchived(animal)) {
     throw new HttpsError('failed-precondition', 'Choose an active horse.');
   }
-  if (owned && emailKey(animal.currentOwnerId) === emailKey(profile.email)) return animal;
-  if (student &&
-      ((animal.instructors || []).some((instructor) =>
-        typeof instructor.id === 'string' && emailKey(instructor.id) === emailKey(profile.email)) ||
-      await trainerGrant(tx, db, auth, animal, horseId, uid, profile.email))) return animal;
-
-  throw new HttpsError('permission-denied', 'This horse link is no longer authorized.');
+  return animal;
 }
 
 function storeJournal(tx, ref, profile, uid, authorUid, entry, animal, horseId) {
@@ -730,14 +826,21 @@ async function saveJournal(tx, db, auth, identity, data) {
   if (typeof tag !== 'string') throw new HttpsError('invalid-argument', 'Invalid entry type.');
   const date = entryDate(data.date, null);
   const details = {type};
-  for (const [field, max] of Object.entries({title: 100, instructor: 200, focus: 4000, nextSteps: 4000})) {
-    const value = text(data[field], max, field, true);
-    if (value) details[field] = value;
+  const instructorVal = text(data.instructor, 200, 'instructor', true);
+  if (instructorVal) details.instructor = instructorVal;
+  applyStructuredLogFields(details, data);
+  if (animal && emailKey(animal.currentOwnerId) !== emailKey(record.profile.email) &&
+      record.profile.isTrainer === true) {
+    details.authorRole = 'trainer';
   }
   if (!animal && data.horse) details.horse = text(data.horse, 200, 'horse name');
   if (type === 'show' && data.placing) details.placing = text(data.placing, 40, 'placing');
+  const notesText = text(data.notes, 12000, 'notes', true);
+  if (!hasAnyEntryContent(notesText, details)) {
+    throw new HttpsError('invalid-argument', 'Invalid notes.');
+  }
   const entry = {
-    id, date, name: text(data.notes, 12000, 'notes'),
+    id, date, name: notesText,
     parentId: record.profile.email, message: record.profile.name || identity.email,
     imageUrl: `LogTag.${tag}`, riderLog: details,
   };
@@ -746,9 +849,14 @@ async function saveJournal(tx, db, auth, identity, data) {
   return {status: 'saved'};
 }
 
-function wireNote(note, riderName) {
+function wireNote(note, riderName, extraFields = {}) {
   const date = note.date?.toDate?.() ?? note.date;
-  return {...note, date: date instanceof Date ? date.toISOString() : date || null, riderName};
+  return {
+    ...note,
+    date: date instanceof Date ? date.toISOString() : date || null,
+    riderName,
+    ...extraFields,
+  };
 }
 
 async function horseHistory(tx, db, auth, identity, data) {
@@ -762,13 +870,15 @@ async function horseHistory(tx, db, auth, identity, data) {
   }
   const query = db.collection(journalCollection).where('horseId', '==', horseId);
   const entries = (await tx.get(query)).docs.map((doc) => {
-    const {note, riderName} = doc.data();
-    return wireNote(note, riderName);
+    const {note, riderName, authorUid, riderUid} = doc.data();
+    return wireNote(note, riderName, {
+      editable: authorUid === identity.uid && riderUid === identity.uid,
+    });
   });
   if (data.includeTrainingNotes === true && (owner || trainer)) {
     for (const note of animal.notes || []) {
       if (note.imageUrl === 'LogTag.Training' || note.riderLog?.authorRole === 'verifier') {
-        entries.push(wireNote(note, null));
+        entries.push(wireNote(note, null, {editable: false}));
       }
     }
   }
@@ -803,10 +913,9 @@ function entryDate(value, fallback) {
 
 function lessonDetails(data, coachName) {
   const details = {type: 'lesson', instructor: coachName, authorRole: 'instructor'};
-  for (const [field, max] of Object.entries({title: 100, horse: 200, focus: 4000, nextSteps: 4000})) {
-    const value = text(data[field], max, field, true);
-    if (value) details[field] = value;
-  }
+  const horseName = text(data.horse, 200, 'horse', true);
+  if (horseName) details.horse = horseName;
+  applyStructuredLogFields(details, data);
   return details;
 }
 
@@ -828,11 +937,16 @@ async function changeLesson(tx, db, auth, link, actor, data) {
   const horseId = data.horseId == null ? null : documentId(data.horseId, 'horse ID');
   const animal = horseId ?
     await linkedHorse(tx, db, auth, profile, link.learnerUid, horseId, saved.horseId === horseId) : null;
+  const nextDetails = lessonDetails(data, link.coachName);
+  const notesText = text(data.notes, 4000, 'notes', true);
+  if (!hasAnyEntryContent(notesText, nextDetails)) {
+    throw new HttpsError('invalid-argument', 'Invalid notes.');
+  }
   const entry = {
     ...saved.note,
     date: entryDate(data.date, null),
-    name: text(data.notes, 4000, 'notes'),
-    riderLog: lessonDetails(data, link.coachName),
+    name: notesText,
+    riderLog: nextDetails,
   };
   storeJournal(tx, ref, profile, link.learnerUid, link.coachUid, entry, animal, horseId);
   return {status: 'saved'};
@@ -874,27 +988,36 @@ async function addRecord(tx, db, auth, link, actor, data, now, connectionId) {
     throw new HttpsError('permission-denied', 'Only the coach who verified this skill can remove it.');
   }
   const levelLabel = data.level === 'LEARNING' ? 'Learning' : 'Proficient';
+  let builtDetails;
+  if (verification) {
+    builtDetails = {
+      type: 'activity',
+      title: removal ? 'Verification removed' : 'Skill verification',
+      authorRole: 'verifier',
+    };
+  } else if (link.kind === 'rider') {
+    builtDetails = lessonDetails(data, link.coachName);
+  } else {
+    builtDetails = {type: 'training', authorRole: 'trainer'};
+    applyStructuredLogFields(builtDetails, data);
+  }
+  const notesInput = !verification ? text(data.notes, 4000, 'notes', true) : '';
+  if (!verification && !hasAnyEntryContent(notesInput, builtDetails)) {
+    throw new HttpsError('invalid-argument', 'Invalid notes.');
+  }
   const name = removal ?
     `${link.coachName} removed verification for ${skill.skillName}.` : verification ?
     `${link.coachName} verified ${skill.skillName} as ${levelLabel}.` :
-    text(data.notes, 4000, 'notes');
+    notesInput;
   const entry = {
     id: recordId,
     date: entryDate(data.date, now),
     name,
     parentId: link.coachEmail,
     message: link.coachName,
-    imageUrl: 'LogTag.Training',
+    imageUrl: verification ? 'LogTag.Other' : 'LogTag.Training',
+    riderLog: builtDetails,
   };
-  if (verification) {
-    entry.imageUrl = 'LogTag.Other';
-    entry.riderLog = {type: 'activity', title: removal ? 'Verification removed' : 'Skill verification',
-      authorRole: 'verifier'};
-  } else if (link.kind === 'rider') {
-    entry.riderLog = lessonDetails(data, link.coachName);
-  } else {
-    entry.riderLog = {type: 'training', authorRole: 'trainer'};
-  }
   const horseId = data.horseId == null ? null : documentId(data.horseId, 'horse ID');
   if (horseId && link.kind !== 'rider') {
     throw new HttpsError('invalid-argument', 'Choose the horse from its training connection.');

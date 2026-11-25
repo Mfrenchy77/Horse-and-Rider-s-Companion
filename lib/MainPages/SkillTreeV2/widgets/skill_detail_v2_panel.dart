@@ -26,6 +26,7 @@ class SkillDetailV2Panel extends StatelessWidget {
     required this.onSelectRelatedSkill,
     required this.onChangeResourceSort,
     this.onSuggestForSkill,
+    this.onLogPractice,
     this.isAdminEditMode = false,
     this.onEditSkill,
     this.canEditResource,
@@ -48,6 +49,7 @@ class SkillDetailV2Panel extends StatelessWidget {
   final ValueChanged<String> onSelectRelatedSkill;
   final ValueChanged<SkillTreeV2ResourceSort> onChangeResourceSort;
   final VoidCallback? onSuggestForSkill;
+  final VoidCallback? onLogPractice;
   final bool isAdminEditMode;
   final VoidCallback? onEditSkill;
   final bool Function(Resource resource)? canEditResource;
@@ -334,25 +336,36 @@ class SkillDetailV2Panel extends StatelessWidget {
             onEditResource: onEditResource,
             onLinkResourceSkills: onLinkResourceSkills,
           ),
-          if (onSuggestForSkill != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: ValueListenableBuilder<bool>(
-                valueListenable: SkillTreeSpotlightTour.isTourActive,
-                builder: (context, tourActive, child) => KeyedSubtree(
-                  key: tourActive &&
-                          skill.id == SkillTreeSpotlightTour.activeSkillId
-                      ? SkillTreeSpotlightTour.suggestKey
-                      : null,
-                  child: child!,
-                ),
-                child: OutlinedButton.icon(
-                  key: const Key('skillDetailV2SuggestButton'),
-                  onPressed: onSuggestForSkill,
-                  icon: const Icon(Icons.lightbulb_outline, size: 18),
-                  label: const Text('Suggest Improvement for This Skill'),
-                ),
-              ),
+          if (onLogPractice != null || onSuggestForSkill != null)
+            Wrap(
+              spacing: AppTokens.spaceSm,
+              runSpacing: AppTokens.spaceXs,
+              children: [
+                if (onLogPractice != null && !isRetired)
+                  OutlinedButton.icon(
+                    key: const Key('skillDetailV2LogPracticeButton'),
+                    onPressed: onLogPractice,
+                    icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+                    label: const Text('Log Practice'),
+                  ),
+                if (onSuggestForSkill != null)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: SkillTreeSpotlightTour.isTourActive,
+                    builder: (context, tourActive, child) => KeyedSubtree(
+                      key: tourActive &&
+                              skill.id == SkillTreeSpotlightTour.activeSkillId
+                          ? SkillTreeSpotlightTour.suggestKey
+                          : null,
+                      child: child!,
+                    ),
+                    child: OutlinedButton.icon(
+                      key: const Key('skillDetailV2SuggestButton'),
+                      onPressed: onSuggestForSkill,
+                      icon: const Icon(Icons.lightbulb_outline, size: 18),
+                      label: const Text('Suggest Improvement for This Skill'),
+                    ),
+                  ),
+              ],
             ),
         ],
       ),

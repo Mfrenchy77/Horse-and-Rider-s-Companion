@@ -311,6 +311,13 @@ class ConnectionsCubit extends Cubit<ConnectionsState> {
     required CoachingConnection link,
     required String recordId,
     required String notes,
+    String? title,
+    SessionFeel? feel,
+    String? highlights,
+    String? focus,
+    String? nextSteps,
+    List<PracticedSkillTag> practicedSkills = const [],
+    String? videoUrl,
     String? skillId,
     String level = 'LEARNING',
   }) async {
@@ -320,6 +327,14 @@ class ConnectionsCubit extends Cubit<ConnectionsState> {
       'id': link.id,
       'version': link.version,
       'notes': notes,
+      if (title != null) 'title': title,
+      if (feel != null) 'feel': feel.name,
+      if (highlights != null) 'highlights': highlights,
+      if (focus != null) 'focus': focus,
+      if (nextSteps != null) 'nextSteps': nextSteps,
+      if (practicedSkills.isNotEmpty)
+        'practicedSkills': practicedSkills.map((s) => s.toMap()).toList(),
+      if (videoUrl != null) 'videoUrl': videoUrl,
       if (skillId != null) 'skillId': skillId,
       if (skillId != null) 'level': level,
     });

@@ -1,11 +1,9 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
-import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/log_view_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -158,15 +156,12 @@ class LogBookButton extends StatelessWidget {
                     FilledButton.icon(
                       key: const Key('horseAddEntryButton'),
                       style: filledStyle,
-                      onPressed: () {
-                        showAppGlassDialog<AddLogEntryDialog>(
-                          context: context,
-                          builder: (context) => AddLogEntryDialog(
-                            usersProfile: cubit.state.usersProfile!,
-                            horseProfile: horseProfile,
-                          ),
-                        );
-                      },
+                      onPressed: saving
+                          ? null
+                          : () => RiderLogbookPage.addEntry(
+                              context,
+                              initialHorse: horseProfile,
+                            ),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('Add entry'),
                     ),

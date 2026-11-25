@@ -11,6 +11,7 @@ import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tou
 import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/resource_update_skills_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
@@ -52,6 +53,17 @@ class SkillTreeV2View extends StatefulWidget {
   @visibleForTesting
   static void resetPreviewStoreForTest() {
     _previewProgressStore = InMemorySkillTreeV2Store();
+  }
+
+  static SkillTreeV2Repository defaultRepository() {
+    if (Firebase.apps.isEmpty) {
+      return SkillTreeV2Repository(
+        store: HybridCurriculumSkillTreeV2Store(
+          primaryStore: _previewProgressStore,
+        ),
+      );
+    }
+    return SkillTreeV2Repository(store: FirestoreSkillTreeV2Store());
   }
 
   @override
@@ -523,7 +535,7 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
         onRestored: (_) {
           _invalidateCurriculumCache();
           _loadPublicationStatus();
-    _loadContributorNames();
+          _loadContributorNames();
           _cubit.initialize(
             initialSubject: _cubit.state.subject,
             profileDocId: _profileDocIdFor(
@@ -679,14 +691,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     }
     _repository =
         widget.repository ?? providedRepo ?? _resolveDefaultRepository();
-    _cubit = SkillTreeV2Cubit(
-      repository: _repository,
-      initialSubject: initialSubject,
-    )
-      ..initialize(
-        initialSubject: initialSubject,
-        profileDocId: _profileDocIdFor(appState, initialSubject),
-      );
+    _cubit =
+        SkillTreeV2Cubit(
+          repository: _repository,
+          initialSubject: initialSubject,
+        )..initialize(
+          initialSubject: initialSubject,
+          profileDocId: _profileDocIdFor(appState, initialSubject),
+        );
     _loadPublicationStatus();
     _loadContributorNames();
     GuestSpotlightTour.skillTreeHooks = GuestSpotlightSkillTreeHooks(
@@ -767,15 +779,47 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     _resetDetailScrollToTop();
   }
 
-  SkillTreeV2Repository _resolveDefaultRepository() {
-    if (Firebase.apps.isEmpty) {
-      return SkillTreeV2Repository(
-        store: HybridCurriculumSkillTreeV2Store(
-          primaryStore: SkillTreeV2View._previewProgressStore,
-        ),
+  SkillTreeV2Repository _resolveDefaultRepository() =>
+      SkillTreeV2View.defaultRepository();
+
+  Future<void> _handleLogPracticeForSkill({
+    required BuildContext context,
+    required AppState appState,
+    required CurriculumSkill skill,
+    required DifficultyState? selectedLevel,
+    required CoachingConnection? coachingLink,
+    required String? profileDocId,
+  }) async {
+    if (appState.isGuest ||
+        appState.usersProfile == null ||
+        skill.status == CurriculumSkillStatus.retired) {
+      return;
+    }
+    final activeHorse =
+        !appState.isForRider &&
+            appState.horseProfile != null &&
+            !appState.horseProfile!.isArchived
+        ? appState.horseProfile
+        : null;
+    final tag = PracticedSkillTag(
+      skillId: skill.id,
+      skillName: skill.name,
+      subject: skill.subject.name,
+      level: selectedLevel?.name.toLowerCase(),
+    );
+    final saved = await RiderLogbookPage.addEntry(
+      context,
+      initialHorse: activeHorse,
+      horseConnection: activeHorse != null ? coachingLink : null,
+      initialType: RiderLogType.training,
+      initialPracticedSkills: [tag],
+    );
+    if ((saved ?? false) && mounted) {
+      await _cubit.refreshProfileData(
+        subject: _cubit.state.subject,
+        profileDocId: profileDocId,
       );
     }
-    return SkillTreeV2Repository(store: FirestoreSkillTreeV2Store());
   }
 
   @override
@@ -1520,6 +1564,29 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                                             .selectSkill(id),
                                                     onChangeResourceSort:
                                                         _cubit.setResourceSort,
+                                                    onLogPractice:
+                                                        appState.isGuest ||
+                                                            appState.usersProfile ==
+                                                                null ||
+                                                            effectiveState
+                                                                    .selectedSkill!
+                                                                    .status ==
+                                                                CurriculumSkillStatus
+                                                                    .retired
+                                                        ? null
+                                                        : () => _handleLogPracticeForSkill(
+                                                            context: context,
+                                                            appState: appState,
+                                                            skill: effectiveState
+                                                                .selectedSkill!,
+                                                            selectedLevel:
+                                                                effectiveState
+                                                                    .effectiveSelectedLevel,
+                                                            coachingLink:
+                                                                coachingLink,
+                                                            profileDocId:
+                                                                profileDocId,
+                                                          ),
                                                     onSuggestForSkill: () async {
                                                       final created = await showSuggestImprovementDialog(
                                                         context,
@@ -1762,6 +1829,26 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                                 _cubit.selectSkill(id),
                                             onChangeResourceSort:
                                                 _cubit.setResourceSort,
+                                            onLogPractice:
+                                                appState.isGuest ||
+                                                    appState.usersProfile ==
+                                                        null ||
+                                                    effectiveState
+                                                            .selectedSkill!
+                                                            .status ==
+                                                        CurriculumSkillStatus
+                                                            .retired
+                                                ? null
+                                                : () => _handleLogPracticeForSkill(
+                                                    context: context,
+                                                    appState: appState,
+                                                    skill: effectiveState
+                                                        .selectedSkill!,
+                                                    selectedLevel: effectiveState
+                                                        .effectiveSelectedLevel,
+                                                    coachingLink: coachingLink,
+                                                    profileDocId: profileDocId,
+                                                  ),
                                             onSuggestForSkill: () async {
                                               final created =
                                                   await showSuggestImprovementDialog(
@@ -1848,106 +1935,106 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                     ),
                     child: PopupMenuButton<String>(
                       key: const Key('skillTreeV2AppBarOverflowMenu'),
-                    tooltip: 'More options',
-                    onSelected: (value) async {
-                      if (value == 'share_skill' &&
-                          effectiveState.selectedSkill != null) {
-                        final skill = effectiveState.selectedSkill!;
-                        await shareAppLink(
-                          context,
-                          title: "${skill.name} — Horse & Rider's Companion",
-                          dialogTitle: 'Share Skill',
-                          url: buildSkillShareUrl(skill.id),
-                        );
-                      } else if (value == 'suggest') {
-                        final created = await showSuggestImprovementDialog(
-                          context,
-                          subject: effectiveState.subject,
-                          realm: effectiveState.realm,
-                        );
-                        if (created != null && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Suggestion submitted for review. Thank you!',
-                              ),
-                            ),
+                      tooltip: 'More options',
+                      onSelected: (value) async {
+                        if (value == 'share_skill' &&
+                            effectiveState.selectedSkill != null) {
+                          final skill = effectiveState.selectedSkill!;
+                          await shareAppLink(
+                            context,
+                            title: "${skill.name} — Horse & Rider's Companion",
+                            dialogTitle: 'Share Skill',
+                            url: buildSkillShareUrl(skill.id),
                           );
-                        }
-                      } else if (value == 'my_suggestions') {
-                        await showMySuggestionsDialog(context);
-                      } else if (value == 'admin_edit_draft' &&
-                          isVerifiedAdmin) {
-                        await _toggleAdminEditMode(publishedState);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (effectiveState.selectedSkill != null)
-                        const PopupMenuItem<String>(
-                          key: Key('skillTreeV2MenuShareSkill'),
-                          value: 'share_skill',
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.share_outlined, size: 18),
-                              SizedBox(width: AppTokens.spaceSm),
-                              Flexible(child: Text('Share Skill')),
-                            ],
-                          ),
-                        ),
-                      if (!(_mobileShowingDetail &&
-                          effectiveState.selectedSkill != null))
-                        const PopupMenuItem<String>(
-                          key: Key('skillTreeV2MenuSuggestImprovement'),
-                          value: 'suggest',
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.lightbulb_outline, size: 18),
-                              SizedBox(width: AppTokens.spaceSm),
-                              Flexible(child: Text('Suggest an Improvement')),
-                            ],
-                          ),
-                        ),
-                      if (!appState.isGuest && appState.user.emailVerified)
-                        const PopupMenuItem<String>(
-                          key: Key('skillTreeV2MenuMySuggestions'),
-                          value: 'my_suggestions',
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.history_edu_outlined, size: 18),
-                              SizedBox(width: AppTokens.spaceSm),
-                              Flexible(child: Text('My Suggestions')),
-                            ],
-                          ),
-                        ),
-                      if (isVerifiedAdmin)
-                        PopupMenuItem<String>(
-                          key: const Key('skillTreeV2MenuAdminEditDraft'),
-                          value: 'admin_edit_draft',
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _isAdminEditMode
-                                    ? Icons.edit_off_outlined
-                                    : Icons.edit_note_outlined,
-                                size: 18,
-                              ),
-                              const SizedBox(width: AppTokens.spaceSm),
-                              Flexible(
-                                child: Text(
-                                  _isAdminEditMode
-                                      ? 'Exit Curriculum Draft Mode'
-                                      : 'Edit Curriculum (Draft)',
+                        } else if (value == 'suggest') {
+                          final created = await showSuggestImprovementDialog(
+                            context,
+                            subject: effectiveState.subject,
+                            realm: effectiveState.realm,
+                          );
+                          if (created != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Suggestion submitted for review. Thank you!',
                                 ),
                               ),
-                            ],
+                            );
+                          }
+                        } else if (value == 'my_suggestions') {
+                          await showMySuggestionsDialog(context);
+                        } else if (value == 'admin_edit_draft' &&
+                            isVerifiedAdmin) {
+                          await _toggleAdminEditMode(publishedState);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        if (effectiveState.selectedSkill != null)
+                          const PopupMenuItem<String>(
+                            key: Key('skillTreeV2MenuShareSkill'),
+                            value: 'share_skill',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.share_outlined, size: 18),
+                                SizedBox(width: AppTokens.spaceSm),
+                                Flexible(child: Text('Share Skill')),
+                              ],
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
+                        if (!(_mobileShowingDetail &&
+                            effectiveState.selectedSkill != null))
+                          const PopupMenuItem<String>(
+                            key: Key('skillTreeV2MenuSuggestImprovement'),
+                            value: 'suggest',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lightbulb_outline, size: 18),
+                                SizedBox(width: AppTokens.spaceSm),
+                                Flexible(child: Text('Suggest an Improvement')),
+                              ],
+                            ),
+                          ),
+                        if (!appState.isGuest && appState.user.emailVerified)
+                          const PopupMenuItem<String>(
+                            key: Key('skillTreeV2MenuMySuggestions'),
+                            value: 'my_suggestions',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.history_edu_outlined, size: 18),
+                                SizedBox(width: AppTokens.spaceSm),
+                                Flexible(child: Text('My Suggestions')),
+                              ],
+                            ),
+                          ),
+                        if (isVerifiedAdmin)
+                          PopupMenuItem<String>(
+                            key: const Key('skillTreeV2MenuAdminEditDraft'),
+                            value: 'admin_edit_draft',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isAdminEditMode
+                                      ? Icons.edit_off_outlined
+                                      : Icons.edit_note_outlined,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: AppTokens.spaceSm),
+                                Flexible(
+                                  child: Text(
+                                    _isAdminEditMode
+                                        ? 'Exit Curriculum Draft Mode'
+                                        : 'Edit Curriculum (Draft)',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),

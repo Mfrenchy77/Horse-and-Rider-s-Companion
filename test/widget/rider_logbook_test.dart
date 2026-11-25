@@ -386,10 +386,15 @@ void main() {
       expect(saved.riderLog?.type, RiderLogType.lesson);
       expect(saved.riderLog?.horse, isNull);
       expect(saved.riderLog?.instructor, 'Alex');
+      // Month section headers add vertical space; scroll so both cards build.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -200));
+      await tester.pumpAndSettle();
       expect(
         tester.getTopLeft(find.text('Practised transitions')).dy,
         lessThan(tester.getTopLeft(find.text('Relax your shoulders')).dy),
       );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Newest first'));
       await tester.pumpAndSettle();

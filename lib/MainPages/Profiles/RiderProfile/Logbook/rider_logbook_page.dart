@@ -7,11 +7,13 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_filter_bar.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_hero_header.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_shared_widgets.dart';
 import 'package:horseandriderscompanion/CommonWidgets/personalized_logbook_backdrop.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 import 'package:intl/intl.dart';
@@ -47,9 +49,25 @@ class RiderLogbookPage extends StatefulWidget {
     );
   }
 
-  static Future<void> addEntry(BuildContext context) => _addEntry(context);
+  static Future<bool?> addEntry(
+    BuildContext context, {
+    HorseProfile? initialHorse,
+    CoachingConnection? horseConnection,
+    RiderLogType? initialType,
+    List<PracticedSkillTag> initialPracticedSkills = const [],
+    List<BaseListItem> knownEntries = const [],
+    BaseListItem? entry,
+  }) => _addEntry(
+    context,
+    initialHorse: initialHorse,
+    horseConnection: horseConnection,
+    initialType: initialType,
+    initialPracticedSkills: initialPracticedSkills,
+    knownEntries: knownEntries,
+    entry: entry,
+  );
 
-  static Future<void> addLessonFor(
+  static Future<bool?> addLessonFor(
     BuildContext context,
     CoachingConnection student, {
     BaseListItem? entry,
@@ -63,21 +81,24 @@ class RiderLogbookPage extends StatefulWidget {
     initialLevel: initialLevel,
   );
 
-  static Future<void> _addEntry(
+  static Future<bool?> _addEntry(
     BuildContext context, {
     CoachingConnection? student,
+    HorseProfile? initialHorse,
+    CoachingConnection? horseConnection,
+    RiderLogType? initialType,
+    List<PracticedSkillTag> initialPracticedSkills = const [],
+    List<BaseListItem> knownEntries = const [],
     BaseListItem? entry,
     Skill? initialSkill,
     LevelState? initialLevel,
   }) async {
     final app = context.read<AppCubit>();
     final profile = app.state.usersProfile;
-    if (app.state.isGuest || profile == null) return;
+    if (app.state.isGuest || profile == null) return null;
 
-    // This editor can be opened from outside
-    // RiderLogbookPage (e.g. Connections).
-    // Provide LogbookCubit at the route level so the editor does not depend on
-    // ancestor pages.
+    // Provide LogbookCubit at the route level so the editor works when opened
+    // from Rider Profile, Horse Profile, Connections, or Skill Tree 2.0.
     final saved = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider(
@@ -88,6 +109,11 @@ class RiderLogbookPage extends StatefulWidget {
           child: _LogEntryEditor(
             email: profile.email,
             initialStudent: student,
+            initialHorse: initialHorse,
+            horseConnection: horseConnection,
+            initialType: initialType,
+            initialPracticedSkills: initialPracticedSkills,
+            knownEntries: knownEntries,
             initialSkill: initialSkill,
             initialLevel: initialLevel,
             entry: entry,
@@ -104,6 +130,7 @@ class RiderLogbookPage extends StatefulWidget {
         viewed.email.toLowerCase() == student.learner) {
       await app.refreshViewedRider(viewed.email);
     }
+    return saved;
   }
 
   @override
@@ -122,8 +149,17 @@ String _entryMetadata(BaseListItem entry) =>
     '${entry.riderLogType.label} · ${_dateLabel(entry.date)}';
 
 String _entryTitle(BaseListItem entry) {
-  final title = entry.riderLog?.title ?? entry.name?.trim().split('\n').first;
-  return title == null || title.isEmpty ? entry.riderLogType.label : title;
+  final info = entry.riderLog;
+  final title =
+      info?.title ??
+      entry.name?.trim().split('\n').first ??
+      info?.highlights?.trim().split('\n').first ??
+      info?.focus?.trim().split('\n').first;
+  if (title != null && title.isNotEmpty) return title;
+  if (info != null && info.practicedSkills.isNotEmpty) {
+    return info.practicedSkills.map((s) => s.skillName).join(', ');
+  }
+  return entry.riderLogType.label;
 }
 
 String? _entryAttribution(BaseListItem entry, RiderProfile rider) {
@@ -149,8 +185,23 @@ String? _entryAttribution(BaseListItem entry, RiderProfile rider) {
   return 'Added by ${name == null || name.isEmpty ? email : name}';
 }
 
+sealed class _TimelineListItem {
+  const _TimelineListItem();
+}
+
+class _TimelineMonthItem extends _TimelineListItem {
+  const _TimelineMonthItem(this.date);
+  final DateTime date;
+}
+
+class _TimelineEntryItem extends _TimelineListItem {
+  const _TimelineEntryItem(this.entry);
+  final BaseListItem entry;
+}
+
 class _RiderLogbookPageState extends State<RiderLogbookPage> {
   RiderLogType? _filter;
+  String? _horseFilterKey;
   bool _newestFirst = true;
   String _query = '';
   String? _journalUid;
@@ -182,109 +233,45 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
     return _journal;
   }
 
-  void _openEditor([BaseListItem? entry]) {
-    Navigator.of(context).push<void>(
+  void _openEditor({
+    BaseListItem? entry,
+    List<BaseListItem> knownEntries = const [],
+  }) {
+    Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
           value: _logbookCubit,
-          child: _LogEntryEditor(email: widget.email, entry: entry),
+          child: _LogEntryEditor(
+            email: widget.email,
+            entry: entry,
+            knownEntries: knownEntries,
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _openEntry(BaseListItem entry) async {
-    final action = await showAppGlassDialog<String>(
+  Future<void> _openEntry(
+    BaseListItem entry,
+    List<BaseListItem> allEntries,
+  ) async {
+    final rider = _owner(context.read<AppCubit>().state, widget.email);
+    if (rider == null) return;
+    final canEdit = entry.canEditRiderLog(rider.email);
+    final canDelete = canEdit && _readLogbookConnections(context) != null;
+    final action = await showLogbookEntryDetailDialog(
       context: context,
-      builder: (_) => BlocBuilder<AppCubit, AppState>(
-        builder: (context, state) {
-          final rider = _owner(state, widget.email);
-          if (rider == null) {
-            return const AppGlassDialog(
-              content: Text('Logbook unavailable.'),
-            );
-          }
-          final info = entry.riderLog;
-          final attribution = _entryAttribution(entry, rider);
-          return AppGlassDialog(
-            title: Text(
-              info?.title ?? entry.riderLogType.label,
-              style: AppTokens.sectionTitleStyle(context),
-            ),
-            maxWidth: 560,
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    AppStatusBadge(
-                      label: entry.riderLogType.label,
-                      icon: Icons.bookmark_outline_rounded,
-                      tone: AppStatusTone.coral,
-                    ),
-                    Text(
-                      _dateLabel(entry.date),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTokens.secondaryTextColor(context),
-                      ),
-                    ),
-                    if (entry.riderLogType == RiderLogType.show &&
-                        info?.placing != null)
-                      LogbookPlacingBadge(placing: info!.placing!),
-                  ],
-                ),
-                if (attribution != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    attribution,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTokens.secondaryTextColor(context),
-                    ),
-                  ),
-                ],
-                if (info?.instructor != null)
-                  _EntryField(label: 'Instructor', value: info!.instructor!),
-                if (entry.riderLogType == RiderLogType.show &&
-                    info?.placing != null)
-                  _EntryField(label: 'Placing', value: info!.placing!),
-                if (info?.horse != null)
-                  _EntryField(label: 'Horse', value: info!.horse!),
-                if (info?.focus != null)
-                  _EntryField(label: 'Work / focus', value: info!.focus!),
-                if (entry.name?.trim().isNotEmpty ?? false)
-                  _EntryField(label: 'Notes', value: entry.name!),
-                if (info?.nextSteps != null)
-                  _EntryField(label: 'Next steps', value: info!.nextSteps!),
-              ],
-            ),
-            actions: [
-              AppOutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                label: 'Close',
-              ),
-              if (entry.canEditRiderLog(rider.email))
-                AppPrimaryButton(
-                  onPressed: () => Navigator.pop(context, 'edit'),
-                  icon: Icons.edit_outlined,
-                  label: 'Edit entry',
-                ),
-              if (entry.canEditRiderLog(rider.email) &&
-                  _readLogbookConnections(context) != null)
-                AppDestructiveButton(
-                  outlined: true,
-                  onPressed: () => Navigator.pop(context, 'delete'),
-                  label: 'Delete entry',
-                ),
-            ],
-          );
-        },
-      ),
+      entry: entry,
+      categoryLabel: entry.riderLogType.label,
+      fallbackTitle: _entryTitle(entry),
+      attribution: _entryAttribution(entry, rider),
+      canEdit: canEdit,
+      canDelete: canDelete,
     );
     if (!mounted) return;
-    if (action == 'edit') _openEditor(entry);
+    if (action == 'edit') {
+      _openEditor(entry: entry, knownEntries: allEntries);
+    }
     if (action == 'delete') await _deleteEntry(entry);
   }
 
@@ -318,6 +305,56 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  Map<String, String> _horseFilterOptions(
+    RiderProfile rider,
+    List<BaseListItem> allEntries,
+  ) {
+    final options = <String, String>{};
+    for (final horse in [
+      ...?rider.ownedHorses,
+      ...?rider.studentHorses,
+    ]) {
+      final id = horse.id?.trim();
+      final name = horse.name?.trim();
+      if (id != null && id.isNotEmpty) {
+        options['id:$id'] = (name != null && name.isNotEmpty) ? name : id;
+      }
+    }
+    for (final entry in allEntries) {
+      final info = entry.riderLog;
+      if (info == null) continue;
+      final id = info.horseId?.trim();
+      final name = info.horse?.trim();
+      if (id != null && id.isNotEmpty) {
+        options.putIfAbsent(
+          'id:$id',
+          () => (name != null && name.isNotEmpty) ? name : id,
+        );
+      } else if (name != null && name.isNotEmpty) {
+        final alreadyNamed = options.values.any(
+          (existing) => existing.toLowerCase() == name.toLowerCase(),
+        );
+        if (!alreadyNamed) {
+          options['name:${name.toLowerCase()}'] = name;
+        }
+      }
+    }
+    return options;
+  }
+
+  bool _matchesHorseFilter(BaseListItem entry, String? filterKey) {
+    if (filterKey == null) return true;
+    final info = entry.riderLog;
+    if (info == null) return false;
+    if (filterKey.startsWith('id:')) {
+      return info.horseId == filterKey.substring(3);
+    }
+    if (filterKey.startsWith('name:')) {
+      return info.horse?.trim().toLowerCase() == filterKey.substring(5);
+    }
+    return true;
   }
 
   @override
@@ -380,13 +417,23 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
     required bool sharedLoading,
   }) {
     final sharedIds = shared.map((entry) => entry.id).toSet();
+    final allEntries = [
+      ...?rider.notes?.where((entry) => !sharedIds.contains(entry.id)),
+      ...shared,
+    ];
+    final horseOptions = _horseFilterOptions(rider, allEntries);
+    final activeHorseFilter =
+        _horseFilterKey != null && horseOptions.containsKey(_horseFilterKey)
+        ? _horseFilterKey
+        : null;
+
     final entries =
-        [
-              ...?rider.notes?.where((entry) => !sharedIds.contains(entry.id)),
-              ...shared,
-            ]
+        allEntries
             .where((entry) {
               if (_filter != null && entry.riderLogType != _filter) {
+                return false;
+              }
+              if (!_matchesHorseFilter(entry, activeHorseFilter)) {
                 return false;
               }
               if (_query.isEmpty) return true;
@@ -397,8 +444,11 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                 info?.title,
                 info?.horse,
                 info?.instructor,
+                info?.feel?.label,
+                info?.highlights,
                 info?.focus,
                 info?.nextSteps,
+                ...?info?.practicedSkills.map((s) => s.skillName),
               ].whereType<String>().any(
                 (value) => value.toLowerCase().contains(_query),
               );
@@ -411,6 +461,39 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                 ? b.date!.compareTo(a.date!)
                 : a.date!.compareTo(b.date!);
           });
+
+    final selectedHorseId =
+        activeHorseFilter != null && activeHorseFilter.startsWith('id:')
+        ? activeHorseFilter.substring(3)
+        : null;
+    final selectedHorseName =
+        activeHorseFilter != null && activeHorseFilter.startsWith('name:')
+        ? activeHorseFilter.substring(5)
+        : null;
+    final nextStepsHit = findPreviousNextSteps(
+      allEntries,
+      horseId: selectedHorseId,
+      horseName: selectedHorseName,
+    );
+    final recentSkills = recentPracticedSkills(
+      allEntries,
+      horseId: selectedHorseId,
+    );
+    final showUpNext =
+        _query.isEmpty &&
+        _filter == null &&
+        (nextStepsHit != null || recentSkills.isNotEmpty);
+
+    final listItems = <_TimelineListItem>[];
+    String? lastMonth;
+    for (final entry in entries) {
+      final month = monthGroupKey(entry.date);
+      if (month != null && month != lastMonth) {
+        lastMonth = month;
+        listItems.add(_TimelineMonthItem(entry.date!));
+      }
+      listItems.add(_TimelineEntryItem(entry));
+    }
 
     return CustomScrollView(
       slivers: [
@@ -426,11 +509,26 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
               title: rider.name,
               photoUrl: rider.picUrl,
               imageProvider: widget.previewImage,
-              onAddEntry: _openEditor,
+              onAddEntry: () => _openEditor(knownEntries: allEntries),
               fallbackIcon: Icons.person_outline_rounded,
             ),
           ),
         ),
+        if (showUpNext)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.spaceLg,
+              0,
+              AppTokens.spaceLg,
+              AppTokens.spaceMd,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: LogbookUpNextCard(
+                nextStepsHit: nextStepsHit,
+                recentSkills: recentSkills,
+              ),
+            ),
+          ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
             AppTokens.spaceLg,
@@ -439,18 +537,66 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
             AppTokens.spaceMd,
           ),
           sliver: SliverToBoxAdapter(
-            child: LogbookFilterBar<RiderLogType?>(
-              options: [
-                const LogbookFilterOption(value: null, label: 'All entries'),
-                for (final type in RiderLogType.values)
-                  LogbookFilterOption(value: type, label: type.label),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LogbookFilterBar<RiderLogType?>(
+                  options: [
+                    const LogbookFilterOption(
+                      value: null,
+                      label: 'All entries',
+                    ),
+                    for (final type in RiderLogType.values)
+                      LogbookFilterOption(value: type, label: type.label),
+                  ],
+                  selected: _filter,
+                  onSelected: (type) => setState(() => _filter = type),
+                  newestFirst: _newestFirst,
+                  onSortChanged: (value) =>
+                      setState(() => _newestFirst = value),
+                  onSearchChanged: (value) =>
+                      setState(() => _query = value.trim().toLowerCase()),
+                ),
+                if (horseOptions.length >= 2 &&
+                    allEntries.any(
+                      (e) =>
+                          (e.riderLog?.horseId?.isNotEmpty ?? false) ||
+                          (e.riderLog?.horse?.isNotEmpty ?? false),
+                    )) ...[
+                  const SizedBox(height: AppTokens.spaceSm),
+                  SingleChildScrollView(
+                    key: const Key('riderLogbookHorseFilterBar'),
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        FilterChip(
+                          key: const Key('horseFilter_all'),
+                          visualDensity: VisualDensity.compact,
+                          label: const Text('All horses'),
+                          selected: activeHorseFilter == null,
+                          onSelected: (_) =>
+                              setState(() => _horseFilterKey = null),
+                        ),
+                        for (final option in horseOptions.entries) ...[
+                          const SizedBox(width: 6),
+                          FilterChip(
+                            key: Key('horseFilter_${option.key}'),
+                            visualDensity: VisualDensity.compact,
+                            label: Text(option.value),
+                            selected: activeHorseFilter == option.key,
+                            onSelected: (_) => setState(
+                              () => _horseFilterKey =
+                                  activeHorseFilter == option.key
+                                  ? null
+                                  : option.key,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ],
-              selected: _filter,
-              onSelected: (type) => setState(() => _filter = type),
-              newestFirst: _newestFirst,
-              onSortChanged: (value) => setState(() => _newestFirst = value),
-              onSearchChanged: (value) =>
-                  setState(() => _query = value.trim().toLowerCase()),
             ),
           ),
         ),
@@ -493,10 +639,16 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
             sliver: SliverToBoxAdapter(
               child: AppEmptyState(
                 icon: Icons.auto_stories_outlined,
-                title: _filter == null && _query.isEmpty
+                title:
+                    _filter == null &&
+                        activeHorseFilter == null &&
+                        _query.isEmpty
                     ? 'Start your training journal'
                     : 'No matching entries',
-                description: _filter == null && _query.isEmpty
+                description:
+                    _filter == null &&
+                        activeHorseFilter == null &&
+                        _query.isEmpty
                     ? 'Add your first entry.'
                     : 'No entries match your current filter or search.',
               ),
@@ -511,9 +663,13 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
               AppTokens.spaceXl,
             ),
             sliver: SliverList.builder(
-              itemCount: entries.length,
+              itemCount: listItems.length,
               itemBuilder: (context, index) {
-                final entry = entries[index];
+                final item = listItems[index];
+                if (item is _TimelineMonthItem) {
+                  return LogbookMonthHeader(date: item.date);
+                }
+                final entry = (item as _TimelineEntryItem).entry;
                 final attribution = _entryAttribution(entry, rider);
                 final horse = entry.riderLog?.horse;
                 final title = _entryTitle(entry);
@@ -521,10 +677,11 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                   title: title,
                   metadata: [
                     _entryMetadata(entry),
-                    if (horse != null) horse,
-                    if (attribution != null) attribution,
+                    ?horse,
+                    ?attribution,
                   ].join('\n'),
-                  preview: entry.name != title ? entry.name : null,
+                  preview: buildLogbookCardPreview(entry, title),
+                  footer: buildLogbookEntryFooter(context, entry),
                   icon: switch (entry.riderLogType) {
                     RiderLogType.lesson => Icons.school_outlined,
                     RiderLogType.training => Icons.directions_run,
@@ -538,7 +695,7 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
                           entry.riderLog?.placing != null
                       ? LogbookPlacingBadge(placing: entry.riderLog!.placing!)
                       : null,
-                  onTap: () => _openEntry(entry),
+                  onTap: () => _openEntry(entry, allEntries),
                 );
               },
             ),
@@ -546,34 +703,4 @@ class _RiderLogbookPageState extends State<RiderLogbookPage> {
       ],
     );
   }
-}
-
-class _EntryField extends StatelessWidget {
-  const _EntryField({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: AppTokens.secondaryTextColor(context),
-          ),
-        ),
-        const SizedBox(height: 2),
-        SelectableText(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppTokens.primaryTextColor(context),
-          ),
-        ),
-      ],
-    ),
-  );
 }

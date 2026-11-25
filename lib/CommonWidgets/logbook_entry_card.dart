@@ -10,6 +10,7 @@ class LogbookEntryCard extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.preview,
+    this.footer,
     this.trailing,
     super.key,
   });
@@ -19,6 +20,7 @@ class LogbookEntryCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final String? preview;
+  final Widget? footer;
   final Widget? trailing;
 
   static const _glassBorderDark = Color(0x475E8F99);
@@ -98,6 +100,10 @@ class LogbookEntryCard extends StatelessWidget {
                           height: 1.4,
                         ),
                       ),
+                    ],
+                    if (footer != null) ...[
+                      const SizedBox(height: 8),
+                      footer!,
                     ],
                   ],
                 ),

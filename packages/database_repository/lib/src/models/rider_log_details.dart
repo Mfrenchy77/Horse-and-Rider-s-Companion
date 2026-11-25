@@ -24,9 +24,104 @@ enum RiderLogType {
   final String label;
 }
 
-/// Optional structured fields on a rider note. Legacy notes omit this map.
+/// Optional non-judgmental feel/outcome tag for a training session.
+enum SessionFeel {
+  /// Clear step forward or breakthrough moment.
+  breakthrough('Breakthrough'),
+
+  /// Calm, steady, productive work.
+  steady('Steady progress'),
+
+  /// Constructive work through a challenge or tension.
+  working('Working through it'),
+
+  /// Easy, relaxed, trail, or recovery session.
+  recovery('Light / recovery');
+
+  const SessionFeel(this.label);
+
+  /// Human-readable label shown on chips and badges.
+  final String label;
+
+  /// Parses wire name or returns `null`.
+  static SessionFeel? fromWire(Object? raw) {
+    if (raw is! String || raw.isEmpty) return null;
+    return values.asNameMap()[raw];
+  }
+}
+
+/// Lightweight reference to a Skill Tree 2.0 skill practiced in a session.
+class PracticedSkillTag {
+  /// Creates a [PracticedSkillTag].
+  const PracticedSkillTag({
+    required this.skillId,
+    required this.skillName,
+    this.subject = 'rider',
+    this.level,
+  });
+
+  /// Skill Tree 2.0 skill ID (`SkillsV2/{skillId}`).
+  final String skillId;
+
+  /// Snapshot display name for fast, offline-resilient rendering.
+  final String skillName;
+
+  /// Subject (`'rider'` or `'horse'`).
+  final String subject;
+
+  /// Optional difficulty level wire string (`'introductory'`, `'intermediate'`,
+  /// `'advanced'`).
+  final String? level;
+
+  /// Human-readable level label, if present.
+  String? get levelLabel => switch (level?.toLowerCase()) {
+    'introductory' => 'Introductory',
+    'intermediate' => 'Intermediate',
+    'advanced' => 'Advanced',
+    _ => null,
+  };
+
+  /// Parses a [PracticedSkillTag] from a raw map, returning `null` if invalid.
+  static PracticedSkillTag? fromMap(Object? raw) {
+    if (raw is! Map) return null;
+    final id = raw['skillId'];
+    final name = raw['skillName'];
+    if (id is! String || id.trim().isEmpty) return null;
+    final trimmedId = id.trim();
+    final trimmedName =
+        name is String && name.trim().isNotEmpty ? name.trim() : trimmedId;
+    final rawSubject = raw['subject'];
+    final subject = rawSubject == 'horse' ? 'horse' : 'rider';
+    final rawLevel = raw['level'];
+    final level = rawLevel is String &&
+            const {
+              'introductory',
+              'intermediate',
+              'advanced',
+            }.contains(rawLevel.toLowerCase())
+        ? rawLevel.toLowerCase()
+        : null;
+    return PracticedSkillTag(
+      skillId: trimmedId,
+      skillName: trimmedName,
+      subject: subject,
+      level: level,
+    );
+  }
+
+  /// Serializes this tag to a Firestore-compatible map.
+  Map<String, Object?> toMap() => {
+    'skillId': skillId,
+    'skillName': skillName,
+    'subject': subject,
+    if (level != null) 'level': level,
+  };
+}
+
+/// Optional structured fields on a rider or horse journal entry.
+/// Legacy notes omit this map.
 class RiderLogDetails {
-  /// Creates the structured portion of a rider entry.
+  /// Creates the structured portion of a logbook entry.
   const RiderLogDetails({
     required this.type,
     this.title,
@@ -36,8 +131,13 @@ class RiderLogDetails {
     this.placing,
     this.authorRole,
     this.shared = false,
+    this.authorOnly = false,
+    this.feel,
+    this.highlights,
     this.focus,
     this.nextSteps,
+    this.practicedSkills = const [],
+    this.videoUrl,
   });
 
   /// Category of the journal entry.
@@ -58,17 +158,32 @@ class RiderLogDetails {
   /// Optional result text for a show.
   final String? placing;
 
-  /// The role recorded for an entry submitted by a coach.
+  /// The role recorded for an entry submitted by a coach/trainer.
   final String? authorRole;
 
   /// Whether this note is stored as a shared journal record.
   final bool shared;
 
-  /// Work or skills the rider focused on.
+  /// True when a reflection is kept private to its author even with a horse.
+  final bool authorOnly;
+
+  /// Optional session feel/outcome tag.
+  final SessionFeel? feel;
+
+  /// What went well / improved during the session.
+  final String? highlights;
+
+  /// What needs more work / session focus.
   final String? focus;
 
-  /// What the rider plans to do next.
+  /// Plans for the next session.
   final String? nextSteps;
+
+  /// Skill Tree 2.0 skills practiced during the session.
+  final List<PracticedSkillTag> practicedSkills;
+
+  /// Optional external training video link (`https://...`).
+  final String? videoUrl;
 
   /// Reads structured fields when the map has a supported category.
   static RiderLogDetails? fromMap(Object? value) {
@@ -78,8 +193,16 @@ class RiderLogDetails {
 
     String? text(String key) {
       final field = value[key];
-      return field is String && field.trim().isNotEmpty ? field : null;
+      return field is String && field.trim().isNotEmpty ? field.trim() : null;
     }
+
+    final rawSkills = value['practicedSkills'];
+    final parsedSkills = rawSkills is List
+        ? rawSkills
+              .map(PracticedSkillTag.fromMap)
+              .whereType<PracticedSkillTag>()
+              .toList()
+        : const <PracticedSkillTag>[];
 
     return RiderLogDetails(
       type: type,
@@ -90,8 +213,13 @@ class RiderLogDetails {
       placing: text('placing'),
       authorRole: text('authorRole'),
       shared: value['shared'] == true,
+      authorOnly: value['authorOnly'] == true,
+      feel: SessionFeel.fromWire(value['feel']),
+      highlights: text('highlights'),
       focus: text('focus'),
       nextSteps: text('nextSteps'),
+      practicedSkills: parsedSkills,
+      videoUrl: text('videoUrl'),
     );
   }
 
@@ -105,7 +233,13 @@ class RiderLogDetails {
     if (placing != null) 'placing': placing,
     if (authorRole != null) 'authorRole': authorRole,
     if (shared) 'shared': true,
+    if (authorOnly) 'authorOnly': true,
+    if (feel != null) 'feel': feel!.name,
+    if (highlights != null) 'highlights': highlights,
     if (focus != null) 'focus': focus,
     if (nextSteps != null) 'nextSteps': nextSteps,
+    if (practicedSkills.isNotEmpty)
+      'practicedSkills': practicedSkills.map((s) => s.toMap()).toList(),
+    if (videoUrl != null) 'videoUrl': videoUrl,
   };
 }

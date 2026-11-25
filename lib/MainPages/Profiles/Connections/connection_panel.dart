@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/logbook_shared_widgets.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/cubit/logbook_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/logbook_connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
+import 'package:intl/intl.dart';
 
 class ConnectionPanel extends StatelessWidget {
   const ConnectionPanel({
@@ -288,18 +292,14 @@ class ConnectionPanel extends StatelessWidget {
                           RiderLogbookPage.addLessonFor(context, link);
                           return;
                         }
-                        final skills = cubit.skillsFor(link);
-                        showAppGlassDialog<void>(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => BlocProvider.value(
-                            value: cubit,
-                            child: _TrainingRecordDialog(
-                              skills: skills,
-                              link: link,
-                            ),
-                          ),
-                        );
+                         showAppGlassDialog<void>(
+                           context: context,
+                           barrierDismissible: false,
+                           builder: (_) => BlocProvider.value(
+                             value: cubit,
+                             child: _TrainingRecordDialog(link: link),
+                           ),
+                         );
                       },
                 child: Text(
                   link.kind == 'rider'
@@ -399,9 +399,8 @@ class ConnectionPanel extends StatelessWidget {
 }
 
 class _TrainingRecordDialog extends StatefulWidget {
-  const _TrainingRecordDialog({required this.skills, required this.link});
+  const _TrainingRecordDialog({required this.link});
 
-  final List<Skill> skills;
   final CoachingConnection link;
 
   @override
@@ -411,13 +410,76 @@ class _TrainingRecordDialog extends StatefulWidget {
 class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
   final _recordId = ViewUtils.createId();
   String _notes = '';
-  String? _skillId;
-  String _level = 'LEARNING';
+  String _highlights = '';
+  String _focus = '';
+  String _nextSteps = '';
+  String _title = '';
+  String _videoUrl = '';
+  SessionFeel? _feel;
+  List<PracticedSkillTag> _practicedSkills = const [];
+  bool _takeawaysExpanded = false;
+  ({BaseListItem entry, String nextSteps})? _previousNextSteps;
   bool _saving = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPreviousPlan());
+  }
+
+  Future<void> _loadPreviousPlan() async {
+    try {
+      final items = await context.read<ConnectionsCubit>().historyFor(
+        widget.link,
+      );
+      if (!mounted) return;
+      final hit = findPreviousNextSteps(items, includeAuthorOnly: false);
+      if (hit != null) {
+        setState(() => _previousNextSteps = hit);
+      }
+    } catch (_) {}
+  }
+
+  bool get _hasAnyContent =>
+      _notes.isNotEmpty ||
+      _highlights.isNotEmpty ||
+      _focus.isNotEmpty ||
+      _nextSteps.isNotEmpty ||
+      _title.isNotEmpty ||
+      _practicedSkills.isNotEmpty;
+
+  String? _trimmedOrNull(String raw) {
+    final t = raw.trim();
+    return t.isEmpty ? null : t;
+  }
+
+  Future<void> _pickSkills() async {
+    final picked = await showPracticedSkillsPickerDialog(
+      context: context,
+      initialSelection: _practicedSkills,
+      defaultSubject: widget.link.kind == 'horse'
+          ? SkillSubject.horse
+          : SkillSubject.rider,
+    );
+    if (!mounted || picked == null) return;
+    setState(() => _practicedSkills = picked);
+  }
+
   Future<void> _save() async {
     if (_saving) return;
+    final video = _trimmedOrNull(_videoUrl);
+    if (video != null) {
+      final uri = Uri.tryParse(video);
+      if (uri == null ||
+          !uri.hasAuthority ||
+          (uri.scheme != 'https' && uri.scheme != 'http')) {
+        setState(
+          () => _error = 'Enter a valid http:// or https:// video link.',
+        );
+        return;
+      }
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -428,8 +490,13 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
         link: widget.link,
         recordId: _recordId,
         notes: _notes,
-        skillId: _skillId,
-        level: _level,
+        title: _trimmedOrNull(_title),
+        feel: _feel,
+        highlights: _trimmedOrNull(_highlights),
+        focus: _trimmedOrNull(_focus),
+        nextSteps: _trimmedOrNull(_nextSteps),
+        practicedSkills: _practicedSkills,
+        videoUrl: video,
       );
       if (!mounted) return;
       if (saved) {
@@ -460,9 +527,38 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
             ? 'Add lesson record'
             : 'Add training record',
       ),
+      maxWidth: 560,
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 10,
         children: [
+          if (_previousNextSteps != null)
+            Container(
+              key: const Key('trainerPreviousNextStepsBanner'),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTokens.accentColor(context).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(
+                    'From last session',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppTokens.accentColor(context),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    _previousNextSteps!.nextSteps,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
           TextField(
             enabled: !_saving,
             decoration: const InputDecoration(labelText: 'Notes'),
@@ -471,42 +567,111 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
             maxLength: 4000,
             onChanged: (value) => setState(() => _notes = value.trim()),
           ),
-          if (widget.skills.isNotEmpty)
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Skill progress (optional)',
-              ),
-              onChanged: _saving
-                  ? null
-                  : (value) => setState(() => _skillId = value),
-              items: [
-                const DropdownMenuItem<String>(child: Text('No skill update')),
-                for (final skill in widget.skills)
-                  DropdownMenuItem(
-                    value: skill.id,
-                    child: Text(
-                      skill.skillName,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-              ],
-            ),
-          if (_skillId != null)
-            DropdownButtonFormField<String>(
-              initialValue: _level,
-              decoration: const InputDecoration(labelText: 'Progress'),
-              items: const [
-                DropdownMenuItem(value: 'LEARNING', child: Text('Learning')),
-                DropdownMenuItem(
-                  value: 'PROFICIENT',
-                  child: Text('Proficient'),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final feel in SessionFeel.values)
+                ChoiceChip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text(feel.label),
+                  selected: _feel == feel,
+                  onSelected: _saving
+                      ? null
+                      : (sel) => setState(() => _feel = sel ? feel : null),
                 ),
-              ],
-              onChanged: _saving
-                  ? null
-                  : (value) => setState(() => _level = value!),
+            ],
+          ),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _saving ? null : _pickSkills,
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+                icon: const Icon(Icons.add, size: 16),
+                label: Text(
+                  _practicedSkills.isEmpty
+                      ? 'Tag practiced skills'
+                      : 'Edit skills (${_practicedSkills.length})',
+                ),
+              ),
+              for (final tag in _practicedSkills)
+                InputChip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text(
+                    tag.levelLabel == null
+                        ? tag.skillName
+                        : '${tag.skillName} · ${tag.levelLabel}',
+                  ),
+                  onDeleted: _saving
+                      ? null
+                      : () => setState(
+                          () => _practicedSkills = _practicedSkills
+                              .where((s) => s.skillId != tag.skillId)
+                              .toList(),
+                        ),
+                ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () =>
+                  setState(() => _takeawaysExpanded = !_takeawaysExpanded),
+              icon: Icon(
+                _takeawaysExpanded ? Icons.expand_less : Icons.expand_more,
+                size: 18,
+              ),
+              label: Text(
+                _takeawaysExpanded
+                    ? 'Hide takeaways & video'
+                    : 'Add takeaways, next steps, or video (optional)',
+              ),
             ),
+          ),
+          if (_takeawaysExpanded) ...[
+            TextField(
+              enabled: !_saving,
+              decoration: const InputDecoration(
+                labelText: 'What went well (optional)',
+              ),
+              maxLines: 2,
+              onChanged: (v) => setState(() => _highlights = v.trim()),
+            ),
+            TextField(
+              enabled: !_saving,
+              decoration: const InputDecoration(
+                labelText: 'What needs work (optional)',
+              ),
+              maxLines: 2,
+              onChanged: (v) => setState(() => _focus = v.trim()),
+            ),
+            TextField(
+              enabled: !_saving,
+              decoration: const InputDecoration(
+                labelText: 'Plans for next session (optional)',
+              ),
+              maxLines: 2,
+              onChanged: (v) => setState(() => _nextSteps = v.trim()),
+            ),
+            TextField(
+              enabled: !_saving,
+              decoration: const InputDecoration(labelText: 'Title (optional)'),
+              onChanged: (v) => setState(() => _title = v.trim()),
+            ),
+            TextField(
+              enabled: !_saving,
+              decoration: const InputDecoration(
+                labelText: 'Training video link (optional)',
+              ),
+              keyboardType: TextInputType.url,
+              onChanged: (v) => setState(() => _videoUrl = v.trim()),
+            ),
+          ],
           if (_error != null) Text(_error!),
         ],
       ),
@@ -516,7 +681,7 @@ class _TrainingRecordDialogState extends State<_TrainingRecordDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _notes.isEmpty || _saving ? null : _save,
+          onPressed: !_hasAnyContent || _saving ? null : _save,
           child: Text(_saving ? 'Saving…' : 'Save record'),
         ),
       ],
@@ -539,11 +704,31 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
   Future<List<BaseListItem>> _load() =>
       context.read<ConnectionsCubit>().historyFor(widget.link);
 
+  Future<void> _editEntry(BaseListItem entry) async {
+    if (widget.link.kind == 'rider') {
+      await RiderLogbookPage.addLessonFor(
+        context,
+        widget.link,
+        entry: entry,
+      );
+    } else {
+      await RiderLogbookPage.addEntry(
+        context,
+        horseConnection: widget.link,
+        entry: entry,
+      );
+    }
+    if (mounted) {
+      setState(() => _entries = _load());
+    }
+  }
+
   Future<void> _delete(BaseListItem entry) async {
+    final isRiderLink = widget.link.kind == 'rider';
     final confirmed = await showAppGlassDialog<bool>(
       context: context,
       builder: (context) => AppGlassDialog(
-        title: const Text('Delete this lesson?'),
+        title: Text(isRiderLink ? 'Delete this lesson?' : 'Delete this entry?'),
         content: const Text('It will be removed from both logbooks.'),
         actions: [
           TextButton(
@@ -559,16 +744,38 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
     );
     if (!mounted || !(confirmed ?? false)) return;
     try {
-      final ok = await context.read<ConnectionsCubit>().deleteLesson(
-        link: widget.link,
-        entryId: entry.id ?? '',
-      );
-      if (!ok) throw StateError('delete failed');
+      if (isRiderLink) {
+        final ok = await context.read<ConnectionsCubit>().deleteLesson(
+          link: widget.link,
+          entryId: entry.id ?? '',
+        );
+        if (!ok) throw StateError('delete failed');
+      } else {
+        final logbookCubit = LogbookCubit(
+          connectionRepository:
+              context.read<LogbookConnectionRepository?>() ??
+              context.read<ConnectionRepository?>(),
+          riderProfileRepository:
+              context.read<LogbookRiderProfileRepository?>() ??
+              context.read<RiderProfileRepository?>(),
+        );
+        try {
+          await logbookCubit.deleteEntry(entry);
+        } finally {
+          await logbookCubit.close();
+        }
+      }
       if (mounted) setState(() => _entries = _load());
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not delete the lesson.')),
+          SnackBar(
+            content: Text(
+              isRiderLink
+                  ? 'Could not delete the lesson.'
+                  : 'Could not delete the entry.',
+            ),
+          ),
         );
       }
     }
@@ -615,27 +822,59 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
                   children: [
                     for (final entry in entries)
                       ListTile(
+                        onTap: () async {
+                          final editable = entry.isSelected ?? false;
+                          final action = await showLogbookEntryDetailDialog(
+                            context: context,
+                            entry: entry,
+                            categoryLabel: entry.riderLogType.label,
+                            fallbackTitle:
+                                entry.riderLog?.title ?? entry.name ?? 'Entry',
+                            riderLabel: entry.extra != null
+                                ? 'Rider: ${entry.extra}'
+                                : null,
+                            attribution: entry.message != null
+                                ? 'Recorded by ${entry.message}'
+                                : null,
+                            canEdit: editable,
+                            canDelete: editable,
+                          );
+                          if (!context.mounted) return;
+                          if (action == 'edit') {
+                            await _editEntry(entry);
+                          } else if (action == 'delete') {
+                            await _delete(entry);
+                          }
+                        },
                         title: Text(
                           entry.riderLog?.title ?? entry.name ?? 'Entry',
                         ),
                         subtitle: Text(
                           [
                             if (entry.riderLog?.title != null &&
-                                entry.name != null)
+                                entry.name != null &&
+                                entry.name!.isNotEmpty)
                               entry.name!,
+                            if (entry.riderLog?.feel != null)
+                              'Feel: ${entry.riderLog!.feel!.label}',
+                            if (entry.riderLog != null &&
+                                entry.riderLog!.practicedSkills.isNotEmpty)
+                              'Skills: ${entry.riderLog!.practicedSkills.map(
+                                (s) => s.skillName,
+                              ).join(', ')}',
                             if (entry.extra != null) 'Rider: ${entry.extra}',
                             if (entry.message != null)
                               'Recorded by ${entry.message}',
                             if (entry.riderLog?.horse != null)
                               'Horse: ${entry.riderLog!.horse}',
+                            if (entry.riderLog?.highlights != null)
+                              'Went well: ${entry.riderLog!.highlights}',
                             if (entry.riderLog?.focus != null)
                               'Focus: ${entry.riderLog!.focus}',
                             if (entry.riderLog?.nextSteps != null)
                               'Next: ${entry.riderLog!.nextSteps}',
                             if (entry.date != null)
-                              MaterialLocalizations.of(
-                                context,
-                              ).formatMediumDate(entry.date!),
+                              DateFormat.yMMMd().format(entry.date!),
                           ].join('\n'),
                         ),
                         trailing: entry.isSelected ?? false
@@ -644,24 +883,25 @@ class _ConnectionHistoryState extends State<_ConnectionHistory> {
                                   if (value == 'delete') {
                                     await _delete(entry);
                                   } else {
-                                    await RiderLogbookPage.addLessonFor(
-                                      context,
-                                      widget.link,
-                                      entry: entry,
-                                    );
-                                    if (mounted) {
-                                      setState(() => _entries = _load());
-                                    }
+                                    await _editEntry(entry);
                                   }
                                 },
-                                itemBuilder: (_) => const [
+                                itemBuilder: (_) => [
                                   PopupMenuItem(
                                     value: 'edit',
-                                    child: Text('Edit lesson'),
+                                    child: Text(
+                                      widget.link.kind == 'rider'
+                                          ? 'Edit lesson'
+                                          : 'Edit entry',
+                                    ),
                                   ),
                                   PopupMenuItem(
                                     value: 'delete',
-                                    child: Text('Delete lesson'),
+                                    child: Text(
+                                      widget.link.kind == 'rider'
+                                          ? 'Delete lesson'
+                                          : 'Delete entry',
+                                    ),
                                   ),
                                 ],
                               )

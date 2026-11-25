@@ -274,7 +274,13 @@ void main() {
     expect(find.text('Matt French'), findsOneWidget);
     expect(find.text('Training journal & progress history'), findsOneWidget);
     expect(find.text('Add entry'), findsOneWidget);
-    expect(find.byType(LogbookEntryCard), findsAtLeastNWidgets(2));
+    expect(find.byType(LogbookEntryCard), findsAtLeastNWidgets(1));
+    await tester.scrollUntilVisible(
+      find.text('1st'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     expect(find.byType(AppStatusBadge), findsOneWidget);
     expect(find.text('1st'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -566,6 +572,12 @@ void main() {
 
     expect(find.text('Add entry'), findsOneWidget);
     expect(find.byType(LogbookAddFab), findsNothing);
+    await tester.scrollUntilVisible(
+      find.byType(LogbookPlacingBadge),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     expect(find.byType(LogbookPlacingBadge), findsOneWidget);
     expect(find.text('2nd'), findsOneWidget);
     expect(tester.takeException(), isNull);

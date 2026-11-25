@@ -101,8 +101,12 @@ class LogbookCubit extends Cubit<LogbookState> {
     String? horse,
     DateTime? date,
     String? title,
+    SessionFeel? feel,
+    String? highlights,
     String? focus,
     String? nextSteps,
+    List<PracticedSkillTag> practicedSkills = const [],
+    String? videoUrl,
     String? skillId,
     String level = 'LEARNING',
   }) async {
@@ -126,8 +130,13 @@ class LogbookCubit extends Cubit<LogbookState> {
         'horse': horse,
         'date': date?.toUtc().toIso8601String(),
         'title': title,
+        if (feel != null) 'feel': feel.name,
+        if (highlights != null) 'highlights': highlights,
         'focus': focus,
         'nextSteps': nextSteps,
+        if (practicedSkills.isNotEmpty)
+          'practicedSkills': practicedSkills.map((s) => s.toMap()).toList(),
+        if (videoUrl != null) 'videoUrl': videoUrl,
         'skillId': skillId,
         'level': level,
       });

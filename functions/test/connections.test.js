@@ -693,3 +693,110 @@ test('LOW-1: canonical Requests/{id} blocks transfer accept even with pending se
   );
   assert.equal(docs.get('Horse_Profile/atlas').currentOwnerId, student);
 });
+
+test('structured logbook fields, video validation, and trainer SharedRidingEntries parity', async () => {
+  const {call, getLink, request} = fixture();
+
+  // 1. Owner saves structured journal entry with empty notes + feel, takeaways, practicedSkills, videoUrl
+  await assert.rejects(
+      call(student, {
+        action: 'saveJournal',
+        id: 'empty-entry',
+        horseId: 'atlas',
+        type: 'training',
+        notes: '   ',
+      }),
+      {code: 'invalid-argument'},
+  );
+  await assert.rejects(
+      call(student, {
+        action: 'saveJournal',
+        id: 'bad-video',
+        horseId: 'atlas',
+        type: 'training',
+        notes: 'Pole work',
+        videoUrl: 'javascript:alert(1)',
+      }),
+      {code: 'invalid-argument'},
+  );
+
+  await call(student, {
+    action: 'saveJournal',
+    id: 'structured-owner',
+    horseId: 'atlas',
+    type: 'training',
+    notes: '',
+    feel: 'breakthrough',
+    highlights: 'Soft jaw over raised cavaletti',
+    focus: 'Maintain straightness on exit',
+    nextSteps: 'Add 3-loop serpentine warm-up',
+    videoUrl: 'https://youtu.be/example123',
+    practicedSkills: [
+      {
+        skillId: 'horse_polework_cavaletti',
+        skillName: 'Polework & Cavaletti',
+        subject: 'horse',
+        level: 'intermediate',
+      },
+    ],
+  });
+
+  // 2. Accept horse training connection for coach (without needing studentHorses mirrored on Rider_Profile)
+  const horseConn = await call(student, request('horse'));
+  const horseVersion = getLink(horseConn.id).version;
+  await call(coach, {id: horseConn.id, version: horseVersion, action: 'accept'});
+
+  // 3. Connected trainer saves rich structured entry to SharedRidingEntries via saveJournal
+  await call(coach, {
+    action: 'saveJournal',
+    id: 'trainer-session-1',
+    horseId: 'atlas',
+    type: 'training',
+    notes: 'Relaxed in-hand yielding before saddling.',
+    feel: 'steady',
+    highlights: 'Immediate response to light halter cue',
+    nextSteps: 'Repeat yield at trot transition',
+    practicedSkills: [
+      {
+        skillId: 'horse_yield_hindquarters',
+        skillName: 'Yielding the Hindquarters',
+        subject: 'horse',
+        level: 'introductory',
+      },
+    ],
+  });
+
+  // 4. Owner sees both entries; owner can edit own entry (editable: true) but not trainer's (editable: false)
+  const ownerHistory = await call(student, {action: 'horseHistory', horseId: 'atlas'});
+  assert.equal(ownerHistory.entries.length, 2);
+  const ownerViewOwn = ownerHistory.entries.find((e) => e.id === 'structured-owner');
+  const ownerViewTrainer = ownerHistory.entries.find((e) => e.id === 'trainer-session-1');
+  assert.equal(ownerViewOwn.editable, true);
+  assert.equal(ownerViewOwn.riderLog.feel, 'breakthrough');
+  assert.equal(ownerViewOwn.riderLog.highlights, 'Soft jaw over raised cavaletti');
+  assert.equal(ownerViewOwn.riderLog.nextSteps, 'Add 3-loop serpentine warm-up');
+  assert.equal(ownerViewOwn.riderLog.videoUrl, 'https://youtu.be/example123');
+  assert.equal(ownerViewOwn.riderLog.practicedSkills.length, 1);
+  assert.equal(ownerViewOwn.riderLog.practicedSkills[0].skillId, 'horse_polework_cavaletti');
+  assert.equal(ownerViewTrainer.editable, false);
+  assert.equal(ownerViewTrainer.riderLog.authorRole, 'trainer');
+
+  // 5. Trainer sees editable: true on own entry and can edit & delete own entry, but cannot delete owner's entry
+  const trainerHistory = await call(coach, {action: 'horseHistory', horseId: 'atlas'});
+  const trainerViewOwn = trainerHistory.entries.find((e) => e.id === 'trainer-session-1');
+  assert.equal(trainerViewOwn.editable, true);
+  await call(coach, {
+    action: 'saveJournal',
+    id: 'trainer-session-1',
+    isEdit: true,
+    shared: true,
+    horseId: 'atlas',
+    type: 'training',
+    notes: 'Updated trainer notes.',
+    feel: 'steady',
+  });
+  await call(coach, {action: 'deleteJournal', id: 'trainer-session-1', shared: true});
+  const afterDelete = await call(student, {action: 'horseHistory', horseId: 'atlas'});
+  assert.equal(afterDelete.entries.length, 1);
+  assert.equal(afterDelete.entries[0].id, 'structured-owner');
+});

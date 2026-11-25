@@ -1,3 +1,5 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 part of 'rider_logbook_page.dart';
 
 class _LogEntryEditor extends StatefulWidget {
@@ -5,6 +7,11 @@ class _LogEntryEditor extends StatefulWidget {
     required this.email,
     this.entry,
     this.initialStudent,
+    this.initialHorse,
+    this.horseConnection,
+    this.initialType,
+    this.initialPracticedSkills = const [],
+    this.knownEntries = const [],
     this.initialSkill,
     this.initialLevel,
   });
@@ -12,6 +19,11 @@ class _LogEntryEditor extends StatefulWidget {
   final String email;
   final BaseListItem? entry;
   final CoachingConnection? initialStudent;
+  final HorseProfile? initialHorse;
+  final CoachingConnection? horseConnection;
+  final RiderLogType? initialType;
+  final List<PracticedSkillTag> initialPracticedSkills;
+  final List<BaseListItem> knownEntries;
   final Skill? initialSkill;
   final LevelState? initialLevel;
 
@@ -34,12 +46,9 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   late final _placing = TextEditingController(
     text: widget.entry?.riderLog?.placing,
   );
-  String? _selectedHorseName;
-  late String _horseChoice = switch (widget.entry?.riderLog) {
-    RiderLogDetails(horseId: final String id) => 'horse:$id',
-    RiderLogDetails(horse: final String _) => 'other',
-    _ => 'none',
-  };
+  late final _highlights = TextEditingController(
+    text: widget.entry?.riderLog?.highlights,
+  );
   late final _focus = TextEditingController(
     text: widget.entry?.riderLog?.focus,
   );
@@ -47,10 +56,65 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   late final _nextSteps = TextEditingController(
     text: widget.entry?.riderLog?.nextSteps,
   );
-  late RiderLogType _type = widget.entry?.riderLogType ?? RiderLogType.lesson;
+  late final _videoUrl = TextEditingController(
+    text: widget.entry?.riderLog?.videoUrl,
+  );
+
+  late String? _selectedHorseName =
+      widget.entry?.riderLog?.horse ??
+      widget.initialHorse?.name ??
+      widget.horseConnection?.horseName;
+
+  late String _horseChoice = switch (widget.entry?.riderLog) {
+    RiderLogDetails(horseId: final String id) => 'horse:$id',
+    RiderLogDetails(horse: final String _) => 'other',
+    _ =>
+      widget.initialHorse != null
+          ? 'horse:${widget.initialHorse!.id}'
+          : widget.horseConnection?.horseId != null
+          ? 'horse:${widget.horseConnection!.horseId}'
+          : 'none',
+  };
+
+  late RiderLogType _type =
+      widget.entry?.riderLogType ??
+      widget.initialType ??
+      (widget.initialHorse != null || widget.horseConnection != null
+          ? RiderLogType.training
+          : RiderLogType.lesson);
+
   late DateTime? _date = widget.entry == null
       ? DateTime.now()
       : widget.entry!.date;
+
+  late SessionFeel? _feel = widget.entry?.riderLog?.feel;
+
+  late List<PracticedSkillTag> _practicedSkills = List.of(
+    widget.entry?.riderLog?.practicedSkills ?? widget.initialPracticedSkills,
+  );
+
+  // Explicit opt-in only: never checked automatically.
+  bool _markPracticedAsLearning = false;
+  List<PracticedSkillTag> _eligibleLearningTags = const [];
+  int _eligibilityRequest = 0;
+
+  // Private reflections default to author-only (false) even when a horse is
+  // selected; only pre-enabled when editing an already-shared reflection.
+  late bool _shareReflection = widget.entry?.riderLog?.shared ?? false;
+
+  late bool _takeawaysExpanded = switch (widget.entry?.riderLog) {
+    final RiderLogDetails d =>
+      d.highlights != null ||
+          d.focus != null ||
+          d.nextSteps != null ||
+          d.title != null ||
+          d.videoUrl != null,
+    null => false,
+  };
+
+  final Map<String, List<BaseListItem>> _fetchedHorseHistory = {};
+  final Set<String> _loadingHorseHistoryIds = {};
+
   CoachingConnection? _student;
   Map<String, String> _studentHorses = {};
   List<String> _personalStudentHorseIds = [];
@@ -62,6 +126,9 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     LevelState.PROFICIENT || LevelState.VERIFIED => 'PROFICIENT',
     _ => 'LEARNING',
   };
+
+  bool _saving = false;
+  String? _error;
 
   @override
   void initState() {
@@ -75,6 +142,158 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
         }
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _refreshHorseHistoryForNextSteps();
+      _refreshLearningEligibility();
+    });
+  }
+
+  String? get _selectedHorseId => _horseChoice.startsWith('horse:')
+      ? _horseChoice.substring('horse:'.length)
+      : null;
+
+  SkillTreeV2Repository? _resolveSkillTreeRepo() {
+    try {
+      final provided = context.read<SkillTreeV2Repository?>();
+      if (provided != null) return provided;
+    } catch (_) {}
+    return SkillTreeV2View.defaultRepository();
+  }
+
+  Future<void> _refreshHorseHistoryForNextSteps() async {
+    if (widget.entry != null ||
+        _student != null ||
+        widget.knownEntries.isNotEmpty ||
+        (widget.initialHorse == null && widget.horseConnection == null)) {
+      return;
+    }
+    final horseId = _selectedHorseId;
+    if (horseId == null ||
+        _fetchedHorseHistory.containsKey(horseId) ||
+        _loadingHorseHistoryIds.contains(horseId)) {
+      return;
+    }
+    final repo = _readLogbookConnections(context);
+    if (repo == null) return;
+    _loadingHorseHistoryIds.add(horseId);
+    try {
+      final items = await repo.history({
+        'action': 'horseHistory',
+        'horseId': horseId,
+      });
+      if (!mounted) return;
+      setState(() {
+        _loadingHorseHistoryIds.remove(horseId);
+        _fetchedHorseHistory[horseId] = items;
+      });
+    } on Exception catch (_) {
+      _loadingHorseHistoryIds.remove(horseId);
+    }
+  }
+
+  Future<void> _refreshLearningEligibility() async {
+    final req = ++_eligibilityRequest;
+    final appState = context.read<AppCubit>().state;
+    final rider = _owner(appState, widget.email);
+    if (rider == null || _student != null || _practicedSkills.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _eligibleLearningTags = const [];
+          _markPracticedAsLearning = false;
+        });
+      }
+      return;
+    }
+
+    final repo = _resolveSkillTreeRepo();
+    if (repo == null) {
+      if (mounted) {
+        setState(() {
+          _eligibleLearningTags = const [];
+          _markPracticedAsLearning = false;
+        });
+      }
+      return;
+    }
+
+    final horseId = _selectedHorseId;
+    final ownsSelectedHorse =
+        horseId != null &&
+        ((rider.ownedHorses?.any((h) => h.id == horseId) ?? false) ||
+            (widget.initialHorse?.id == horseId &&
+                !widget.initialHorse!.isArchived &&
+                widget.initialHorse!.currentOwnerId.toLowerCase() ==
+                    rider.email.toLowerCase()) ||
+            (appState.horseProfile?.id == horseId &&
+                !appState.horseProfile!.isArchived &&
+                appState.horseProfile!.currentOwnerId.toLowerCase() ==
+                    rider.email.toLowerCase()));
+
+    var riderProgress = const <String, SkillProgressRecord>{};
+    var riderVerifications = const <String, SkillVerificationRecord>{};
+    var horseProgress = const <String, SkillProgressRecord>{};
+    var horseVerifications = const <String, SkillVerificationRecord>{};
+
+    final needsRider = _practicedSkills.any(
+      (t) => t.subject == 'rider' && t.level != null,
+    );
+    final needsHorse =
+        ownsSelectedHorse &&
+        _practicedSkills.any((t) => t.subject == 'horse' && t.level != null);
+
+    try {
+      if (needsRider) {
+        riderProgress = await repo.fetchProgress(
+          subject: SkillSubject.rider,
+          profileDocId: rider.email,
+        );
+        riderVerifications = await repo.fetchVerifications(
+          subject: SkillSubject.rider,
+          profileDocId: rider.email,
+        );
+      }
+      if (needsHorse) {
+        horseProgress = await repo.fetchProgress(
+          subject: SkillSubject.horse,
+          profileDocId: horseId,
+        );
+        horseVerifications = await repo.fetchVerifications(
+          subject: SkillSubject.horse,
+          profileDocId: horseId,
+        );
+      }
+    } catch (_) {
+      return;
+    }
+
+    if (!mounted || req != _eligibilityRequest) return;
+
+    final eligible = <PracticedSkillTag>[];
+    for (final tag in _practicedSkills) {
+      final level = parsePracticedDifficultyLevel(tag.level);
+      if (level == null) continue;
+      if (tag.subject == 'rider') {
+        final selfState = riderProgress[tag.skillId]?.levels[level]?.state;
+        final verified =
+            riderVerifications[tag.skillId]?.levels.containsKey(level) ?? false;
+        if (selfState == null && !verified) {
+          eligible.add(tag);
+        }
+      } else if (tag.subject == 'horse' && ownsSelectedHorse) {
+        final selfState = horseProgress[tag.skillId]?.levels[level]?.state;
+        final verified =
+            horseVerifications[tag.skillId]?.levels.containsKey(level) ?? false;
+        if (selfState == null && !verified) {
+          eligible.add(tag);
+        }
+      }
+    }
+
+    setState(() {
+      _eligibleLearningTags = eligible;
+      if (eligible.isEmpty) _markPracticedAsLearning = false;
+    });
   }
 
   Future<void> _chooseStudent(
@@ -89,7 +308,8 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       _loadingHorses = student != null;
       _error = null;
     });
-    if (student == null) return;
+    await _refreshLearningEligibility();
+    if (student == null || !mounted) return;
     try {
       final previous = widget.entry?.riderLog;
       final horses = await context
@@ -115,9 +335,6 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     }
   }
 
-  bool _saving = false;
-  String? _error;
-
   @override
   void dispose() {
     for (final controller in [
@@ -125,18 +342,71 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       _instructor,
       _horse,
       _placing,
+      _highlights,
       _focus,
       _notes,
       _nextSteps,
+      _videoUrl,
     ]) {
       controller.dispose();
     }
     super.dispose();
   }
 
+  bool get _hasStructuredContent =>
+      _highlights.text.trim().isNotEmpty ||
+      _focus.text.trim().isNotEmpty ||
+      _nextSteps.text.trim().isNotEmpty ||
+      _title.text.trim().isNotEmpty ||
+      _practicedSkills.isNotEmpty;
+
+  Future<void> _applyOptInLearningUpdates(
+    AppState appState,
+    RiderProfile rider,
+    String? horseId,
+  ) async {
+    if (!_markPracticedAsLearning ||
+        _student != null ||
+        _eligibleLearningTags.isEmpty) {
+      return;
+    }
+    final repo = _resolveSkillTreeRepo();
+    if (repo == null) return;
+    for (final tag in _eligibleLearningTags) {
+      final level = parsePracticedDifficultyLevel(tag.level);
+      if (level == null) continue;
+      final subject = tag.subject == 'horse'
+          ? SkillSubject.horse
+          : SkillSubject.rider;
+      final profileDocId = subject == SkillSubject.horse
+          ? horseId
+          : rider.email;
+      if (profileDocId == null || profileDocId.isEmpty) continue;
+      try {
+        await repo.setLevelProgress(
+          subject: subject,
+          profileDocId: profileDocId,
+          skillId: tag.skillId,
+          level: level,
+          state: LevelState.LEARNING,
+          actorUid: appState.user.id,
+          actorName: rider.name,
+        );
+      } catch (_) {
+        // Non-blocking: journal entry itself is already persisted.
+      }
+    }
+  }
+
   Future<void> _save() async {
-    if (_saving || !_form.currentState!.validate()) return;
-    final rider = _owner(context.read<AppCubit>().state, widget.email);
+    if (_saving) return;
+    final rawVideo = _videoUrl.text.trim();
+    if (rawVideo.isNotEmpty && !_takeawaysExpanded) {
+      setState(() => _takeawaysExpanded = true);
+    }
+    if (!_form.currentState!.validate()) return;
+    final appState = context.read<AppCubit>().state;
+    final rider = _owner(appState, widget.email);
     if (rider == null ||
         !(widget.entry?.canEditRiderLog(rider.email) ?? true)) {
       return;
@@ -152,9 +422,7 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     }
 
     try {
-      final horseId = _horseChoice.startsWith('horse:')
-          ? _horseChoice.substring('horse:'.length)
-          : null;
+      final horseId = _selectedHorseId;
       final student = _type == RiderLogType.lesson ? _student : null;
       if (student != null) {
         final message = await context.read<LogbookCubit>().saveStudentLesson(
@@ -167,8 +435,12 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           horse: _horseChoice == 'other' ? value(_horse) : null,
           date: _date,
           title: value(_title),
+          feel: _feel,
+          highlights: value(_highlights),
           focus: value(_focus),
           nextSteps: value(_nextSteps),
+          practicedSkills: _practicedSkills,
+          videoUrl: value(_videoUrl),
           skillId: widget.initialSkill?.id ?? _skillId,
           level: _level,
         );
@@ -179,6 +451,14 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
         Navigator.of(context).pop(true);
         return;
       }
+
+      final wasShared = widget.entry?.riderLog?.shared ?? false;
+      final shouldShare = _type == RiderLogType.reflection
+          ? (horseId != null ? _shareReflection : wasShared)
+          : (horseId != null || wasShared);
+      final isAuthorOnlyReflection =
+          _type == RiderLogType.reflection && !shouldShare;
+
       final details = RiderLogDetails(
         type: _type,
         title: value(_title),
@@ -188,15 +468,20 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
             : _linkedHorses(rider)[_horseChoice],
         horseId: horseId,
         placing: _type == RiderLogType.show ? value(_placing) : null,
+        authorOnly: isAuthorOnlyReflection,
+        feel: _feel,
+        highlights: value(_highlights),
         focus: value(_focus),
         nextSteps: value(_nextSteps),
+        practicedSkills: _practicedSkills,
+        videoUrl: value(_videoUrl),
       );
-      final shared = widget.entry?.riderLog?.shared ?? false;
-      if (horseId != null || shared) {
+
+      if (shouldShare) {
         await context.read<LogbookCubit>().saveSharedJournalEntry(
           id: _id,
           isEdit: widget.entry != null,
-          shared: shared,
+          shared: wasShared,
           date: _date,
           notes: _notes.text.trim(),
           details: details,
@@ -204,7 +489,7 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       } else {
         await context.read<LogbookCubit>().saveLocalEntry(
           rider: rider,
-          isEdit: widget.entry != null,
+          isEdit: widget.entry != null && !wasShared,
           entry: BaseListItem(
             id: _id,
             date: _date,
@@ -221,8 +506,15 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
             riderLog: details,
           ),
         );
+        if (wasShared && mounted && widget.entry != null) {
+          try {
+            await context.read<LogbookCubit>().deleteEntry(widget.entry!);
+          } catch (_) {}
+        }
       }
-      if (mounted) Navigator.of(context).pop();
+
+      await _applyOptInLearningUpdates(appState, rider, horseId);
+      if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -247,11 +539,51 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     if (mounted && date != null) setState(() => _date = date);
   }
 
+  Future<void> _pickPracticedSkills() async {
+    final defaultSubject = _selectedHorseId != null
+        ? SkillSubject.horse
+        : SkillSubject.rider;
+    final picked = await showPracticedSkillsPickerDialog(
+      context: context,
+      initialSelection: _practicedSkills,
+      defaultSubject: defaultSubject,
+    );
+    if (!mounted || picked == null) return;
+    setState(() => _practicedSkills = picked);
+    await _refreshLearningEligibility();
+  }
+
+  ({BaseListItem entry, String nextSteps})? _previousNextStepsForSelection(
+    AppState appState,
+    RiderProfile rider,
+  ) {
+    if (widget.entry != null) return null;
+    final horseId = _selectedHorseId;
+    final otherHorseName = _horseChoice == 'other' ? _horse.text.trim() : null;
+    if (horseId == null && (otherHorseName == null || otherHorseName.isEmpty)) {
+      return null;
+    }
+    final combined = <BaseListItem>[
+      ...widget.knownEntries,
+      ...?rider.notes,
+      if (horseId != null && widget.initialHorse?.id == horseId)
+        ...?widget.initialHorse?.notes,
+      if (horseId != null && appState.horseProfile?.id == horseId)
+        ...?appState.horseProfile?.notes,
+      if (horseId != null) ...?_fetchedHorseHistory[horseId],
+    ];
+    return findPreviousNextSteps(
+      combined,
+      horseId: horseId,
+      horseName: horseId == null ? otherHorseName : null,
+      excludeEntryId: _id,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final rider = context.select(
-      (AppCubit cubit) => _owner(cubit.state, widget.email),
-    );
+    final appState = context.watch<AppCubit>().state;
+    final rider = _owner(appState, widget.email);
     final allowed = rider != null;
     final connections = context.watch<ConnectionsCubit?>()?.state;
     final students =
@@ -268,6 +600,15 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
         widget.entry == null &&
         ((rider?.isTrainer ?? false) || widget.initialStudent != null) &&
         _type == RiderLogType.lesson;
+    final previousNextSteps = rider == null
+        ? null
+        : _previousNextStepsForSelection(appState, rider);
+    final selectedHorseLabel = rider == null
+        ? 'this horse'
+        : (_linkedHorses(rider, connections: connections)[_horseChoice] ??
+              _selectedHorseName ??
+              'this horse');
+
     return PopScope(
       canPop: !_saving,
       child: Scaffold(
@@ -329,6 +670,14 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              if (previousNextSteps != null) ...[
+                                _previousNextStepsBanner(
+                                  context,
+                                  previousNextSteps,
+                                  selectedHorseLabel,
+                                ),
+                                const SizedBox(height: 10),
+                              ],
                               _section(context, 'What would you like to log?', [
                                 Text(
                                   'You can log an entry with or without '
@@ -386,13 +735,49 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                                   ),
                                 if (_loadingHorses)
                                   const LinearProgressIndicator(),
-                                _horseAndDateFields(rider),
+                                _horseAndDateFields(rider, connections),
                                 if (_horseChoice == 'other')
                                   _field(
                                     context,
                                     _horse,
                                     'Horse name',
                                     required: true,
+                                    onChanged: (_) => setState(() {}),
+                                  ),
+                                if (_type == RiderLogType.reflection &&
+                                    _selectedHorseId != null)
+                                  SwitchListTile.adaptive(
+                                    key: const Key('shareReflectionSwitch'),
+                                    contentPadding: EdgeInsets.zero,
+                                    dense: true,
+                                    value: _shareReflection,
+                                    onChanged: _saving
+                                        ? null
+                                        : (val) => setState(
+                                            () => _shareReflection = val,
+                                          ),
+                                    title: Text(
+                                      'Share reflection on '
+                                      '$selectedHorseLabel’s logbook',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                    ),
+                                    subtitle: Text(
+                                      _shareReflection
+                                          ? 'Visible on $selectedHorseLabel’s '
+                                                'shared logbook.'
+                                          : 'Author-only — kept private to you '
+                                                'unless shared.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: AppTokens.secondaryTextColor(
+                                              context,
+                                            ),
+                                          ),
+                                    ),
                                   ),
                                 if (_type == RiderLogType.show)
                                   _field(
@@ -412,37 +797,103 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
                                     icon: Icons.person_outline,
                                   ),
                                 ],
-                                const Divider(height: 1),
-                                _field(
-                                  context,
-                                  _title,
-                                  'Title (optional)',
-                                  maxLength: 100,
-                                ),
-                                _field(
-                                  context,
-                                  _focus,
-                                  'Work / focus (optional)',
-                                  maxLines: 2,
-                                ),
+                                if (_type != RiderLogType.care) ...[
+                                  const Divider(height: 1),
+                                  _feelSelector(context),
+                                  _practicedSkillsSection(context),
+                                ],
                               ]),
                               const SizedBox(height: 10),
-                              _section(context, 'Notes and next steps', [
-                                if (_student != null) ..._skillFields(context),
+                              _section(context, 'Session notes & takeaways', [
+                                if (_student != null &&
+                                    widget.initialSkill != null)
+                                  ..._skillFields(context),
                                 _field(
                                   context,
                                   _notes,
                                   'Notes',
                                   minLines: 3,
                                   maxLines: 7,
-                                  required: true,
+                                  validator: (text) {
+                                    if ((text?.trim().isEmpty ?? true) &&
+                                        !_hasStructuredContent) {
+                                      return 'Enter a note.';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                _field(
-                                  context,
-                                  _nextSteps,
-                                  'Next steps (optional)',
-                                  maxLines: 3,
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton.icon(
+                                    key: const Key('toggleTakeawaysSection'),
+                                    onPressed: () => setState(
+                                      () => _takeawaysExpanded =
+                                          !_takeawaysExpanded,
+                                    ),
+                                    icon: Icon(
+                                      _takeawaysExpanded
+                                          ? Icons.expand_less
+                                          : Icons.expand_more,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      _takeawaysExpanded
+                                          ? 'Hide structured takeaways & video'
+                                          : 'Add takeaways, next steps, or video (optional)',
+                                    ),
+                                  ),
                                 ),
+                                if (_takeawaysExpanded) ...[
+                                  _field(
+                                    context,
+                                    _highlights,
+                                    'What went well (optional)',
+                                    key: const Key('logEntryHighlights'),
+                                    maxLines: 2,
+                                  ),
+                                  _field(
+                                    context,
+                                    _focus,
+                                    'What needs work (optional)',
+                                    key: const Key('logEntryFocus'),
+                                    maxLines: 2,
+                                  ),
+                                  _field(
+                                    context,
+                                    _nextSteps,
+                                    'Plans for next session (optional)',
+                                    key: const Key('logEntryNextSteps'),
+                                    maxLines: 3,
+                                  ),
+                                  _field(
+                                    context,
+                                    _title,
+                                    'Title (optional)',
+                                    key: const Key('logEntryTitle'),
+                                    maxLength: 100,
+                                  ),
+                                  _field(
+                                    context,
+                                    _videoUrl,
+                                    'Training video link (optional)',
+                                    key: const Key('logEntryVideoUrl'),
+                                    icon: Icons.ondemand_video_outlined,
+                                    capitalizeSentences: false,
+                                    keyboardType: TextInputType.url,
+                                    validator: (text) {
+                                      final raw = text?.trim() ?? '';
+                                      if (raw.isEmpty) return null;
+                                      final uri = Uri.tryParse(raw);
+                                      if (uri == null ||
+                                          !uri.hasAuthority ||
+                                          (uri.scheme != 'https' &&
+                                              uri.scheme != 'http')) {
+                                        return 'Enter a valid http:// or https:// video link.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
                               ]),
                             ],
                           ),
@@ -463,6 +914,181 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _previousNextStepsBanner(
+    BuildContext context,
+    ({BaseListItem entry, String nextSteps}) hit,
+    String horseLabel,
+  ) {
+    final theme = Theme.of(context);
+    final accent = AppTokens.accentColor(context);
+    final dateText = hit.entry.date == null
+        ? null
+        : DateFormat.MMMd().format(hit.entry.date!);
+    final heading = dateText == null
+        ? 'From last session with $horseLabel'
+        : 'From last session with $horseLabel ($dateText)';
+
+    return AppSurfaceCard(
+      key: const Key('previousSessionNextStepsBanner'),
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.flag_outlined, size: 20, color: accent),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 4,
+              children: [
+                Text(
+                  heading,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  hit.nextSteps,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppTokens.primaryTextColor(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _feelSelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 6,
+      children: [
+        Text(
+          'Session feel (optional)',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: AppTokens.secondaryTextColor(context),
+          ),
+        ),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final feel in SessionFeel.values)
+              ChoiceChip(
+                key: Key('sessionFeel_${feel.name}'),
+                visualDensity: VisualDensity.compact,
+                label: Text(feel.label),
+                selected: _feel == feel,
+                onSelected: _saving
+                    ? null
+                    : (selected) =>
+                          setState(() => _feel = selected ? feel : null),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _practicedSkillsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              'Practiced skills (optional)',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
+              ),
+            ),
+            OutlinedButton.icon(
+              key: const Key('addPracticedSkillsButton'),
+              onPressed: _saving ? null : _pickPracticedSkills,
+              style: OutlinedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+              ),
+              icon: const Icon(Icons.add, size: 16),
+              label: Text(
+                _practicedSkills.isEmpty
+                    ? 'Tag practiced skills'
+                    : 'Edit skills (${_practicedSkills.length})',
+              ),
+            ),
+          ],
+        ),
+        if (_practicedSkills.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final tag in _practicedSkills)
+                InputChip(
+                  key: Key('taggedSkillChip_${tag.skillId}'),
+                  visualDensity: VisualDensity.compact,
+                  label: Text(
+                    tag.levelLabel == null
+                        ? tag.skillName
+                        : '${tag.skillName} · ${tag.levelLabel}',
+                  ),
+                  onDeleted: _saving
+                      ? null
+                      : () {
+                          setState(() {
+                            _practicedSkills = _practicedSkills
+                                .where((s) => s.skillId != tag.skillId)
+                                .toList();
+                          });
+                          _refreshLearningEligibility();
+                        },
+                ),
+            ],
+          ),
+        if (_student == null && _eligibleLearningTags.isNotEmpty)
+          CheckboxListTile(
+            key: const Key('markPracticedAsLearningCheckbox'),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            value: _markPracticedAsLearning,
+            onChanged: _saving
+                ? null
+                : (val) =>
+                      setState(() => _markPracticedAsLearning = val ?? false),
+            title: Text(
+              _eligibleLearningTags.length == 1
+                  ? 'Mark this skill as Learning?'
+                  : 'Mark these practiced skills as Learning?',
+            ),
+            subtitle: Text(
+              _eligibleLearningTags
+                  .map(
+                    (t) => t.levelLabel == null
+                        ? t.skillName
+                        : '${t.skillName} (${t.levelLabel})',
+                  )
+                  .join(', '),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTokens.secondaryTextColor(context),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -573,6 +1199,7 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   Map<String, String> _linkedHorses(
     RiderProfile rider, {
     Set<String>? activeStudentHorseIds,
+    ConnectionsState? connections,
   }) {
     final links = <String, String>{};
     for (final horse in [
@@ -585,6 +1212,36 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
         final name = horse.name?.trim();
         links['horse:$id'] = name == null || name.isEmpty ? id : name;
       }
+    }
+    final activeConnections =
+        connections ?? context.read<ConnectionsCubit?>()?.state;
+    if (activeConnections != null) {
+      final lowerEmail = rider.email.toLowerCase();
+      for (final conn in activeConnections.connections) {
+        if (conn.kind == 'horse' &&
+            conn.status == 'accepted' &&
+            conn.coach == lowerEmail &&
+            conn.horseId != null &&
+            conn.horseId!.isNotEmpty) {
+          links.putIfAbsent(
+            'horse:${conn.horseId}',
+            () => conn.horseName ?? conn.horseId!,
+          );
+        }
+      }
+    }
+    if (widget.initialHorse != null && !widget.initialHorse!.isArchived) {
+      links.putIfAbsent(
+        'horse:${widget.initialHorse!.id}',
+        () => widget.initialHorse!.name,
+      );
+    }
+    if (widget.horseConnection?.horseId != null) {
+      final hId = widget.horseConnection!.horseId!;
+      links.putIfAbsent(
+        'horse:$hId',
+        () => widget.horseConnection!.horseName ?? hId,
+      );
     }
     final previous = widget.entry?.riderLog;
     final previousId = previous?.horseId;
@@ -601,11 +1258,16 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     return links;
   }
 
-  Widget _horseAndDateFields(RiderProfile rider) {
+  Widget _horseAndDateFields(
+    RiderProfile rider,
+    ConnectionsState? connections,
+  ) {
     final repository =
         context.read<HorseProfileStore?>() ??
         context.read<HorseProfileRepository?>();
-    if (_student != null || repository == null) return _dateAndHorse(rider);
+    if (_student != null || repository == null) {
+      return _dateAndHorse(rider, connections: connections);
+    }
     final ids =
         (rider.studentHorses ?? <BaseListItem>[])
             .map((horse) => horse.id)
@@ -620,11 +1282,16 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           ? null
           : _loadActiveHorseIds(repository, ids);
     }
-    if (_activeStudentHorseIds == null) return _dateAndHorse(rider);
+    if (_activeStudentHorseIds == null) {
+      return _dateAndHorse(rider, connections: connections);
+    }
     return FutureBuilder<Set<String>>(
       future: _activeStudentHorseIds,
-      builder: (context, snapshot) =>
-          _dateAndHorse(rider, activeStudentHorseIds: snapshot.data ?? {}),
+      builder: (context, snapshot) => _dateAndHorse(
+        rider,
+        activeStudentHorseIds: snapshot.data ?? {},
+        connections: connections,
+      ),
     );
   }
 
@@ -648,6 +1315,7 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
   Widget _dateAndHorse(
     RiderProfile rider, {
     Set<String>? activeStudentHorseIds,
+    ConnectionsState? connections,
   }) {
     final date = OutlinedButton.icon(
       key: const Key('logEntryDate'),
@@ -656,21 +1324,27 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       label: Text(_dateLabel(_date)),
     );
     final horses = _student == null
-        ? _linkedHorses(rider, activeStudentHorseIds: activeStudentHorseIds)
+        ? _linkedHorses(
+            rider,
+            activeStudentHorseIds: activeStudentHorseIds,
+            connections: connections,
+          )
         : {..._studentHorses};
     if (_horseChoice.startsWith('horse:') &&
         !horses.containsKey(_horseChoice)) {
       horses[_horseChoice] =
           widget.entry?.riderLog?.horse ?? 'Previously linked horse';
     }
+    final helperText = _type == RiderLogType.reflection
+        ? 'Reflections stay private to you unless you choose to share.'
+        : 'Selecting a linked horse shares this entry in its logbook.';
     final horse = DropdownButtonFormField<String>(
       key: ValueKey('logEntryHorse-${_student?.id ?? 'self'}'),
       initialValue: _horseChoice,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: 'Horse (optional)',
-        helperText:
-            'Selecting a linked horse shares this entry in its logbook.',
+        helperText: helperText,
         helperMaxLines: 2,
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
@@ -687,10 +1361,14 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       ],
       onChanged: _saving || _loadingHorses
           ? null
-          : (value) => setState(() {
-              _horseChoice = value!;
-              _selectedHorseName = horses[value];
-            }),
+          : (value) {
+              setState(() {
+                _horseChoice = value!;
+                _selectedHorseName = horses[value];
+              });
+              _refreshHorseHistoryForNextSteps();
+              _refreshLearningEligibility();
+            },
     );
     return LayoutBuilder(
       builder: (context, constraints) => constraints.maxWidth >= 480
@@ -764,6 +1442,10 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
     int maxLines = 1,
     int? maxLength,
     bool required = false,
+    bool capitalizeSentences = true,
+    TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
+    FormFieldValidator<String>? validator,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -778,7 +1460,11 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
       minLines: minLines,
       maxLines: maxLines,
       maxLength: maxLength,
-      textCapitalization: TextCapitalization.sentences,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
+      textCapitalization: capitalizeSentences
+          ? TextCapitalization.sentences
+          : TextCapitalization.none,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon == null ? null : Icon(icon, size: 18),
@@ -806,13 +1492,15 @@ class _LogEntryEditorState extends State<_LogEntryEditor> {
           ),
         ),
       ),
-      validator: required
-          ? (text) => (text?.trim().isEmpty ?? true)
-                ? (controller == _notes
-                      ? 'Enter a note.'
-                      : 'Enter the horse name.')
-                : null
-          : null,
+      validator:
+          validator ??
+          (required
+              ? (text) => (text?.trim().isEmpty ?? true)
+                    ? (controller == _notes
+                          ? 'Enter a note.'
+                          : 'Enter the horse name.')
+                    : null
+              : null),
     );
   }
 }
