@@ -1,0 +1,385 @@
+[
+  {
+    "id": "green",
+    "slug": "green",
+    "term": "Green",
+    "definition": "A horse or rider with limited experience in a particular activity.",
+    "explanation": "Green describes experience, not a fixed level of safety or temperament. Ask which tasks and settings the person means. A horse can be experienced on trails and green in an arena.",
+    "synonyms": [],
+    "categories": [
+      "Training"
+    ],
+    "examples": [
+      "A seasoned trail horse may be green over fences."
+    ],
+    "relatedTerms": [
+      "green-broke",
+      "groundwork"
+    ],
+    "skillIds": [],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "Usage varies by region and speaker. Ask for specific experience.",
+    "status": "published",
+    "revision": 1,
+    "contextual": false,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "green-broke",
+    "slug": "green-broke",
+    "term": "Green Broke",
+    "definition": "A horse that has begun ridden training and still needs substantial education.",
+    "explanation": "The phrase has no universal assessment standard. It may mean anything from accepting a rider to doing simple ridden work. Ask what the horse can reliably do and under what conditions. Beginners need suitable instruction and an appropriately experienced horse.",
+    "synonyms": [
+      "green broken",
+      "green-broken"
+    ],
+    "categories": [
+      "Training"
+    ],
+    "examples": [
+      "Ask whether the horse has been ridden outside an enclosed area."
+    ],
+    "relatedTerms": [
+      "green",
+      "groundwork"
+    ],
+    "skillIds": [],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "Usage varies by region and speaker. Ask for specific experience.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "canter",
+    "slug": "canter",
+    "term": "Canter",
+    "definition": "A three-beat gait with a leading side and a moment when all four feet are off the ground.",
+    "explanation": "In a typical canter, the outside hind lands first, the inside hind and outside fore land together, and the inside fore lands last. On a left lead, the left foreleg is the final footfall. Speed and stride length vary.",
+    "synonyms": [
+      "cantering",
+      "lope",
+      "loping"
+    ],
+    "categories": [
+      "Gaits"
+    ],
+    "examples": [
+      "A rider asks for a left-lead canter on a left circle."
+    ],
+    "relatedTerms": [
+      "counter-canter",
+      "half-halt"
+    ],
+    "skillIds": [
+      "rider.mounted.canter",
+      "horse.mounted.canter"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Lope is commonly used in Western riding for the canter, often with a relaxed tempo. Discipline-specific expectations for tempo and presentation differ, while a typical canter or lope has the same three-beat footfall sequence.",
+    "regionalUsage": "In North American Western, ranch, and trail riding, lope is the standard everyday term, while canter is used across English disciplines and throughout Britain, Ireland, Europe, and Oceania.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "ground-tie",
+    "slug": "ground-tie",
+    "term": "Ground Tie",
+    "definition": "To teach a horse to remain in place when its lead or reins are placed on the ground.",
+    "explanation": "This is a trained response, not physical restraint. Teach it progressively in a safe enclosed setting. A horse can move away, and loose equipment can catch on objects. It does not replace supervision or a safe tying arrangement.",
+    "synonyms": [
+      "ground tying",
+      "ground-tie"
+    ],
+    "categories": [
+      "Handling"
+    ],
+    "examples": [
+      "A trained horse waits while its handler adjusts equipment nearby."
+    ],
+    "relatedTerms": [
+      "groundwork"
+    ],
+    "skillIds": [],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "groundwork",
+    "slug": "groundwork",
+    "term": "Groundwork",
+    "definition": "Training and handling activities carried out while the handler is on the ground.",
+    "explanation": "Groundwork includes leading, yielding, standing, preparation for equipment, and other learning tasks. Its purpose and methods vary. Effective work uses clear cues, suitable reinforcement, and attention to the horse’s comfort and understanding.",
+    "synonyms": [
+      "ground work"
+    ],
+    "categories": [
+      "Handling",
+      "Training"
+    ],
+    "examples": [
+      "Practising a calm halt while leading is groundwork."
+    ],
+    "relatedTerms": [
+      "ground-tie",
+      "green"
+    ],
+    "skillIds": [
+      "rider.in_hand.leading",
+      "horse.in_hand.leading"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "half-halt",
+    "slug": "half-halt",
+    "term": "Half Halt",
+    "definition": "A brief, coordinated request to rebalance and prepare for what comes next while maintaining forward intention.",
+    "explanation": "Riders coordinate their posture and aids, then soften as the horse responds. The exact aids depend on the horse’s education and the task. A half halt should not become a sustained pull or a forced head position.",
+    "synonyms": [
+      "half-halt",
+      "half halts"
+    ],
+    "categories": [
+      "Riding"
+    ],
+    "examples": [
+      "A rider uses a half halt before a transition or a turn."
+    ],
+    "relatedTerms": [
+      "collection",
+      "canter"
+    ],
+    "skillIds": [
+      "rider.mounted.half_halt"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "collection",
+    "slug": "collection",
+    "term": "Collection",
+    "definition": "A way of moving with greater balance and carrying effort behind, allowing shorter strides while maintaining energy.",
+    "explanation": "Collection develops through progressive strength, coordination, and education. It is not defined by a tucked head or slow speed alone. Disciplines describe and assess its degree differently, and physical ability varies between horses.",
+    "synonyms": [],
+    "categories": [
+      "Riding",
+      "Biomechanics"
+    ],
+    "examples": [
+      "A horse shortens its stride while remaining active and balanced."
+    ],
+    "relatedTerms": [
+      "half-halt",
+      "shoulder-in"
+    ],
+    "skillIds": [],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": false,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "shoulder-in",
+    "slug": "shoulder-in",
+    "term": "Shoulder-In",
+    "definition": "A lateral exercise in which a horse travels forward with its shoulders displaced inward and its body bent away from the direction of sideways travel.",
+    "explanation": "On a straight arena track, the hindquarters remain near the track while the shoulders move to the inside. The horse bends around the rider’s inside leg. Angle and precision depend on the stage of training and the discipline.",
+    "synonyms": [
+      "shoulder in"
+    ],
+    "categories": [
+      "Riding"
+    ],
+    "examples": [
+      "A few balanced steps of shoulder-in can introduce the exercise."
+    ],
+    "relatedTerms": [
+      "collection",
+      "half-halt"
+    ],
+    "skillIds": [
+      "rider.mounted.shoulder_in",
+      "horse.mounted.shoulder_in"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "counter-canter",
+    "slug": "counter-canter",
+    "term": "Counter-Canter",
+    "definition": "A deliberate canter on the lead opposite to the direction of a turn.",
+    "explanation": "A horse travelling around a left curve on the right lead is in counter-canter when the lead is intentional. The exercise asks for balance without changing leads. Progress gradually and choose a line suited to the horse’s strength.",
+    "synonyms": [
+      "counter canter"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "A shallow loop can introduce counter-canter without a tight turn."
+    ],
+    "relatedTerms": [
+      "canter"
+    ],
+    "skillIds": [
+      "rider.mounted.canter"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "poll",
+    "slug": "poll",
+    "term": "Poll",
+    "definition": "The area at the top of the horse’s head, just behind the ears.",
+    "explanation": "The poll is associated with the back of the skull and the upper neck. Pressure from headgear, muscle tension, or discomfort can affect the area. Restricted movement or pain calls for qualified assessment.",
+    "synonyms": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "examples": [
+      "Check that a headpiece rests comfortably behind the ears."
+    ],
+    "relatedTerms": [
+      "withers"
+    ],
+    "skillIds": [],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": false,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "withers",
+    "slug": "withers",
+    "term": "Withers",
+    "definition": "The ridge at the base of the neck between the top of the shoulder blades.",
+    "explanation": "The withers are formed largely by the tall spinal processes of the front thoracic vertebrae and their surrounding tissues. Horse height is commonly measured at the highest point of the withers. Saddle fit must allow suitable clearance and movement.",
+    "synonyms": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "examples": [
+      "A measuring stick is placed beside a standing horse to measure height at the withers."
+    ],
+    "relatedTerms": [
+      "poll"
+    ],
+    "skillIds": [],
+    "resourceIds": [],
+    "media": [],
+    "usage": "",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  }
+]

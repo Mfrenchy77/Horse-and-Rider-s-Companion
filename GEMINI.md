@@ -18,3 +18,7 @@ After completing an implementation:
 - Never commit credentials, secrets, generated build files, or temporary debugging files.
 - If tests fail or changes are incomplete, report the problem rather than committing broken work.
 - Do not amend or rewrite existing commits unless requested.
+
+## Equestrian Dictionary
+
+Follow docs/EQUESTRIAN_DICTIONARY_GUIDING_PRINCIPLES.md when developing or editing the Dictionary.

@@ -291,6 +291,17 @@ class UserProfileDrawer extends StatelessWidget {
                       },
                     ),
 
+                  ListTile(
+                    key: const Key('drawerDictionaryTile'),
+                    leading: const Icon(Icons.menu_book_outlined),
+                    title: const Text('Dictionary'),
+                    onTap: () {
+                      onClose?.call();
+                      Scaffold.maybeOf(context)?.closeDrawer();
+                      context.push('/Dictionary');
+                    },
+                  ),
+
                   // Settings
                   ListTile(
                     leading: const Icon(Icons.settings),

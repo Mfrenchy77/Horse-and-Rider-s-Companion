@@ -47,6 +47,7 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
       (id === './connections' ? require('../connections') :
       id === './account_deletion' ? require('../account_deletion') :
       id === './suggestions' ? require('../suggestions') :
+      id === './dictionary' ? require('../dictionary') :
       id === './curriculum_drafts' ? require('../curriculum_drafts') :
       id === './curriculum_revisions' ? require('../curriculum_revisions') :
       id === './share_preview' ? require('../share_preview') :

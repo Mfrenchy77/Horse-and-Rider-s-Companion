@@ -155,8 +155,34 @@ class GuestProfile extends StatelessWidget {
                               'linked directly to skills.',
                           onTap: () => context.goNamed(ResourcesPage.name),
                         );
-                        return constraints.maxWidth >= 640
-                            ? IntrinsicHeight(
+                        final dictionary = _ExploreCard(
+                          key: const Key('guestExploreDictionary'),
+                          icon: Icons.menu_book_outlined,
+                          title: 'Equestrian Dictionary',
+                          description:
+                              'Explore plain-language horsemanship terms '
+                              'across English, Western, trail, and groundwork.',
+                          onTap: () => context.push('/Dictionary'),
+                        );
+                        if (constraints.maxWidth >= 860) {
+                          return IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: AppTokens.spaceMd,
+                              children: [
+                                Expanded(child: skills),
+                                Expanded(child: resources),
+                                Expanded(child: dictionary),
+                              ],
+                            ),
+                          );
+                        }
+                        if (constraints.maxWidth >= 640) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: AppTokens.spaceMd,
+                            children: [
+                              IntrinsicHeight(
                                 child: Row(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
@@ -166,12 +192,16 @@ class GuestProfile extends StatelessWidget {
                                     Expanded(child: resources),
                                   ],
                                 ),
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: AppTokens.spaceMd,
-                                children: [skills, resources],
-                              );
+                              ),
+                              dictionary,
+                            ],
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: AppTokens.spaceMd,
+                          children: [skills, resources, dictionary],
+                        );
                       },
                     ),
                   ],

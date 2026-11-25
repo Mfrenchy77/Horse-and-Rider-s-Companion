@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/App/Routes/route_observer.dart';
-
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_admin_page.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_page.dart';
 import 'package:horseandriderscompanion/MainPages/Navigator/navigation_view.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
@@ -153,6 +153,25 @@ class Routes {
       navigatorKey: routeNavigatorKey,
       initialLocation: ProfilePage.path,
       routes: <RouteBase>[
+        GoRoute(
+          path: DictionaryAdminPage.path,
+          builder: (context, state) => const DictionaryAdminPage(),
+        ),
+        GoRoute(
+          path: DictionaryPage.path,
+          builder: (context, state) => DictionaryPage(
+            initialQuery: state.uri.queryParameters['q'] ?? '',
+          ),
+          routes: [
+            GoRoute(
+              path: ':termSlug',
+              builder: (context, state) => DictionaryPage(
+                slug: state.pathParameters['termSlug'],
+              ),
+            ),
+          ],
+        ),
+
         GoRoute(
           path: AuthPage.path,
           name: AuthPage.name,

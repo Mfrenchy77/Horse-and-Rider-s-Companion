@@ -85,6 +85,8 @@
       }
     ],
     "rewrites": [
+      {"source": "/Dictionary", "function": "sharePreview"},
+      {"source": "/Dictionary/**", "function": "sharePreview"},
       {
         "source": "/SkillTree",
         "function": "sharePreview"

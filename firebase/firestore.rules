@@ -133,6 +133,34 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /DictionaryEntries/{slug} {
+      allow read: if resource.data.status == 'published';
+      allow write: if false;
+    }
+    match /DictionaryPublic/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /DictionaryDrafts/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /Revisions/{revision} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+    match /DictionarySuggestions/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /AuditEvents/{event} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+    match /DictionaryRateLimits/{id} {
+      allow read, write: if false;
+    }
+
     match /SkillFamilies/{familyId} {
       allow read: if true;
       allow write: if false;

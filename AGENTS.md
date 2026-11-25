@@ -250,3 +250,7 @@ Production deployment always requires explicit owner authorization.
 Prioritize delivering a working, maintainable application over endlessly refining implementation details.
 
 Make thoughtful improvements, test them, commit completed work locally, and move forward.
+
+## Equestrian Dictionary
+
+Follow docs/EQUESTRIAN_DICTIONARY_GUIDING_PRINCIPLES.md for Dictionary implementation and editorial work. Published meanings have stable IDs and slugs. Keep submissions, drafts, contributor identities, and review history private. Public recognition requires explicit consent.

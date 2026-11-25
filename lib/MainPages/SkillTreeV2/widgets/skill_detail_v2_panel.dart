@@ -4,6 +4,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
@@ -144,10 +145,11 @@ class SkillDetailV2Panel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: AppTokens.spaceXs,
               children: [
-                if (skill.summary.trim().isNotEmpty) Text(skill.summary),
+                if (skill.summary.trim().isNotEmpty)
+                  ContextualDictionaryText(text: skill.summary),
                 if (skill.purpose.trim().isNotEmpty)
-                  Text(
-                    'Purpose: ${skill.purpose}',
+                  ContextualDictionaryText(
+                    text: 'Purpose: ${skill.purpose}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppTokens.secondaryTextColor(context),
                     ),
@@ -751,7 +753,7 @@ class _LevelDetailSection extends StatelessWidget {
               spacing: AppTokens.spaceSm,
               children: [
                 if (definition.overview.trim().isNotEmpty)
-                  Text(definition.overview),
+                  ContextualDictionaryText(text: definition.overview),
                 _CriteriaBlock(
                   title: 'Learning criteria',
                   body: definition.learning,
@@ -968,8 +970,8 @@ class _EducationalComponentsSectionState
                       if (component.description.trim().isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(left: 12),
-                          child: Text(
-                            component.description,
+                          child: ContextualDictionaryText(
+                            text: component.description,
                             style: theme.textTheme.bodySmall,
                           ),
                         ),
@@ -1063,7 +1065,7 @@ class _CriteriaBlock extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        Text(body, style: theme.textTheme.bodySmall),
+        ContextualDictionaryText(text: body, style: theme.textTheme.bodySmall),
       ],
     );
   }

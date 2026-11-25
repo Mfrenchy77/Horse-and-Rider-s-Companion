@@ -969,3 +969,48 @@ test('Conversations, notification tokens, and unknown collections enforce strict
   await assertFails(getDoc(doc(aliceDb, 'UnknownCollection/doc-1')));
   await assertFails(setDoc(doc(aliceDb, 'UnknownCollection/doc-2'), { hack: true }));
 });
+
+test('Dictionary published entries are public; drafts, identities, limits, and writes are private', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'DictionaryEntries/canter'), {status: 'published', definition: 'Three-beat gait.'});
+    await setDoc(doc(db, 'DictionaryEntries/hidden'), {status: 'draft', definition: 'Private.'});
+    await setDoc(doc(db, 'DictionaryDrafts/canter'), {status: 'draft'});
+    await setDoc(doc(db, 'DictionarySuggestions/proposal'), {contributorUid: 'member'});
+    await setDoc(doc(db, 'DictionarySuggestions/proposal/AuditEvents/one'), {note: 'Private'});
+    await setDoc(doc(db, 'DictionaryRateLimits/key'), {count: 1});
+  });
+  const guest = environment.unauthenticatedContext().firestore();
+  const member = environment.authenticatedContext('member', verified).firestore();
+  const otherMember = environment.authenticatedContext('other-member', verified).firestore();
+  const moderator = environment.authenticatedContext('moderator', {...verified, moderator: true}).firestore();
+  const unverifiedAdmin = environment.authenticatedContext('unverified-admin', {
+    email: 'admin@example.com',
+    email_verified: false,
+    admin: true,
+  }).firestore();
+  const admin = environment.authenticatedContext('admin', {...verified, admin: true}).firestore();
+  await environment.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'DictionaryDrafts/canter/Revisions/1'), {revision: 1, status: 'published'});
+  });
+  for (const db of [guest, member, otherMember, moderator, unverifiedAdmin]) {
+    await assertSucceeds(getDoc(doc(db, 'DictionaryEntries/canter')));
+    await assertSucceeds(getDocs(query(collection(db, 'DictionaryEntries'), where('status', '==', 'published'))));
+    await assertFails(getDocs(collection(db, 'DictionaryEntries')));
+    for (const path of [
+      'DictionaryEntries/hidden', 'DictionaryDrafts/canter', 'DictionaryDrafts/canter/Revisions/1',
+      'DictionarySuggestions/proposal', 'DictionarySuggestions/proposal/AuditEvents/one', 'DictionaryRateLimits/key',
+    ]) await assertFails(getDoc(doc(db, path)));
+  }
+  for (const db of [guest, member, moderator, unverifiedAdmin, admin]) {
+    for (const path of ['DictionaryEntries/canter', 'DictionaryDrafts/canter', 'DictionarySuggestions/proposal']) {
+      await assertFails(setDoc(doc(db, path), {status: 'published'}));
+    }
+  }
+  await assertSucceeds(getDoc(doc(admin, 'DictionaryDrafts/canter')));
+  await assertSucceeds(getDoc(doc(admin, 'DictionaryDrafts/canter/Revisions/1')));
+  await assertSucceeds(getDoc(doc(admin, 'DictionarySuggestions/proposal')));
+  await assertSucceeds(getDoc(doc(admin, 'DictionarySuggestions/proposal/AuditEvents/one')));
+  await assertFails(getDoc(doc(admin, 'DictionaryRateLimits/key')));
+});

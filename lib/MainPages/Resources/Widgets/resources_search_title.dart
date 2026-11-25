@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -71,13 +72,25 @@ class ResourcesSearchTitle extends StatelessWidget {
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    textController.clear();
-                    cubit.toggleSearch();
-                  },
-                  icon: const Icon(Icons.clear),
-                  tooltip: 'Clear',
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Search Dictionary',
+                      onPressed: () => context.push(
+                        '/Dictionary?q=${Uri.encodeQueryComponent(textController.text)}',
+                      ),
+                      icon: const Icon(Icons.menu_book_outlined),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        textController.clear();
+                        cubit.toggleSearch();
+                      },
+                      icon: const Icon(Icons.clear),
+                      tooltip: 'Clear',
+                    ),
+                  ],
                 ),
               ),
             );

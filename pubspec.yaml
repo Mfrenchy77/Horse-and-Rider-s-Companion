@@ -82,6 +82,7 @@ flutter:
   assets:
     - assets/
     - curriculum/v2/
+    - functions/dictionary_seed.json
   fonts:
     - family: HorseAndRiderIcons
       fonts:

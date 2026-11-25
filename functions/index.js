@@ -25,6 +25,22 @@ const {
   rollbackCurriculumRevisionHandler,
 } = require('./curriculum_revisions');
 const {sharePreviewHandler} = require('./share_preview');
+const {submitDictionarySuggestion, editDictionary, dictionaryEmulator} = require('./dictionary');
+const {defineSecret} = require('firebase-functions/params');
+const dictionaryRateSecret = defineSecret('DICTIONARY_RATE_SECRET');
+
+exports.submitDictionarySuggestion = onCall(
+    {region: 'us-central1', enforceAppCheck: !dictionaryEmulator, secrets: [dictionaryRateSecret]},
+    (request) => submitDictionarySuggestion(admin.firestore(), {
+      secret: dictionaryRateSecret.value(), requireAppCheck: !dictionaryEmulator,
+    })(request),
+);
+
+exports.editDictionary = onCall(
+    {region: 'us-central1'},
+    (request) => editDictionary(admin.firestore())(request),
+);
+
 const {syncPublicHorseProfileHandler} = require('./public_horse_profile');
 const {syncPublicRiderProfileHandler} = require('./public_rider_profile');
 

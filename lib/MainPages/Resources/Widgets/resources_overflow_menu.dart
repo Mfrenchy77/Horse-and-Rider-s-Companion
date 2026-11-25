@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/quick_share_resource_page.dart';
@@ -18,6 +19,9 @@ class ResourcesOverflowMenu extends StatelessWidget {
             ? PopupMenuButton<String>(
                 tooltip: 'Add, Edit or Sort Resources',
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'Dictionary', child: Text('Dictionary'),
+                  ),
                   const PopupMenuItem<String>(value: 'Add', child: Text('Add')),
                   const PopupMenuItem<String>(
                     value: 'Edit',
@@ -30,6 +34,9 @@ class ResourcesOverflowMenu extends StatelessWidget {
                 ],
                 onSelected: (value) {
                   switch (value) {
+                    case 'Dictionary':
+                      context.push('/Dictionary');
+                      break;
                     case 'Add':
                       QuickShareResourcePage.open(
                         context,
@@ -56,12 +63,19 @@ class ResourcesOverflowMenu extends StatelessWidget {
                 itemBuilder: (context) {
                   return <PopupMenuEntry<String>>[
                     const PopupMenuItem<String>(
+                    value: 'Dictionary', child: Text('Dictionary'),
+                  ),
+                    const PopupMenuItem<String>(
                       value: 'Sort',
                       child: Text('Sort'),
                     ),
                   ];
                 },
                 onSelected: (value) {
+                  if (value == 'Dictionary') {
+                    context.push('/Dictionary');
+                    return;
+                  }
                   showAppGlassDialog<void>(
                     context: context,
                     builder: (context) => const ResourcesSortDialog(

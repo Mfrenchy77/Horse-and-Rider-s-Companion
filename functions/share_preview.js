@@ -2,6 +2,8 @@
 /* eslint max-len: ["error", {"code": 120}] */
 'use strict';
 
+const {publicEntry} = require('./dictionary');
+
 const DEFAULT_TITLE = 'Horse & Rider\'s Companion';
 const DEFAULT_DESCRIPTION =
   'Track Rider and Horse horsemanship skills, explore Skill Tree 2.0, and share educational resources.';
@@ -44,6 +46,7 @@ function buildMetaTagsHtml(meta) {
     `<meta property="og:description" content="${description}">`,
     `<meta property="og:image" content="${image}">`,
     `<meta property="og:url" content="${url}">`,
+    `<link rel="canonical" href="${url}">`,
     '<meta name="twitter:card" content="summary">',
     `<meta name="twitter:title" content="${title}">`,
     `<meta name="twitter:description" content="${description}">`,
@@ -181,7 +184,18 @@ function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
       let meta;
       let cacheControl = 'public, max-age=300, s-maxage=600';
 
-      if (horseMatch) {
+      const dictionaryMatch = reqPath.match(/^\/Dictionary(?:\/([a-z0-9-]+))?\/?$/);
+      if (dictionaryMatch) {
+        const entry = dictionaryMatch[1] ? await publicEntry(db, dictionaryMatch[1]) : null;
+        meta = {
+          title: entry ? entry.term + ' — Equestrian Dictionary — ' + DEFAULT_TITLE :
+            'Equestrian Dictionary — ' + DEFAULT_TITLE,
+          description: entry ? entry.definition : 'Explore plain-language equestrian definitions for every discipline.',
+          image: origin + DEFAULT_IMAGE_PATH,
+          url: origin + '/Dictionary' + (entry ? '/' + entry.slug : ''),
+        };
+        if (dictionaryMatch[1] && !entry) cacheControl = 'no-store';
+      } else if (horseMatch) {
         const rawHorseId = safeDecodeURIComponent(horseMatch[1]);
         const horse = await resolvePublicHorse(db, rawHorseId);
         meta = buildHorsePreviewMeta(origin, horse);

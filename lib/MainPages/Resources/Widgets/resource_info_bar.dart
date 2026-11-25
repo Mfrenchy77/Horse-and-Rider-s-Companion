@@ -7,6 +7,7 @@ import 'package:flutter_quill/flutter_quill.dart' show Document;
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/app.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/resources_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/create_resource_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResourceDialog/cubit/create_resource_dialog_cubit.dart';
@@ -314,15 +315,24 @@ class ResourceInfoBar extends StatelessWidget {
                   ],
                   if (description.isNotEmpty) ...[
                     const SizedBox(height: AppTokens.spaceSm),
-                    Text(
-                      description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTokens.secondaryTextColor(context),
-                        height: 1.4,
+                    if (isDetailHeader && !_HeroFlightScope.isInFlight(context))
+                      ContextualDictionaryText(
+                        text: description,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                          height: 1.4,
+                        ),
+                      )
+                    else
+                      Text(
+                        description,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                          height: 1.4,
+                        ),
                       ),
-                    ),
                   ],
                   if (skills.isNotEmpty) ...[
                     const SizedBox(height: AppTokens.spaceSm),

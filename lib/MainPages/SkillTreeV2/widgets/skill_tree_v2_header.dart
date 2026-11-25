@@ -1,5 +1,6 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
@@ -100,6 +101,11 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: 'Equestrian Dictionary',
+              onPressed: () => context.push('/Dictionary'),
+              icon: const Icon(Icons.menu_book_outlined),
             ),
             SegmentedButton<SkillTreeV2ViewMode>(
               key: const Key('skillTreeV2ViewModeSelector'),

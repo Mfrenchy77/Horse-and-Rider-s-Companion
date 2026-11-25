@@ -1,8 +1,10 @@
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/adaptive_app_bar_actions.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/cubit/administration_suggestions_cubit.dart';
@@ -349,31 +351,37 @@ class _AdministrationPageState extends State<AdministrationPage> {
                     : 'Moderation · Suggestions Inbox',
               ),
               actions: [
-                if (appState.isAdmin) ...[
-                  IconButton(
-                    key: const Key('adminDownloadCurriculumButton'),
-                    tooltip: 'Download Curriculum',
-                    onPressed: _openDownloadCurriculum,
-                    icon: const Icon(Icons.download_outlined),
+                AdaptiveAppBarActions(actions: [
+                  if (appState.isAdmin) ...[
+                    AdaptiveAppBarAction(
+                      key: const Key('adminDownloadCurriculumButton'),
+                      label: 'Download Curriculum',
+                      onPressed: _openDownloadCurriculum,
+                      icon: Icons.download_outlined,
+                    ),
+                    AdaptiveAppBarAction(
+                      key: const Key('adminRevisionHistoryButton'),
+                      label: 'Curriculum Revision History',
+                      onPressed: _openRevisionHistory,
+                      icon: Icons.history_outlined,
+                    ),
+                    AdaptiveAppBarAction(
+                      label: 'Dictionary review',
+                      onPressed: () => context.push('/DictionaryReview'),
+                      icon: Icons.menu_book_outlined,
+                    ),
+                  ],
+                  AdaptiveAppBarAction(
+                    key: const Key('adminRefreshInboxButton'),
+                    label: 'Refresh inbox',
+                    priority: 2,
+                    onPressed: state.isLoading ? null : () {
+                      _cubit.loadInbox(statusFilter: state.statusFilter);
+                      _loadPublicationStatus();
+                    },
+                    icon: Icons.refresh,
                   ),
-                  IconButton(
-                    key: const Key('adminRevisionHistoryButton'),
-                    tooltip: 'Curriculum Revision History',
-                    onPressed: _openRevisionHistory,
-                    icon: const Icon(Icons.history_outlined),
-                  ),
-                ],
-                IconButton(
-                  key: const Key('adminRefreshInboxButton'),
-                  tooltip: 'Refresh inbox',
-                  onPressed: state.isLoading
-                      ? null
-                      : () {
-                          _cubit.loadInbox(statusFilter: state.statusFilter);
-                          _loadPublicationStatus();
-                        },
-                  icon: const Icon(Icons.refresh),
-                ),
+                ]),
               ],
             ),
             body: AppScaffoldBackdrop(
