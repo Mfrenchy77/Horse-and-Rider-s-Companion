@@ -389,7 +389,8 @@ class ResourceInfoBar extends StatelessWidget {
                         return ValueListenableBuilder<bool>(
                           valueListenable: ResourcesSpotlightTour.isTourActive,
                           builder: (context, tourActive, child) => KeyedSubtree(
-                            key: tourActive &&
+                            key:
+                                tourActive &&
                                     resource.id ==
                                         ResourcesSpotlightTour
                                             .activeDetailResourceId

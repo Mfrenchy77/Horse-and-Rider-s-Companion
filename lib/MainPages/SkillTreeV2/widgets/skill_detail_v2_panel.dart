@@ -132,82 +132,81 @@ class SkillDetailV2Panel extends StatelessWidget {
                     ),
                 ],
               ),
-          ValueListenableBuilder<bool>(
-            valueListenable: SkillTreeSpotlightTour.isTourActive,
-            builder: (context, tourActive, child) => KeyedSubtree(
-              key: tourActive &&
-                      skill.id == SkillTreeSpotlightTour.activeSkillId
-                  ? SkillTreeSpotlightTour.descriptionKey
-                  : null,
-              child: child!,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: AppTokens.spaceXs,
-              children: [
-                if (skill.summary.trim().isNotEmpty)
-                  ContextualDictionaryText(text: skill.summary),
-                if (skill.purpose.trim().isNotEmpty)
-                  ContextualDictionaryText(
-                    text: 'Purpose: ${skill.purpose}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppTokens.secondaryTextColor(context),
-                    ),
-                  ),
-                ..._buildAliasesSection(context, skill),
-              ],
-            ),
-          ),
+              ValueListenableBuilder<bool>(
+                valueListenable: SkillTreeSpotlightTour.isTourActive,
+                builder: (context, tourActive, child) => KeyedSubtree(
+                  key:
+                      tourActive &&
+                          skill.id == SkillTreeSpotlightTour.activeSkillId
+                      ? SkillTreeSpotlightTour.descriptionKey
+                      : null,
+                  child: child!,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppTokens.spaceXs,
+                  children: [
+                    if (skill.summary.trim().isNotEmpty)
+                      ContextualDictionaryText(text: skill.summary),
+                    if (skill.purpose.trim().isNotEmpty)
+                      ContextualDictionaryText(
+                        text: 'Purpose: ${skill.purpose}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                        ),
+                      ),
+                    ..._buildAliasesSection(context, skill),
+                  ],
+                ),
+              ),
             ],
           ),
-              if (isRetired)
-                Container(
-                  key: const Key('retiredSkillBanner'),
-                  padding: const EdgeInsets.all(AppTokens.spaceSm),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer.withValues(
-                      alpha: 0.45,
-                    ),
-                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                  ),
-                  child: Column(
+          if (isRetired)
+            Container(
+              key: const Key('retiredSkillBanner'),
+              padding: const EdgeInsets.all(AppTokens.spaceSm),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer.withValues(
+                  alpha: 0.45,
+                ),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppTokens.spaceXs,
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: AppTokens.spaceXs,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.archive_outlined,
-                            size: 18,
-                            color: theme.colorScheme.onSecondaryContainer,
-                          ),
-                          const SizedBox(width: AppTokens.spaceSm),
-                          Expanded(
-                            child: Text(
-                              'This skill has been retired. Historical '
-                              'progress and instructor verifications remain '
-                              'preserved.',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ),
-                        ],
+                      Icon(
+                        Icons.archive_outlined,
+                        size: 18,
+                        color: theme.colorScheme.onSecondaryContainer,
                       ),
-                      if (replacementSkill != null)
-                        OutlinedButton.icon(
-                          key: const Key('retiredSkillReplacementButton'),
-                          onPressed: () =>
-                              onSelectRelatedSkill(replacementSkill.id),
-                          icon: const Icon(Icons.arrow_forward, size: 16),
-                          label: Text(
-                            'View replacement: ${replacementSkill.name}',
-                          ),
+                      const SizedBox(width: AppTokens.spaceSm),
+                      Expanded(
+                        child: Text(
+                          'This skill has been retired. Historical '
+                          'progress and instructor verifications remain '
+                          'preserved.',
+                          style: theme.textTheme.bodySmall,
                         ),
+                      ),
                     ],
                   ),
-                ),
-              if (skill.safety.isNotEmpty)
-                Container(
+                  if (replacementSkill != null)
+                    OutlinedButton.icon(
+                      key: const Key('retiredSkillReplacementButton'),
+                      onPressed: () =>
+                          onSelectRelatedSkill(replacementSkill.id),
+                      icon: const Icon(Icons.arrow_forward, size: 16),
+                      label: Text('View replacement: ${replacementSkill.name}'),
+                    ),
+                ],
+              ),
+            ),
+          if (skill.safety.isNotEmpty)
+            Container(
               padding: const EdgeInsets.all(AppTokens.spaceSm),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.35),
@@ -238,7 +237,8 @@ class SkillDetailV2Panel extends StatelessWidget {
                   ValueListenableBuilder<int?>(
                     valueListenable: GuestSpotlightTour.activeStep,
                     builder: (context, tourStep, innerChild) => KeyedSubtree(
-                      key: skillTourActive &&
+                      key:
+                          skillTourActive &&
                               skill.id == SkillTreeSpotlightTour.activeSkillId
                           ? SkillTreeSpotlightTour.difficultyKey
                           : (tourStep == 3 &&
@@ -354,7 +354,8 @@ class SkillDetailV2Panel extends StatelessWidget {
                   ValueListenableBuilder<bool>(
                     valueListenable: SkillTreeSpotlightTour.isTourActive,
                     builder: (context, tourActive, child) => KeyedSubtree(
-                      key: tourActive &&
+                      key:
+                          tourActive &&
                               skill.id == SkillTreeSpotlightTour.activeSkillId
                           ? SkillTreeSpotlightTour.suggestKey
                           : null,
@@ -524,22 +525,24 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
     _isLoading = lookupIds.isNotEmpty;
 
     for (final id in lookupIds) {
-      final sub = store.getResourcesForSkill(skillId: id).listen(
-        (items) {
-          if (!mounted) return;
-          setState(() {
-            _resourcesByLookupId[id] = items;
-            _isLoading = false;
-          });
-        },
-        onError: (_) {
-          if (!mounted) return;
-          setState(() {
-            _resourcesByLookupId.putIfAbsent(id, () => const []);
-            _isLoading = false;
-          });
-        },
-      );
+      final sub = store
+          .getResourcesForSkill(skillId: id)
+          .listen(
+            (items) {
+              if (!mounted) return;
+              setState(() {
+                _resourcesByLookupId[id] = items;
+                _isLoading = false;
+              });
+            },
+            onError: (_) {
+              if (!mounted) return;
+              setState(() {
+                _resourcesByLookupId.putIfAbsent(id, () => const []);
+                _isLoading = false;
+              });
+            },
+          );
       _subscriptions.add(sub);
     }
   }
@@ -562,8 +565,7 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
     final theme = Theme.of(context);
     final appState = context.watch<AppCubit>().state;
     final store =
-        context.read<ResourcesStore?>() ??
-        context.read<ResourcesRepository?>();
+        context.read<ResourcesStore?>() ?? context.read<ResourcesRepository?>();
     final lookupIds = effectiveResourceLookupIds(
       skill: widget.skill,
       legacySkills: appState.allSkills,
@@ -742,8 +744,8 @@ class _LevelDetailSection extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: SkillTreeSpotlightTour.isTourActive,
             builder: (context, tourActive, child) => KeyedSubtree(
-              key: tourActive &&
-                      skill.id == SkillTreeSpotlightTour.activeSkillId
+              key:
+                  tourActive && skill.id == SkillTreeSpotlightTour.activeSkillId
                   ? SkillTreeSpotlightTour.criteriaKey
                   : null,
               child: child!,
@@ -769,8 +771,8 @@ class _LevelDetailSection extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: SkillTreeSpotlightTour.isTourActive,
             builder: (context, tourActive, child) => KeyedSubtree(
-              key: tourActive &&
-                      skill.id == SkillTreeSpotlightTour.activeSkillId
+              key:
+                  tourActive && skill.id == SkillTreeSpotlightTour.activeSkillId
                   ? SkillTreeSpotlightTour.selfAssessKey
                   : null,
               child: child!,
@@ -828,8 +830,8 @@ class _LevelDetailSection extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: SkillTreeSpotlightTour.isTourActive,
             builder: (context, tourActive, child) => KeyedSubtree(
-              key: tourActive &&
-                      skill.id == SkillTreeSpotlightTour.activeSkillId
+              key:
+                  tourActive && skill.id == SkillTreeSpotlightTour.activeSkillId
                   ? SkillTreeSpotlightTour.verificationKey
                   : null,
               child: child!,
@@ -852,9 +854,7 @@ class _LevelDetailSection extends StatelessWidget {
                         children: [
                           if (!isVerified)
                             FilledButton.tonalIcon(
-                              key: Key(
-                                'verifyLevel_${skill.id}_${level.name}',
-                              ),
+                              key: Key('verifyLevel_${skill.id}_${level.name}'),
                               onPressed: isSubmitting
                                   ? null
                                   : () => onVerifyLevel(verified: true),
@@ -863,9 +863,7 @@ class _LevelDetailSection extends StatelessWidget {
                             ),
                           if (isVerified)
                             OutlinedButton.icon(
-                              key: Key(
-                                'revokeLevel_${skill.id}_${level.name}',
-                              ),
+                              key: Key('revokeLevel_${skill.id}_${level.name}'),
                               onPressed: isSubmitting
                                   ? null
                                   : () => onVerifyLevel(verified: false),
@@ -894,7 +892,8 @@ class _LevelDetailSection extends StatelessWidget {
             ValueListenableBuilder<bool>(
               valueListenable: SkillTreeSpotlightTour.isTourActive,
               builder: (context, tourActive, child) => KeyedSubtree(
-                key: tourActive &&
+                key:
+                    tourActive &&
                         skill.id == SkillTreeSpotlightTour.activeSkillId
                     ? SkillTreeSpotlightTour.guidanceKey
                     : null,
@@ -914,10 +913,7 @@ class _LevelDetailSection extends StatelessWidget {
 }
 
 class _EducationalComponentsSection extends StatefulWidget {
-  const _EducationalComponentsSection({
-    required this.definition,
-    super.key,
-  });
+  const _EducationalComponentsSection({required this.definition, super.key});
 
   final SkillLevelDefinition definition;
 

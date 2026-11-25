@@ -260,11 +260,7 @@ class _ExploreCard extends StatelessWidget {
                     child: Icon(icon, color: accent, size: 26),
                   ),
                   const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 20,
-                    color: accent,
-                  ),
+                  Icon(Icons.arrow_forward_rounded, size: 20, color: accent),
                 ],
               ),
               const SizedBox(height: AppTokens.spaceMd),
