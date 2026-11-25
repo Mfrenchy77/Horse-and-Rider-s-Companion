@@ -160,6 +160,37 @@ void main() {
     },
   );
 
+  testWidgets('a directly opened Dictionary returns to Welcome with Back', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/Dictionary',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const Scaffold(body: Text('Welcome')),
+        ),
+        GoRoute(
+          path: '/Dictionary',
+          builder: (_, _) =>
+              DictionaryPage(repository: RecordingDictionary(entries)),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: harness.cubit,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('published manifest suppresses bundled fallback and drafts', () async {
     final db = FakeFirebaseFirestore();
     await db.collection('DictionaryPublic').doc('catalogue').set({

@@ -82,18 +82,43 @@ class DictionaryRepository {
       final db = firestore ?? FirebaseFirestore.instance;
       // A manifest distinguishes an intentionally empty catalogue from the
       // initial bundled collection before server publication begins.
-      final manifest = await db
-          .collection('DictionaryPublic')
-          .doc('catalogue')
-          .get();
-      if (manifest.exists) {
+      final DocumentSnapshot<Map<String, dynamic>> manifest;
+      try {
+        manifest = await db
+            .collection('DictionaryPublic')
+            .doc('catalogue')
+            .get(const GetOptions(source: Source.server));
+      } on FirebaseException catch (error) {
+        // Before Dictionary rules are deployed, the existing default-deny
+        // rules reject this new path. Only this initialization check may use
+        // the approved bundle on denial; published-query failures must surface.
+        if (error.code != 'permission-denied') rethrow;
+        DocumentSnapshot<Map<String, dynamic>>? cachedManifest;
+        try {
+          cachedManifest = await db
+              .collection('DictionaryPublic')
+              .doc('catalogue')
+              .get(const GetOptions(source: Source.cache));
+        } on FirebaseException {
+          // Older deployments have no cached Dictionary initialization record.
+        }
+        // A previously observed publication must never revert to starters when
+        // access is subsequently denied.
+        if (cachedManifest?.data()?['initialized'] == true) rethrow;
+        return _loadBundledEntries();
+      }
+      if (manifest.data()?['initialized'] == true) {
         final docs = await db
             .collection('DictionaryEntries')
             .where('status', isEqualTo: 'published')
-            .get();
+            .get(const GetOptions(source: Source.server));
         return docs.docs.map((doc) => DictionaryEntry(doc.data())).toList();
       }
     }
+    return _loadBundledEntries();
+  }
+
+  Future<List<DictionaryEntry>> _loadBundledEntries() async {
     final json = await (bundle ?? rootBundle).loadString(
       'functions/dictionary_seed.json',
     );
