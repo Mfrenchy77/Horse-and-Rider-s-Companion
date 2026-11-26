@@ -18,7 +18,13 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test --no-pub
-      - run: flutter build web --release --wasm --no-pub
+      - name: Validate web build config
+        run: |
+          python3 -c "import json; cfg = json.load(open('web_build_config.json')); assert cfg.get('DICTIONARY_RECAPTCHA_SITE_KEY', '').strip(), 'Missing DICTIONARY_RECAPTCHA_SITE_KEY'; assert cfg.get('ENABLE_CURRICULUM_PUBLISHING') == 'true', 'ENABLE_CURRICULUM_PUBLISHING must be true'"
+      - name: Compile production web app
+        run: >-
+          flutter build web --release --wasm --no-pub
+          --dart-define-from-file=web_build_config.json
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'

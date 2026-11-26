@@ -45,4 +45,3 @@ app.*.map.json
 /android/app/release
 # Widget Preview related
 .widget_preview/
-/web_build_config.json

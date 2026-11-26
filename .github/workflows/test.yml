@@ -29,5 +29,10 @@ jobs:
         with:
           name: test-coverage
           path: coverage/
+      - name: Validate web build config
+        run: |
+          python3 -c "import json; cfg = json.load(open('web_build_config.json')); assert cfg.get('DICTIONARY_RECAPTCHA_SITE_KEY', '').strip(), 'Missing DICTIONARY_RECAPTCHA_SITE_KEY'; assert cfg.get('ENABLE_CURRICULUM_PUBLISHING') == 'true', 'ENABLE_CURRICULUM_PUBLISHING must be true'"
       - name: Compile production web app
-        run: flutter build web --release --wasm --no-pub
+        run: >-
+          flutter build web --release --wasm --no-pub
+          --dart-define-from-file=web_build_config.json
