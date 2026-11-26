@@ -883,7 +883,15 @@ async function cleanupStorage(bucket, uid, email) {
     }
   }
   if (typeof bucket.deleteFiles === 'function') {
-    for (const prefix of new Set([`covers/${email}/`, `covers/${normalized}/`])) {
+    const prefixes = [
+      `Riders_Photo/${uid}/`,
+      `Horses_Photo/${uid}/`,
+      `resources/pdfs/users/${uid}/`,
+      `dictionary_submissions/${uid}/`,
+      `covers/${email}/`,
+      `covers/${normalized}/`,
+    ];
+    for (const prefix of new Set(prefixes.filter(Boolean))) {
       try {
         await bucket.deleteFiles({prefix});
       } catch (err) {

@@ -1,10 +1,40 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    function isVerifiedDictionaryAdmin() {
+    function verifiedUser() {
       return request.auth != null
-        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email_verified', false) == true;
+    }
+
+    function verifiedLowerEmail() {
+      return verifiedUser() && request.auth.token.email is string
+        ? request.auth.token.email.lower()
+        : '';
+    }
+
+    function isAdmin() {
+      return verifiedUser()
         && request.auth.token.get('admin', false) == true;
+    }
+
+    function isVerifiedEditor() {
+      return verifiedUser()
+        && request.auth.token.get('editor', false) == true;
+    }
+
+    function isValidImageUpload() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType != null
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)');
+    }
+
+    function isValidPdfUpload() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 25 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
     }
 
     function isValidDictionaryImage() {
@@ -18,25 +48,113 @@ service firebase.storage {
         ];
     }
 
-    match /Riders_Photo/{riderId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    function ownsRiderProfile(riderId) {
+      let path = /databases/(default)/documents/Rider_Profile/$(riderId);
+      return verifiedUser()
+        && firestore.exists(path)
+        && (
+          firestore.get(path).data.get('ownerUid', '') == request.auth.uid
+          || (
+            firestore.get(path).data.get('ownerUid', null) == null
+            && firestore.get(path).data.get('email', '').lower() == verifiedLowerEmail()
+          )
+        );
     }
 
+    function ownsHorseProfile(horseId) {
+      let path = /databases/(default)/documents/Horse_Profile/$(horseId);
+      return verifiedUser()
+        && firestore.exists(path)
+        && (
+          firestore.get(path).data.get('ownerUid', '') == request.auth.uid
+          || (
+            firestore.get(path).data.get('ownerUid', null) == null
+            && firestore.get(path).data.get('currentOwnerId', '').lower() == verifiedLowerEmail()
+          )
+        );
+    }
+
+    function ownsResource(resourceId) {
+      let path = /databases/(default)/documents/Resources/$(resourceId);
+      return verifiedUser()
+        && firestore.exists(path)
+        && (
+          firestore.get(path).data.get('authorId', '').lower() == verifiedLowerEmail()
+          || firestore.get(path).data.get('lastEditBy', '').lower() == verifiedLowerEmail()
+        );
+    }
+
+    // New UID-scoped rider photos
+    match /Riders_Photo/{uid}/{fileName} {
+      allow read: if true;
+      allow create, update: if verifiedUser()
+        && request.auth.uid == uid
+        && isValidImageUpload();
+      allow delete: if verifiedUser()
+        && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Legacy Rider_Profile doc-ID keyed photos
+    match /Riders_Photo/{riderId} {
+      allow read: if true;
+      allow create, update: if isValidImageUpload()
+        && (isAdmin() || ownsRiderProfile(riderId));
+      allow delete: if verifiedUser()
+        && (isAdmin() || ownsRiderProfile(riderId));
+    }
+
+    // New UID-scoped horse photos (including before Horse_Profile doc exists)
+    match /Horses_Photo/{uid}/{horseId} {
+      allow read: if true;
+      allow create, update: if verifiedUser()
+        && request.auth.uid == uid
+        && isValidImageUpload();
+      allow delete: if verifiedUser()
+        && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Legacy Horse_Profile doc-ID keyed photos
     match /Horses_Photo/{horseId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create, update: if isValidImageUpload()
+        && (isAdmin() || ownsHorseProfile(horseId));
+      allow delete: if verifiedUser()
+        && (isAdmin() || ownsHorseProfile(horseId));
     }
 
     match /covers/{userEmail}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.auth.token.email == userEmail;
+      allow create, update: if verifiedUser()
+        && request.auth.token.email is string
+        && request.auth.token.email.lower() == userEmail.lower()
+        && isValidImageUpload();
+      allow delete: if verifiedUser()
+        && (
+          isAdmin()
+          || (
+            request.auth.token.email is string
+            && request.auth.token.email.lower() == userEmail.lower()
+          )
+        );
     }
 
+    // New UID-scoped resource PDFs
+    match /resources/pdfs/users/{uid}/{resourceId}/{fileName} {
+      allow read: if true;
+      allow create, update: if verifiedUser()
+        && request.auth.uid == uid
+        && isValidPdfUpload();
+      allow delete: if verifiedUser()
+        && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Legacy resource PDFs: restricted to existing resource owner, verified editor, or admin
     match /resources/pdfs/{resourceId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create, update: if isValidPdfUpload()
+        && (isAdmin() || isVerifiedEditor() || ownsResource(resourceId));
+      allow delete: if verifiedUser()
+        && (isAdmin() || isVerifiedEditor() || ownsResource(resourceId));
     }
 
     // Private community submission uploads: verified contributors may create
@@ -44,12 +162,9 @@ service firebase.storage {
     // verified Dictionary administrators may inspect or delete them during review.
     match /dictionary_submissions/{uid}/{submissionId}/{fileName} {
       allow read, delete: if (
-        request.auth != null
-        && request.auth.token.get('email_verified', false) == true
-        && request.auth.uid == uid
-      ) || isVerifiedDictionaryAdmin();
-      allow create: if request.auth != null
-        && request.auth.token.get('email_verified', false) == true
+        verifiedUser() && request.auth.uid == uid
+      ) || isAdmin();
+      allow create: if verifiedUser()
         && request.auth.uid == uid
         && isValidDictionaryImage();
       allow update: if false;
@@ -57,10 +172,9 @@ service firebase.storage {
 
     // Private draft uploads: only verified Dictionary administrators may read or write.
     match /dictionary_drafts/{entryId}/{fileName} {
-      allow read: if isVerifiedDictionaryAdmin();
-      allow create, update: if isVerifiedDictionaryAdmin()
-        && isValidDictionaryImage();
-      allow delete: if isVerifiedDictionaryAdmin();
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidDictionaryImage();
+      allow delete: if isAdmin();
     }
 
     // Published Dictionary images: publicly readable, written only by Cloud Functions on publish.

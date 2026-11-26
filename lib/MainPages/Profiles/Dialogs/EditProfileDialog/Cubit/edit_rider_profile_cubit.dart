@@ -76,7 +76,9 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     String? picUrl;
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
-      imageQuality: 20,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 85,
       source: ImageSource.gallery,
     );
 

@@ -160,7 +160,9 @@ void main() {
     when(
       () => picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 20,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
       ),
     ).thenAnswer((_) async => pickedFile);
     when(
@@ -241,7 +243,9 @@ void main() {
     when(
       () => picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 20,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
       ),
     ).thenAnswer((_) async => null);
 

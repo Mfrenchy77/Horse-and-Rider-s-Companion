@@ -68,8 +68,11 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
             context.read<MediaStorageRepository?>() ??
             context.read<CloudRepository?>(),
         idTokenProvider: () =>
+            context.read<AuthGateway?>()?.getAccessToken() ??
             context.read<AuthenticationRepository?>()?.getAccessToken() ??
             Future<String?>.value(),
+        currentUid: context.read<AuthGateway?>()?.currentUser.id ??
+            context.read<AuthenticationRepository?>()?.currentUser.id,
       ),
       child: BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
         listenWhen: (p, c) =>

@@ -1,10 +1,12 @@
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, prefer_initializing_formals
 
 import 'dart:async';
 import 'dart:io';
 
 import 'package:database_repository/src/logging/app_logger.dart';
 import 'package:database_repository/src/media_storage_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,8 +16,13 @@ import 'package:image_picker/image_picker.dart';
 class CloudRepository implements MediaStorageRepository {
   /// Creates a [CloudRepository] backed by [storage] (defaults to
   /// [FirebaseStorage.instance]).
-  // ignore: prefer_initializing_formals
-  CloudRepository({FirebaseStorage? storage}) : _storage = storage;
+  CloudRepository({
+    FirebaseStorage? storage,
+    firebase_auth.FirebaseAuth? auth,
+    String? Function()? currentUidProvider,
+  }) : _storage = storage,
+       _auth = auth,
+       _currentUidProvider = currentUidProvider;
 
   ///Constant to point to the Riders Photo Collection
   static const String RIDERS_PHOTO = 'Riders_Photo';
@@ -24,9 +31,39 @@ class CloudRepository implements MediaStorageRepository {
   static const String HORSES_PHOTO = 'Horses_Photo';
 
   final FirebaseStorage? _storage;
+  final firebase_auth.FirebaseAuth? _auth;
+  final String? Function()? _currentUidProvider;
+
+  String? _resolveUid() {
+    final provided = _currentUidProvider?.call()?.trim();
+    if (provided != null && provided.isNotEmpty) return provided;
+    try {
+      if (_auth != null) {
+        final uid = _auth.currentUser?.uid.trim();
+        return (uid == null || uid.isEmpty) ? null : uid;
+      }
+      if (Firebase.apps.isNotEmpty) {
+        final uid = firebase_auth.FirebaseAuth.instance.currentUser?.uid.trim();
+        return (uid == null || uid.isEmpty) ? null : uid;
+      }
+    } catch (_) {}
+    return null;
+  }
 
   Reference get _storageReference =>
       (_storage ?? FirebaseStorage.instance).ref();
+
+  String _inferImageContentType(XFile file) {
+    final mime = file.mimeType?.trim().toLowerCase();
+    if (mime != null && mime.startsWith('image/')) {
+      return mime;
+    }
+    final name = file.name.toLowerCase();
+    if (name.endsWith('.png')) return 'image/png';
+    if (name.endsWith('.webp')) return 'image/webp';
+    if (name.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
+  }
 
   Future<String?> _uploadPhoto({
     required Reference ref,
@@ -36,12 +73,16 @@ class CloudRepository implements MediaStorageRepository {
       if (file == null) {
         throw Exception('No file provided for upload');
       }
+      final metadata = SettableMetadata(
+        contentType: _inferImageContentType(file),
+        cacheControl: 'public, max-age=86400',
+      );
       if (kIsWeb) {
         final data = await file.readAsBytes();
-        await ref.putData(data);
+        await ref.putData(data, metadata);
       } else {
         final mobileFile = File(file.path);
-        await ref.putFile(mobileFile);
+        await ref.putFile(mobileFile, metadata);
       }
       return await ref.getDownloadURL();
     } on FirebaseException catch (e, stackTrace) {
@@ -68,7 +109,11 @@ class CloudRepository implements MediaStorageRepository {
     required XFile? file,
     required String riderId,
   }) {
-    final riderRef = _storageReference.child(RIDERS_PHOTO).child(riderId);
+    final uid = _resolveUid();
+    final ridersRoot = _storageReference.child(RIDERS_PHOTO);
+    final riderRef = uid != null
+        ? ridersRoot.child(uid).child(riderId)
+        : ridersRoot.child(riderId);
     return _uploadPhoto(ref: riderRef, file: file);
   }
 
@@ -78,7 +123,11 @@ class CloudRepository implements MediaStorageRepository {
     required XFile? file,
     required String horseId,
   }) {
-    final horseRef = _storageReference.child(HORSES_PHOTO).child(horseId);
+    final uid = _resolveUid();
+    final horsesRoot = _storageReference.child(HORSES_PHOTO);
+    final horseRef = uid != null
+        ? horsesRoot.child(uid).child(horseId)
+        : horsesRoot.child(horseId);
     return _uploadPhoto(ref: horseRef, file: file);
   }
 
@@ -91,9 +140,10 @@ class CloudRepository implements MediaStorageRepository {
   }) async {
     try {
       final ref = _storageReference.child(path);
-      final meta = contentType == null
-          ? null
-          : SettableMetadata(contentType: contentType);
+      final meta = SettableMetadata(
+        contentType: contentType,
+        cacheControl: 'public, max-age=31536000',
+      );
       final uploadTask = ref.putData(bytes, meta);
       StreamSubscription<TaskSnapshot>? sub;
       if (onProgress != null) {

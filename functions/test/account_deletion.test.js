@@ -754,3 +754,41 @@ test('cancels pending Requests, scrubs PII, preserves surviving access, and dele
   });
   assert.equal(retryResult.status, 'completed');
 });
+
+test('cleanupStorage removes legacy and UID-scoped Storage prefixes including horse photos and PDFs', async () => {
+  const riderEmail = 'Cleanup@Example.com';
+  const normalized = riderEmail.toLowerCase();
+  const db = createFirestoreMock([
+    [`Rider_Profile/${profileId(normalized)}`, {email: riderEmail, ownerUid: 'u-clean', name: 'Cleanup'}],
+    ['DeletionJobs/u-clean', {
+      uid: 'u-clean',
+      status: 'in_progress',
+      lockExpiresAt: 10,
+      steps: {horses: true, connections: true, profileAndTokens: true},
+    }],
+  ]);
+  const deletedFiles = [];
+  const deletedPrefixes = [];
+  const bucket = {
+    file: (p) => ({delete: async () => deletedFiles.push(p)}),
+    deleteFiles: async ({prefix}) => deletedPrefixes.push(prefix),
+  };
+  const auth = {
+    revokeRefreshTokens: async () => {},
+    deleteUser: async () => {},
+  };
+  const handler = accountDeletionHandler(db, auth, bucket, {nowSeconds: () => 2000});
+  const result = await handler({
+    auth: {
+      uid: 'u-clean',
+      token: {email: riderEmail, auth_time: 1995, firebase: {sign_in_provider: 'password'}},
+    },
+  });
+  assert.equal(result.status, 'completed');
+  assert.ok(deletedFiles.includes('Riders_Photo/u-clean'));
+  assert.ok(deletedPrefixes.includes('Riders_Photo/u-clean/'));
+  assert.ok(deletedPrefixes.includes('Horses_Photo/u-clean/'));
+  assert.ok(deletedPrefixes.includes('resources/pdfs/users/u-clean/'));
+  assert.ok(deletedPrefixes.includes('dictionary_submissions/u-clean/'));
+  assert.ok(deletedPrefixes.includes(`covers/${normalized}/`));
+});

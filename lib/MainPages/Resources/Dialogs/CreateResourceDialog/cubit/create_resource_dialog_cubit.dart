@@ -34,12 +34,15 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
     Future<String?> Function()? idTokenProvider,
+    String? currentUid,
   }) : _debounce = null,
        _storage = mediaStorage,
        // ignore: prefer_initializing_formals
        _linkMetadataService = linkMetadataService,
        // ignore: prefer_initializing_formals
        _idTokenProvider = idTokenProvider,
+       // ignore: prefer_initializing_formals
+       _currentUid = currentUid,
        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
            ? _kDefaultPreviewMetaUrl
            : previewMetaEndpoint!.trim(),
@@ -96,6 +99,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   final String _resolveImageUrl;
   final LinkMetadataService? _linkMetadataService;
   final Future<String?> Function()? _idTokenProvider;
+  final String? _currentUid;
 
   // ----------------- tiny logger -----------------
   static int _seq = 0;
@@ -823,11 +827,15 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     final bytes = state.pdfBytes!;
     final name = state.pdfName ?? 'document.pdf';
     final id = state.resource?.id ?? _resourcesRepository.newId();
+    final uid = _currentUid?.trim();
+    final storagePath = (uid != null && uid.isNotEmpty)
+        ? 'resources/pdfs/users/$uid/$id/$name'
+        : 'resources/pdfs/$id/$name';
 
     emit(state.copyWith(pdfUploading: true, pdfUploadProgress: 0));
 
     final url = await (_storage ?? CloudRepository()).uploadBytes(
-      path: 'resources/pdfs/$id/$name',
+      path: storagePath,
       bytes: bytes,
       contentType: 'application/pdf',
       onProgress: (p) {

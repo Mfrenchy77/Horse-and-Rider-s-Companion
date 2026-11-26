@@ -77,7 +77,7 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
       emit(state.copyWith(status: ArticleCreateStatus.uploadingCover));
 
       final downloadUrl = await _storage.uploadBytes(
-        path: 'covers/${_user.email}/$tempId/$filename',
+        path: 'covers/${_user.email.toLowerCase()}/$tempId/$filename',
         bytes: bytes,
         contentType: _guessContentType(filename),
       );
@@ -104,7 +104,8 @@ class CreateArticleCubit extends Cubit<ArticleCreateState> {
     if (n.endsWith('.png')) return 'image/png';
     if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
     if (n.endsWith('.webp')) return 'image/webp';
-    return 'image/*';
+    if (n.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
   }
 
   // ------------------ Submit ------------------

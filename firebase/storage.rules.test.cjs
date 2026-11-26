@@ -177,3 +177,156 @@ test('verified administrators can read/write valid PNG/JPEG/WebP drafts, cannot 
   );
   assert.equal(publicWrite.status, 403);
 });
+
+const otherMemberToken = emulatorJwt({
+  user_id: 'member-2',
+  sub: 'member-2',
+  email: 'other@example.com',
+  email_verified: true,
+});
+
+const editorToken = emulatorJwt({
+  user_id: 'editor-1',
+  sub: 'editor-1',
+  email: 'editor@example.com',
+  email_verified: true,
+  editor: true,
+});
+
+const unverifiedMemberToken = emulatorJwt({
+  user_id: 'unverified-1',
+  sub: 'unverified-1',
+  email: 'unverified@example.com',
+  email_verified: false,
+});
+
+async function seedFirestoreDoc(collection, docId, fields) {
+  const host = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
+  const url = `http://${host}/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer owner',
+    },
+    body: JSON.stringify({fields}),
+  });
+  assert.equal(res.status, 200, `Expected seed ${collection}/${docId} to succeed`);
+}
+
+async function deleteObject(path, token) {
+  const url = `${BASE_URL}/${encodeURIComponent(path)}`;
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return fetch(url, {method: 'DELETE', headers});
+}
+
+test('Riders_Photo, Horses_Photo, covers, and resources/pdfs enforce ownership, MIME types, and size limits', async () => {
+  await seedFirestoreDoc('Rider_Profile', 'rider-doc-1', {
+    ownerUid: {stringValue: 'member-1'},
+    email: {stringValue: 'member@example.com'},
+  });
+  await seedFirestoreDoc('Horse_Profile', 'horse-doc-1', {
+    ownerUid: {stringValue: 'member-1'},
+    currentOwnerId: {stringValue: 'member@example.com'},
+  });
+  await seedFirestoreDoc('Resources', 'res-doc-1', {
+    authorId: {stringValue: 'member@example.com'},
+    lastEditBy: {stringValue: 'member@example.com'},
+  });
+
+  // Unverified users cannot write any user media path.
+  assert.equal(
+      (await uploadObject('Riders_Photo/unverified-1/avatar.jpg', Buffer.from('jpg'), 'image/jpeg', unverifiedMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/unverified-1/horse-1', Buffer.from('jpg'), 'image/jpeg', unverifiedMemberToken)).status,
+      403,
+  );
+
+  // Owners can upload valid images to legacy and UID-scoped rider/horse paths.
+  assert.equal(
+      (await uploadObject('Riders_Photo/rider-doc-1', Buffer.from('jpg'), 'image/jpeg', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('Riders_Photo/member-1/avatar.png', Buffer.from('png'), 'image/png', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/horse-doc-1', Buffer.from('jpg'), 'image/jpeg', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/member-1/new-horse', Buffer.from('webp'), 'image/webp', memberToken)).status,
+      200,
+  );
+
+  // Cross-user overwrites and deletes are rejected.
+  assert.equal(
+      (await uploadObject('Riders_Photo/rider-doc-1', Buffer.from('pwn'), 'image/jpeg', otherMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/horse-doc-1', Buffer.from('pwn'), 'image/jpeg', otherMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/member-1/new-horse', Buffer.from('pwn'), 'image/jpeg', otherMemberToken)).status,
+      403,
+  );
+  assert.equal((await deleteObject('Horses_Photo/horse-doc-1', otherMemberToken)).status, 403);
+
+  // Wrong MIME type or oversized image (>10 MB) rejected even for owner.
+  assert.equal(
+      (await uploadObject('Horses_Photo/member-1/bad.pdf', Buffer.from('%PDF'), 'application/pdf', memberToken)).status,
+      403,
+  );
+  const bigImage = Buffer.alloc(10 * 1024 * 1024 + 1, 0x41);
+  assert.equal(
+      (await uploadObject('Horses_Photo/member-1/too-big.jpg', bigImage, 'image/jpeg', memberToken)).status,
+      403,
+  );
+
+  // Covers allow owner email only and enforce image MIME.
+  assert.equal(
+      (await uploadObject('covers/member@example.com/c1/cover.jpg', Buffer.from('jpg'), 'image/jpeg', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('covers/member@example.com/c1/bad.txt', Buffer.from('txt'), 'text/plain', memberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('covers/member@example.com/c1/cover.jpg', Buffer.from('pwn'), 'image/jpeg', otherMemberToken)).status,
+      403,
+  );
+
+  // Resource PDFs: UID-scoped, legacy owner, and editor succeed; non-owner / non-PDF / >25 MB fail.
+  assert.equal(
+      (await uploadObject('resources/pdfs/users/member-1/res-new/guide.pdf', Buffer.from('%PDF'), 'application/pdf', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('resources/pdfs/res-doc-1/guide.pdf', Buffer.from('%PDF'), 'application/pdf', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('resources/pdfs/editor-res/guide.pdf', Buffer.from('%PDF'), 'application/pdf', editorToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('resources/pdfs/res-doc-1/guide.pdf', Buffer.from('%PDF'), 'application/pdf', otherMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('resources/pdfs/users/member-1/res-new/evil.html', Buffer.from('<html>'), 'text/html', memberToken)).status,
+      403,
+  );
+  const bigPdf = Buffer.alloc(25 * 1024 * 1024 + 1, 0x25);
+  assert.equal(
+      (await uploadObject('resources/pdfs/users/member-1/res-new/huge.pdf', bigPdf, 'application/pdf', memberToken)).status,
+      403,
+  );
+});

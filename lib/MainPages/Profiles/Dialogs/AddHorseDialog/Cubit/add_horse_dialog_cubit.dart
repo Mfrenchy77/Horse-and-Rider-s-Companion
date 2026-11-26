@@ -31,7 +31,7 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     _locationLookupService.warmUp();
     emit(
       state.copyWith(
-        id: horseProfile?.id ?? DateTime.now().toString(),
+        id: horseProfile?.id ?? ViewUtils.createId(),
         horseProfile: horseProfile,
         usersProfile: usersProfile,
         height: horseProfile?.height,
@@ -109,7 +109,9 @@ class AddHorseDialogCubit extends Cubit<AddHorseDialogState> {
     final picker = _imagePicker ?? ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 20,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 85,
     );
 
     if (pickedFile != null) {

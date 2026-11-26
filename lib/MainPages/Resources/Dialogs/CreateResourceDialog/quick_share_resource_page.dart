@@ -25,7 +25,10 @@ class QuickShareResourcePage extends StatefulWidget {
     final mediaStorage =
         context.read<MediaStorageRepository?>() ??
         context.read<CloudRepository?>();
+    final authGateway = context.read<AuthGateway?>();
     final authRepository = context.read<AuthenticationRepository?>();
+    final currentUid =
+        authGateway?.currentUser.id ?? authRepository?.currentUser.id;
     final shared = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider(
@@ -37,7 +40,10 @@ class QuickShareResourcePage extends StatefulWidget {
             resourcesRepository: repository,
             mediaStorage: mediaStorage,
             idTokenProvider: () =>
-                authRepository?.getAccessToken() ?? Future<String?>.value(),
+                authGateway?.getAccessToken() ??
+                authRepository?.getAccessToken() ??
+                Future<String?>.value(),
+            currentUid: currentUid,
           ),
           child: const QuickShareResourcePage(),
         ),
