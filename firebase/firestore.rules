@@ -150,7 +150,11 @@ service cloud.firestore {
       }
     }
     match /DictionarySuggestions/{id} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || (
+        verifiedAuth()
+        && resource != null
+        && resource.data.contributorUid == request.auth.uid
+      );
       allow write: if false;
       match /AuditEvents/{event} {
         allow read: if isAdmin();

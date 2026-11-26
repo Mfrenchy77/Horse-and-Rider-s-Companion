@@ -32,7 +32,9 @@ const dictionaryRateSecret = defineSecret('DICTIONARY_RATE_SECRET');
 exports.submitDictionarySuggestion = onCall(
     {region: 'us-central1', enforceAppCheck: !dictionaryEmulator, secrets: [dictionaryRateSecret]},
     (request) => submitDictionarySuggestion(admin.firestore(), {
-      secret: dictionaryRateSecret.value(), requireAppCheck: !dictionaryEmulator,
+      secret: dictionaryRateSecret.value(),
+      requireAppCheck: !dictionaryEmulator,
+      bucket: admin.storage().bucket(),
     })(request),
 );
 

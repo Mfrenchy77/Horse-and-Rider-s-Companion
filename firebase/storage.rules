@@ -39,6 +39,22 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
 
+    // Private community submission uploads: verified contributors may create
+    // images in their own submission folder and read/delete their own pending files;
+    // verified Dictionary administrators may inspect or delete them during review.
+    match /dictionary_submissions/{uid}/{submissionId}/{fileName} {
+      allow read, delete: if (
+        request.auth != null
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.uid == uid
+      ) || isVerifiedDictionaryAdmin();
+      allow create: if request.auth != null
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.uid == uid
+        && isValidDictionaryImage();
+      allow update: if false;
+    }
+
     // Private draft uploads: only verified Dictionary administrators may read or write.
     match /dictionary_drafts/{entryId}/{fileName} {
       allow read: if isVerifiedDictionaryAdmin();

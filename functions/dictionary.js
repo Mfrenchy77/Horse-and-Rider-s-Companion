@@ -7,10 +7,32 @@ const {safePublicContributorName} = require('./suggestions');
 const seed = require('./dictionary_seed.json');
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const KINDS = ['missing_term', 'definition', 'correction', 'improvement', 'regional_usage', 'related_term'];
-const STATUSES = ['submitted', 'under_review', 'needs_clarification', 'approved', 'rejected', 'published'];
+const KINDS = [
+  'new_term',
+  'missing_term',
+  'definition',
+  'correction',
+  'improvement',
+  'regional_usage',
+  'related_term',
+  'image_contribution',
+];
+const STATUSES = [
+  'submitted',
+  'under_review',
+  'needs_clarification',
+  'partially_approved',
+  'approved',
+  'rejected',
+  'published',
+];
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const ALLOWED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const IMAGE_TYPES = new Set(['illustrative', 'photograph', 'diagram']);
+const IMAGE_DECISIONS = new Set(['pending', 'approved', 'rejected']);
+const TEXT_DECISIONS = new Set(['pending', 'approved', 'rejected']);
+const MAX_SUBMITTED_IMAGES = 3;
+const MAX_DICTIONARY_IMAGE_BYTES = 10 * 1024 * 1024;
 const IMAGE_EXT_BY_TYPE = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -121,9 +143,25 @@ function validateEntry(raw) {
     resourceIds: strings(raw.resourceIds, 'resource IDs'),
     contextual: raw.contextual === true,
     media: media.map((item) => {
+      if (!item || typeof item !== 'object') {
+        throw new HttpsError('invalid-argument', 'Invalid media item.');
+      }
       const url = text(item.url, 2048, 'media URL', true);
       if (!/^https:\/\//.test(url)) throw new HttpsError('invalid-argument', 'HTTPS media required.');
-      return {url, label: text(item.label, 120, 'media label', true)};
+      const imageType = item.imageType ? text(item.imageType, 24, 'image type') : 'illustrative';
+      if (!IMAGE_TYPES.has(imageType)) {
+        throw new HttpsError('invalid-argument', 'Invalid image type.');
+      }
+      const explanation = text(item.explanation, 600, 'image explanation');
+      const attribution = item.attribution ? safePublicContributorName(item.attribution) : null;
+      if (item.attribution && !attribution) {
+        throw new HttpsError('invalid-argument', 'Invalid image attribution.');
+      }
+      const normalized = {url, label: text(item.label, 120, 'media label', true)};
+      if (imageType !== 'illustrative') normalized.imageType = imageType;
+      if (explanation) normalized.explanation = explanation;
+      if (attribution) normalized.attribution = attribution;
+      return normalized;
     }),
   };
   if (EMAIL_PATTERN.test(JSON.stringify(entry))) {
@@ -138,9 +176,33 @@ function requireAdmin(request) {
   }
 }
 
-function submitDictionarySuggestion(db, {secret, now = () => Date.now(), requireAppCheck = true} = {}) {
+function parseSubmissionStoragePath(rawUrl, expectedUid = null, expectedSubmissionId = null) {
+  const parsed = parseFirebaseStorageUrl(rawUrl);
+  if (!parsed || parsed.invalid) return null;
+  const match = parsed.objectPath.match(/^dictionary_submissions\/([^/]+)\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)$/);
+  if (!match) return null;
+  const [, uid, submissionId] = match;
+  if (expectedUid && uid !== expectedUid) return null;
+  if (expectedSubmissionId && submissionId !== expectedSubmissionId) return null;
+  return {bucketName: parsed.bucketName, objectPath: parsed.objectPath, uid, submissionId};
+}
+
+function summarizeSubmittedMediaProposal(submittedImages, reason) {
+  const count = submittedImages.length;
+  const base = count === 1 ? 'Submitted 1 educational image.' : `Submitted ${count} educational images.`;
+  return reason ? `${base} Note: ${reason}` : base;
+}
+
+function submitDictionarySuggestion(db, {secret, now = () => Date.now(), requireAppCheck = true, bucket = null} = {}) {
   return async (request) => {
     if (requireAppCheck && !request.app) throw new HttpsError('unauthenticated', 'App verification required.');
+    if (!request.auth || !request.auth.uid || request.auth.token?.email_verified !== true) {
+      throw new HttpsError(
+          'unauthenticated',
+          'Sign in with a verified email address to contribute to the Dictionary.',
+      );
+    }
+    const uid = request.auth.uid;
     const raw = request.data || {};
     if (raw.website) throw new HttpsError('invalid-argument', 'Invalid submission.');
     const term = text(raw.term, 120, 'term', true);
@@ -148,24 +210,120 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
     if (!KINDS.includes(kind)) throw new HttpsError('invalid-argument', 'Invalid contribution type.');
     const termId = text(raw.termId, 100, 'term ID');
     if (termId && !SLUG.test(termId)) throw new HttpsError('invalid-argument', 'Invalid term ID.');
+    if (kind === 'image_contribution' && !termId) {
+      throw new HttpsError('invalid-argument', 'Target term ID is required for image contributions.');
+    }
     const reason = text(raw.reason, 2000, 'reason');
+    const requireDef = Boolean(
+        (termId && raw.proposedFields != null) || (kind === 'new_term' && raw.proposedFields != null),
+    );
     const proposedFields = validateStructuredFields(
         raw.proposedFields,
         'proposed fields',
-        {requireDefinition: Boolean(termId && raw.proposedFields != null)},
+        {requireDefinition: requireDef},
     );
+    const categories = raw.categories == null ? [] : strings(raw.categories, 'categories', 6);
     const clientBaseFields = validateStructuredFields(raw.baseFields, 'base fields');
     if (raw.baseRevision != null && (!Number.isInteger(raw.baseRevision) || raw.baseRevision < 0)) {
       throw new HttpsError('invalid-argument', 'Invalid base revision.');
     }
-    const rawProposal = text(raw.proposal, 4000, 'proposal', !proposedFields);
-    const recognitionConsent = raw.recognitionConsent === true;
-    const publicName = recognitionConsent ? safePublicContributorName(raw.publicName) : null;
-    if (recognitionConsent && !publicName) throw new HttpsError('invalid-argument', 'A public name is required.');
     const submissionId = text(raw.submissionId, 64, 'submission ID', true);
     if (!/^[a-zA-Z0-9-]{16,64}$/.test(submissionId)) {
       throw new HttpsError('invalid-argument', 'Invalid submission ID.');
     }
+    const rawImages = raw.submittedImages == null ? [] : raw.submittedImages;
+    if (!Array.isArray(rawImages) || rawImages.length > MAX_SUBMITTED_IMAGES) {
+      throw new HttpsError(
+          'invalid-argument',
+          `You may attach at most ${MAX_SUBMITTED_IMAGES} images per submission.`,
+      );
+    }
+    if (kind === 'image_contribution' && rawImages.length === 0) {
+      throw new HttpsError('invalid-argument', 'Attach at least one image to contribute.');
+    }
+    const rightsConfirmed = raw.rightsConfirmed === true;
+    if (rawImages.length > 0 && !rightsConfirmed) {
+      throw new HttpsError(
+          'invalid-argument',
+          'Confirm contributor rights and display permission before submitting images.',
+      );
+    }
+    const submittedImages = [];
+    const seenPaths = new Set();
+    const seenHashes = new Set();
+    for (const img of rawImages) {
+      if (!img || typeof img !== 'object' || Array.isArray(img)) {
+        throw new HttpsError('invalid-argument', 'Invalid submitted image.');
+      }
+      const imgId = text(img.id, 64, 'image ID', true);
+      if (!/^[A-Za-z0-9_-]{4,64}$/.test(imgId)) {
+        throw new HttpsError('invalid-argument', 'Invalid image ID.');
+      }
+      const url = text(img.url, 2048, 'image URL', true);
+      const parsedPath = parseSubmissionStoragePath(url, uid, submissionId);
+      if (!parsedPath) {
+        throw new HttpsError(
+            'invalid-argument',
+            'Submitted images must come from your own private contribution upload.',
+        );
+      }
+      if (bucket && parsedPath.bucketName !== bucket.name) {
+        throw new HttpsError('invalid-argument', 'Submitted image belongs to an unexpected storage bucket.');
+      }
+      if (bucket) {
+        const file = bucket.file(parsedPath.objectPath);
+        const [exists] = await file.exists();
+        if (!exists) {
+          throw new HttpsError('failed-precondition', 'Uploaded submission image does not exist.');
+        }
+        const [meta] = await file.getMetadata();
+        if (!ALLOWED_IMAGE_TYPES.has(meta?.contentType)) {
+          throw new HttpsError('invalid-argument', 'Submitted image must be PNG, JPEG, or WebP.');
+        }
+        const size = Number(meta?.size || 0);
+        if (!Number.isFinite(size) || size <= 0 || size > MAX_DICTIONARY_IMAGE_BYTES) {
+          throw new HttpsError('invalid-argument', 'Submitted image exceeds 10 MB limit.');
+        }
+      }
+      const caption = text(img.caption, 120, 'image caption');
+      const explanation = text(img.explanation, 600, 'image explanation');
+      const imageType = img.imageType ? text(img.imageType, 24, 'image type') : 'illustrative';
+      if (!IMAGE_TYPES.has(imageType)) {
+        throw new HttpsError('invalid-argument', 'Invalid image type.');
+      }
+      const sha256 = text(img.sha256, 64, 'image checksum').toLowerCase();
+      if (sha256 && !/^[a-f0-9]{64}$/.test(sha256)) {
+        throw new HttpsError('invalid-argument', 'Invalid image checksum.');
+      }
+      if (EMAIL_PATTERN.test(`${caption} ${explanation}`)) {
+        throw new HttpsError('invalid-argument', 'Image captions and explanations must not contain email addresses.');
+      }
+      if (seenPaths.has(parsedPath.objectPath) || (sha256 && seenHashes.has(sha256))) {
+        continue;
+      }
+      seenPaths.add(parsedPath.objectPath);
+      if (sha256) seenHashes.add(sha256);
+      const item = {
+        id: imgId,
+        url,
+        storagePath: parsedPath.objectPath,
+        caption,
+        explanation,
+        imageType,
+        reviewStatus: 'pending',
+      };
+      if (sha256) item.sha256 = sha256;
+      submittedImages.push(item);
+    }
+
+    const proposalRequired = !proposedFields && submittedImages.length === 0;
+    const rawProposal = text(raw.proposal, 4000, 'proposal', proposalRequired);
+    if (EMAIL_PATTERN.test(`${term} ${rawProposal} ${reason} ${categories.join(' ')}`)) {
+      throw new HttpsError('invalid-argument', 'Public contributions must not contain email addresses.');
+    }
+    const recognitionConsent = raw.recognitionConsent === true;
+    const publicName = recognitionConsent ? safePublicContributorName(raw.publicName) : null;
+    if (recognitionConsent && !publicName) throw new HttpsError('invalid-argument', 'A public name is required.');
     if (!secret) throw new HttpsError('failed-precondition', 'Submission protection is not configured.');
     const at = now();
     const ip = request.rawRequest?.ip || '';
@@ -173,12 +331,14 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
     // Daily keyed hashes avoid storing IP addresses and rotate limiter identities.
     const day = Math.floor(at / 86400000);
     const digest = (value) => createHmac('sha256', secret).update(day + ':' + value).digest('hex');
-    const buckets = [db.collection('DictionaryRateLimits').doc(digest('ip:' + ip))];
-    if (request.auth?.uid) buckets.push(db.collection('DictionaryRateLimits').doc(digest(request.auth.uid)));
+    const buckets = [
+      db.collection('DictionaryRateLimits').doc(digest('ip:' + ip)),
+      db.collection('DictionaryRateLimits').doc(digest(uid)),
+    ];
     const ref = db.collection('DictionarySuggestions').doc(submissionId);
     await db.runTransaction(async (tx) => {
       const existing = await tx.get(ref);
-      const limits = await Promise.all(buckets.map((bucket) => tx.get(bucket)));
+      const limits = await Promise.all(buckets.map((limitDoc) => tx.get(limitDoc)));
       const publicSnap = termId ? await tx.get(db.collection('DictionaryEntries').doc(termId)) : null;
 
       let resolvedBaseRevision = raw.baseRevision ?? null;
@@ -192,16 +352,27 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
           resolvedBaseFields = extractStructuredFields(liveData);
         }
       }
-      const changedFields = proposedFields ? computeChangedFields(resolvedBaseFields, proposedFields) : [];
-      if (proposedFields && changedFields.length === 0) {
-        throw new HttpsError('invalid-argument', 'Modify at least one field before submitting.');
+      const changedFields = termId && proposedFields ?
+        computeChangedFields(resolvedBaseFields, proposedFields) :
+        [];
+      if (termId && proposedFields && changedFields.length === 0 && submittedImages.length === 0) {
+        throw new HttpsError('invalid-argument', 'Modify at least one field or attach an image before submitting.');
       }
-      const proposal = rawProposal || summarizeStructuredProposal(changedFields, reason);
+      let proposal = rawProposal;
+      if (!proposal) {
+        if (kind === 'image_contribution') {
+          proposal = summarizeSubmittedMediaProposal(submittedImages, reason);
+        } else if (kind === 'new_term' && proposedFields?.definition) {
+          proposal = proposedFields.definition;
+        } else {
+          proposal = summarizeStructuredProposal(changedFields, reason);
+        }
+      }
 
       if (existing.exists) {
         // A retry is accepted only for the same private submission identity and content.
         const data = existing.data();
-        if (data.requestKey === digest(ip) && data.term === term && data.proposal === proposal) return;
+        if (data.contributorUid === uid && data.term === term && data.proposal === proposal) return;
         throw new HttpsError('already-exists', 'Submission ID already used.');
       }
       if (limits.some((limit) => (limit.data()?.count || 0) >= 5)) {
@@ -213,19 +384,25 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
       const record = {
         term, proposal, kind, recognitionConsent, publicName,
         termId,
-        contributorUid: request.auth?.uid || null,
-        requestKey: digest(ip), status: 'submitted', createdAt: new Date(at),
+        contributorUid: uid,
+        requestKey: digest(ip),
+        status: 'submitted',
+        textDecision: kind === 'image_contribution' ? 'rejected' : 'pending',
+        rightsConfirmed,
+        createdAt: new Date(at),
       };
       if (reason) record.reason = reason;
+      if (categories.length > 0) record.categories = categories;
+      if (submittedImages.length > 0) record.submittedImages = submittedImages;
       if (resolvedBaseRevision != null) record.baseRevision = resolvedBaseRevision;
       if (resolvedBaseFields) record.baseFields = resolvedBaseFields;
       if (proposedFields) {
         record.proposedFields = proposedFields;
-        record.changedFields = changedFields;
+        if (changedFields.length > 0) record.changedFields = changedFields;
       }
       tx.create(ref, record);
     });
-    return {id: ref.id, status: 'submitted'};
+    return {id: ref.id, status: 'submitted', imageCount: submittedImages.length};
   };
 }
 
@@ -254,7 +431,36 @@ function extractDraftStoragePath(rawUrl) {
   return parsed.objectPath.startsWith('dictionary_drafts/') ? parsed.objectPath : null;
 }
 
-async function validateMediaOwnership(media, entryId, bucket, {checkDraftExists = false} = {}) {
+function approvedSubmissionPathMap(suggestionData) {
+  const approved = new Map();
+  if (!suggestionData || !Array.isArray(suggestionData.submittedImages)) return approved;
+  for (const img of suggestionData.submittedImages) {
+    if (img && img.reviewStatus === 'approved' && img.storagePath) {
+      approved.set(img.storagePath, img);
+    }
+  }
+  return approved;
+}
+
+async function deleteStoragePathsSafely(bucket, paths) {
+  if (!bucket || !Array.isArray(paths) || paths.length === 0) return;
+  await Promise.allSettled(
+      paths.map(async (objectPath) => {
+        try {
+          await bucket.file(objectPath).delete();
+        } catch (_) {
+          // Already deleted or unavailable; ignore during best-effort cleanup.
+        }
+      }),
+  );
+}
+
+async function validateMediaOwnership(
+    media,
+    entryId,
+    bucket,
+    {checkDraftExists = false, approvedSubmissionPaths = new Map()} = {},
+) {
   if (!Array.isArray(media) || media.length === 0) return;
   for (const item of media) {
     const parsed = parseFirebaseStorageUrl(item.url);
@@ -264,10 +470,10 @@ async function validateMediaOwnership(media, entryId, bucket, {checkDraftExists 
     }
     const {bucketName, objectPath} = parsed;
     if (!bucket) {
-      if (objectPath.startsWith('dictionary_drafts/')) {
+      if (objectPath.startsWith('dictionary_drafts/') || objectPath.startsWith('dictionary_submissions/')) {
         throw new HttpsError(
             'failed-precondition',
-            'Draft images must be promoted to public storage before publishing.',
+            'Draft and submitted images must be promoted to public storage before publishing.',
         );
       }
       continue;
@@ -291,6 +497,24 @@ async function validateMediaOwnership(media, entryId, bucket, {checkDraftExists 
           throw new HttpsError('invalid-argument', 'Draft image must be PNG, JPEG, or WebP.');
         }
       }
+    } else if (objectPath.startsWith('dictionary_submissions/')) {
+      if (!approvedSubmissionPaths.has(objectPath)) {
+        throw new HttpsError(
+            'failed-precondition',
+            'Submitted images must be individually approved before publishing.',
+        );
+      }
+      if (checkDraftExists) {
+        const srcFile = bucket.file(objectPath);
+        const [exists] = await srcFile.exists();
+        if (!exists) {
+          throw new HttpsError('failed-precondition', 'Approved submission image does not exist.');
+        }
+        const [srcMeta] = await srcFile.getMetadata();
+        if (!ALLOWED_IMAGE_TYPES.has(srcMeta?.contentType)) {
+          throw new HttpsError('invalid-argument', 'Submitted image must be PNG, JPEG, or WebP.');
+        }
+      }
     } else if (objectPath.startsWith('dictionary_public/')) {
       const publicMatch = objectPath.match(/^dictionary_public\/([a-z0-9-]+)\/([A-Za-z0-9._-]+)$/);
       if (!publicMatch || publicMatch[1] !== entryId) {
@@ -302,14 +526,24 @@ async function validateMediaOwnership(media, entryId, bucket, {checkDraftExists 
   }
 }
 
-async function promoteDraftMedia(media, entryId, bucket) {
+async function promoteDraftMedia(
+    media,
+    entryId,
+    bucket,
+    {approvedSubmissionPaths = new Map(), contributorCredit = null} = {},
+) {
   if (!Array.isArray(media) || media.length === 0) return {media: [], promotedFiles: []};
-  await validateMediaOwnership(media, entryId, bucket, {checkDraftExists: true});
+  await validateMediaOwnership(media, entryId, bucket, {
+    checkDraftExists: true,
+    approvedSubmissionPaths,
+  });
   const promoted = [];
   const promotedFiles = [];
   for (const item of media) {
     const parsed = parseFirebaseStorageUrl(item.url);
-    if (!parsed || !parsed.objectPath.startsWith('dictionary_drafts/')) {
+    const isDraft = Boolean(parsed && parsed.objectPath.startsWith('dictionary_drafts/'));
+    const isApprovedSubmission = Boolean(parsed && parsed.objectPath.startsWith('dictionary_submissions/'));
+    if (!parsed || (!isDraft && !isApprovedSubmission)) {
       promoted.push(item);
       continue;
     }
@@ -317,7 +551,7 @@ async function promoteDraftMedia(media, entryId, bucket) {
     const [srcMeta] = await srcFile.getMetadata();
     const ext = IMAGE_EXT_BY_TYPE[srcMeta?.contentType];
     if (!ext) {
-      throw new HttpsError('invalid-argument', 'Draft image must be PNG, JPEG, or WebP.');
+      throw new HttpsError('invalid-argument', 'Uploaded image must be PNG, JPEG, or WebP.');
     }
     // Always generate a unique, immutable public filename so concurrent or failed
     // publications can never overwrite an existing published image.
@@ -333,7 +567,22 @@ async function promoteDraftMedia(media, entryId, bucket) {
     });
     const publicUrl =
       `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(publicPath)}?alt=media&token=${token}`;
-    promoted.push({url: publicUrl, label: item.label});
+    const publishedItem = {url: publicUrl, label: item.label};
+    if (item.imageType && item.imageType !== 'illustrative') {
+      publishedItem.imageType = item.imageType;
+    }
+    if (item.explanation) {
+      publishedItem.explanation = item.explanation;
+    }
+    if (isApprovedSubmission) {
+      // Only attribute community-contributed images when explicit consent was granted.
+      if (contributorCredit) {
+        publishedItem.attribution = item.attribution || contributorCredit;
+      }
+    } else if (item.attribution) {
+      publishedItem.attribution = item.attribution;
+    }
+    promoted.push(publishedItem);
   }
   return {media: promoted, promotedFiles};
 }
@@ -359,10 +608,12 @@ async function cleanupAbandonedDraftMedia(
     {maxAgeMs = 7 * 24 * 60 * 60 * 1000, now = () => Date.now()} = {},
 ) {
   if (!bucket || typeof bucket.getFiles !== 'function') return {deleted: []};
-  const [draftSnap, publicSnap, [files]] = await Promise.all([
+  const [draftSnap, publicSnap, suggestionSnap, [draftFiles], [submissionFiles]] = await Promise.all([
     db.collection('DictionaryDrafts').get(),
     db.collection('DictionaryEntries').get(),
+    db.collection('DictionarySuggestions').get(),
     bucket.getFiles({prefix: 'dictionary_drafts/'}),
+    bucket.getFiles({prefix: 'dictionary_submissions/'}),
   ]);
   const referencedPaths = new Set();
   for (const doc of [...draftSnap.docs, ...publicSnap.docs]) {
@@ -372,9 +623,18 @@ async function cleanupAbandonedDraftMedia(
       if (path) referencedPaths.add(path);
     }
   }
+  for (const doc of suggestionSnap.docs) {
+    const data = doc.data() || {};
+    if (data.status === 'rejected' || data.status === 'published') continue;
+    for (const img of (Array.isArray(data.submittedImages) ? data.submittedImages : [])) {
+      if (img?.reviewStatus !== 'rejected' && img?.storagePath) {
+        referencedPaths.add(img.storagePath);
+      }
+    }
+  }
   const cutoff = now() - maxAgeMs;
   const deleted = [];
-  for (const file of files) {
+  for (const file of [...draftFiles, ...submissionFiles]) {
     if (referencedPaths.has(file.name)) continue;
     const createdAt = Date.parse(file.metadata?.timeCreated || '');
     if (Number.isFinite(createdAt) && createdAt > cutoff) continue;
@@ -382,6 +642,46 @@ async function cleanupAbandonedDraftMedia(
     deleted.push(file.name);
   }
   return {deleted};
+}
+
+function normalizeImageDecisionsInput(rawDecisions) {
+  if (rawDecisions == null) return null;
+  const list = Array.isArray(rawDecisions) ?
+    rawDecisions :
+    Object.entries(rawDecisions).map(([id, value]) => ({id, ...(value || {})}));
+  const byId = new Map();
+  for (const decision of list) {
+    if (!decision || typeof decision !== 'object') {
+      throw new HttpsError('invalid-argument', 'Invalid image decision.');
+    }
+    const imgId = text(decision.id, 64, 'image ID', true);
+    const status = text(decision.status, 24, 'image review status', true);
+    if (!IMAGE_DECISIONS.has(status)) {
+      throw new HttpsError('invalid-argument', 'Invalid image review status.');
+    }
+    const normalized = {id: imgId, status};
+    if (decision.caption != null) {
+      normalized.caption = text(decision.caption, 120, 'image caption');
+    }
+    if (decision.explanation != null) {
+      normalized.explanation = text(decision.explanation, 600, 'image explanation');
+    }
+    if (decision.imageType != null) {
+      const imgType = text(decision.imageType, 24, 'image type', true);
+      if (!IMAGE_TYPES.has(imgType)) {
+        throw new HttpsError('invalid-argument', 'Invalid image type.');
+      }
+      normalized.imageType = imgType;
+    }
+    if (decision.reviewNote != null) {
+      normalized.reviewNote = text(decision.reviewNote, 500, 'image review note');
+    }
+    if (EMAIL_PATTERN.test(`${normalized.caption || ''} ${normalized.explanation || ''} ${normalized.reviewNote || ''}`)) {
+      throw new HttpsError('invalid-argument', 'Image metadata must not contain email addresses.');
+    }
+    byId.set(imgId, normalized);
+  }
+  return byId;
 }
 
 function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
@@ -399,8 +699,16 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
           {requireDefinition: raw.editedFields != null && raw.editedFields.definition != null},
       );
       const editedProposal = raw.editedProposal != null ? text(raw.editedProposal, 4000, 'proposal', true) : null;
+      const requestedTextDecision = raw.textDecision != null ?
+        text(raw.textDecision, 24, 'text decision', true) :
+        null;
+      if (requestedTextDecision && !TEXT_DECISIONS.has(requestedTextDecision)) {
+        throw new HttpsError('invalid-argument', 'Invalid text decision.');
+      }
+      const decisionMap = normalizeImageDecisionsInput(raw.imageDecisions);
       const ref = db.collection('DictionarySuggestions').doc(id);
       let nextStatus = null;
+      let pathsToDelete = [];
       await db.runTransaction(async (tx) => {
         const snapshot = await tx.get(ref);
         if (!snapshot.exists) throw new HttpsError('not-found', 'Suggestion not found.');
@@ -408,12 +716,78 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
         if (current.status === 'published') {
           throw new HttpsError('failed-precondition', 'Published suggestions are immutable.');
         }
-        const status = raw.status != null ? raw.status : current.status;
+        const currentImages = Array.isArray(current.submittedImages) ? current.submittedImages : [];
+        let updatedImages = currentImages.map((img) => ({...img}));
+        if (decisionMap) {
+          const validIds = new Set(currentImages.map((img) => img.id));
+          for (const targetId of decisionMap.keys()) {
+            if (!validIds.has(targetId)) {
+              throw new HttpsError('invalid-argument', `Unknown submitted image ID: ${targetId}`);
+            }
+          }
+          updatedImages = updatedImages.map((img) => {
+            const dec = decisionMap.get(img.id);
+            if (!dec) return img;
+            const next = {
+              ...img,
+              reviewStatus: dec.status,
+              reviewedAt: at,
+              reviewedByUid: request.auth.uid,
+            };
+            if (dec.caption !== undefined) next.caption = dec.caption;
+            if (dec.explanation !== undefined) next.explanation = dec.explanation;
+            if (dec.imageType !== undefined) next.imageType = dec.imageType;
+            if (dec.reviewNote !== undefined) next.reviewNote = dec.reviewNote;
+            return next;
+          });
+        }
+        if (raw.status === 'rejected') {
+          updatedImages = updatedImages.map((img) => ({
+            ...img,
+            reviewStatus: 'rejected',
+            reviewedAt: at,
+            reviewedByUid: request.auth.uid,
+          }));
+        }
+
+        const textDecision = requestedTextDecision ||
+          (raw.status === 'approved' ? 'approved' : raw.status === 'rejected' ? 'rejected' : (current.textDecision || 'pending'));
+
+        let status = raw.status != null ? raw.status : current.status;
+        if (raw.status == null && (decisionMap || requestedTextDecision)) {
+          const hasText = current.kind !== 'image_contribution' &&
+            Boolean(current.proposedFields || current.proposal || current.kind === 'new_term');
+          const allDecisions = [
+            ...(hasText ? [textDecision] : []),
+            ...updatedImages.map((img) => img.reviewStatus || 'pending'),
+          ];
+          const approvedCount = allDecisions.filter((d) => d === 'approved').length;
+          const rejectedCount = allDecisions.filter((d) => d === 'rejected').length;
+          if (approvedCount > 0 && approvedCount === allDecisions.length) {
+            status = 'approved';
+          } else if (approvedCount > 0) {
+            status = 'partially_approved';
+          } else if (rejectedCount > 0 && rejectedCount === allDecisions.length) {
+            status = 'rejected';
+          } else {
+            status = 'under_review';
+          }
+        }
         if (!STATUSES.includes(status) || status === 'published') {
           throw new HttpsError('invalid-argument', 'Invalid review status.');
         }
         nextStatus = status;
-        const patch = {status, updatedAt: at};
+        const patch = {
+          status,
+          textDecision,
+          updatedAt: at,
+        };
+        if (currentImages.length > 0) {
+          patch.submittedImages = updatedImages;
+          pathsToDelete = updatedImages
+              .filter((img) => img.reviewStatus === 'rejected' && img.storagePath)
+              .map((img) => img.storagePath);
+        }
         if (editedFields) {
           if (!current.originalProposedFields && current.proposedFields) {
             patch.originalProposedFields = current.proposedFields;
@@ -434,31 +808,55 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
         tx.update(ref, patch);
         tx.create(ref.collection('AuditEvents').doc(), {
           status,
+          textDecision,
+          imageDecisions: updatedImages.map((img) => ({
+            id: img.id,
+            status: img.reviewStatus || 'pending',
+          })),
           note: text(raw.note, 2000, 'review note'),
           proposalEdited: Boolean(editedFields || editedProposal),
           at,
           actorUid: request.auth.uid,
         });
       });
+      await deleteStoragePathsSafely(bucket, pathsToDelete);
       return {id, status: nextStatus};
     }
     if (!['save', 'publish'].includes(action)) throw new HttpsError('invalid-argument', 'Invalid action.');
     const entry = validateEntry(raw.entry);
     if (entry.id !== id) throw new HttpsError('invalid-argument', 'ID mismatch.');
-    let promotedFiles = [];
-    if (action === 'publish') {
-      const promotion = await promoteDraftMedia(entry.media, id, bucket);
-      entry.media = promotion.media;
-      promotedFiles = promotion.promotedFiles;
-    } else {
-      await validateMediaOwnership(entry.media, id, bucket, {checkDraftExists: Boolean(bucket)});
-    }
     const draft = db.collection('DictionaryDrafts').doc(id);
     const publicRef = db.collection('DictionaryEntries').doc(entry.slug);
     const suggestionId = text(raw.suggestionId, 100, 'suggestion ID');
     if (suggestionId && !/^[a-zA-Z0-9-]{16,100}$/.test(suggestionId)) {
       throw new HttpsError('invalid-argument', 'Invalid suggestion ID.');
     }
+    const preDraftSnap = await draft.get();
+    const preSourceId = suggestionId || preDraftSnap.data()?.suggestionId || null;
+    const preContribSnap = preSourceId ?
+      await db.collection('DictionarySuggestions').doc(preSourceId).get() :
+      null;
+    const preContribData = preContribSnap?.exists ? preContribSnap.data() : null;
+    const approvedSubmissionPaths = approvedSubmissionPathMap(preContribData);
+    const contributorCredit = preContribData?.recognitionConsent === true ?
+      safePublicContributorName(preContribData.publicName) :
+      null;
+
+    let promotedFiles = [];
+    if (action === 'publish') {
+      const promotion = await promoteDraftMedia(entry.media, id, bucket, {
+        approvedSubmissionPaths,
+        contributorCredit,
+      });
+      entry.media = promotion.media;
+      promotedFiles = promotion.promotedFiles;
+    } else {
+      await validateMediaOwnership(entry.media, id, bucket, {
+        checkDraftExists: Boolean(bucket),
+        approvedSubmissionPaths,
+      });
+    }
+    let cleanupSubmissionPaths = [];
     try {
       await db.runTransaction(async (tx) => {
         const manifestRef = db.collection('DictionaryPublic').doc('catalogue');
@@ -500,7 +898,11 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
             );
           }
         }
-        if (action === 'publish' && contribution && contribution.data().status !== 'approved') {
+        if (
+          action === 'publish' &&
+          contribution &&
+          !['approved', 'partially_approved'].includes(contribution.data().status)
+        ) {
           throw new HttpsError('failed-precondition', 'Approve the contribution before publishing.');
         }
         const nextRevision = revision + 1;
@@ -528,6 +930,11 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
           tx.set(publicRef, {...entry, revision: nextRevision, status: 'published', publishedAt: at, attributions});
           tx.set(db.collection('DictionaryPublic').doc('catalogue'), {initialized: true});
           if (suggestion) {
+            if (Array.isArray(credit?.submittedImages)) {
+              cleanupSubmissionPaths = credit.submittedImages
+                  .map((img) => img?.storagePath)
+                  .filter(Boolean);
+            }
             tx.update(suggestion, {status: 'published', entryId: id, updatedAt: at});
             tx.create(suggestion.collection('AuditEvents').doc(), {status: 'published', at, actorUid: request.auth.uid});
           }
@@ -541,6 +948,7 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
     }
     if (action === 'publish') {
       await cleanupEntryDraftMedia(id, entry.media, bucket).catch(() => {});
+      await deleteStoragePathsSafely(bucket, cleanupSubmissionPaths);
     }
     return {id, status: action === 'publish' ? 'published' : 'draft'};
   };
@@ -563,7 +971,7 @@ async function publicEntry(db, slug) {
 module.exports = {
   validateEntry, validateStructuredFields, extractStructuredFields, computeChangedFields,
   effectivePublishedRevision, parseFirebaseStorageUrl, extractDraftStoragePath,
-  validateMediaOwnership, promoteDraftMedia, cleanupAbandonedDraftMedia,
+  parseSubmissionStoragePath, validateMediaOwnership, promoteDraftMedia, cleanupAbandonedDraftMedia,
   requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry,
   dictionaryEmulator: process.env.FUNCTIONS_EMULATOR === 'true',
 };
