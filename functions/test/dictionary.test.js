@@ -54,36 +54,42 @@ function fakeDb() {
   };
 }
 const admin = {uid: 'editor-private-id', token: {admin: true, email_verified: true}};
+const member = {uid: 'private-user', token: {email_verified: true}};
 const payload = (patch = {}) => ({
   submissionId: randomUUID(), term: 'A new term', proposal: 'An independently written description.',
   kind: 'missing_term', recognitionConsent: false, ...patch,
 });
-const request = (data, auth) => ({data, auth, app: {appId: 'test'}, rawRequest: {ip: '127.0.0.8'}});
+const request = (data, auth = member) => ({data, auth, app: {appId: 'test'}, rawRequest: {ip: '127.0.0.8'}});
 
-test('guests can submit with App Check, retries are idempotent, consent defaults private', async () => {
+test('signed-in verified contributors can submit with App Check, retries are idempotent, consent defaults private, and signed-out/unverified requests fail', async () => {
   const db = fakeDb();
   const submit = submitDictionarySuggestion(db, {secret: 'test-secret'});
+  await assert.rejects(submit(request(payload(), null)), {code: 'unauthenticated'});
+  await assert.rejects(
+      submit(request(payload(), {uid: 'unverified', token: {email_verified: false}})),
+      {code: 'unauthenticated'},
+  );
   const data = payload({publicName: 'Unconsented'});
-  await submit(request(data));
-  await submit(request(data));
+  await submit(request(data, member));
+  await submit(request(data, member));
   const stored = db.store.get('DictionarySuggestions/' + data.submissionId);
   assert.equal(stored.publicName, null);
-  assert.equal(stored.contributorUid, null);
+  assert.equal(stored.contributorUid, member.uid);
   assert.equal(stored.recognitionConsent, false);
   assert(!JSON.stringify(stored).includes('127.0.0.8'));
-  await assert.rejects(submit({...request(payload()), app: null}), {code: 'unauthenticated'});
-  await assert.rejects(submit(request(payload({website: 'spam'}))), {code: 'invalid-argument'});
-  await assert.rejects(submit(request(payload({recognitionConsent: true, publicName: 'private@email.com'}))),
+  await assert.rejects(submit({...request(payload(), member), app: null}), {code: 'unauthenticated'});
+  await assert.rejects(submit(request(payload({website: 'spam'}), member)), {code: 'invalid-argument'});
+  await assert.rejects(submit(request(payload({recognitionConsent: true, publicName: 'private@email.com'}), member)),
       {code: 'invalid-argument'});
 });
 
-test('guest spam limit is transactional and member identity stays private', async () => {
+test('per-member rate limit is transactional and member identity stays private', async () => {
   const db = fakeDb();
   const submit = submitDictionarySuggestion(db, {secret: 'test-secret'});
-  for (let i = 0; i < 5; i++) await submit(request(payload(), {uid: 'private-user', token: {}}));
-  await assert.rejects(submit(request(payload())), {code: 'resource-exhausted'});
+  for (let i = 0; i < 5; i++) await submit(request(payload(), member));
+  await assert.rejects(submit(request(payload(), member)), {code: 'resource-exhausted'});
   const suggestion = [...db.store.entries()].find(([path]) => path.startsWith('DictionarySuggestions/'))[1];
-  assert.equal(suggestion.contributorUid, 'private-user');
+  assert.equal(suggestion.contributorUid, member.uid);
 });
 
 test('only verified admins edit, publishing is atomic, reviewed, and revision protected', async () => {
@@ -95,7 +101,7 @@ test('only verified admins edit, publishing is atomic, reviewed, and revision pr
     await assert.rejects(edit(request(data, auth)), {code: 'permission-denied'});
   }
   const proposal = payload({recognitionConsent: true, publicName: 'Community Rider'});
-  await submitDictionarySuggestion(db, {secret: 'test'})(request(proposal, {uid: 'private-user'}));
+  await submitDictionarySuggestion(db, {secret: 'test'})(request(proposal, member));
   await assert.rejects(edit(request({...data, suggestionId: proposal.submissionId}, admin)),
       {code: 'failed-precondition'});
   await edit(request({action: 'review', id: proposal.submissionId, status: 'approved', note: 'Reviewed independently'}, admin));
@@ -511,4 +517,222 @@ test('publishing promotes private draft images to immutable dictionary_public pa
   assert(objects.has(savedDraftImg), 'Saved draft image must never be deleted');
   assert(objects.has(recentOrphanImg), 'Recent upload within retention window must be kept');
   assert(!objects.has(expiredOrphanImg), 'Expired unreferenced draft image must be deleted');
+});
+
+test('community new_term & image_contribution enforce ownership, limits, rights, partial approval, cleanup, and public metadata', async () => {
+  const db = fakeDb();
+  const objects = new Map();
+  const subBucket = {
+    name: 'test-bucket',
+    file(path) {
+      return {
+        name: path,
+        path,
+        async exists() {
+          return [objects.has(path)];
+        },
+        async copy(dest) {
+          assert(objects.has(path), 'Source must exist: ' + path);
+          objects.set(dest.path, {...objects.get(path)});
+        },
+        async getMetadata() {
+          return [objects.get(path)];
+        },
+        async setMetadata(meta) {
+          objects.set(path, {...objects.get(path), ...meta});
+        },
+        async delete() {
+          objects.delete(path);
+        },
+      };
+    },
+    async getFiles({prefix} = {}) {
+      const matched = [...objects.entries()]
+          .filter(([path]) => !prefix || path.startsWith(prefix))
+          .map(([path, metadata]) => ({
+            name: path,
+            metadata,
+            async delete() {
+              objects.delete(path);
+            },
+          }));
+      return [matched];
+    },
+  };
+
+  const urlFor = (objectPath) =>
+    'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+    encodeURIComponent(objectPath) +
+    '?alt=media&token=tok';
+
+  const submit = submitDictionarySuggestion(db, {secret: 'test-secret', bucket: subBucket});
+  const edit = editDictionary(db, {bucket: subBucket});
+
+  const subId = randomUUID();
+  const p1 = `dictionary_submissions/${member.uid}/${subId}/good_diagram.png`;
+  const p2 = `dictionary_submissions/${member.uid}/${subId}/blurry_photo.jpg`;
+  const foreignPath = `dictionary_submissions/other-user/${subId}/stolen.png`;
+  objects.set(p1, {contentType: 'image/png', size: 2048, timeCreated: '2026-11-25T10:00:00Z'});
+  objects.set(p2, {contentType: 'image/jpeg', size: 4096, timeCreated: '2026-11-25T10:00:00Z'});
+  objects.set(foreignPath, {contentType: 'image/png', size: 2048, timeCreated: '2026-11-25T10:00:00Z'});
+
+  // Reject missing rights confirmation
+  await assert.rejects(
+      submit(request({
+        submissionId: subId,
+        term: 'Canter',
+        termId: 'canter',
+        kind: 'image_contribution',
+        rightsConfirmed: false,
+        submittedImages: [{id: 'img_1', url: urlFor(p1), imageType: 'diagram'}],
+      }, member)),
+      {code: 'invalid-argument'},
+  );
+
+  // Reject attaching another user's upload
+  await assert.rejects(
+      submit(request({
+        submissionId: subId,
+        term: 'Canter',
+        termId: 'canter',
+        kind: 'image_contribution',
+        rightsConfirmed: true,
+        submittedImages: [{id: 'img_f', url: urlFor(foreignPath)}],
+      }, member)),
+      {code: 'invalid-argument'},
+  );
+
+  // Reject > 3 images
+  await assert.rejects(
+      submit(request({
+        submissionId: subId,
+        term: 'Canter',
+        termId: 'canter',
+        kind: 'image_contribution',
+        rightsConfirmed: true,
+        submittedImages: [
+          {id: 'img_1', url: urlFor(p1)},
+          {id: 'img_2', url: urlFor(p2)},
+          {id: 'img_3', url: urlFor(p1)},
+          {id: 'img_4', url: urlFor(p2)},
+        ],
+      }, member)),
+      {code: 'invalid-argument'},
+  );
+
+  // Submit image contribution with deduplicated duplicate SHA-256 and opt-in recognition
+  const dupHash = 'a'.repeat(64);
+  const imgSub = await submit(request({
+    submissionId: subId,
+    term: 'Canter',
+    termId: 'canter',
+    kind: 'image_contribution',
+    rightsConfirmed: true,
+    recognitionConsent: true,
+    publicName: 'Morgan Trail',
+    submittedImages: [
+      {
+        id: 'img_1',
+        url: urlFor(p1),
+        sha256: dupHash,
+        caption: 'Lead leg placement',
+        explanation: 'Shows three-beat sequence.',
+        imageType: 'diagram',
+      },
+      {
+        id: 'img_dup',
+        url: urlFor(p2),
+        sha256: dupHash,
+        caption: 'Duplicate hash ignored',
+      },
+      {
+        id: 'img_2',
+        url: urlFor(p2),
+        sha256: 'b'.repeat(64),
+        caption: 'Blurry arena shot',
+      },
+    ],
+  }, member));
+  assert.equal(imgSub.imageCount, 2);
+
+  // Admin partially approves img_1 (editing caption/imageType) and rejects img_2
+  const reviewRes = await edit(request({
+    action: 'review',
+    id: subId,
+    textDecision: 'rejected',
+    imageDecisions: [
+      {
+        id: 'img_1',
+        status: 'approved',
+        caption: 'Inside lead footfall diagram',
+        explanation: 'Illustrates three-beat canter sequence with suspension.',
+        imageType: 'diagram',
+      },
+      {id: 'img_2', status: 'rejected'},
+    ],
+    note: 'Diagram is clear; second image blurry.',
+  }, admin));
+  assert.equal(reviewRes.status, 'partially_approved');
+  // Rejected image was deleted from private Storage immediately on review!
+  assert(!objects.has(p2));
+  assert(objects.has(p1));
+
+  // Unapproved submission URL cannot be published directly without approval
+  const canterSeed = seeds.find((item) => item.id === 'canter');
+  await assert.rejects(
+      edit(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        suggestionId: subId,
+        entry: {
+          ...canterSeed,
+          media: [{url: urlFor(p2), label: 'Rejected image'}],
+        },
+      }, admin)),
+      {code: 'failed-precondition'},
+  );
+
+  // Publish approved community diagram alongside an existing published image
+  await edit(request({
+    action: 'publish',
+    id: 'canter',
+    expectedRevision: 0,
+    suggestionId: subId,
+    entry: {
+      ...canterSeed,
+      media: [
+        {url: urlFor(p1), label: 'Inside lead footfall diagram', explanation: 'Illustrates three-beat canter sequence with suspension.', imageType: 'diagram', attribution: 'Morgan Trail'},
+      ],
+    },
+  }, admin));
+
+  const updatedCanter = db.store.get('DictionaryEntries/canter');
+  assert.equal(updatedCanter.media.length, 1);
+  assert.match(updatedCanter.media[0].url, /dictionary_public%2Fcanter%2F/);
+  assert.equal(updatedCanter.media[0].imageType, 'diagram');
+  assert.equal(updatedCanter.media[0].attribution, 'Morgan Trail');
+  // Private submission file is cleaned up once promoted to dictionary_public/
+  assert(!objects.has(p1));
+
+  // New term with categories and no images
+  const newTermId = randomUUID();
+  await submit(request({
+    submissionId: newTermId,
+    term: 'Cavaletti',
+    kind: 'new_term',
+    categories: ['Groundwork', 'Gymnastics'],
+    proposedFields: {
+      definition: 'Low adjustable poles used at walk, trot, or canter to build cadence.',
+      explanation: 'Used across English and Western programs.',
+      usage: '',
+      regionalUsage: '',
+      examples: ['Space trot rails to match natural stride length.'],
+      synonyms: ['ground poles'],
+    },
+    recognitionConsent: false,
+  }, member));
+  const storedNew = db.store.get('DictionarySuggestions/' + newTermId);
+  assert.deepEqual(storedNew.categories, ['Groundwork', 'Gymnastics']);
+  assert.equal(storedNew.kind, 'new_term');
 });

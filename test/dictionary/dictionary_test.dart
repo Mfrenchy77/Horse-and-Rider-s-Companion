@@ -394,14 +394,14 @@ void main() {
   );
 
   testWidgets(
-    'guest submission succeeds, encourages optional account creation, and signed-in submission confirms private follow-up',
+    'signed-out visitors see account prompt for suggestions, while signed-in verified users submit new terms and improvements with opt-in attribution',
     (tester) async {
       tester.view.physicalSize = const Size(800, 820);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      // 1. Guest flow
+      // 1. Signed-out visitor sees account prompt with Create Account & Sign In
       harness.cubit.emit(harness.cubit.state.copyWith(isGuest: true));
       final repo = RecordingDictionary(entries);
       await tester.pumpWidget(
@@ -410,27 +410,21 @@ void main() {
       await tester.pumpAndSettle();
       await _captureView(tester, 'dictionary_guest_suggestion.png');
 
-      await tester.enterText(find.byType(TextFormField).at(0), 'Jog');
-      await tester.enterText(
-        find.byType(TextFormField).at(1),
-        'Explain Western usage of jog.',
-      );
       expect(
-        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
-        isFalse,
+        find.byKey(const Key('dictionaryAuthRequiredPrompt')),
+        findsOneWidget,
       );
-      await tester.tap(find.text('Submit suggestion'));
-      await tester.pumpAndSettle();
-      expect(repo.submitted?['recognitionConsent'], isFalse);
-      expect(repo.submitted?['publicName'], '');
-      expect(find.textContaining('submitted for review'), findsOneWidget);
       expect(
         find.byKey(const Key('dictionaryCreateAccountButton')),
         findsOneWidget,
       );
-      expect(find.text('Sign in'), findsNothing);
+      expect(find.byKey(const Key('dictionarySignInButton')), findsOneWidget);
+      expect(
+        find.byKey(const Key('dictionarySubmitSuggestionButton')),
+        findsNothing,
+      );
 
-      // 2. Signed-in flow with opt-in attribution
+      // 2. Signed-in verified user submits a new term with category
       harness.cubit.emit(
         harness.cubit.state.copyWith(
           isGuest: false,
@@ -448,6 +442,49 @@ void main() {
           ),
         ),
       );
+      await tester.pumpWidget(
+        wrap(
+          Scaffold(
+            body: DictionarySuggestionDialog(
+              key: const Key('newTermDialog'),
+              repository: repo,
+              availableCategories: const ['Gaits', 'Foundations'],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('newTermField_term')), 'Jog');
+      await tester.enterText(
+        find.byKey(const Key('newTermField_definition')),
+        'A relaxed, balanced two-beat gait commonly used in Western riding.',
+      );
+      await tester.tap(find.byKey(const Key('newTermCategoryChip_Gaits')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
+            )
+            .value,
+        isFalse,
+      );
+      final submitNewBtn = find.byKey(
+        const Key('dictionarySubmitSuggestionButton'),
+      );
+      await tester.ensureVisible(submitNewBtn);
+      await tester.tap(submitNewBtn);
+      await tester.pumpAndSettle();
+      expect(repo.submitted?['kind'], 'new_term');
+      expect(repo.submitted?['categories'], ['Gaits']);
+      expect(repo.submitted?['recognitionConsent'], isFalse);
+      expect(repo.submitted?['publicName'], '');
+      expect(
+        find.textContaining('submitted for editorial review'),
+        findsOneWidget,
+      );
+
+      // 3. Signed-in improvement flow with opt-in attribution
       await tester.pumpWidget(
         wrap(
           Scaffold(
@@ -477,7 +514,11 @@ void main() {
       );
       await _captureView(tester, 'dictionary_signed_in_suggestion.png');
 
-      await tester.tap(find.text('Submit suggestion'));
+      final submitEditBtn = find.byKey(
+        const Key('dictionarySubmitSuggestionButton'),
+      );
+      await tester.ensureVisible(submitEditBtn);
+      await tester.tap(submitEditBtn);
       await tester.pumpAndSettle();
       expect(repo.submitted?['kind'], 'correction');
       expect(repo.submitted?['recognitionConsent'], isTrue);

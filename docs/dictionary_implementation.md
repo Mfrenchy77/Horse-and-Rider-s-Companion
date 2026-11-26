@@ -56,9 +56,33 @@ The starter prose is original. Background checks used the Extension Horses expla
 - [USDF Glossary of Judging Terms](https://www.usdf.org/EduDocs/Competition/2019Glossary__final9.2018.pdf)
 - [USDF half-halt training reference](https://www.usdf.org/EduDocs/Training/Half-Halt_3.pdf)
 
+## Community contributions and educational images
+
+Registered, email-verified community members can submit three types of Dictionary contributions:
+
+1. **Suggest a New Term** (`kind: 'new_term'`): structured fields (`term`, `definition`, categories, synonyms, examples, discipline usage, regional usage, explanation) plus up to 3 optional images.
+2. **Suggest an Improvement** (`kind: 'correction'` / `'improvement'`): per-field diffing against the published revision, optional reason notes, and optional images.
+3. **Contribute Images** (`kind: 'image_contribution'`): upload 1–3 educational images directly to a Dictionary entry without requiring wording edits.
+
+Signed-out visitors see a clear account prompt with **Create a Free Account** (`/SignIn?mode=register`) and **Sign In** (`/SignIn?mode=login`) actions. Signed-in contributors can review the status of their own submissions and per-image moderation outcomes in **My Contributions**, backed by `DictionaryStore.loadMySuggestions`. Internal admin review notes (`AuditEvents`) and contributor emails remain strictly private.
+
+### Image validation, processing, rights, and storage lifecycle
+
+- **Client processing (`DictionaryImageProcessor`):** Validates magic bytes and file extensions (`PNG`, `JPEG`, `WebP`, max 10 MB), computes SHA-256 checksums to skip duplicate uploads, resizes images exceeding 2048 px while keeping crisp detail for illustrations and diagrams, displays upload progress, supports retries on interrupted uploads, and deletes removed temporary uploads.
+- **Rights & opt-in attribution:** Image submissions require explicit confirmation (`rightsConfirmed: true`) that the contributor created or has permission to submit the images, grants non-exclusive display permission without copyright transfer, and understands moderation precedes publication. Public recognition (`recognitionConsent` + `publicName`) defaults unchecked and never exposes email addresses.
+- **Private Storage isolation:** Contributors upload only into `dictionary_submissions/{uid}/{submissionId}/{fileName}` with `update: if false`. `submitDictionarySuggestion` enforces verified auth, UID/submission folder ownership, image existence/MIME/size checks, and max 3 images per submission.
+- **Partial review & promotion:** Administrators can inspect thumbnails, classify images (`illustrative`, `photograph`, `diagram`), edit captions and explanations, approve or reject individual images independently alongside wording (`partially_approved`), preserve existing published images when incorporating, set the primary hero image, and publish. Rejected submission files are deleted on review, approved submission images are promoted to immutable `dictionary_public/{entryId}/{uuid}.{ext}` URLs on publish, remaining temp submission files are cleaned up after promotion, and `cleanupAbandonedDraftMedia` sweeps stale orphaned draft and submission files.
+- **Public multi-image viewer:** Published entries display the primary image in `HeroHeader` and secondary images in `DictionaryMediaGallery`, opening the immersive `PhotoView` modal (`showProfilePhoto`) with captions, image type labels, educational explanations, and consented attribution.
+
 ## Local checks and release checklist
 
-Flutter tests are in test/dictionary/dictionary_test.dart. Functions tests are functions/test/dictionary.test.js. Firestore coverage extends firebase/firestore.rules.test.cjs. Real transaction concurrency is tested by functions/test/dictionary_emulator.js, which refuses to run without the emulator environment.
+Flutter tests are in `test/dictionary/` (`dictionary_test.dart`, `dictionary_change_tracking_test.dart`, `dictionary_image_upload_test.dart`, `dictionary_hero_header_test.dart`, `dictionary_dynamic_refresh_test.dart`, and `dictionary_community_contributions_test.dart`). Functions tests are in `functions/test/dictionary.test.js`. Firestore security rule tests are in `firebase/firestore.rules.test.cjs`. Real transaction concurrency is tested by `functions/test/dictionary_emulator.js`, which refuses to run without the emulator environment.
+
+Before production release (not executed by this task), deploy:
+1. Cloud Functions (`submitDictionarySuggestion`, `editDictionary`, `sharePreview`)
+2. Firestore security rules (`firebase/firestore.rules`)
+3. Firebase Storage security rules (`firebase/storage.rules`)
+4. Flutter web/app Hosting build (with `DICTIONARY_RECAPTCHA_SITE_KEY` / App Check configured)
 
 Run focused Flutter tests, Flutter analysis, Functions lint/unit tests, then the Auth/Firestore emulator suites. Existing unfinished Logbook work and baseline navigation failures are outside this milestone.
 

@@ -1000,8 +1000,12 @@ test('Dictionary published entries are public; drafts, identities, limits, and w
     await assertFails(getDocs(collection(db, 'DictionaryEntries')));
     for (const path of [
       'DictionaryEntries/hidden', 'DictionaryDrafts/canter', 'DictionaryDrafts/canter/Revisions/1',
-      'DictionarySuggestions/proposal', 'DictionarySuggestions/proposal/AuditEvents/one', 'DictionaryRateLimits/key',
+      'DictionarySuggestions/proposal/AuditEvents/one', 'DictionaryRateLimits/key',
     ]) await assertFails(getDoc(doc(db, path)));
+  }
+  await assertSucceeds(getDoc(doc(member, 'DictionarySuggestions/proposal')));
+  for (const db of [guest, otherMember, moderator, unverifiedAdmin]) {
+    await assertFails(getDoc(doc(db, 'DictionarySuggestions/proposal')));
   }
   for (const db of [guest, member, moderator, unverifiedAdmin, admin]) {
     for (const path of ['DictionaryEntries/canter', 'DictionaryDrafts/canter', 'DictionarySuggestions/proposal']) {

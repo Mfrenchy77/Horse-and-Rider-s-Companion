@@ -11,7 +11,9 @@ const actor = {uid: 'dictionary-emulator-admin', token: {admin: true, email_veri
 async function main() {
   const suffix = Date.now().toString(36);
   const submit = submitDictionarySuggestion(db, {secret: 'emulator-only', requireAppCheck: false});
+  const memberAuth = {uid: 'emulator-member-' + suffix, token: {email_verified: true}};
   const requests = Array.from({length: 6}, (_, index) => ({
+    auth: memberAuth,
     rawRequest: {ip: 'dictionary-emulator-' + suffix},
     data: {
       submissionId: 'dictionary-' + suffix + '-' + index,
@@ -41,6 +43,7 @@ async function main() {
   // Verify structured improvement + concurrent revision mismatch protection on real Firestore transactions.
   const structuredId = 'dictionary-structured-' + suffix;
   await submit({
+    auth: memberAuth,
     rawRequest: {ip: 'dictionary-emulator-2-' + suffix},
     data: {
       submissionId: structuredId,

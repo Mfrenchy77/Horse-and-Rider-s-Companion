@@ -75,80 +75,109 @@ void main() {
     );
   }
 
+  void signInAsVerifiedMember() {
+    harness.cubit.emit(
+      harness.cubit.state.copyWith(
+        isGuest: false,
+        usersProfile: RiderProfile(
+          id: 'member',
+          email: 'rider@example.com',
+          name: 'Alex Rider',
+        ),
+        user: const User(
+          id: 'uid-alex',
+          email: 'rider@example.com',
+          name: 'Alex Rider',
+          isGuest: false,
+          emailVerified: true,
+        ),
+      ),
+    );
+  }
+
   group('Word-level diff and structured field preservation', () {
-    test('diffWords accurately distinguishes added, removed, and unchanged text', () {
-      const original =
-          'A three-beat gait faster than a trot and slower than a gallop.';
-      const edited =
-          'A balanced three-beat gait faster than a trot or jog and slower than a gallop.';
+    test(
+      'diffWords accurately distinguishes added, removed, and unchanged text',
+      () {
+        const original =
+            'A three-beat gait faster than a trot and slower than a gallop.';
+        const edited =
+            'A balanced three-beat gait faster than a trot or jog and slower than a gallop.';
 
-      final segments = diffWords(original, edited);
-      expect(
-        segments.where((s) => s.op == DiffOp.insert).map((s) => s.text.trim()),
-        containsAll(['balanced', 'or jog']),
-      );
-      expect(
-        segments.where((s) => s.op == DiffOp.delete),
-        isEmpty,
-      );
-      expect(
-        segments.where((s) => s.op == DiffOp.equal).map((s) => s.text).join(),
-        contains('three-beat gait faster than a trot'),
-      );
+        final segments = diffWords(original, edited);
+        expect(
+          segments
+              .where((s) => s.op == DiffOp.insert)
+              .map((s) => s.text.trim()),
+          containsAll(['balanced', 'or jog']),
+        );
+        expect(segments.where((s) => s.op == DiffOp.delete), isEmpty);
+        expect(
+          segments.where((s) => s.op == DiffOp.equal).map((s) => s.text).join(),
+          contains('three-beat gait faster than a trot'),
+        );
 
-      final replacement = diffWords(
-        'Limited experience in an arena.',
-        'Growing confidence on trails.',
-      );
-      expect(replacement.any((s) => s.op == DiffOp.delete), isTrue);
-      expect(replacement.any((s) => s.op == DiffOp.insert), isTrue);
-      expect(replacement.any((s) => s.op == DiffOp.equal), isTrue);
-    });
+        final replacement = diffWords(
+          'Limited experience in an arena.',
+          'Growing confidence on trails.',
+        );
+        expect(replacement.any((s) => s.op == DiffOp.delete), isTrue);
+        expect(replacement.any((s) => s.op == DiffOp.insert), isTrue);
+        expect(replacement.any((s) => s.op == DiffOp.equal), isTrue);
+      },
+    );
 
-    test('applyChangedFieldsToEntry preserves all unchanged fields and concurrent edits to other fields', () {
-      final canter = DictionaryRepository.resolve(seedEntries, 'canter')!;
-      final base = DictionaryStructuredFields.fromEntry(canter);
-      final proposed = DictionaryStructuredFields(
-        definition: 'A cadenced three-beat gait with suspension.',
-        explanation: base.explanation,
-        usage: base.usage,
-        regionalUsage: base.regionalUsage,
-        examples: base.examples,
-        synonyms: base.synonyms,
-      );
+    test(
+      'applyChangedFieldsToEntry preserves all unchanged fields and concurrent edits to other fields',
+      () {
+        final canter = DictionaryRepository.resolve(seedEntries, 'canter')!;
+        final base = DictionaryStructuredFields.fromEntry(canter);
+        final proposed = DictionaryStructuredFields(
+          definition: 'A cadenced three-beat gait with suspension.',
+          explanation: base.explanation,
+          usage: base.usage,
+          regionalUsage: base.regionalUsage,
+          examples: base.examples,
+          synonyms: base.synonyms,
+        );
 
-      expect(proposed.changedKeysAgainst(base), ['definition']);
+        expect(proposed.changedKeysAgainst(base), ['definition']);
 
-      // Suppose the live entry meanwhile had regionalUsage updated and keeps categories/skillIds.
-      final liveData = <String, dynamic>{
-        ...canter.data,
-        'regionalUsage': 'Updated live regional usage that must not be overwritten.',
-        'categories': const ['Gaits', 'Foundations'],
-        'skillIds': const ['rider.mounted.canter'],
-      };
+        // Suppose the live entry meanwhile had regionalUsage updated and keeps categories/skillIds.
+        final liveData = <String, dynamic>{
+          ...canter.data,
+          'regionalUsage':
+              'Updated live regional usage that must not be overwritten.',
+          'categories': const ['Gaits', 'Foundations'],
+          'skillIds': const ['rider.mounted.canter'],
+        };
 
-      final merged = proposed.applyChangedFieldsToEntry(liveData, base: base);
-      expect(merged['definition'], 'A cadenced three-beat gait with suspension.');
-      expect(
-        merged['regionalUsage'],
-        'Updated live regional usage that must not be overwritten.',
-      );
-      expect(merged['explanation'], canter.explanation);
-      expect(merged['categories'], ['Gaits', 'Foundations']);
-      expect(merged['skillIds'], ['rider.mounted.canter']);
-    });
+        final merged = proposed.applyChangedFieldsToEntry(liveData, base: base);
+        expect(
+          merged['definition'],
+          'A cadenced three-beat gait with suspension.',
+        );
+        expect(
+          merged['regionalUsage'],
+          'Updated live regional usage that must not be overwritten.',
+        );
+        expect(merged['explanation'], canter.explanation);
+        expect(merged['categories'], ['Gaits', 'Foundations']);
+        expect(merged['skillIds'], ['rider.mounted.canter']);
+      },
+    );
   });
 
   group('Contributor experience (DictionarySuggestionDialog)', () {
     testWidgets(
-      'existing entry pre-fills structured fields, shows current published definition, previews changes, uses Suggest an Improvement wording, and supports guest submission',
+      'existing entry pre-fills structured fields, shows current published definition, previews changes, uses Suggest an Improvement wording, and submits cleanly',
       (tester) async {
         tester.view.physicalSize = const Size(920, 960);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        harness.cubit.emit(harness.cubit.state.copyWith(isGuest: true));
+        signInAsVerifiedMember();
         final canter = DictionaryRepository.resolve(seedEntries, 'canter')!;
         final repo = _RecordingRepo(seedEntries);
 
@@ -261,24 +290,29 @@ void main() {
           'A balanced three-beat gait with a moment of suspension, called lope in Western riding.',
         );
         expect(proposedMap['explanation'], canter.explanation);
-        // Guest account prompt remains available after submission
         expect(
-          find.byKey(const Key('dictionaryCreateAccountButton')),
+          find.textContaining('email address is never shown publicly'),
           findsOneWidget,
         );
       },
     );
 
     testWidgets(
-      'new term submission keeps empty form and replaces Correction label with Suggest an Improvement',
+      'new term mode presents structured new definition fields including category chips',
       (tester) async {
+        signInAsVerifiedMember();
         final repo = _RecordingRepo(seedEntries);
         await tester.pumpWidget(
           wrap(Scaffold(body: DictionarySuggestionDialog(repository: repo))),
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Contribute to the Dictionary'), findsOneWidget);
+        expect(find.text('Suggest a New Term'), findsOneWidget);
+        expect(find.byKey(const Key('newTermField_term')), findsOneWidget);
+        expect(
+          find.byKey(const Key('newTermField_definition')),
+          findsOneWidget,
+        );
         expect(
           find.byKey(const Key('dictionaryCurrentPublishedCard')),
           findsNothing,
@@ -287,12 +321,6 @@ void main() {
           find.byKey(const Key('dictionaryReviewChangesButton')),
           findsNothing,
         );
-
-        // Open dropdown to confirm "Suggest an Improvement" replaces "Correction"
-        await tester.tap(find.byType(DropdownButtonFormField<String>));
-        await tester.pumpAndSettle();
-        expect(find.text('Suggest an Improvement'), findsWidgets);
-        expect(find.text('Correction'), findsNothing);
       },
     );
   });
@@ -407,7 +435,10 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         signInAsVerifiedAdmin();
-        final greenStarter = DictionaryRepository.resolve(seedEntries, 'green')!;
+        final greenStarter = DictionaryRepository.resolve(
+          seedEntries,
+          'green',
+        )!;
         final contributorBase = DictionaryStructuredFields.fromEntry(
           greenStarter,
         );
@@ -419,8 +450,7 @@ void main() {
           'publishedAt': Timestamp.now(),
           'definition':
               'A horse or rider still building experience in a specific discipline or setting.',
-          'regionalUsage':
-              'Updated regional note preserved from revision 2.',
+          'regionalUsage': 'Updated regional note preserved from revision 2.',
         });
         final liveEntries = [
           for (final e in seedEntries)
@@ -474,7 +504,10 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Old wording (rev 0)'), findsNWidgets(2));
-        expect(find.text('Current published wording (rev 2)'), findsNWidgets(2));
+        expect(
+          find.text('Current published wording (rev 2)'),
+          findsNWidgets(2),
+        );
         expect(find.text('Proposed wording'), findsNWidgets(2));
 
         // 2. Open Incorporate wording -> _EntryEditor shows mismatch banner & disables Publish until acknowledged
