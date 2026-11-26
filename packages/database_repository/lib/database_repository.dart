@@ -50,3 +50,4 @@ export 'src/firestore_connection_request_store.dart';
 export 'src/composite_connection_request_store.dart';
 export 'src/in_memory_connection_request_store.dart';
 export 'src/logging/app_logger.dart';
+export 'src/curriculum_import_validator.dart';

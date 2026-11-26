@@ -22,6 +22,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_help
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_sync.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/ability_summary_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_draft_dialogs.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_import_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/curriculum_revision_dialogs.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/instructor_ability_matrix_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
@@ -40,6 +41,7 @@ class SkillTreeV2View extends StatefulWidget {
     this.enableCurriculumPublishing = kEnableCurriculumPublishing,
     this.initialSkillId,
     this.initialLevel,
+    this.onPickCurriculumImportFile,
   });
 
   final SkillTreeV2Repository? repository;
@@ -47,6 +49,7 @@ class SkillTreeV2View extends StatefulWidget {
   final bool enableCurriculumPublishing;
   final String? initialSkillId;
   final DifficultyState? initialLevel;
+  final CurriculumImportFilePicker? onPickCurriculumImportFile;
 
   static InMemorySkillTreeV2Store _previewProgressStore =
       InMemorySkillTreeV2Store();
@@ -476,6 +479,48 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     );
   }
 
+  Future<void> _openImportCurriculumDialog(
+    SkillTreeV2State publishedState,
+  ) async {
+    final draft =
+        _draft ??
+        SkillTreeCurriculumDraft(
+          families: List<SkillFamily>.from(publishedState.families),
+          skills: List<CurriculumSkill>.from(publishedState.skills),
+        );
+    final imported = await showAppGlassDialog<SkillTreeCurriculumDraft>(
+      context: context,
+      builder: (_) => CurriculumImportDialog(
+        publishedFamilies: publishedState.families,
+        publishedSkills: publishedState.skills,
+        currentDraftFamilies: draft.families,
+        currentDraftSkills: draft.skills,
+        onPickFile: widget.onPickCurriculumImportFile,
+      ),
+    );
+    if (imported == null || !mounted) return;
+
+    setState(() {
+      _draft = SkillTreeCurriculumDraft(
+        families: imported.families,
+        skills: imported.skills,
+        updatedByUid: draft.updatedByUid,
+        updatedByName: draft.updatedByName,
+        updatedAt: draft.updatedAt,
+      );
+      _hasUnsavedDraftChanges = true;
+      _isPreviewingDraft = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Imported curriculum into draft (unsaved). Review changes, '
+          'Save Draft, then Publish when ready.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _openPublishDialog(SkillTreeV2State publishedState) async {
     final draft = _draft;
     final draftRepo = context.read<SkillTreeDraftRepository?>();
@@ -613,6 +658,14 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                   icon: const Icon(Icons.create_new_folder_outlined, size: 18),
                   label: const Text('Add Skill Family'),
                 ),
+              OutlinedButton.icon(
+                key: const Key('draftImportButton'),
+                onPressed: _isDraftBusy
+                    ? null
+                    : () => _openImportCurriculumDialog(publishedState),
+                icon: const Icon(Icons.upload_file_outlined, size: 18),
+                label: const Text('Import Curriculum'),
+              ),
               OutlinedButton.icon(
                 key: const Key('draftPreviewButton'),
                 onPressed: _isDraftBusy

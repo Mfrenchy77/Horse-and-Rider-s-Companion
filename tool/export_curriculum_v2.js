@@ -4,7 +4,6 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const admin = require(path.resolve(__dirname, '../functions/node_modules/firebase-admin'));
 const {validateCurriculum} = require('../functions/curriculum_validator');
 const {
   REVISIONS_COLLECTION,
@@ -17,6 +16,12 @@ const {
 
 const ROOT = path.resolve(__dirname, '..');
 const DEFAULT_OUT_DIR = path.join(ROOT, 'curriculum', 'v2');
+const DEFAULT_IMPORT_OUT_FILE = path.join(
+    ROOT,
+    'build',
+    'curriculum',
+    'skill_tree_v2_import.json',
+);
 
 const SKILL_FILE_MAP = [
   {file: 'skills_rider_husbandry.json', subject: 'rider', realm: 'Husbandry'},
@@ -31,8 +36,11 @@ function parseArgs(argv) {
   const args = {
     write: false,
     check: false,
+    bundle: false,
     projectId: process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT || '',
+    inDir: DEFAULT_OUT_DIR,
     outDir: DEFAULT_OUT_DIR,
+    outFile: DEFAULT_IMPORT_OUT_FILE,
   };
   for (let i = 2; i < argv.length; i += 1) {
     const token = argv[i];
@@ -41,11 +49,19 @@ function parseArgs(argv) {
     } else if (token === '--dry-run' || token === '--check') {
       args.write = false;
       args.check = token === '--check';
+    } else if (token === '--bundle' || token === '--bundle-import') {
+      args.bundle = true;
     } else if (token === '--project' && argv[i + 1]) {
       args.projectId = argv[i + 1];
       i += 1;
+    } else if (token === '--in-dir' && argv[i + 1]) {
+      args.inDir = path.resolve(argv[i + 1]);
+      i += 1;
     } else if (token === '--out-dir' && argv[i + 1]) {
       args.outDir = path.resolve(argv[i + 1]);
+      i += 1;
+    } else if (token === '--out-file' && argv[i + 1]) {
+      args.outFile = path.resolve(argv[i + 1]);
       i += 1;
     }
   }
@@ -271,8 +287,116 @@ async function exportCurriculumFromFirestore(db, {outDir = DEFAULT_OUT_DIR, writ
   };
 }
 
+function loadLocalCurriculumV2(inDir = DEFAULT_OUT_DIR) {
+  const familiesPath = path.join(inDir, 'families.json');
+  const families = JSON.parse(fs.readFileSync(familiesPath, 'utf8'));
+  const skills = [];
+  for (const spec of SKILL_FILE_MAP) {
+    const filePath = path.join(inDir, spec.file);
+    const list = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    skills.push(...list);
+  }
+  return {families, skills};
+}
+
+function buildCanonicalImportPayload({
+  families,
+  skills,
+  requireFamilyDescription = true,
+  enforceSizeLimit = true,
+}) {
+  const validation = validateCurriculum({
+    families,
+    skills,
+    requireFamilyDescription,
+    enforceSizeLimit,
+  });
+  if (!validation.ok) {
+    throw new Error(
+        `Curriculum failed validation: ${validation.errors.join(' ')}`,
+    );
+  }
+
+  const cleanedFamilies = validation.families
+      .map(cleanFamilyForExport)
+      .sort(sortByOrderThenId);
+  const cleanedSkills = validation.skills
+      .map(cleanSkillForExport)
+      .sort(sortByOrderThenId);
+
+  const payload = {
+    schemaVersion: 2,
+    families: cleanedFamilies,
+    skills: cleanedSkills,
+  };
+  const json = `${JSON.stringify(payload, null, 2)}\n`;
+  const {checksum} = computeCurriculumChecksum({
+    families: cleanedFamilies,
+    skills: cleanedSkills,
+  });
+
+  return {
+    payload,
+    json,
+    familyCount: cleanedFamilies.length,
+    skillCount: cleanedSkills.length,
+    totalLevels: validation.totalLevels,
+    sizeBytes: validation.sizeBytes,
+    warnings: validation.warnings,
+    checksum,
+  };
+}
+
+function bundleLocalCurriculumForImport({
+  inDir = DEFAULT_OUT_DIR,
+  outFile = DEFAULT_IMPORT_OUT_FILE,
+  write = false,
+} = {}) {
+  const {families, skills} = loadLocalCurriculumV2(inDir);
+  const built = buildCanonicalImportPayload({families, skills});
+  if (write) {
+    fs.mkdirSync(path.dirname(outFile), {recursive: true});
+    fs.writeFileSync(outFile, built.json, 'utf8');
+  }
+  return {
+    ...built,
+    inDir,
+    outFile,
+    wroteFile: write,
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv);
+  if (args.bundle) {
+    const bundled = bundleLocalCurriculumForImport({
+      inDir: args.inDir,
+      outFile: args.outFile,
+      write: args.write,
+    });
+    console.log(`Source: local files (${bundled.inDir})`);
+    console.log(
+        `Families: ${bundled.familyCount} | Skills: ${bundled.skillCount} | ` +
+        `Levels: ${bundled.totalLevels} | Size: ${(bundled.sizeBytes / 1024).toFixed(1)} KB`,
+    );
+    console.log(`Checksum: ${bundled.checksum}`);
+    for (const warning of bundled.warnings) {
+      console.warn(`WARNING: ${warning}`);
+    }
+    if (bundled.wroteFile) {
+      console.log(`WROTE IMPORT FILE: ${bundled.outFile}`);
+    } else {
+      console.log(
+          `DRY RUN: Validated canonical import JSON (${Buffer.byteLength(bundled.json, 'utf8')} bytes). ` +
+          `Re-run with --bundle --write to write ${bundled.outFile}.`,
+      );
+    }
+    return;
+  }
+
+  const admin = require(
+      path.resolve(__dirname, '../functions/node_modules/firebase-admin'),
+  );
   const appOptions = args.projectId ? {projectId: args.projectId} : {};
   if (!admin.apps.length) {
     admin.initializeApp(appOptions);
@@ -314,11 +438,15 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_IMPORT_OUT_FILE,
   SKILL_FILE_MAP,
   cleanFamilyForExport,
   cleanSkillForExport,
   buildExportFiles,
   diffExportFiles,
+  loadLocalCurriculumV2,
+  buildCanonicalImportPayload,
+  bundleLocalCurriculumForImport,
   loadActiveCurriculumReadOnly,
   exportCurriculumFromFirestore,
 };

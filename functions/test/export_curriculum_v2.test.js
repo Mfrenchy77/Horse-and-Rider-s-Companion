@@ -8,9 +8,13 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {
+  DEFAULT_IMPORT_OUT_FILE,
   SKILL_FILE_MAP,
   buildExportFiles,
   diffExportFiles,
+  loadLocalCurriculumV2,
+  buildCanonicalImportPayload,
+  bundleLocalCurriculumForImport,
 } = require('../../tool/export_curriculum_v2');
 
 function loadRepoCurriculum() {
@@ -33,7 +37,7 @@ test('buildExportFiles produces deterministic JSON matching curriculum/v2 file s
 
   assert.equal(exportA.familyCount, 32);
   assert.equal(exportA.skillCount, 72);
-  assert.equal(exportA.totalLevels, 149);
+  assert.equal(exportA.totalLevels, 154);
   assert.equal(exportA.checksum, exportB.checksum);
   assert.equal(exportA.files.size, 7);
 
@@ -62,6 +66,40 @@ test('diffExportFiles detects modified files in dry-run without touching unrelat
     const secondDiff = diffExportFiles(built.files, tmpDir);
     assert.equal(secondDiff.filter((d) => d.changed).length, 0);
     assert.equal(fs.readFileSync(unrelatedPath, 'utf8'), 'keep-me');
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
+  }
+});
+
+test('bundleLocalCurriculumForImport builds validated canonical v2 JSON without touching unrelated files', () => {
+  const {families, skills} = loadLocalCurriculumV2();
+  const bundled = buildCanonicalImportPayload({families, skills});
+
+  assert.equal(bundled.payload.schemaVersion, 2);
+  assert.equal(bundled.familyCount, 32);
+  assert.equal(bundled.skillCount, 72);
+  assert.equal(bundled.totalLevels, 154);
+  assert.ok(bundled.json.endsWith('\n'));
+  assert.ok(
+      DEFAULT_IMPORT_OUT_FILE.endsWith(
+          path.join('build', 'curriculum', 'skill_tree_v2_import.json'),
+      ),
+  );
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hrc-bundle-import-test-'));
+  try {
+    const outFile = path.join(tmpDir, 'nested', 'skill_tree_v2_import.json');
+    const dryRun = bundleLocalCurriculumForImport({outFile, write: false});
+    assert.equal(dryRun.wroteFile, false);
+    assert.equal(fs.existsSync(outFile), false);
+
+    const written = bundleLocalCurriculumForImport({outFile, write: true});
+    assert.equal(written.wroteFile, true);
+    assert.equal(fs.existsSync(outFile), true);
+    const parsed = JSON.parse(fs.readFileSync(outFile, 'utf8'));
+    assert.equal(parsed.schemaVersion, 2);
+    assert.equal(parsed.families.length, 32);
+    assert.equal(parsed.skills.length, 72);
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

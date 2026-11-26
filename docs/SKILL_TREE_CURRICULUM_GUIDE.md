@@ -403,7 +403,22 @@ Before any curriculum change is merged or published:
    - Published identity & progress protection: published skill IDs cannot be deleted (`status: "retired"` required), `subject` and published `availableLevels` cannot be removed, published `legacyIds` cannot be dropped, and material `proficient` standard edits require incrementing `standardVersion`.
    - All 84 legacy IDs in `migrate_working_dir/skills_snapshot.json` remain mapped **exactly once** across `legacyIds[]` and `legacy_mapping.json` (verified by CLI validation).
    - Single-document draft size monitoring: warns above `700 KB` and blocks saves above `900 KB` (current baseline `~174.5 KB`) ahead of Firestore's `1 MiB` document limit.
-3. Production publication (`SkillFamilies` and `SkillsV2`) continues to use the Admin SDK CLI pipeline ([publish_curriculum_v2.js](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/tool/publish_curriculum_v2.js), dry-run by default, never mutating `Rider_Profile`, `Horse_Profile`, or `Resources`) until Phase 2B revision-based publishing is enabled.
+3. Production publication (`SkillFamilies` and `SkillsV2`) is managed through the versioned draft-and-revision workflow below (never mutating `Rider_Profile`, `Horse_Profile`, `SkillProgress`, `SkillVerifications`, or `Resources`).
+
+### 8.7 Editorial Import & Revision Publishing Workflow
+When curated updates in `curriculum/v2/` are ready for administrator review and publication:
+
+1. **Validate local curriculum files:**
+   - Run `node tool/validate_curriculum_v2.js` and `flutter test test/domain/curriculum_v2_validation_test.dart`.
+2. **Generate a canonical import JSON bundle:**
+   - Run `node tool/export_curriculum_v2.js --bundle --write` to write the validated canonical payload (`{ "schemaVersion": 2, "families": [...], "skills": [...] }`) to `build/curriculum/skill_tree_v2_import.json`.
+   - This format matches `buildCanonicalCurriculumExportJson()` cleanly and preserves all stable skill IDs, `legacyIds`, difficulty `standardVersion` values, and relationships.
+3. **Import into the Admin Draft inside Skill Tree 2.0:**
+   - Sign in as an administrator, open Skill Tree 2.0, open the Overflow Menu → **Edit Curriculum (Draft)**, and click **Import Curriculum**.
+   - Upload `build/curriculum/skill_tree_v2_import.json` (or paste JSON). The importer validates the entire schema, relationships, and published-skill preservation rules before touching the draft, and previews differences against both the published curriculum and the current saved draft.
+   - Confirm **Import into Draft** (or **Cancel** to leave the draft untouched). Importing never publishes automatically.
+4. **Save, Preview, and Publish Revision:**
+   - Browse the updated skills in **Admin Draft Mode**, click **Save Draft**, review **Preview Changes**, and click **Publish Curriculum** with release notes to publish the next immutable revision while keeping previous revisions available for rollback under **Revision History**.
 
 ---
 
