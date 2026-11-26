@@ -4,8 +4,16 @@ import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tou
 import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_icon.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
+/// Illustrated Skill Family & compact skill list for Skill Tree 2.0
+/// Explore Skills.
+///
+/// Adapts across viewports without additional Firestore reads:
+/// - `< 600px` (mobile) & `>= 900px` (desktop master rail): 1-column cards.
+/// - `600px .. < 900px` (tablet, when not searching): 2-column family grid
+///   with full-width inline expansion below the active row.
 class SkillFamilyListV2 extends StatelessWidget {
   const SkillFamilyListV2({
     super.key,
@@ -28,277 +36,531 @@ class SkillFamilyListV2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isSearching = state.searchQuery.trim().isNotEmpty;
     final visible = state.visibleSkills;
+    final isSearching = state.searchQuery.trim().isNotEmpty;
 
-    final families = isSearching
+    // Group visible skills by familyId in a single pass.
+    final skillsByFamilyId = <String, List<CurriculumSkill>>{};
+    for (final skill in visible) {
+      skillsByFamilyId.putIfAbsent(skill.familyId, () => []).add(skill);
+    }
+    for (final list in skillsByFamilyId.values) {
+      list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
+
+    final candidateFamilies = isSearching
         ? (state.families
               .where(
                 (f) =>
                     f.subject == state.subject &&
-                    visible.any((s) => s.familyId == f.id),
+                    (skillsByFamilyId[f.id]?.isNotEmpty ?? false),
               )
               .toList()
             ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)))
         : state.realmFamilies;
 
-    if (visible.isEmpty &&
-        !(isAdminEditMode && !isSearching && families.isNotEmpty)) {
+    final visibleFamilies = [
+      for (final family in candidateFamilies)
+        if ((skillsByFamilyId[family.id]?.isNotEmpty ?? false) ||
+            (isAdminEditMode && !isSearching))
+          family,
+    ];
+
+    if (visibleFamilies.isEmpty) {
       return AppSurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTokens.spaceMd),
-          child: Text(
-            isSearching
-                ? 'No skills match "${state.searchQuery.trim()}".'
-                : 'No skills in this category yet.',
-            style: theme.textTheme.bodyMedium,
-          ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 36,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: AppTokens.spaceSm),
+            Text(
+              isSearching
+                  ? 'No matching skills'
+                  : 'No skills in this category yet.',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppTokens.spaceXs),
+            Text(
+              isSearching
+                  ? 'Try another equestrian term or switch between Rider and '
+                        'Horse.'
+                  : 'Skills for this area will appear here once added.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    final list = ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: families.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppTokens.spaceMd),
-      itemBuilder: (context, index) {
-        final family = families[index];
-        final familySkills =
-            visible.where((s) => s.familyId == family.id).toList()
-              ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-        if (familySkills.isEmpty && !(isAdminEditMode && !isSearching)) {
-          return const SizedBox.shrink();
-        }
+    final familyEntries = [
+      for (var i = 0; i < visibleFamilies.length; i++)
+        _FamilyRenderEntry(
+          index: i,
+          family: visibleFamilies[i],
+          skills: skillsByFamilyId[visibleFamilies[i].id] ?? const [],
+          expanded:
+              isSearching ||
+              state.expandedFamilyIds.contains(visibleFamilies[i].id),
+        ),
+    ];
 
-        final isExpanded =
-            isSearching || state.expandedFamilyIds.contains(family.id);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportWidth = MediaQuery.sizeOf(context).width;
+        final isTabletGrid =
+            !isSearching && constraints.maxWidth >= 520 && viewportWidth < 900;
 
-        final card = RepaintBoundary(
-          child: AppSurfaceCard(
-            key: Key('skillFamily_${family.id}'),
-            padding: const EdgeInsets.all(AppTokens.spaceMd),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: AppTokens.spaceSm,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppTokens.spaceMd,
+          children: [
+            if (isTabletGrid)
+              ..._buildTabletGridRows(context, familyEntries)
+            else
+              for (final entry in familyEntries) _buildSingleColumnCard(entry),
+            if (contributorNames.isNotEmpty)
+              _ContributorsFooter(names: contributorNames),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSingleColumnCard(_FamilyRenderEntry entry) {
+    final hasSelectedSkill = entry.skills.any(
+      (s) => s.id == state.selectedSkillId,
+    );
+    final card = AppSurfaceCard(
+      key: Key('skillFamily_${entry.family.id}'),
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _FamilyHeaderTile(
+            family: entry.family,
+            skillCount: entry.skills.length,
+            expanded: entry.expanded,
+            hasSelectedSkill: hasSelectedSkill,
+            isSearching: state.searchQuery.trim().isNotEmpty,
+            isAdminEditMode: isAdminEditMode,
+            onToggle: () => onToggleFamily(entry.family.id),
+            onEditFamily: onEditFamily == null
+                ? null
+                : () => onEditFamily!(entry.family),
+          ),
+          if (entry.expanded)
+            _ExpandedFamilySkillsPanel(
+              entry: entry,
+              selectedSkillId: state.selectedSkillId,
+              progressBySkillId: state.progressBySkillId,
+              verificationsBySkillId: state.verificationsBySkillId,
+              isAdminEditMode: isAdminEditMode,
+              onSelectSkill: onSelectSkill,
+              onAddSkillToFamily: onAddSkillToFamily,
+            ),
+        ],
+      ),
+    );
+
+    if (entry.index != 0) return card;
+    return _wrapWithFamilyTourKey(card);
+  }
+
+  List<Widget> _buildTabletGridRows(
+    BuildContext context,
+    List<_FamilyRenderEntry> entries,
+  ) {
+    final rows = <Widget>[];
+    for (var i = 0; i < entries.length; i += 2) {
+      final left = entries[i];
+      final right = i + 1 < entries.length ? entries[i + 1] : null;
+      rows.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppTokens.spaceSm,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Semantics(
-                  button: true,
-                  expanded: isExpanded,
-                  label: family.name,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      key: Key('skillFamilyHeader_${family.id}'),
-                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                      hoverColor: AppTokens.hoverOverlay(context),
-                      highlightColor: AppTokens.pressOverlay(context),
-                      focusColor: AppTokens.focusOverlay(context),
-                      splashColor: AppTokens.pressOverlay(context),
-                      onTap: isSearching
-                          ? null
-                          : () => onToggleFamily(family.id),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppTokens.spaceXs,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: AppTokens.spaceXs,
-                                children: [
-                                  Text(
-                                    family.name,
-                                    style: AppTokens.sectionTitleStyle(
-                                      context,
-                                    ).copyWith(fontSize: 18, height: 1.25),
-                                  ),
-                                  if (family.description.trim().isNotEmpty)
-                                    Text(
-                                      family.description,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: AppTokens.secondaryTextColor(
-                                              context,
-                                            ),
-                                          ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: AppTokens.spaceSm),
-                            if (isAdminEditMode && onEditFamily != null)
-                              IconButton(
-                                key: Key('editFamilyButton_${family.id}'),
-                                tooltip: 'Edit Skill Family',
-                                icon: const Icon(Icons.edit_outlined, size: 18),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => onEditFamily!(family),
-                              ),
-                            AnimatedRotation(
-                              turns: isExpanded ? 0.5 : 0.0,
-                              duration: AppTokens.motionDuration(context),
-                              curve: Curves.easeOutCubic,
-                              child: Icon(
-                                Icons.expand_more,
-                                color: AppTokens.secondaryTextColor(context),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Builder(
-                  builder: (context) {
-                    final expandDuration = AppTokens.motionDuration(context);
-                    final expandedContent = isExpanded
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            spacing: AppTokens.spaceSm,
-                            children: [
-                              for (
-                                var skillIdx = 0;
-                                skillIdx < familySkills.length;
-                                skillIdx++
-                              )
-                                Builder(
-                                  builder: (context) {
-                                    final skill = familySkills[skillIdx];
-                                    final row = _SkillRowCard(
-                                      skill: skill,
-                                      subtitle: isSearching
-                                          ? realmDisplayLabel(skill.realm)
-                                          : null,
-                                      isSelected:
-                                          skill.id == state.selectedSkillId,
-                                      progress:
-                                          state.progressBySkillId[skill.id],
-                                      verification: state
-                                          .verificationsBySkillId[skill.id],
-                                      onTap: () {
-                                        onSelectSkill(skill);
-                                        // ignore: lines_longer_than_80_chars
-                                        GuestSpotlightTour.notifySkillSelected();
-                                      },
-                                    );
-                                    return index == 0 && skillIdx == 0
-                                        ? ValueListenableBuilder<bool>(
-                                            valueListenable:
-                                                SkillTreeSpotlightTour
-                                                    .isTourActive,
-                                            builder: (
-                                              context,
-                                              tourActive,
-                                              child,
-                                            ) {
-                                              final key = tourActive
-                                                  ? SkillTreeSpotlightTour
-                                                        .skillRowKey
-                                                  : GuestSpotlightTour
-                                                        .skillTreeSkillRowKey;
-                                              return KeyedSubtree(
-                                                key: key,
-                                                child: child!,
-                                              );
-                                            },
-                                            child: row,
-                                          )
-                                        : row;
-                                  },
-                                ),
-                              if (isAdminEditMode && onAddSkillToFamily != null)
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: TextButton.icon(
-                                    key: Key('addSkillButton_${family.id}'),
-                                    onPressed: () =>
-                                        onAddSkillToFamily!(family),
-                                    icon: const Icon(Icons.add, size: 18),
-                                    label: const Text('Add Skill'),
-                                  ),
-                                ),
-                            ],
-                          )
-                        : const SizedBox.shrink();
-                    if (expandDuration == Duration.zero) {
-                      return expandedContent;
-                    }
-                    return ClipRect(
-                      child: AnimatedSize(
-                        duration: expandDuration,
-                        reverseDuration: AppTokens.motionDuration(
-                          context,
-                          const Duration(milliseconds: 150),
-                        ),
-                        curve: Curves.easeOutCubic,
-                        alignment: Alignment.topCenter,
-                        child: expandedContent,
-                      ),
-                    );
-                  },
+                Expanded(child: _buildGridTileCard(context, left)),
+                const SizedBox(width: AppTokens.spaceMd),
+                Expanded(
+                  child: right == null
+                      ? const SizedBox.shrink()
+                      : _buildGridTileCard(context, right),
                 ),
               ],
             ),
-          ),
-        );
-        return index == 0
-            ? ValueListenableBuilder<bool>(
-                valueListenable: SkillTreeSpotlightTour.isTourActive,
-                builder: (context, tourActive, child) => KeyedSubtree(
-                  key: tourActive
-                      ? SkillTreeSpotlightTour.familyKey
-                      : GuestSpotlightTour.skillTreeFamilyKey,
-                  child: child!,
-                ),
-                child: card,
-              )
-            : card;
-      },
+            if (left.expanded) _buildTabletExpandedDrawer(context, left),
+            if (right != null && right.expanded)
+              _buildTabletExpandedDrawer(context, right),
+          ],
+        ),
+      );
+    }
+    return rows;
+  }
+
+  Widget _buildGridTileCard(BuildContext context, _FamilyRenderEntry entry) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppTokens.coralAccent : theme.colorScheme.primary;
+    final hasSelectedSkill = entry.skills.any(
+      (s) => s.id == state.selectedSkillId,
+    );
+    final activeBorder = entry.expanded || hasSelectedSkill
+        ? accent.withValues(alpha: 0.65)
+        : null;
+    final tile = AppSurfaceCard(
+      key: Key('skillFamily_${entry.family.id}'),
+      padding: EdgeInsets.zero,
+      borderColor: activeBorder,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 88),
+        child: _FamilyHeaderTile(
+          family: entry.family,
+          skillCount: entry.skills.length,
+          expanded: entry.expanded,
+          hasSelectedSkill: hasSelectedSkill,
+          isSearching: false,
+          isAdminEditMode: isAdminEditMode,
+          onToggle: () => onToggleFamily(entry.family.id),
+          onEditFamily: onEditFamily == null
+              ? null
+              : () => onEditFamily!(entry.family),
+        ),
+      ),
     );
 
-    if (contributorNames.isEmpty) return list;
+    if (entry.index != 0) return tile;
+    return _wrapWithFamilyTourKey(tile);
+  }
 
-    final displayedNames = contributorNames.take(3).toList();
-    final namesLine = displayedNames.length == 1
-        ? 'With contributions from ${displayedNames.first} and other members '
-              'of our community.'
-        : 'With contributions from ${displayedNames.join(', ')} and other '
-              'members of our community.';
+  Widget _buildTabletExpandedDrawer(
+    BuildContext context,
+    _FamilyRenderEntry entry,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppTokens.coralAccent : theme.colorScheme.primary;
+    return AppSurfaceCard(
+      padding: EdgeInsets.zero,
+      borderColor: accent.withValues(alpha: 0.45),
+      child: _ExpandedFamilySkillsPanel(
+        entry: entry,
+        selectedSkillId: state.selectedSkillId,
+        progressBySkillId: state.progressBySkillId,
+        verificationsBySkillId: state.verificationsBySkillId,
+        isAdminEditMode: isAdminEditMode,
+        onSelectSkill: onSelectSkill,
+        onAddSkillToFamily: onAddSkillToFamily,
+        showTopDivider: false,
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: AppTokens.spaceMd,
-      children: [
-        list,
-        AppSurfaceCard(
-          key: const Key('communityContributorsCard'),
-          padding: const EdgeInsets.all(AppTokens.spaceMd),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 4,
+  Widget _wrapWithFamilyTourKey(Widget child) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: SkillTreeSpotlightTour.isTourActive,
+      builder: (context, isMemberTourActive, inner) {
+        return KeyedSubtree(
+          key: isMemberTourActive
+              ? SkillTreeSpotlightTour.familyKey
+              : GuestSpotlightTour.skillTreeFamilyKey,
+          child: inner!,
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _FamilyRenderEntry {
+  const _FamilyRenderEntry({
+    required this.index,
+    required this.family,
+    required this.skills,
+    required this.expanded,
+  });
+
+  final int index;
+  final SkillFamily family;
+  final List<CurriculumSkill> skills;
+  final bool expanded;
+}
+
+class _FamilyHeaderTile extends StatelessWidget {
+  const _FamilyHeaderTile({
+    required this.family,
+    required this.skillCount,
+    required this.expanded,
+    required this.hasSelectedSkill,
+    required this.isSearching,
+    required this.isAdminEditMode,
+    required this.onToggle,
+    this.onEditFamily,
+  });
+
+  final SkillFamily family;
+  final int skillCount;
+  final bool expanded;
+  final bool hasSelectedSkill;
+  final bool isSearching;
+  final bool isAdminEditMode;
+  final VoidCallback onToggle;
+  final VoidCallback? onEditFamily;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    final countLabel = '$skillCount ${skillCount == 1 ? 'skill' : 'skills'}';
+    final selected = expanded || hasSelectedSkill;
+
+    return Semantics(
+      button: true,
+      expanded: expanded,
+      label: '${family.name}, $countLabel',
+      child: InkWell(
+        key: Key('skillFamilyHeader_${family.id}'),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        onTap: isSearching ? null : onToggle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.spaceMd,
+            vertical: AppTokens.spaceMd,
+          ),
+          child: Row(
             children: [
-              Text(
-                'Community Contributors',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
+              SkillFamilyIconBadge(
+                familyId: family.id,
+                fallbackRealm: family.realm,
+                badgeSize: 54,
+                iconSize: 38,
+                state: selected
+                    ? SkillFamilyIconState.selected
+                    : SkillFamilyIconState.normal,
+              ),
+              const SizedBox(width: AppTokens.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      family.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      countLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isDark
+                            ? AppTokens.secondaryTextDark
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                namesLine,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppTokens.secondaryTextColor(context),
+              if (isAdminEditMode && onEditFamily != null)
+                IconButton(
+                  key: Key('editFamilyButton_${family.id}'),
+                  tooltip: 'Edit family',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onEditFamily,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                ),
+              const SizedBox(width: AppTokens.spaceXs),
+              AnimatedRotation(
+                turns: expanded ? 0.5 : 0.0,
+                duration: reducedMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  Icons.expand_more,
+                  color: selected
+                      ? (isDark
+                            ? AppTokens.coralAccent
+                            : theme.colorScheme.primary)
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _ExpandedFamilySkillsPanel extends StatelessWidget {
+  const _ExpandedFamilySkillsPanel({
+    required this.entry,
+    required this.selectedSkillId,
+    required this.progressBySkillId,
+    required this.verificationsBySkillId,
+    required this.isAdminEditMode,
+    required this.onSelectSkill,
+    this.onAddSkillToFamily,
+    this.showTopDivider = true,
+  });
+
+  final _FamilyRenderEntry entry;
+  final String? selectedSkillId;
+  final Map<String, SkillProgressRecord> progressBySkillId;
+  final Map<String, SkillVerificationRecord> verificationsBySkillId;
+  final bool isAdminEditMode;
+  final ValueChanged<CurriculumSkill> onSelectSkill;
+  final ValueChanged<SkillFamily>? onAddSkillToFamily;
+  final bool showTopDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final hasDescription = entry.family.description.trim().isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.spaceMd,
+        0,
+        AppTokens.spaceMd,
+        AppTokens.spaceMd,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showTopDivider)
+            Divider(
+              height: 1,
+              color: theme.dividerColor.withValues(alpha: isDark ? 0.3 : 0.18),
+            ),
+          if (!showTopDivider) const SizedBox(height: AppTokens.spaceMd),
+          if (hasDescription) ...[
+            if (showTopDivider) const SizedBox(height: AppTokens.spaceSm),
+            Text(
+              entry.family.description,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isDark
+                    ? AppTokens.secondaryTextDark
+                    : theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppTokens.spaceSm),
+          for (
+            var skillIdx = 0;
+            skillIdx < entry.skills.length;
+            skillIdx++
+          ) ...[
+            if (skillIdx > 0) const SizedBox(height: AppTokens.spaceXs),
+            _buildSkillRow(
+              entry.skills[skillIdx],
+              isFirstTourTarget: entry.index == 0 && skillIdx == 0,
+            ),
+          ],
+          if (isAdminEditMode && onAddSkillToFamily != null) ...[
+            const SizedBox(height: AppTokens.spaceSm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                key: Key('addSkillButton_${entry.family.id}'),
+                onPressed: () => onAddSkillToFamily!(entry.family),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add skill to family'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkillRow(
+    CurriculumSkill skill, {
+    required bool isFirstTourTarget,
+  }) {
+    final row = _SkillRowCard(
+      skill: skill,
+      selected: selectedSkillId == skill.id,
+      progress: progressBySkillId[skill.id],
+      verification: verificationsBySkillId[skill.id],
+      onTap: () {
+        GuestSpotlightTour.notifySkillSelected();
+        onSelectSkill(skill);
+      },
+    );
+    if (!isFirstTourTarget) return row;
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: SkillTreeSpotlightTour.isTourActive,
+      builder: (context, isMemberTourActive, inner) {
+        return KeyedSubtree(
+          key: isMemberTourActive
+              ? SkillTreeSpotlightTour.skillRowKey
+              : GuestSpotlightTour.skillTreeSkillRowKey,
+          child: inner!,
+        );
+      },
+      child: row,
+    );
+  }
+}
+
+class _ContributorsFooter extends StatelessWidget {
+  const _ContributorsFooter({required this.names});
+
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppSurfaceCard(
+      key: const Key('communityContributorsCard'),
+      padding: const EdgeInsets.all(AppTokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.diversity_3_outlined,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: AppTokens.spaceXs),
+              Text(
+                'Community Contributors',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.spaceXs),
+          Text(
+            'With contributions from ${names.join(', ')} and other members '
+            'who help refine the horsemanship curriculum.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -306,102 +568,89 @@ class SkillFamilyListV2 extends StatelessWidget {
 class _SkillRowCard extends StatelessWidget {
   const _SkillRowCard({
     required this.skill,
-    required this.isSelected,
+    required this.selected,
     required this.progress,
     required this.verification,
     required this.onTap,
-    this.subtitle,
   });
 
   final CurriculumSkill skill;
-  final bool isSelected;
+  final bool selected;
   final SkillProgressRecord? progress;
   final SkillVerificationRecord? verification;
   final VoidCallback onTap;
-  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final radius = BorderRadius.circular(AppTokens.radiusSm);
-    return AppSelectionHighlight(
-      selected: isSelected,
-      backgroundColor: isSelected
-          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
-          : (isDark
-                ? AppTokens.midnightInputFill
-                : theme.colorScheme.surfaceContainerLow),
-      child: DecoratedBox(
-        decoration: isSelected
-            ? const BoxDecoration()
-            : BoxDecoration(
-                borderRadius: radius,
-                border: Border.all(
-                  color: isDark
-                      ? AppTokens.cardBorderDark.withValues(alpha: 0.55)
-                      : theme.dividerColor.withValues(alpha: 0.4),
-                ),
-              ),
-        child: InkWell(
-          key: Key('skillCard_${skill.id}'),
-          borderRadius: radius,
-          hoverColor: AppTokens.hoverOverlay(context),
-          highlightColor: AppTokens.pressOverlay(context),
-          focusColor: AppTokens.focusOverlay(context),
-          splashColor: AppTokens.pressOverlay(context),
-          onTap: onTap,
+    final accent = isDark ? AppTokens.coralAccent : theme.colorScheme.primary;
+    final bgColor = selected
+        ? accent.withValues(alpha: isDark ? 0.14 : 0.08)
+        : (isDark
+              ? AppTokens.midnightBase.withValues(alpha: 0.45)
+              : theme.colorScheme.surfaceContainerLowest.withValues(
+                  alpha: 0.7,
+                ));
+    final borderColor = selected
+        ? accent.withValues(alpha: 0.72)
+        : theme.dividerColor.withValues(alpha: isDark ? 0.35 : 0.2);
+
+    return Material(
+      color: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        side: BorderSide(color: borderColor),
+      ),
+      child: InkWell(
+        key: Key('skillCard_${skill.id}'),
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppTokens.spaceMd,
-              vertical: AppTokens.spaceSm + 4,
+              vertical: AppTokens.spaceSm,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: AppTokens.spaceXs,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 6,
+                    children: [
+                      Text(
                         skill.name,
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppTokens.secondaryTextColor(context),
-                        ),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          for (final level in skill.availableLevels)
+                            _LevelStatusPill(
+                              level: level,
+                              state: progress?.levels[level]?.state,
+                              verified:
+                                  verification?.levels.containsKey(level) ??
+                                  false,
+                            ),
+                        ],
                       ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right, size: 18),
-                  ],
-                ),
-                if (skill.summary.trim().isNotEmpty)
-                  Text(
-                    skill.summary,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppTokens.secondaryTextColor(context),
-                    ),
+                    ],
                   ),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    for (final level in skill.availableLevels)
-                      _LevelStatusPill(
-                        level: level,
-                        selfState: progress?.levels[level]?.state,
-                        isVerified:
-                            verification?.levels.containsKey(level) ?? false,
-                      ),
-                  ],
+                ),
+                const SizedBox(width: AppTokens.spaceXs),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: selected ? accent : theme.colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -415,65 +664,59 @@ class _SkillRowCard extends StatelessWidget {
 class _LevelStatusPill extends StatelessWidget {
   const _LevelStatusPill({
     required this.level,
-    required this.selfState,
-    required this.isVerified,
+    required this.state,
+    required this.verified,
   });
 
   final DifficultyState level;
-  final LevelState? selfState;
-  final bool isVerified;
+  final LevelState? state;
+  final bool verified;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final short = shortDifficultyLabel(level);
-    final (IconData? icon, Color bg, Color fg, String suffix) = isVerified
-        ? (
-            Icons.verified,
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.onPrimaryContainer,
-            ' · Verified',
-          )
-        : switch (selfState) {
-            LevelState.PROFICIENT => (
-              Icons.check_circle_outline,
-              theme.colorScheme.tertiaryContainer,
-              theme.colorScheme.onTertiaryContainer,
-              ' · Proficient',
-            ),
-            LevelState.LEARNING => (
-              Icons.school_outlined,
-              theme.colorScheme.secondaryContainer,
-              theme.colorScheme.onSecondaryContainer,
-              ' · Learning',
-            ),
-            _ => (
-              null,
-              theme.colorScheme.surfaceContainerHighest,
-              theme.colorScheme.onSurfaceVariant,
-              '',
-            ),
-          };
+    final isDark = theme.brightness == Brightness.dark;
+    final label = shortDifficultyLabel(level);
+
+    Color bg;
+    Color fg;
+    IconData? icon;
+    if (verified) {
+      bg = AppTokens.successDark.withValues(alpha: 0.22);
+      fg = isDark ? AppTokens.successDark : Colors.green.shade800;
+      icon = Icons.verified_rounded;
+    } else if (state == LevelState.PROFICIENT) {
+      bg = AppTokens.successDark.withValues(alpha: 0.14);
+      fg = isDark ? AppTokens.successDark : Colors.green.shade800;
+      icon = Icons.check_circle_outline_rounded;
+    } else if (state == LevelState.LEARNING) {
+      bg = AppTokens.warningDark.withValues(alpha: 0.16);
+      fg = isDark ? AppTokens.warningDark : Colors.orange.shade900;
+      icon = Icons.school_outlined;
+    } else {
+      bg = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
+      fg = theme.colorScheme.onSurfaceVariant;
+    }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTokens.cardBorderDark.withValues(alpha: 0.45),
-        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 4),
+            Icon(icon, size: 11, color: fg),
+            const SizedBox(width: 3),
           ],
           Text(
-            '$short$suffix',
-            style: theme.textTheme.labelSmall?.copyWith(color: fg),
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

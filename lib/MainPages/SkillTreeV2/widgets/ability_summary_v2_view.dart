@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_icon.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class AbilitySummaryV2View extends StatelessWidget {
@@ -126,38 +127,80 @@ class AbilitySummaryV2View extends StatelessWidget {
           )
         else
           for (final entry in startedByRealm.entries)
-            AppSurfaceCard(
-              key: Key('abilitySummaryRealm_${entry.key.name}'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: AppTokens.spaceSm,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          realmDisplayLabel(entry.key),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => onBrowseRealm(entry.key),
-                        child: const Text('Browse category'),
-                      ),
-                    ],
-                  ),
-                  for (final item in entry.value)
-                    _StartedSkillTile(
-                      item: item,
-                      onTap: () =>
-                          onSelectSkill(item.skill, item.levels.first.level),
-                    ),
-                ],
-              ),
+            _buildRealmProgressCard(
+              context,
+              realm: entry.key,
+              startedSkills: entry.value,
             ),
       ],
+    );
+  }
+
+  Widget _buildRealmProgressCard(
+    BuildContext context, {
+    required SkillCategory realm,
+    required List<_StartedSkillEntry> startedSkills,
+  }) {
+    final theme = Theme.of(context);
+    final familyById = {for (final family in state.families) family.id: family};
+
+    final groupedByFamily = <String, List<_StartedSkillEntry>>{};
+    for (final item in startedSkills) {
+      groupedByFamily.putIfAbsent(item.skill.familyId, () => []).add(item);
+    }
+
+    final sortedFamilyIds = groupedByFamily.keys.toList()
+      ..sort((a, b) {
+        final orderA = familyById[a]?.sortOrder ?? 1 << 20;
+        final orderB = familyById[b]?.sortOrder ?? 1 << 20;
+        return orderA.compareTo(orderB);
+      });
+
+    return AppSurfaceCard(
+      key: Key('abilitySummaryRealm_${realm.name}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppTokens.spaceSm,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  realmDisplayLabel(realm),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => onBrowseRealm(realm),
+                child: const Text('Browse category'),
+              ),
+            ],
+          ),
+          for (final familyId in sortedFamilyIds) ...[
+            _FamilyProgressGroupHeader(
+              familyId: familyId,
+              familyName:
+                  familyById[familyId]?.name ?? realmDisplayLabel(realm),
+              realm: realm,
+              summary: SkillFamilyProgressSummary.fromState(
+                skills: [
+                  for (final s in state.activeSubjectSkills)
+                    if (s.familyId == familyId) s,
+                ],
+                progressBySkillId: state.progressBySkillId,
+                verificationsBySkillId: state.verificationsBySkillId,
+              ),
+            ),
+            for (final item in groupedByFamily[familyId]!)
+              _StartedSkillTile(
+                item: item,
+                onTap: () => onSelectSkill(item.skill, item.levels.first.level),
+              ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -208,9 +251,7 @@ class AbilitySummaryV2View extends StatelessWidget {
           }
         }
         if (startedLevels.isNotEmpty) {
-          entries.add(
-            _StartedSkillEntry(skill: skill, levels: startedLevels),
-          );
+          entries.add(_StartedSkillEntry(skill: skill, levels: startedLevels));
         }
       }
       if (entries.isNotEmpty) {
@@ -218,6 +259,97 @@ class AbilitySummaryV2View extends StatelessWidget {
       }
     }
     return result;
+  }
+}
+
+class _FamilyProgressGroupHeader extends StatelessWidget {
+  const _FamilyProgressGroupHeader({
+    required this.familyId,
+    required this.familyName,
+    required this.realm,
+    required this.summary,
+  });
+
+  final String familyId;
+  final String familyName;
+  final SkillCategory realm;
+  final SkillFamilyProgressSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final hasAchievement =
+        summary.verifiedLevels > 0 || summary.proficientLevels > 0;
+    final successColor = isDark ? AppTokens.successDark : Colors.green.shade700;
+    final warningColor = isDark
+        ? AppTokens.warningDark
+        : Colors.orange.shade800;
+    final barColor = summary.verifiedLevels > 0
+        ? successColor
+        : (hasAchievement ? AppTokens.coralAccent : warningColor);
+
+    final statusParts = <String>[
+      if (summary.totalLevels > 0)
+        '${summary.proficientLevels}/${summary.totalLevels} proficient',
+      if (summary.verifiedLevels > 0) '${summary.verifiedLevels} verified',
+      if (summary.learningLevels > 0) '${summary.learningLevels} learning',
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTokens.spaceXs),
+      child: Row(
+        children: [
+          SkillFamilyIconBadge(
+            familyId: familyId,
+            fallbackRealm: realm,
+            badgeSize: 44,
+            iconSize: 30,
+            state: hasAchievement
+                ? SkillFamilyIconState.selected
+                : SkillFamilyIconState.normal,
+          ),
+          const SizedBox(width: AppTokens.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 4,
+              children: [
+                Text(
+                  familyName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (statusParts.isNotEmpty)
+                  Text(
+                    statusParts.join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isDark
+                          ? AppTokens.secondaryTextDark
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: summary.completionRatio,
+                    minHeight: 6,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: isDark ? 0.55 : 0.7),
+                    valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -320,8 +452,7 @@ class _StartedLevelChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final levelLabel = difficultyDisplayLabel(status.level);
-    final (IconData icon, Color bg, Color fg, String suffix) =
-        status.isVerified
+    final (IconData icon, Color bg, Color fg, String suffix) = status.isVerified
         ? (
             Icons.verified,
             theme.colorScheme.primaryContainer,

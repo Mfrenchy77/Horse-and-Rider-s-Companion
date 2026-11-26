@@ -75,21 +75,24 @@ List<Resource> filterAndRankResourcesForSkill({
     skill: skill,
     legacySkills: legacySkills,
   );
-  final matching = allResources
-      .where((resource) => resource.skillTreeIds.any(lookupIds.contains))
-      .toList()
-    ..sort((a, b) {
-      if (sort == SkillTreeV2ResourceSort.newest) {
-        final dateA = a.lastEditDate ?? a.createdAt ?? DateTime(1970);
-        final dateB = b.lastEditDate ?? b.createdAt ?? DateTime(1970);
-        return dateB.compareTo(dateA);
-      }
-      final scoreCompare = _helpfulnessScore(b).compareTo(_helpfulnessScore(a));
-      if (scoreCompare != 0) return scoreCompare;
-      final dateA = a.lastEditDate ?? a.createdAt ?? DateTime(1970);
-      final dateB = b.lastEditDate ?? b.createdAt ?? DateTime(1970);
-      return dateB.compareTo(dateA);
-    });
+  final matching =
+      allResources
+          .where((resource) => resource.skillTreeIds.any(lookupIds.contains))
+          .toList()
+        ..sort((a, b) {
+          if (sort == SkillTreeV2ResourceSort.newest) {
+            final dateA = a.lastEditDate ?? a.createdAt ?? DateTime(1970);
+            final dateB = b.lastEditDate ?? b.createdAt ?? DateTime(1970);
+            return dateB.compareTo(dateA);
+          }
+          final scoreCompare = _helpfulnessScore(
+            b,
+          ).compareTo(_helpfulnessScore(a));
+          if (scoreCompare != 0) return scoreCompare;
+          final dateA = a.lastEditDate ?? a.createdAt ?? DateTime(1970);
+          final dateB = b.lastEditDate ?? b.createdAt ?? DateTime(1970);
+          return dateB.compareTo(dateA);
+        });
 
   return matching;
 }
@@ -162,9 +165,7 @@ SubjectAbilitySummary computeAbilitySummary({
   var totalVerified = 0;
 
   for (final realm in realms) {
-    final realmSkills = subjectSkills
-        .where((s) => s.realm == realm)
-        .toList();
+    final realmSkills = subjectSkills.where((s) => s.realm == realm).toList();
     var skillCount = 0;
     var levels = 0;
     var learning = 0;
@@ -242,4 +243,86 @@ DifficultyState _maxLevel(DifficultyState? current, DifficultyState candidate) {
   return (order[candidate] ?? -1) >= (order[current] ?? -1)
       ? candidate
       : current;
+}
+
+/// Lightweight in-memory progress summary for a single Skill Family, computed
+/// directly from loaded Skill Tree 2.0 state without extra backend reads.
+class SkillFamilyProgressSummary {
+  const SkillFamilyProgressSummary({
+    required this.totalSkills,
+    required this.startedSkills,
+    required this.learningLevels,
+    required this.proficientLevels,
+    required this.verifiedLevels,
+    required this.totalLevels,
+  });
+
+  factory SkillFamilyProgressSummary.fromState({
+    required List<CurriculumSkill> skills,
+    required Map<String, SkillProgressRecord> progressBySkillId,
+    required Map<String, SkillVerificationRecord> verificationsBySkillId,
+  }) {
+    var startedSkills = 0;
+    var learningLevels = 0;
+    var proficientLevels = 0;
+    var verifiedLevels = 0;
+    var totalLevels = 0;
+
+    for (final skill in skills) {
+      totalLevels += skill.availableLevels.length;
+      final progress = progressBySkillId[skill.id];
+      final verification = verificationsBySkillId[skill.id];
+      var skillStarted = false;
+
+      for (final level in skill.availableLevels) {
+        final verified = verification?.levels.containsKey(level) ?? false;
+        final selfState = progress?.levels[level]?.state;
+        if (verified) {
+          verifiedLevels++;
+          proficientLevels++;
+          skillStarted = true;
+        } else if (selfState == LevelState.PROFICIENT) {
+          proficientLevels++;
+          skillStarted = true;
+        } else if (selfState == LevelState.LEARNING) {
+          learningLevels++;
+          skillStarted = true;
+        }
+      }
+      if (skillStarted) startedSkills++;
+    }
+
+    return SkillFamilyProgressSummary(
+      totalSkills: skills.length,
+      startedSkills: startedSkills,
+      learningLevels: learningLevels,
+      proficientLevels: proficientLevels,
+      verifiedLevels: verifiedLevels,
+      totalLevels: totalLevels,
+    );
+  }
+
+  final int totalSkills;
+  final int startedSkills;
+  final int learningLevels;
+  final int proficientLevels;
+  final int verifiedLevels;
+  final int totalLevels;
+
+  double get completionRatio =>
+      totalLevels == 0 ? 0 : (proficientLevels / totalLevels).clamp(0, 1);
+
+  String get skillCountLabel =>
+      '$totalSkills ${totalSkills == 1 ? 'skill' : 'skills'}';
+
+  String? get progressLabel {
+    if (startedSkills == 0) return null;
+    if (verifiedLevels > 0) {
+      return '$verifiedLevels verified · $startedSkills/$totalSkills started';
+    }
+    if (proficientLevels > 0) {
+      return '$proficientLevels/$totalLevels proficient';
+    }
+    return '$startedSkills/$totalSkills learning';
+  }
 }
