@@ -32,6 +32,10 @@ Future<T?> showAppGlassDialog<T>({
   bool barrierDismissible = true,
   bool useRootNavigator = true,
   double blurSigma = AppTokens.glassBackdropBlurSigma,
+  Rect? originRect,
+  Rect? Function()? resolveOriginRect,
+  Duration? transitionDuration,
+  Duration? reverseTransitionDuration,
 }) {
   final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -47,6 +51,10 @@ Future<T?> showAppGlassDialog<T>({
       barrierColor: isDark
           ? AppTokens.glassBarrierDark
           : AppTokens.glassBarrierLight,
+      originRect: originRect,
+      resolveOriginRect: resolveOriginRect,
+      customTransitionDuration: transitionDuration,
+      customReverseTransitionDuration: reverseTransitionDuration,
     ),
   );
 }
@@ -250,26 +258,65 @@ class _AppDialogRoute<T> extends DialogRoute<T> {
     required this.useGlassBackdrop,
     required this.blurSigma,
     required Color super.barrierColor,
+    this.originRect,
+    this.resolveOriginRect,
+    this.customTransitionDuration,
+    this.customReverseTransitionDuration,
   }) : super(traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop);
 
   final bool reduceMotion;
   final bool useGlassBackdrop;
   final double blurSigma;
+  final Rect? originRect;
+  final Rect? Function()? resolveOriginRect;
+  final Duration? customTransitionDuration;
+  final Duration? customReverseTransitionDuration;
+
   late final CurvedAnimation _visibility;
   late final CurvedAnimation _scale;
+  late final CurvedAnimation _anchoredMotion;
+  late final CurvedAnimation _anchoredOpacity;
+  Rect? _activeOriginRect;
+
+  bool get _usesAnchoredOrigin =>
+      originRect != null || resolveOriginRect != null;
 
   @override
-  Duration get transitionDuration => reduceMotion
-      ? Duration.zero
-      : Duration(milliseconds: useGlassBackdrop ? 300 : 340);
+  Duration get transitionDuration {
+    if (reduceMotion) return Duration.zero;
+    if (customTransitionDuration != null) return customTransitionDuration!;
+    return Duration(
+      milliseconds: _usesAnchoredOrigin ? 320 : (useGlassBackdrop ? 300 : 340),
+    );
+  }
 
   @override
-  Duration get reverseTransitionDuration => reduceMotion
-      ? Duration.zero
-      : Duration(milliseconds: useGlassBackdrop ? 220 : 230);
+  Duration get reverseTransitionDuration {
+    if (reduceMotion) return Duration.zero;
+    if (customReverseTransitionDuration != null) {
+      return customReverseTransitionDuration!;
+    }
+    return Duration(
+      milliseconds: _usesAnchoredOrigin ? 240 : (useGlassBackdrop ? 220 : 230),
+    );
+  }
 
   @override
   Curve get barrierCurve => Curves.linear;
+
+  Rect? _resolveCurrentOriginRect() {
+    try {
+      return resolveOriginRect?.call() ?? originRect;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _handleAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.reverse && resolveOriginRect != null) {
+      _activeOriginRect = _resolveCurrentOriginRect();
+    }
+  }
 
   @override
   void install() {
@@ -286,6 +333,20 @@ class _AppDialogRoute<T> extends DialogRoute<T> {
       curve: useGlassBackdrop ? Curves.easeOutCubic : Curves.easeOutBack,
       reverseCurve: Curves.easeInCubic.flipped,
     );
+    _anchoredMotion = CurvedAnimation(
+      parent: animation!,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInOutCubic.flipped,
+    );
+    _anchoredOpacity = CurvedAnimation(
+      parent: animation!,
+      curve: const Interval(0, 0.55, curve: Curves.easeOut),
+      reverseCurve: const Interval(0, 0.85, curve: Curves.easeIn).flipped,
+    );
+    if (_usesAnchoredOrigin) {
+      _activeOriginRect = _resolveCurrentOriginRect();
+      animation!.addStatusListener(_handleAnimationStatus);
+    }
   }
 
   @override
@@ -301,6 +362,36 @@ class _AppDialogRoute<T> extends DialogRoute<T> {
     );
   }
 
+  bool _isValidOriginRect(Rect? rect, Rect viewportRect) {
+    if (rect == null || rect.isEmpty) return false;
+    if (!rect.left.isFinite ||
+        !rect.top.isFinite ||
+        !rect.width.isFinite ||
+        !rect.height.isFinite) {
+      return false;
+    }
+    return viewportRect.overlaps(rect);
+  }
+
+  Widget _buildCenteredFallback(BoxConstraints constraints, Widget child) {
+    final slideOffset = useGlassBackdrop ? 16.0 : 20.0;
+    final scaleBegin = useGlassBackdrop ? 0.94 : 0.88;
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset(0, slideOffset / constraints.maxHeight),
+        end: Offset.zero,
+      ).animate(_visibility),
+      child: FadeTransition(
+        opacity: _visibility,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: scaleBegin, end: 1).animate(_scale),
+          child: SizedBox.expand(child: child),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget buildTransitions(
     BuildContext context,
@@ -310,28 +401,59 @@ class _AppDialogRoute<T> extends DialogRoute<T> {
   ) {
     if (reduceMotion) return child;
 
-    final slideOffset = useGlassBackdrop ? 16.0 : 20.0;
-    final scaleBegin = useGlassBackdrop ? 0.94 : 0.88;
+    if (!_usesAnchoredOrigin) {
+      return LayoutBuilder(
+        builder: (context, constraints) =>
+            _buildCenteredFallback(constraints, child),
+      );
+    }
 
     return LayoutBuilder(
-      builder: (context, constraints) => SlideTransition(
-        position: Tween<Offset>(
-          begin: Offset(0, slideOffset / constraints.maxHeight),
-          end: Offset.zero,
-        ).animate(_visibility),
-        child: FadeTransition(
-          opacity: _visibility,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: scaleBegin, end: 1).animate(_scale),
-            child: SizedBox.expand(child: child),
-          ),
-        ),
-      ),
+      builder: (context, constraints) {
+        final viewportRect = Offset.zero & constraints.biggest;
+        final viewportCenter = viewportRect.center;
+        final restingWidth = (constraints.maxWidth - 48).clamp(240.0, 460.0);
+
+        return AnimatedBuilder(
+          animation: animation,
+          child: SizedBox.expand(child: child),
+          builder: (context, dialogChild) {
+            final origin = _activeOriginRect;
+            if (!_isValidOriginRect(origin, viewportRect)) {
+              return _buildCenteredFallback(constraints, child);
+            }
+            final delta = origin!.center - viewportCenter;
+            final scaleBegin = (origin.width / restingWidth).clamp(0.24, 0.45);
+            final moveT = _anchoredMotion.value.clamp(0.0, 1.0);
+            final opacityT = _anchoredOpacity.value.clamp(0.0, 1.0);
+            final offset = Offset(
+              delta.dx * (1.0 - moveT),
+              delta.dy * (1.0 - moveT),
+            );
+            final scale = lerpDouble(scaleBegin, 1.0, moveT)!;
+
+            return Transform.translate(
+              key: const Key('appDialogOriginTranslate'),
+              offset: offset,
+              child: Transform.scale(
+                key: const Key('appDialogOriginScale'),
+                scale: scale,
+                child: Opacity(opacity: opacityT, child: dialogChild),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   @override
   void dispose() {
+    if (_usesAnchoredOrigin) {
+      animation?.removeStatusListener(_handleAnimationStatus);
+    }
+    _anchoredMotion.dispose();
+    _anchoredOpacity.dispose();
     _visibility.dispose();
     _scale.dispose();
     super.dispose();

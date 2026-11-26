@@ -36,16 +36,98 @@ void _openDictionarySearch(BuildContext context, String query) {
   );
 }
 
+const Duration _kDefinitionDialogEnterDuration = Duration(milliseconds: 320);
+const Duration _kDefinitionDialogExitDuration = Duration(milliseconds: 240);
+
+Rect? _overlayRectForRenderBox(RenderBox box, RenderBox overlayBox) {
+  if (!box.attached || !box.hasSize || box.size.isEmpty) return null;
+  if (!overlayBox.attached || !overlayBox.hasSize || overlayBox.size.isEmpty) {
+    return null;
+  }
+  final topLeft = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
+  final rect = topLeft & box.size;
+  if (!rect.left.isFinite ||
+      !rect.top.isFinite ||
+      !rect.width.isFinite ||
+      !rect.height.isFinite) {
+    return null;
+  }
+  final overlayRect = Offset.zero & overlayBox.size;
+  return overlayRect.overlaps(rect) ? rect : null;
+}
+
+Rect? _resolveOriginRectInOverlay(
+  BuildContext originContext,
+  NavigatorState navigator,
+) {
+  if (!originContext.mounted) return null;
+  final renderObject = originContext.findRenderObject();
+  final overlayObject = navigator.overlay?.context.findRenderObject();
+  if (renderObject is! RenderBox || overlayObject is! RenderBox) return null;
+  final rect = _overlayRectForRenderBox(renderObject, overlayObject);
+  if (rect == null) return null;
+
+  final scrollable = Scrollable.maybeOf(originContext);
+  if (scrollable != null && scrollable.mounted) {
+    final scrollObject = scrollable.context.findRenderObject();
+    if (scrollObject is RenderBox &&
+        scrollObject.attached &&
+        scrollObject.hasSize) {
+      final scrollTopLeft = overlayObject.globalToLocal(
+        scrollObject.localToGlobal(Offset.zero),
+      );
+      final scrollRect = scrollTopLeft & scrollObject.size;
+      if (!scrollRect.overlaps(rect)) return null;
+    }
+  }
+  return rect;
+}
+
+Rect? _convertGlobalRectToOverlay(Rect globalRect, NavigatorState navigator) {
+  if (globalRect.isEmpty) return null;
+  final overlayObject = navigator.overlay?.context.findRenderObject();
+  if (overlayObject is! RenderBox ||
+      !overlayObject.attached ||
+      !overlayObject.hasSize ||
+      overlayObject.size.isEmpty) {
+    return null;
+  }
+  final localTopLeft = overlayObject.globalToLocal(globalRect.topLeft);
+  final rect = localTopLeft & globalRect.size;
+  if (!rect.left.isFinite ||
+      !rect.top.isFinite ||
+      !rect.width.isFinite ||
+      !rect.height.isFinite) {
+    return null;
+  }
+  final overlayRect = Offset.zero & overlayObject.size;
+  return overlayRect.overlaps(rect) ? rect : null;
+}
+
 /// Opens a compact glass dialog showing a published Dictionary [entry] without
 /// navigating away from the current screen.
 Future<void> showDictionaryDefinitionDialog(
   BuildContext context,
-  DictionaryEntry entry,
-) {
+  DictionaryEntry entry, {
+  BuildContext? originContext,
+  Rect? originRect,
+}) {
   final synonyms = entry.strings('synonyms');
   final categories = entry.strings('categories');
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final localOriginRect = originRect == null
+      ? null
+      : _convertGlobalRectToOverlay(originRect, navigator);
+  final resolveOriginRect = originContext != null
+      ? () => _resolveOriginRectInOverlay(originContext, navigator)
+      : null;
+
   return showAppGlassDialog<void>(
     context: context,
+    originRect: localOriginRect,
+    resolveOriginRect: resolveOriginRect,
+    transitionDuration: _kDefinitionDialogEnterDuration,
+    reverseTransitionDuration: _kDefinitionDialogExitDuration,
     builder: (dialogContext) => AppGlassDialog(
       key: const Key('dictionaryDefinitionDialog'),
       maxWidth: 460,
@@ -105,14 +187,26 @@ Future<void> showSelectedTermDefinition(
   BuildContext context, {
   required String selectedText,
   required List<DictionaryEntry> entries,
+  Rect? originRect,
 }) {
   final result = lookupSelectedDictionaryTerm(selectedText, entries);
   if (result.exactMatch case final match?) {
-    return showDictionaryDefinitionDialog(context, match);
+    return showDictionaryDefinitionDialog(
+      context,
+      match,
+      originRect: originRect,
+    );
   }
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final localOriginRect = originRect == null
+      ? null
+      : _convertGlobalRectToOverlay(originRect, navigator);
   if (result.ambiguousMatches.isNotEmpty) {
     return showAppGlassDialog<void>(
       context: context,
+      originRect: localOriginRect,
+      transitionDuration: _kDefinitionDialogEnterDuration,
+      reverseTransitionDuration: _kDefinitionDialogExitDuration,
       builder: (dialogContext) => AppGlassDialog(
         key: const Key('dictionaryAmbiguousDialog'),
         maxWidth: 480,
@@ -187,6 +281,9 @@ Future<void> showSelectedTermDefinition(
       : result.normalizedQuery;
   return showAppGlassDialog<void>(
     context: context,
+    originRect: localOriginRect,
+    transitionDuration: _kDefinitionDialogEnterDuration,
+    reverseTransitionDuration: _kDefinitionDialogExitDuration,
     builder: (dialogContext) => AppGlassDialog(
       key: const Key('dictionaryNoDefinitionDialog'),
       maxWidth: 420,
@@ -291,28 +388,33 @@ class _DictionaryTextState extends State<DictionaryText> {
         WidgetSpan(
           alignment: PlaceholderAlignment.baseline,
           baseline: TextBaseline.alphabetic,
-          child: Semantics(
-            button: true,
-            label: '$matchedWord, open dictionary definition',
-            child: TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                minimumSize: const Size(0, 22),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-                foregroundColor: accent,
-              ),
-              onPressed: () =>
-                  showDictionaryDefinitionDialog(context, match.entry),
-              child: Text(
-                matchedWord,
-                style: effectiveStyle.copyWith(
-                  color: accent,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                  decorationStyle: TextDecorationStyle.solid,
-                  decorationColor: accent,
-                  decorationThickness: 1.2,
+          child: Builder(
+            builder: (termContext) => Semantics(
+              button: true,
+              label: '$matchedWord, open dictionary definition',
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  minimumSize: const Size(0, 22),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: accent,
+                ),
+                onPressed: () => showDictionaryDefinitionDialog(
+                  context,
+                  match.entry,
+                  originContext: termContext,
+                ),
+                child: Text(
+                  matchedWord,
+                  style: effectiveStyle.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                    decorationStyle: TextDecorationStyle.solid,
+                    decorationColor: accent,
+                    decorationThickness: 1.2,
+                  ),
                 ),
               ),
             ),
@@ -343,6 +445,7 @@ class _DictionaryTextState extends State<DictionaryText> {
         );
         final selected = _selectedText.trim();
         if (selected.isNotEmpty) {
+          final anchor = selectableRegionState.contextMenuAnchors.primaryAnchor;
           buttonItems.insert(
             0,
             ContextMenuButtonItem(
@@ -354,6 +457,11 @@ class _DictionaryTextState extends State<DictionaryText> {
                   context,
                   selectedText: selected,
                   entries: widget.entries,
+                  originRect: Rect.fromCenter(
+                    center: anchor,
+                    width: 72,
+                    height: 24,
+                  ),
                 );
               },
             ),
