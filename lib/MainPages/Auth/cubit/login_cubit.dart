@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
+import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'login_state.dart';
@@ -26,7 +27,6 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Toggles the visibility of the password field.
   void togglePasswordVisible() {
-    debugPrint('Toggle Password Visibility');
     emit(state.copyWith(isPasswordVisible: !state.isPasswordVisible));
   }
 
@@ -51,14 +51,10 @@ class LoginCubit extends Cubit<LoginState> {
   }
 
   /// Updates the state to indicate that email verification is pending.
-  void awaitingEmailVerification() {
-    debugPrint('Waiting Email Verification');
-  }
+  void awaitingEmailVerification() {}
 
   /// Opens the default email application for the provided email address.
-  Future<void> openEmailApp({
-    required String email,
-  }) async {
+  Future<void> openEmailApp({required String email}) async {
     // Use a proper mailto: URI so platform handlers can route to email apps.
     final emailUri = Uri(scheme: 'mailto', path: email);
 
@@ -73,10 +69,7 @@ class LoginCubit extends Cubit<LoginState> {
       return;
     }
     try {
-      await launchUrl(
-        emailUri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
     } catch (e) {
       emit(
         state.copyWith(
@@ -97,9 +90,7 @@ class LoginCubit extends Cubit<LoginState> {
   /// Updates the state with the new name value.
   void nameChanged(String value) {
     final name = Name.dirty(value);
-    emit(
-      state.copyWith(name: name),
-    );
+    emit(state.copyWith(name: name));
   }
 
   /// Updates the state with the new email value.
@@ -149,7 +140,6 @@ class LoginCubit extends Cubit<LoginState> {
       if (isClosed) return;
 
       if (value == null) {
-        debugPrint('User not created');
         emit(
           state.copyWith(
             isError: true,
@@ -168,7 +158,6 @@ class LoginCubit extends Cubit<LoginState> {
         );
         clearError();
       } else {
-        debugPrint('Email not verified');
         // await openEmailApp(email: state.email.value);
         emit(
           state.copyWith(
@@ -181,7 +170,7 @@ class LoginCubit extends Cubit<LoginState> {
       }
     } on SignUpWithEmailAndPasswordFailure catch (e) {
       if (isClosed) return;
-      debugPrint('Error: ${e.message}');
+      AppLogger.warning(LogCategory.auth, 'Sign-up failed: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -190,9 +179,14 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (isClosed) return;
-      debugPrint('Submission Failure: $e');
+      AppLogger.error(
+        LogCategory.auth,
+        'Unexpected sign-up error',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -219,7 +213,6 @@ class LoginCubit extends Cubit<LoginState> {
       if (isClosed) return;
 
       if (value == null) {
-        debugPrint('User not created');
         emit(
           state.copyWith(
             isError: true,
@@ -240,7 +233,7 @@ class LoginCubit extends Cubit<LoginState> {
       }
     } on LogInWithEmailAndPasswordFailure catch (e) {
       if (isClosed) return;
-      debugPrint('Error: ${e.message}');
+      AppLogger.warning(LogCategory.auth, 'Login failed: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -249,9 +242,14 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (isClosed) return;
-      debugPrint('Submission Failure: $e');
+      AppLogger.error(
+        LogCategory.auth,
+        'Unexpected login error',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -267,7 +265,6 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Logs in with Google authentication.
   Future<void> logInWithGoogle() async {
-    debugPrint('Log in with Google');
     if (_submitting) return;
     _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
@@ -275,7 +272,6 @@ class LoginCubit extends Cubit<LoginState> {
       final value = await _authenticationRepository.logInWithGoogle();
       if (isClosed) return;
       if (value == null) {
-        debugPrint('User not created');
         emit(
           state.copyWith(
             isError: true,
@@ -296,7 +292,7 @@ class LoginCubit extends Cubit<LoginState> {
       }
     } on LogInWithGoogleFailure catch (e) {
       if (isClosed) return;
-      debugPrint('Error: ${e.message}');
+      AppLogger.warning(LogCategory.auth, 'Google login failed: ${e.message}');
       emit(
         state.copyWith(
           isError: true,
@@ -305,9 +301,14 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (isClosed) return;
-      debugPrint('Submission Failure: $e');
+      AppLogger.error(
+        LogCategory.auth,
+        'Unexpected Google login error',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -323,7 +324,6 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Logs in as a guest.
   Future<void> logInAsGuest() async {
-    debugPrint('Log in as Guest');
     if (_submitting) return;
     _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
@@ -331,7 +331,6 @@ class LoginCubit extends Cubit<LoginState> {
       final value = await _authenticationRepository.signInAsGuest();
       if (isClosed) return;
       if (value == null) {
-        debugPrint('User not created');
         emit(
           state.copyWith(
             isError: true,
@@ -351,9 +350,14 @@ class LoginCubit extends Cubit<LoginState> {
         );
         clearError();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (isClosed) return;
-      debugPrint('Submission Failure: $e');
+      AppLogger.error(
+        LogCategory.auth,
+        'Guest sign-in failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -369,7 +373,6 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Sends a forgot password email.
   Future<void> sendForgotPasswordEmail() async {
-    debugPrint('Send Forgot Password Email');
     if (_submitting) return;
     _submitting = true;
     emit(state.copyWith(status: FormStatus.submitting));
@@ -388,7 +391,10 @@ class LoginCubit extends Cubit<LoginState> {
       clearError();
     } on ResetPasswordFailure catch (e) {
       if (isClosed) return;
-      debugPrint('Error: ${e.message}');
+      AppLogger.warning(
+        LogCategory.auth,
+        'Password reset failed: ${e.message}',
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -397,9 +403,14 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
       clearError();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (isClosed) return;
-      debugPrint('Submission Failure: $e');
+      AppLogger.error(
+        LogCategory.auth,
+        'Unexpected password reset error',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -420,12 +431,6 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Clears any error messages.
   void clearError() {
-    emit(
-      state.copyWith(
-        isError: false,
-        isMessage: false,
-        message: '',
-      ),
-    );
+    emit(state.copyWith(isError: false, isMessage: false, message: ''));
   }
 }

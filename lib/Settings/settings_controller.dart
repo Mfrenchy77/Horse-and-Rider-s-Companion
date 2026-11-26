@@ -4,6 +4,7 @@ import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 
 /// A class that many Widgets can interact with to read user settings, update
 /// user settings, or listen to user settings changes.
@@ -52,9 +53,13 @@ class SettingsController with ChangeNotifier {
       _skillTreeLayout = _settingsService.getSkillTreeLayout();
       _skillTreeV2Enabled = _settingsService.getSkillTreeV2Enabled();
       notifyListeners();
-    } catch (e) {
-      // Handle the error, log it, or show a user-friendly message
-      debugPrint('Error loading settings: $e');
+    } catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.settings,
+        'Error loading settings',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 

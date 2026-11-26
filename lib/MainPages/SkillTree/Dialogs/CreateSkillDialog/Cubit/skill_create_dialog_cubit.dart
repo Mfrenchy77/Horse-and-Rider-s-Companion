@@ -2,7 +2,6 @@
 
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:form_inputs/form_inputs.dart';
 
@@ -131,8 +130,13 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     try {
       await _skillsRepository.createOrEditSkill(skill: skill);
       emit(state.copyWith(status: FormStatus.success));
-    } catch (e) {
-      debugPrint(e.toString());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.skillTree,
+        'Failed to create skill',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(state.copyWith(status: FormStatus.failure));
     }
   }
@@ -168,8 +172,13 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     try {
       await _skillsRepository.createOrEditSkill(skill: skill);
       emit(state.copyWith(status: FormStatus.success));
-    } catch (e) {
-      debugPrint(e.toString());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.skillTree,
+        'Failed to edit skill',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(state.copyWith(status: FormStatus.failure));
     }
   }
@@ -180,8 +189,13 @@ class CreateSkillDialogCubit extends Cubit<CreateSkillDialogState> {
     try {
       _skillsRepository.deleteSkill(skill: skill);
       emit(state.copyWith(status: FormStatus.success));
-    } catch (e) {
-      debugPrint(e.toString());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.skillTree,
+        'Failed to delete skill',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(state.copyWith(status: FormStatus.failure));
     }
   }

@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:database_repository/src/logging/app_logger.dart';
 import 'package:database_repository/src/media_storage_repository.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -43,10 +44,20 @@ class CloudRepository implements MediaStorageRepository {
         await ref.putFile(mobileFile);
       }
       return await ref.getDownloadURL();
-    } on FirebaseException catch (e) {
-      debugPrint(e.toString());
-    } catch (e) {
-      debugPrint('Error: $e');
+    } on FirebaseException catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.storage,
+        'Firebase storage upload failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.storage,
+        'Unexpected photo upload error',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
     return null;
   }

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/support_message_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/viewing_profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/AddCommentDialog/cubit/comment_cubit.dart';
@@ -98,9 +99,7 @@ class _CommentItemState extends State<CommentItem> {
       listenWhen: (previous, current) =>
           previous.resources != current.resources,
       listener: (context, state) {
-        setState(() {
-          debugPrint('CommentItem: Resources Updated');
-        });
+        setState(() {});
       },
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
@@ -294,10 +293,6 @@ class _CommentItemState extends State<CommentItem> {
                                         switch (value) {
                                           case 'Report':
                                             _toggleActionsVisibility();
-                                            debugPrint(
-                                              'Report Comment: '
-                                              '${widget.comment.id}',
-                                            );
                                             showAppGlassDialog<void>(
                                               context: context,
                                               builder: (context) =>
@@ -351,7 +346,10 @@ class _CommentItemState extends State<CommentItem> {
       return quill.QuillEditor.basic(controller: controller);
     }
 
-    // Plain text fallback
-    return SelectableText(raw, style: const TextStyle(fontSize: 16));
+    // Plain text fallback with contextual Dictionary highlights & Define menu
+    return ContextualDictionaryText(
+      text: raw,
+      style: const TextStyle(fontSize: 16),
+    );
   }
 }

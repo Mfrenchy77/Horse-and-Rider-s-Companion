@@ -312,7 +312,6 @@ class _PostalCodePredictionTileState extends State<_PostalCodePredictionTile> {
                   subtitle: Text('${location.city}, ${location.state}'),
                   onTap: () {
                     _controller.collapse();
-                    debugPrint('Location Selected ${location.city}');
                     widget.onLocationSelected(
                       '${location.city}, ${location.state}',
                       widget.postalCode,

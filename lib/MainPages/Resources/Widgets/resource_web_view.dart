@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
+import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
 class ResourceWebView extends StatefulWidget {
@@ -173,12 +174,15 @@ class _ResourceWebViewState extends State<ResourceWebView> {
                 onProgressChanged: (_, percent) => _updateProgress(percent),
                 onReceivedError: (_, request, error) {
                   if (request.isForMainFrame ?? true) _finishLoading();
-                  debugPrint('Web error: $error');
+                  AppLogger.warning(
+                    LogCategory.resources,
+                    'Resource web view error',
+                    error: error,
+                  );
                 },
                 onReceivedHttpError: (_, request, _) {
                   if (request.isForMainFrame ?? false) _finishLoading();
                 },
-                onConsoleMessage: (_, msg) => debugPrint('Console: $msg'),
               ),
       ),
     );

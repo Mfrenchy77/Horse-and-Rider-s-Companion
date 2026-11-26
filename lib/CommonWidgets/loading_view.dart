@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logo.dart';
 
 Widget loadingView() {
-  debugPrint('loadingView');
-  // ignore: lines_longer_than_80_chars
   return const Center(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,

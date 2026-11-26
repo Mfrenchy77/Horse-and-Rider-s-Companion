@@ -1,12 +1,12 @@
 // ignore_for_file: lines_longer_than_80_chars, constant_identifier_names, public_member_api_docs
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/logging/app_logger.dart';
 import 'package:database_repository/src/mappers/base_list_item_firestore_mapper.dart';
 import 'package:database_repository/src/mappers/rider_profile_firestore_mapper.dart';
 import 'package:database_repository/src/models/models.dart';
 import 'package:database_repository/src/repository_exception.dart';
 import 'package:database_repository/src/rider_profile_store.dart';
-import 'package:flutter/foundation.dart';
 
 ///Interface for Firebase and Rider's Profile
 class RiderProfileRepository implements RiderProfileStore {
@@ -128,7 +128,9 @@ class RiderProfileRepository implements RiderProfileStore {
       );
       if (index < 0) throw StateError('This log entry no longer exists.');
       final original = Map<String, dynamic>.from(notes[index]! as Map);
-      if (!BaseListItemFirestoreMapper.fromMap(original).canEditRiderLog(email)) {
+      if (!BaseListItemFirestoreMapper.fromMap(
+        original,
+      ).canEditRiderLog(email)) {
         throw StateError('This log entry cannot be edited.');
       }
       // Preserve legacy fields and any fields this version does not recognize.
@@ -147,11 +149,16 @@ class RiderProfileRepository implements RiderProfileStore {
         .doc(_convertEmailToPath(email: email))
         .snapshots()
         .map((snap) => snap.data())
-        .handleError((Object error) {
+        .handleError((Object error, StackTrace stackTrace) {
           if (error is FirebaseException) {
             handleFirebaseException(error);
           } else {
-            debugPrint('An unknown error occurred in getRiderProfile: $error');
+            AppLogger.error(
+              LogCategory.database,
+              'Error in getRiderProfile',
+              error: error,
+              stackTrace: stackTrace,
+            );
           }
         });
   }
@@ -174,12 +181,15 @@ class RiderProfileRepository implements RiderProfileStore {
         .doc(_convertEmailToPath(email: email))
         .snapshots()
         .map((snap) => snap.data())
-        .handleError((Object error) {
+        .handleError((Object error, StackTrace stackTrace) {
           if (error is FirebaseException) {
             handleFirebaseException(error);
           } else {
-            debugPrint(
-              'An unknown error occurred in getPublicRiderProfile: $error',
+            AppLogger.error(
+              LogCategory.database,
+              'Error in getPublicRiderProfile',
+              error: error,
+              stackTrace: stackTrace,
             );
           }
         });
@@ -193,11 +203,16 @@ class RiderProfileRepository implements RiderProfileStore {
         .get()
         .asStream()
         .map((event) => event.docs.isNotEmpty ? event.docs.first.data() : null)
-        .handleError((Object error) {
+        .handleError((Object error, StackTrace stackTrace) {
           if (error is FirebaseException) {
             handleFirebaseException(error);
           } else {
-            debugPrint('An unknown error occurred in getProfileByName: $error');
+            AppLogger.error(
+              LogCategory.database,
+              'Error in getProfileByName',
+              error: error,
+              stackTrace: stackTrace,
+            );
           }
         });
   }
@@ -210,12 +225,15 @@ class RiderProfileRepository implements RiderProfileStore {
         .where('name', isLessThanOrEqualTo: '$name\uf8ff')
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList())
-        .handleError((Object error) {
+        .handleError((Object error, StackTrace stackTrace) {
           if (error is FirebaseException) {
             handleFirebaseException(error);
           } else {
-            debugPrint(
-              'An unknown error occurred in getProfilesByName: $error',
+            AppLogger.error(
+              LogCategory.database,
+              'Error in getProfilesByName',
+              error: error,
+              stackTrace: stackTrace,
             );
           }
         });
@@ -228,12 +246,15 @@ class RiderProfileRepository implements RiderProfileStore {
         .where('zipCode', isEqualTo: zipcode)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList())
-        .handleError((Object error) {
+        .handleError((Object error, StackTrace stackTrace) {
           if (error is FirebaseException) {
             handleFirebaseException(error);
           } else {
-            debugPrint(
-              'An unknown error occurred in getProfilesByZipcode: $error',
+            AppLogger.error(
+              LogCategory.database,
+              'Error in getProfilesByZipcode',
+              error: error,
+              stackTrace: stackTrace,
             );
           }
         });
@@ -271,15 +292,14 @@ class RiderProfileRepository implements RiderProfileStore {
 void handleFirebaseException(FirebaseException exception) {
   switch (exception.code) {
     case 'not-found':
-      debugPrint('Document not found');
-      break;
+      AppLogger.warning(LogCategory.database, 'Firestore document not found');
     case 'permission-denied':
-      debugPrint('Permission denied');
-      break;
-    // Add cases for other error codes
+      AppLogger.warning(LogCategory.database, 'Firestore permission denied');
     default:
-      debugPrint('An unknown error occurred: ${exception.message}');
+      AppLogger.error(
+        LogCategory.database,
+        'Firestore operation failed (${exception.code})',
+        error: exception.message,
+      );
   }
-  // Depending on the use case, you might want to rethrow the exception
-  // or handle it silently
 }

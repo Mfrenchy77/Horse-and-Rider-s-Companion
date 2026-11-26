@@ -24,8 +24,8 @@ class ProfileTile extends StatelessWidget {
               leading: () {
                 final tag =
                     (baseItem.imageUrl != null && baseItem.imageUrl!.isNotEmpty)
-                        ? 'profilePic-${baseItem.imageUrl.hashCode}'
-                        : null;
+                    ? 'profilePic-${baseItem.imageUrl.hashCode}'
+                    : null;
                 if (tag != null) {
                   return Hero(
                     transitionOnUserGestures: true,
@@ -42,10 +42,7 @@ class ProfileTile extends StatelessWidget {
               title: Hero(
                 transitionOnUserGestures: true,
                 tag: 'profileName-${baseItem.name.hashCode}',
-                child: Text(
-                  baseItem.name ?? '',
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(baseItem.name ?? '', textAlign: TextAlign.center),
               ),
               onTap: () {
                 if (baseItem.isCollapsed!) {
@@ -58,12 +55,9 @@ class ProfileTile extends StatelessWidget {
                   );
                 } else {
                   // cubit.setLoading();
-                  debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
                   context.pushNamed(
                     HorseProfilePage.name,
-                    pathParameters: {
-                      HorseProfilePage.pathParams: baseItem.id!,
-                    },
+                    pathParameters: {HorseProfilePage.pathParams: baseItem.id!},
                   );
                 }
               },

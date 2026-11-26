@@ -38,7 +38,6 @@ class AuthView extends StatelessWidget {
       body: BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
           if (state.status == FormStatus.success) {
-            debugPrint('Success Pop?');
             context.goNamed(ProfilePage.name);
             // if (state.mailAppResult != null) {
             //   showDialog<MailAppPickerDialog>(
@@ -58,7 +57,6 @@ class AuthView extends StatelessWidget {
                 now.difference(_lastSnackShownAt!) >= _snackCooldown;
             if (canShow) {
               _lastSnackShownAt = now;
-              debugPrint('Message: ${state.message}');
               SchedulerBinding.instance.addPostFrameCallback((_) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context)
@@ -82,7 +80,6 @@ class AuthView extends StatelessWidget {
                 now.difference(_lastSnackShownAt!) >= _snackCooldown;
             if (canShow) {
               _lastSnackShownAt = now;
-              debugPrint('Error: ${state.message}');
               SchedulerBinding.instance.addPostFrameCallback((_) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context)

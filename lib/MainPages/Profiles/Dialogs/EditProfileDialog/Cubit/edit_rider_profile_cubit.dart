@@ -4,7 +4,6 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/location_lookup_service.dart';
@@ -130,7 +129,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     required String stateIso,
     required String countryIso,
   }) {
-    debugPrint('Getting Cities for $stateIso, $countryIso');
     return _locationLookupService.getCities(
       stateIso: stateIso,
       countryIso: countryIso,
@@ -156,20 +154,11 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     required String locationName,
     required String selectedZipCode,
   }) {
-    debugPrint('Location Name: $locationName');
-    debugPrint('Zip Code: $selectedZipCode');
     final zipCode = ZipCode.dirty(selectedZipCode);
-    if (zipCode.isValid) {
-      emit(state.copyWith(locationName: locationName, zipCode: zipCode));
-    } else {
-      debugPrint('Zip Code is not valid');
-      emit(state.copyWith(locationName: locationName, zipCode: zipCode));
-    }
+    emit(state.copyWith(locationName: locationName, zipCode: zipCode));
   }
 
   Future<void> _searchForZip() async {
-    debugPrint('Searching by Zip Code');
-
     emit(state.copyWith(autoCompleteStatus: AutoCompleteStatus.loading));
 
     if (state.countryIso != null &&
@@ -183,7 +172,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         );
         if (zipResponse != null && zipResponse.results.results.isNotEmpty) {
           if (zipResponse.results.results.length > 1) {
-            debugPrint('More than one result');
             emit(
               state.copyWith(
                 prediction: zipResponse.results,
@@ -191,7 +179,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
               ),
             );
           } else {
-            debugPrint('One result');
             final zipCode = ZipCode.dirty(
               zipResponse.results.results.keys.elementAt(0),
             );
@@ -212,23 +199,18 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
           ),
         );
       }
-    } else {
-      debugPrint('No Country, State or City Selected');
     }
   }
 
   void countrySelected({required String country, required String countryIso}) {
-    debugPrint('Country Selected: $country');
     emit(state.copyWith(selectedCountry: country, countryIso: countryIso));
   }
 
   void stateSelected(String selectedState) {
-    debugPrint('State Selected: $selectedState');
     emit(state.copyWith(selectedState: selectedState));
   }
 
   void citySelected(String city) {
-    debugPrint('City Selected: $city');
     emit(state.copyWith(selectedCity: city));
     _searchForZip();
   }
@@ -236,8 +218,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
   Future<void> updateRiderProfile() async {
     emit(state.copyWith(status: SubmissionStatus.inProgress));
     final riderProfile = state.riderProfile;
-    debugPrint('zipCode: ${state.zipCode.value}');
-    debugPrint('locationName: ${state.locationName}');
 
     // Create a new instance of riderProfile with updated values
     final updatedRiderProfile = riderProfile?.copyWith(
@@ -259,14 +239,18 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
     );
 
     if (updatedRiderProfile != null) {
-      debugPrint('Editing Rider Profile ${updatedRiderProfile.name}');
       try {
         await _riderProfileRepository.createOrUpdateRiderProfile(
           riderProfile: updatedRiderProfile,
         );
         emit(state.copyWith(status: SubmissionStatus.success));
-      } catch (e) {
-        debugPrint('Something went wrong: $e');
+      } catch (e, stackTrace) {
+        AppLogger.error(
+          LogCategory.profile,
+          'Failed to update rider profile',
+          error: e,
+          stackTrace: stackTrace,
+        );
         emit(
           state.copyWith(
             status: SubmissionStatus.failure,
@@ -277,7 +261,10 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         clearError();
       }
     } else {
-      debugPrint('Rider Profile is null');
+      AppLogger.warning(
+        LogCategory.profile,
+        'Cannot update profile: riderProfile is null',
+      );
     }
   }
 
@@ -291,9 +278,6 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
       } else {
         finalName = state.user?.name ?? '';
       }
-      debugPrint(
-        '111   111   Creating a New Profile for $finalName   !!!   !!!',
-      );
 
       final note = BaseListItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -327,8 +311,13 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
           riderProfile: riderProfile,
         );
         emit(state.copyWith(status: SubmissionStatus.success));
-      } on RepositoryException catch (e) {
-        debugPrint('Error: ${e.message}');
+      } on RepositoryException catch (e, stackTrace) {
+        AppLogger.error(
+          LogCategory.profile,
+          'Failed to create rider profile: ${e.message}',
+          error: e,
+          stackTrace: stackTrace,
+        );
         emit(
           state.copyWith(
             status: SubmissionStatus.failure,
@@ -339,7 +328,10 @@ class EditRiderProfileCubit extends Cubit<EditRiderProfileState> {
         clearError();
       }
     } else {
-      debugPrint('User is null');
+      AppLogger.warning(
+        LogCategory.profile,
+        'Cannot create rider profile: user is null',
+      );
       emit(state.copyWith(error: 'User is null', isError: true));
       clearError();
     }

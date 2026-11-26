@@ -14,6 +14,7 @@ import 'package:horseandriderscompanion/Initialization/ads_initialization.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_initialization.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
+import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +26,12 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     try {
       await FirebaseInitialization.initializeFirebase();
     } catch (e, stack) {
-      debugPrint('Firebase initialization failed: $e');
-      debugPrintStack(stackTrace: stack);
+      AppLogger.error(
+        LogCategory.app,
+        'Firebase initialization failed',
+        error: e,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -39,8 +44,13 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
         serverClientId:
             '854658032014-hlrq1mf9jkv4qv0fkj59h7un5cfddnet.apps.googleusercontent.com',
       );
-    } catch (e) {
-      debugPrint('GoogleSignIn initialization failed: $e');
+    } catch (e, stack) {
+      AppLogger.warning(
+        LogCategory.auth,
+        'GoogleSignIn initialization failed',
+        error: e,
+        stackTrace: stack,
+      );
     }
   }
 

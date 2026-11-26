@@ -151,9 +151,7 @@ class ResourceRatingButtons extends StatelessWidget {
             Visibility(
               visible: !state.isGuest,
               child: PopupMenuButton<String>(
-                key: Key(
-                  'resourceOverflowMenu_${resource.id ?? 'unknown'}',
-                ),
+                key: Key('resourceOverflowMenu_${resource.id ?? 'unknown'}'),
                 icon: Icon(Icons.more_vert, color: muted),
                 onSelected: (value) {
                   switch (value) {
@@ -170,7 +168,6 @@ class ResourceRatingButtons extends StatelessWidget {
                       );
                       break;
                     case 'Report':
-                      debugPrint('Report: ${resource.name}');
                       showAppGlassDialog<void>(
                         context: context,
                         builder: (context) => const SupportMessageDialog(),

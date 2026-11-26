@@ -177,7 +177,6 @@ class CreateSkillDialog extends StatelessWidget {
                     ],
                     selected: <bool>{state.isForRider},
                     onSelectionChanged: (value) {
-                      debugPrint('Rider or Horse: $value');
                       cubit.isForRiderChanged(isForRider: value.first);
                     },
                   ),
@@ -212,7 +211,6 @@ class CreateSkillDialog extends StatelessWidget {
                     ],
                     selected: <DifficultyState>{state.difficulty},
                     onSelectionChanged: (value) {
-                      debugPrint('Difficulty: $value');
                       cubit.skillDifficultyChanged(value.first);
                     },
                   ),
@@ -258,7 +256,6 @@ class CreateSkillDialog extends StatelessWidget {
                     ],
                     selected: <SkillCategory>{state.category},
                     onSelectionChanged: (value) {
-                      debugPrint('Category: $value');
                       cubit.skillCategoryChanged(value.first);
                     },
                   ),

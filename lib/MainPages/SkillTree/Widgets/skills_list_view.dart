@@ -58,9 +58,7 @@ class SkillsListView extends StatelessWidget {
                     position: skills.isNotEmpty ? skills.length : 0,
                   ),
                 ),
-                child: const Icon(
-                  Icons.add,
-                ),
+                child: const Icon(Icons.add),
               ),
             ),
           ),
@@ -111,9 +109,11 @@ class SkillsListView extends StatelessWidget {
                           .map(
                             (skill) => SkillItem(
                               skill: skill,
-                              verified: isVerified(
+                              verified:
+                                  isVerified(
                                     horseProfile: state.horseProfile,
-                                    profile: state.viewingProfile ??
+                                    profile:
+                                        state.viewingProfile ??
                                         state.usersProfile,
                                     skill: skill,
                                   ) ??
@@ -128,9 +128,6 @@ class SkillsListView extends StatelessWidget {
                               ),
                               name: skill?.skillName,
                               onTap: () {
-                                debugPrint(
-                                  'Tapped on skill: ${skill?.skillName}',
-                                );
                                 context.goNamed(
                                   SkillTreeView.skillLevelName,
                                   pathParameters: {
@@ -149,8 +146,9 @@ class SkillsListView extends StatelessWidget {
                                       allSkills: state.allSkills,
                                       isForRider: state.isForRider,
                                       usersProfile: state.usersProfile!,
-                                      position:
-                                          skills.isNotEmpty ? skills.length : 0,
+                                      position: skills.isNotEmpty
+                                          ? skills.length
+                                          : 0,
                                     ),
                                   );
                                 } else {
@@ -168,9 +166,7 @@ class SkillsListView extends StatelessWidget {
                     ),
                   )
                 else
-                  const Center(
-                    child: Text('No Skills'),
-                  ),
+                  const Center(child: Text('No Skills')),
               ],
             ),
           ),

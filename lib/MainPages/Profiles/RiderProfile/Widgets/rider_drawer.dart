@@ -34,114 +34,109 @@ class UserProfileDrawer extends StatelessWidget {
         final cubit = context.read<AppCubit>();
         final email = state.usersProfile?.email ?? '';
         final content = ListView(
-            children: [
-              Stack(
-                children: [
-                  UserAccountsDrawerHeader(
-                    // margin: const EdgeInsets.only(top: 8, left: 8),
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(
-                          SharedPrefs().isDarkMode
-                              ? 'assets/horse_logo_and_text_dark.png'
-                              : 'assets/horse_logo_and_text_light.png',
-                        ),
-                        alignment: Alignment.topLeft,
-                        scale: 10,
+          children: [
+            Stack(
+              children: [
+                UserAccountsDrawerHeader(
+                  // margin: const EdgeInsets.only(top: 8, left: 8),
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(
+                        SharedPrefs().isDarkMode
+                            ? 'assets/horse_logo_and_text_dark.png'
+                            : 'assets/horse_logo_and_text_light.png',
                       ),
+                      alignment: Alignment.topLeft,
+                      scale: 10,
                     ),
+                  ),
 
-                    accountName: Text(
-                      state.usersProfile?.name ?? '',
-                      style: TextStyle(
-                        color: SharedPrefs().isDarkMode
-                            ? Colors.white
-                            : Colors.black,
-                      ),
+                  accountName: Text(
+                    state.usersProfile?.name ?? '',
+                    style: TextStyle(
+                      color: SharedPrefs().isDarkMode
+                          ? Colors.white
+                          : Colors.black,
                     ),
-                    accountEmail: Row(
-                      children: [
-                        Expanded(
-                          child: Tooltip(
-                            message: email,
-                            child: Text(
-                              email,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                  ),
+                  accountEmail: Row(
+                    children: [
+                      Expanded(
+                        child: Tooltip(
+                          message: email,
+                          child: Text(
+                            email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ),
-                        if (SharedPrefs().isSeasonalMode())
-                          const Padding(
-                            padding: EdgeInsetsDirectional.only(
-                              start: 8,
-                              end: 12,
-                            ),
-                            child: SeasonalDecorationWidget(),
+                      ),
+                      if (SharedPrefs().isSeasonalMode())
+                        const Padding(
+                          padding: EdgeInsetsDirectional.only(
+                            start: 8,
+                            end: 12,
                           ),
-                      ],
-                    ),
+                          child: SeasonalDecorationWidget(),
+                        ),
+                    ],
                   ),
-                  // Positioned close button in the top-right of the header
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: SafeArea(
-                      child: Hero(
-                        tag: 'drawer-hamburger-x',
-                        flightShuttleBuilder:
-                            (
-                              BuildContext flightContext,
-                              Animation<double> animation,
-                              HeroFlightDirection flightDirection,
-                              BuildContext fromHeroContext,
-                              BuildContext toHeroContext,
-                            ) {
-                              final iconSize =
-                                  IconTheme.of(flightContext).size ?? 24.0;
-                              final iconColor = IconTheme.of(
-                                flightContext,
-                              ).color;
-                              return Center(
-                                child: IconTheme(
-                                  data: IconThemeData(
-                                    size: iconSize,
-                                    color: iconColor,
-                                  ),
-                                  child: AnimatedIcon(
-                                    icon: AnimatedIcons.menu_close,
-                                    progress: animation,
-                                  ),
+                ),
+                // Positioned close button in the top-right of the header
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: SafeArea(
+                    child: Hero(
+                      tag: 'drawer-hamburger-x',
+                      flightShuttleBuilder:
+                          (
+                            BuildContext flightContext,
+                            Animation<double> animation,
+                            HeroFlightDirection flightDirection,
+                            BuildContext fromHeroContext,
+                            BuildContext toHeroContext,
+                          ) {
+                            final iconSize =
+                                IconTheme.of(flightContext).size ?? 24.0;
+                            final iconColor = IconTheme.of(flightContext).color;
+                            return Center(
+                              child: IconTheme(
+                                data: IconThemeData(
+                                  size: iconSize,
+                                  color: iconColor,
                                 ),
-                              );
-                            },
-                        child: IconButton(
-                          icon: AnimatedIcon(
-                            icon: AnimatedIcons.menu_close,
-                            progress:
-                                iconAnimation ??
-                                const AlwaysStoppedAnimation(1),
-                          ),
-                          tooltip: 'Close drawer',
-                          onPressed:
-                              onClose ??
-                              () => Scaffold.maybeOf(context)?.closeDrawer(),
+                                child: AnimatedIcon(
+                                  icon: AnimatedIcons.menu_close,
+                                  progress: animation,
+                                ),
+                              ),
+                            );
+                          },
+                      child: IconButton(
+                        icon: AnimatedIcon(
+                          icon: AnimatedIcons.menu_close,
+                          progress:
+                              iconAnimation ?? const AlwaysStoppedAnimation(1),
                         ),
+                        tooltip: 'Close drawer',
+                        onPressed:
+                            onClose ??
+                            () => Scaffold.maybeOf(context)?.closeDrawer(),
                       ),
                     ),
                   ),
-                ],
-              ),
-              ValueListenableBuilder<bool>(
-                valueListenable: ProfileSpotlightTour.isTourActive,
-                builder: (context, tourActive, _) => Column(
-                  key: tourActive
-                      ? ProfileSpotlightTour.drawerNavListKey
-                      : null,
-                  children: [
+                ),
+              ],
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: ProfileSpotlightTour.isTourActive,
+              builder: (context, tourActive, _) => Column(
+                key: tourActive ? ProfileSpotlightTour.drawerNavListKey : null,
+                children: [
                   ///   Sign Out
                   ListTile(
                     leading: const Icon(Icons.close),
@@ -267,8 +262,6 @@ class UserProfileDrawer extends StatelessWidget {
                           key: const Key('ProfileSearchDialog'),
                         ),
                       );
-
-                      debugPrint('Search Clicked');
                     },
                   ),
                   Divider(
@@ -349,7 +342,6 @@ class UserProfileDrawer extends StatelessWidget {
                     leading: const Icon(Icons.help),
                     title: const Text('Send Email to Support'),
                     onTap: () {
-                      debugPrint('Send Email to Support');
                       onClose?.call();
 
                       showAppGlassDialog<SupportMessageDialog>(
@@ -379,10 +371,10 @@ class UserProfileDrawer extends StatelessWidget {
                     child: const Text('Privacy Policy'),
                   ),
                 ],
-                ),
               ),
-            ],
-          );
+            ),
+          ],
+        );
         final gradients = Theme.of(context).extension<SurfaceGradients>();
         return Drawer(
           child: gradients != null

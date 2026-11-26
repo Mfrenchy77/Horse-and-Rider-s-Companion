@@ -69,25 +69,18 @@ class HorseAndRidersTheme {
 
   static ThemeSeasons _getSeason(int month, int day) {
     if (month == 10) {
-      debugPrint('Halloween');
       return ThemeSeasons.halloween;
     } else if (month == 12) {
-      debugPrint('Christmas');
       return ThemeSeasons.christmas;
     } else if (month == 3 && day >= 22 || month == 4 && day <= 15) {
-      debugPrint('Easter');
       return ThemeSeasons.easter;
     } else if (month == 12 || month < 3) {
-      debugPrint('Winter');
       return ThemeSeasons.winter;
     } else if (month >= 3 && month < 6) {
-      debugPrint('Spring');
       return ThemeSeasons.spring;
     } else if (month >= 6 && month < 9) {
-      debugPrint('Summer');
       return ThemeSeasons.summer;
     } else if (month >= 9 && month < 12) {
-      debugPrint('Autumn');
       return ThemeSeasons.autumn;
     }
     // Default to main if the month is somehow out of range

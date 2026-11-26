@@ -101,121 +101,121 @@ class _AddHorseDialogState extends State<AddHorseDialog> {
             final cubit = context.read<AddHorseDialogCubit>();
 
             _syncController(_breedController, state.breed.value);
-          _syncController(
-            _dobController,
-            state.dateOfBirth != null
-                ? DateFormat('MMMM dd yyyy').format(state.dateOfBirth!)
-                : '',
-          );
-          _syncController(_colorController, state.color.value);
-          _syncController(
-            _purchaseDateController,
-            state.dateOfPurchase != null
-                ? DateFormat('MMMM dd yyyy').format(
-                    DateTime.fromMillisecondsSinceEpoch(
-                      state.dateOfPurchase as int,
-                    ),
-                  )
-                : '',
-          );
+            _syncController(
+              _dobController,
+              state.dateOfBirth != null
+                  ? DateFormat('MMMM dd yyyy').format(state.dateOfBirth!)
+                  : '',
+            );
+            _syncController(_colorController, state.color.value);
+            _syncController(
+              _purchaseDateController,
+              state.dateOfPurchase != null
+                  ? DateFormat('MMMM dd yyyy').format(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        state.dateOfPurchase as int,
+                      ),
+                    )
+                  : '',
+            );
 
-          final isWide = MediaQuery.sizeOf(context).width >= 700;
-          return AppGlassDialog(
-            maxWidth: 600,
-            density: AppGlassDensity.frosted,
-            insetPadding: isWide
-                ? const EdgeInsets.symmetric(horizontal: 32, vertical: 36)
-                : const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-            padding: EdgeInsets.all(
-              isWide ? AppTokens.spaceXl : AppTokens.spaceLg,
-            ),
-            title: Text(
-              widget._editProfile
-                  ? 'Edit Horse: ${state.horseProfile?.name}'
-                  : 'Create New Horse Profile',
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ///   Horse photo
-                _horsePhoto(context: context, size: 85, state: state),
-                gap(),
+            final isWide = MediaQuery.sizeOf(context).width >= 700;
+            return AppGlassDialog(
+              maxWidth: 600,
+              density: AppGlassDensity.frosted,
+              insetPadding: isWide
+                  ? const EdgeInsets.symmetric(horizontal: 32, vertical: 36)
+                  : const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+              padding: EdgeInsets.all(
+                isWide ? AppTokens.spaceXl : AppTokens.spaceLg,
+              ),
+              title: Text(
+                widget._editProfile
+                    ? 'Edit Horse: ${state.horseProfile?.name}'
+                    : 'Create New Horse Profile',
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ///   Horse photo
+                  _horsePhoto(context: context, size: 85, state: state),
+                  gap(),
 
-                ///   Horse Name
-                _horseName(context: context, state: state),
-                gap(),
+                  ///   Horse Name
+                  _horseName(context: context, state: state),
+                  gap(),
 
-                ///   Horse NickName
-                _horseNickName(context: context, state: state),
-                gap(),
+                  ///   Horse NickName
+                  _horseNickName(context: context, state: state),
+                  gap(),
 
-                ///  Horse Location
-                _horseLocation(context: context, state: state),
-                gap(),
+                  ///  Horse Location
+                  _horseLocation(context: context, state: state),
+                  gap(),
 
-                ///   Horse Gender
-                _horseGender(state: state, context: context),
+                  ///   Horse Gender
+                  _horseGender(state: state, context: context),
 
-                ///   Horse Breed
-                _horseBreed(
-                  state: state,
-                  context: context,
-                  breedController: _breedController,
+                  ///   Horse Breed
+                  _horseBreed(
+                    state: state,
+                    context: context,
+                    breedController: _breedController,
+                  ),
+                  gap(),
+
+                  ///   Horse Date of Birth
+                  _horseDateOfBirth(
+                    state: state,
+                    cubit: cubit,
+                    context: context,
+                    dateText: _dobController,
+                  ),
+                  gap(),
+
+                  ///   Horse Color
+                  _horseColor(
+                    state: state,
+                    context: context,
+                    controller: _colorController,
+                  ),
+                  gap(),
+
+                  ///   Horse Height
+                  HorseHeightField(controller: _heightController),
+                  gap(),
+                  _didPurchaseHorse(context: context, state: state),
+
+                  gap(),
+
+                  ///   Horse Purchase Date
+                  _horsePurchaseDate(
+                    cubit: cubit,
+                    state: state,
+                    context: context,
+                    dateText: _purchaseDateController,
+                  ),
+
+                  gap(),
+
+                  ///   HorsePurchase Price
+                  _horsePurchasePrice(context: context, state: state),
+
+                  errorText(state: state),
+                ],
+              ),
+              actions: [
+                AppOutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  label: 'Cancel',
                 ),
-                gap(),
-
-                ///   Horse Date of Birth
-                _horseDateOfBirth(
-                  state: state,
-                  cubit: cubit,
+                _horseSubmitButton(
+                  isEdit: widget._editProfile,
                   context: context,
-                  dateText: _dobController,
-                ),
-                gap(),
-
-                ///   Horse Color
-                _horseColor(
                   state: state,
-                  context: context,
-                  controller: _colorController,
                 ),
-                gap(),
-
-                ///   Horse Height
-                HorseHeightField(controller: _heightController),
-                gap(),
-                _didPurchaseHorse(context: context, state: state),
-
-                gap(),
-
-                ///   Horse Purchase Date
-                _horsePurchaseDate(
-                  cubit: cubit,
-                  state: state,
-                  context: context,
-                  dateText: _purchaseDateController,
-                ),
-
-                gap(),
-
-                ///   HorsePurchase Price
-                _horsePurchasePrice(context: context, state: state),
-
-                errorText(state: state),
               ],
-            ),
-            actions: [
-              AppOutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                label: 'Cancel',
-              ),
-              _horseSubmitButton(
-                isEdit: widget._editProfile,
-                context: context,
-                state: state,
-              ),
-            ],
-          );
+            );
           },
         ),
       ),
@@ -486,7 +486,6 @@ Widget _horseDateOfBirth({
         firstDate: DateTime(1995),
         lastDate: DateTime(2100),
       ).then((value) {
-        debugPrint('DateofBirth: $value');
         if (value != null) {
           dateText.text = value.toString();
           if (state.horseProfile != null) {

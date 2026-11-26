@@ -7,7 +7,6 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:cache/cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
-import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// -------------------- Error types (unchanged) --------------------
@@ -79,9 +78,7 @@ class LogInWithEmailAndPasswordFailure implements Exception {
 }
 
 class LogInAsGuestFailure implements Exception {
-  const LogInAsGuestFailure([
-    this.message = 'An unknown exception occurred.',
-  ]);
+  const LogInAsGuestFailure([this.message = 'An unknown exception occurred.']);
   factory LogInAsGuestFailure.fromCode(String code) {
     switch (code) {
       case 'user-disabled':
@@ -96,9 +93,7 @@ class LogInAsGuestFailure implements Exception {
 }
 
 class ResetPasswordFailure implements Exception {
-  const ResetPasswordFailure([
-    this.message = 'An unknown exception occurred.',
-  ]);
+  const ResetPasswordFailure([this.message = 'An unknown exception occurred.']);
   factory ResetPasswordFailure.fromCode(String code) {
     switch (code) {
       case 'invalid-email':
@@ -180,9 +175,9 @@ class AuthenticationRepository implements AuthGateway {
     CacheClient? cache,
     firebase_auth.FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn, // optional injection to match your main.dart
-  })  : _cache = cache ?? CacheClient(),
-        _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+  }) : _cache = cache ?? CacheClient(),
+       _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
+       _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   final CacheClient _cache;
   final firebase_auth.FirebaseAuth _firebaseAuth;
@@ -213,7 +208,6 @@ class AuthenticationRepository implements AuthGateway {
   }
 
   Future<void> _clearCachedUser() async {
-    debugPrint('Clearing cached user');
     _cache.remove(key: userCacheKey);
   }
 
@@ -360,7 +354,6 @@ class AuthenticationRepository implements AuthGateway {
 
   @override
   Future<void> logOut() async {
-    debugPrint('Logging out');
     try {
       await _firebaseAuth.signOut();
       if (!isWeb) {

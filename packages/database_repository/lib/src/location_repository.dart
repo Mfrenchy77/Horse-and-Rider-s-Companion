@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:database_repository/database_repository.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Repository for handling location-based API calls.
@@ -16,9 +15,7 @@ class LocationRepository {
   /// Returns a [Future] that resolves to a list of [Country] objects.
   /// Throws an [Exception] if the API call fails.
   Future<List<Country>> getCountries() async {
-    final headers = {
-      'X-CSCAPI-KEY': apiKey,
-    };
+    final headers = {'X-CSCAPI-KEY': apiKey};
 
     final request = http.Request(
       'GET',
@@ -49,9 +46,7 @@ class LocationRepository {
   /// Returns a [Future] that resolves to a list of [StateLocation] objects.
   /// Throws an [Exception] if the API call fails.
   Future<List<StateLocation>> getStates({required String countryIso}) async {
-    final headers = {
-      'X-CSCAPI-KEY': apiKey,
-    };
+    final headers = {'X-CSCAPI-KEY': apiKey};
 
     final request = http.Request(
       'GET',
@@ -88,9 +83,7 @@ class LocationRepository {
     required String countryCode,
     required String stateIso,
   }) async {
-    final headers = {
-      'X-CSCAPI-KEY': apiKey,
-    };
+    final headers = {'X-CSCAPI-KEY': apiKey};
 
     final request = http.Request(
       'GET',
@@ -100,7 +93,6 @@ class LocationRepository {
     );
 
     request.headers.addAll(headers);
-    debugPrint('City request: $request');
     final response = await request.send();
 
     if (response.statusCode == 200) {

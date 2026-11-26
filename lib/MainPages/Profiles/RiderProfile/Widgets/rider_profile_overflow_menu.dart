@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialo
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
+import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 
 class RiderProfileOverFlowMenu extends StatelessWidget {
   const RiderProfileOverFlowMenu({super.key, this.menuController});
@@ -63,7 +64,10 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                       ),
                     );
                   } else {
-                    debugPrint('Can not add horse, user profile is null');
+                    AppLogger.warning(
+                      LogCategory.profile,
+                      'Cannot add horse: user profile is null',
+                    );
                   }
                 },
                 child: const Text('Add Horse'),

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
 import 'package:horseandriderscompanion/Utilities/util_methods.dart';
@@ -39,14 +38,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Monitors the default Field's [value] in the Search Dialog for
   /// Riders and Horses
   void nameChanged(String value) {
-    debugPrint('Name Changed to $value');
     final name = Name.dirty(value);
     emit(state.copyWith(searchValue: name));
   }
 
   /// Monitor the Email Field's [value] in the Search Dialog
   void emailChanged(String value) {
-    debugPrint('Email Changed to $value');
     final email = Email.dirty(value);
     emit(state.copyWith(email: email));
   }
@@ -54,14 +51,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Monitor the Zip Code Field's [value] in the Search Dialog
   /// for Riders and Horses
   void zipCodeChanged(String value) {
-    debugPrint('Zip Code Changed to $value');
     final zipCode = ZipCode.dirty(value);
     emit(state.copyWith(zipCode: zipCode));
   }
 
   /// Location Range [value] changed
   void locationRangeChanged(int? value) {
-    debugPrint('Location Range Changed to $value');
     if (value != null) {
       final locationRange = LocationRange.dirty(value);
       emit(state.copyWith(locationRange: locationRange));
@@ -77,10 +72,6 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Change the [searchType]
   void searchTypeChanged(SearchType searchType) {
-    debugPrint(
-      'Search Type Changed  from ${state.searchType.name} to $searchType',
-    );
-
     emit(
       state.copyWith(
         searchType: searchType,
@@ -92,7 +83,6 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// This toggles the search type between Rider and Horse
   void toggleForRider() {
-    debugPrint('Is Search for Rider Changed to ${!state.isSearchRider}');
     emit(
       state.copyWith(
         isSearchRider: !state.isSearchRider,
@@ -104,9 +94,6 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
   /// Search for a Rider Profile by Name
   void searchProfilesByName() {
     emit(state.copyWith(status: FormStatus.submitting));
-    debugPrint(
-      'getProfile by Name for ${capitalizeWords(state.searchValue.value)}',
-    );
     // Cancel the previous subscription if there was one
     _cancelSearchSubscriptions();
     try {
@@ -116,7 +103,6 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           )
           .listen((results) {
             if (isClosed) return;
-            debugPrint('Results: ${results.length}');
             if (results.isNotEmpty) {
               emit(
                 state.copyWith(
@@ -134,7 +120,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             }
           });
-    } catch (e) {
+    } catch (e, stackTrace) {
       emit(
         state.copyWith(
           status: FormStatus.failure,
@@ -142,7 +128,12 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           isError: true,
         ),
       );
-      debugPrint("Failed with error '$e': $e");
+      AppLogger.error(
+        LogCategory.profile,
+        'Profile search by name failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -151,11 +142,6 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
     if (usersProfile == null) {
       return state.riderProfiles;
     }
-
-    debugPrint(
-      'Removing User Profile: '
-      '${usersProfile.email} from Search Results',
-    );
     // Create a new list to avoid modifying the state directly
     final profiles = List<RiderProfile>.from(state.riderProfiles);
     // Find the index of the profile to remove
@@ -208,16 +194,19 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             },
           );
-    } on RepositoryException catch (e) {
+    } on RepositoryException catch (e, stackTrace) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
+      AppLogger.error(
+        LogCategory.profile,
+        'Profile search by email failed (${e.code})',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
   /// Search for a Rider Profile by Zip Code
   void searchRiderByZipCode() {
-    debugPrint('Search by Zip Code ${state.searchValue}');
     emit(state.copyWith(status: FormStatus.submitting));
     _cancelSearchSubscriptions();
 
@@ -226,9 +215,7 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
           .getProfilesByZipcode(zipcode: state.zipCode.value.trim())
           .listen((profiles) {
             if (isClosed) return;
-            debugPrint('Results: ${profiles.length}');
             if (profiles.isNotEmpty) {
-              debugPrint('Results: ${profiles.length}');
               emit(
                 state.copyWith(
                   riderProfiles: profiles,
@@ -236,15 +223,19 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
                 ),
               );
             } else {
-              debugPrint('No Results');
               emit(
                 state.copyWith(status: FormStatus.failure, error: 'No Results'),
               );
             }
           });
-    } catch (e) {
+    } catch (e, stackTrace) {
       emit(state.copyWith(status: FormStatus.failure, error: e.toString()));
-      debugPrint("Failed with error '$e': $e");
+      AppLogger.error(
+        LogCategory.profile,
+        'Profile search by zip code failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -252,7 +243,6 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Search for a Horse by Name
   void searchForHorseByName() {
-    debugPrint('Search for horse ${state.searchValue}');
     emit(state.copyWith(status: FormStatus.submitting));
     _cancelSearchSubscriptions();
     try {
@@ -273,10 +263,14 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             }
           });
-    } on RepositoryException catch (e) {
+    } on RepositoryException catch (e, stackTrace) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
+      AppLogger.error(
+        LogCategory.profile,
+        'Horse search by name failed (${e.code})',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -302,10 +296,14 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
               );
             }
           });
-    } on RepositoryException catch (e) {
+    } on RepositoryException catch (e, stackTrace) {
       emit(state.copyWith(status: FormStatus.failure, error: e.message));
-
-      debugPrint("Failed with error '${e.code}': ${e.message}");
+      AppLogger.error(
+        LogCategory.profile,
+        'Horse search by nickname failed (${e.code})',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -350,21 +348,22 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
       try {
         _searchSubscription = _horseProfileRepository
             .getHorseProfileById(id: targetId)
-            .listen(
-              (horseProfile) {
-                if (isClosed) return;
-                if (horseProfile != null) {
-                  emitResult(horseProfile);
-                } else {
-                  searchPublicFallback();
-                }
-              },
-              onError: (_) => searchPublicFallback(),
-            );
-      } on RepositoryException catch (e) {
+            .listen((horseProfile) {
+              if (isClosed) return;
+              if (horseProfile != null) {
+                emitResult(horseProfile);
+              } else {
+                searchPublicFallback();
+              }
+            }, onError: (_) => searchPublicFallback());
+      } on RepositoryException catch (e, stackTrace) {
         emit(state.copyWith(status: FormStatus.failure, error: e.message));
-
-        debugPrint("Failed with error '${e.code}': ${e.message}");
+        AppLogger.error(
+          LogCategory.profile,
+          'Horse search by ID failed (${e.code})',
+          error: e,
+          stackTrace: stackTrace,
+        );
       }
     } else {
       emit(
@@ -434,13 +433,11 @@ class ProfileSearchCubit extends Cubit<ProfileSearchState> {
 
   /// Clears the search results
   void clearSearchResults() {
-    debugPrint('Clear Search Results');
     emit(state.copyWith(riderProfiles: [], horseProfiles: []));
   }
 
   /// Clear the error message
   void clearError() {
-    debugPrint('Clear Error');
     emit(state.copyWith(isError: false, error: ''));
   }
 

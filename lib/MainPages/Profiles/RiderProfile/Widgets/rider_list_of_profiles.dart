@@ -111,31 +111,19 @@ class RiderListOfProfiles extends StatelessWidget {
           const SizedBox(height: 16),
         ],
         if (students.isNotEmpty) ...[
-          _PersonListSection(
-            title: 'Students',
-            people: students,
-          ),
+          _PersonListSection(title: 'Students', people: students),
           const SizedBox(height: 16),
         ],
         if (studentHorses.isNotEmpty) ...[
-          _HorsePhotoSection(
-            title: 'Student horses',
-            horses: studentHorses,
-          ),
+          _HorsePhotoSection(title: 'Student horses', horses: studentHorses),
           const SizedBox(height: 16),
         ],
         if (instructors.isNotEmpty) ...[
-          _PersonListSection(
-            title: 'Instructors',
-            people: instructors,
-          ),
+          _PersonListSection(title: 'Instructors', people: instructors),
           const SizedBox(height: 16),
         ],
         if (archivedHorses.isNotEmpty) ...[
-          _HorsePhotoSection(
-            title: 'Archived horses',
-            horses: archivedHorses,
-          ),
+          _HorsePhotoSection(title: 'Archived horses', horses: archivedHorses),
           const SizedBox(height: 16),
         ],
       ],
@@ -174,11 +162,11 @@ class _HorsePhotoSection extends StatelessWidget {
                   showArrow: true,
                   onAction: horses.length > 3
                       ? () => _showAllDialog(
-                            context,
-                            title: title,
-                            items: horses,
-                            isHorse: true,
-                          )
+                          context,
+                          title: title,
+                          items: horses,
+                          isHorse: true,
+                        )
                       : null,
                 ),
               ),
@@ -387,11 +375,11 @@ class _PersonListSection extends StatelessWidget {
             showArrow: true,
             onAction: people.length > 3
                 ? () => _showAllDialog(
-                      context,
-                      title: title,
-                      items: people,
-                      isHorse: false,
-                    )
+                    context,
+                    title: title,
+                    items: people,
+                    isHorse: false,
+                  )
                 : null,
           ),
           const SizedBox(height: 6),
@@ -474,7 +462,6 @@ void _openItem(
       pathParameters: {ViewingProfilePage.pathParams: id},
     );
   } else {
-    debugPrint('Sending to HorseProfilePage: $id');
     context.pushNamed(
       HorseProfilePage.name,
       pathParameters: {HorseProfilePage.pathParams: id},

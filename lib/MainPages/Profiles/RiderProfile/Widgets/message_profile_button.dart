@@ -14,9 +14,7 @@ class MessageProfileButton extends StatelessWidget {
           return const SizedBox.shrink();
         } else {
           return ElevatedButton.icon(
-            onPressed: () {
-              debugPrint('Send Message');
-            },
+            onPressed: () {},
             icon: const Icon(Icons.mail),
             label: const Text('Send Message'),
           );

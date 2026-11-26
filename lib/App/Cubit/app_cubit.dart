@@ -143,33 +143,25 @@ class AppCubit extends Cubit<AppState> {
 
   /// Checks if the user is a first time user and launces the About Page
   void _checkFirstLaunch() {
-    debugPrint('Checking First Launch');
     final firstTime = SharedPrefs().isFirstLaunch();
     if (firstTime) {
-      debugPrint('First Launch: $firstTime');
       emit(state.copyWith(showFirstLaunch: true));
-    } else {
-      debugPrint('Not First Launch');
     }
   }
 
   /// Sets the First Launch to false
   Future<void> setFirstLaunch() async {
-    debugPrint('Setting First Launch to false');
     SharedPrefs().setFirstLaunch(isFirst: false);
     emit(state.copyWith(showFirstLaunch: false));
   }
 
   /// Checks if the users has viewed the Onboarding
   void _checkOnboarding() {
-    debugPrint('Checking Onboarding');
-
     emit(state.copyWith(showOnboarding: SharedPrefs().showOnboarding()));
   }
 
   /// Sets the Onboarding to false
   void completeOnboarding() {
-    debugPrint('Setting Onboarding to false');
     SharedPrefs().setShowOnboarding(show: false);
     emit(state.copyWith(showOnboarding: false));
   }
@@ -199,8 +191,13 @@ class AppCubit extends Cubit<AppState> {
       emit(state.copyWith(usersProfile: profile, isProfileSetup: true));
       // Also dismiss onboarding
       completeOnboarding();
-    } catch (e) {
-      debugPrint('Error saving profile from onboarding: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Error saving profile from onboarding',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(isError: true, errorMessage: 'Failed to save profile'),
       );
@@ -209,7 +206,6 @@ class AppCubit extends Cubit<AppState> {
 
   void _getUsersProfile({required User user}) {
     if (user.isGuest) {
-      debugPrint('Guest User');
       emit(
         state.copyWith(
           status: AppStatus.authenticated,
@@ -219,7 +215,6 @@ class AppCubit extends Cubit<AppState> {
         ),
       );
     } else if (!user.emailVerified) {
-      debugPrint('User Email Not Verified');
       _checkEmailVerificationStatus();
       emit(
         state.copyWith(
@@ -272,21 +267,29 @@ class AppCubit extends Cubit<AppState> {
   /// for the owner, accepted instructors, and admins) and falls back to the
   /// sanitized `Public_Rider_Profile` projection for unrelated viewers.
   Future<RiderProfile?> _fetchRiderProfile(String email) async {
-    debugPrint('Fetching Rider Profile for $email');
     try {
       final profile = await _riderProfileRepository
           .getRiderProfile(email: email)
           .first;
       if (profile != null) return profile;
     } catch (e) {
-      debugPrint('Private rider profile unavailable for $email: $e');
+      AppLogger.debug(
+        LogCategory.profile,
+        'Private rider profile unavailable; falling back to public profile',
+        error: e,
+      );
     }
     try {
       return await _riderProfileRepository
           .getPublicRiderProfile(email: email)
           .first;
-    } catch (e) {
-      debugPrint('Error fetching public rider profile: $e');
+    } catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.profile,
+        'Error fetching public rider profile',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -301,7 +304,6 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void clearProfileSetup() {
-    debugPrint('Clearing Profile Setup');
     emit(state.copyWith(isProfileSetup: false));
   }
 
@@ -312,11 +314,10 @@ class AppCubit extends Cubit<AppState> {
     // Correct way to parse the URL
     final url = Uri.parse(urlString);
 
-    debugPrint('Opening Email: $url');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      debugPrint('Could not launch $url');
+      AppLogger.warning(LogCategory.app, 'Could not launch email provider URL');
       // Handle the case where the URL could not be launched.
     }
   }
@@ -332,8 +333,13 @@ class AppCubit extends Cubit<AppState> {
         // Firebase userChanges delivers the refreshed user to the same
         // handler as sign-in. The timer only asks Firebase to refresh it.
         await _authenticationRepository.reloadCurrentUser();
-      } catch (error) {
-        debugPrint('Unable to refresh email verification: $error');
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          LogCategory.auth,
+          'Unable to refresh email verification',
+          error: error,
+          stackTrace: stackTrace,
+        );
       } finally {
         _verificationReloadInProgress = false;
       }
@@ -359,7 +365,6 @@ class AppCubit extends Cubit<AppState> {
 
     // Early exit for guest users to avoid unnecessary checks
     if (state.isGuest) {
-      debugPrint('Guest User');
       return false;
     }
 
@@ -368,7 +373,6 @@ class AppCubit extends Cubit<AppState> {
       if (usersProfile != null) {
         // Profile owner check
         if (viewingProfile.email == usersProfile.email) {
-          debugPrint('Profile Owner');
           return true;
         }
         // Instructor check for the viewing profile
@@ -376,12 +380,10 @@ class AppCubit extends Cubit<AppState> {
               (instructor) => instructor.id == usersProfile.email,
             ) ??
             false) {
-          debugPrint('Viewing Profile Instructor');
           return true;
         }
       }
       // If no conditions met for viewingProfile, not authorized
-      debugPrint('Not Authorized for Viewing Profile');
       return false;
     }
 
@@ -390,7 +392,6 @@ class AppCubit extends Cubit<AppState> {
       // Owner check for horse
       if (horseProfile.currentOwnerId.toLowerCase() ==
           usersProfile.email.toLowerCase()) {
-        debugPrint('Horse Owner');
         return true;
       }
       // Instructor check for horse
@@ -398,7 +399,6 @@ class AppCubit extends Cubit<AppState> {
             (instructor) => instructor.id == usersProfile.email,
           ) ??
           false) {
-        debugPrint('Horse Instructor');
         return true;
       }
     }
@@ -408,11 +408,9 @@ class AppCubit extends Cubit<AppState> {
 
     // Default authorization based on user profile availability
     if (usersProfile != null) {
-      debugPrint('User Profile Loaded, Default Authorization');
       return true;
     }
 
-    debugPrint('Default Not Authorized');
     return false;
   }
 
@@ -425,8 +423,13 @@ class AppCubit extends Cubit<AppState> {
         email: email,
         serverOnly: true,
       );
-    } catch (error) {
-      debugPrint('Could not refresh viewed rider: $error');
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        LogCategory.profile,
+        'Could not refresh viewed rider',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
     if (isClosed ||
         state.user != session ||
@@ -459,7 +462,6 @@ class AppCubit extends Cubit<AppState> {
         if (isClosed) return;
         if (value != null) {
           final viewingProfile = value;
-          debugPrint('Viewing Profile Retrieved: ${viewingProfile.name}');
 
           emit(
             state.copyWith(
@@ -483,15 +485,12 @@ class AppCubit extends Cubit<AppState> {
         }
       });
     } else {
-      debugPrint('Returning to Users Profile');
       // goBackToUsersProfile(context);
     }
   }
 
   /// Back Button Pressed in the Viewing Profile or Horse Profile
   void profileBackButtonPressed() {
-    debugPrint('Back to Users Profile/Guest Profile');
-
     if (!state.isForRider) {
       resetFromHorseProfile();
     } else if (state.isViewing) {
@@ -505,11 +504,17 @@ class AppCubit extends Cubit<AppState> {
     BaseListItem note,
   ) {
     if (riderProfile == null) {
-      debugPrint('Rider profile is null');
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Cannot update rider skill level: rider profile is null',
+      );
       return;
     }
     if (state.skill == null) {
-      debugPrint('Skill is null');
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Cannot update rider skill level: selected skill is null',
+      );
       return;
     }
 
@@ -530,10 +535,8 @@ class AppCubit extends Cubit<AppState> {
 
     if (existingIndex != -1) {
       updatedSkillLevels[existingIndex] = updatedSkillLevel;
-      debugPrint('Updated existing skill level');
     } else {
       updatedSkillLevels.add(updatedSkillLevel);
-      debugPrint('Added new skill level');
     }
 
     final updatedProfile = riderProfile.copyWith(
@@ -557,8 +560,13 @@ class AppCubit extends Cubit<AppState> {
       await _riderProfileRepository.createOrUpdateRiderProfile(
         riderProfile: riderProfile,
       );
-      debugPrint('Rider profile changes persisted');
-    } catch (error) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Failed to update rider profile',
+        error: error,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -570,13 +578,10 @@ class AppCubit extends Cubit<AppState> {
 
   /// Called when User finishes setting up their profile
   void resetProfileSetup() {
-    debugPrint('Changing showingProfileSetup to false');
     emit(state.copyWith(pageStatus: AppPageStatus.profile, isForRider: true));
   }
 
-  void test(String test) {
-    debugPrint('Testing From $test');
-  }
+  void test(String test) {}
 
   /// Returns the current profile being viewed
   RiderProfile? determineCurrentProfile() {
@@ -681,8 +686,13 @@ class AppCubit extends Cubit<AppState> {
           errorMessage: 'Instructor request sent to ${instructorProfile.name}',
         ),
       );
-    } catch (e) {
-      debugPrint('Failed to send instructor request: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Failed to send instructor request',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(isError: true, errorMessage: 'Failed to send request'),
       );
@@ -749,8 +759,13 @@ class AppCubit extends Cubit<AppState> {
           errorMessage: 'Student request sent to ${studentProfile.name}',
         ),
       );
-    } catch (e) {
-      debugPrint('Failed to send student request: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Failed to send student request',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(isError: true, errorMessage: 'Failed to send request'),
       );
@@ -807,8 +822,13 @@ class AppCubit extends Cubit<AppState> {
           errorMessage: 'Removed ${studentProfile.name} as a Student',
         ),
       );
-    } catch (e) {
-      debugPrint('Failed to remove student: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Failed to remove student',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(isError: true, errorMessage: 'Failed to remove student'),
       );
@@ -869,8 +889,13 @@ class AppCubit extends Cubit<AppState> {
           errorMessage: 'Removed ${instructorProfile.name} as an Instructor',
         ),
       );
-    } catch (e) {
-      debugPrint('Failed to remove instructor: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Failed to remove instructor',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -1130,12 +1155,9 @@ class AppCubit extends Cubit<AppState> {
 
   /// Retrieves the Horse Profile from the database if needed
   Future<void> getHorseProfile({required String id}) async {
-    debugPrint('getHorseProfile for $id');
     if (state.horseProfile?.id == id) {
-      debugPrint('Horse Profile already retrieved');
-      // State emission if necessary
+      // Already loaded
     } else {
-      debugPrint('Horse Profile not retrieved, getting now');
       // Cancel any existing listener before subscribing to a new horse
       await _horseProfileSubscription?.cancel();
 
@@ -1163,9 +1185,14 @@ class AppCubit extends Cubit<AppState> {
                   );
                 }
               },
-              onError: (Object error) {
+              onError: (Object error, StackTrace stackTrace) {
                 if (isClosed) return;
-                debugPrint('Failed to retrieve public horse profile: $error');
+                AppLogger.error(
+                  LogCategory.profile,
+                  'Failed to retrieve public horse profile',
+                  error: error,
+                  stackTrace: stackTrace,
+                );
                 emit(
                   state.copyWith(
                     pageStatus: AppPageStatus.error,
@@ -1187,7 +1214,6 @@ class AppCubit extends Cubit<AppState> {
             (horseProfile) {
               if (isClosed) return;
               if (horseProfile != null) {
-                debugPrint('Horse Profile Retrieved: ${horseProfile.name}');
                 _checkAndSetOwnerProfile(horseProfile);
                 emit(
                   state.copyWith(
@@ -1202,9 +1228,10 @@ class AppCubit extends Cubit<AppState> {
             },
             onError: (Object error) {
               if (isClosed) return;
-              debugPrint(
-                'Private horse profile unavailable ($error); '
-                'falling back to Public_Horse_Profile',
+              AppLogger.debug(
+                LogCategory.profile,
+                'Private horse profile unavailable; falling back to public',
+                error: error,
               );
               subscribePublicFallback();
             },
@@ -1216,25 +1243,25 @@ class AppCubit extends Cubit<AppState> {
   Future<void> _checkAndSetOwnerProfile(HorseProfile horseProfile) async {
     if (!isOwner() &&
         state.ownersProfile?.email != horseProfile.currentOwnerId) {
-      debugPrint('Not Owner, fetching owner profile');
       final ownerProfile = await _fetchRiderProfile(
         horseProfile.currentOwnerId,
       );
-      debugPrint('Owner Profile Retrieved: ${ownerProfile?.name}');
       emit(state.copyWith(ownersProfile: ownerProfile));
-    } else {
-      debugPrint('Owner or same owner profile, no need to fetch');
     }
   }
 
   Future<void> _persistHorseProfileChanges(HorseProfile horseProfile) async {
-    debugPrint('Persisting Horse Profile Changes');
     try {
       await _horseProfileRepository.createOrUpdateHorseProfile(
         horseProfile: horseProfile,
       );
-    } catch (error) {
-      debugPrint('Error: $error');
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Error updating horse profile',
+        error: error,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           isError: true,
@@ -1275,8 +1302,13 @@ class AppCubit extends Cubit<AppState> {
       }
       emit(state.copyWith(horseProfile: updatedHorseProfile));
       return true;
-    } catch (error) {
-      debugPrint('Error updating public sharing: $error');
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        LogCategory.profile,
+        'Error updating horse public sharing',
+        error: error,
+        stackTrace: stackTrace,
+      );
       emit(
         state.copyWith(
           horseProfile: horseProfile,
@@ -1327,10 +1359,12 @@ class AppCubit extends Cubit<AppState> {
       final updatedHorseProfile = horseProfile.copyWith(
         skillLevels: updatedSkillLevels,
       );
-      debugPrint('Skills: ${updatedHorseProfile.skillLevels?.length}');
       _addNoteToHorseProfile(updatedHorseProfile, note);
     } else {
-      debugPrint('horse Profile or skill is null');
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Cannot update horse skill level: horse profile or skill is null',
+      );
     }
   }
 
@@ -1364,7 +1398,6 @@ class AppCubit extends Cubit<AppState> {
 
   ///  Removes the horse from the users student horse list
   void _removeStudentHorse(HorseProfile horseProfile) {
-    debugPrint('Remove Student Horse');
     final currentUser = state.usersProfile;
     final updatedHorse = horseProfile.copyWith(
       instructors: horseProfile.instructors
@@ -1393,17 +1426,24 @@ class AppCubit extends Cubit<AppState> {
             errorMessage: 'Removed ${horseProfile.name} as a student horse',
           ),
         );
-      } on RepositoryException catch (e) {
-        debugPrint('Error: $e');
+      } on RepositoryException catch (e, stackTrace) {
+        AppLogger.error(
+          LogCategory.profile,
+          'Failed to remove student horse',
+          error: e,
+          stackTrace: stackTrace,
+        );
       }
     } else {
-      debugPrint('Error: No User Profile Found to remove Student Horse');
+      AppLogger.warning(
+        LogCategory.profile,
+        'No user profile found to remove student horse',
+      );
     }
   }
 
   ///  Creates a request to add the horse as a student horse
   void _addStudentHorseRequest() {
-    debugPrint('Request to add horse as student horse');
     final user = state.usersProfile;
     final owner = state.ownersProfile;
     final horse = state.horseProfile;
@@ -1413,7 +1453,11 @@ class AppCubit extends Cubit<AppState> {
         horse == null ||
         user.email.toLowerCase() == owner.email.toLowerCase() ||
         !(user.isTrainer ?? false)) {
-      debugPrint('Something went Wrong, No owner profile found');
+      AppLogger.warning(
+        LogCategory.profile,
+        'Cannot request student horse: '
+        'missing required profile or trainer role',
+      );
       return;
     } else {
       if (_hasPendingOutgoingRequest(
@@ -1457,7 +1501,6 @@ class AppCubit extends Cubit<AppState> {
       );
 
       unawaited(_connectionRequestRepository.sendRequest(request));
-      debugPrint('Success');
       emit(
         state.copyWith(
           isMessage: true,
@@ -1629,15 +1672,12 @@ class AppCubit extends Cubit<AppState> {
 
   /// Retrieves the Skills from the database if needed
   void _getSkillTreeLists() {
-    debugPrint('getSkillTreeLists');
-
     _getSkills();
     // Skills are shared by the rider profile and Skill Tree.
   }
 
   void _getSkills() {
     if (_skillsSubscription != null) return;
-    debugPrint('Listening for skill catalogue updates');
     _skillsSubscription = _skillTreeRepository.getSkills().listen(
       (skillsList) {
         final next = skillsList.toList()
@@ -1646,8 +1686,13 @@ class AppCubit extends Cubit<AppState> {
         emit(state.copyWith(allSkills: next));
         _sortSkills(state.categorySortState, state.difficultySortState);
       },
-      onError: (Object error) {
-        debugPrint('Failed to listen for skill catalogue: $error');
+      onError: (Object error, StackTrace stackTrace) {
+        AppLogger.error(
+          LogCategory.skillTree,
+          'Failed to listen for skill catalogue',
+          error: error,
+          stackTrace: stackTrace,
+        );
       },
     );
   }
@@ -1657,7 +1702,6 @@ class AppCubit extends Cubit<AppState> {
     if (state.isError) {
       emit(state.copyWith(isError: false));
     }
-    debugPrint('Listening for resource updates after entering Resources');
     _resourcesStream = _resourcesRepository.getResources().listen(
       (resources) {
         if (state.hasResourceCatalogue &&
@@ -1679,7 +1723,7 @@ class AppCubit extends Cubit<AppState> {
           ),
         );
       },
-      onError: (Object error) {
+      onError: (Object error, StackTrace stackTrace) {
         _resourcesStream = null;
         emit(
           state.copyWith(
@@ -1688,7 +1732,12 @@ class AppCubit extends Cubit<AppState> {
             errorMessage: 'Unable to load resources.',
           ),
         );
-        debugPrint('Failed to listen for resource updates: $error');
+        AppLogger.error(
+          LogCategory.resources,
+          'Failed to listen for resource updates',
+          error: error,
+          stackTrace: stackTrace,
+        );
       },
       cancelOnError: true,
     );
@@ -1743,11 +1792,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Return a Skill item from the id
   Skill? getSkillFromId(String id) {
-    final skill = _getSkillFromId(id);
-    if (skill == null) {
-      debugPrint('Skill not found for id: $id');
-    } else {}
-    return skill;
+    return _getSkillFromId(id);
   }
 
   bool skillExists(String id) {
@@ -1757,33 +1802,21 @@ class AppCubit extends Cubit<AppState> {
   /// set the selected Skill from the id
   void setSkill(String? id) {
     if (id == null || id.isEmpty) {
-      debugPrint('Skill id is null or empty');
       emit(state.copyWith(clearSkill: true));
       return;
     }
     final skill = _getSkillFromId(id);
     if (skill != null) {
-      debugPrint('Setting Skill: ${skill.skillName}');
       emit(state.copyWith(skill: skill));
     } else {
-      debugPrint('Skill not found for id: $id');
       emit(state.copyWith(clearSkill: true));
     }
   }
 
   Skill? getSkillFromSkillName(String skillName) {
-    debugPrint('Getting Skill: $skillName');
-    final skill = state.allSkills.firstWhereOrNull(
+    return state.allSkills.firstWhereOrNull(
       (element) => element?.skillName == skillName,
     );
-    if (skill == null) {
-      debugPrint(
-        'Skill not found, Skill list length: ${state.allSkills.length}',
-      );
-    } else {
-      debugPrint('Skill Found: ${skill.skillName}');
-    }
-    return skill;
   }
 
   /// Adds a Resource to the selected Skill
@@ -1792,10 +1825,7 @@ class AppCubit extends Cubit<AppState> {
     required Skill? skill,
   }) {
     if (resource != null) {
-      debugPrint('Resource Selected: ${resource.name}');
-
       if (skill != null) {
-        debugPrint('Skill Selected: ${skill.skillName}');
         final skillTreeIds = List<String>.of(resource.skillTreeIds);
 
         // Toggle the presence of skill.id in skillTreeIds
@@ -1811,23 +1841,33 @@ class AppCubit extends Cubit<AppState> {
           _resourcesRepository.createOrUpdateResource(
             resource: updatedResource,
           );
-        } catch (e) {
-          debugPrint('Error: $e');
+        } catch (e, stackTrace) {
+          AppLogger.error(
+            LogCategory.resources,
+            'Failed to link resource to skill',
+            error: e,
+            stackTrace: stackTrace,
+          );
           emit(state.copyWith(errorMessage: e.toString(), isError: true));
         }
       } else {
-        debugPrint('skill is null');
+        AppLogger.warning(
+          LogCategory.skillTree,
+          'Cannot link resource: skill is null',
+        );
         emit(state.copyWith(errorMessage: 'skill is null', isError: true));
       }
     } else {
-      debugPrint('resource is null');
+      AppLogger.warning(
+        LogCategory.resources,
+        'Cannot link resource: resource is null',
+      );
       emit(state.copyWith(errorMessage: 'resource is null', isError: true));
     }
   }
 
   /// Search icon pressed and initiating a search
   Future<void> search() async {
-    debugPrint('search');
     emit(state.copyWith(isSearch: true, searchList: _getSearchList()));
   }
 
@@ -1843,14 +1883,12 @@ class AppCubit extends Cubit<AppState> {
 
   /// Category Filter Changed
   void categorySortChanged(CategorySortState categorySortState) {
-    debugPrint('Category Filter Changedto : $categorySortState.name');
     emit(state.copyWith(categorySortState: categorySortState));
     _sortSkills(categorySortState, state.difficultySortState);
   }
 
   /// Difficulty Filter Changed
   void difficultySortChanged(DifficultySortState difficultySortState) {
-    debugPrint('Difficulty Filter Changed to: $difficultySortState.name');
     emit(state.copyWith(difficultySortState: difficultySortState));
     _sortSkills(state.categorySortState, difficultySortState);
   }
@@ -1863,11 +1901,6 @@ class AppCubit extends Cubit<AppState> {
       if (state.viewingProfile != null && state.isViewing) {
         // process the level change for the viewing profile
         // and add a note to the user's
-        debugPrint(
-          'Changing and Verifing ${state.viewingProfile?.name}'
-          ' ${state.skill} '
-          'to $levelState',
-        );
         final note = BaseListItem(
           date: DateTime.now(),
           imageUrl: LogTag.Edit.toString(),
@@ -1898,10 +1931,6 @@ class AppCubit extends Cubit<AppState> {
       } else {
         // process the level change for the user's profile
         // add a note to the user's profile
-        debugPrint(
-          'Changing ${state.usersProfile?.name} ${state.skill?.skillName} '
-          'to $levelState',
-        );
         final newUsersProfile = state.usersProfile;
         final note = BaseListItem(
           date: DateTime.now(),
@@ -1918,10 +1947,6 @@ class AppCubit extends Cubit<AppState> {
     } else {
       // process the level change for the horse's profile
       // add a note to the horse's profile and the user's profile
-      debugPrint(
-        'Changing ${state.horseProfile?.name} ${state.skill} '
-        'to $levelState',
-      );
       final newHorseProfile = state.horseProfile;
       final horseNote =
           state.usersProfile?.email != newHorseProfile?.currentOwnerId
@@ -2153,29 +2178,21 @@ class AppCubit extends Cubit<AppState> {
             return '';
           }
         } else {
-          debugPrint('skillLevels is null');
           return '';
         }
       } else {
         return '';
       }
     } else {
-      debugPrint('skill is null');
       return '';
     }
   }
 
   ///Sort skills by state.isForRider and return the sorted list
   List<Skill?> _sortSkillsByType(List<Skill?> skills) {
-    debugPrint(
-      'Sorting ${skills.length} Skills by'
-      ' ${state.isForRider ? 'Rider' : 'Horse'}',
-    );
-    final sortedSkills = skills
+    return skills
         .where((element) => element?.rider == state.isForRider)
         .toList();
-    debugPrint('Returning ${sortedSkills.length} skills');
-    return sortedSkills;
   }
 
   void sortForHorse() {
@@ -2200,7 +2217,6 @@ class AppCubit extends Cubit<AppState> {
     sortedSkills = _sortSkillsByDifficulty(difficultySort, sortedSkills);
 
     // Emit the sorted skills
-    debugPrint('Emitting ${sortedSkills.length} Sorted Skills');
     emit(state.copyWith(sortedSkills: _sortSkillsByType(sortedSkills)));
   }
 
@@ -2434,8 +2450,13 @@ class AppCubit extends Cubit<AppState> {
       )) {
         return;
       }
-    } catch (error) {
-      debugPrint('Unable to open resource: $error');
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        LogCategory.resources,
+        'Unable to open resource',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
     if (!isClosed) createError('Unable to open resource link');
   }
@@ -2491,10 +2512,7 @@ class AppCubit extends Cubit<AppState> {
 
   /// Returns a resource based on the [id]
   Resource? getResourceById(String id) {
-    debugPrint('getResourceById for $id');
-
     if (state.resource?.id == id) {
-      debugPrint('Resource is already set: ${state.resource?.name}');
       return state.resource; // Return the already set resource
     }
 
@@ -2503,10 +2521,7 @@ class AppCubit extends Cubit<AppState> {
     );
 
     if (resource != null) {
-      debugPrint('Resource found: ${resource.name}');
       selectResource(resource);
-    } else {
-      debugPrint('Resource not found');
     }
 
     return resource;
@@ -2628,7 +2643,6 @@ class AppCubit extends Cubit<AppState> {
 
   ///  Sort the resources by the newest last edit date
   void _sortByNew() {
-    debugPrint('Sorting by New');
     final sortedList = List<Resource>.of(state.resources)
       ..sort((a, b) => _resourceDate(b).compareTo(_resourceDate(a)));
     emit(
@@ -2642,7 +2656,6 @@ class AppCubit extends Cubit<AppState> {
   /// Sort the resources by the ones that have the oldest
   /// last edit date
   void _sortByOld() {
-    debugPrint('Sorting by Old');
     final sortedList = List<Resource>.of(state.resources)
       ..sort((a, b) => _resourceDate(a).compareTo(_resourceDate(b)));
     emit(
@@ -2656,7 +2669,6 @@ class AppCubit extends Cubit<AppState> {
   /// Sort the resources by the ones that have been saved
   /// by the user
   void _sortBySaved() {
-    debugPrint('Sorting by Saved');
     final savedResources = <Resource>[];
     if (state.usersProfile != null) {
       if (state.usersProfile?.savedResourcesList != null) {
@@ -2713,7 +2725,10 @@ class AppCubit extends Cubit<AppState> {
       );
     } else {
       // Handle the case where the user profile is not available
-      debugPrint('User profile is not available');
+      AppLogger.warning(
+        LogCategory.resources,
+        'Cannot save resource: user profile unavailable',
+      );
       emit(
         state.copyWith(
           errorMessage:
@@ -2981,18 +2996,15 @@ class AppCubit extends Cubit<AppState> {
     final profile = state.usersProfile;
     final email = profile?.email.trim().toLowerCase() ?? '';
     if (email.isEmpty) {
-      debugPrint('User Profile is null');
       return;
     }
     if (_conversationsStream != null && _requestsSubscriptionEmail == email) {
-      debugPrint('Conversations already retrieved');
       return;
     }
     unawaited(_conversationsStream?.cancel());
     _conversationsStream = null;
     _requestsSubscriptionEmail = email;
     emit(state.copyWith(conversationsState: ConversationsState.loading));
-    debugPrint('getConversations');
     try {
       _conversationsStream = _connectionRequestRepository
           .watchRequests(userEmail: profile!.email)
@@ -3007,8 +3019,13 @@ class AppCubit extends Cubit<AppState> {
                 ),
               );
             },
-            onError: (Object error) {
-              debugPrint('Requests stream error: $error');
+            onError: (Object error, StackTrace stackTrace) {
+              AppLogger.error(
+                LogCategory.profile,
+                'Requests stream error',
+                error: error,
+                stackTrace: stackTrace,
+              );
               _conversationsStream = null;
               _requestsSubscriptionEmail = null;
               emit(
@@ -3016,8 +3033,13 @@ class AppCubit extends Cubit<AppState> {
               );
             },
           );
-    } catch (error) {
-      debugPrint('Failed to watch requests: $error');
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        LogCategory.profile,
+        'Failed to watch requests',
+        error: error,
+        stackTrace: stackTrace,
+      );
       _conversationsStream = null;
       _requestsSubscriptionEmail = null;
       emit(state.copyWith(conversationsState: ConversationsState.error));
@@ -3357,7 +3379,6 @@ class AppCubit extends Cubit<AppState> {
   /// 1: SkillTreePage
   /// 2: ResourcesPage
   void changeIndex(int index) {
-    debugPrint('Changing index from ${state.index} to $index');
     switch (index) {
       case 0:
         emit(state.copyWith(index: index, pageStatus: AppPageStatus.profile));
@@ -3376,7 +3397,6 @@ class AppCubit extends Cubit<AppState> {
 
   /// Skill Tree Tab Navigation
   void setSkillTreeTabIndex(int index) {
-    debugPrint('Navigating to Skill Tree Tab Index: $index');
     emit(state.copyWith(skillTreeTabIndex: index));
   }
 
@@ -3407,7 +3427,6 @@ class AppCubit extends Cubit<AppState> {
 
   /// Resets from Horse Profile to the Rider Profile
   void resetFromHorseProfile() {
-    debugPrint('resetFromHorseProfile');
     unawaited(_horseProfileSubscription?.cancel());
     _horseProfileSubscription = null;
     emit(
@@ -3436,7 +3455,6 @@ class AppCubit extends Cubit<AppState> {
 
   /// Resets From Viewing Profile to the Users Profile
   void resetFromViewingProfile() {
-    debugPrint('resetFromViewingProfile');
     emit(
       state.copyWith(
         index: 0,
@@ -3472,7 +3490,6 @@ class AppCubit extends Cubit<AppState> {
 
   ///Reset from the Resource Page to the Resource List
   void resetFromResource() {
-    debugPrint('resetFromResource');
     emit(
       state.copyWith(
         index: 2,
@@ -3496,7 +3513,6 @@ class AppCubit extends Cubit<AppState> {
 
   /// Navigates to the List of Skills
   void navigateToSkillsList() {
-    debugPrint('navigateToSkillsList');
     emit(
       state.copyWith(
         pageStatus: AppPageStatus.skillTree,
@@ -3509,7 +3525,6 @@ class AppCubit extends Cubit<AppState> {
   /// Navigates to a the Skill Level Screen in the Skill Tree
 
   void navigateToSkillLevel({required Skill? skill}) {
-    debugPrint('navigateToSkillLevel for ${skill?.skillName}');
     emit(
       state.copyWith(
         skill: skill,
@@ -3524,13 +3539,11 @@ class AppCubit extends Cubit<AppState> {
 
   /// Navigates to the Settings Page
   void navigateToSettings() {
-    debugPrint('navigateToSettings');
     emit(state.copyWith(pageStatus: AppPageStatus.settings));
   }
 
   /// Navigates to the Resources Page
   void navigateToResources(Resource resource) {
-    debugPrint('navigateToResources');
     loadResourcesIfNeeded();
     emit(
       state.copyWith(
@@ -3541,7 +3554,6 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void navigateToResourceComments(Resource resource) {
-    debugPrint('navigateToResourceComments');
     emit(
       state.copyWith(resource: resource, pageStatus: AppPageStatus.resource),
     );
@@ -3549,19 +3561,16 @@ class AppCubit extends Cubit<AppState> {
 
   /// Create Error
   void createError(String message) {
-    debugPrint('Creating Error Message: $message');
     emit(state.copyWith(isError: true, errorMessage: message));
   }
 
   /// Clears the Error Message and Snackbar
   void clearErrorMessage() {
-    debugPrint('Clearing Error Message');
     emit(state.copyWith(isMessage: false, errorMessage: '', isError: false));
   }
 
   /// Create a Snackbar Message
   void createMessage(String message) {
-    debugPrint('Creating Message: $message');
     emit(state.copyWith(isMessage: true, errorMessage: message));
   }
 

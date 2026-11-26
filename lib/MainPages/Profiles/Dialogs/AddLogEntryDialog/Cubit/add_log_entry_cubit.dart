@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -45,7 +44,6 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
     emit(state.copyWith(status: FormStatus.submitting));
     if (horseProfile != null) {
       // add the log entry for the horse
-      debugPrint('Adding log entry for horse');
       final logEntry = BaseListItem(
         date: state.date,
         name: state.logEntry.value,
@@ -67,7 +65,6 @@ class AddLogEntryCubit extends Cubit<AddLogEntryState> {
       }
     } else {
       // add the log entry for the rider
-      debugPrint('Adding log entry for rider');
       final logEntry = BaseListItem(
         date: state.date,
         name: state.logEntry.value,

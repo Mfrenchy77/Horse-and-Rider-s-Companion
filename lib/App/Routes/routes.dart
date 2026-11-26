@@ -42,17 +42,8 @@ class Routes {
 
     // ── Observers (your existing behavior) ───────────────────────────────────
     final routeObserver = RouteObserverWithCallback(
-      onPop: (route, previousRoute) {
-        debugPrint(
-          'Observer Pop: ${route.settings.name},'
-          ' ${previousRoute?.settings.name}',
-        );
-      },
+      onPop: (route, previousRoute) {},
       onPush: (route, previousRoute) {
-        debugPrint(
-          'Observer Push: ${route.settings.name},'
-          ' ${previousRoute?.settings.name}',
-        );
         if (previousRoute?.settings.name == AuthPage.name) {
           appCubit.setProfile();
         }

@@ -33,7 +33,6 @@ class EditRiderProfileDialog extends StatelessWidget {
   final void Function() onProfileUpdated;
   @override
   Widget build(BuildContext context) {
-    debugPrint('EditRiderProfileDialog');
     return BlocProvider(
       create: (context) => EditRiderProfileCubit(
         user: user,
@@ -51,64 +50,62 @@ class EditRiderProfileDialog extends StatelessWidget {
             context.read<RiderProfileRepository?>() ??
             RiderProfileRepository(),
       ),
-        child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
-          listenWhen: (previous, current) =>
-              previous.status != current.status ||
-              (current.isError && !previous.isError),
-          listener: (context, state) {
-            if (state.status == SubmissionStatus.success) {
-              onProfileUpdated();
-              final route = ModalRoute.of(context);
-              if (route?.isCurrent ?? false) {
-                Navigator.of(context).pop();
-              }
+      child: BlocListener<EditRiderProfileCubit, EditRiderProfileState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status ||
+            (current.isError && !previous.isError),
+        listener: (context, state) {
+          if (state.status == SubmissionStatus.success) {
+            onProfileUpdated();
+            final route = ModalRoute.of(context);
+            if (route?.isCurrent ?? false) {
+              Navigator.of(context).pop();
             }
-            if (state.isError) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text(state.error),
-                  ),
-                );
-            }
-          },
-          child: AppGlassDialog(
-            maxWidth: 600,
-            density: AppGlassDensity.frosted,
-            title: Text(
-              user != null
-                  ? 'Finish setting up your Profile'
-                  : 'Edit Profile',
-            ),
-            content: Form(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const ProfilePhoto(key: Key('profilePhoto')),
-                  gap(),
-                  const RiderName(key: Key('riderName')),
-                  gap(),
-                  const RiderBio(key: Key('riderBio')),
-                  gap(),
-                  const RiderLocation(key: Key('riderLocation')),
-                  gap(),
-                  const RiderWebsite(key: Key('riderWebsite')),
-                  gap(),
-                  const TrainerQuestion(key: Key('trainerQuestion')),
-                ],
-              ),
-            ),
-            actions: [
-              Visibility(
-                visible: user == null,
-                child: const CancelButton(key: Key('cancelButton')),
-              ),
-              const SubmitButton(key: Key('submitButton')),
-            ],
+          }
+          if (state.isError) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.red,
+                  content: Text(state.error),
+                ),
+              );
+          }
+        },
+        child: AppGlassDialog(
+          maxWidth: 600,
+          density: AppGlassDensity.frosted,
+          title: Text(
+            user != null ? 'Finish setting up your Profile' : 'Edit Profile',
           ),
+          content: Form(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ProfilePhoto(key: Key('profilePhoto')),
+                gap(),
+                const RiderName(key: Key('riderName')),
+                gap(),
+                const RiderBio(key: Key('riderBio')),
+                gap(),
+                const RiderLocation(key: Key('riderLocation')),
+                gap(),
+                const RiderWebsite(key: Key('riderWebsite')),
+                gap(),
+                const TrainerQuestion(key: Key('trainerQuestion')),
+              ],
+            ),
+          ),
+          actions: [
+            Visibility(
+              visible: user == null,
+              child: const CancelButton(key: Key('cancelButton')),
+            ),
+            const SubmitButton(key: Key('submitButton')),
+          ],
         ),
+      ),
     );
   }
 }

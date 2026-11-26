@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:database_repository/src/logging/app_logger.dart';
 
 /// Represents location details associated with a specific postal code.
 ///
@@ -103,8 +103,9 @@ class PostalCodeResults {
 
         results[key] = locations;
       } else {
-        debugPrint(
-          'Something went Wrong in PostalCodeREsults: value is not a list',
+        AppLogger.warning(
+          LogCategory.database,
+          'Unexpected non-list value in PostalCodeResults for "$key"',
         );
       }
     });
@@ -139,8 +140,9 @@ class ZipcodeApiResponse {
   factory ZipcodeApiResponse.fromJson(Map<String, dynamic> json) {
     return ZipcodeApiResponse(
       query: json['query'] as Map<String, dynamic>,
-      results:
-          PostalCodeResults.fromJson(json['results'] as Map<String, dynamic>),
+      results: PostalCodeResults.fromJson(
+        json['results'] as Map<String, dynamic>,
+      ),
     );
   }
 }

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 
 part 'horse_profile_state.dart';
 
@@ -31,11 +30,7 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
   Future<void> getHorseProfile(String id) async {
     emit(state.copyWith(status: HorseProfileStatus.loading));
     try {
-      debugPrint('getHorseProfile for $id');
-      if (state.horseProfile?.id == id) {
-        debugPrint('Horse Profile already retrieved');
-      } else {
-        debugPrint('Horse Profile not retrieved, getting now');
+      if (state.horseProfile?.id != id) {
         try {
           await _horseProfileSubscription?.cancel();
           final horseRepo = _horseProfileRepository ?? HorseProfileRepository();
@@ -44,18 +39,13 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
             horseProfile,
           ) {
             if (isClosed) return;
-            debugPrint('Horse Profile Retrieved: ${horseProfile?.name}');
             if (horseProfile != null) {
               if (!_isOwner()) {
-                debugPrint('Not Owner');
                 riderRepo
                     .getRiderProfile(email: horseProfile.currentOwnerId)
                     .first
                     .then((ownerProfile) {
                       if (isClosed) return;
-                      debugPrint(
-                        'Owner Profile Retrieved: ${ownerProfile?.name}',
-                      );
                       emit(
                         state.copyWith(
                           index: 0,
@@ -66,7 +56,6 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
                       );
                     });
               } else {
-                debugPrint('Owner');
                 emit(
                   state.copyWith(
                     index: 0,
@@ -77,8 +66,13 @@ class HorseProfileCubit extends Cubit<HorseProfileState> {
               }
             }
           });
-        } on RepositoryException catch (e) {
-          debugPrint('Failed to get Horse Profile: $e');
+        } on RepositoryException catch (e, stackTrace) {
+          AppLogger.error(
+            LogCategory.profile,
+            'Failed to get horse profile',
+            error: e,
+            stackTrace: stackTrace,
+          );
           emit(state.copyWith(errorMessage: e.message));
         }
       }

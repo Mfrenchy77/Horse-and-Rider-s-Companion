@@ -119,7 +119,6 @@ class _NavigationViewState extends State<NavigationView> {
 
         // Manual onboarding presentation (guest vs signed-in)
         if (state.showOnboarding && !_onboardingDialogOpen) {
-          debugPrint('onboarding');
           //   _onboardingDialogOpen = true;
           //   SchedulerBinding.instance.addPostFrameCallback((_) async {
           //     if (!mounted) return;

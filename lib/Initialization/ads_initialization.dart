@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 
 class AdsInitialization {
   static Future<void> initializeAds() async {
     try {
-      debugPrint('defaultTargetPlatform: $defaultTargetPlatform');
       if (kIsWeb) return; // AdSense is initialized by the web entry point.
       if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.android) {
-        debugPrint('Launching Ads on Mobile');
+        AppLogger.info(LogCategory.ads, 'Initializing mobile ads');
         await MobileAds.instance.initialize();
         await MobileAds.instance.updateRequestConfiguration(
           RequestConfiguration(
@@ -18,11 +18,18 @@ class AdsInitialization {
       } else if (defaultTargetPlatform == TargetPlatform.linux ||
           defaultTargetPlatform == TargetPlatform.macOS ||
           defaultTargetPlatform == TargetPlatform.windows) {
-        // Implement desktop-specific ads initialization or handling here
-        debugPrint('Ads not supported on this platform');
+        AppLogger.debug(
+          LogCategory.ads,
+          'Mobile ads unsupported on $defaultTargetPlatform',
+        );
       }
-    } catch (e) {
-      debugPrint('Error initializing ads: $e');
+    } catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.ads,
+        'Error initializing ads',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 }

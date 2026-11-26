@@ -3,7 +3,6 @@ import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Utilities/view_utils.dart';
 
 part 'comment_state.dart';
@@ -37,7 +36,10 @@ class CommentCubit extends Cubit<CommentState> {
     final res = state.resource;
     if (res == null) {
       emit(state.copyWith(status: CommentStatus.initial));
-      debugPrint('Resource is null, cannot send comment');
+      AppLogger.warning(
+        LogCategory.resources,
+        'Cannot send comment: resource is null',
+      );
       return;
     }
 
@@ -56,7 +58,10 @@ class CommentCubit extends Cubit<CommentState> {
           // keep user/rating/parentId/resourceId as-is
         );
       } else {
-        debugPrint('Edit requested but original comment not found; appending.');
+        AppLogger.warning(
+          LogCategory.resources,
+          'Edit requested for missing comment; appending instead',
+        );
         comments.add(
           state.comment!.copyWith(
             comment: state.commentMessage.trim(),
@@ -94,8 +99,13 @@ class CommentCubit extends Cubit<CommentState> {
           ),
         );
       }
-    } catch (e) {
-      debugPrint('sendComment error: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        LogCategory.resources,
+        'Failed to save comment',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!isClosed) emit(state.copyWith(status: CommentStatus.initial));
     }
   }

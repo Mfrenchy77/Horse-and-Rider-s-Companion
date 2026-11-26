@@ -97,7 +97,10 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   static int _seq = 0;
   String _newTrace() => '${DateTime.now().millisecondsSinceEpoch}-${_seq++}';
   void _d(String tag, String msg) {
-    if (kDebugMode) debugPrint('[CreateResourceDialogCubit][$tag] $msg');
+    AppLogger.debug(
+      LogCategory.resources,
+      '[CreateResourceDialogCubit][$tag] $msg',
+    );
   }
 
   String _clipForLog(String? s, [int max = 160]) {

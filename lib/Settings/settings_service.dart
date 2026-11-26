@@ -76,25 +76,16 @@ class SettingsService {
     // Use the shared_preferences package to persist settings locally or the
     if (theme == ThemeMode.system) {
       SharedPrefs().setDarkMode(isDark: 'system');
-      debugPrint('ThemeMode.system');
     } else if (theme == ThemeMode.light) {
       SharedPrefs().setDarkMode(isDark: 'light');
-      debugPrint('ThemeMode.light');
     } else if (theme == ThemeMode.dark) {
       SharedPrefs().setDarkMode(isDark: 'dark');
-      debugPrint('ThemeMode.dark');
-    } else {
-      debugPrint('ThemeMode.else');
     }
   }
 
   ///Persists the users perfered perefernce for seasonal mode to local storage
   Future<void> updateSeasonalMode() async {
     SharedPrefs().setSeasonalMode(isSeasonal: !SharedPrefs().isSeasonalMode());
-
-    debugPrint(
-      'Seasonal Mode settings service: ${SharedPrefs().isSeasonalMode()}',
-    );
   }
 
   ThemeData getThemeMode() {

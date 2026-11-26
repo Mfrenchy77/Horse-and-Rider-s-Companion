@@ -663,7 +663,10 @@ async function sendPush(tokens, payload) {
 async function sendEmail(emails, mail) {
   if (!emails || emails.length === 0) return;
   // TODO: Integrate a provider (SendGrid/Mailgun) and set API key env.
-  logger.info(`Email stub -> ${emails.join(', ')} | ${mail.subject}`);
+  logger.info('Email notification stub skipped', {
+    recipientCount: emails.length,
+    hasSubject: Boolean(mail && mail.subject),
+  });
 }
 
 exports.onRequestCreated = onDocumentCreated(

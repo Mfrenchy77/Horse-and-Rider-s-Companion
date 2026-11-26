@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 
 //Widget with an icon button that lets you selects saved profiles
@@ -13,9 +11,7 @@ class SavedProfilesWidget extends StatelessWidget {
       children: [
         //Saved accounts button
         IconButton(
-          onPressed: () {
-            print('Open saved accounts');
-          },
+          onPressed: () {},
           icon: const Icon(Icons.account_circle),
           color: Colors.black,
         ),

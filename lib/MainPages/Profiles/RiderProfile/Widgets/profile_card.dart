@@ -15,40 +15,29 @@ class ProfileCard extends StatelessWidget {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
         return
-            // SizedBox(
-            //   width: 200,
-            //   child: Card(
-            //     elevation: 8,
-            //     child:
-            FilledButton.tonalIcon(
+        // SizedBox(
+        //   width: 200,
+        //   child: Card(
+        //     elevation: 8,
+        //     child:
+        FilledButton.tonalIcon(
           icon: Padding(
-            padding: const EdgeInsets.fromLTRB(0,5,0,5),
-            child: ProfilePhoto(
-              size: 40,
-              profilePicUrl: baseItem.imageUrl,
-            ),
+            padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
+            child: ProfilePhoto(size: 40, profilePicUrl: baseItem.imageUrl),
           ),
-          label: Text(
-            baseItem.name ?? '',
-            textAlign: TextAlign.center,
-          ),
+          label: Text(baseItem.name ?? '', textAlign: TextAlign.center),
           onPressed: () {
             if (baseItem.isCollapsed!) {
               // cubit.setLoading();
               context.pushNamed(
                 ViewingProfilePage.name,
-                pathParameters: {
-                  ViewingProfilePage.pathParams: baseItem.id!,
-                },
+                pathParameters: {ViewingProfilePage.pathParams: baseItem.id!},
               );
             } else {
               //cubit.setLoading();
-              debugPrint('Sending to HorseProfilePage: ${baseItem.id}');
               context.pushNamed(
                 HorseProfilePage.name,
-                pathParameters: {
-                  HorseProfilePage.pathParams: baseItem.id!,
-                },
+                pathParameters: {HorseProfilePage.pathParams: baseItem.id!},
               );
             }
           },
