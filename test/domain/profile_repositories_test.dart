@@ -46,14 +46,25 @@ void main() {
   test(
     'horse searches match stored name, nickname and zip-code fields',
     () async {
-      await horses.createOrUpdateHorseProfile(
-        horseProfile: HorseProfile(
-          id: 'h',
-          name: 'Star',
-          nickname: 'Starlight',
-          zipCode: '92101',
-        ),
+      final horse = HorseProfile(
+        id: 'h',
+        name: 'Star',
+        nickname: 'Starlight',
+        zipCode: '92101',
+        isPublic: true,
       );
+      await horses.createOrUpdateHorseProfile(horseProfile: horse);
+      // Private-only writes must not appear in public search queries before
+      // the public projection is populated.
+      expect(await horses.getHorseByName(name: 'Sta').first, isEmpty);
+      expect(await horses.getHorseByNickName(nickName: 'Starl').first, isEmpty);
+      expect(await horses.getHorseByZipCode(zipCode: '92101').first, isEmpty);
+
+      await db
+          .collection(HorseProfileRepository.PUBLIC_HORSE_PROFILE)
+          .doc(horse.id)
+          .set(HorseProfileFirestoreMapper.toFirestore(horse));
+
       expect((await horses.getHorseByName(name: 'Sta').first).single.id, 'h');
       expect(
         (await horses.getHorseByNickName(nickName: 'Starl').first).single.id,
@@ -83,14 +94,21 @@ void main() {
     await riders.createOrUpdateRiderProfile(
       riderProfile: rider.copyWith(name: 'Updated'),
     );
-    expect((await riders.getProfileByName(name: 'Updated').first)?.id, 'r');
+    expect(
+      (await riders.getRiderProfileByEmail(email: rider.email))?.name,
+      'Updated',
+    );
+    expect(
+      (await riders.getRiderProfile(email: rider.email).first)?.name,
+      'Updated',
+    );
     await riders.deleteRiderProfile(email: rider.email);
     expect(await riders.getRiderProfileByEmail(email: rider.email), isNull);
   });
   test(
     'rider name and location searches return only matching profiles',
     () async {
-      for (final rider in [
+      final sampleRiders = [
         RiderProfile(
           id: '1',
           name: 'Alice',
@@ -103,8 +121,17 @@ void main() {
           email: 'bob@example.com',
           zipCode: '10001',
         ),
-      ]) {
+      ];
+      for (final rider in sampleRiders) {
         await riders.createOrUpdateRiderProfile(riderProfile: rider);
+      }
+      expect(await riders.getProfilesByName(name: 'Ali').first, isEmpty);
+
+      for (final rider in sampleRiders) {
+        await db
+            .collection(RiderProfileRepository.PUBLIC_RIDER_PROFILE)
+            .doc(rider.id)
+            .set(RiderProfileFirestoreMapper.toFirestore(rider));
       }
       expect(
         (await riders.getProfilesByName(name: 'Ali').first).single.id,
@@ -114,6 +141,7 @@ void main() {
         (await riders.getProfilesByZipcode(zipcode: '10001').first).single.id,
         '2',
       );
+      expect((await riders.getProfileByName(name: 'Alice').first)?.id, '1');
       expect(await riders.getProfileByName(name: 'Missing').first, isNull);
     },
   );
@@ -132,53 +160,44 @@ void main() {
       expect(saved?.ownedHorses?.map((horse) => horse.id), ['h']);
     },
   );
-  test(
-    'RiderProfile.fromFirestore converts Timestamp and DateTime '
-    'subscription dates',
-    () async {
-      final start = DateTime.utc(2026, 1, 15, 12);
-      final end = DateTime.utc(2027, 1, 15, 12);
-      final rawDoc = db.collection('Rider_Profile').doc('raw-doc');
-      await rawDoc.set({
-        'id': 'r',
-        'name': 'Rider',
-        'email': 'r@example.com',
-        'subscriptionDate': Timestamp.fromDate(start),
-        'subscriptionEndDate': Timestamp.fromDate(end),
-      });
+  test('RiderProfile.fromFirestore converts Timestamp and DateTime '
+      'subscription dates', () async {
+    final start = DateTime.utc(2026, 1, 15, 12);
+    final end = DateTime.utc(2027, 1, 15, 12);
+    final rawDoc = db.collection('Rider_Profile').doc('raw-doc');
+    await rawDoc.set({
+      'id': 'r',
+      'name': 'Rider',
+      'email': 'r@example.com',
+      'subscriptionDate': Timestamp.fromDate(start),
+      'subscriptionEndDate': Timestamp.fromDate(end),
+    });
 
-      final loadedFromTimestamp = RiderProfileFirestoreMapper.fromFirestore(
-        await rawDoc.get(),
-        null,
-      );
-      expect(
-        loadedFromTimestamp.subscriptionDate?.isAtSameMomentAs(start),
-        isTrue,
-      );
-      expect(
-        loadedFromTimestamp.subscriptionEndDate?.isAtSameMomentAs(end),
-        isTrue,
-      );
+    final loadedFromTimestamp = RiderProfileFirestoreMapper.fromFirestore(
+      await rawDoc.get(),
+      null,
+    );
+    expect(
+      loadedFromTimestamp.subscriptionDate?.isAtSameMomentAs(start),
+      isTrue,
+    );
+    expect(
+      loadedFromTimestamp.subscriptionEndDate?.isAtSameMomentAs(end),
+      isTrue,
+    );
 
-      final riderWithDates = RiderProfile(
-        id: 'r2',
-        name: 'Rider Two',
-        email: 'r2@example.com',
-        subscriptionDate: start,
-        subscriptionEndDate: end,
-      );
-      await riders.createOrUpdateRiderProfile(riderProfile: riderWithDates);
-      final loadedRoundTrip = await riders.getRiderProfileByEmail(
-        email: 'r2@example.com',
-      );
-      expect(
-        loadedRoundTrip?.subscriptionDate?.isAtSameMomentAs(start),
-        isTrue,
-      );
-      expect(
-        loadedRoundTrip?.subscriptionEndDate?.isAtSameMomentAs(end),
-        isTrue,
-      );
-    },
-  );
+    final riderWithDates = RiderProfile(
+      id: 'r2',
+      name: 'Rider Two',
+      email: 'r2@example.com',
+      subscriptionDate: start,
+      subscriptionEndDate: end,
+    );
+    await riders.createOrUpdateRiderProfile(riderProfile: riderWithDates);
+    final loadedRoundTrip = await riders.getRiderProfileByEmail(
+      email: 'r2@example.com',
+    );
+    expect(loadedRoundTrip?.subscriptionDate?.isAtSameMomentAs(start), isTrue);
+    expect(loadedRoundTrip?.subscriptionEndDate?.isAtSameMomentAs(end), isTrue);
+  });
 }
