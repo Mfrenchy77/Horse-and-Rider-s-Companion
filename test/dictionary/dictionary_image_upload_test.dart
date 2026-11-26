@@ -139,76 +139,85 @@ void main() {
   }
 
   group('DictionaryImageValidator', () {
-    test('accepts PNG, JPEG, and WebP and rejects invalid formats or sizes', () {
-      final png = DictionaryImageValidator.validate(
-        bytes: _pngBytes(),
-        fileName: 'Canter Diagram.PNG',
-      );
-      expect(png.contentType, 'image/png');
-      expect(png.fileName, 'canter-diagram.png');
-
-      final jpg = DictionaryImageValidator.validate(
-        bytes: _jpegBytes(),
-        fileName: 'lope_photo.jpeg',
-      );
-      expect(jpg.contentType, 'image/jpeg');
-      expect(jpg.fileName, 'lope_photo.jpg');
-
-      final webp = DictionaryImageValidator.validate(
-        bytes: _webpBytes(),
-        fileName: 'stride.webp',
-      );
-      expect(webp.contentType, 'image/webp');
-      expect(webp.fileName, 'stride.webp');
-
-      expect(
-        () => DictionaryImageValidator.validate(
-          bytes: Uint8List(0),
-          fileName: 'empty.png',
-        ),
-        throwsFormatException,
-      );
-      expect(
-        () => DictionaryImageValidator.validate(
-          bytes: Uint8List.fromList([0x47, 0x49, 0x46, 0x38]),
-          fileName: 'anim.gif',
-        ),
-        throwsFormatException,
-      );
-      expect(
-        () => DictionaryImageValidator.validate(
+    test(
+      'accepts PNG, JPEG, and WebP and rejects invalid formats or sizes',
+      () {
+        final png = DictionaryImageValidator.validate(
           bytes: _pngBytes(),
-          fileName: 'spoofed.jpg',
-        ),
-        throwsFormatException,
-      );
-      // Arbitrary text renamed to .png must be rejected.
-      expect(
-        () => DictionaryImageValidator.validate(
-          bytes: Uint8List.fromList('not actually a png'.codeUnits),
-          fileName: 'renamed.png',
-        ),
-        throwsFormatException,
-      );
-      expect(
-        () => DictionaryImageValidator.validate(
-          bytes: Uint8List(maxDictionaryImageBytes + 1),
-          fileName: 'huge.png',
-        ),
-        throwsFormatException,
-      );
-    });
+          fileName: 'Canter Diagram.PNG',
+        );
+        expect(png.contentType, 'image/png');
+        expect(png.fileName, 'canter-diagram.png');
 
-    test('isDictionaryImageUrl distinguishes HTTPS image URLs from non-image links', () {
-      expect(
-        isDictionaryImageUrl(
-          'https://firebasestorage.googleapis.com/v0/b/app/o/dictionary_public%2Fcanter%2Fphoto.webp?alt=media&token=123',
-        ),
-        isTrue,
-      );
-      expect(isDictionaryImageUrl('http://example.com/photo.png'), isFalse);
-      expect(isDictionaryImageUrl('https://example.com/article.html'), isFalse);
-    });
+        final jpg = DictionaryImageValidator.validate(
+          bytes: _jpegBytes(),
+          fileName: 'lope_photo.jpeg',
+        );
+        expect(jpg.contentType, 'image/jpeg');
+        expect(jpg.fileName, 'lope_photo.jpg');
+
+        final webp = DictionaryImageValidator.validate(
+          bytes: _webpBytes(),
+          fileName: 'stride.webp',
+        );
+        expect(webp.contentType, 'image/webp');
+        expect(webp.fileName, 'stride.webp');
+
+        expect(
+          () => DictionaryImageValidator.validate(
+            bytes: Uint8List(0),
+            fileName: 'empty.png',
+          ),
+          throwsFormatException,
+        );
+        expect(
+          () => DictionaryImageValidator.validate(
+            bytes: Uint8List.fromList([0x47, 0x49, 0x46, 0x38]),
+            fileName: 'anim.gif',
+          ),
+          throwsFormatException,
+        );
+        expect(
+          () => DictionaryImageValidator.validate(
+            bytes: _pngBytes(),
+            fileName: 'spoofed.jpg',
+          ),
+          throwsFormatException,
+        );
+        // Arbitrary text renamed to .png must be rejected.
+        expect(
+          () => DictionaryImageValidator.validate(
+            bytes: Uint8List.fromList('not actually a png'.codeUnits),
+            fileName: 'renamed.png',
+          ),
+          throwsFormatException,
+        );
+        expect(
+          () => DictionaryImageValidator.validate(
+            bytes: Uint8List(maxDictionaryImageBytes + 1),
+            fileName: 'huge.png',
+          ),
+          throwsFormatException,
+        );
+      },
+    );
+
+    test(
+      'isDictionaryImageUrl distinguishes HTTPS image URLs from non-image links',
+      () {
+        expect(
+          isDictionaryImageUrl(
+            'https://firebasestorage.googleapis.com/v0/b/app/o/dictionary_public%2Fcanter%2Fphoto.webp?alt=media&token=123',
+          ),
+          isTrue,
+        );
+        expect(isDictionaryImageUrl('http://example.com/photo.png'), isFalse);
+        expect(
+          isDictionaryImageUrl('https://example.com/article.html'),
+          isFalse,
+        );
+      },
+    );
   });
 
   group('Admin image manager & public inline gallery', () {
@@ -261,8 +270,9 @@ void main() {
               firestore: db,
               repository: repo,
               mediaStorage: storage,
-              pickImageFile: () async =>
-                  pickIndex < queuedPicks.length ? queuedPicks[pickIndex++] : null,
+              pickImageFile: () async => pickIndex < queuedPicks.length
+                  ? queuedPicks[pickIndex++]
+                  : null,
             ),
           ),
         );
@@ -355,8 +365,8 @@ void main() {
           await tester.ensureVisible(uploadBtn);
           await tester.tap(uploadBtn);
           await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump(const Duration(milliseconds: 100));
         }
         expect(find.text('Images (8/8)'), findsOneWidget);
         final disabledUploadBtn = tester.widget<OutlinedButton>(uploadBtn);
@@ -473,7 +483,9 @@ void main() {
         await tester.pumpAndSettle();
         expect(
           tester
-              .widget<TextFormField>(find.byKey(const Key('dictionaryField_id')))
+              .widget<TextFormField>(
+                find.byKey(const Key('dictionaryField_id')),
+              )
               .controller!
               .text,
           'jog',
@@ -491,7 +503,7 @@ void main() {
     );
 
     testWidgets(
-      'public Dictionary detail renders published images inline via SmartImage and keeps non-image links as buttons',
+      'public Dictionary detail renders first published image as hero, secondary images inline, and keeps non-image links as buttons',
       (tester) async {
         tester.view.physicalSize = const Size(1024, 900);
         tester.view.devicePixelRatio = 1;
@@ -506,6 +518,11 @@ void main() {
               'url':
                   'https://firebasestorage.googleapis.com/v0/b/demo/o/dictionary_public%2Fcanter%2Fstride.png?alt=media&token=pub1',
               'label': 'Three-beat canter sequence',
+            },
+            {
+              'url':
+                  'https://firebasestorage.googleapis.com/v0/b/demo/o/dictionary_public%2Fcanter%2Flead.png?alt=media&token=pub2',
+              'label': 'Inside lead alignment',
             },
             {
               'url': 'https://example.com/equine-biomechanics-guide',
@@ -526,12 +543,15 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
         await tester.pump(const Duration(milliseconds: 100));
 
-        expect(find.byType(SmartImage), findsOneWidget);
+        // First image is in the hero, second image is in the secondary gallery.
+        expect(find.byType(SmartImage), findsNWidgets(2));
+        expect(find.byKey(const Key('dictionaryHeroImage')), findsOneWidget);
         expect(find.text('Three-beat canter sequence'), findsOneWidget);
         expect(
           find.byKey(const Key('dictionaryInlineImage_0')),
           findsOneWidget,
         );
+        expect(find.text('Inside lead alignment'), findsOneWidget);
         // Non-image HTTPS resource remains a clickable link button.
         expect(find.text('Read biomechanics guide'), findsOneWidget);
       },

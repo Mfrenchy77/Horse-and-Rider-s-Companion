@@ -5,6 +5,7 @@ import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/adaptive_app_bar_actions.dart';
 import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
+import 'package:horseandriderscompanion/CommonWidgets/hero_header.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_admin_page.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
@@ -86,7 +87,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
         return Scaffold(
           appBar: ThemedAppBar(
             centerTitle: true,
-            title: const AppTitle(),
+            title: const _ResponsiveDictionaryAppBarTitle(),
             leading: BackButton(
               onPressed: () {
                 if (context.canPop()) {
@@ -434,150 +435,215 @@ class _DictionaryPageState extends State<DictionaryPage> {
   Widget _detail(DictionaryEntry entry, List<DictionaryEntry> entries) {
     final app = context.read<AppCubit>().state;
     final categories = entry.strings('categories');
+    final allMedia = (entry.data['media'] as List<dynamic>? ?? [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+    final firstImageIndex = allMedia.indexWhere(
+      (item) => isDictionaryImageUrl(item['url'] as String?),
+    );
+    final heroItem = firstImageIndex >= 0 ? allMedia[firstImageIndex] : null;
+    final heroUrl = heroItem?['url'] as String?;
+    final heroCaption = (heroItem?['label'] as String?)?.trim() ?? '';
+    final galleryMedia = [
+      for (var i = 0; i < allMedia.length; i++)
+        if (i != firstImageIndex) allMedia[i],
+    ];
+
     return AppSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (categories.isNotEmpty) ...[
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final cat in categories)
-                  AppStatusBadge(label: cat, tone: AppStatusTone.info),
-              ],
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            HeroHeader(
+              key: const Key('dictionaryHeroHeader'),
+              title: entry.term,
+              imageUrl: heroUrl,
+              imageKey: const Key('dictionaryHeroImage'),
+              tapKey: const Key('dictionaryHeroTapTarget'),
+              useSmartImage: true,
+              imageSemanticLabel: heroCaption.isNotEmpty
+                  ? heroCaption
+                  : 'Illustration for ${entry.term}',
+              categoryBadges: categories,
+              zoomTooltip: 'View full illustration',
+              heightBuilder: (maxWidth, {required hasImage}) =>
+                  (maxWidth * 0.52).clamp(220.0, 380.0),
             ),
-            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(AppTokens.spaceMd),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (heroUrl != null && heroCaption.isNotEmpty) ...[
+                    Text(
+                      heroCaption,
+                      key: const Key('dictionaryHeroCaption'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTokens.secondaryTextColor(context),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  Text(
+                    entry.definition,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (entry.strings('synonyms').isNotEmpty)
+                    _section(
+                      'Also called',
+                      Text(entry.strings('synonyms').join(' · ')),
+                    ),
+                  if (entry.explanation.isNotEmpty)
+                    _section(
+                      'In context',
+                      DictionaryText(
+                        text: entry.explanation,
+                        entries: entries
+                            .where((other) => other.id != entry.id)
+                            .toList(),
+                      ),
+                    ),
+                  if (entry.text('usage').isNotEmpty)
+                    _section(
+                      'Usage',
+                      DictionaryText(
+                        text: entry.text('usage'),
+                        entries: entries
+                            .where((other) => other.id != entry.id)
+                            .toList(),
+                      ),
+                    ),
+                  if (entry.text('regionalUsage').isNotEmpty)
+                    _section(
+                      'Regional variations',
+                      DictionaryText(
+                        text: entry.text('regionalUsage'),
+                        entries: entries
+                            .where((other) => other.id != entry.id)
+                            .toList(),
+                      ),
+                    ),
+                  if (entry.strings('examples').isNotEmpty)
+                    _section(
+                      'Examples',
+                      DictionaryText(
+                        text: entry.strings('examples').join('\n\n'),
+                        entries: entries
+                            .where((other) => other.id != entry.id)
+                            .toList(),
+                      ),
+                    ),
+                  if (entry.strings('relatedTerms').isNotEmpty)
+                    _section(
+                      'Related terminology',
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final id in entry.strings('relatedTerms'))
+                            if (DictionaryRepository.resolve(entries, id)
+                                case final related?)
+                              ActionChip(
+                                label: Text(related.term),
+                                onPressed: () =>
+                                    context.push('/Dictionary/${related.slug}'),
+                              ),
+                        ],
+                      ),
+                    ),
+                  if (entry.strings('skillIds').isNotEmpty)
+                    _section(
+                      'Related skills',
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final id in entry.strings('skillIds'))
+                            ActionChip(
+                              avatar: const Icon(
+                                Icons.account_tree_outlined,
+                                size: 16,
+                              ),
+                              label: Text(
+                                app.allSkills
+                                        .where((skill) => skill?.id == id)
+                                        .firstOrNull
+                                        ?.skillName ??
+                                    _skillLabels[id] ??
+                                    'Explore related skill',
+                              ),
+                              onPressed: () => SkillTreeView.openSkill(
+                                GoRouter.of(context),
+                                id,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (entry.strings('resourceIds').isNotEmpty)
+                    _section(
+                      'Related Resources',
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final id in entry.strings('resourceIds'))
+                            TextButton(
+                              onPressed: () => context.push(
+                                '/Resources/Comments/${Uri.encodeComponent(id)}',
+                              ),
+                              child: Text(
+                                app.resources
+                                        .where((resource) => resource.id == id)
+                                        .firstOrNull
+                                        ?.name ??
+                                    'Read Resource',
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (galleryMedia.isNotEmpty)
+                    _section(
+                      'Educational media',
+                      DictionaryMediaGallery(media: galleryMedia),
+                    ),
+                  if (entry.strings('attributions').isNotEmpty)
+                    _section(
+                      'Community contributors',
+                      Text(entry.strings('attributions').join(', ')),
+                    ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _suggest(entry),
+                        icon: const Icon(Icons.edit_note_outlined, size: 18),
+                        label: const Text('Suggest an improvement'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => shareAppLink(
+                          context,
+                          title: entry.term,
+                          dialogTitle: 'Share definition',
+                          url:
+                              '${resolveShareOrigin()}/Dictionary/${entry.slug}',
+                          text: entry.definition,
+                        ),
+                        icon: const Icon(Icons.share_outlined, size: 18),
+                        label: const Text('Share term'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
-          Text(entry.term, style: AppTokens.heroTitleStyle(context)),
-          const SizedBox(height: 12),
-          Text(
-            entry.definition,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          if (entry.strings('synonyms').isNotEmpty)
-            _section(
-              'Also called',
-              Text(entry.strings('synonyms').join(' · ')),
-            ),
-          if (entry.explanation.isNotEmpty)
-            _section(
-              'In context',
-              DictionaryText(
-                text: entry.explanation,
-                entries: entries
-                    .where((other) => other.id != entry.id)
-                    .toList(),
-              ),
-            ),
-          if (entry.text('usage').isNotEmpty)
-            _section('Usage', Text(entry.text('usage'))),
-          if (entry.text('regionalUsage').isNotEmpty)
-            _section('Regional variations', Text(entry.text('regionalUsage'))),
-          if (entry.strings('examples').isNotEmpty)
-            _section('Examples', Text(entry.strings('examples').join('\n\n'))),
-          if (entry.strings('relatedTerms').isNotEmpty)
-            _section(
-              'Related terminology',
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final id in entry.strings('relatedTerms'))
-                    if (DictionaryRepository.resolve(entries, id)
-                        case final related?)
-                      ActionChip(
-                        label: Text(related.term),
-                        onPressed: () =>
-                            context.push('/Dictionary/${related.slug}'),
-                      ),
-                ],
-              ),
-            ),
-          if (entry.strings('skillIds').isNotEmpty)
-            _section(
-              'Related skills',
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final id in entry.strings('skillIds'))
-                    ActionChip(
-                      avatar: const Icon(Icons.account_tree_outlined, size: 16),
-                      label: Text(
-                        app.allSkills
-                                .where((skill) => skill?.id == id)
-                                .firstOrNull
-                                ?.skillName ??
-                            _skillLabels[id] ??
-                            'Explore related skill',
-                      ),
-                      onPressed: () =>
-                          SkillTreeView.openSkill(GoRouter.of(context), id),
-                    ),
-                ],
-              ),
-            ),
-          if (entry.strings('resourceIds').isNotEmpty)
-            _section(
-              'Related Resources',
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final id in entry.strings('resourceIds'))
-                    TextButton(
-                      onPressed: () => context.push(
-                        '/Resources/Comments/${Uri.encodeComponent(id)}',
-                      ),
-                      child: Text(
-                        app.resources
-                                .where((resource) => resource.id == id)
-                                .firstOrNull
-                                ?.name ??
-                            'Read Resource',
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          if ((entry.data['media'] as List<dynamic>? ?? []).isNotEmpty)
-            _section(
-              'Educational media',
-              DictionaryMediaGallery(
-                media: (entry.data['media'] as List<dynamic>)
-                    .map((item) => (item as Map).cast<String, dynamic>())
-                    .toList(),
-              ),
-            ),
-          if (entry.strings('attributions').isNotEmpty)
-            _section(
-              'Community contributors',
-              Text(entry.strings('attributions').join(', ')),
-            ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 10,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _suggest(entry),
-                icon: const Icon(Icons.edit_note_outlined, size: 18),
-                label: const Text('Suggest an improvement'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => shareAppLink(
-                  context,
-                  title: entry.term,
-                  dialogTitle: 'Share definition',
-                  url: '${resolveShareOrigin()}/Dictionary/${entry.slug}',
-                  text: entry.definition,
-                ),
-                icon: const Icon(Icons.share_outlined, size: 18),
-                label: const Text('Share term'),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -598,4 +664,34 @@ class _DictionaryPageState extends State<DictionaryPage> {
       ],
     ),
   );
+}
+
+class _ResponsiveDictionaryAppBarTitle extends StatelessWidget {
+  const _ResponsiveDictionaryAppBarTitle();
+
+  static const double _wordmarkMinWidth = 200;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: "Horse & Rider's Companion",
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final showFullWordmark =
+              !constraints.hasBoundedWidth ||
+              constraints.maxWidth >= _wordmarkMinWidth;
+          if (showFullWordmark) {
+            return const AppTitle(key: Key('dictionaryAppBarWordmark'));
+          }
+          return const Image(
+            key: Key('dictionaryAppBarCompactLogo'),
+            color: Colors.white,
+            fit: BoxFit.contain,
+            image: AssetImage('assets/horse_logo.png'),
+            height: 30,
+          );
+        },
+      ),
+    );
+  }
 }

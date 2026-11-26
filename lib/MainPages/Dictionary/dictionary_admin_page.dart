@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -19,10 +18,7 @@ import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dar
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class _InboxBundle {
-  const _InboxBundle({
-    required this.items,
-    required this.publishedEntries,
-  });
+  const _InboxBundle({required this.items, required this.publishedEntries});
 
   final List<Map<String, dynamic>> items;
   final List<DictionaryEntry> publishedEntries;
@@ -67,7 +63,8 @@ class DictionaryAdminPage extends StatefulWidget {
   });
   static const path = '/DictionaryReview';
 
-  final FirebaseFirestore? firestore;
+  /// Optional legacy Firestore passthrough when [repository] is omitted.
+  final Object? firestore;
   final DictionaryRepository? repository;
   final MediaStorageRepository? mediaStorage;
   final DictionaryImagePicker? pickImageFile;
@@ -77,28 +74,21 @@ class DictionaryAdminPage extends StatefulWidget {
 }
 
 class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
-  FirebaseFirestore get _db => widget.firestore ?? FirebaseFirestore.instance;
   late final DictionaryRepository _repository =
-      widget.repository ?? DictionaryRepository(firestore: widget.firestore);
+      widget.repository ??
+      DictionaryRepository.withLegacyFirestore(widget.firestore);
 
   Future<_InboxBundle>? _inbox;
   String? _statusFilter;
 
   Future<_InboxBundle> _load() async {
     final results = await Future.wait<dynamic>([
-      _db
-          .collection('DictionarySuggestions')
-          .orderBy('createdAt', descending: true)
-          .limit(100)
-          .get(),
+      _repository.loadSuggestions(),
       _repository.load(),
     ]);
-    final snap = results[0] as QuerySnapshot<Map<String, dynamic>>;
+    final items = results[0] as List<Map<String, dynamic>>;
     final published = results[1] as List<DictionaryEntry>;
-    return _InboxBundle(
-      items: snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList(),
-      publishedEntries: published,
-    );
+    return _InboxBundle(items: items, publishedEntries: published);
   }
 
   void _refresh() => setState(() => _inbox = _load());
@@ -116,10 +106,10 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
 
   Future<List<DictionaryEntry>> _loadAllEntries() async {
     final published = await _repository.load();
-    final drafts = await _db.collection('DictionaryDrafts').get();
+    final drafts = await _repository.loadDrafts();
     final entriesById = {for (final entry in published) entry.id: entry};
-    for (final doc in drafts.docs) {
-      entriesById[doc.id] = DictionaryEntry(doc.data());
+    for (final draft in drafts) {
+      entriesById[draft.id] = draft;
     }
     return entriesById.values.toList()
       ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
@@ -129,7 +119,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     List<DictionaryEntry> entries,
     Map<String, dynamic> suggestion,
   ) {
-    final lookup = ((suggestion['termId'] as String?)?.trim().isNotEmpty ?? false)
+    final lookup =
+        ((suggestion['termId'] as String?)?.trim().isNotEmpty ?? false)
         ? suggestion['termId'] as String
         : (suggestion['term'] as String? ?? '');
     if (lookup.trim().isEmpty) return null;
@@ -168,15 +159,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
   Future<void> _showAuditHistory(Map<String, dynamic> item) async {
     final id = item['id'] as String?;
     if (id == null || id.isEmpty) return;
-    final snap = await _db
-        .collection('DictionarySuggestions')
-        .doc(id)
-        .collection('AuditEvents')
-        .orderBy('at', descending: true)
-        .limit(30)
-        .get();
+    final events = await _repository.loadSuggestionHistory(id);
     if (!mounted) return;
-    final events = snap.docs.map((d) => d.data()).toList();
     await showAppGlassDialog<void>(
       context: context,
       builder: (ctx) => AppGlassDialog(
@@ -238,11 +222,11 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
 
   Future<void> _edit({Map<String, dynamic>? suggestion}) async {
     final published = await _repository.load();
-    final drafts = await _db.collection('DictionaryDrafts').get();
+    final drafts = await _repository.loadDrafts();
     if (!mounted) return;
     final entriesById = {for (final entry in published) entry.id: entry};
-    for (final doc in drafts.docs) {
-      entriesById[doc.id] = DictionaryEntry(doc.data());
+    for (final draft in drafts) {
+      entriesById[draft.id] = draft;
     }
     final allEntries = entriesById.values.toList()
       ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
@@ -257,7 +241,6 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     await showAppGlassDialog<void>(
       context: context,
       builder: (_) => _EntryEditor(
-        firestore: _db,
         repository: _repository,
         mediaStorage: widget.mediaStorage,
         pickImageFile: widget.pickImageFile,
@@ -305,7 +288,6 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     await showAppGlassDialog<void>(
       context: context,
       builder: (_) => _EntryEditor(
-        firestore: _db,
         repository: _repository,
         mediaStorage: widget.mediaStorage,
         pickImageFile: widget.pickImageFile,
@@ -419,7 +401,9 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     final isAuthorizedAdmin =
         !appState.isGuest &&
         appState.isAdmin &&
-        (widget.firestore != null || appState.user.emailVerified);
+        (widget.firestore != null ||
+            widget.repository != null ||
+            appState.user.emailVerified);
     if (!isAuthorizedAdmin) {
       return Scaffold(
         appBar: ThemedAppBar(title: const Text('Dictionary review')),
@@ -735,9 +719,7 @@ class _ReasonCallout extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1036,7 +1018,6 @@ class _ReviewDialogState extends State<_ReviewDialog> {
 
 class _EntryEditor extends StatefulWidget {
   const _EntryEditor({
-    required this.firestore,
     required this.repository,
     required this.existingEntries,
     this.mediaStorage,
@@ -1045,7 +1026,6 @@ class _EntryEditor extends StatefulWidget {
     this.publishedTarget,
     this.suggestion,
   });
-  final FirebaseFirestore firestore;
   final DictionaryRepository repository;
   final MediaStorageRepository? mediaStorage;
   final DictionaryImagePicker? pickImageFile;
@@ -1153,12 +1133,11 @@ class _EntryEditorState extends State<_EntryEditor> {
           };
       var data = Map<String, dynamic>.from(initial);
       if (initial['id'] != null && (initial['id'] as String).isNotEmpty) {
-        final draft = await widget.firestore
-            .collection('DictionaryDrafts')
-            .doc(initial['id'] as String)
-            .get();
-        if (draft.exists) {
-          data = Map<String, dynamic>.from(draft.data()!);
+        final draft = await widget.repository.loadDraft(
+          initial['id'] as String,
+        );
+        if (draft != null) {
+          data = Map<String, dynamic>.from(draft.data);
           _existingDraft = true;
         }
       }
@@ -1249,10 +1228,7 @@ class _EntryEditorState extends State<_EntryEditor> {
 
   List<Map<String, dynamic>> _mediaPayload() => [
     for (var i = 0; i < _mediaUrls.length; i++)
-      {
-        'url': _mediaUrls[i],
-        'label': _mediaLabelControllers[i].text.trim(),
-      },
+      {'url': _mediaUrls[i], 'label': _mediaLabelControllers[i].text.trim()},
   ];
 
   Map<String, dynamic> _currentEntryPayload() => <String, dynamic>{
@@ -1496,18 +1472,8 @@ class _EntryEditorState extends State<_EntryEditor> {
   Future<void> _openRevisions() async {
     final id = _fields['id']!.text.trim();
     if (id.isEmpty) return;
-    final snap = await widget.firestore
-        .collection('DictionaryDrafts')
-        .doc(id)
-        .collection('Revisions')
-        .get();
+    final revisions = await widget.repository.loadEntryRevisions(id);
     if (!mounted) return;
-    final revisions = snap.docs.map((d) => d.data()).toList()
-      ..sort(
-        (a, b) => ((b['revision'] as int?) ?? 0).compareTo(
-          (a['revision'] as int?) ?? 0,
-        ),
-      );
     await showAppGlassDialog<void>(
       context: context,
       builder: (ctx) => AppGlassDialog(
@@ -1569,13 +1535,18 @@ class _EntryEditorState extends State<_EntryEditor> {
         if (_hasRevisionMismatch && _acknowledgedMismatch)
           'acknowledgeRevisionMismatch': true,
       });
-      if (action == 'publish') {
+      if (action == 'publish' || action == 'unpublish' || action == 'archive') {
         DictionaryRepository.invalidateCache();
+        if (widget.repository.usesDefaultBackend) {
+          unawaited(DictionaryRepository.refreshCachedEntries());
+        }
       }
       _savedOrPublished = true;
       final activeUrls = _mediaUrls.toSet();
       _cleanupSessionDraftUrls(
-        _sessionUploadedDraftUrls.where((u) => !activeUrls.contains(u)).toList(),
+        _sessionUploadedDraftUrls
+            .where((u) => !activeUrls.contains(u))
+            .toList(),
       );
       if (mounted) Navigator.pop(context);
     } catch (error) {
@@ -1609,7 +1580,8 @@ class _EntryEditorState extends State<_EntryEditor> {
         : null;
 
     final keysToShow = <String>{
-      if (proposedFields != null) ...proposedFields.changedKeysAgainst(baseFields),
+      if (proposedFields != null)
+        ...proposedFields.changedKeysAgainst(baseFields),
       ...currentFields.changedKeysAgainst(baseFields),
     };
     final orderedKeys = [
@@ -1668,9 +1640,7 @@ class _EntryEditorState extends State<_EntryEditor> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
       ),
       child: Column(
@@ -1685,9 +1655,9 @@ class _EntryEditorState extends State<_EntryEditor> {
             children: [
               Text(
                 'Images (${_mediaUrls.length}/$maxDictionaryMediaItems)',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               OutlinedButton.icon(
                 key: const Key('dictionaryUploadImageButton'),
@@ -1939,11 +1909,7 @@ class _EntryEditorState extends State<_EntryEditor> {
                         ? 3
                         : 1,
                     maxLines:
-                        [
-                          'definition',
-                          'explanation',
-                          ...lists,
-                        ].contains(key)
+                        ['definition', 'explanation', ...lists].contains(key)
                         ? 8
                         : 1,
                     decoration: InputDecoration(

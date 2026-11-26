@@ -41,9 +41,9 @@ Future<void> _captureView(WidgetTester tester, String filename) async {
     if (byteData != null) {
       final dir = Directory(_scratchDir);
       if (!dir.existsSync()) dir.createSync(recursive: true);
-      await File('$_scratchDir/$filename').writeAsBytes(
-        byteData.buffer.asUint8List(),
-      );
+      await File(
+        '$_scratchDir/$filename',
+      ).writeAsBytes(byteData.buffer.asUint8List());
     }
   });
 }
@@ -90,9 +90,9 @@ void main() {
   );
 
   test(
-    'starter meanings cover all 12 requested terms, Canter/Lope unity, synonyms, categories, and ambiguous words',
+    'starter, Batch 1, and Batch 2 meanings cover all requested terms, cross-discipline unity, synonyms, categories, and ambiguous words',
     () {
-      expect(entries, hasLength(11));
+      expect(entries, hasLength(28));
       const starterTerms = [
         'Green',
         'Green Broke',
@@ -106,10 +106,37 @@ void main() {
         'Counter-Canter',
         'Poll',
         'Withers',
+        'Trot',
+        'Jog',
+        'Posting Trot',
+        'Rising Trot',
+        'Trot Diagonal',
+        'Canter Lead',
+        'Lope Lead',
+        'Aids',
+        'Cues',
+        'Rhythm',
+        'Rein Contact',
+        'Transitions',
+        'Forehand',
+        'Hindquarters',
+        'Girth',
+        'Cinch',
+        'Quick-Release Knot',
+        'TPR',
+        'Negative Reinforcement',
+        'Positive Reinforcement',
+        'Self-Carriage',
+        'Longeing',
+        'Lunging',
       ];
       for (final term in starterTerms) {
         final resolved = DictionaryRepository.resolve(entries, term);
-        expect(resolved, isNotNull, reason: 'Starter term "$term" must resolve');
+        expect(
+          resolved,
+          isNotNull,
+          reason: 'Starter term "$term" must resolve',
+        );
       }
       // Canter and Lope resolve to the single canonical entry 'canter'
       final canter = DictionaryRepository.resolve(entries, 'Canter')!;
@@ -133,7 +160,7 @@ void main() {
       );
       expect(
         DictionaryRepository.search(entries, category: 'Anatomy'),
-        hasLength(2),
+        hasLength(4),
       );
       expect(
         DictionaryRepository.search(entries, letter: 'W').single.slug,
@@ -210,35 +237,36 @@ void main() {
     expect(await DictionaryRepository(firestore: db).load(), isEmpty);
   });
 
-  testWidgets('public browse supports search, filters, mobile and desktop layouts', (
-    tester,
-  ) async {
-    // 1. Desktop guest browse
-    tester.view.physicalSize = const Size(1180, 860);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(
-      wrap(DictionaryPage(repository: RecordingDictionary(entries))),
-    );
-    await tester.pumpAndSettle();
-    await _captureView(tester, 'dictionary_guest_desktop.png');
+  testWidgets(
+    'public browse supports search, filters, mobile and desktop layouts',
+    (tester) async {
+      // 1. Desktop guest browse
+      tester.view.physicalSize = const Size(1180, 860);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        wrap(DictionaryPage(repository: RecordingDictionary(entries))),
+      );
+      await tester.pumpAndSettle();
+      await _captureView(tester, 'dictionary_guest_desktop.png');
 
-    // 2. Mobile guest browse
-    tester.view.physicalSize = const Size(390, 850);
-    await tester.pumpAndSettle();
-    await _captureView(tester, 'dictionary_guest_mobile.png');
+      // 2. Mobile guest browse
+      tester.view.physicalSize = const Size(390, 850);
+      await tester.pumpAndSettle();
+      await _captureView(tester, 'dictionary_guest_mobile.png');
 
-    await tester.enterText(find.byType(TextField), 'loping');
-    await tester.pumpAndSettle();
-    expect(find.text('Canter'), findsOneWidget);
-    expect(find.textContaining('Also called: loping'), findsOneWidget);
-    expect(find.text('Withers'), findsNothing);
-    await tester.enterText(find.byType(TextField), 'zzzzz');
-    await tester.pumpAndSettle();
-    expect(find.textContaining('No matching terms.'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      await tester.enterText(find.byType(TextField), 'loping');
+      await tester.pumpAndSettle();
+      expect(find.text('Canter'), findsOneWidget);
+      expect(find.textContaining('Also called: loping'), findsOneWidget);
+      expect(find.text('Withers'), findsNothing);
+      await tester.enterText(find.byType(TextField), 'zzzzz');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('No matching terms.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('unauthenticated detail deep links and synonym URLs open', (
     tester,
@@ -282,182 +310,184 @@ void main() {
     await _captureView(tester, 'dictionary_term_detail.png');
   });
 
-  testWidgets('context definition opens in SkillDetailV2Panel and Resources without replacing reader', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1024, 860);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'context definition opens in SkillDetailV2Panel and Resources without replacing reader',
+    (tester) async {
+      tester.view.physicalSize = const Size(1024, 860);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    const sampleSkill = CurriculumSkill(
-      id: 'rider.mounted.half_halt',
-      familyId: 'fam_mounted',
-      subject: SkillSubject.rider,
-      realm: SkillCategory.Mounted,
-      name: 'Balancing Transitions',
-      summary: 'Use a gentle half halt before asking for canter.',
-      purpose: 'Prepare balanced transitions without pulling.',
-      sortOrder: 1,
-      availableLevels: [DifficultyState.Introductory],
-      levels: {
-        DifficultyState.Introductory: SkillLevelDefinition(
-          overview: 'Coordinate seat and aids during groundwork and riding.',
-          learning: 'Practises timely release.',
-          proficient: 'Maintains soft balance.',
-        ),
-      },
-    );
-    const v2State = SkillTreeV2State(
-      realm: SkillCategory.Mounted,
-      skills: [sampleSkill],
-      selectedSkillId: 'rider.mounted.half_halt',
-      selectedLevel: DifficultyState.Introductory,
-    );
+      const sampleSkill = CurriculumSkill(
+        id: 'rider.mounted.half_halt',
+        familyId: 'fam_mounted',
+        subject: SkillSubject.rider,
+        realm: SkillCategory.Mounted,
+        name: 'Balancing Transitions',
+        summary: 'Use a gentle half halt before asking for canter.',
+        purpose: 'Prepare balanced transitions without pulling.',
+        sortOrder: 1,
+        availableLevels: [DifficultyState.Introductory],
+        levels: {
+          DifficultyState.Introductory: SkillLevelDefinition(
+            overview: 'Coordinate seat and aids during groundwork and riding.',
+            learning: 'Practises timely release.',
+            proficient: 'Maintains soft balance.',
+          ),
+        },
+      );
+      const v2State = SkillTreeV2State(
+        realm: SkillCategory.Mounted,
+        skills: [sampleSkill],
+        selectedSkillId: 'rider.mounted.half_halt',
+        selectedLevel: DifficultyState.Introductory,
+      );
 
-    await tester.pumpWidget(
-      wrap(
-        Scaffold(
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                SkillDetailV2Panel(
-                  state: v2State,
-                  skill: sampleSkill,
-                  allResources: const [],
-                  canSelfAssess: false,
-                  selfAssessDisabledReason: null,
-                  canVerify: false,
-                  onSelectLevel: (_) {},
-                  onSelfAssess: (_, _) {},
-                  onVerifyLevel: (_, {required verified}) {},
-                  onSelectRelatedSkill: (_) {},
-                  onChangeResourceSort: (_) {},
-                ),
-                CommentPageHeader(
-                  resource: Resource(
-                    id: 'res-1',
-                    name: 'Lateral Suppleness Guide',
-                    description: 'Introducing shoulder-in on a calm circle.',
-                    skillTreeIds: const ['rider.mounted.shoulder_in'],
+      await tester.pumpWidget(
+        wrap(
+          Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  SkillDetailV2Panel(
+                    state: v2State,
+                    skill: sampleSkill,
+                    allResources: const [],
+                    canSelfAssess: false,
+                    selfAssessDisabledReason: null,
+                    canVerify: false,
+                    onSelectLevel: (_) {},
+                    onSelfAssess: (_, _) {},
+                    onVerifyLevel: (_, {required verified}) {},
+                    onSelectRelatedSkill: (_) {},
+                    onChangeResourceSort: (_) {},
                   ),
-                ),
-              ],
+                  CommentPageHeader(
+                    resource: Resource(
+                      id: 'res-1',
+                      name: 'Lateral Suppleness Guide',
+                      description: 'Introducing shoulder-in on a calm circle.',
+                      skillTreeIds: const ['rider.mounted.shoulder_in'],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // Recognized terms in SkillDetailV2Panel AND Resource detail header are interactive!
-    expect(find.widgetWithText(TextButton, 'half halt'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'shoulder-in'), findsOneWidget);
+      // Recognized terms in SkillDetailV2Panel AND Resource detail header are interactive!
+      expect(find.widgetWithText(TextButton, 'half halt'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'shoulder-in'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(TextButton, 'half halt'));
-    await tester.pumpAndSettle();
-    expect(find.text('Full definition'), findsOneWidget);
-    expect(find.textContaining('brief, coordinated request'), findsOneWidget);
-    await _captureView(tester, 'dictionary_contextual_popover.png');
+      await tester.tap(find.widgetWithText(TextButton, 'half halt'));
+      await tester.pumpAndSettle();
+      expect(find.text('View full definition'), findsOneWidget);
+      expect(find.textContaining('brief, coordinated request'), findsOneWidget);
+      await _captureView(tester, 'dictionary_contextual_popover.png');
 
-    await tester.tap(find.text('Close'));
-    await tester.pumpAndSettle();
-  });
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+    },
+  );
 
-  testWidgets('guest submission succeeds, encourages optional account creation, and signed-in submission confirms private follow-up', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(800, 820);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'guest submission succeeds, encourages optional account creation, and signed-in submission confirms private follow-up',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 820);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    // 1. Guest flow
-    harness.cubit.emit(harness.cubit.state.copyWith(isGuest: true));
-    final repo = RecordingDictionary(entries);
-    await tester.pumpWidget(
-      wrap(Scaffold(body: DictionarySuggestionDialog(repository: repo))),
-    );
-    await tester.pumpAndSettle();
-    await _captureView(tester, 'dictionary_guest_suggestion.png');
+      // 1. Guest flow
+      harness.cubit.emit(harness.cubit.state.copyWith(isGuest: true));
+      final repo = RecordingDictionary(entries);
+      await tester.pumpWidget(
+        wrap(Scaffold(body: DictionarySuggestionDialog(repository: repo))),
+      );
+      await tester.pumpAndSettle();
+      await _captureView(tester, 'dictionary_guest_suggestion.png');
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Jog');
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      'Explain Western usage of jog.',
-    );
-    expect(
-      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
-      isFalse,
-    );
-    await tester.tap(find.text('Submit suggestion'));
-    await tester.pumpAndSettle();
-    expect(repo.submitted?['recognitionConsent'], isFalse);
-    expect(repo.submitted?['publicName'], '');
-    expect(find.textContaining('submitted for review'), findsOneWidget);
-    expect(
-      find.byKey(const Key('dictionaryCreateAccountButton')),
-      findsOneWidget,
-    );
-    expect(find.text('Sign in'), findsNothing);
+      await tester.enterText(find.byType(TextFormField).at(0), 'Jog');
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'Explain Western usage of jog.',
+      );
+      expect(
+        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        isFalse,
+      );
+      await tester.tap(find.text('Submit suggestion'));
+      await tester.pumpAndSettle();
+      expect(repo.submitted?['recognitionConsent'], isFalse);
+      expect(repo.submitted?['publicName'], '');
+      expect(find.textContaining('submitted for review'), findsOneWidget);
+      expect(
+        find.byKey(const Key('dictionaryCreateAccountButton')),
+        findsOneWidget,
+      );
+      expect(find.text('Sign in'), findsNothing);
 
-    // 2. Signed-in flow with opt-in attribution
-    harness.cubit.emit(
-      harness.cubit.state.copyWith(
-        isGuest: false,
-        usersProfile: RiderProfile(
-          id: 'member',
-          email: 'rider@example.com',
-          name: 'Alex Rider',
-        ),
-        user: const User(
-          id: 'uid-alex',
-          email: 'rider@example.com',
-          name: 'Alex Rider',
+      // 2. Signed-in flow with opt-in attribution
+      harness.cubit.emit(
+        harness.cubit.state.copyWith(
           isGuest: false,
-          emailVerified: true,
-        ),
-      ),
-    );
-    await tester.pumpWidget(
-      wrap(
-        Scaffold(
-          body: DictionarySuggestionDialog(
-            key: const Key('signedInSuggestionDialog'),
-            repository: repo,
-            entry: entries.first,
+          usersProfile: RiderProfile(
+            id: 'member',
+            email: 'rider@example.com',
+            name: 'Alex Rider',
+          ),
+          user: const User(
+            id: 'uid-alex',
+            email: 'rider@example.com',
+            name: 'Alex Rider',
+            isGuest: false,
+            emailVerified: true,
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('suggestionField_explanation')),
-      'Clarify arena vs trail examples.',
-    );
-    await tester.ensureVisible(
-      find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
-    );
-    await tester.tap(
-      find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
-    );
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('dictionaryPublicNameField')),
-      'Alex R.',
-    );
-    await _captureView(tester, 'dictionary_signed_in_suggestion.png');
+      );
+      await tester.pumpWidget(
+        wrap(
+          Scaffold(
+            body: DictionarySuggestionDialog(
+              key: const Key('signedInSuggestionDialog'),
+              repository: repo,
+              entry: entries.first,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('suggestionField_explanation')),
+        'Clarify arena vs trail examples.',
+      );
+      await tester.ensureVisible(
+        find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
+      );
+      await tester.tap(
+        find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('dictionaryPublicNameField')),
+        'Alex R.',
+      );
+      await _captureView(tester, 'dictionary_signed_in_suggestion.png');
 
-    await tester.tap(find.text('Submit suggestion'));
-    await tester.pumpAndSettle();
-    expect(repo.submitted?['kind'], 'correction');
-    expect(repo.submitted?['recognitionConsent'], isTrue);
-    expect(repo.submitted?['publicName'], 'Alex R.');
-    expect(
-      find.textContaining('email address is never shown publicly'),
-      findsOneWidget,
-    );
-  });
+      await tester.tap(find.text('Submit suggestion'));
+      await tester.pumpAndSettle();
+      expect(repo.submitted?['kind'], 'correction');
+      expect(repo.submitted?['recognitionConsent'], isTrue);
+      expect(repo.submitted?['publicName'], 'Alex R.');
+      expect(
+        find.textContaining('email address is never shown publicly'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('Guest Welcome opens the public Dictionary from dedicated card', (
     tester,
@@ -507,8 +537,8 @@ void main() {
       // 2. Verified administrator moderation & publication workflow
       final db = FakeFirebaseFirestore();
       await db.collection('DictionarySuggestions').doc('sug-1').set({
-        'term': 'Jog',
-        'proposal': 'A relaxed two-beat Western trot.',
+        'term': 'Cavaletti',
+        'proposal': 'Low raised poles used to build rhythm and balance.',
         'kind': 'missing_term',
         'status': 'approved',
         'recognitionConsent': true,
@@ -560,7 +590,7 @@ void main() {
         wrap(DictionaryAdminPage(firestore: db, repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Jog'), findsOneWidget);
+      expect(find.text('Cavaletti'), findsOneWidget);
       expect(
         find.textContaining('Opt-in recognition requested as: Taylor Trail'),
         findsOneWidget,
@@ -591,7 +621,7 @@ void main() {
 
       await tester.enterText(
         find.byKey(const Key('dictionaryField_term')),
-        'Jog',
+        'Cavaletti',
       );
       await tester.pumpAndSettle();
       expect(
@@ -601,7 +631,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('dictionaryPreviewButton')));
       await tester.pumpAndSettle();
-      expect(find.text('Preview · Jog'), findsOneWidget);
+      expect(find.text('Preview · Cavaletti'), findsOneWidget);
       await tester.tap(find.text('Close preview'));
       await tester.pumpAndSettle();
 
@@ -611,7 +641,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.calls.last.$1, 'editDictionary');
       expect(repo.calls.last.$2['action'], 'publish');
-      expect(repo.calls.last.$2['id'], 'jog');
+      expect(repo.calls.last.$2['id'], 'cavaletti');
       expect(repo.calls.last.$2['suggestionId'], 'sug-1');
     },
   );

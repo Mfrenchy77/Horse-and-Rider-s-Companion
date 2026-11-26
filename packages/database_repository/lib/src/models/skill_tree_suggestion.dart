@@ -1,6 +1,5 @@
 // ignore_for_file: public_member_api_docs
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 /// Categories of community Skill Tree curriculum suggestions.
@@ -49,11 +48,7 @@ enum SuggestionStatus {
     'Approved (Alias / Component)',
     isAdminOnly: true,
   ),
-  approvedAsLevel(
-    'approved_as_level',
-    'Approved (Level)',
-    isAdminOnly: true,
-  ),
+  approvedAsLevel('approved_as_level', 'Approved (Level)', isAdminOnly: true),
   approvedAsNewSkill(
     'approved_as_new_skill',
     'Approved (New Skill)',
@@ -72,11 +67,7 @@ enum SuggestionStatus {
     isAdminOnly: true,
   );
 
-  const SuggestionStatus(
-    this.value,
-    this.label, {
-    required this.isAdminOnly,
-  });
+  const SuggestionStatus(this.value, this.label, {required this.isAdminOnly});
 
   /// Wire/Firestore string identifier.
   final String value;
@@ -129,19 +120,19 @@ class SkillTreeSuggestionDraft {
 
   /// Converts this draft to the Cloud Function payload map.
   Map<String, dynamic> toPayload() => {
-        'contributionCategory': contributionCategory.value,
-        'subject': subject,
-        'realm': realm,
-        'familyId': familyId,
-        'targetSkillId': targetSkillId,
-        'targetSkillName': targetSkillName,
-        'targetLevel': targetLevel,
-        'title': title,
-        'description': description,
-        'rationale': rationale,
-        'proposedAlias': proposedAlias,
-        'creditConsent': creditConsent,
-      };
+    'contributionCategory': contributionCategory.value,
+    'subject': subject,
+    'realm': realm,
+    'familyId': familyId,
+    'targetSkillId': targetSkillId,
+    'targetSkillName': targetSkillName,
+    'targetLevel': targetLevel,
+    'title': title,
+    'description': description,
+    'rationale': rationale,
+    'proposedAlias': proposedAlias,
+    'creditConsent': creditConsent,
+  };
 }
 
 /// Staff review update payload for an existing [SkillTreeSuggestion].
@@ -169,9 +160,7 @@ class SuggestionReviewUpdate {
 
   /// Converts this update to the Cloud Function payload map.
   Map<String, dynamic> toPayload() {
-    final payload = <String, dynamic>{
-      'suggestionId': suggestionId,
-    };
+    final payload = <String, dynamic>{'suggestionId': suggestionId};
     if (status != null) {
       payload['status'] = status!.value;
     }
@@ -286,33 +275,33 @@ class SkillTreeSuggestion extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        submittedByUid,
-        submitterEmail,
-        submitterName,
-        contributionCategory,
-        subject,
-        realm,
-        familyId,
-        targetSkillId,
-        targetSkillName,
-        targetLevel,
-        title,
-        description,
-        rationale,
-        proposedAlias,
-        creditConsent,
-        creditGranted,
-        status,
-        assignedToUid,
-        publicResolutionNote,
-        reviewedByUid,
-        reviewedByName,
-        createdAt,
-        updatedAt,
-        reviewedAt,
-        incorporatedAt,
-      ];
+    id,
+    submittedByUid,
+    submitterEmail,
+    submitterName,
+    contributionCategory,
+    subject,
+    realm,
+    familyId,
+    targetSkillId,
+    targetSkillName,
+    targetLevel,
+    title,
+    description,
+    rationale,
+    proposedAlias,
+    creditConsent,
+    creditGranted,
+    status,
+    assignedToUid,
+    publicResolutionNote,
+    reviewedByUid,
+    reviewedByName,
+    createdAt,
+    updatedAt,
+    reviewedAt,
+    incorporatedAt,
+  ];
 }
 
 /// Private staff audit event stored under
@@ -365,17 +354,17 @@ class SuggestionAuditEvent extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        type,
-        actorUid,
-        actorName,
-        actorRole,
-        fromStatus,
-        toStatus,
-        privateNote,
-        publicNote,
-        at,
-      ];
+    id,
+    type,
+    actorUid,
+    actorName,
+    actorRole,
+    fromStatus,
+    toStatus,
+    privateNote,
+    publicNote,
+    at,
+  ];
 }
 
 /// Domain exception thrown by Skill Tree suggestion store operations.
@@ -392,10 +381,19 @@ class SkillTreeSuggestionException implements Exception {
 
 DateTime? _parseDate(dynamic value) {
   if (value == null) return null;
-  if (value is Timestamp) return value.toDate().toUtc();
   if (value is DateTime) return value.toUtc();
+  if (value is int) {
+    return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+  }
   if (value is String && value.isNotEmpty) {
     return DateTime.tryParse(value)?.toUtc();
   }
+  try {
+    // Supports provider timestamp objects (e.g. Firestore Timestamp) without
+    // coupling domain models to cloud_firestore.
+    // ignore: avoid_dynamic_calls
+    final converted = value.toDate();
+    if (converted is DateTime) return converted.toUtc();
+  } catch (_) {}
   return null;
 }

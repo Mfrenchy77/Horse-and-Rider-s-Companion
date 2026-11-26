@@ -222,8 +222,8 @@ class SkillDetailV2Panel extends StatelessWidget {
                   ),
                   const SizedBox(width: AppTokens.spaceSm),
                   Expanded(
-                    child: Text(
-                      skill.safety.join(' • '),
+                    child: ContextualDictionaryText(
+                      text: skill.safety.join(' • '),
                       style: theme.textTheme.bodySmall,
                     ),
                   ),

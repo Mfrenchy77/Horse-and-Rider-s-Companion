@@ -42,12 +42,13 @@ void main() {
         FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'),
       );
       final entries = await DictionaryRepository(firestore: db).load();
-      expect(entries, hasLength(11));
+      expect(entries, hasLength(28));
       expect(
         entries.every((entry) => entry.bundled && entry.published),
         isTrue,
       );
       expect(DictionaryRepository.resolve(entries, 'lope')?.id, 'canter');
+      expect(DictionaryRepository.resolve(entries, 'jog')?.id, 'trot');
       expect(
         DictionaryRepository.resolve(entries, 'green broke')?.id,
         'green-broke',
@@ -91,7 +92,7 @@ void main() {
         'definition': 'Private unfinished definition.',
       });
       final entries = await DictionaryRepository(firestore: db).load();
-      expect(entries, hasLength(11));
+      expect(entries, hasLength(28));
       expect(
         entries.every((entry) => entry.bundled && entry.published),
         isTrue,

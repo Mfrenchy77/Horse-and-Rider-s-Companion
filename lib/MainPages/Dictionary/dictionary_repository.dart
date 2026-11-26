@@ -1,144 +1,198 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
-import 'package:http/http.dart' as http;
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_store.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/firebase_dictionary_store.dart';
 
-/// One meaning. Synonyms resolve to this entry rather than creating copies.
-class DictionaryEntry {
-  DictionaryEntry(this.data, {this.bundled = false});
+export 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_store.dart';
 
-  final bool bundled;
-
-  final Map<String, dynamic> data;
-  String get id => data['id'] as String;
-  String get slug => data['slug'] as String;
-  String get term => data['term'] as String;
-  String get definition => data['definition'] as String;
-  String get explanation => data['explanation'] as String? ?? '';
-  bool get published => data['status'] == 'published';
-  bool get contextual => data['contextual'] == true;
-  int get publishedRevision {
-    if (bundled) return 0;
-    final rev = data['revision'] as int? ?? 0;
-    if (data['publishedAt'] == null && rev <= 1) return 0;
-    return rev;
-  }
-
-  List<String> strings(String field) =>
-      (data[field] as List<dynamic>? ?? []).cast<String>();
-  String text(String field) => data[field] as String? ?? '';
-}
-
+/// Provider-independent facade and reactive cache for the Equestrian
+/// Dictionary.
+///
+/// Delegates persistence and server actions to a [DictionaryStore] (defaulting
+/// to [FirebaseDictionaryStore] when no custom store is configured).
 class DictionaryRepository {
-  DictionaryRepository({this.firestore, this.bundle});
+  DictionaryRepository({
+    DictionaryStore? store,
+    FirebaseFirestore? firestore,
+    AssetBundle? bundle,
+  }) : firestore = firestore,
+       bundle = bundle,
+       _store =
+           store ??
+           (firestore == null && bundle == null && defaultStore != null
+               ? defaultStore!
+               : FirebaseDictionaryStore(firestore: firestore, bundle: bundle));
+
+  /// Convenience constructor accepting an untyped legacy Firestore reference so
+  /// UI screens do not need to import `cloud_firestore`.
+  factory DictionaryRepository.withLegacyFirestore(
+    Object? firestore, {
+    AssetBundle? bundle,
+  }) => DictionaryRepository(
+    store: FirebaseDictionaryStore.fromLegacyFirestore(
+      firestore,
+      bundle: bundle,
+    ),
+  );
 
   final FirebaseFirestore? firestore;
   final AssetBundle? bundle;
-  static bool _appCheckActivated = false;
+  final DictionaryStore _store;
+
+  /// Optional backend-neutral default store (e.g., an alternative backend
+  /// adapter or [InMemoryDictionaryStore] in tests). When `null`, defaults to
+  /// [FirebaseDictionaryStore].
+  static DictionaryStore? defaultStore;
+
   static Future<List<DictionaryEntry>>? _cachedEntriesFuture;
+  static Future<List<DictionaryEntry>>? _refreshingFuture;
   static List<DictionaryEntry>? _resolvedCachedEntries;
+  static DateTime? _cachedAt;
+
+  /// How long cached published entries remain fresh before a single
+  /// deduplicated background refresh runs on next access.
+  static Duration cacheTtl = const Duration(minutes: 10);
+
+  /// Clock hook for deterministic TTL testing.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
+  /// Reactive notifier updated whenever the shared published Dictionary
+  /// catalogue is loaded or refreshed. Mounted `ContextualDictionaryText`
+  /// widgets listen to this so already-open screens update without restart.
+  static final ValueNotifier<List<DictionaryEntry>?> entriesNotifier =
+      ValueNotifier<List<DictionaryEntry>?>(null);
 
   /// Synchronously returns cached entries if already loaded in this session.
   static List<DictionaryEntry>? get peekCachedEntries => _resolvedCachedEntries;
 
+  /// Whether this repository instance is backed by the shared default store
+  /// (and should keep the global reactive cache synchronized).
+  bool get usesDefaultBackend {
+    if (defaultStore != null) {
+      return identical(_store, defaultStore);
+    }
+    return _store is FirebaseDictionaryStore && _store.usesDefaultBackend;
+  }
+
+  /// Returns whether the in-memory cache is missing or past [cacheTtl].
+  static bool get isCacheStale {
+    final cachedAt = _cachedAt;
+    if (_resolvedCachedEntries == null || cachedAt == null) return true;
+    return clock().difference(cachedAt) >= cacheTtl;
+  }
+
+  static List<DictionaryEntry> _storeCache(List<DictionaryEntry> items) {
+    final publishedOnly = List<DictionaryEntry>.unmodifiable(
+      items.where((entry) => entry.published),
+    );
+    _resolvedCachedEntries = publishedOnly;
+    _cachedAt = clock();
+    entriesNotifier.value = publishedOnly;
+    return publishedOnly;
+  }
+
   /// Returns published Dictionary entries cached in memory for contextual
   /// highlighting across Skill Tree and Resources without repeated network or
   /// asset reads.
+  ///
+  /// Uses a stale-while-revalidate strategy: if cached entries are older than
+  /// [cacheTtl], returns the current entries immediately while triggering one
+  /// deduplicated background refresh that notifies [entriesNotifier].
   static Future<List<DictionaryEntry>> cachedEntries({
+    DictionaryStore? store,
     FirebaseFirestore? firestore,
     AssetBundle? bundle,
+    bool forceRefresh = false,
   }) {
-    if (firestore != null || bundle != null) {
-      return DictionaryRepository(firestore: firestore, bundle: bundle).load();
+    if (store != null || firestore != null || bundle != null) {
+      return DictionaryRepository(
+        store: store,
+        firestore: firestore,
+        bundle: bundle,
+      ).load();
+    }
+    if (forceRefresh) {
+      return refreshCachedEntries();
     }
     if (_resolvedCachedEntries != null) {
+      if (isCacheStale) {
+        unawaited(refreshCachedEntries());
+      }
       return Future.value(_resolvedCachedEntries!);
     }
     return _cachedEntriesFuture ??= DictionaryRepository()
         .load()
-        .then((items) => _resolvedCachedEntries = items)
-        .catchError((Object _) => const <DictionaryEntry>[]);
+        .then(_storeCache)
+        .catchError((Object _) {
+          _cachedEntriesFuture = null;
+          return _resolvedCachedEntries ?? const <DictionaryEntry>[];
+        });
+  }
+
+  /// Forces a single deduplicated reload of the published Dictionary catalogue
+  /// and notifies all listening widgets via [entriesNotifier].
+  ///
+  /// Preserves existing cached entries if the refresh fails due to a transient
+  /// network error.
+  static Future<List<DictionaryEntry>> refreshCachedEntries({
+    DictionaryStore? store,
+    FirebaseFirestore? firestore,
+    AssetBundle? bundle,
+  }) {
+    return _refreshingFuture ??=
+        DictionaryRepository(store: store, firestore: firestore, bundle: bundle)
+            .load()
+            .then(_storeCache)
+            .catchError((Object _) {
+              return _resolvedCachedEntries ?? const <DictionaryEntry>[];
+            })
+            .whenComplete(() {
+              _refreshingFuture = null;
+            });
   }
 
   /// Clears the session cache (used after admin publication or in tests).
   static void invalidateCache() {
     _cachedEntriesFuture = null;
+    _refreshingFuture = null;
     _resolvedCachedEntries = null;
+    _cachedAt = null;
+    entriesNotifier.value = null;
   }
 
-  Future<Map<String, String>> skillLabels() async {
-    final skills = await AssetCurriculumV2Loader(bundle: bundle).loadSkills();
-    return {
-      for (final skill in skills)
-        skill.id:
-            '${skill.subject.name == 'horse' ? 'Horse' : 'Rider'} · '
-            '${skill.name}',
-    };
-  }
+  Future<Map<String, String>> skillLabels() => _store.loadSkillLabels();
 
   Future<List<DictionaryEntry>> load() async {
-    if (firestore != null || Firebase.apps.isNotEmpty) {
-      final db = firestore ?? FirebaseFirestore.instance;
-      // A manifest distinguishes an intentionally empty catalogue from the
-      // initial bundled collection before server publication begins.
-      final DocumentSnapshot<Map<String, dynamic>> manifest;
-      try {
-        manifest = await db
-            .collection('DictionaryPublic')
-            .doc('catalogue')
-            .get(const GetOptions(source: Source.server));
-      } on FirebaseException catch (error) {
-        // Before Dictionary rules are deployed, the existing default-deny
-        // rules reject this new path. Only this initialization check may use
-        // the approved bundle on denial; published-query failures must surface.
-        if (error.code != 'permission-denied') rethrow;
-        DocumentSnapshot<Map<String, dynamic>>? cachedManifest;
-        try {
-          cachedManifest = await db
-              .collection('DictionaryPublic')
-              .doc('catalogue')
-              .get(const GetOptions(source: Source.cache));
-        } on FirebaseException {
-          // Older deployments have no cached Dictionary initialization record.
-        }
-        // A previously observed publication must never revert to starters when
-        // access is subsequently denied.
-        if (cachedManifest?.data()?['initialized'] == true) rethrow;
-        return _loadBundledEntries();
-      }
-      if (manifest.data()?['initialized'] == true) {
-        final docs = await db
-            .collection('DictionaryEntries')
-            .where('status', isEqualTo: 'published')
-            .get(const GetOptions(source: Source.server));
-        return docs.docs.map((doc) => DictionaryEntry(doc.data())).toList();
-      }
+    final entries = await _store.loadPublishedEntries();
+    if (usesDefaultBackend) {
+      return _storeCache(entries);
     }
-    return _loadBundledEntries();
+    return entries;
   }
 
-  Future<List<DictionaryEntry>> _loadBundledEntries() async {
-    final json = await (bundle ?? rootBundle).loadString(
-      'functions/dictionary_seed.json',
-    );
-    return (jsonDecode(json) as List<dynamic>)
-        .map(
-          (item) => DictionaryEntry(
-            (item as Map).cast<String, dynamic>(),
-            bundled: true,
-          ),
-        )
-        .where((entry) => entry.published)
-        .toList();
-  }
+  Future<void> call(String function, Map<String, dynamic> data) =>
+      _store.executeAction(function, data);
+
+  Future<List<Map<String, dynamic>>> loadSuggestions({int limit = 100}) =>
+      _store.loadSuggestions(limit: limit);
+
+  Future<List<DictionaryEntry>> loadDrafts() => _store.loadDrafts();
+
+  Future<DictionaryEntry?> loadDraft(String entryId) =>
+      _store.loadDraft(entryId);
+
+  Future<List<Map<String, dynamic>>> loadSuggestionHistory(
+    String suggestionId, {
+    int limit = 30,
+  }) => _store.loadSuggestionHistory(suggestionId, limit: limit);
+
+  Future<List<Map<String, dynamic>>> loadEntryRevisions(String entryId) =>
+      _store.loadEntryRevisions(entryId);
 
   static DictionaryEntry? resolve(List<DictionaryEntry> entries, String value) {
     final needle = value.toLowerCase().trim();
@@ -178,51 +232,6 @@ class DictionaryRepository {
                 ].any((text) => text.toLowerCase().contains(needle)));
       }).toList()
       ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
-  }
-
-  /// Uses the same authenticated callable protocol as curriculum suggestions.
-  Future<void> call(String function, Map<String, dynamic> data) async {
-    const emulator = FirebaseEmulators.enabled;
-    final projectId = Firebase.app().options.projectId;
-    final uri = emulator
-        ? Uri.http('127.0.0.1:5001', '/demo-horse-rules/us-central1/$function')
-        : Uri.https('us-central1-$projectId.cloudfunctions.net', '/$function');
-    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
-    String? appCheck;
-    if (!emulator && function == 'submitDictionarySuggestion') {
-      if (!_appCheckActivated) {
-        const siteKey = String.fromEnvironment('DICTIONARY_RECAPTCHA_SITE_KEY');
-        if (kIsWeb && siteKey.isEmpty) {
-          throw StateError(
-            'Dictionary submissions are awaiting verification setup. '
-            'Please try again later.',
-          );
-        }
-        await FirebaseAppCheck.instance.activate(
-          providerWeb: kIsWeb ? ReCaptchaV3Provider(siteKey) : null,
-        );
-        _appCheckActivated = true;
-      }
-      appCheck = await FirebaseAppCheck.instance.getToken();
-    }
-    final response = await http
-        .post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-            if (appCheck != null) 'X-Firebase-AppCheck': appCheck,
-          },
-          body: jsonEncode({'data': data}),
-        )
-        .timeout(const Duration(seconds: 25));
-    final result = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode != 200 || result['error'] != null) {
-      final error = result['error'] as Map<String, dynamic>?;
-      throw StateError(
-        error?['message'] as String? ?? 'Could not complete the request.',
-      );
-    }
   }
 
   static String newSubmissionId() {
