@@ -224,6 +224,192 @@ class InMemoryDictionaryStore implements DictionaryStore {
       return;
     }
 
+    if (action == 'approve_and_publish' && id != null) {
+      final suggIndex = _suggestions.indexWhere((item) => item['id'] == id);
+      if (suggIndex < 0) {
+        throw StateError('Suggestion not found.');
+      }
+      final suggestion = _suggestions[suggIndex];
+      if (suggestion['status'] == 'published') {
+        throw StateError('This submission has already been published.');
+      }
+      if (suggestion['status'] == 'rejected') {
+        throw StateError('Rejected submissions cannot be published directly.');
+      }
+      if (suggestion['rightsConfirmed'] == false) {
+        throw StateError(
+          'Contributor rights confirmation is required before publishing.',
+        );
+      }
+      final targetId = (suggestion['termId'] as String?)?.trim() ?? '';
+      if (targetId.isEmpty) {
+        throw StateError('Target Dictionary entry is required.');
+      }
+      final baseEntry =
+          _publishedById[targetId]?.data ?? _draftsById[targetId]?.data;
+      if (baseEntry == null) {
+        throw StateError('Target Dictionary entry not found.');
+      }
+      final currentRevision =
+          _draftsById[targetId]?.data['revision'] as int? ??
+          _publishedById[targetId]?.publishedRevision ??
+          0;
+      final expectedRevision = data['expectedRevision'] as int?;
+      if (expectedRevision != null && expectedRevision != currentRevision) {
+        throw StateError('This entry changed. Reload before publishing.');
+      }
+
+      final imageDecisionsRaw = data['imageDecisions'];
+      final decisionById = <String, Map<String, dynamic>>{};
+      if (imageDecisionsRaw is List) {
+        for (final entry
+            in imageDecisionsRaw.whereType<Map<dynamic, dynamic>>()) {
+          final imgId = entry['id'] as String?;
+          if (imgId != null) {
+            decisionById[imgId] = entry.cast<String, dynamic>();
+          }
+        }
+      }
+      final rawImages = (suggestion['submittedImages'] as List<dynamic>? ?? [])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
+          .toList();
+      if (rawImages.isEmpty) {
+        throw StateError('No submitted images found on this contribution.');
+      }
+      for (final img in rawImages) {
+        final dec = decisionById[img['id']];
+        final nextStatus =
+            (dec?['status'] as String?) ??
+            (img['reviewStatus'] == 'rejected' ? 'rejected' : 'approved');
+        img['reviewStatus'] = nextStatus;
+        if (dec?['caption'] != null) img['caption'] = dec!['caption'];
+        if (dec?['explanation'] != null) {
+          img['explanation'] = dec!['explanation'];
+        }
+        if (dec?['imageType'] != null) img['imageType'] = dec!['imageType'];
+      }
+      final approvedImages = rawImages
+          .where((img) => img['reviewStatus'] == 'approved')
+          .toList();
+      final rejectedCount = rawImages
+          .where((img) => img['reviewStatus'] == 'rejected')
+          .length;
+      if (approvedImages.isEmpty) {
+        throw StateError('Approve at least one image before publishing.');
+      }
+
+      final contributorCredit = suggestion['recognitionConsent'] == true
+          ? (suggestion['publicName'] as String?)?.trim()
+          : null;
+      final existingMedia = (baseEntry['media'] as List<dynamic>? ?? [])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
+          .toList();
+      final approvedMediaEntries = approvedImages.map((img) {
+        final caption = (img['caption'] as String?)?.trim() ?? '';
+        final item = <String, dynamic>{
+          'url': img['url'],
+          'label': caption.isNotEmpty
+              ? caption
+              : (baseEntry['term'] as String? ?? 'Dictionary image'),
+          if (img['imageType'] != null && img['imageType'] != 'illustrative')
+            'imageType': img['imageType'],
+          if (((img['explanation'] as String?)?.trim() ?? '').isNotEmpty)
+            'explanation': (img['explanation'] as String).trim(),
+          if (contributorCredit != null && contributorCredit.isNotEmpty)
+            'attribution': contributorCredit,
+        };
+        return (id: img['id'] as String?, item: item);
+      }).toList();
+
+      final heroImageId = (data['heroImageId'] as String?) ?? '';
+      late final List<Map<String, dynamic>> combinedMedia;
+      if (heroImageId.startsWith('submitted:')) {
+        final chosenId = heroImageId.substring('submitted:'.length);
+        final heroMatch = approvedMediaEntries.where((e) => e.id == chosenId);
+        if (heroMatch.isEmpty) {
+          throw StateError(
+            'Selected hero image must be an approved submitted image.',
+          );
+        }
+        combinedMedia = [
+          heroMatch.first.item,
+          ...existingMedia,
+          ...approvedMediaEntries
+              .where((e) => e.id != chosenId)
+              .map((e) => e.item),
+        ];
+      } else if (heroImageId.startsWith('existing:')) {
+        final idx = int.tryParse(heroImageId.substring('existing:'.length));
+        if (idx == null || idx < 0 || idx >= existingMedia.length) {
+          throw StateError('Selected existing hero image is invalid.');
+        }
+        combinedMedia = [
+          existingMedia[idx],
+          for (var i = 0; i < existingMedia.length; i++)
+            if (i != idx) existingMedia[i],
+          ...approvedMediaEntries.map((e) => e.item),
+        ];
+      } else {
+        combinedMedia = [
+          ...existingMedia,
+          ...approvedMediaEntries.map((e) => e.item),
+        ];
+      }
+
+      if (combinedMedia.length > 8) {
+        throw StateError('Publishing would exceed the 8-image limit.');
+      }
+
+      final nextRev = currentRevision + 1;
+      final priorAttributions =
+          (baseEntry['attributions'] as List<dynamic>? ?? [])
+              .whereType<String>()
+              .toList();
+      final nextAttributions = <String>{
+        ...priorAttributions,
+        if (contributorCredit != null && contributorCredit.isNotEmpty)
+          contributorCredit,
+      }.toList();
+
+      final stored = <String, dynamic>{
+        ...baseEntry,
+        'id': targetId,
+        'slug': (baseEntry['slug'] as String?) ?? targetId,
+        'media': combinedMedia,
+        'attributions': nextAttributions,
+        'status': 'published',
+        'revision': nextRev,
+        'publishedAt': DateTime.now().toIso8601String(),
+      };
+      _draftsById[targetId] = DictionaryEntry(stored);
+      _publishedById[targetId] = DictionaryEntry(stored);
+      _revisionsByEntryId.putIfAbsent(targetId, () => []).insert(0, stored);
+
+      suggestion['submittedImages'] = rawImages;
+      suggestion['status'] = 'published';
+      suggestion['entryId'] = targetId;
+
+      final note = (data['note'] as String?) ?? '';
+      final nowIso = DateTime.now().toIso8601String();
+      _suggestionHistory.putIfAbsent(id, () => [])
+        ..insert(0, {
+          'status': rejectedCount > 0 ? 'partially_approved' : 'approved',
+          'note': note,
+          'at': nowIso,
+        })
+        ..insert(0, {
+          'status': 'published',
+          'note': note,
+          'entryId': targetId,
+          'publishedImageCount': approvedImages.length,
+          'rejectedImageCount': rejectedCount,
+          'at': nowIso,
+        });
+      return;
+    }
+
     if ((action == 'save_draft' || action == 'save' || action == 'publish') &&
         id != null) {
       final rawEntry = (data['entry'] as Map?)?.cast<String, dynamic>() ?? {};

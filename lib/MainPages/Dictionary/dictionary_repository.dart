@@ -178,6 +178,22 @@ class DictionaryRepository {
   Future<void> call(String function, Map<String, dynamic> data) =>
       _store.executeAction(function, data);
 
+  Future<void> approveAndPublishImages({
+    required String suggestionId,
+    required int expectedRevision,
+    required List<Map<String, dynamic>> imageDecisions,
+    String? heroImageId,
+    String note = '',
+  }) => _store.executeAction('editDictionary', {
+    'action': 'approve_and_publish',
+    'id': suggestionId,
+    'expectedRevision': expectedRevision,
+    'imageDecisions': imageDecisions,
+    if (heroImageId != null && heroImageId.isNotEmpty)
+      'heroImageId': heroImageId,
+    'note': note,
+  });
+
   Future<List<Map<String, dynamic>>> loadSuggestions({int limit = 100}) =>
       _store.loadSuggestions(limit: limit);
 

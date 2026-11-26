@@ -81,6 +81,109 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
 
   Future<_InboxBundle>? _inbox;
   String? _statusFilter;
+  String? _focusedSubmissionId;
+  final Map<String, GlobalKey> _submissionCardKeys = {};
+
+  static bool _isPendingSubmission(Map<String, dynamic> item) {
+    final status = (item['status'] as String?) ?? 'submitted';
+    return status == 'submitted' ||
+        status == 'under_review' ||
+        status == 'needs_clarification';
+  }
+
+  static bool _isQuickPublishImageSubmission(
+    Map<String, dynamic> item,
+    DictionaryEntry? target,
+  ) {
+    if (target == null) return false;
+    final status = item['status'] as String?;
+    if (status == 'published' || status == 'rejected') return false;
+    final images = item['submittedImages'] as List<dynamic>?;
+    if (images == null || images.isEmpty) return false;
+    return item['kind'] == 'image_contribution' ||
+        item['proposedFields'] == null;
+  }
+
+  GlobalKey _keyForSubmission(String id) =>
+      _submissionCardKeys.putIfAbsent(id, GlobalKey.new);
+
+  void _focusSubmission(String? id) {
+    if (!mounted) return;
+    setState(() {
+      _statusFilter = null;
+      _focusedSubmissionId = id;
+    });
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _submissionCardKeys[id]?.currentContext;
+      if (ctx != null && ctx.mounted) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 220),
+          alignment: 0.1,
+        );
+      }
+    });
+  }
+
+  Map<String, dynamic>? _nextPendingItem(
+    List<Map<String, dynamic>> items, {
+    String? afterId,
+  }) {
+    final pending = items.where(_isPendingSubmission).toList();
+    if (pending.isEmpty) return null;
+    if (afterId == null) return pending.first;
+    final idx = pending.indexWhere((e) => e['id'] == afterId);
+    if (idx >= 0 && idx + 1 < pending.length) {
+      return pending[idx + 1];
+    }
+    return pending.firstWhere(
+      (e) => e['id'] != afterId,
+      orElse: () => pending.first,
+    );
+  }
+
+  Future<void> _openQuickApproveAndPublish(
+    Map<String, dynamic> item,
+    DictionaryEntry target,
+    _InboxBundle bundle,
+  ) async {
+    final drafts = await _repository.loadDrafts();
+    if (!mounted) return;
+    final draftMatch = drafts.where((d) => d.id == target.id).firstOrNull;
+    final effectiveTarget = draftMatch ?? target;
+    final selectedNext = await showAppGlassDialog<Map<String, dynamic>?>(
+      context: context,
+      builder: (_) => _ApproveAndPublishImagesDialog(
+        item: item,
+        targetEntry: effectiveTarget,
+        allSubmissions: bundle.items,
+        repository: _repository,
+        onPublished: () {
+          if (mounted) _refresh();
+        },
+      ),
+    );
+    if (!mounted) return;
+    _refresh();
+    if (selectedNext != null) {
+      final refreshedBundle = await (_inbox ?? _load());
+      if (!mounted) return;
+      final nextTarget = _resolveSuggestionTarget(
+        refreshedBundle.publishedEntries,
+        selectedNext,
+      );
+      if (_isQuickPublishImageSubmission(selectedNext, nextTarget)) {
+        await _openQuickApproveAndPublish(
+          selectedNext,
+          nextTarget!,
+          refreshedBundle,
+        );
+      } else {
+        _focusSubmission(selectedNext['id'] as String?);
+      }
+    }
+  }
 
   Future<_InboxBundle> _load() async {
     final results = await Future.wait<dynamic>([
@@ -329,16 +432,45 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     if (submittedImages.isEmpty) return const SizedBox.shrink();
 
     final secondaryColor = AppTokens.secondaryTextColor(context);
+    final rightsConfirmed = item['rightsConfirmed'] == true;
+    final consent = item['recognitionConsent'] == true;
+    final publicName = (item['publicName'] as String?)?.trim() ?? '';
+    final attributionText = consent && publicName.isNotEmpty
+        ? 'Public credit: $publicName'
+        : 'Contributor: Private account (no public credit)';
+
     return Column(
       key: Key('adminSubmittedImages_${item['id']}'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 8,
       children: [
-        Text(
-          'Submitted images (${submittedImages.length})',
-          style: Theme.of(
-            context,
-          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              'Submitted images (${submittedImages.length})',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            AppStatusBadge(
+              key: Key('adminRightsBadge_${item['id']}'),
+              label: rightsConfirmed
+                  ? 'Permissions confirmed'
+                  : 'Permissions not confirmed',
+              tone: rightsConfirmed
+                  ? AppStatusTone.success
+                  : AppStatusTone.warning,
+            ),
+            Text(
+              attributionText,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+            ),
+          ],
         ),
         Wrap(
           spacing: 10,
@@ -670,6 +802,9 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                           );
                         }
                         final bundle = snapshot.data!;
+                        final pendingItems = bundle.items
+                            .where(_isPendingSubmission)
+                            .toList();
                         final filtered = bundle.items
                             .where(
                               (item) =>
@@ -688,7 +823,68 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                           );
                         }
                         return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (pendingItems.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: AppSurfaceCard(
+                                  key: const Key('dictionaryPendingQueueBar'),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  child: Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
+                                    alignment: WrapAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${pendingItems.length} pending '
+                                        '${pendingItems.length == 1 ? 'submission' : 'submissions'} '
+                                        'ready for review',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      OutlinedButton.icon(
+                                        key: const Key(
+                                          'inboxNextSubmissionButton',
+                                        ),
+                                        onPressed: () {
+                                          final next = _nextPendingItem(
+                                            bundle.items,
+                                            afterId: _focusedSubmissionId,
+                                          );
+                                          _focusSubmission(
+                                            next?['id'] as String?,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.arrow_forward,
+                                          size: 16,
+                                        ),
+                                        label: const Text('Next Submission'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else if (bundle.items.isNotEmpty)
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 12),
+                                child: AppFeedbackBanner(
+                                  key: Key('inboxQueueCaughtUpBanner'),
+                                  message:
+                                      'All caught up! No pending submissions '
+                                      'remain in the review queue.',
+                                ),
+                              ),
                             for (final item in filtered)
                               Builder(
                                 builder: (context) {
@@ -696,9 +892,27 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                     bundle.publishedEntries,
                                     item,
                                   );
+                                  final itemId = (item['id'] as String?) ?? '';
+                                  final isFocused =
+                                      itemId.isNotEmpty &&
+                                      itemId == _focusedSubmissionId;
+                                  final isQuickPublish =
+                                      _isQuickPublishImageSubmission(
+                                        item,
+                                        target,
+                                      );
                                   return Padding(
+                                    key: itemId.isNotEmpty
+                                        ? _keyForSubmission(itemId)
+                                        : null,
                                     padding: const EdgeInsets.only(bottom: 12),
                                     child: AppSurfaceCard(
+                                      key: itemId.isNotEmpty
+                                          ? Key('submissionCard_$itemId')
+                                          : null,
+                                      borderColor: isFocused
+                                          ? AppTokens.accentColor(context)
+                                          : null,
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
@@ -795,6 +1009,27 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                             spacing: 8,
                                             runSpacing: 8,
                                             children: [
+                                              if (isQuickPublish)
+                                                FilledButton.icon(
+                                                  key: Key(
+                                                    'approveAndPublishButton_${item['id']}',
+                                                  ),
+                                                  onPressed: () => _perform(
+                                                    () =>
+                                                        _openQuickApproveAndPublish(
+                                                          item,
+                                                          target!,
+                                                          bundle,
+                                                        ),
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.publish_outlined,
+                                                    size: 16,
+                                                  ),
+                                                  label: const Text(
+                                                    'Approve & Publish',
+                                                  ),
+                                                ),
                                               for (final status in const [
                                                 'under_review',
                                                 'needs_clarification',
@@ -1582,6 +1817,554 @@ class _PartialReviewDialogState extends State<_PartialReviewDialog> {
           child: const Text('Save review decisions'),
         ),
       ],
+    );
+  }
+}
+
+class _ApproveAndPublishImagesDialog extends StatefulWidget {
+  const _ApproveAndPublishImagesDialog({
+    required this.item,
+    required this.targetEntry,
+    required this.allSubmissions,
+    required this.repository,
+    this.onPublished,
+  });
+
+  final Map<String, dynamic> item;
+  final DictionaryEntry targetEntry;
+  final List<Map<String, dynamic>> allSubmissions;
+  final DictionaryRepository repository;
+  final VoidCallback? onPublished;
+
+  @override
+  State<_ApproveAndPublishImagesDialog> createState() =>
+      _ApproveAndPublishImagesDialogState();
+}
+
+class _ApproveAndPublishImagesDialogState
+    extends State<_ApproveAndPublishImagesDialog> {
+  final _note = TextEditingController();
+  late final List<_PartialImageDraft> _images;
+  late final List<DictionaryMediaItem> _existingMedia;
+  late String _selectedHeroId;
+  bool _busy = false;
+  bool _published = false;
+  String? _error;
+  int _publishedCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _existingMedia = (widget.targetEntry.data['media'] as List<dynamic>? ?? [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((e) => DictionaryMediaItem.fromMap(e.cast<String, dynamic>()))
+        .where((m) => m.url.isNotEmpty)
+        .toList();
+    _images = [
+      for (final raw
+          in (widget.item['submittedImages'] as List<dynamic>? ?? [])
+              .whereType<Map<dynamic, dynamic>>())
+        _PartialImageDraft(
+          id: (raw['id'] as String?) ?? '',
+          url: (raw['url'] as String?) ?? '',
+          status: (raw['reviewStatus'] == 'rejected') ? 'rejected' : 'approved',
+          imageType: DictionaryImageType.fromStorageValue(
+            raw['imageType'] as String?,
+          ),
+          caption: (raw['caption'] as String?) ?? '',
+          explanation: (raw['explanation'] as String?) ?? '',
+        ),
+    ];
+    if (_existingMedia.isNotEmpty) {
+      _selectedHeroId = 'existing:0';
+    } else {
+      final firstApproved = _images
+          .where((img) => img.status == 'approved')
+          .firstOrNull;
+      _selectedHeroId = firstApproved != null
+          ? 'submitted:${firstApproved.id}'
+          : '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _note.dispose();
+    for (final img in _images) {
+      img.dispose();
+    }
+    super.dispose();
+  }
+
+  List<_PartialImageDraft> get _approvedImages =>
+      _images.where((img) => img.status == 'approved').toList();
+
+  List<_PartialImageDraft> get _rejectedImages =>
+      _images.where((img) => img.status == 'rejected').toList();
+
+  List<Map<String, dynamic>> get _remainingPendingSubmissions => widget
+      .allSubmissions
+      .where(
+        (s) =>
+            s['id'] != widget.item['id'] &&
+            _DictionaryAdminPageState._isPendingSubmission(s),
+      )
+      .toList();
+
+  void _setImageStatus(_PartialImageDraft img, String status) {
+    setState(() {
+      img.status = status;
+      if (status == 'rejected' && _selectedHeroId == 'submitted:${img.id}') {
+        final fallbackSubmitted = _approvedImages.firstOrNull;
+        if (_existingMedia.isNotEmpty) {
+          _selectedHeroId = 'existing:0';
+        } else if (fallbackSubmitted != null) {
+          _selectedHeroId = 'submitted:${fallbackSubmitted.id}';
+        } else {
+          _selectedHeroId = '';
+        }
+      } else if (status == 'approved' && _selectedHeroId.isEmpty) {
+        _selectedHeroId = _existingMedia.isNotEmpty
+            ? 'existing:0'
+            : 'submitted:${img.id}';
+      }
+    });
+  }
+
+  String _heroSummaryLabel() {
+    if (_selectedHeroId.startsWith('submitted:')) {
+      final id = _selectedHeroId.substring('submitted:'.length);
+      final match = _approvedImages.where((img) => img.id == id).firstOrNull;
+      if (match != null) {
+        final caption = match.captionController.text.trim();
+        return caption.isNotEmpty ? caption : 'Submitted image (${match.id})';
+      }
+    }
+    if (_existingMedia.isNotEmpty) {
+      final existingLabel = _existingMedia.first.label.trim();
+      return existingLabel.isNotEmpty
+          ? 'Current hero: $existingLabel'
+          : 'Keep current hero image';
+    }
+    return 'None selected';
+  }
+
+  Future<void> _publish() async {
+    if (_busy || _published) return;
+    final approved = _approvedImages;
+    if (approved.isEmpty) {
+      setState(() => _error = 'Approve at least one image before publishing.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.approveAndPublishImages(
+        suggestionId: (widget.item['id'] as String?) ?? '',
+        expectedRevision: widget.targetEntry.publishedRevision,
+        heroImageId: _selectedHeroId,
+        note: _note.text.trim(),
+        imageDecisions: [
+          for (final img in _images)
+            {
+              'id': img.id,
+              'status': img.status,
+              'caption': img.captionController.text.trim(),
+              'explanation': img.explanationController.text.trim(),
+              'imageType': img.imageType.storageValue,
+            },
+        ],
+      );
+      DictionaryRepository.invalidateCache();
+      if (widget.repository.usesDefaultBackend) {
+        unawaited(DictionaryRepository.refreshCachedEntries());
+      }
+      widget.onPublished?.call();
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _published = true;
+        _publishedCount = approved.length;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = error.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sugId = (widget.item['id'] as String?) ?? '';
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    final consent = widget.item['recognitionConsent'] == true;
+    final publicName = (widget.item['publicName'] as String?)?.trim() ?? '';
+    final rightsConfirmed = widget.item['rightsConfirmed'] == true;
+    final approved = _approvedImages;
+    final rejected = _rejectedImages;
+    final galleryTotal =
+        (_existingMedia.length +
+                approved.length -
+                (approved.isNotEmpty || _existingMedia.isNotEmpty ? 1 : 0))
+            .clamp(0, maxDictionaryMediaItems);
+    final remainingPending = _remainingPendingSubmissions;
+
+    return PopScope(
+      canPop: !_busy,
+      child: AppGlassDialog(
+        maxWidth: 740,
+        title: Text(
+          _published
+              ? 'Published to ${widget.targetEntry.term}'
+              : 'Approve & Publish · ${widget.targetEntry.term}',
+        ),
+        content: _published
+            ? Column(
+                key: const Key('approveAndPublishSuccessView'),
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 12,
+                children: [
+                  AppFeedbackBanner(
+                    message:
+                        'Published $_publishedCount approved '
+                        '${_publishedCount == 1 ? 'image' : 'images'} to '
+                        '${widget.targetEntry.term}.',
+                  ),
+                  if (remainingPending.isNotEmpty)
+                    Text(
+                      '${remainingPending.length} pending '
+                      '${remainingPending.length == 1 ? 'submission' : 'submissions'} '
+                      'remaining in the review queue.',
+                    )
+                  else
+                    Container(
+                      key: const Key('dictionaryQueueEmptyMessage'),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: const Row(
+                        spacing: 8,
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 18),
+                          Expanded(
+                            child: Text(
+                              'All caught up! No pending submissions remain in the review queue.',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 12,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      AppStatusBadge(
+                        label: rightsConfirmed
+                            ? 'Permissions confirmed'
+                            : 'Permissions not confirmed',
+                        tone: rightsConfirmed
+                            ? AppStatusTone.success
+                            : AppStatusTone.warning,
+                      ),
+                      Text(
+                        consent && publicName.isNotEmpty
+                            ? 'Public credit: $publicName'
+                            : 'Contributor: Private account (no public credit)',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    key: const Key('approveAndPublishPreviewSummary'),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.35),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 4,
+                      children: [
+                        Text(
+                          'Confirmation preview',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text('Hero image: ${_heroSummaryLabel()}'),
+                        Text(
+                          'Gallery images: $galleryTotal '
+                          '(${_existingMedia.length} existing, '
+                          '${approved.length} approved)',
+                        ),
+                        if (rejected.isNotEmpty)
+                          Text(
+                            'Rejected images: ${rejected.length} '
+                            '(excluded and deleted from private storage)',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (_existingMedia.isNotEmpty)
+                    Wrap(
+                      key: const Key('heroImageSelectionRow'),
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          'Hero image:',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        ChoiceChip(
+                          key: const Key('selectHero_existing_0'),
+                          label: const Text('Keep existing hero'),
+                          selected: _selectedHeroId == 'existing:0',
+                          onSelected: _busy
+                              ? null
+                              : (_) => setState(
+                                  () => _selectedHeroId = 'existing:0',
+                                ),
+                        ),
+                      ],
+                    ),
+                  for (var i = 0; i < _images.length; i++)
+                    Container(
+                      key: Key(
+                        'quickReviewImageCard_${sugId}_${_images[i].id}',
+                      ),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                        border: Border.all(
+                          color: _selectedHeroId == 'submitted:${_images[i].id}'
+                              ? AppTokens.accentColor(context)
+                              : Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: 8,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 10,
+                            children: [
+                              InkWell(
+                                key: Key(
+                                  'quickImageZoom_${sugId}_${_images[i].id}',
+                                ),
+                                onTap: _images[i].url.startsWith('https://')
+                                    ? () => showProfilePhoto(
+                                        context,
+                                        _images[i].url,
+                                        caption:
+                                            _images[i].captionController.text
+                                                .trim()
+                                                .isEmpty
+                                            ? 'Submitted image ${i + 1}'
+                                            : _images[i].captionController.text
+                                                  .trim(),
+                                        explanation: _images[i]
+                                            .explanationController
+                                            .text
+                                            .trim(),
+                                        imageTypeLabel:
+                                            _images[i].imageType.label,
+                                        attribution:
+                                            consent && publicName.isNotEmpty
+                                            ? publicName
+                                            : null,
+                                      )
+                                    : null,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(
+                                    AppTokens.radiusSm,
+                                  ),
+                                  child: SmartImage(
+                                    _images[i].url,
+                                    width: 112,
+                                    height: 90,
+                                    maxLogicalWidth: 200,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: [
+                                    ChoiceChip(
+                                      key: Key(
+                                        'quickApproveImg_${sugId}_${_images[i].id}',
+                                      ),
+                                      label: const Text('Approve'),
+                                      selected: _images[i].status == 'approved',
+                                      onSelected: _busy
+                                          ? null
+                                          : (_) => _setImageStatus(
+                                              _images[i],
+                                              'approved',
+                                            ),
+                                    ),
+                                    ChoiceChip(
+                                      key: Key(
+                                        'quickRejectImg_${sugId}_${_images[i].id}',
+                                      ),
+                                      label: const Text('Reject'),
+                                      selected: _images[i].status == 'rejected',
+                                      onSelected: _busy
+                                          ? null
+                                          : (_) => _setImageStatus(
+                                              _images[i],
+                                              'rejected',
+                                            ),
+                                    ),
+                                    ChoiceChip(
+                                      key: Key(
+                                        'selectHero_submitted_${_images[i].id}',
+                                      ),
+                                      label: const Text('Use as hero'),
+                                      selected:
+                                          _selectedHeroId ==
+                                          'submitted:${_images[i].id}',
+                                      onSelected:
+                                          _busy ||
+                                              _images[i].status != 'approved'
+                                          ? null
+                                          : (_) => setState(
+                                              () => _selectedHeroId =
+                                                  'submitted:${_images[i].id}',
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          DropdownButtonFormField<DictionaryImageType>(
+                            key: Key('quickImageType_${_images[i].id}'),
+                            initialValue: _images[i].imageType,
+                            decoration: const InputDecoration(
+                              labelText: 'Educational image type',
+                            ),
+                            items: [
+                              for (final type in DictionaryImageType.values)
+                                DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type.label),
+                                ),
+                            ],
+                            onChanged: _busy
+                                ? null
+                                : (value) {
+                                    if (value != null) {
+                                      setState(
+                                        () => _images[i].imageType = value,
+                                      );
+                                    }
+                                  },
+                          ),
+                          TextFormField(
+                            key: Key('quickCaption_${_images[i].id}'),
+                            controller: _images[i].captionController,
+                            enabled: !_busy,
+                            maxLength: 120,
+                            decoration: const InputDecoration(
+                              labelText: 'Caption / alt text',
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          TextFormField(
+                            key: Key('quickExplanation_${_images[i].id}'),
+                            controller: _images[i].explanationController,
+                            enabled: !_busy,
+                            maxLength: 600,
+                            minLines: 1,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              labelText: 'Educational explanation (optional)',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  TextField(
+                    key: const Key('quickPublishNote'),
+                    controller: _note,
+                    enabled: !_busy,
+                    maxLength: 2000,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Private editorial audit note (optional)',
+                    ),
+                  ),
+                  if (_error != null)
+                    AppFeedbackBanner(
+                      key: const Key('quickPublishErrorBanner'),
+                      message: _error!,
+                      tone: AppStatusTone.error,
+                    ),
+                ],
+              ),
+        actions: _published
+            ? [
+                TextButton(
+                  key: const Key('closeAfterPublishButton'),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    remainingPending.isEmpty ? 'Done' : 'Back to inbox',
+                  ),
+                ),
+                if (remainingPending.isNotEmpty)
+                  FilledButton.icon(
+                    key: const Key('nextSubmissionAfterPublishButton'),
+                    onPressed: () =>
+                        Navigator.pop(context, remainingPending.first),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('Next Submission'),
+                  ),
+              ]
+            : [
+                TextButton(
+                  onPressed: _busy ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton.icon(
+                  key: const Key('confirmApproveAndPublishButton'),
+                  onPressed: (_busy || approved.isEmpty) ? null : _publish,
+                  icon: const Icon(Icons.publish_outlined, size: 16),
+                  label: Text(_busy ? 'Publishing…' : 'Confirm & Publish'),
+                ),
+              ],
+      ),
     );
   }
 }
