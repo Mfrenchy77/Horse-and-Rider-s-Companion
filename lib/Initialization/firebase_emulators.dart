@@ -29,11 +29,15 @@ class FirebaseEmulators {
   static Uri accountDeletionEndpoint() =>
       Uri.http('$_host:5001', '/$projectId/us-central1/requestAccountDeletion');
 
-  static Uri submitSuggestionEndpoint() =>
-      Uri.http('$_host:5001', '/$projectId/us-central1/submitSkillTreeSuggestion');
+  static Uri submitSuggestionEndpoint() => Uri.http(
+    '$_host:5001',
+    '/$projectId/us-central1/submitSkillTreeSuggestion',
+  );
 
-  static Uri reviewSuggestionEndpoint() =>
-      Uri.http('$_host:5001', '/$projectId/us-central1/reviewSkillTreeSuggestion');
+  static Uri reviewSuggestionEndpoint() => Uri.http(
+    '$_host:5001',
+    '/$projectId/us-central1/reviewSkillTreeSuggestion',
+  );
 
   static Uri saveCurriculumDraftEndpoint() => Uri.http(
     '$_host:5001',
@@ -59,4 +63,19 @@ class FirebaseEmulators {
     '$_host:5001',
     '/$projectId/us-central1/abortSkillTreeCurriculumPublication',
   );
+
+  static Uri invitationPreviewEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/getInvitationPreview');
+
+  static Uri createInvitationEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/createInvitation');
+
+  static Uri redeemInvitationEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/redeemInvitation');
+
+  static Uri listInvitationsEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/listMyInvitations');
+
+  static Uri revokeInvitationEndpoint() =>
+      Uri.http('$_host:5001', '/$projectId/us-central1/revokeInvitation');
 }

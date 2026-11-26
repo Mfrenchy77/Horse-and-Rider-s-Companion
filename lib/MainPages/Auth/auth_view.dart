@@ -8,6 +8,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/forgot_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/login_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/register_view.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/pending_invitation_storage.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
@@ -38,7 +39,12 @@ class AuthView extends StatelessWidget {
       body: BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
           if (state.status == FormStatus.success) {
-            context.goNamed(ProfilePage.name);
+            final pendingInvite = PendingInvitationStorage.readToken();
+            if (!state.isGuest && pendingInvite != null) {
+              context.go('/invite/${Uri.encodeComponent(pendingInvite)}');
+            } else {
+              context.goNamed(ProfilePage.name);
+            }
             // if (state.mailAppResult != null) {
             //   showDialog<MailAppPickerDialog>(
             //     context: context,
@@ -119,6 +125,51 @@ class AuthView extends StatelessWidget {
                       Expanded(child: Center(child: form)),
                     ],
                   );
+            final pendingInvite = PendingInvitationStorage.readToken();
+            final contentWithBanner = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (pendingInvite != null) ...[
+                  Container(
+                    key: const Key('authPendingInviteBanner'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTokens.spaceMd,
+                      vertical: AppTokens.spaceSm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTokens.accentColor(
+                        context,
+                      ).withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                      border: Border.all(
+                        color: AppTokens.accentColor(
+                          context,
+                        ).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.mail_outline,
+                          size: 18,
+                          color: AppTokens.accentColor(context),
+                        ),
+                        const SizedBox(width: AppTokens.spaceSm),
+                        const Expanded(
+                          child: Text(
+                            'Sign in or create an account to continue your '
+                            'invitation.',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppTokens.spaceMd),
+                ],
+                content,
+              ],
+            );
             return SizedBox.expand(
               child: AppScaffoldBackdrop(
                 child: SingleChildScrollView(
@@ -127,14 +178,14 @@ class AuthView extends StatelessWidget {
                     child: MaxWidthBox(
                       maxWidth: isSmallScreen ? 510 : 960,
                       child: isDark
-                          ? AppSurfaceCard(child: content)
+                          ? AppSurfaceCard(child: contentWithBanner)
                           : GradientCard(
                               color: ColorConst.cardDark,
                               margin: EdgeInsets.zero,
                               elevation: 5,
                               child: Padding(
                                 padding: const EdgeInsets.all(20),
-                                child: content,
+                                child: contentWithBanner,
                               ),
                             ),
                     ),

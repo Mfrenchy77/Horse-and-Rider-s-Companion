@@ -322,27 +322,30 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  /// Triggers an immediate email verification refresh check.
+  Future<void> refreshEmailVerificationStatus() async {
+    if (_verificationReloadInProgress) return;
+    _verificationReloadInProgress = true;
+    try {
+      await _authenticationRepository.reloadCurrentUser();
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        LogCategory.auth,
+        'Unable to refresh email verification',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _verificationReloadInProgress = false;
+    }
+  }
+
   /// Peroiodically checks the email verification status.
   void _checkEmailVerificationStatus() {
     _emailVerificationTimer = Timer.periodic(const Duration(seconds: 10), (
       _,
     ) async {
-      if (_verificationReloadInProgress) return;
-      _verificationReloadInProgress = true;
-      try {
-        // Firebase userChanges delivers the refreshed user to the same
-        // handler as sign-in. The timer only asks Firebase to refresh it.
-        await _authenticationRepository.reloadCurrentUser();
-      } catch (error, stackTrace) {
-        AppLogger.warning(
-          LogCategory.auth,
-          'Unable to refresh email verification',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      } finally {
-        _verificationReloadInProgress = false;
-      }
+      await refreshEmailVerificationStatus();
     });
   }
 
@@ -3246,7 +3249,8 @@ class AppCubit extends Cubit<AppState> {
           request.senderEmail.toLowerCase() ==
           state.usersProfile?.email.toLowerCase();
       final connectionId = request.connectionId;
-      if (request.kind == ConnectionRequestKind.transferHorse &&
+      if ((request.kind == ConnectionRequestKind.transferHorse ||
+              request.kind == ConnectionRequestKind.student) &&
           connectionId != null &&
           connectionId.isNotEmpty &&
           _submitCoachingAction != null) {

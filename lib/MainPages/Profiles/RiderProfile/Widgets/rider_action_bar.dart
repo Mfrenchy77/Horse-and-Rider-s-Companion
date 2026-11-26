@@ -18,6 +18,7 @@ class RiderActionBar extends StatelessWidget {
     required this.showWebsite,
     this.studentConnection,
     this.saving = false,
+    this.onInviteStudent,
   });
 
   final RiderProfile profile;
@@ -26,10 +27,14 @@ class RiderActionBar extends StatelessWidget {
   final bool showWebsite;
   final CoachingConnection? studentConnection;
   final bool saving;
+  final VoidCallback? onInviteStudent;
 
   @override
   Widget build(BuildContext context) {
-    if (!showLogbook && !showWebsite) return const SizedBox.shrink();
+    final showInviteStudent = onInviteStudent != null;
+    if (!showLogbook && !showWebsite && !showInviteStudent) {
+      return const SizedBox.shrink();
+    }
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -72,7 +77,10 @@ class RiderActionBar extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 480;
         final textScale = MediaQuery.textScalerOf(context).scale(14);
-        final useWrap = constraints.maxWidth < 340 || textScale > 20;
+        final useWrap =
+            constraints.maxWidth < 340 ||
+            textScale > 20 ||
+            (showInviteStudent && constraints.maxWidth < 460);
 
         final logLabel = ownProfile ? "Rider's Log Book" : 'Student logbook';
         final addLabel = ownProfile ? 'Add entry' : 'Add lesson';
@@ -136,6 +144,20 @@ class RiderActionBar extends StatelessWidget {
               ),
             ),
           ],
+          if (showInviteStudent)
+            _ActionButtonShell(
+              expand: !useWrap,
+              child: OutlinedButton(
+                key: const Key('InviteStudentButton'),
+                style: outlinedStyle,
+                onPressed: onInviteStudent,
+                child: _ButtonContent(
+                  icon: Icons.person_add_alt_1_rounded,
+                  label: 'Invite student',
+                  stacked: compact && !useWrap,
+                ),
+              ),
+            ),
           if (showWebsite)
             _ActionButtonShell(
               expand: !useWrap,
@@ -156,11 +178,7 @@ class RiderActionBar extends StatelessWidget {
         ];
 
         if (useWrap) {
-          return Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: buttons,
-          );
+          return Wrap(spacing: 10, runSpacing: 10, children: buttons);
         }
 
         return Row(

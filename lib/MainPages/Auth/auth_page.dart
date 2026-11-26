@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/auth_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/cubit/login_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/pending_invitation_storage.dart';
 
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
@@ -27,7 +28,12 @@ class AuthPage extends StatelessWidget {
       child: Builder(
         builder: (context) {
           // Check for optional query parameter to pick initial screen
-          final mode = GoRouterState.of(context).uri.queryParameters['mode'];
+          final uri = GoRouterState.of(context).uri;
+          final inviteToken = uri.queryParameters['invite'];
+          if (PendingInvitationStorage.isValidTokenFormat(inviteToken)) {
+            PendingInvitationStorage.saveToken(inviteToken!);
+          }
+          final mode = uri.queryParameters['mode'];
           if (mode == 'register') {
             SchedulerBinding.instance.addPostFrameCallback((_) {
               if (!context.mounted) return;

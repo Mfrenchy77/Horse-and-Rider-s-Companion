@@ -1,3 +1,4 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
@@ -6,17 +7,26 @@ import 'package:horseandriderscompanion/Utilities/share_helper_stub.dart'
     if (dart.library.js_interop) 'package:horseandriderscompanion/Utilities/share_helper_web.dart';
 
 /// Function signature for platform-native sharing (e.g. Web Share API).
-typedef NativeShareHandler = Future<bool> Function({
-  required String title,
-  required String url,
-  String? text,
-});
+typedef NativeShareHandler =
+    Future<bool> Function({
+      required String title,
+      required String url,
+      String? text,
+    });
 
 /// Optional test override for [tryNativeWebShare].
 NativeShareHandler? debugNativeShareOverride;
 
 /// Default production origin used when [Uri.base] is not HTTP(S) (e.g. tests).
-const String kProductionOrigin = 'https://horse-and-riders-compani-d2bd4.web.app';
+const String kProductionOrigin =
+    'https://horse-and-riders-compani-d2bd4.web.app';
+
+/// Canonical domain used for generated invitation links unless overridden
+/// with `--dart-define=INVITE_BASE_URL=...` or an active HTTP(S) origin.
+const String kInviteCanonicalOrigin = String.fromEnvironment(
+  'INVITE_BASE_URL',
+  defaultValue: 'https://horseandriderscompanion.com',
+);
 
 /// Resolves the active HTTP(S) origin for shareable URLs.
 String resolveShareOrigin([Uri? baseUri]) {
@@ -25,6 +35,56 @@ String resolveShareOrigin([Uri? baseUri]) {
     return uri.origin;
   }
   return kProductionOrigin;
+}
+
+/// Resolves the origin for personalized invitation links.
+///
+/// Preserves local dev/emulator hosts and Firebase Hosting preview channels,
+/// while defaulting to [kInviteCanonicalOrigin].
+String resolveInviteOrigin([Uri? baseUri]) {
+  final uri = baseUri ?? Uri.base;
+  if (uri.scheme == 'http' || uri.scheme == 'https') {
+    final host = uri.host.toLowerCase();
+    final isLocal = host == 'localhost' || host == '127.0.0.1';
+    final isPreviewChannel = host.endsWith('.web.app') && host.contains('--');
+    final isPrimaryDomain =
+        host == 'horseandriderscompanion.com' ||
+        host == 'www.horseandriderscompanion.com';
+    if (isLocal || isPreviewChannel || isPrimaryDomain) {
+      return uri.origin;
+    }
+  }
+  return kInviteCanonicalOrigin;
+}
+
+/// Builds the canonical shareable URL for a personalized invitation.
+String buildInvitationShareUrl(String token, {Uri? baseUri}) {
+  final origin = resolveInviteOrigin(baseUri);
+  return '$origin/invite/${Uri.encodeComponent(token.trim())}';
+}
+
+/// Builds a welcoming, discipline-neutral share message for invitations.
+String buildInvitationShareMessage({
+  required InvitationType type,
+  required String inviterName,
+  required String url,
+  String? personalMessage,
+}) {
+  final name = inviterName.trim().isNotEmpty ? inviterName.trim() : 'A rider';
+  final header = switch (type) {
+    InvitationType.studentConnection =>
+      '$name invited you to connect as their student on '
+          "Horse & Rider's Companion.",
+    InvitationType.general =>
+      "$name invited you to join Horse & Rider's Companion — track rider "
+          'and horse horsemanship skills, keep a logbook, and explore '
+          'educational resources.',
+  };
+  final note = personalMessage?.trim();
+  if (note != null && note.isNotEmpty) {
+    return '$header\n\n"$note"\n\nOpen your invitation: $url';
+  }
+  return '$header\n\nOpen your invitation: $url';
 }
 
 /// Builds the canonical shareable URL for a Skill Tree 2.0 skill.
@@ -73,14 +133,11 @@ Future<void> shareAppLink(
             Container(
               padding: const EdgeInsets.all(AppTokens.spaceSm),
               decoration: BoxDecoration(
-                color: Theme.of(dialogContext)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withValues(alpha: 0.45),
+                color: Theme.of(
+                  dialogContext,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                border: Border.all(
-                  color: Theme.of(dialogContext).dividerColor,
-                ),
+                border: Border.all(color: Theme.of(dialogContext).dividerColor),
               ),
               child: SelectableText(
                 url,

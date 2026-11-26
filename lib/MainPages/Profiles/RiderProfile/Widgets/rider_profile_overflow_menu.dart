@@ -1,15 +1,17 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/invite_share_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/manage_invitations_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/EditProfileDialog/edit_rider_profile_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/Logbook/rider_logbook_page.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
-import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 
 class RiderProfileOverFlowMenu extends StatelessWidget {
   const RiderProfileOverFlowMenu({super.key, this.menuController});
@@ -71,6 +73,34 @@ class RiderProfileOverFlowMenu extends StatelessWidget {
                   }
                 },
                 child: const Text('Add Horse'),
+              ),
+              if (state.usersProfile?.isTrainer ?? false)
+                MenuItemButton(
+                  key: const Key('overflowInviteStudentItem'),
+                  onPressed: () {
+                    if (tourActive) return;
+                    InviteShareDialog.show(
+                      context,
+                      initialType: InvitationType.studentConnection,
+                    );
+                  },
+                  child: const Text('Invite Student'),
+                ),
+              MenuItemButton(
+                key: const Key('overflowInviteSomeoneItem'),
+                onPressed: () {
+                  if (tourActive) return;
+                  InviteShareDialog.show(context);
+                },
+                child: const Text('Invite Someone'),
+              ),
+              MenuItemButton(
+                key: const Key('overflowManageInvitationsItem'),
+                onPressed: () {
+                  if (tourActive) return;
+                  ManageInvitationsDialog.show(context);
+                },
+                child: const Text('Manage Invitations'),
               ),
               if (state.canAccessAdministration)
                 MenuItemButton(

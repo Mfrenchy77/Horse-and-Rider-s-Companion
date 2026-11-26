@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/banner_ad_view.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/pending_invitation_storage.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
@@ -35,7 +36,9 @@ class _NavigationViewState extends State<NavigationView> {
   @override
   void initState() {
     super.initState();
-    _showEmailVerificationIfNeeded(context.read<AppCubit>());
+    final cubit = context.read<AppCubit>();
+    _showEmailVerificationIfNeeded(cubit);
+    _restorePendingInvitationIfReady(cubit);
   }
 
   @override
@@ -55,6 +58,36 @@ class _NavigationViewState extends State<NavigationView> {
         }
       }
     }
+  }
+
+  void _restorePendingInvitationIfReady(AppCubit cubit) {
+    final state = cubit.state;
+    if (state.isGuest ||
+        !state.user.emailVerified ||
+        state.user.id.isEmpty ||
+        state.status != AppStatus.authenticated) {
+      return;
+    }
+    final pendingToken = PendingInvitationStorage.readToken();
+    if (pendingToken == null) return;
+    if (!PendingInvitationStorage.shouldAutoRedirect(
+      uid: state.user.id,
+      token: pendingToken,
+    )) {
+      return;
+    }
+    PendingInvitationStorage.markAutoRedirected(
+      uid: state.user.id,
+      token: pendingToken,
+    );
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final currentPath = GoRouter.of(
+        context,
+      ).routeInformationProvider.value.uri.path;
+      if (currentPath.startsWith('/invite/')) return;
+      GoRouter.of(context).go('/invite/${Uri.encodeComponent(pendingToken)}');
+    });
   }
 
   void _showEmailVerificationIfNeeded(AppCubit cubit) {
@@ -87,6 +120,9 @@ class _NavigationViewState extends State<NavigationView> {
     return BlocListener<AppCubit, AppState>(
       listenWhen: (previous, current) =>
           previous.index != current.index ||
+          previous.status != current.status ||
+          previous.isGuest != current.isGuest ||
+          previous.user.emailVerified != current.user.emailVerified ||
           previous.showOnboarding != current.showOnboarding ||
           previous.isError != current.isError ||
           previous.isMessage != current.isMessage ||
@@ -203,6 +239,7 @@ class _NavigationViewState extends State<NavigationView> {
         }
 
         _showEmailVerificationIfNeeded(cubit);
+        _restorePendingInvitationIfReady(cubit);
       },
       child: Builder(
         builder: (context) {

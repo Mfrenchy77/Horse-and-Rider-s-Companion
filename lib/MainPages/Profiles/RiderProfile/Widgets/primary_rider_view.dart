@@ -2,6 +2,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/invite_share_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_panel.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
@@ -36,6 +37,8 @@ class PrimaryRiderView extends StatelessWidget {
         instructor.coach == viewer?.toLowerCase();
     final showLogbook = !app.isGuest && (ownProfile || showStudentLogbook);
     final showWebsite = profile.homeUrl?.trim().isNotEmpty ?? false;
+    final showInviteStudent =
+        !app.isGuest && ownProfile && (profile.isTrainer ?? false);
     final subtitle = (profile.isTrainer ?? false)
         ? 'Professional Trainer'
         : null;
@@ -43,7 +46,7 @@ class PrimaryRiderView extends StatelessWidget {
     final bodyContent = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showLogbook || showWebsite) ...[
+        if (showLogbook || showWebsite || showInviteStudent) ...[
           RiderActionBar(
             profile: profile,
             ownProfile: ownProfile,
@@ -52,6 +55,12 @@ class PrimaryRiderView extends StatelessWidget {
             studentConnection: showStudentLogbook ? instructor : null,
             saving:
                 showStudentLogbook && (connections?.actionInProgress ?? false),
+            onInviteStudent: showInviteStudent
+                ? () => InviteShareDialog.show(
+                    context,
+                    initialType: InvitationType.studentConnection,
+                  )
+                : null,
           ),
           const SizedBox(height: 16),
         ],
@@ -182,8 +191,7 @@ class _RiderAboutState extends State<_RiderAbout> {
                     if (canExpand) ...[
                       const SizedBox(height: 6),
                       TextButton(
-                        onPressed: () =>
-                            setState(() => _expanded = !_expanded),
+                        onPressed: () => setState(() => _expanded = !_expanded),
                         style: TextButton.styleFrom(
                           foregroundColor: accent,
                           padding: const EdgeInsets.symmetric(

@@ -33,6 +33,7 @@ class App extends StatefulWidget {
     this._connectionRequestStore,
     this._skillTreeSuggestionsStore,
     this._skillTreeV2Repository,
+    this._invitationStore,
     this.useCompositeRequestStore = kUseCompositeRequestStore,
     this.mirrorRequestWritesToLegacy = kMirrorRequestWritesToLegacy,
     this._firestore,
@@ -63,6 +64,7 @@ class App extends StatefulWidget {
   final ConnectionRequestStore? _connectionRequestStore;
   final SkillTreeSuggestionsStore? _skillTreeSuggestionsStore;
   final SkillTreeV2Repository? _skillTreeV2Repository;
+  final InvitationStore? _invitationStore;
   final bool useCompositeRequestStore;
   final bool mirrorRequestWritesToLegacy;
   final FirebaseFirestore? _firestore;
@@ -124,6 +126,28 @@ class _AppState extends State<App> {
           primaryStore: FirestoreSkillTreeV2Store(firestore: widget._firestore),
         ),
       );
+  late final InvitationRepository _invitationRepository = InvitationRepository(
+    store:
+        widget._invitationStore ??
+        CloudInvitationStore(
+          tokenProvider: widget._authenticationRepository.getAccessToken,
+          previewEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.invitationPreviewEndpoint()
+              : null,
+          createEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.createInvitationEndpoint()
+              : null,
+          redeemEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.redeemInvitationEndpoint()
+              : null,
+          listEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.listInvitationsEndpoint()
+              : null,
+          revokeEndpoint: FirebaseEmulators.enabled
+              ? FirebaseEmulators.revokeInvitationEndpoint()
+              : null,
+        ),
+  );
   late final ConnectionRequestStore _connectionRequestStore =
       widget._connectionRequestStore ??
       (widget.useCompositeRequestStore && widget._messagesRepository != null
@@ -235,6 +259,9 @@ class _AppState extends State<App> {
         ),
         RepositoryProvider<SkillTreeV2Repository>.value(
           value: _skillTreeV2Repository,
+        ),
+        RepositoryProvider<InvitationRepository>.value(
+          value: _invitationRepository,
         ),
         if (widget._authenticationRepository
             case final AuthenticationRepository repo)

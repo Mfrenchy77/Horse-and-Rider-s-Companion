@@ -13,6 +13,7 @@ import 'package:horseandriderscompanion/MainPages/Auth/auth_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_admin_page.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_page.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/invite_page.dart';
 import 'package:horseandriderscompanion/MainPages/Navigator/navigation_view.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/HorseProfile/horse_profile_page.dart';
@@ -169,6 +170,14 @@ class Routes {
           path: AuthPage.path,
           name: AuthPage.name,
           builder: (context, state) => const AuthPage(),
+        ),
+        GoRoute(path: '/invite', redirect: (_, _) => ProfilePage.path),
+        GoRoute(
+          path: InvitePage.path,
+          name: InvitePage.name,
+          builder: (context, state) => InvitePage(
+            token: state.pathParameters[InvitePage.tokenParam] ?? '',
+          ),
         ),
 
         // ── MAIN SHELL: app chrome + animated branch container ───────────────

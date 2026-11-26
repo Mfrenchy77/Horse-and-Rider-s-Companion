@@ -1,3 +1,4 @@
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,8 @@ import 'package:horseandriderscompanion/CommonWidgets/seasonal_decoration.dart';
 import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Administration/administration_page.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/invite_share_dialog.dart';
+import 'package:horseandriderscompanion/MainPages/Invitations/manage_invitations_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/tutorial_selector_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Privacy%20Policy/privacy_policy_page.dart';
@@ -262,6 +265,40 @@ class UserProfileDrawer extends StatelessWidget {
                           key: const Key('ProfileSearchDialog'),
                         ),
                       );
+                    },
+                  ),
+                  if (state.usersProfile?.isTrainer ?? false)
+                    ListTile(
+                      key: const Key('drawerInviteStudentTile'),
+                      leading: const Icon(Icons.school_outlined),
+                      title: const Text('Invite Student'),
+                      onTap: () {
+                        onClose?.call();
+                        Scaffold.maybeOf(context)?.closeDrawer();
+                        InviteShareDialog.show(
+                          context,
+                          initialType: InvitationType.studentConnection,
+                        );
+                      },
+                    ),
+                  ListTile(
+                    key: const Key('drawerInviteSomeoneTile'),
+                    leading: const Icon(Icons.person_add_alt_1_outlined),
+                    title: const Text('Invite Someone'),
+                    onTap: () {
+                      onClose?.call();
+                      Scaffold.maybeOf(context)?.closeDrawer();
+                      InviteShareDialog.show(context);
+                    },
+                  ),
+                  ListTile(
+                    key: const Key('drawerManageInvitationsTile'),
+                    leading: const Icon(Icons.mail_outline),
+                    title: const Text('Invitations'),
+                    onTap: () {
+                      onClose?.call();
+                      Scaffold.maybeOf(context)?.closeDrawer();
+                      ManageInvitationsDialog.show(context);
                     },
                   ),
                   Divider(

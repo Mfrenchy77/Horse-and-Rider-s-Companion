@@ -26,3 +26,4 @@ export 'curriculum_draft_diff.dart';
 export 'curriculum_revision.dart';
 export 'skill_progress_v2.dart';
 export 'skill_tree_suggestion.dart';
+export 'invitation.dart';
