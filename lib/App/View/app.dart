@@ -36,7 +36,7 @@ class App extends StatefulWidget {
     this.useCompositeRequestStore = kUseCompositeRequestStore,
     this.mirrorRequestWritesToLegacy = kMirrorRequestWritesToLegacy,
     this._firestore,
-  // ignore: prefer_initializing_formals
+    // ignore: prefer_initializing_formals
   }) : _messagesRepository = messagesRepository;
 
   /// Opt-in flag for dual-reading `Requests` alongside legacy
@@ -121,9 +121,7 @@ class _AppState extends State<App> {
       widget._skillTreeV2Repository ??
       SkillTreeV2Repository(
         store: HybridCurriculumSkillTreeV2Store(
-          primaryStore: FirestoreSkillTreeV2Store(
-            firestore: widget._firestore,
-          ),
+          primaryStore: FirestoreSkillTreeV2Store(firestore: widget._firestore),
         ),
       );
   late final ConnectionRequestStore _connectionRequestStore =

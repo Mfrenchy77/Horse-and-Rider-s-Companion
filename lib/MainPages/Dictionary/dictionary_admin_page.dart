@@ -1,12 +1,19 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/database_repository.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_diff.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -44,14 +51,26 @@ bool _detectRevisionMismatch({
   return false;
 }
 
+/// Picked image payload for Dictionary admin uploads (injectable in tests).
+typedef DictionaryImagePicker =
+    Future<({String name, Uint8List bytes})?> Function();
+
 /// Uses the existing verified administrator claims and private suggestion/audit
 /// pattern. Dictionary editors have no direct client write permissions.
 class DictionaryAdminPage extends StatefulWidget {
-  const DictionaryAdminPage({super.key, this.firestore, this.repository});
+  const DictionaryAdminPage({
+    super.key,
+    this.firestore,
+    this.repository,
+    this.mediaStorage,
+    this.pickImageFile,
+  });
   static const path = '/DictionaryReview';
 
   final FirebaseFirestore? firestore;
   final DictionaryRepository? repository;
+  final MediaStorageRepository? mediaStorage;
+  final DictionaryImagePicker? pickImageFile;
 
   @override
   State<DictionaryAdminPage> createState() => _DictionaryAdminPageState();
@@ -240,6 +259,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
       builder: (_) => _EntryEditor(
         firestore: _db,
         repository: _repository,
+        mediaStorage: widget.mediaStorage,
+        pickImageFile: widget.pickImageFile,
         existingEntries: allEntries,
         initial: initial,
         publishedTarget: publishedTarget,
@@ -286,6 +307,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
       builder: (_) => _EntryEditor(
         firestore: _db,
         repository: _repository,
+        mediaStorage: widget.mediaStorage,
+        pickImageFile: widget.pickImageFile,
         existingEntries: entries,
         initial: selected,
       ),
@@ -1016,12 +1039,16 @@ class _EntryEditor extends StatefulWidget {
     required this.firestore,
     required this.repository,
     required this.existingEntries,
+    this.mediaStorage,
+    this.pickImageFile,
     this.initial,
     this.publishedTarget,
     this.suggestion,
   });
   final FirebaseFirestore firestore;
   final DictionaryRepository repository;
+  final MediaStorageRepository? mediaStorage;
+  final DictionaryImagePicker? pickImageFile;
   final List<DictionaryEntry> existingEntries;
   final DictionaryEntry? initial;
   final DictionaryEntry? publishedTarget;
@@ -1033,10 +1060,19 @@ class _EntryEditor extends StatefulWidget {
 class _EntryEditorState extends State<_EntryEditor> {
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
+  final List<String> _mediaUrls = [];
+  final List<TextEditingController> _mediaLabelControllers = [];
+  final Set<String> _persistedMediaUrls = {};
+  final Set<String> _sessionUploadedDraftUrls = {};
+  MediaStorageRepository? _resolvedStorage;
+  bool _savedOrPublished = false;
   int _revision = 0;
   bool _busy = true;
+  bool _uploadingMedia = false;
+  double _uploadProgress = 0;
   bool _contextual = false;
   String? _error;
+  String? _mediaError;
   bool _existingDraft = false;
   bool _slugManuallyEdited = false;
   bool _acknowledgedMismatch = false;
@@ -1095,7 +1131,9 @@ class _EntryEditorState extends State<_EntryEditor> {
     if (widget.initial != null || _existingDraft || _slugManuallyEdited) return;
     final generated = _slugify(_fields['term']!.text);
     if (generated.isNotEmpty) {
-      _fields['id']!.text = generated;
+      if (_mediaUrls.isEmpty && !_uploadingMedia) {
+        _fields['id']!.text = generated;
+      }
       _fields['slug']!.text = generated;
     }
     if (mounted) setState(() {});
@@ -1157,20 +1195,65 @@ class _EntryEditorState extends State<_EntryEditor> {
             ? (data[key] as List<dynamic>? ?? []).join('\n')
             : data[key] as String? ?? '';
       }
+      _clearMediaControllers();
+      _persistedMediaUrls.clear();
+      final existingMedia = data['media'] as List<dynamic>? ?? const [];
+      for (final rawItem in existingMedia) {
+        if (rawItem is Map) {
+          final url = (rawItem['url'] as String?)?.trim() ?? '';
+          final label = (rawItem['label'] as String?)?.trim() ?? '';
+          if (url.isNotEmpty) {
+            _mediaUrls.add(url);
+            _persistedMediaUrls.add(url);
+            _mediaLabelControllers.add(TextEditingController(text: label));
+          }
+        }
+      }
     } catch (error) {
       _error = error.toString();
     }
     if (mounted) setState(() => _busy = false);
   }
 
+  void _clearMediaControllers() {
+    for (final controller in _mediaLabelControllers) {
+      controller.dispose();
+    }
+    _mediaLabelControllers.clear();
+    _mediaUrls.clear();
+  }
+
   @override
   void dispose() {
+    if (!_savedOrPublished) {
+      _cleanupSessionDraftUrls(_sessionUploadedDraftUrls.toList());
+    }
     _fields['term']?.removeListener(_syncSlugFromTerm);
     for (final controller in _fields.values) {
       controller.dispose();
     }
+    _clearMediaControllers();
     super.dispose();
   }
+
+  void _cleanupSessionDraftUrls(Iterable<String> urls) {
+    final storage = _resolvedStorage ?? widget.mediaStorage;
+    if (storage == null) return;
+    for (final url in urls) {
+      if (_persistedMediaUrls.contains(url)) continue;
+      if (!_sessionUploadedDraftUrls.contains(url)) continue;
+      _sessionUploadedDraftUrls.remove(url);
+      unawaited(storage.deleteByUrl(url).catchError((Object _) {}));
+    }
+  }
+
+  List<Map<String, dynamic>> _mediaPayload() => [
+    for (var i = 0; i < _mediaUrls.length; i++)
+      {
+        'url': _mediaUrls[i],
+        'label': _mediaLabelControllers[i].text.trim(),
+      },
+  ];
 
   Map<String, dynamic> _currentEntryPayload() => <String, dynamic>{
     for (final key in fields)
@@ -1182,9 +1265,148 @@ class _EntryEditorState extends State<_EntryEditor> {
                 .toList()
           : _fields[key]!.text.trim(),
     'contextual': _contextual,
-    'media': widget.initial?.data['media'] ?? <dynamic>[],
+    'media': _mediaPayload(),
     'status': 'published',
   };
+
+  Future<({String name, Uint8List bytes})?> _defaultPickImage() async {
+    final file = await FilePicker.pickFile(type: FileType.image);
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    return (name: file.name, bytes: bytes);
+  }
+
+  String _defaultCaptionFromFileName(String fileName) {
+    final withoutExt = fileName.replaceAll(RegExp(r'\.[^.]+$'), '');
+    final cleaned = withoutExt.replaceAll(RegExp('[-_]+'), ' ').trim();
+    if (cleaned.isEmpty) return 'Dictionary illustration';
+    return cleaned.length > 120 ? cleaned.substring(0, 120) : cleaned;
+  }
+
+  Future<void> _pickAndUploadImage({int? replaceIndex}) async {
+    if (_busy || _uploadingMedia) return;
+    final entryId = _fields['id']!.text.trim().toLowerCase();
+    if (entryId.isEmpty) {
+      setState(() {
+        _mediaError = 'Enter a term or ID before uploading images.';
+      });
+      return;
+    }
+    if (replaceIndex == null && _mediaUrls.length >= maxDictionaryMediaItems) {
+      setState(() {
+        _mediaError =
+            'Up to $maxDictionaryMediaItems images are allowed per definition.';
+      });
+      return;
+    }
+
+    setState(() {
+      _mediaError = null;
+    });
+
+    try {
+      final picked = await (widget.pickImageFile ?? _defaultPickImage)();
+      if (picked == null) return;
+
+      final validated = DictionaryImageValidator.validate(
+        bytes: picked.bytes,
+        fileName: picked.name,
+      );
+
+      if (!mounted) return;
+      final storage =
+          widget.mediaStorage ??
+          context.read<MediaStorageRepository?>() ??
+          CloudRepository();
+      _resolvedStorage = storage;
+
+      setState(() {
+        _uploadingMedia = true;
+        _uploadProgress = 0;
+        _mediaError = null;
+      });
+
+      final uploadId = DictionaryRepository.newSubmissionId().substring(0, 24);
+      final storagePath =
+          'dictionary_drafts/$entryId/${uploadId}_${validated.fileName}';
+      final url = await storage.uploadBytes(
+        path: storagePath,
+        bytes: validated.bytes,
+        contentType: validated.contentType,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() => _uploadProgress = progress.clamp(0.0, 1.0));
+          }
+        },
+      );
+
+      if (!mounted) {
+        unawaited(storage.deleteByUrl(url).catchError((Object _) {}));
+        return;
+      }
+      _sessionUploadedDraftUrls.add(url);
+      String? replacedUrl;
+      setState(() {
+        if (replaceIndex != null && replaceIndex < _mediaUrls.length) {
+          replacedUrl = _mediaUrls[replaceIndex];
+          _mediaUrls[replaceIndex] = url;
+          if (_mediaLabelControllers[replaceIndex].text.trim().isEmpty) {
+            _mediaLabelControllers[replaceIndex].text =
+                _defaultCaptionFromFileName(validated.fileName);
+          }
+        } else {
+          _mediaUrls.add(url);
+          _mediaLabelControllers.add(
+            TextEditingController(
+              text: _defaultCaptionFromFileName(validated.fileName),
+            ),
+          );
+        }
+        _uploadingMedia = false;
+        _uploadProgress = 0;
+      });
+      if (replacedUrl != null) {
+        _cleanupSessionDraftUrls([replacedUrl!]);
+      }
+    } on FormatException catch (error) {
+      if (mounted) {
+        setState(() {
+          _uploadingMedia = false;
+          _uploadProgress = 0;
+          _mediaError = error.message;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _uploadingMedia = false;
+          _uploadProgress = 0;
+          _mediaError = 'Image upload failed: $error';
+        });
+      }
+    }
+  }
+
+  void _moveMedia(int index, int delta) {
+    final target = index + delta;
+    if (target < 0 || target >= _mediaUrls.length) return;
+    setState(() {
+      final url = _mediaUrls.removeAt(index);
+      _mediaUrls.insert(target, url);
+      final controller = _mediaLabelControllers.removeAt(index);
+      _mediaLabelControllers.insert(target, controller);
+    });
+  }
+
+  void _removeMedia(int index) {
+    if (index < 0 || index >= _mediaUrls.length) return;
+    late final String removedUrl;
+    setState(() {
+      removedUrl = _mediaUrls.removeAt(index);
+      _mediaLabelControllers.removeAt(index).dispose();
+    });
+    _cleanupSessionDraftUrls([removedUrl]);
+  }
 
   DictionaryEntry? _conflictingTermMatch() {
     final currentId = _fields['id']!.text.trim().toLowerCase();
@@ -1253,6 +1475,12 @@ class _EntryEditorState extends State<_EntryEditor> {
               ),
             if (previewEntry.strings('examples').isNotEmpty)
               Text('Examples:\n${previewEntry.strings('examples').join('\n')}'),
+            if ((previewEntry.data['media'] as List<dynamic>? ?? []).isNotEmpty)
+              DictionaryMediaGallery(
+                media: (previewEntry.data['media'] as List<dynamic>)
+                    .map((item) => (item as Map).cast<String, dynamic>())
+                    .toList(),
+              ),
           ],
         ),
         actions: [
@@ -1344,6 +1572,11 @@ class _EntryEditorState extends State<_EntryEditor> {
       if (action == 'publish') {
         DictionaryRepository.invalidateCache();
       }
+      _savedOrPublished = true;
+      final activeUrls = _mediaUrls.toSet();
+      _cleanupSessionDraftUrls(
+        _sessionUploadedDraftUrls.where((u) => !activeUrls.contains(u)).toList(),
+      );
       if (mounted) Navigator.pop(context);
     } catch (error) {
       if (mounted) {
@@ -1428,14 +1661,190 @@ class _EntryEditorState extends State<_EntryEditor> {
     );
   }
 
+  Widget _buildMediaEditorSection(BuildContext context) {
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    return Container(
+      key: const Key('dictionaryMediaSection'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 10,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                'Images (${_mediaUrls.length}/$maxDictionaryMediaItems)',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              OutlinedButton.icon(
+                key: const Key('dictionaryUploadImageButton'),
+                onPressed:
+                    _busy ||
+                        _uploadingMedia ||
+                        _mediaUrls.length >= maxDictionaryMediaItems
+                    ? null
+                    : _pickAndUploadImage,
+                icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                label: const Text('Upload image (PNG, JPEG, WebP)'),
+              ),
+            ],
+          ),
+          Text(
+            'Uploads stay private in draft storage until published. The first '
+            'image is also used for link-sharing previews.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+          ),
+          if (_uploadingMedia)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 4,
+              children: [
+                LinearProgressIndicator(
+                  key: const Key('dictionaryMediaUploadProgress'),
+                  value: _uploadProgress > 0 ? _uploadProgress : null,
+                ),
+                Text(
+                  'Uploading image… ${(_uploadProgress * 100).round()}%',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          if (_mediaError != null)
+            AppFeedbackBanner(
+              key: const Key('dictionaryMediaError'),
+              message: _mediaError!,
+              tone: AppStatusTone.error,
+            ),
+          for (var i = 0; i < _mediaUrls.length; i++)
+            Container(
+              key: Key('dictionaryMediaItem_$i'),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 8,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 12,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                        child: SmartImage(
+                          _mediaUrls[i],
+                          width: 112,
+                          height: 84,
+                          maxLogicalWidth: 240,
+                        ),
+                      ),
+                      Expanded(
+                        child: TextFormField(
+                          key: Key('dictionaryMediaLabel_$i'),
+                          controller: _mediaLabelControllers[i],
+                          enabled: !_busy && !_uploadingMedia,
+                          maxLength: 120,
+                          decoration: InputDecoration(
+                            labelText: i == 0
+                                ? 'Caption / alt text (primary OG image)'
+                                : 'Caption / alt text',
+                          ),
+                          validator: (value) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isEmpty) {
+                              return 'Caption is required.';
+                            }
+                            if (RegExp(
+                              r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                              caseSensitive: false,
+                            ).hasMatch(trimmed)) {
+                              return 'Remove email addresses from captions.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      IconButton(
+                        key: Key('dictionaryMediaMoveUp_$i'),
+                        tooltip: 'Move up',
+                        onPressed: _busy || _uploadingMedia || i == 0
+                            ? null
+                            : () => _moveMedia(i, -1),
+                        icon: const Icon(Icons.arrow_upward, size: 18),
+                      ),
+                      IconButton(
+                        key: Key('dictionaryMediaMoveDown_$i'),
+                        tooltip: 'Move down',
+                        onPressed:
+                            _busy ||
+                                _uploadingMedia ||
+                                i == _mediaUrls.length - 1
+                            ? null
+                            : () => _moveMedia(i, 1),
+                        icon: const Icon(Icons.arrow_downward, size: 18),
+                      ),
+                      TextButton.icon(
+                        key: Key('dictionaryMediaReplace_$i'),
+                        onPressed: _busy || _uploadingMedia
+                            ? null
+                            : () => _pickAndUploadImage(replaceIndex: i),
+                        icon: const Icon(Icons.swap_horiz, size: 16),
+                        label: const Text('Replace'),
+                      ),
+                      TextButton.icon(
+                        key: Key('dictionaryMediaRemove_$i'),
+                        onPressed: _busy || _uploadingMedia
+                            ? null
+                            : () => _removeMedia(i),
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        label: const Text('Remove'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isNewEntry = widget.initial == null && !_existingDraft;
     final duplicateMatch = _conflictingTermMatch();
-    final canPersist = !_busy && (!_hasRevisionMismatch || _acknowledgedMismatch);
+    final canPersist =
+        !_busy &&
+        !_uploadingMedia &&
+        (!_hasRevisionMismatch || _acknowledgedMismatch);
 
     return PopScope(
-      canPop: !_busy,
+      canPop: !_busy && !_uploadingMedia,
       child: AppGlassDialog(
         maxWidth: 760,
         title: Text(
@@ -1510,7 +1919,11 @@ class _EntryEditorState extends State<_EntryEditor> {
                     controller: _fields[key],
                     enabled:
                         !_busy &&
-                        (!const ['id', 'slug'].contains(key) || isNewEntry),
+                        (key == 'id'
+                            ? (isNewEntry &&
+                                  _mediaUrls.isEmpty &&
+                                  !_uploadingMedia)
+                            : (key != 'slug' || isNewEntry)),
                     onChanged: (value) {
                       if (key == 'id' || key == 'slug') {
                         _slugManuallyEdited = true;
@@ -1536,6 +1949,12 @@ class _EntryEditorState extends State<_EntryEditor> {
                     decoration: InputDecoration(
                       labelText:
                           key + (lists.contains(key) ? ' (one per line)' : ''),
+                      helperText:
+                          key == 'id' &&
+                              isNewEntry &&
+                              (_mediaUrls.isNotEmpty || _uploadingMedia)
+                          ? 'Entry ID is locked while images are attached.'
+                          : null,
                     ),
                     validator: (value) {
                       final trimmed = value?.trim() ?? '';
@@ -1578,6 +1997,9 @@ class _EntryEditorState extends State<_EntryEditor> {
                   'Allow contextual matching (unambiguous terms only)',
                 ),
               ),
+              const SizedBox(height: 8),
+              _buildMediaEditorSection(context),
+              const SizedBox(height: 8),
               const Text(
                 'Review meaning, examples, welfare, usage, licensing, '
                 'and contributor consent before publishing.',

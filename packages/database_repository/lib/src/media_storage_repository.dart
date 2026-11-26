@@ -38,4 +38,7 @@ abstract interface class MediaStorageRepository {
     String? contentType,
     void Function(double progress)? onProgress,
   });
+
+  /// Best-effort deletion of an uploaded object by its download [url].
+  Future<void> deleteByUrl(String url) async {}
 }

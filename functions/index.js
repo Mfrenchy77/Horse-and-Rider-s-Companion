@@ -38,7 +38,10 @@ exports.submitDictionarySuggestion = onCall(
 
 exports.editDictionary = onCall(
     {region: 'us-central1'},
-    (request) => editDictionary(admin.firestore())(request),
+    (request) => editDictionary(
+        admin.firestore(),
+        {bucket: admin.storage().bucket()},
+    )(request),
 );
 
 const {syncPublicHorseProfileHandler} = require('./public_horse_profile');

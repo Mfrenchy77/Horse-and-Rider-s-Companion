@@ -34,6 +34,9 @@ class _InMemoryMediaStorageRepository implements MediaStorageRepository {
   }
 
   @override
+  Future<void> deleteByUrl(String url) async {}
+
+  @override
   Future<String> uploadBytes({
     required String path,
     required Uint8List bytes,

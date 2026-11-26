@@ -3,7 +3,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {randomUUID} = require('node:crypto');
-const {submitDictionarySuggestion, editDictionary, validateEntry, publicEntry} = require('../dictionary');
+const {
+  submitDictionarySuggestion,
+  editDictionary,
+  validateEntry,
+  publicEntry,
+  cleanupAbandonedDraftMedia,
+} = require('../dictionary');
 const {sharePreviewHandler} = require('../share_preview');
 const seeds = require('../dictionary_seed.json');
 
@@ -16,6 +22,11 @@ function fakeDb() {
   });
   const collection = (path) => ({
     doc: (id = randomUUID()) => ref(path + '/' + id),
+    get: async () => ({
+      docs: [...store.entries()]
+          .filter(([key]) => key.startsWith(path + '/') && !key.slice(path.length + 1).includes('/'))
+          .map(([, data]) => ({data: () => structuredClone(data)})),
+    }),
     where: (field, op, value) => ({
       limit: (count) => ({
         get: async () => ({docs: [...store.entries()].filter(([key, data]) =>
@@ -289,4 +300,215 @@ test('structured improvements record base revision, validate changes, allow admi
   );
   assert(db.store.has('DictionaryDrafts/canter/Revisions/1'));
   assert(db.store.has('DictionaryDrafts/canter/Revisions/2'));
+});
+
+test('publishing promotes private draft images to immutable dictionary_public paths, verifies ownership, cleans up failed publishes, and preserves saved drafts', async () => {
+  const db = fakeDb();
+  const canterSeed = seeds.find((item) => item.id === 'canter');
+  const draftPath = 'dictionary_drafts/canter/abc123_diagram.png';
+  const draftUrl =
+    'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+    encodeURIComponent(draftPath) +
+    '?alt=media&token=draft-tok';
+
+  // Without a storage bucket, publishing a draft-storage URL must fail rather than leaking a draft path.
+  const editNoBucket = editDictionary(db);
+  await assert.rejects(
+      editNoBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {...canterSeed, media: [{url: draftUrl, label: 'Canter footfalls'}]},
+      }, admin)),
+      {code: 'failed-precondition'},
+  );
+
+  // Stateful mock bucket tracking existing objects, copies, metadata, and deletions.
+  const objects = new Map([
+    [draftPath, {contentType: 'image/png', timeCreated: '2026-11-01T00:00:00Z'}],
+    ['dictionary_drafts/withers/other.png', {contentType: 'image/png', timeCreated: '2026-11-01T00:00:00Z'}],
+    ['dictionary_drafts/canter/bad.gif', {contentType: 'image/gif', timeCreated: '2026-11-01T00:00:00Z'}],
+  ]);
+  const fakeBucket = {
+    name: 'test-bucket',
+    file(path) {
+      return {
+        name: path,
+        path,
+        async exists() {
+          return [objects.has(path)];
+        },
+        async copy(dest) {
+          assert(objects.has(path), 'Source must exist: ' + path);
+          objects.set(dest.path, {...objects.get(path)});
+        },
+        async getMetadata() {
+          assert(objects.has(path), 'Missing metadata for: ' + path);
+          return [objects.get(path)];
+        },
+        async setMetadata(meta) {
+          objects.set(path, {...objects.get(path), ...meta});
+        },
+        async delete() {
+          objects.delete(path);
+        },
+      };
+    },
+    async getFiles({prefix} = {}) {
+      const matched = [...objects.entries()]
+          .filter(([path]) => !prefix || path.startsWith(prefix))
+          .map(([path, metadata]) => ({
+            name: path,
+            metadata,
+            async delete() {
+              objects.delete(path);
+            },
+          }));
+      return [matched];
+    },
+  };
+
+  const editWithBucket = editDictionary(db, {bucket: fakeBucket});
+
+  // Reject wrong bucket, wrong entry ownership, unrelated folder, missing draft, and bad content-type.
+  await assert.rejects(
+      editWithBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {
+          ...canterSeed,
+          media: [{
+            url: 'https://firebasestorage.googleapis.com/v0/b/wrong-bucket/o/' + encodeURIComponent(draftPath),
+            label: 'Wrong bucket',
+          }],
+        },
+      }, admin)),
+      {code: 'invalid-argument'},
+  );
+  await assert.rejects(
+      editWithBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {
+          ...canterSeed,
+          media: [{
+            url: 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+              encodeURIComponent('dictionary_drafts/withers/other.png'),
+            label: 'Other entry image',
+          }],
+        },
+      }, admin)),
+      {code: 'invalid-argument'},
+  );
+  await assert.rejects(
+      editWithBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {
+          ...canterSeed,
+          media: [{
+            url: 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+              encodeURIComponent('Riders_Photo/rider-1.png'),
+            label: 'Unrelated folder',
+          }],
+        },
+      }, admin)),
+      {code: 'invalid-argument'},
+  );
+  await assert.rejects(
+      editWithBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {
+          ...canterSeed,
+          media: [{
+            url: 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+              encodeURIComponent('dictionary_drafts/canter/missing.png'),
+            label: 'Missing file',
+          }],
+        },
+      }, admin)),
+      {code: 'failed-precondition'},
+  );
+  await assert.rejects(
+      editWithBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {
+          ...canterSeed,
+          media: [{
+            url: 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+              encodeURIComponent('dictionary_drafts/canter/bad.gif'),
+            label: 'Disallowed GIF',
+          }],
+        },
+      }, admin)),
+      {code: 'invalid-argument'},
+  );
+
+  // Successful publish creates an immutable UUID public path and cleans up the entry's draft file.
+  await editWithBucket(request({
+    action: 'publish',
+    id: 'canter',
+    expectedRevision: 0,
+    entry: {...canterSeed, media: [{url: draftUrl, label: 'Canter footfalls'}]},
+  }, admin));
+
+  const published = db.store.get('DictionaryEntries/canter');
+  assert.equal(published.media.length, 1);
+  assert.equal(published.media[0].label, 'Canter footfalls');
+  assert.match(
+      published.media[0].url,
+      /dictionary_public%2Fcanter%2F[0-9a-f-]{36}\.png\?alt=media&token=/,
+  );
+  const firstPublicPath = decodeURIComponent(
+      new URL(published.media[0].url).pathname.split('/o/')[1],
+  );
+  assert(objects.has(firstPublicPath));
+  assert(!objects.has(draftPath), 'Published draft image should be cleaned up');
+
+  // Re-seed draft image and attempt a stale publish (expectedRevision: 0 instead of 1).
+  // Must fail with 'aborted', keep firstPublicPath intact, and leave zero orphaned dictionary_public files!
+  objects.set(draftPath, {contentType: 'image/png', timeCreated: '2026-11-01T00:00:00Z'});
+  await assert.rejects(
+      editWithBucket(request({
+        action: 'publish',
+        id: 'canter',
+        expectedRevision: 0,
+        entry: {...canterSeed, media: [{url: draftUrl, label: 'Stale overwrite attempt'}]},
+      }, admin)),
+      {code: 'aborted'},
+  );
+  const publicCanterFiles = [...objects.keys()].filter((p) => p.startsWith('dictionary_public/canter/'));
+  assert.deepEqual(publicCanterFiles, [firstPublicPath]);
+
+  // Verify cleanupAbandonedDraftMedia deletes only unreferenced expired draft files
+  // and NEVER deletes files referenced by saved drafts or recent uploads.
+  const savedDraftImg = 'dictionary_drafts/green/saved.png';
+  const expiredOrphanImg = 'dictionary_drafts/green/abandoned.png';
+  const recentOrphanImg = 'dictionary_drafts/green/recent.png';
+  objects.set(savedDraftImg, {contentType: 'image/png', timeCreated: '2026-11-01T00:00:00Z'});
+  objects.set(expiredOrphanImg, {contentType: 'image/png', timeCreated: '2026-11-01T00:00:00Z'});
+  objects.set(recentOrphanImg, {contentType: 'image/png', timeCreated: '2026-11-25T10:00:00Z'});
+  db.store.set('DictionaryDrafts/green', {
+    ...seeds[0],
+    media: [{
+      url: 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+        encodeURIComponent(savedDraftImg) + '?alt=media&token=s1',
+      label: 'Saved draft illustration',
+    }],
+  });
+
+  const cleanupResult = await cleanupAbandonedDraftMedia(db, fakeBucket, {
+    now: () => Date.parse('2026-11-25T16:00:00Z'),
+  });
+  assert(cleanupResult.deleted.includes(expiredOrphanImg));
+  assert(objects.has(savedDraftImg), 'Saved draft image must never be deleted');
+  assert(objects.has(recentOrphanImg), 'Recent upload within retention window must be kept');
+  assert(!objects.has(expiredOrphanImg), 'Expired unreferenced draft image must be deleted');
 });

@@ -1,6 +1,23 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isVerifiedDictionaryAdmin() {
+      return request.auth != null
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('admin', false) == true;
+    }
+
+    function isValidDictionaryImage() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType in [
+          'image/png',
+          'image/jpeg',
+          'image/webp'
+        ];
+    }
+
     match /Riders_Photo/{riderId} {
       allow read: if true;
       allow write: if request.auth != null;
@@ -20,6 +37,20 @@ service firebase.storage {
     match /resources/pdfs/{resourceId}/{fileName} {
       allow read: if true;
       allow write: if request.auth != null;
+    }
+
+    // Private draft uploads: only verified Dictionary administrators may read or write.
+    match /dictionary_drafts/{entryId}/{fileName} {
+      allow read: if isVerifiedDictionaryAdmin();
+      allow create, update: if isVerifiedDictionaryAdmin()
+        && isValidDictionaryImage();
+      allow delete: if isVerifiedDictionaryAdmin();
+    }
+
+    // Published Dictionary images: publicly readable, written only by Cloud Functions on publish.
+    match /dictionary_public/{entryId}/{fileName} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

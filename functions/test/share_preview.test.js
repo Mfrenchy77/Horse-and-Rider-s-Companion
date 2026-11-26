@@ -1,10 +1,11 @@
+/* eslint-disable max-len */
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {sharePreviewHandler} = require('../share_preview');
+const { sharePreviewHandler } = require('../share_preview');
 
-function fakeDb(docsById, horsesById = {}) {
+function fakeDb(docsById, horsesById = {}, dictionaryById = {}) {
   return {
     collection(name) {
       if (name === 'Horse_Profile') {
@@ -13,23 +14,38 @@ function fakeDb(docsById, horsesById = {}) {
             return {
               async get() {
                 const data = horsesById[id];
-                return data
-                  ? {exists: true, id, data: () => data}
-                  : {exists: false, id, data: () => undefined};
+                return data ?
+                  { exists: true, id, data: () => data } :
+                  { exists: false, id, data: () => undefined };
               },
             };
           },
         };
       }
+      if (name === 'DictionaryEntries') {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = dictionaryById[id];
+                return data ?
+                  { exists: true, id, data: () => data } :
+                  { exists: false, id, data: () => undefined };
+              },
+            };
+          },
+        };
+      }
+
       assert.equal(name, 'SkillsV2');
       return {
         doc(id) {
           return {
             async get() {
               const data = docsById[id];
-              return data
-                ? {exists: true, id, data: () => data}
-                : {exists: false, id, data: () => undefined};
+              return data ?
+                { exists: true, id, data: () => data } :
+                { exists: false, id, data: () => undefined };
             },
           };
         },
@@ -42,10 +58,10 @@ function fakeDb(docsById, horsesById = {}) {
                 async get() {
                   for (const [id, data] of Object.entries(docsById)) {
                     if (Array.isArray(data.legacyIds) && data.legacyIds.includes(value)) {
-                      return {empty: false, docs: [{id, data: () => data}]};
+                      return { empty: false, docs: [{ id, data: () => data }] };
                     }
                   }
-                  return {empty: true, docs: []};
+                  return { empty: true, docs: [] };
                 },
               };
             },
@@ -95,8 +111,8 @@ test('sharePreview injects Open Graph tags for active V2 skill into index.html',
   });
 
   const req = {
-    headers: {host: '127.0.0.1:5000'},
-    query: {skillId: 'rider.mounted.sidepass'},
+    headers: { host: '127.0.0.1:5000' },
+    query: { skillId: 'rider.mounted.sidepass' },
   };
   const res = makeRes();
   await handler(req, res);
@@ -126,24 +142,24 @@ test('sharePreview resolves legacy skill ID to canonical og:url and hides draft 
     },
   });
   const handler = sharePreviewHandler(db, {
-    fetchFn: async () => ({ok: false}),
+    fetchFn: async () => ({ ok: false }),
   });
 
   const resLegacy = makeRes();
   await handler(
-      {headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'}, query: {skillId: 'rider.mounted.sidepass_rail'}},
-      resLegacy,
+    { headers: { 'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app' }, query: { skillId: 'rider.mounted.sidepass_rail' } },
+    resLegacy,
   );
   assert.equal(resLegacy.statusCode, 200);
   assert.match(
-      resLegacy.body,
-      /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app\/SkillTree\?skillId=rider\.mounted\.sidepass">/,
+    resLegacy.body,
+    /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app\/SkillTree\?skillId=rider\.mounted\.sidepass">/,
   );
 
   const resDraft = makeRes();
   await handler(
-      {headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'}, query: {skillId: 'rider.draft.secret'}},
-      resDraft,
+    { headers: { 'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app' }, query: { skillId: 'rider.draft.secret' } },
+    resDraft,
   );
   assert.equal(resDraft.statusCode, 200);
   assert.doesNotMatch(resDraft.body, /Secret Draft/);
@@ -164,8 +180,8 @@ test('sharePreview serves public active horse metadata without leaking private f
       currentOwnerId: 'owner@example.com',
       currentOwnerName: 'Secret Owner',
       purchasePrice: 12000,
-      notes: [{id: 'n1', name: 'Private vet note'}],
-      instructors: [{id: 'trainer@example.com', name: 'Trainer Bob'}],
+      notes: [{ id: 'n1', name: 'Private vet note' }],
+      instructors: [{ id: 'trainer@example.com', name: 'Trainer Bob' }],
     },
     'horse-sale': {
       isPublic: true,
@@ -181,17 +197,17 @@ test('sharePreview serves public active horse metadata without leaking private f
     },
   });
   const handler = sharePreviewHandler(db, {
-    fetchFn: async () => ({ok: false}),
+    fetchFn: async () => ({ ok: false }),
   });
 
   const resPublic = makeRes();
   await handler(
-      {
-        headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'},
-        path: '/Profile/Horse_Profile/horse-1',
-        query: {},
-      },
-      resPublic,
+    {
+      headers: { 'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app' },
+      path: '/Profile/Horse_Profile/horse-1',
+      query: {},
+    },
+    resPublic,
   );
   assert.equal(resPublic.statusCode, 200);
   assert.match(resPublic.body, /<meta property="og:title" content="Starlight — Horse &amp; Rider&#39;s Companion">/);
@@ -202,12 +218,12 @@ test('sharePreview serves public active horse metadata without leaking private f
 
   const resSale = makeRes();
   await handler(
-      {
-        headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'},
-        path: '/Profile/Horse_Profile/horse-sale',
-        query: {},
-      },
-      resSale,
+    {
+      headers: { 'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app' },
+      path: '/Profile/Horse_Profile/horse-sale',
+      query: {},
+    },
+    resSale,
   );
   assert.equal(resSale.statusCode, 200);
   assert.match(resSale.body, /<meta property="og:title" content="Comet \(For Sale\) — Horse &amp; Rider&#39;s Companion">/);
@@ -234,18 +250,18 @@ test('sharePreview hides private, archived, and missing horse profiles', async (
     },
   });
   const handler = sharePreviewHandler(db, {
-    fetchFn: async () => ({ok: false}),
+    fetchFn: async () => ({ ok: false }),
   });
 
   for (const id of ['horse-private', 'horse-default', 'horse-archived', 'horse-missing']) {
     const res = makeRes();
     await handler(
-        {
-          headers: {'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app'},
-          path: `/Profile/Horse_Profile/${id}`,
-          query: {},
-        },
-        res,
+      {
+        headers: { 'x-forwarded-host': 'horse-and-riders-compani-d2bd4.web.app' },
+        path: `/Profile/Horse_Profile/${id}`,
+        query: {},
+      },
+      res,
     );
     assert.equal(res.statusCode, 200);
     assert.equal(res.headers['Cache-Control'], 'no-store');
@@ -253,4 +269,101 @@ test('sharePreview hides private, archived, and missing horse profiles', async (
     assert.match(res.body, /<meta property="og:title" content="Horse &amp; Rider&#39;s Companion">/);
     assert.match(res.body, /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app">/);
   }
+});
+
+test('sharePreview uses published Dictionary images and protects unpublished entries', async () => {
+  const db = fakeDb({}, {}, {
+    'canter': {
+      status: 'published',
+      slug: 'canter',
+      term: 'Canter',
+      definition: 'A three-beat gait.',
+      media: [
+        {
+          url: 'https://example.com/images/canter.jpg',
+          label: 'Horse cantering',
+        },
+      ],
+    },
+    'collection': {
+      status: 'published',
+      slug: 'collection',
+      term: 'Collection',
+      definition: 'Balanced movement.',
+      media: [],
+    },
+    'secret-draft': {
+      status: 'draft',
+      slug: 'secret-draft',
+      term: 'Secret Draft',
+      definition: 'Private definition.',
+      media: [
+        {
+          url: 'https://example.com/images/private.jpg',
+          label: 'Private image',
+        },
+      ],
+    },
+  });
+
+  const handler = sharePreviewHandler(db, {
+    fetchFn: async () => ({ ok: false }),
+  });
+
+  const makeRequest = (slug) => ({
+    headers: { host: 'horseandriderscompanion.com' },
+    path: `/Dictionary/${slug}`,
+    query: {},
+  });
+
+  const published = makeRes();
+  await handler(makeRequest('canter'), published);
+  assert.equal(published.statusCode, 200);
+  assert.match(
+    published.body,
+    /<meta property="og:image" content="https:\/\/example\.com\/images\/canter\.jpg">/,
+  );
+  assert.match(published.body, /Canter — Equestrian Dictionary/);
+
+  const fallback = makeRes();
+  await handler(makeRequest('collection'), fallback);
+
+  assert.equal(fallback.statusCode, 200);
+  assert.match(
+    fallback.body,
+    /<meta property="og:image" content="https:\/\/horseandriderscompanion\.com\/images\/dictionary-share-default\.png">/,
+  );
+
+  const draft = makeRes();
+  await handler(makeRequest('secret-draft'), draft);
+
+  assert.equal(draft.statusCode, 200);
+  assert.match(draft.body, /dictionary-share-default\.png/);
+  assert.doesNotMatch(draft.body, /Secret Draft|Private definition|private\.jpg/);
+  assert.equal(draft.headers['Cache-Control'], 'no-store');
+});
+
+test('sharePreview uses Firebase Storage dictionary_public image URLs for og:image', async () => {
+  const storageUrl =
+    'https://firebasestorage.googleapis.com/v0/b/demo-bucket/o/dictionary_public%2Fwithers%2Fdiagram.webp?alt=media&token=abc-123';
+  const db = fakeDb({}, {}, {
+    withers: {
+      status: 'published',
+      slug: 'withers',
+      term: 'Withers',
+      definition: 'The ridge between the shoulder blades.',
+      media: [
+        {url: storageUrl, label: 'Withers anatomy'},
+      ],
+    },
+  });
+  const handler = sharePreviewHandler(db, {fetchFn: async () => ({ok: false})});
+  const res = makeRes();
+  await handler({headers: {host: 'horseandriderscompanion.com'}, path: '/Dictionary/withers', query: {}}, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.match(
+      res.body,
+      new RegExp(`<meta property="og:image" content="${storageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/&/g, '&amp;')}">`),
+  );
 });

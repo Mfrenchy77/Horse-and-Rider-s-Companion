@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc */
 'use strict';
 
-const {createHmac} = require('node:crypto');
+const {createHmac, randomUUID} = require('node:crypto');
 const {HttpsError} = require('firebase-functions/v2/https');
 const {safePublicContributorName} = require('./suggestions');
 const seed = require('./dictionary_seed.json');
@@ -10,6 +10,12 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const KINDS = ['missing_term', 'definition', 'correction', 'improvement', 'regional_usage', 'related_term'];
 const STATUSES = ['submitted', 'under_review', 'needs_clarification', 'approved', 'rejected', 'published'];
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+const ALLOWED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const IMAGE_EXT_BY_TYPE = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+};
 const STRUCTURED_KEYS = ['definition', 'explanation', 'usage', 'regionalUsage', 'examples', 'synonyms'];
 const FIELD_LABELS = {
   definition: 'Short definition',
@@ -223,7 +229,162 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
   };
 }
 
-function editDictionary(db, {now = () => new Date()} = {}) {
+function parseFirebaseStorageUrl(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== 'https:' || parsed.hostname !== 'firebasestorage.googleapis.com') {
+      return null;
+    }
+    const match = parsed.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
+    if (!match) return null;
+    const bucketName = decodeURIComponent(match[1]);
+    const objectPath = decodeURIComponent(match[2]);
+    if (!bucketName || !objectPath || objectPath.includes('..') || objectPath.startsWith('/')) {
+      return {invalid: true};
+    }
+    return {bucketName, objectPath};
+  } catch (_) {
+    return null;
+  }
+}
+
+function extractDraftStoragePath(rawUrl) {
+  const parsed = parseFirebaseStorageUrl(rawUrl);
+  if (!parsed || parsed.invalid) return null;
+  return parsed.objectPath.startsWith('dictionary_drafts/') ? parsed.objectPath : null;
+}
+
+async function validateMediaOwnership(media, entryId, bucket, {checkDraftExists = false} = {}) {
+  if (!Array.isArray(media) || media.length === 0) return;
+  for (const item of media) {
+    const parsed = parseFirebaseStorageUrl(item.url);
+    if (!parsed) continue;
+    if (parsed.invalid) {
+      throw new HttpsError('invalid-argument', 'Malformed Firebase Storage media URL.');
+    }
+    const {bucketName, objectPath} = parsed;
+    if (!bucket) {
+      if (objectPath.startsWith('dictionary_drafts/')) {
+        throw new HttpsError(
+            'failed-precondition',
+            'Draft images must be promoted to public storage before publishing.',
+        );
+      }
+      continue;
+    }
+    if (bucketName !== bucket.name) {
+      throw new HttpsError('invalid-argument', 'Media image belongs to an unexpected storage bucket.');
+    }
+    if (objectPath.startsWith('dictionary_drafts/')) {
+      const draftMatch = objectPath.match(/^dictionary_drafts\/([a-z0-9-]+)\/([A-Za-z0-9._-]+)$/);
+      if (!draftMatch || draftMatch[1] !== entryId) {
+        throw new HttpsError('invalid-argument', 'Draft image does not belong to this Dictionary entry.');
+      }
+      if (checkDraftExists) {
+        const srcFile = bucket.file(objectPath);
+        const [exists] = await srcFile.exists();
+        if (!exists) {
+          throw new HttpsError('failed-precondition', 'Referenced draft image does not exist.');
+        }
+        const [srcMeta] = await srcFile.getMetadata();
+        if (!ALLOWED_IMAGE_TYPES.has(srcMeta?.contentType)) {
+          throw new HttpsError('invalid-argument', 'Draft image must be PNG, JPEG, or WebP.');
+        }
+      }
+    } else if (objectPath.startsWith('dictionary_public/')) {
+      const publicMatch = objectPath.match(/^dictionary_public\/([a-z0-9-]+)\/([A-Za-z0-9._-]+)$/);
+      if (!publicMatch || publicMatch[1] !== entryId) {
+        throw new HttpsError('invalid-argument', 'Public image does not belong to this Dictionary entry.');
+      }
+    } else {
+      throw new HttpsError('invalid-argument', 'Dictionary media cannot reference unrelated storage folders.');
+    }
+  }
+}
+
+async function promoteDraftMedia(media, entryId, bucket) {
+  if (!Array.isArray(media) || media.length === 0) return {media: [], promotedFiles: []};
+  await validateMediaOwnership(media, entryId, bucket, {checkDraftExists: true});
+  const promoted = [];
+  const promotedFiles = [];
+  for (const item of media) {
+    const parsed = parseFirebaseStorageUrl(item.url);
+    if (!parsed || !parsed.objectPath.startsWith('dictionary_drafts/')) {
+      promoted.push(item);
+      continue;
+    }
+    const srcFile = bucket.file(parsed.objectPath);
+    const [srcMeta] = await srcFile.getMetadata();
+    const ext = IMAGE_EXT_BY_TYPE[srcMeta?.contentType];
+    if (!ext) {
+      throw new HttpsError('invalid-argument', 'Draft image must be PNG, JPEG, or WebP.');
+    }
+    // Always generate a unique, immutable public filename so concurrent or failed
+    // publications can never overwrite an existing published image.
+    const publicPath = `dictionary_public/${entryId}/${randomUUID()}.${ext}`;
+    const destFile = bucket.file(publicPath);
+    await srcFile.copy(destFile);
+    promotedFiles.push(destFile);
+    const token = randomUUID();
+    await destFile.setMetadata({
+      contentType: srcMeta.contentType,
+      cacheControl: 'public, max-age=31536000, immutable',
+      metadata: {firebaseStorageDownloadTokens: token},
+    });
+    const publicUrl =
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(publicPath)}?alt=media&token=${token}`;
+    promoted.push({url: publicUrl, label: item.label});
+  }
+  return {media: promoted, promotedFiles};
+}
+
+async function cleanupEntryDraftMedia(entryId, keepMedia, bucket) {
+  if (!bucket || typeof bucket.getFiles !== 'function') return;
+  const keepPaths = new Set(
+      (keepMedia || [])
+          .map((item) => extractDraftStoragePath(item?.url))
+          .filter(Boolean),
+  );
+  const [files] = await bucket.getFiles({prefix: `dictionary_drafts/${entryId}/`});
+  await Promise.allSettled(
+      files
+          .filter((file) => !keepPaths.has(file.name))
+          .map((file) => file.delete()),
+  );
+}
+
+async function cleanupAbandonedDraftMedia(
+    db,
+    bucket,
+    {maxAgeMs = 7 * 24 * 60 * 60 * 1000, now = () => Date.now()} = {},
+) {
+  if (!bucket || typeof bucket.getFiles !== 'function') return {deleted: []};
+  const [draftSnap, publicSnap, [files]] = await Promise.all([
+    db.collection('DictionaryDrafts').get(),
+    db.collection('DictionaryEntries').get(),
+    bucket.getFiles({prefix: 'dictionary_drafts/'}),
+  ]);
+  const referencedPaths = new Set();
+  for (const doc of [...draftSnap.docs, ...publicSnap.docs]) {
+    const data = doc.data() || {};
+    for (const item of (Array.isArray(data.media) ? data.media : [])) {
+      const path = extractDraftStoragePath(item?.url);
+      if (path) referencedPaths.add(path);
+    }
+  }
+  const cutoff = now() - maxAgeMs;
+  const deleted = [];
+  for (const file of files) {
+    if (referencedPaths.has(file.name)) continue;
+    const createdAt = Date.parse(file.metadata?.timeCreated || '');
+    if (Number.isFinite(createdAt) && createdAt > cutoff) continue;
+    await file.delete();
+    deleted.push(file.name);
+  }
+  return {deleted};
+}
+
+function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
   return async (request) => {
     requireAdmin(request);
     const raw = request.data || {};
@@ -284,84 +445,103 @@ function editDictionary(db, {now = () => new Date()} = {}) {
     if (!['save', 'publish'].includes(action)) throw new HttpsError('invalid-argument', 'Invalid action.');
     const entry = validateEntry(raw.entry);
     if (entry.id !== id) throw new HttpsError('invalid-argument', 'ID mismatch.');
+    let promotedFiles = [];
+    if (action === 'publish') {
+      const promotion = await promoteDraftMedia(entry.media, id, bucket);
+      entry.media = promotion.media;
+      promotedFiles = promotion.promotedFiles;
+    } else {
+      await validateMediaOwnership(entry.media, id, bucket, {checkDraftExists: Boolean(bucket)});
+    }
     const draft = db.collection('DictionaryDrafts').doc(id);
     const publicRef = db.collection('DictionaryEntries').doc(entry.slug);
     const suggestionId = text(raw.suggestionId, 100, 'suggestion ID');
     if (suggestionId && !/^[a-zA-Z0-9-]{16,100}$/.test(suggestionId)) {
       throw new HttpsError('invalid-argument', 'Invalid suggestion ID.');
     }
-    await db.runTransaction(async (tx) => {
-      const manifestRef = db.collection('DictionaryPublic').doc('catalogue');
-      const manifest = await tx.get(manifestRef);
-      const seedSnapshots = action === 'publish' && !manifest.exists ?
+    try {
+      await db.runTransaction(async (tx) => {
+        const manifestRef = db.collection('DictionaryPublic').doc('catalogue');
+        const manifest = await tx.get(manifestRef);
+        const seedSnapshots = action === 'publish' && !manifest.exists ?
         await Promise.all(seed.map((item) => tx.get(db.collection('DictionaryEntries').doc(item.slug)))) : [];
-      const currentDraft = await tx.get(draft);
-      const currentPublic = await tx.get(publicRef);
-      const sourceId = suggestionId || currentDraft.data()?.suggestionId || null;
-      const suggestion = sourceId ? db.collection('DictionarySuggestions').doc(sourceId) : null;
-      const contribution = suggestion ? await tx.get(suggestion) : null;
-      const revision = currentDraft.data()?.revision || currentPublic.data()?.revision || 0;
-      if (raw.expectedRevision !== revision) {
-        throw new HttpsError('aborted', 'This entry changed. Reload before saving.');
-      }
-      if (currentDraft.exists && currentDraft.data().slug !== entry.slug) {
-        throw new HttpsError('failed-precondition', 'Published URLs and draft slugs are stable.');
-      }
-      if (currentPublic.exists && currentPublic.data().id !== id) {
-        throw new HttpsError('already-exists', 'This slug belongs to another meaning.');
-      }
-      if (suggestion && !contribution.exists) throw new HttpsError('not-found', 'Suggestion not found.');
-      if (contribution && contribution.exists) {
-        const contribData = contribution.data();
-        const publishedRev = effectivePublishedRevision(currentPublic);
-        const liveSnapshot = currentPublic.exists ? extractStructuredFields(currentPublic.data()) : null;
-        const baseMismatch = typeof contribData.baseRevision === 'number' && publishedRev !== contribData.baseRevision;
-        const snapshotMismatch = Boolean(
-            contribData.baseFields &&
+        const currentDraft = await tx.get(draft);
+        const currentPublic = await tx.get(publicRef);
+        const sourceId = suggestionId || currentDraft.data()?.suggestionId || null;
+        const suggestion = sourceId ? db.collection('DictionarySuggestions').doc(sourceId) : null;
+        const contribution = suggestion ? await tx.get(suggestion) : null;
+        const revision = currentDraft.data()?.revision || currentPublic.data()?.revision || 0;
+        if (raw.expectedRevision !== revision) {
+          throw new HttpsError('aborted', 'This entry changed. Reload before saving.');
+        }
+        if (currentDraft.exists && currentDraft.data().slug !== entry.slug) {
+          throw new HttpsError('failed-precondition', 'Published URLs and draft slugs are stable.');
+        }
+        if (currentPublic.exists && currentPublic.data().id !== id) {
+          throw new HttpsError('already-exists', 'This slug belongs to another meaning.');
+        }
+        if (suggestion && !contribution.exists) throw new HttpsError('not-found', 'Suggestion not found.');
+        if (contribution && contribution.exists) {
+          const contribData = contribution.data();
+          const publishedRev = effectivePublishedRevision(currentPublic);
+          const liveSnapshot = currentPublic.exists ? extractStructuredFields(currentPublic.data()) : null;
+          const baseMismatch = typeof contribData.baseRevision === 'number' && publishedRev !== contribData.baseRevision;
+          const snapshotMismatch = Boolean(
+              contribData.baseFields &&
             liveSnapshot &&
             computeChangedFields(contribData.baseFields, liveSnapshot).length > 0,
-        );
-        const previouslyAcked = currentDraft.data()?.acknowledgedPublishedRevision === publishedRev &&
-          currentDraft.data()?.suggestionId === sourceId;
-        if ((baseMismatch || snapshotMismatch) && raw.acknowledgeRevisionMismatch !== true && !previouslyAcked) {
-          throw new HttpsError(
-              'failed-precondition',
-              'Published definition changed since this suggestion was submitted. Review old, current, and proposed wording before applying.',
           );
-        }
-      }
-      if (action === 'publish' && contribution && contribution.data().status !== 'approved') {
-        throw new HttpsError('failed-precondition', 'Approve the contribution before publishing.');
-      }
-      const nextRevision = revision + 1;
-      const publishedRev = effectivePublishedRevision(currentPublic);
-      const editor = {updatedAt: at, updatedByUid: request.auth.uid};
-      const data = {
-        ...entry, revision: nextRevision, status: action === 'publish' ? 'published' : 'draft', ...editor,
-        suggestionId: action === 'publish' ? null : sourceId,
-        ...(raw.acknowledgeRevisionMismatch === true && sourceId ? {acknowledgedPublishedRevision: publishedRev} : {}),
-      };
-      tx.set(draft, data);
-      tx.create(draft.collection('Revisions').doc(String(nextRevision)), data);
-      if (action === 'publish') {
-        // Whitelist public fields. Never spread a private suggestion or draft into public data.
-        for (let index = 0; index < seedSnapshots.length; index++) {
-          if (!seedSnapshots[index].exists && seed[index].slug !== entry.slug) {
-            tx.create(db.collection('DictionaryEntries').doc(seed[index].slug), seed[index]);
+          const previouslyAcked = currentDraft.data()?.acknowledgedPublishedRevision === publishedRev &&
+          currentDraft.data()?.suggestionId === sourceId;
+          if ((baseMismatch || snapshotMismatch) && raw.acknowledgeRevisionMismatch !== true && !previouslyAcked) {
+            throw new HttpsError(
+                'failed-precondition',
+                'Published definition changed since this suggestion was submitted. Review old, current, and proposed wording before applying.',
+            );
           }
         }
-        const credit = contribution?.data();
-        const publicName = credit?.recognitionConsent === true ? safePublicContributorName(credit.publicName) : null;
-        const priorNames = currentPublic.data()?.attributions || [];
-        const attributions = [...new Set([...priorNames, ...(publicName ? [publicName] : [])])];
-        tx.set(publicRef, {...entry, revision: nextRevision, status: 'published', publishedAt: at, attributions});
-        tx.set(db.collection('DictionaryPublic').doc('catalogue'), {initialized: true});
-        if (suggestion) {
-          tx.update(suggestion, {status: 'published', entryId: id, updatedAt: at});
-          tx.create(suggestion.collection('AuditEvents').doc(), {status: 'published', at, actorUid: request.auth.uid});
+        if (action === 'publish' && contribution && contribution.data().status !== 'approved') {
+          throw new HttpsError('failed-precondition', 'Approve the contribution before publishing.');
         }
+        const nextRevision = revision + 1;
+        const publishedRev = effectivePublishedRevision(currentPublic);
+        const editor = {updatedAt: at, updatedByUid: request.auth.uid};
+        const data = {
+          ...entry, revision: nextRevision, status: action === 'publish' ? 'published' : 'draft', ...editor,
+          suggestionId: action === 'publish' ? null : sourceId,
+          ...(raw.acknowledgeRevisionMismatch === true && sourceId ?
+            {acknowledgedPublishedRevision: publishedRev} : {}),
+        };
+        tx.set(draft, data);
+        tx.create(draft.collection('Revisions').doc(String(nextRevision)), data);
+        if (action === 'publish') {
+        // Whitelist public fields. Never spread a private suggestion or draft into public data.
+          for (let index = 0; index < seedSnapshots.length; index++) {
+            if (!seedSnapshots[index].exists && seed[index].slug !== entry.slug) {
+              tx.create(db.collection('DictionaryEntries').doc(seed[index].slug), seed[index]);
+            }
+          }
+          const credit = contribution?.data();
+          const publicName = credit?.recognitionConsent === true ? safePublicContributorName(credit.publicName) : null;
+          const priorNames = currentPublic.data()?.attributions || [];
+          const attributions = [...new Set([...priorNames, ...(publicName ? [publicName] : [])])];
+          tx.set(publicRef, {...entry, revision: nextRevision, status: 'published', publishedAt: at, attributions});
+          tx.set(db.collection('DictionaryPublic').doc('catalogue'), {initialized: true});
+          if (suggestion) {
+            tx.update(suggestion, {status: 'published', entryId: id, updatedAt: at});
+            tx.create(suggestion.collection('AuditEvents').doc(), {status: 'published', at, actorUid: request.auth.uid});
+          }
+        }
+      });
+    } catch (error) {
+      if (promotedFiles.length > 0) {
+        await Promise.allSettled(promotedFiles.map((file) => file.delete()));
       }
-    });
+      throw error;
+    }
+    if (action === 'publish') {
+      await cleanupEntryDraftMedia(id, entry.media, bucket).catch(() => {});
+    }
     return {id, status: action === 'publish' ? 'published' : 'draft'};
   };
 }
@@ -382,6 +562,8 @@ async function publicEntry(db, slug) {
 
 module.exports = {
   validateEntry, validateStructuredFields, extractStructuredFields, computeChangedFields,
-  effectivePublishedRevision, requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry,
+  effectivePublishedRevision, parseFirebaseStorageUrl, extractDraftStoragePath,
+  validateMediaOwnership, promoteDraftMedia, cleanupAbandonedDraftMedia,
+  requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry,
   dictionaryEmulator: process.env.FUNCTIONS_EMULATOR === 'true',
 };

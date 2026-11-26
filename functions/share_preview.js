@@ -8,6 +8,7 @@ const DEFAULT_TITLE = 'Horse & Rider\'s Companion';
 const DEFAULT_DESCRIPTION =
   'Track Rider and Horse horsemanship skills, explore Skill Tree 2.0, and share educational resources.';
 const DEFAULT_IMAGE_PATH = '/icons/Icon-512.png';
+const DICTIONARY_IMAGE_PATH = '/images/dictionary-share-default.png';
 const PROD_ORIGIN = 'https://horse-and-riders-compani-d2bd4.web.app';
 const DOC_ID_REGEX = /^[A-Za-z0-9._-]{1,120}$/;
 
@@ -68,8 +69,8 @@ function injectMetaIntoHtml(html, meta) {
 function fallbackHtmlShell(meta) {
   return injectMetaIntoHtml(
       '<!DOCTYPE html>\n<html>\n<head>\n  <base href="/">\n  <meta charset="UTF-8">\n' +
-      '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
-      '  <script src="flutter_bootstrap.js" async></script>\n</head>\n<body></body>\n</html>',
+    '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '  <script src="flutter_bootstrap.js" async></script>\n</head>\n<body></body>\n</html>',
       meta,
   );
 }
@@ -171,6 +172,24 @@ function buildHorsePreviewMeta(origin, horse) {
     url: `${origin}/Profile/Horse_Profile/${encodeURIComponent(horse.id)}`,
   };
 }
+function dictionaryPreviewImage(entry, origin) {
+  const fallback = `${origin}${DICTIONARY_IMAGE_PATH}`;
+  if (!entry || !Array.isArray(entry.media)) return fallback;
+
+  const image = entry.media.find((item) => {
+    if (!item || typeof item.url !== 'string') return false;
+
+    try {
+      const url = new URL(item.url);
+      return url.protocol === 'https:' &&
+        /\.(png|jpe?g|webp)(?:$|[?#])/i.test(url.pathname);
+    } catch (_) {
+      return false;
+    }
+  });
+
+  return image ? image.url : fallback;
+}
 
 function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
   return async (req, res) => {
@@ -191,7 +210,7 @@ function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
           title: entry ? entry.term + ' — Equestrian Dictionary — ' + DEFAULT_TITLE :
             'Equestrian Dictionary — ' + DEFAULT_TITLE,
           description: entry ? entry.definition : 'Explore plain-language equestrian definitions for every discipline.',
-          image: origin + DEFAULT_IMAGE_PATH,
+          image: dictionaryPreviewImage(entry, origin),
           url: origin + '/Dictionary' + (entry ? '/' + entry.slug : ''),
         };
         if (dictionaryMatch[1] && !entry) cacheControl = 'no-store';

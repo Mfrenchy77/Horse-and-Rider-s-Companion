@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/adaptive_app_bar_actions.dart';
+import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_admin_page.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_suggestion_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
@@ -13,7 +15,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/share_helper.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class DictionaryPage extends StatefulWidget {
   const DictionaryPage({
@@ -84,7 +85,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
             : DictionaryRepository.resolve(entries, widget.slug!);
         return Scaffold(
           appBar: ThemedAppBar(
-            title: Text(entry?.term ?? 'Equestrian Dictionary'),
+            centerTitle: true,
+            title: const AppTitle(),
             leading: BackButton(
               onPressed: () {
                 if (context.canPop()) {
@@ -541,26 +543,10 @@ class _DictionaryPageState extends State<DictionaryPage> {
           if ((entry.data['media'] as List<dynamic>? ?? []).isNotEmpty)
             _section(
               'Educational media',
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final item
-                      in (entry.data['media'] as List<dynamic>)
-                          .cast<Map<String, dynamic>>())
-                    TextButton.icon(
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      onPressed: () async {
-                        final uri = Uri.tryParse(item['url'] as String);
-                        if (uri?.scheme == 'https') {
-                          await launchUrl(
-                            uri!,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      },
-                      label: Text(item['label'] as String),
-                    ),
-                ],
+              DictionaryMediaGallery(
+                media: (entry.data['media'] as List<dynamic>)
+                    .map((item) => (item as Map).cast<String, dynamic>())
+                    .toList(),
               ),
             ),
           if (entry.strings('attributions').isNotEmpty)

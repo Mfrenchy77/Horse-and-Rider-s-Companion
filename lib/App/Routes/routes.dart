@@ -32,6 +32,9 @@ class Routes {
     required SettingsController settingsContoller,
     required AppCubit appCubit,
   }) {
+    // Keep browser URLs synchronized with context.push() navigation.
+    GoRouter.optionURLReflectsImperativeAPIs = true;
+
     final routeNavigatorKey = GlobalKey<NavigatorState>();
     final profileNavigatorKey = GlobalKey<NavigatorState>();
     final skillTreeNavigatorKey = GlobalKey<NavigatorState>();
@@ -165,9 +168,8 @@ class Routes {
           routes: [
             GoRoute(
               path: ':termSlug',
-              builder: (context, state) => DictionaryPage(
-                slug: state.pathParameters['termSlug'],
-              ),
+              builder: (context, state) =>
+                  DictionaryPage(slug: state.pathParameters['termSlug']),
             ),
           ],
         ),

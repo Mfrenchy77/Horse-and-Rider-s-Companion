@@ -104,4 +104,14 @@ class CloudRepository implements MediaStorageRepository {
       throw MediaStorageException(e.message ?? e.code);
     }
   }
+
+  @override
+  Future<void> deleteByUrl(String url) async {
+    try {
+      await (_storage ?? FirebaseStorage.instance).refFromURL(url).delete();
+    } on FirebaseException catch (e) {
+      if (e.code == 'object-not-found') return;
+      throw MediaStorageException(e.message ?? e.code);
+    }
+  }
 }
