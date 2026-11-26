@@ -123,7 +123,11 @@ class SkillFamilyListV2 extends StatelessWidget {
             if (isTabletGrid)
               ..._buildTabletGridRows(context, familyEntries)
             else
-              for (final entry in familyEntries) _buildSingleColumnCard(entry),
+              for (final entry in familyEntries)
+                _buildSingleColumnCard(
+                  entry,
+                  showSelectionHighlight: viewportWidth >= 900,
+                ),
             if (contributorNames.isNotEmpty)
               _ContributorsFooter(names: contributorNames),
           ],
@@ -132,10 +136,13 @@ class SkillFamilyListV2 extends StatelessWidget {
     );
   }
 
-  Widget _buildSingleColumnCard(_FamilyRenderEntry entry) {
-    final hasSelectedSkill = entry.skills.any(
-      (s) => s.id == state.selectedSkillId,
-    );
+  Widget _buildSingleColumnCard(
+    _FamilyRenderEntry entry, {
+    required bool showSelectionHighlight,
+  }) {
+    final hasSelectedSkill =
+        showSelectionHighlight &&
+        entry.skills.any((s) => s.id == state.selectedSkillId);
     final card = AppSurfaceCard(
       key: Key('skillFamily_${entry.family.id}'),
       padding: EdgeInsets.zero,
@@ -185,17 +192,19 @@ class SkillFamilyListV2 extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AppTokens.spaceSm,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _buildGridTileCard(context, left)),
-                const SizedBox(width: AppTokens.spaceMd),
-                Expanded(
-                  child: right == null
-                      ? const SizedBox.shrink()
-                      : _buildGridTileCard(context, right),
-                ),
-              ],
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _buildGridTileCard(context, left)),
+                  const SizedBox(width: AppTokens.spaceMd),
+                  Expanded(
+                    child: right == null
+                        ? const SizedBox.shrink()
+                        : _buildGridTileCard(context, right),
+                  ),
+                ],
+              ),
             ),
             if (left.expanded) _buildTabletExpandedDrawer(context, left),
             if (right != null && right.expanded)
@@ -211,12 +220,7 @@ class SkillFamilyListV2 extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final accent = isDark ? AppTokens.coralAccent : theme.colorScheme.primary;
-    final hasSelectedSkill = entry.skills.any(
-      (s) => s.id == state.selectedSkillId,
-    );
-    final activeBorder = entry.expanded || hasSelectedSkill
-        ? accent.withValues(alpha: 0.65)
-        : null;
+    final activeBorder = entry.expanded ? accent.withValues(alpha: 0.65) : null;
     final tile = AppSurfaceCard(
       key: Key('skillFamily_${entry.family.id}'),
       padding: EdgeInsets.zero,
@@ -227,7 +231,7 @@ class SkillFamilyListV2 extends StatelessWidget {
           family: entry.family,
           skillCount: entry.skills.length,
           expanded: entry.expanded,
-          hasSelectedSkill: hasSelectedSkill,
+          hasSelectedSkill: false,
           isSearching: false,
           isAdminEditMode: isAdminEditMode,
           onToggle: () => onToggleFamily(entry.family.id),
@@ -684,7 +688,7 @@ class _LevelStatusPill extends StatelessWidget {
     if (verified) {
       bg = AppTokens.successDark.withValues(alpha: 0.22);
       fg = isDark ? AppTokens.successDark : Colors.green.shade800;
-      icon = Icons.verified_rounded;
+      icon = Icons.verified;
     } else if (state == LevelState.PROFICIENT) {
       bg = AppTokens.successDark.withValues(alpha: 0.14);
       fg = isDark ? AppTokens.successDark : Colors.green.shade800;

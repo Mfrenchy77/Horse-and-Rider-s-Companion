@@ -484,9 +484,13 @@ class _StartedLevelChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: fg),
           const SizedBox(width: 4),
-          Text(
-            '$levelLabel · $suffix',
-            style: theme.textTheme.labelSmall?.copyWith(color: fg),
+          Flexible(
+            child: Text(
+              '$levelLabel · $suffix',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(color: fg),
+            ),
           ),
         ],
       ),
@@ -522,10 +526,14 @@ class _MilestoneStatChip extends StatelessWidget {
         children: [
           Icon(icon, size: 18),
           const SizedBox(width: 8),
-          Text(
-            '$count $label',
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              '$count $label',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
