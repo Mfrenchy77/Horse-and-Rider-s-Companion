@@ -9,6 +9,7 @@ import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 /// Resolves whether the current user is signed in with a verified email and can
 /// contribute community definitions, improvements, or educational images.
+@immutable
 class DictionaryContributorIdentity {
   const DictionaryContributorIdentity({
     required this.isSignedIn,
@@ -16,15 +17,16 @@ class DictionaryContributorIdentity {
     required this.uid,
   });
 
-  factory DictionaryContributorIdentity.fromContext(BuildContext context) {
-    final appState = context.watch<AppCubit?>()?.state;
-    final user = appState?.user;
-    final signedIn =
-        appState != null &&
-        !appState.isGuest &&
-        user != null &&
-        !user.isGuest &&
-        user.id.isNotEmpty;
+  factory DictionaryContributorIdentity.fromAppState(AppState? appState) {
+    if (appState == null) {
+      return const DictionaryContributorIdentity(
+        isSignedIn: false,
+        emailVerified: false,
+        uid: '',
+      );
+    }
+    final user = appState.user;
+    final signedIn = !appState.isGuest && !user.isGuest && user.id.isNotEmpty;
     return DictionaryContributorIdentity(
       isSignedIn: signedIn,
       emailVerified: signedIn && user.emailVerified,
@@ -32,11 +34,41 @@ class DictionaryContributorIdentity {
     );
   }
 
+  factory DictionaryContributorIdentity.fromContext(BuildContext context) {
+    final cubit = context.read<AppCubit?>();
+    if (cubit == null) {
+      return const DictionaryContributorIdentity(
+        isSignedIn: false,
+        emailVerified: false,
+        uid: '',
+      );
+    }
+    if (context is Element && context.debugDoingBuild) {
+      return context.select<AppCubit, DictionaryContributorIdentity>(
+        (appCubit) =>
+            DictionaryContributorIdentity.fromAppState(appCubit.state),
+      );
+    }
+    return DictionaryContributorIdentity.fromAppState(cubit.state);
+  }
+
   final bool isSignedIn;
   final bool emailVerified;
   final String uid;
 
   bool get canContribute => isSignedIn && emailVerified;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DictionaryContributorIdentity &&
+          runtimeType == other.runtimeType &&
+          isSignedIn == other.isSignedIn &&
+          emailVerified == other.emailVerified &&
+          uid == other.uid;
+
+  @override
+  int get hashCode => Object.hash(isSignedIn, emailVerified, uid);
 }
 
 /// Clear friendly guidance for signed-out or unverified visitors who tap a

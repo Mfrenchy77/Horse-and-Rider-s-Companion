@@ -550,37 +550,39 @@ class AppGlassDialog extends StatelessWidget {
       insetPadding: insetPadding,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: AppGlassSurface(
-          padding: padding,
-          density: density,
-          highlightFocusedFields: highlightFocusedFields,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (title != null)
-                Semantics(
-                  namesRoute: true,
-                  child: DefaultTextStyle.merge(
-                    style: AppTokens.sectionTitleStyle(context),
-                    textAlign: TextAlign.center,
-                    child: title!,
+        child: RepaintBoundary(
+          child: AppGlassSurface(
+            padding: padding,
+            density: density,
+            highlightFocusedFields: highlightFocusedFields,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (title != null)
+                  Semantics(
+                    namesRoute: true,
+                    child: DefaultTextStyle.merge(
+                      style: AppTokens.sectionTitleStyle(context),
+                      textAlign: TextAlign.center,
+                      child: title!,
+                    ),
                   ),
-                ),
-              if (title != null && contentWidget != null)
-                const SizedBox(height: AppTokens.spaceMd),
-              ?contentWidget,
-              if (actionWidgets.isNotEmpty) ...[
-                const SizedBox(height: AppTokens.spaceLg),
-                OverflowBar(
-                  alignment: MainAxisAlignment.end,
-                  overflowAlignment: OverflowBarAlignment.end,
-                  spacing: 8,
-                  overflowSpacing: 8,
-                  children: actionWidgets,
-                ),
+                if (title != null && contentWidget != null)
+                  const SizedBox(height: AppTokens.spaceMd),
+                ?contentWidget,
+                if (actionWidgets.isNotEmpty) ...[
+                  const SizedBox(height: AppTokens.spaceLg),
+                  OverflowBar(
+                    alignment: MainAxisAlignment.end,
+                    overflowAlignment: OverflowBarAlignment.end,
+                    spacing: 8,
+                    overflowSpacing: 8,
+                    children: actionWidgets,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

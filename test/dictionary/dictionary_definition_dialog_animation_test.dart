@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:photo_view/photo_view.dart';
 
 DictionaryEntry _entry({
   required String id,
@@ -14,6 +15,7 @@ DictionaryEntry _entry({
   required String definition,
   List<String> synonyms = const [],
   List<String> categories = const ['Training'],
+  List<Map<String, dynamic>> media = const [],
 }) => DictionaryEntry({
   'id': id,
   'slug': id,
@@ -21,6 +23,7 @@ DictionaryEntry _entry({
   'definition': definition,
   'synonyms': synonyms,
   'categories': categories,
+  if (media.isNotEmpty) 'media': media,
   'status': 'published',
   'contextual': true,
 });
@@ -413,6 +416,206 @@ void main() {
         await tester.pumpAndSettle();
         expect(pushedSlug, 'canter');
         expect(find.text('Full: canter'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
+  group('Dictionary definition dialog illustrations', () {
+    final illustratedEntry = _entry(
+      id: 'canter',
+      term: 'Canter',
+      definition: 'A three-beat asymmetrical gait with a moment of suspension.',
+      synonyms: ['lope'],
+      categories: ['Gaits'],
+      media: const [
+        {
+          'url':
+              'https://firebasestorage.googleapis.com/v0/b/demo/o/dictionary_public%2Fcanter%2Fstride.png?alt=media&token=img1',
+          'label': 'Three-beat canter footfall sequence',
+          'explanation': 'Shows outside hind, diagonal pair, then inside fore.',
+          'imageType': 'diagram',
+          'attribution': 'Sarah',
+        },
+      ],
+    );
+
+    final linkOnlyEntry = _entry(
+      id: 'collection',
+      term: 'Collection',
+      definition: 'Engaged hindquarter carrying more weight smoothly.',
+      categories: ['Training'],
+      media: const [
+        {
+          'url': 'https://example.com/biomechanics-article',
+          'label': 'Read biomechanics article',
+        },
+      ],
+    );
+
+    testWidgets(
+      'displays compact hero illustration header, allows tap-to-zoom, and preserves word-anchored animation',
+      (tester) async {
+        tester.view.physicalSize = const Size(900, 760);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: mainThemeDark,
+            home: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.only(left: 24, top: 24),
+                child: DictionaryText(
+                  text: 'Ask for a balanced canter.',
+                  entries: [illustratedEntry],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'canter'));
+        await tester.pump();
+        expect(
+          find.byKey(const Key('appDialogOriginTranslate')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('appDialogOriginScale')), findsOneWidget);
+        await tester.pumpAndSettle();
+
+        final imageFinder = find.byKey(
+          const Key('dictionaryDefinitionDialogImage'),
+        );
+        expect(imageFinder, findsOneWidget);
+        final imageBox = tester.getSize(imageFinder);
+        expect(imageBox.height, inInclusiveRange(160.0, 200.0));
+
+        expect(find.text('Canter'), findsOneWidget);
+        expect(find.text('Gaits'), findsOneWidget);
+        expect(
+          find.text(
+            'A three-beat asymmetrical gait with a moment of suspension.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Three-beat canter footfall sequence'),
+          findsOneWidget,
+        );
+        expect(find.text('View full definition'), findsOneWidget);
+
+        // Tap illustration to open full-size PhotoView viewer.
+        await tester.tap(
+          find.byKey(const Key('dictionaryDefinitionDialogImageTap')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byType(PhotoView), findsOneWidget);
+
+        // Close PhotoView -> returns to definition dialog.
+        await tester.tap(find.byIcon(Icons.close));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byType(PhotoView), findsNothing);
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialog')),
+          findsOneWidget,
+        );
+
+        // Close definition dialog -> reverses animation smoothly.
+        await tester.tap(find.text('Close'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 120));
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialog')),
+          findsOneWidget,
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialog')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'falls back cleanly to text-only dialog when no published image exists',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: mainThemeDark,
+            home: Scaffold(
+              body: DictionaryText(
+                text: 'Develop collection gradually.',
+                entries: [linkOnlyEntry],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'collection'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialog')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialogImage')),
+          findsNothing,
+        );
+        expect(find.text('Collection'), findsOneWidget);
+        expect(find.text('View full definition'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'handles narrow mobile viewport and reduced-motion without overflow when image is present',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: mainThemeDark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(12),
+                child: DictionaryText(
+                  text: 'Maintain a calm canter.',
+                  entries: [illustratedEntry],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.widgetWithText(TextButton, 'canter'));
+        await tester.pump();
+
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialog')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('dictionaryDefinitionDialogImage')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('appDialogOriginTranslate')), findsNothing);
+        expect(find.byKey(const Key('appDialogOriginScale')), findsNothing);
         expect(tester.takeException(), isNull);
       },
     );

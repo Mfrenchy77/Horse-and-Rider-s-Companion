@@ -388,7 +388,11 @@ class _DictionarySuggestionDialogState
             mediaStorage: widget.mediaStorage,
             pickImages: widget.pickImages,
             onItemsChanged: (next) => setState(() => _images = next),
-            onBusyChanged: (isBusy) => setState(() => _uploadBusy = isBusy),
+            onBusyChanged: (isBusy) {
+              if (isBusy != _uploadBusy) {
+                setState(() => _uploadBusy = isBusy);
+              }
+            },
           ),
           const SizedBox(height: 10),
           DictionaryContributorAttributionSection(
@@ -622,7 +626,11 @@ class _DictionarySuggestionDialogState
             mediaStorage: widget.mediaStorage,
             pickImages: widget.pickImages,
             onItemsChanged: (next) => setState(() => _images = next),
-            onBusyChanged: (isBusy) => setState(() => _uploadBusy = isBusy),
+            onBusyChanged: (isBusy) {
+              if (isBusy != _uploadBusy) {
+                setState(() => _uploadBusy = isBusy);
+              }
+            },
           ),
           TextFormField(
             key: const Key('suggestionReasonField'),
@@ -732,7 +740,23 @@ class _DictionarySuggestionDialogState
             FilledButton(
               key: const Key('dictionarySubmitSuggestionButton'),
               onPressed: busy ? null : _submit,
-              child: Text(_busy ? 'Submitting…' : 'Submit suggestion'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [
+                  if (busy)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  Text(
+                    _busy
+                        ? 'Submitting…'
+                        : (_uploadBusy ? 'Uploading…' : 'Submit suggestion'),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

@@ -114,29 +114,31 @@ class _GlassModalBarrier extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final t = reduceMotion
-            ? 1.0
-            : Curves.easeOutCubic.transform(animation.value.clamp(0.0, 1.0));
-        final sigma = blurSigma * t;
-        if (sigma <= 0.01) return child!;
-        final filter = ImageFilter.blur(
-          sigmaX: sigma,
-          sigmaY: sigma,
-          tileMode: TileMode.clamp,
-        );
-        // Two passes keep each sigma <= 30 so WebGL/CanvasKit does not clamp
-        // or skip the blur while dramatically defocusing underlying text.
-        return ClipRect(
-          child: BackdropFilter(
-            filter: filter,
-            child: BackdropFilter(filter: filter, child: child),
-          ),
-        );
-      },
-      child: barrier,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) {
+          final t = reduceMotion
+              ? 1.0
+              : Curves.easeOutCubic.transform(animation.value.clamp(0.0, 1.0));
+          final sigma = blurSigma * t;
+          if (sigma <= 0.01) return child!;
+          final filter = ImageFilter.blur(
+            sigmaX: sigma,
+            sigmaY: sigma,
+            tileMode: TileMode.clamp,
+          );
+          // Two passes keep each sigma <= 30 so WebGL/CanvasKit does not clamp
+          // or skip the blur while dramatically defocusing underlying text.
+          return ClipRect(
+            child: BackdropFilter(
+              filter: filter,
+              child: BackdropFilter(filter: filter, child: child),
+            ),
+          );
+        },
+        child: barrier,
+      ),
     );
   }
 }

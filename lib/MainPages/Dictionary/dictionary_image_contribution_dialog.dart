@@ -1,5 +1,7 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'dart:typed_data';
+
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,12 +20,18 @@ class DictionaryImageContributionDialog extends StatefulWidget {
     required this.entry,
     this.mediaStorage,
     this.pickImages,
+    this.processImage,
   });
 
   final DictionaryRepository repository;
   final DictionaryEntry entry;
   final MediaStorageRepository? mediaStorage;
   final DictionaryMultiImagePicker? pickImages;
+  final Future<ProcessedDictionaryImage> Function({
+    required Uint8List bytes,
+    required String fileName,
+  })?
+  processImage;
 
   @override
   State<DictionaryImageContributionDialog> createState() =>
@@ -195,9 +203,13 @@ class _DictionaryImageContributionDialogState
                       items: _images,
                       mediaStorage: widget.mediaStorage,
                       pickImages: widget.pickImages,
+                      processImage: widget.processImage,
                       onItemsChanged: (next) => setState(() => _images = next),
-                      onBusyChanged: (isBusy) =>
-                          setState(() => _uploadBusy = isBusy),
+                      onBusyChanged: (isBusy) {
+                        if (isBusy != _uploadBusy) {
+                          setState(() => _uploadBusy = isBusy);
+                        }
+                      },
                     ),
                     TextFormField(
                       key: const Key('imageContributionNoteField'),
@@ -236,7 +248,23 @@ class _DictionaryImageContributionDialogState
             FilledButton(
               key: const Key('submitImageContributionButton'),
               onPressed: busy ? null : _submit,
-              child: Text(_submitting ? 'Submitting…' : 'Submit for review'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [
+                  if (busy)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  Text(
+                    _submitting
+                        ? 'Submitting…'
+                        : (_uploadBusy ? 'Uploading…' : 'Submit for review'),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

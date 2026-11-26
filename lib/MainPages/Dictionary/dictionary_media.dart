@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -101,29 +102,173 @@ class ProcessedDictionaryImage {
 /// Validates, hashes, and resizes oversized educational images while preserving
 /// crisp detail up to `maxDimension` px.
 class DictionaryImageProcessor {
+  static const int _maxCacheEntries = 16;
+  static final Map<String, ProcessedDictionaryImage> _cache = {};
+
+  @visibleForTesting
+  static void clearCache() => _cache.clear();
+
+  /// Reads pixel dimensions directly from PNG, JPEG, or WebP headers without
+  /// decoding the bitmap into memory.
+  static ({int width, int height})? readDimensions(
+    Uint8List bytes,
+    String contentType,
+  ) {
+    switch (contentType) {
+      case 'image/png':
+        return _readPngDimensions(bytes);
+      case 'image/jpeg':
+        return _readJpegDimensions(bytes);
+      case 'image/webp':
+        return _readWebpDimensions(bytes);
+      default:
+        return null;
+    }
+  }
+
+  static ({int width, int height})? _readPngDimensions(Uint8List bytes) {
+    if (bytes.length < 24) return null;
+    // IHDR chunk at byte offset 12..15.
+    if (bytes[12] != 0x49 ||
+        bytes[13] != 0x48 ||
+        bytes[14] != 0x44 ||
+        bytes[15] != 0x52) {
+      return null;
+    }
+    final data = ByteData.sublistView(bytes, 16, 24);
+    final width = data.getUint32(0);
+    final height = data.getUint32(4);
+    if (width <= 0 || height <= 0) return null;
+    return (width: width, height: height);
+  }
+
+  static ({int width, int height})? _readJpegDimensions(Uint8List bytes) {
+    if (bytes.length < 11 || bytes[0] != 0xFF || bytes[1] != 0xD8) {
+      return null;
+    }
+    var pos = 2;
+    while (pos < bytes.length - 1) {
+      if (bytes[pos] != 0xFF) {
+        pos++;
+        continue;
+      }
+      while (pos < bytes.length && bytes[pos] == 0xFF) {
+        pos++;
+      }
+      if (pos >= bytes.length) break;
+      final marker = bytes[pos++];
+      if (marker == 0x00 ||
+          marker == 0x01 ||
+          (marker >= 0xD0 && marker <= 0xD7)) {
+        continue;
+      }
+      if (marker == 0xD9 || marker == 0xDA) {
+        break;
+      }
+      if (pos + 1 >= bytes.length) break;
+      final segmentLength = (bytes[pos] << 8) | bytes[pos + 1];
+      if (segmentLength < 2 || pos + segmentLength > bytes.length) break;
+      final isSof =
+          (marker >= 0xC0 && marker <= 0xC3) ||
+          (marker >= 0xC5 && marker <= 0xC7) ||
+          (marker >= 0xC9 && marker <= 0xCB) ||
+          (marker >= 0xCD && marker <= 0xCF);
+      if (isSof && segmentLength >= 7) {
+        final height = (bytes[pos + 3] << 8) | bytes[pos + 4];
+        final width = (bytes[pos + 5] << 8) | bytes[pos + 6];
+        if (width > 0 && height > 0) {
+          return (width: width, height: height);
+        }
+        return null;
+      }
+      pos += segmentLength;
+    }
+    return null;
+  }
+
+  static ({int width, int height})? _readWebpDimensions(Uint8List bytes) {
+    if (bytes.length < 30 ||
+        bytes[0] != 0x52 ||
+        bytes[1] != 0x49 ||
+        bytes[2] != 0x46 ||
+        bytes[3] != 0x46 ||
+        bytes[8] != 0x57 ||
+        bytes[9] != 0x45 ||
+        bytes[10] != 0x42 ||
+        bytes[11] != 0x50) {
+      return null;
+    }
+    final c0 = bytes[12];
+    final c1 = bytes[13];
+    final c2 = bytes[14];
+    final c3 = bytes[15];
+    // 'VP8 ' (lossy)
+    if (c0 == 0x56 && c1 == 0x50 && c2 == 0x38 && c3 == 0x20) {
+      if (bytes[23] != 0x9D || bytes[24] != 0x01 || bytes[25] != 0x2A) {
+        return null;
+      }
+      final width = (bytes[26] | (bytes[27] << 8)) & 0x3FFF;
+      final height = (bytes[28] | (bytes[29] << 8)) & 0x3FFF;
+      return (width > 0 && height > 0) ? (width: width, height: height) : null;
+    }
+    // 'VP8L' (lossless)
+    if (c0 == 0x56 && c1 == 0x50 && c2 == 0x38 && c3 == 0x4C) {
+      if (bytes[20] != 0x2F) return null;
+      final bits =
+          bytes[21] | (bytes[22] << 8) | (bytes[23] << 16) | (bytes[24] << 24);
+      final width = (bits & 0x3FFF) + 1;
+      final height = ((bits >> 14) & 0x3FFF) + 1;
+      return (width: width, height: height);
+    }
+    // 'VP8X' (extended)
+    if (c0 == 0x56 && c1 == 0x50 && c2 == 0x38 && c3 == 0x58) {
+      final width = (bytes[24] | (bytes[25] << 8) | (bytes[26] << 16)) + 1;
+      final height = (bytes[27] | (bytes[28] << 8) | (bytes[29] << 16)) + 1;
+      return (width: width, height: height);
+    }
+    return null;
+  }
+
+  static void _storeCache(String key, ProcessedDictionaryImage value) {
+    _cache.remove(key);
+    _cache[key] = value;
+    if (_cache.length > _maxCacheEntries) {
+      _cache.remove(_cache.keys.first);
+    }
+  }
+
   static Future<ProcessedDictionaryImage> process({
     required Uint8List bytes,
     required String fileName,
     int maxDimension = maxDictionaryImageDimension,
+    String? precomputedRawHash,
   }) async {
     final validated = DictionaryImageValidator.validate(
       bytes: bytes,
       fileName: fileName,
     );
-    final rawHash = crypto.sha256.convert(validated.bytes).toString();
+    final rawHash =
+        precomputedRawHash ?? crypto.sha256.convert(validated.bytes).toString();
+    final cacheKey = '$rawHash:$maxDimension';
+    final cached = _cache[cacheKey];
+    if (cached != null) return cached;
 
     try {
-      final codec = await ui.instantiateImageCodec(validated.bytes);
-      final frame = await codec.getNextFrame();
-      final width = frame.image.width;
-      final height = frame.image.height;
-      frame.image.dispose();
-      codec.dispose();
+      var dims = readDimensions(validated.bytes, validated.contentType);
+      if (dims == null) {
+        final codec = await ui.instantiateImageCodec(validated.bytes);
+        final frame = await codec.getNextFrame();
+        dims = (width: frame.image.width, height: frame.image.height);
+        frame.image.dispose();
+        codec.dispose();
+      }
 
-      if (width > maxDimension || height > maxDimension) {
-        final scale = maxDimension / (width > height ? width : height);
-        final targetWidth = max(1, (width * scale).round());
-        final targetHeight = max(1, (height * scale).round());
+      if (dims.width > maxDimension || dims.height > maxDimension) {
+        final scale =
+            maxDimension /
+            (dims.width > dims.height ? dims.width : dims.height);
+        final targetWidth = max(1, (dims.width * scale).round());
+        final targetHeight = max(1, (dims.height * scale).round());
         final resizedCodec = await ui.instantiateImageCodec(
           validated.bytes,
           targetWidth: targetWidth,
@@ -138,13 +283,17 @@ class DictionaryImageProcessor {
 
         if (byteData != null) {
           final resizedBytes = byteData.buffer.asUint8List();
-          if (resizedBytes.isNotEmpty &&
-              resizedBytes.length <= maxDictionaryImageBytes) {
+          final shouldUseResized =
+              resizedBytes.isNotEmpty &&
+              resizedBytes.length <= maxDictionaryImageBytes &&
+              (validated.contentType == 'image/png' ||
+                  resizedBytes.length <= validated.bytes.length);
+          if (shouldUseResized) {
             final baseName = validated.fileName.replaceAll(
               RegExp(r'\.[^.]+$'),
               '',
             );
-            return ProcessedDictionaryImage(
+            final processed = ProcessedDictionaryImage(
               bytes: resizedBytes,
               fileName: '$baseName.png',
               contentType: 'image/png',
@@ -152,6 +301,8 @@ class DictionaryImageProcessor {
               originalByteLength: validated.bytes.length,
               wasResized: true,
             );
+            _storeCache(cacheKey, processed);
+            return processed;
           }
         }
       }
@@ -160,7 +311,7 @@ class DictionaryImageProcessor {
       // the validated original payload cleanly without failing valid images.
     }
 
-    return ProcessedDictionaryImage(
+    final fallback = ProcessedDictionaryImage(
       bytes: validated.bytes,
       fileName: validated.fileName,
       contentType: validated.contentType,
@@ -168,6 +319,8 @@ class DictionaryImageProcessor {
       originalByteLength: validated.bytes.length,
       wasResized: false,
     );
+    _storeCache(cacheKey, fallback);
+    return fallback;
   }
 }
 
@@ -288,6 +441,20 @@ bool isDictionaryImageUrl(String? rawUrl) {
     r'\.(png|jpe?g|webp)$',
     caseSensitive: false,
   ).hasMatch(uri.path);
+}
+
+/// Returns the primary published image item attached to [entry], or `null`
+/// when [entry] has no valid HTTPS image URL. Reads directly from `entry.data`
+/// without issuing additional repository or Firestore requests.
+DictionaryMediaItem? firstPublishedDictionaryImage(DictionaryEntry entry) {
+  final rawMedia = entry.data['media'];
+  if (rawMedia is! List) return null;
+  for (final item in rawMedia) {
+    if (item is Map && isDictionaryImageUrl(item['url'] as String?)) {
+      return DictionaryMediaItem.fromMap(item.cast<String, dynamic>());
+    }
+  }
+  return null;
 }
 
 /// Renders Dictionary `media` items: images inline via [SmartImage] with
@@ -481,12 +648,13 @@ class CommunityPendingImage {
     required this.contentType,
     this.rawHash,
     this.uploadedUrl,
-    this.uploadProgress = 0,
+    double uploadProgress = 0,
     this.isUploading = false,
     this.errorMessage,
     String initialCaption = '',
     String initialExplanation = '',
-  }) : captionController = TextEditingController(text: initialCaption),
+  }) : progressNotifier = ValueNotifier<double>(uploadProgress.clamp(0.0, 1.0)),
+       captionController = TextEditingController(text: initialCaption),
        explanationController = TextEditingController(text: initialExplanation);
 
   final String id;
@@ -496,11 +664,26 @@ class CommunityPendingImage {
   final String contentType;
   final String? rawHash;
   String? uploadedUrl;
-  double uploadProgress;
+  final ValueNotifier<double> progressNotifier;
   bool isUploading;
   String? errorMessage;
   final TextEditingController captionController;
   final TextEditingController explanationController;
+
+  /// Cached downscaled thumbnail provider (~160px wide) so multi-megapixel
+  /// images do not allocate full-resolution GPU textures in the contribution list.
+  late final ImageProvider thumbnailProvider = ResizeImage(
+    MemoryImage(previewBytes),
+    width: 160,
+  );
+
+  double get uploadProgress => progressNotifier.value;
+  set uploadProgress(double value) {
+    final clamped = value.clamp(0.0, 1.0);
+    if (progressNotifier.value != clamped) {
+      progressNotifier.value = clamped;
+    }
+  }
 
   bool get isReady =>
       uploadedUrl != null && !isUploading && errorMessage == null;
@@ -515,6 +698,7 @@ class CommunityPendingImage {
   };
 
   void dispose() {
+    progressNotifier.dispose();
     captionController.dispose();
     explanationController.dispose();
   }
@@ -560,6 +744,9 @@ class _DictionaryImagePickerSectionState
   MediaStorageRepository? _resolvedStorage;
   String? _error;
   String? _notice;
+  bool _isPreparing = false;
+  String? _preparingStatus;
+  bool _lastReportedBusy = false;
 
   MediaStorageRepository _storage() => _resolvedStorage ??=
       widget.mediaStorage ??
@@ -581,78 +768,117 @@ class _DictionaryImagePickerSectionState
     return out;
   }
 
-  void _notifyBusy() {
-    widget.onBusyChanged?.call(widget.items.any((item) => item.isUploading));
+  void _notifyBusy({List<CommunityPendingImage>? items}) {
+    final active = items ?? widget.items;
+    final busy = _isPreparing || active.any((item) => item.isUploading);
+    if (busy != _lastReportedBusy) {
+      _lastReportedBusy = busy;
+      widget.onBusyChanged?.call(busy);
+    }
   }
 
   Future<void> _selectAndUpload() async {
-    if (widget.items.length >= widget.maxImages) return;
+    if (_isPreparing || widget.items.length >= widget.maxImages) return;
     setState(() {
+      _isPreparing = true;
+      _preparingStatus = 'Selecting images…';
       _error = null;
       _notice = null;
     });
-    final picked = await _pickFromDevice();
-    if (!mounted || picked.isEmpty) return;
+    _notifyBusy();
 
-    final remaining = widget.maxImages - widget.items.length;
-    if (picked.length > remaining) {
-      setState(() {
-        _notice =
-            'Only $remaining more ${remaining == 1 ? 'image' : 'images'} can be added '
-            '(maximum ${widget.maxImages} per submission).';
-      });
-    }
+    try {
+      final picked = await _pickFromDevice();
+      if (!mounted || picked.isEmpty) return;
 
-    final currentList = List<CommunityPendingImage>.from(widget.items);
-    for (final file in picked.take(remaining)) {
-      if (!mounted) return;
-      final rawHash = crypto.sha256.convert(file.bytes).toString();
-      if (currentList.any(
-        (existing) => existing.rawHash == rawHash || existing.sha256 == rawHash,
-      )) {
+      final remaining = widget.maxImages - widget.items.length;
+      if (picked.length > remaining) {
         setState(() {
-          _notice = 'Skipped duplicate image "${file.name}".';
+          _notice =
+              'Only $remaining more ${remaining == 1 ? 'image' : 'images'} can be added '
+              '(maximum ${widget.maxImages} per submission).';
         });
-        continue;
       }
 
-      ProcessedDictionaryImage processed;
-      try {
-        processed =
-            await (widget.processImage ?? DictionaryImageProcessor.process)(
+      final currentList = List<CommunityPendingImage>.from(widget.items);
+      for (final file in picked.take(remaining)) {
+        if (!mounted) return;
+        setState(() {
+          _preparingStatus = 'Preparing ${file.name}…';
+        });
+        await Future<void>.delayed(Duration.zero);
+        if (!mounted) return;
+
+        final rawHash = crypto.sha256.convert(file.bytes).toString();
+        if (currentList.any(
+          (existing) =>
+              existing.rawHash == rawHash || existing.sha256 == rawHash,
+        )) {
+          setState(() {
+            _notice = 'Skipped duplicate image "${file.name}".';
+          });
+          continue;
+        }
+
+        ProcessedDictionaryImage processed;
+        try {
+          if (widget.processImage != null) {
+            processed = await widget.processImage!(
               bytes: file.bytes,
               fileName: file.name,
             );
-      } on FormatException catch (e) {
-        setState(() => _error = e.message);
-        continue;
-      } catch (e) {
-        setState(() => _error = 'Could not prepare image "${file.name}": $e');
-        continue;
-      }
+          } else {
+            processed = await DictionaryImageProcessor.process(
+              bytes: file.bytes,
+              fileName: file.name,
+              precomputedRawHash: rawHash,
+            );
+          }
+        } on FormatException catch (e) {
+          setState(() => _error = e.message);
+          continue;
+        } catch (e) {
+          setState(() => _error = 'Could not prepare image "${file.name}": $e');
+          continue;
+        }
 
-      if (currentList.any((existing) => existing.sha256 == processed.sha256)) {
+        if (currentList.any(
+          (existing) => existing.sha256 == processed.sha256,
+        )) {
+          setState(() {
+            _notice = 'Skipped duplicate image "${file.name}".';
+          });
+          continue;
+        }
+
+        final id =
+            'img_${DateTime.now().microsecondsSinceEpoch}_${currentList.length}';
+        final pending = CommunityPendingImage(
+          id: id,
+          fileName: processed.fileName,
+          previewBytes: processed.bytes,
+          sha256: processed.sha256,
+          contentType: processed.contentType,
+          rawHash: rawHash,
+          isUploading: true,
+        );
+        currentList.add(pending);
+        widget.onItemsChanged(List<CommunityPendingImage>.from(currentList));
+        _notifyBusy(items: currentList);
+        await _uploadPending(
+          pending,
+          processed.bytes,
+          currentList: currentList,
+        );
+      }
+    } finally {
+      if (mounted) {
         setState(() {
-          _notice = 'Skipped duplicate image "${file.name}".';
+          _isPreparing = false;
+          _preparingStatus = null;
         });
-        continue;
+        _notifyBusy();
       }
-
-      final id =
-          'img_${DateTime.now().microsecondsSinceEpoch}_${currentList.length}';
-      final pending = CommunityPendingImage(
-        id: id,
-        fileName: processed.fileName,
-        previewBytes: processed.bytes,
-        sha256: processed.sha256,
-        contentType: processed.contentType,
-        rawHash: rawHash,
-        isUploading: true,
-      );
-      currentList.add(pending);
-      widget.onItemsChanged(List<CommunityPendingImage>.from(currentList));
-      _notifyBusy();
-      await _uploadPending(pending, processed.bytes, currentList: currentList);
     }
   }
 
@@ -668,11 +894,14 @@ class _DictionaryImagePickerSectionState
         ..errorMessage = null
         ..uploadProgress = 0;
     });
-    widget.onBusyChanged?.call(activeList.any((item) => item.isUploading));
+    _notifyBusy(items: activeList);
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final storagePath =
         'dictionary_submissions/${widget.uid}/${widget.submissionId}/${timestamp}_${pending.fileName}';
+    var lastReported = -1.0;
+    var lastEmitMs = 0;
+
     try {
       final url = await _storage().uploadBytes(
         path: storagePath,
@@ -680,9 +909,16 @@ class _DictionaryImagePickerSectionState
         contentType: pending.contentType,
         onProgress: (progress) {
           if (!mounted) return;
-          setState(() {
-            pending.uploadProgress = progress.clamp(0.0, 1.0);
-          });
+          final clamped = progress.clamp(0.0, 1.0);
+          final nowMs = DateTime.now().millisecondsSinceEpoch;
+          if (clamped == 0.0 ||
+              clamped == 1.0 ||
+              (clamped - lastReported).abs() >= 0.02 ||
+              (nowMs - lastEmitMs) >= 60) {
+            lastReported = clamped;
+            lastEmitMs = nowMs;
+            pending.uploadProgress = clamped;
+          }
         },
       );
       if (!mounted) return;
@@ -711,7 +947,7 @@ class _DictionaryImagePickerSectionState
     }
     if (mounted) {
       widget.onItemsChanged(List<CommunityPendingImage>.from(activeList));
-      widget.onBusyChanged?.call(activeList.any((item) => item.isUploading));
+      _notifyBusy(items: activeList);
     }
   }
 
@@ -720,7 +956,7 @@ class _DictionaryImagePickerSectionState
     final next = List<CommunityPendingImage>.from(widget.items)
       ..removeAt(index);
     widget.onItemsChanged(next);
-    _notifyBusy();
+    _notifyBusy(items: next);
     final url = removed.uploadedUrl;
     removed.dispose();
     if (url != null && url.isNotEmpty) {
@@ -749,10 +985,18 @@ class _DictionaryImagePickerSectionState
             ),
             OutlinedButton.icon(
               key: const Key('dictionaryPickCommunityImagesButton'),
-              onPressed: atLimit ? null : _selectAndUpload,
-              icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+              onPressed: (atLimit || _isPreparing) ? null : _selectAndUpload,
+              icon: _isPreparing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_photo_alternate_outlined, size: 18),
               label: Text(
-                atLimit
+                _isPreparing
+                    ? 'Preparing…'
+                    : atLimit
                     ? 'Maximum ${widget.maxImages} reached'
                     : 'Choose images',
               ),
@@ -766,6 +1010,28 @@ class _DictionaryImagePickerSectionState
             context,
           ).textTheme.bodySmall?.copyWith(color: secondaryColor),
         ),
+        if (_preparingStatus != null)
+          Row(
+            key: const Key('dictionaryImagePreparingIndicator'),
+            spacing: 8,
+            children: [
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              Expanded(
+                child: Text(
+                  _preparingStatus!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+                ),
+              ),
+            ],
+          ),
         if (_error != null)
           Text(
             _error!,
@@ -807,134 +1073,148 @@ class _PendingImageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secondaryColor = AppTokens.secondaryTextColor(context);
-    return Container(
-      key: Key('communityPendingImage_$index'),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        border: Border.all(
-          color: item.errorMessage != null
-              ? Theme.of(context).colorScheme.error
-              : Theme.of(context).colorScheme.outlineVariant,
+    return RepaintBoundary(
+      key: ValueKey(item.id),
+      child: Container(
+        key: Key('communityPendingImage_$index'),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: Border.all(
+            color: item.errorMessage != null
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 10,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 12,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                child: SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: Image.memory(
-                    item.previewBytes,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.image_outlined),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: RepaintBoundary(
+                      child: Image(
+                        key: Key('communityImageThumbnail_$index'),
+                        image: item.thumbnailProvider,
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.low,
+                        errorBuilder: (_, _, _) => Container(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.image_outlined),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
-                  children: [
-                    Text(
-                      item.fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (item.isUploading) ...[
-                      LinearProgressIndicator(
-                        key: Key('communityImageProgress_$index'),
-                        value: item.uploadProgress > 0
-                            ? item.uploadProgress
-                            : null,
-                      ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
+                    children: [
                       Text(
-                        'Uploading ${(item.uploadProgress * 100).round()}%',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: secondaryColor),
-                      ),
-                    ] else if (item.errorMessage != null) ...[
-                      Text(
-                        item.errorMessage!,
-                        key: Key('communityImageUploadError_$index'),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontSize: 12,
+                        item.fileName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      OutlinedButton.icon(
-                        key: Key('dictionaryRetryCommunityImage_${item.id}'),
-                        onPressed: onRetry,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Retry upload'),
-                      ),
-                    ] else
-                      Row(
-                        spacing: 4,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 16,
-                            color: AppTokens.accentColor(context),
+                      if (item.isUploading)
+                        ValueListenableBuilder<double>(
+                          valueListenable: item.progressNotifier,
+                          builder: (context, progress, _) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 4,
+                            children: [
+                              LinearProgressIndicator(
+                                key: Key('communityImageProgress_$index'),
+                                value: progress > 0 ? progress : null,
+                              ),
+                              Text(
+                                'Uploading ${(progress * 100).round()}%',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: secondaryColor),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Uploaded and ready for review',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: secondaryColor),
+                        )
+                      else if (item.errorMessage != null) ...[
+                        Text(
+                          item.errorMessage!,
+                          key: Key('communityImageUploadError_$index'),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 12,
                           ),
-                        ],
-                      ),
-                  ],
+                        ),
+                        OutlinedButton.icon(
+                          key: Key('dictionaryRetryCommunityImage_${item.id}'),
+                          onPressed: onRetry,
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('Retry upload'),
+                        ),
+                      ] else
+                        Row(
+                          spacing: 4,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 16,
+                              color: AppTokens.accentColor(context),
+                            ),
+                            Text(
+                              'Uploaded and ready for review',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: secondaryColor),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                key: Key('communityImageRemove_$index'),
-                tooltip: 'Remove image',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: onRemove,
-              ),
-            ],
-          ),
-          TextFormField(
-            key: Key('communityImageCaption_$index'),
-            controller: item.captionController,
-            maxLength: 120,
-            decoration: const InputDecoration(
-              labelText: 'Short caption (optional)',
-              hintText: 'Brief label shown alongside the image',
+                IconButton(
+                  key: Key('communityImageRemove_$index'),
+                  tooltip: 'Remove image',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: onRemove,
+                ),
+              ],
             ),
-          ),
-          TextFormField(
-            key: Key('communityImageExplanation_$index'),
-            controller: item.explanationController,
-            maxLength: 600,
-            minLines: 1,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Educational explanation (optional)',
-              hintText:
-                  'Explain what this photo or diagram helps riders and horses understand',
+            TextFormField(
+              key: Key('communityImageCaption_$index'),
+              controller: item.captionController,
+              maxLength: 120,
+              decoration: const InputDecoration(
+                labelText: 'Short caption (optional)',
+                hintText: 'Brief label shown alongside the image',
+              ),
             ),
-          ),
-        ],
+            TextFormField(
+              key: Key('communityImageExplanation_$index'),
+              controller: item.explanationController,
+              maxLength: 600,
+              minLines: 1,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Educational explanation (optional)',
+                hintText:
+                    'Explain what this photo or diagram helps riders and horses understand',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
+import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
+import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_matcher.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_page.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -114,6 +117,7 @@ Future<void> showDictionaryDefinitionDialog(
 }) {
   final synonyms = entry.strings('synonyms');
   final categories = entry.strings('categories');
+  final heroMedia = firstPublishedDictionaryImage(entry);
   final navigator = Navigator.of(context, rootNavigator: true);
   final localOriginRect = originRect == null
       ? null
@@ -128,55 +132,144 @@ Future<void> showDictionaryDefinitionDialog(
     resolveOriginRect: resolveOriginRect,
     transitionDuration: _kDefinitionDialogEnterDuration,
     reverseTransitionDuration: _kDefinitionDialogExitDuration,
-    builder: (dialogContext) => AppGlassDialog(
-      key: const Key('dictionaryDefinitionDialog'),
-      maxWidth: 460,
-      title: Text(
-        entry.term,
-        style: AppTokens.sectionTitleStyle(dialogContext),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 10,
-        children: [
-          if (categories.isNotEmpty)
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final cat in categories)
-                  AppStatusBadge(label: cat, tone: AppStatusTone.info),
-              ],
-            ),
-          Text(
-            entry.definition,
-            style: Theme.of(dialogContext).textTheme.bodyLarge,
-          ),
-          if (synonyms.isNotEmpty)
-            Text(
-              'Also called: ${synonyms.join(' · ')}',
-              style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                color: AppTokens.secondaryTextColor(dialogContext),
+    builder: (dialogContext) {
+      final screenSize = MediaQuery.sizeOf(dialogContext);
+      final imageHeight = (screenSize.width < 400 || screenSize.height < 640)
+          ? 160.0
+          : 184.0;
+      return AppGlassDialog(
+        key: const Key('dictionaryDefinitionDialog'),
+        maxWidth: 460,
+        title: Text(
+          entry.term,
+          style: AppTokens.sectionTitleStyle(dialogContext),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 10,
+          children: [
+            if (heroMedia != null) ...[
+              RepaintBoundary(
+                child: ClipRRect(
+                  key: const Key('dictionaryDefinitionDialogImageContainer'),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                  child: Material(
+                    color: Theme.of(
+                      dialogContext,
+                    ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.35),
+                    child: InkWell(
+                      key: const Key('dictionaryDefinitionDialogImageTap'),
+                      onTap: () => showProfilePhoto(
+                        dialogContext,
+                        heroMedia.url,
+                        heroTag: 'dictionary-def-dialog-${entry.id}',
+                        caption: heroMedia.label.isEmpty
+                            ? entry.term
+                            : heroMedia.label,
+                        explanation: heroMedia.explanation.isEmpty
+                            ? null
+                            : heroMedia.explanation,
+                        imageTypeLabel: heroMedia.imageType.label,
+                        attribution: heroMedia.attribution,
+                      ),
+                      child: Semantics(
+                        button: true,
+                        label: heroMedia.label.isNotEmpty
+                            ? '${heroMedia.label}. '
+                                  'Tap to view full illustration.'
+                            : 'Illustration for ${entry.term}. '
+                                  'Tap to view larger.',
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: imageHeight,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              SmartImage(
+                                heroMedia.url,
+                                key: const Key(
+                                  'dictionaryDefinitionDialogImage',
+                                ),
+                                width: double.infinity,
+                                height: imageHeight,
+                                maxLogicalWidth: 460,
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.55),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(
+                                      Icons.zoom_in,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
+              if (heroMedia.label.isNotEmpty)
+                Text(
+                  heroMedia.label,
+                  key: const Key('dictionaryDefinitionDialogImageCaption'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                    color: AppTokens.secondaryTextColor(dialogContext),
+                  ),
+                ),
+            ],
+            if (categories.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final cat in categories)
+                    AppStatusBadge(label: cat, tone: AppStatusTone.info),
+                ],
+              ),
+            Text(
+              entry.definition,
+              style: Theme.of(dialogContext).textTheme.bodyLarge,
             ),
+            if (synonyms.isNotEmpty)
+              Text(
+                'Also called: ${synonyms.join(' · ')}',
+                style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                  color: AppTokens.secondaryTextColor(dialogContext),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+          FilledButton.tonalIcon(
+            icon: const Icon(Icons.menu_book_outlined, size: 16),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _openFullDefinition(context, entry);
+            },
+            label: const Text('View full definition'),
+          ),
         ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Close'),
-        ),
-        FilledButton.tonalIcon(
-          icon: const Icon(Icons.menu_book_outlined, size: 16),
-          onPressed: () {
-            Navigator.pop(dialogContext);
-            _openFullDefinition(context, entry);
-          },
-          label: const Text('View full definition'),
-        ),
-      ],
-    ),
+      );
+    },
   );
 }
 
