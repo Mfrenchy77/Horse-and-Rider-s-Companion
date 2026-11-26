@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_diff.dart';
@@ -91,7 +92,12 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     return _InboxBundle(items: items, publishedEntries: published);
   }
 
-  void _refresh() => setState(() => _inbox = _load());
+  void _refresh() {
+    final nextInbox = _load();
+    setState(() {
+      _inbox = nextInbox;
+    });
+  }
 
   Future<void> _perform(Future<void> Function() operation) async {
     try {
@@ -136,6 +142,20 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
         status: status,
         note: note,
         repository: _repository,
+      ),
+    );
+    if (mounted) _refresh();
+  }
+
+  Future<void> _partialReview(Map<String, dynamic> item) async {
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (_) => _PartialReviewDialog(
+        item: item,
+        repository: _repository,
+        onSaved: () {
+          if (mounted) _refresh();
+        },
       ),
     );
     if (mounted) _refresh();
@@ -298,6 +318,130 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     if (mounted) _refresh();
   }
 
+  Widget _buildSubmittedImagesPreview(
+    BuildContext context, {
+    required Map<String, dynamic> item,
+  }) {
+    final submittedImages = (item['submittedImages'] as List<dynamic>? ?? [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((e) => e.cast<String, dynamic>())
+        .toList();
+    if (submittedImages.isEmpty) return const SizedBox.shrink();
+
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    return Column(
+      key: Key('adminSubmittedImages_${item['id']}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 8,
+      children: [
+        Text(
+          'Submitted images (${submittedImages.length})',
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (var i = 0; i < submittedImages.length; i++)
+              Builder(
+                builder: (context) {
+                  final img = submittedImages[i];
+                  final url = (img['url'] as String?) ?? '';
+                  final imgId = (img['id'] as String?) ?? '$i';
+                  final caption = (img['caption'] as String?)?.trim() ?? '';
+                  final explanation =
+                      (img['explanation'] as String?)?.trim() ?? '';
+                  final imageType = DictionaryImageType.fromStorageValue(
+                    img['imageType'] as String?,
+                  );
+                  final reviewStatus =
+                      (img['reviewStatus'] as String?) ?? 'pending';
+                  final tone = switch (reviewStatus) {
+                    'approved' => AppStatusTone.success,
+                    'rejected' => AppStatusTone.error,
+                    _ => AppStatusTone.neutral,
+                  };
+                  return Container(
+                    key: Key('adminSubmittedImageCard_${item['id']}_$imgId'),
+                    width: 240,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 6,
+                      children: [
+                        InkWell(
+                          key: Key(
+                            'adminSubmittedImageZoom_${item['id']}_$imgId',
+                          ),
+                          onTap: url.startsWith('https://')
+                              ? () => showProfilePhoto(
+                                  context,
+                                  url,
+                                  caption: caption.isEmpty
+                                      ? 'Submitted image ${i + 1}'
+                                      : caption,
+                                  explanation: explanation.isEmpty
+                                      ? null
+                                      : explanation,
+                                  imageTypeLabel: imageType.label,
+                                )
+                              : null,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              AppTokens.radiusSm,
+                            ),
+                            child: SmartImage(
+                              url,
+                              width: 224,
+                              height: 120,
+                              maxLogicalWidth: 320,
+                            ),
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            AppStatusBadge(label: reviewStatus, tone: tone),
+                            AppStatusBadge(
+                              label: imageType.label,
+                              tone: AppStatusTone.info,
+                            ),
+                          ],
+                        ),
+                        if (caption.isNotEmpty)
+                          Text(
+                            caption,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        if (explanation.isNotEmpty)
+                          Text(
+                            explanation,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: secondaryColor),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildSuggestionDiffSection(
     BuildContext context, {
     required Map<String, dynamic> item,
@@ -307,6 +451,11 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     final rawProposed = item['proposedFields'];
     final rawBase = item['baseFields'];
     final reason = (item['reason'] as String?)?.trim() ?? '';
+    final categories = (item['categories'] as List<dynamic>? ?? [])
+        .whereType<String>()
+        .where((c) => c.trim().isNotEmpty)
+        .toList();
+    final textDecision = item['textDecision'] as String?;
     final mismatch = _detectRevisionMismatch(
       suggestion: item,
       currentPublished: targetPublished,
@@ -329,7 +478,17 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                   'before applying.',
               tone: AppStatusTone.warning,
             ),
+          if (categories.isNotEmpty)
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final cat in categories)
+                  AppStatusBadge(label: cat, tone: AppStatusTone.info),
+              ],
+            ),
           Text(item['proposal'] as String? ?? ''),
+          _buildSubmittedImagesPreview(context, item: item),
           if (reason.isNotEmpty)
             _ReasonCallout(reason: reason, secondaryColor: secondaryColor),
         ],
@@ -373,6 +532,21 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                 'review before applying.',
             tone: AppStatusTone.warning,
           ),
+        if (categories.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final cat in categories)
+                AppStatusBadge(label: cat, tone: AppStatusTone.info),
+            ],
+          ),
+        if (textDecision == 'rejected')
+          const AppFeedbackBanner(
+            message:
+                'Text wording changes marked rejected; only approved images will be incorporated.',
+            tone: AppStatusTone.warning,
+          ),
         const DictionaryDiffLegend(),
         if (orderedKeys.isEmpty)
           Text(item['proposal'] as String? ?? '')
@@ -389,6 +563,7 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
               baseRevision: baseRev,
               currentRevision: currentRev,
             ),
+        _buildSubmittedImagesPreview(context, item: item),
         if (reason.isNotEmpty)
           _ReasonCallout(reason: reason, secondaryColor: secondaryColor),
       ],
@@ -465,6 +640,7 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                           'submitted',
                           'under_review',
                           'needs_clarification',
+                          'partially_approved',
                           'approved',
                           'published',
                           'rejected',
@@ -548,6 +724,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                                 tone: switch (item['status']) {
                                                   'approved' || 'published' =>
                                                     AppStatusTone.success,
+                                                  'partially_approved' =>
+                                                    AppStatusTone.coral,
                                                   'needs_clarification' =>
                                                     AppStatusTone.warning,
                                                   'rejected' =>
@@ -636,6 +814,31 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                                     status.replaceAll('_', ' '),
                                                   ),
                                                 ),
+                                              if ((item['submittedImages']
+                                                          as List<dynamic>?)
+                                                      ?.isNotEmpty ??
+                                                  false)
+                                                OutlinedButton.icon(
+                                                  key: Key(
+                                                    'reviewImagesButton_${item['id']}',
+                                                  ),
+                                                  onPressed:
+                                                      item['status'] ==
+                                                          'published'
+                                                      ? null
+                                                      : () => _perform(
+                                                          () => _partialReview(
+                                                            item,
+                                                          ),
+                                                        ),
+                                                  icon: const Icon(
+                                                    Icons.collections_outlined,
+                                                    size: 16,
+                                                  ),
+                                                  label: const Text(
+                                                    'Review / edit images',
+                                                  ),
+                                                ),
                                               TextButton.icon(
                                                 key: Key(
                                                   'editProposalButton_${item['id']}',
@@ -668,21 +871,48 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                                 ),
                                                 label: const Text('History'),
                                               ),
-                                              OutlinedButton(
-                                                key: Key(
-                                                  'incorporateWording_${item['id']}',
-                                                ),
-                                                onPressed:
-                                                    item['status'] == 'approved'
-                                                    ? () => _perform(
-                                                        () => _edit(
-                                                          suggestion: item,
-                                                        ),
-                                                      )
-                                                    : null,
-                                                child: const Text(
-                                                  'Incorporate wording',
-                                                ),
+                                              Builder(
+                                                builder: (context) {
+                                                  final canIncorporate =
+                                                      item['status'] ==
+                                                          'approved' ||
+                                                      item['status'] ==
+                                                          'partially_approved';
+                                                  final hasApprovedImages =
+                                                      (item['submittedImages']
+                                                                  as List<
+                                                                    dynamic
+                                                                  >? ??
+                                                              const [])
+                                                          .whereType<
+                                                            Map<
+                                                              dynamic,
+                                                              dynamic
+                                                            >
+                                                          >()
+                                                          .any(
+                                                            (img) =>
+                                                                img['reviewStatus'] ==
+                                                                'approved',
+                                                          );
+                                                  return OutlinedButton(
+                                                    key: Key(
+                                                      'incorporateWording_${item['id']}',
+                                                    ),
+                                                    onPressed: canIncorporate
+                                                        ? () => _perform(
+                                                            () => _edit(
+                                                              suggestion: item,
+                                                            ),
+                                                          )
+                                                        : null,
+                                                    child: Text(
+                                                      hasApprovedImages
+                                                          ? 'Incorporate approved'
+                                                          : 'Incorporate wording',
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ],
                                           ),
@@ -1016,6 +1246,346 @@ class _ReviewDialogState extends State<_ReviewDialog> {
   );
 }
 
+class _PartialImageDraft {
+  _PartialImageDraft({
+    required this.id,
+    required this.url,
+    required this.status,
+    required this.imageType,
+    required String caption,
+    required String explanation,
+  }) : captionController = TextEditingController(text: caption),
+       explanationController = TextEditingController(text: explanation);
+
+  final String id;
+  final String url;
+  String status;
+  DictionaryImageType imageType;
+  final TextEditingController captionController;
+  final TextEditingController explanationController;
+
+  void dispose() {
+    captionController.dispose();
+    explanationController.dispose();
+  }
+}
+
+class _PartialReviewDialog extends StatefulWidget {
+  const _PartialReviewDialog({
+    required this.item,
+    required this.repository,
+    this.onSaved,
+  });
+
+  final Map<String, dynamic> item;
+  final DictionaryRepository repository;
+  final VoidCallback? onSaved;
+
+  @override
+  State<_PartialReviewDialog> createState() => _PartialReviewDialogState();
+}
+
+class _PartialReviewDialogState extends State<_PartialReviewDialog> {
+  final _note = TextEditingController();
+  late final List<_PartialImageDraft> _images;
+  late String _textDecision;
+  late final bool _hasTextProposal;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasTextProposal =
+        widget.item['kind'] != 'image_contribution' &&
+        (widget.item['proposedFields'] is Map ||
+            ((widget.item['proposal'] as String?)?.isNotEmpty ?? false));
+    _textDecision =
+        (widget.item['textDecision'] as String?) ??
+        (widget.item['kind'] == 'image_contribution' ? 'rejected' : 'pending');
+    _images = [
+      for (final raw
+          in (widget.item['submittedImages'] as List<dynamic>? ?? [])
+              .whereType<Map<dynamic, dynamic>>())
+        _PartialImageDraft(
+          id: (raw['id'] as String?) ?? '',
+          url: (raw['url'] as String?) ?? '',
+          status: (raw['reviewStatus'] as String?) ?? 'pending',
+          imageType: DictionaryImageType.fromStorageValue(
+            raw['imageType'] as String?,
+          ),
+          caption: (raw['caption'] as String?) ?? '',
+          explanation: (raw['explanation'] as String?) ?? '',
+        ),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _note.dispose();
+    for (final img in _images) {
+      img.dispose();
+    }
+    super.dispose();
+  }
+
+  String _computedOverallStatus() {
+    final decisions = <String>[
+      if (_hasTextProposal) _textDecision,
+      for (final img in _images) img.status,
+    ];
+    final approvedCount = decisions.where((d) => d == 'approved').length;
+    final rejectedCount = decisions.where((d) => d == 'rejected').length;
+    if (decisions.isNotEmpty && approvedCount == decisions.length) {
+      return 'approved';
+    }
+    if (approvedCount > 0) return 'partially_approved';
+    if (decisions.isNotEmpty && rejectedCount == decisions.length) {
+      return 'rejected';
+    }
+    return 'under_review';
+  }
+
+  Future<void> _save() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final overallStatus = _computedOverallStatus();
+      await widget.repository.call('editDictionary', {
+        'action': 'review',
+        'id': widget.item['id'],
+        'status': overallStatus,
+        'textDecision': _textDecision,
+        'imageDecisions': [
+          for (final img in _images)
+            {
+              'id': img.id,
+              'status': img.status,
+              'caption': img.captionController.text.trim(),
+              'explanation': img.explanationController.text.trim(),
+              'imageType': img.imageType.storageValue,
+            },
+        ],
+        'note': _note.text.trim(),
+      });
+      widget.onSaved?.call();
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error.toString();
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sugId = widget.item['id'];
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    return AppGlassDialog(
+      maxWidth: 720,
+      title: Text('Review submission · ${widget.item['term'] ?? ''}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 12,
+        children: [
+          if (_hasTextProposal)
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8,
+                children: [
+                  Text(
+                    'Proposed wording decision',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        key: Key('adminTextApprove_$sugId'),
+                        label: const Text('Approve wording'),
+                        selected: _textDecision == 'approved',
+                        onSelected: _busy
+                            ? null
+                            : (_) => setState(() => _textDecision = 'approved'),
+                      ),
+                      ChoiceChip(
+                        key: Key('adminTextReject_$sugId'),
+                        label: const Text('Reject wording'),
+                        selected: _textDecision == 'rejected',
+                        onSelected: _busy
+                            ? null
+                            : (_) => setState(() => _textDecision = 'rejected'),
+                      ),
+                      ChoiceChip(
+                        label: const Text('Keep pending'),
+                        selected: _textDecision == 'pending',
+                        onSelected: _busy
+                            ? null
+                            : (_) => setState(() => _textDecision = 'pending'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          for (var i = 0; i < _images.length; i++)
+            Container(
+              key: Key('adminReviewImageCard_${sugId}_${_images[i].id}'),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 8,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 10,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                        child: SmartImage(
+                          _images[i].url,
+                          width: 112,
+                          height: 90,
+                          maxLogicalWidth: 200,
+                        ),
+                      ),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            ChoiceChip(
+                              key: Key(
+                                'adminImageApprove_${sugId}_${_images[i].id}',
+                              ),
+                              label: const Text('Approve image'),
+                              selected: _images[i].status == 'approved',
+                              onSelected: _busy
+                                  ? null
+                                  : (_) => setState(
+                                      () => _images[i].status = 'approved',
+                                    ),
+                            ),
+                            ChoiceChip(
+                              key: Key(
+                                'adminImageReject_${sugId}_${_images[i].id}',
+                              ),
+                              label: const Text('Reject image'),
+                              selected: _images[i].status == 'rejected',
+                              onSelected: _busy
+                                  ? null
+                                  : (_) => setState(
+                                      () => _images[i].status = 'rejected',
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  DropdownButtonFormField<DictionaryImageType>(
+                    key: Key('adminImageType_${sugId}_${_images[i].id}'),
+                    initialValue: _images[i].imageType,
+                    decoration: const InputDecoration(
+                      labelText: 'Educational image type',
+                    ),
+                    items: [
+                      for (final type in DictionaryImageType.values)
+                        DropdownMenuItem(value: type, child: Text(type.label)),
+                    ],
+                    onChanged: _busy
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _images[i].imageType = value);
+                            }
+                          },
+                  ),
+                  TextFormField(
+                    key: Key('adminImageCaption_${sugId}_${_images[i].id}'),
+                    controller: _images[i].captionController,
+                    enabled: !_busy,
+                    maxLength: 120,
+                    decoration: const InputDecoration(
+                      labelText: 'Caption / alt text',
+                    ),
+                  ),
+                  TextFormField(
+                    key: Key('adminImageExplanation_${sugId}_${_images[i].id}'),
+                    controller: _images[i].explanationController,
+                    enabled: !_busy,
+                    maxLength: 600,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText:
+                          'Educational explanation (recommended for diagrams)',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Text(
+            'Rejected images are automatically deleted from private submission '
+            'storage when saved.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+          ),
+          TextField(
+            key: Key('adminPartialReviewNote_$sugId'),
+            controller: _note,
+            enabled: !_busy,
+            maxLength: 2000,
+            minLines: 2,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Private review note'),
+          ),
+          if (_error != null)
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: Key('savePartialReviewButton_$sugId'),
+          onPressed: _busy ? null : _save,
+          child: const Text('Save review decisions'),
+        ),
+      ],
+    );
+  }
+}
+
 class _EntryEditor extends StatefulWidget {
   const _EntryEditor({
     required this.repository,
@@ -1042,6 +1612,9 @@ class _EntryEditorState extends State<_EntryEditor> {
   final _fields = <String, TextEditingController>{};
   final List<String> _mediaUrls = [];
   final List<TextEditingController> _mediaLabelControllers = [];
+  final List<DictionaryImageType> _mediaTypes = [];
+  final List<TextEditingController> _mediaExplanationControllers = [];
+  final List<TextEditingController> _mediaAttributionControllers = [];
   final Set<String> _persistedMediaUrls = {};
   final Set<String> _sessionUploadedDraftUrls = {};
   MediaStorageRepository? _resolvedStorage;
@@ -1142,9 +1715,12 @@ class _EntryEditorState extends State<_EntryEditor> {
         }
       }
 
-      // Apply ONLY the structured fields modified by the suggestion so
-      // unchanged fields on the live/draft entry remain intact.
-      final rawProposed = widget.suggestion?['proposedFields'];
+      // Apply ONLY approved structured fields modified by the suggestion so
+      // unchanged (or rejected) fields on the live/draft entry remain intact.
+      final textRejected = widget.suggestion?['textDecision'] == 'rejected';
+      final rawProposed = textRejected
+          ? null
+          : widget.suggestion?['proposedFields'];
       if (rawProposed is Map) {
         final proposed = DictionaryStructuredFields.fromMap(
           rawProposed.cast<String, dynamic>(),
@@ -1160,6 +1736,16 @@ class _EntryEditorState extends State<_EntryEditor> {
                     )
                   : const DictionaryStructuredFields());
         data = proposed.applyChangedFieldsToEntry(data, base: base);
+      }
+      if (!textRejected &&
+          (data['categories'] as List<dynamic>? ?? const []).isEmpty &&
+          widget.suggestion?['categories'] is List) {
+        data['categories'] = List<String>.from(
+          (widget.suggestion!['categories'] as List)
+              .whereType<String>()
+              .map((c) => c.trim())
+              .where((c) => c.isNotEmpty),
+        );
       }
 
       _revision = _existingDraft || !(widget.initial?.bundled ?? true)
@@ -1179,14 +1765,46 @@ class _EntryEditorState extends State<_EntryEditor> {
       final existingMedia = data['media'] as List<dynamic>? ?? const [];
       for (final rawItem in existingMedia) {
         if (rawItem is Map) {
-          final url = (rawItem['url'] as String?)?.trim() ?? '';
-          final label = (rawItem['label'] as String?)?.trim() ?? '';
-          if (url.isNotEmpty) {
-            _mediaUrls.add(url);
-            _persistedMediaUrls.add(url);
-            _mediaLabelControllers.add(TextEditingController(text: label));
+          final parsed = DictionaryMediaItem.fromMap(
+            rawItem.cast<String, dynamic>(),
+          );
+          if (parsed.url.isNotEmpty) {
+            _addMediaRow(
+              url: parsed.url,
+              label: parsed.label,
+              imageType: parsed.imageType,
+              explanation: parsed.explanation,
+              attribution: parsed.attribution ?? '',
+              persisted: true,
+            );
           }
         }
+      }
+      // Append ONLY approved community-submitted images without replacing
+      // existing published images.
+      final submittedImages =
+          (widget.suggestion?['submittedImages'] as List<dynamic>? ?? const [])
+              .whereType<Map<dynamic, dynamic>>()
+              .map((e) => e.cast<String, dynamic>());
+      final consentedName = widget.suggestion?['recognitionConsent'] == true
+          ? ((widget.suggestion?['publicName'] as String?)?.trim() ?? '')
+          : '';
+      for (final img in submittedImages) {
+        if (img['reviewStatus'] != 'approved') continue;
+        final url = (img['url'] as String?)?.trim() ?? '';
+        if (url.isEmpty || _mediaUrls.contains(url)) continue;
+        if (_mediaUrls.length >= maxDictionaryMediaItems) break;
+        final caption = (img['caption'] as String?)?.trim() ?? '';
+        _addMediaRow(
+          url: url,
+          label: caption.isNotEmpty ? caption : _fields['term']!.text.trim(),
+          imageType: DictionaryImageType.fromStorageValue(
+            img['imageType'] as String?,
+          ),
+          explanation: (img['explanation'] as String?)?.trim() ?? '',
+          attribution: consentedName,
+          persisted: true,
+        );
       }
     } catch (error) {
       _error = error.toString();
@@ -1194,11 +1812,38 @@ class _EntryEditorState extends State<_EntryEditor> {
     if (mounted) setState(() => _busy = false);
   }
 
+  void _addMediaRow({
+    required String url,
+    required String label,
+    DictionaryImageType imageType = DictionaryImageType.illustrative,
+    String explanation = '',
+    String attribution = '',
+    bool persisted = false,
+  }) {
+    _mediaUrls.add(url);
+    if (persisted) {
+      _persistedMediaUrls.add(url);
+    }
+    _mediaLabelControllers.add(TextEditingController(text: label));
+    _mediaTypes.add(imageType);
+    _mediaExplanationControllers.add(TextEditingController(text: explanation));
+    _mediaAttributionControllers.add(TextEditingController(text: attribution));
+  }
+
   void _clearMediaControllers() {
     for (final controller in _mediaLabelControllers) {
       controller.dispose();
     }
+    for (final controller in _mediaExplanationControllers) {
+      controller.dispose();
+    }
+    for (final controller in _mediaAttributionControllers) {
+      controller.dispose();
+    }
     _mediaLabelControllers.clear();
+    _mediaExplanationControllers.clear();
+    _mediaAttributionControllers.clear();
+    _mediaTypes.clear();
     _mediaUrls.clear();
   }
 
@@ -1228,7 +1873,15 @@ class _EntryEditorState extends State<_EntryEditor> {
 
   List<Map<String, dynamic>> _mediaPayload() => [
     for (var i = 0; i < _mediaUrls.length; i++)
-      {'url': _mediaUrls[i], 'label': _mediaLabelControllers[i].text.trim()},
+      DictionaryMediaItem(
+        url: _mediaUrls[i],
+        label: _mediaLabelControllers[i].text.trim(),
+        imageType: _mediaTypes[i],
+        explanation: _mediaExplanationControllers[i].text.trim(),
+        attribution: _mediaAttributionControllers[i].text.trim().isNotEmpty
+            ? _mediaAttributionControllers[i].text.trim()
+            : null,
+      ).toMap(),
   ];
 
   Map<String, dynamic> _currentEntryPayload() => <String, dynamic>{
@@ -1331,11 +1984,9 @@ class _EntryEditorState extends State<_EntryEditor> {
                 _defaultCaptionFromFileName(validated.fileName);
           }
         } else {
-          _mediaUrls.add(url);
-          _mediaLabelControllers.add(
-            TextEditingController(
-              text: _defaultCaptionFromFileName(validated.fileName),
-            ),
+          _addMediaRow(
+            url: url,
+            label: _defaultCaptionFromFileName(validated.fileName),
           );
         }
         _uploadingMedia = false;
@@ -1363,16 +2014,30 @@ class _EntryEditorState extends State<_EntryEditor> {
     }
   }
 
-  void _moveMedia(int index, int delta) {
-    final target = index + delta;
-    if (target < 0 || target >= _mediaUrls.length) return;
+  void _moveMediaToIndex(int from, int target) {
+    if (from < 0 ||
+        from >= _mediaUrls.length ||
+        target < 0 ||
+        target >= _mediaUrls.length ||
+        from == target) {
+      return;
+    }
     setState(() {
-      final url = _mediaUrls.removeAt(index);
+      final url = _mediaUrls.removeAt(from);
       _mediaUrls.insert(target, url);
-      final controller = _mediaLabelControllers.removeAt(index);
-      _mediaLabelControllers.insert(target, controller);
+      final label = _mediaLabelControllers.removeAt(from);
+      _mediaLabelControllers.insert(target, label);
+      final type = _mediaTypes.removeAt(from);
+      _mediaTypes.insert(target, type);
+      final exp = _mediaExplanationControllers.removeAt(from);
+      _mediaExplanationControllers.insert(target, exp);
+      final attr = _mediaAttributionControllers.removeAt(from);
+      _mediaAttributionControllers.insert(target, attr);
     });
   }
+
+  void _moveMedia(int index, int delta) =>
+      _moveMediaToIndex(index, index + delta);
 
   void _removeMedia(int index) {
     if (index < 0 || index >= _mediaUrls.length) return;
@@ -1380,6 +2045,9 @@ class _EntryEditorState extends State<_EntryEditor> {
     setState(() {
       removedUrl = _mediaUrls.removeAt(index);
       _mediaLabelControllers.removeAt(index).dispose();
+      _mediaTypes.removeAt(index);
+      _mediaExplanationControllers.removeAt(index).dispose();
+      _mediaAttributionControllers.removeAt(index).dispose();
     });
     _cleanupSessionDraftUrls([removedUrl]);
   }
@@ -1718,47 +2386,144 @@ class _EntryEditorState extends State<_EntryEditor> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 12,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                        child: SmartImage(
+                      InkWell(
+                        onTap: () => showProfilePhoto(
+                          context,
                           _mediaUrls[i],
-                          width: 112,
-                          height: 84,
-                          maxLogicalWidth: 240,
+                          caption: _mediaLabelControllers[i].text.trim().isEmpty
+                              ? 'Dictionary image ${i + 1}'
+                              : _mediaLabelControllers[i].text.trim(),
+                          explanation: _mediaExplanationControllers[i].text
+                              .trim(),
+                          imageTypeLabel: _mediaTypes[i].label,
+                          attribution: _mediaAttributionControllers[i].text
+                              .trim(),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppTokens.radiusSm,
+                          ),
+                          child: SmartImage(
+                            _mediaUrls[i],
+                            width: 112,
+                            height: 84,
+                            maxLogicalWidth: 240,
+                          ),
                         ),
                       ),
                       Expanded(
-                        child: TextFormField(
-                          key: Key('dictionaryMediaLabel_$i'),
-                          controller: _mediaLabelControllers[i],
-                          enabled: !_busy && !_uploadingMedia,
-                          maxLength: 120,
-                          decoration: InputDecoration(
-                            labelText: i == 0
-                                ? 'Caption / alt text (primary OG image)'
-                                : 'Caption / alt text',
-                          ),
-                          validator: (value) {
-                            final trimmed = value?.trim() ?? '';
-                            if (trimmed.isEmpty) {
-                              return 'Caption is required.';
-                            }
-                            if (RegExp(
-                              r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
-                              caseSensitive: false,
-                            ).hasMatch(trimmed)) {
-                              return 'Remove email addresses from captions.';
-                            }
-                            return null;
-                          },
+                        child: Column(
+                          spacing: 8,
+                          children: [
+                            TextFormField(
+                              key: Key('dictionaryMediaLabel_$i'),
+                              controller: _mediaLabelControllers[i],
+                              enabled: !_busy && !_uploadingMedia,
+                              maxLength: 120,
+                              decoration: InputDecoration(
+                                labelText: i == 0
+                                    ? 'Caption / alt text (primary OG image)'
+                                    : 'Caption / alt text',
+                              ),
+                              validator: (value) {
+                                final trimmed = value?.trim() ?? '';
+                                if (trimmed.isEmpty) {
+                                  return 'Caption is required.';
+                                }
+                                if (RegExp(
+                                  r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                                  caseSensitive: false,
+                                ).hasMatch(trimmed)) {
+                                  return 'Remove email addresses from captions.';
+                                }
+                                return null;
+                              },
+                            ),
+                            DropdownButtonFormField<DictionaryImageType>(
+                              key: Key('dictionaryMediaType_${_mediaUrls[i]}'),
+                              initialValue: _mediaTypes[i],
+                              decoration: const InputDecoration(
+                                labelText: 'Educational image type',
+                              ),
+                              items: [
+                                for (final type in DictionaryImageType.values)
+                                  DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type.label),
+                                  ),
+                              ],
+                              onChanged: _busy || _uploadingMedia
+                                  ? null
+                                  : (value) {
+                                      if (value != null) {
+                                        setState(() => _mediaTypes[i] = value);
+                                      }
+                                    },
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                  TextFormField(
+                    key: Key('dictionaryMediaExplanation_$i'),
+                    controller: _mediaExplanationControllers[i],
+                    enabled: !_busy && !_uploadingMedia,
+                    maxLength: 600,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Educational explanation (optional)',
+                      hintText:
+                          'Clarify biomechanical or practical details shown',
+                    ),
+                    validator: (value) {
+                      final trimmed = value?.trim() ?? '';
+                      if (RegExp(
+                        r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                        caseSensitive: false,
+                      ).hasMatch(trimmed)) {
+                        return 'Remove email addresses from explanations.';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    key: Key('dictionaryMediaAttribution_$i'),
+                    controller: _mediaAttributionControllers[i],
+                    enabled: !_busy && !_uploadingMedia,
+                    maxLength: 80,
+                    decoration: const InputDecoration(
+                      labelText: 'Contributor attribution (optional)',
+                      hintText: 'Only include a public name when consented',
+                    ),
+                    validator: (value) {
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.contains('@')) {
+                        return 'Remove email addresses from attribution.';
+                      }
+                      return null;
+                    },
+                  ),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
+                      if (i == 0)
+                        const AppStatusBadge(
+                          label: 'Primary image',
+                          tone: AppStatusTone.info,
+                        )
+                      else
+                        TextButton.icon(
+                          key: Key('dictionaryMediaSetPrimary_$i'),
+                          onPressed: _busy || _uploadingMedia
+                              ? null
+                              : () => _moveMediaToIndex(i, 0),
+                          icon: const Icon(Icons.star_outline, size: 16),
+                          label: const Text('Set as primary'),
+                        ),
                       IconButton(
                         key: Key('dictionaryMediaMoveUp_$i'),
                         tooltip: 'Move up',

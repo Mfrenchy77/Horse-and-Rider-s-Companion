@@ -59,9 +59,7 @@ List<DiffSegment> _coalesce(List<DiffSegment> raw) {
 /// keeping unchanged text intact.
 List<DiffSegment> diffWords(String oldText, String newText) {
   if (oldText == newText) {
-    return oldText.isEmpty
-        ? const []
-        : [DiffSegment(DiffOp.equal, oldText)];
+    return oldText.isEmpty ? const [] : [DiffSegment(DiffOp.equal, oldText)];
   }
   if (oldText.isEmpty) return [DiffSegment(DiffOp.insert, newText)];
   if (newText.isEmpty) return [DiffSegment(DiffOp.delete, oldText)];
@@ -149,9 +147,11 @@ List<DiffSegment> diffWords(String oldText, String newText) {
 /// instead of "Correction" in user-facing surfaces.
 String dictionaryContributionLabel(String? kind) {
   return switch (kind) {
+    'new_term' => 'New Term',
     'missing_term' => 'Missing term',
     'definition' => 'Definition',
     'correction' || 'improvement' => 'Suggest an Improvement',
+    'image_contribution' => 'Image Contribution',
     'regional_usage' => 'Regional usage',
     'related_term' => 'Related terminology',
     null || '' => 'Suggestion',
@@ -401,7 +401,8 @@ class DictionaryDiffLegend extends StatelessWidget {
       );
     }
 
-    final baseSmall = Theme.of(context).textTheme.labelSmall ?? const TextStyle(fontSize: 12);
+    final baseSmall =
+        Theme.of(context).textTheme.labelSmall ?? const TextStyle(fontSize: 12);
     return Wrap(
       spacing: 8,
       runSpacing: 6,
@@ -470,7 +471,8 @@ class DictionaryDiffRichText extends StatelessWidget {
         ? const Color(0xFF6E252A).withValues(alpha: 0.55)
         : const Color(0xFFFCE0E2);
     final delFg = isDark ? const Color(0xFFFFB4B8) : const Color(0xFF8A1C22);
-    final baseStyle = Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
+    final baseStyle =
+        Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
 
     return Semantics(
       label: 'Comparison between original and proposed wording',
@@ -565,9 +567,7 @@ class DictionaryFieldDiffCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
       ),
       child: Column(
@@ -576,9 +576,9 @@ class DictionaryFieldDiffCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           if (hasThreeWay) ...[
             labeledVersion(
@@ -607,10 +607,7 @@ class DictionaryFieldDiffCard extends StatelessWidget {
               newText: proposedText,
             ),
           ] else ...[
-            DictionaryDiffRichText(
-              oldText: oldText,
-              newText: proposedText,
-            ),
+            DictionaryDiffRichText(oldText: oldText, newText: proposedText),
           ],
         ],
       ),

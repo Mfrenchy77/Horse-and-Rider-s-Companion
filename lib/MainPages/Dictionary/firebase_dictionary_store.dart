@@ -174,6 +174,36 @@ class FirebaseDictionaryStore implements DictionaryStore {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> loadMySuggestions(
+    String contributorUid, {
+    int limit = 50,
+  }) async {
+    if (contributorUid.trim().isEmpty) return const [];
+    final snap = await _db
+        .collection('DictionarySuggestions')
+        .where('contributorUid', isEqualTo: contributorUid)
+        .limit(limit)
+        .get();
+    final items = snap.docs
+        .map((doc) => <String, dynamic>{...doc.data(), 'id': doc.id})
+        .toList();
+    return items..sort(
+      (a, b) => _sortTimestampMs(
+        b['createdAt'],
+      ).compareTo(_sortTimestampMs(a['createdAt'])),
+    );
+  }
+
+  static int _sortTimestampMs(Object? value) {
+    if (value is Timestamp) return value.millisecondsSinceEpoch;
+    if (value is DateTime) return value.millisecondsSinceEpoch;
+    if (value is String) {
+      return DateTime.tryParse(value)?.millisecondsSinceEpoch ?? 0;
+    }
+    return 0;
+  }
+
+  @override
   Future<List<DictionaryEntry>> loadDrafts() async {
     final snap = await _db.collection('DictionaryDrafts').get();
     return snap.docs

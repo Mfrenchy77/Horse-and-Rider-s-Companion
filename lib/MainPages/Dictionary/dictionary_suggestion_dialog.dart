@@ -1,10 +1,11 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_contribution_auth.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_diff.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
@@ -13,10 +14,16 @@ class DictionarySuggestionDialog extends StatefulWidget {
     super.key,
     required this.repository,
     this.entry,
+    this.availableCategories = const [],
+    this.mediaStorage,
+    this.pickImages,
   });
 
   final DictionaryRepository repository;
   final DictionaryEntry? entry;
+  final List<String> availableCategories;
+  final MediaStorageRepository? mediaStorage;
+  final DictionaryMultiImagePicker? pickImages;
 
   @override
   State<DictionarySuggestionDialog> createState() =>
@@ -27,7 +34,7 @@ class _DictionarySuggestionDialogState
     extends State<DictionarySuggestionDialog> {
   final _form = GlobalKey<FormState>();
   late final _term = TextEditingController(text: widget.entry?.term);
-  final _proposal = TextEditingController();
+  final _customCategory = TextEditingController();
   final _reason = TextEditingController();
   final _name = TextEditingController();
   final _structuredControllers = <String, TextEditingController>{};
@@ -35,10 +42,13 @@ class _DictionarySuggestionDialogState
       ? DictionaryStructuredFields.fromEntry(widget.entry!)
       : const DictionaryStructuredFields();
   final _id = DictionaryRepository.newSubmissionId();
+  final _selectedCategories = <String>{};
 
-  String _kind = 'missing_term';
+  List<CommunityPendingImage> _images = [];
+  bool _rightsConfirmed = false;
   bool _consent = false;
   bool _busy = false;
+  bool _uploadBusy = false;
   bool _done = false;
   bool _reviewingChanges = false;
   String? _error;
@@ -48,26 +58,48 @@ class _DictionarySuggestionDialogState
   @override
   void initState() {
     super.initState();
-    if (_isImprovementMode) {
-      _kind = 'correction';
-      for (final spec in DictionaryStructuredFields.specs) {
-        _structuredControllers[spec.key] = TextEditingController(
-          text: _baseFields.displayTextFor(spec.key),
-        );
-      }
+    for (final spec in DictionaryStructuredFields.specs) {
+      _structuredControllers[spec.key] = TextEditingController(
+        text: _isImprovementMode ? _baseFields.displayTextFor(spec.key) : '',
+      );
     }
   }
 
   @override
   void dispose() {
+    if (!_done) {
+      _cleanupTempUploads();
+    }
+    for (final img in _images) {
+      img.dispose();
+    }
     _term.dispose();
-    _proposal.dispose();
+    _customCategory.dispose();
     _reason.dispose();
     _name.dispose();
     for (final controller in _structuredControllers.values) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  void _cleanupTempUploads() {
+    MediaStorageRepository? storage;
+    try {
+      storage =
+          widget.mediaStorage ??
+          context.read<MediaStorageRepository?>() ??
+          CloudRepository();
+    } catch (_) {
+      storage = widget.mediaStorage;
+    }
+    if (storage == null) return;
+    for (final img in _images) {
+      final url = img.uploadedUrl;
+      if (url != null && url.isNotEmpty) {
+        storage.deleteByUrl(url).catchError((_) {});
+      }
+    }
   }
 
   DictionaryStructuredFields _currentProposedFields() {
@@ -85,6 +117,17 @@ class _DictionarySuggestionDialogState
     );
   }
 
+  List<String> _resolvedCategories() {
+    final merged = <String>{
+      ..._selectedCategories,
+      ..._customCategory.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty),
+    };
+    return merged.take(6).toList();
+  }
+
   String _cleanError(Object error) {
     final raw = error.toString();
     return raw.startsWith('Bad state: ') ? raw.substring(11) : raw;
@@ -94,7 +137,7 @@ class _DictionarySuggestionDialogState
     if (!_form.currentState!.validate()) return;
     final proposed = _currentProposedFields();
     final changed = proposed.changedKeysAgainst(_baseFields);
-    if (changed.isEmpty) {
+    if (changed.isEmpty && _images.isEmpty) {
       setState(() {
         _error = 'Edit at least one field before reviewing changes.';
       });
@@ -107,44 +150,76 @@ class _DictionarySuggestionDialogState
   }
 
   Future<void> _submit() async {
+    if (_busy || _uploadBusy) return;
     if (!_reviewingChanges && !(_form.currentState?.validate() ?? true)) {
       return;
     }
-    if (_busy) return;
+    if (_images.any((img) => !img.isReady)) {
+      setState(
+        () => _error =
+            'Wait for image uploads to finish or remove failed images first.',
+      );
+      return;
+    }
+    if (_images.isNotEmpty && !_rightsConfirmed) {
+      setState(
+        () => _error =
+            'Please confirm image permissions and review expectations first.',
+      );
+      return;
+    }
 
-    Map<String, dynamic> payload;
+    final submittedImages = _images
+        .map((img) => img.toSubmissionMap())
+        .toList();
+    final reasonText = _reason.text.trim();
+    late final Map<String, dynamic> payload;
+
     if (_isImprovementMode) {
       final entry = widget.entry!;
       final proposed = _currentProposedFields();
       final changed = proposed.changedKeysAgainst(_baseFields);
-      if (changed.isEmpty) {
+      if (changed.isEmpty && submittedImages.isEmpty) {
         setState(() {
           _error = 'Modify at least one field before submitting.';
         });
         return;
       }
-      final reasonText = _reason.text.trim();
       payload = {
         'submissionId': _id,
         'term': entry.term,
-        'proposal': proposed.summaryAgainst(_baseFields, reason: reasonText),
-        'kind': _kind,
+        'proposal': changed.isEmpty
+            ? 'Contributed ${submittedImages.length} educational '
+                  '${submittedImages.length == 1 ? 'image' : 'images'}.'
+            : proposed.summaryAgainst(_baseFields, reason: reasonText),
+        'kind': changed.isEmpty && submittedImages.isNotEmpty
+            ? 'image_contribution'
+            : 'correction',
         'termId': entry.id,
         'baseRevision': entry.publishedRevision,
         'baseFields': _baseFields.toMap(),
-        'proposedFields': proposed.toMap(),
+        if (changed.isNotEmpty) 'proposedFields': proposed.toMap(),
+        if (submittedImages.isNotEmpty) 'submittedImages': submittedImages,
+        if (submittedImages.isNotEmpty) 'rightsConfirmed': true,
         if (reasonText.isNotEmpty) 'reason': reasonText,
         'recognitionConsent': _consent,
         'publicName': _consent ? _name.text : '',
         'website': '',
       };
     } else {
+      final proposed = _currentProposedFields();
+      final categories = _resolvedCategories();
       payload = {
         'submissionId': _id,
-        'term': _term.text,
-        'proposal': _proposal.text,
-        'kind': _kind,
+        'term': _term.text.trim(),
+        'proposal': proposed.definition,
+        'kind': 'new_term',
         'termId': '',
+        'proposedFields': proposed.toMap(),
+        if (categories.isNotEmpty) 'categories': categories,
+        if (submittedImages.isNotEmpty) 'submittedImages': submittedImages,
+        if (submittedImages.isNotEmpty) 'rightsConfirmed': true,
+        if (reasonText.isNotEmpty) 'reason': reasonText,
         'recognitionConsent': _consent,
         'publicName': _consent ? _name.text : '',
         'website': '',
@@ -203,9 +278,7 @@ class _DictionarySuggestionDialogState
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.4),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -215,9 +288,9 @@ class _DictionarySuggestionDialogState
               Expanded(
                 child: Text(
                   'Current published definition · ${entry.term}',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               if (entry.publishedRevision > 0)
@@ -238,9 +311,13 @@ class _DictionarySuggestionDialogState
     );
   }
 
-  Widget _buildImprovementEditor(BuildContext context, bool isGuest) {
+  Widget _buildImprovementEditor(
+    BuildContext context,
+    DictionaryContributorIdentity identity,
+  ) {
     final secondaryColor = AppTokens.secondaryTextColor(context);
     final entry = widget.entry!;
+    final busy = _busy || _uploadBusy;
 
     return Form(
       key: _form,
@@ -269,7 +346,7 @@ class _DictionarySuggestionDialogState
                 maxLength: spec.maxLength,
                 minLines: spec.minLines,
                 maxLines: spec.maxLines,
-                enabled: !_busy,
+                enabled: !busy,
                 decoration: InputDecoration(
                   labelText: spec.isList
                       ? '${spec.label} (one per line)'
@@ -296,14 +373,36 @@ class _DictionarySuggestionDialogState
             maxLength: 2000,
             minLines: 2,
             maxLines: 4,
-            enabled: !_busy,
+            enabled: !busy,
             decoration: const InputDecoration(
               labelText: 'Why are you suggesting this change? (optional)',
               hintText:
                   'Share discipline context, clarity improvements, or sources.',
             ),
           ),
-          _buildAttributionAndPrivacySection(context, isGuest),
+          const SizedBox(height: 12),
+          DictionaryImagePickerSection(
+            uid: identity.uid,
+            submissionId: _id,
+            items: _images,
+            mediaStorage: widget.mediaStorage,
+            pickImages: widget.pickImages,
+            onItemsChanged: (next) => setState(() => _images = next),
+            onBusyChanged: (isBusy) => setState(() => _uploadBusy = isBusy),
+          ),
+          const SizedBox(height: 10),
+          DictionaryContributorAttributionSection(
+            requireRightsConfirmation: _images.isNotEmpty,
+            rightsConfirmed: _rightsConfirmed,
+            onRightsChanged: (value) =>
+                setState(() => _rightsConfirmed = value),
+            recognitionConsent: _consent,
+            onRecognitionConsentChanged: (value) =>
+                setState(() => _consent = value),
+            publicNameController: _name,
+            busy: busy,
+            errorText: _error,
+          ),
         ],
       ),
     );
@@ -330,6 +429,12 @@ class _DictionarySuggestionDialogState
             label: DictionaryStructuredFields.labelForKey(key),
             oldText: _baseFields.displayTextFor(key),
             proposedText: proposed.displayTextFor(key),
+          ),
+        if (_images.isNotEmpty)
+          Text(
+            'Attached ${_images.length} educational '
+            '${_images.length == 1 ? 'image' : 'images'} for editorial review.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         if (unchangedCount > 0)
           Text(
@@ -379,127 +484,169 @@ class _DictionarySuggestionDialogState
     );
   }
 
-  Widget _buildAttributionAndPrivacySection(
+  Widget _buildNewTermForm(
     BuildContext context,
-    bool isGuest,
+    DictionaryContributorIdentity identity,
   ) {
     final secondaryColor = AppTokens.secondaryTextColor(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        CheckboxListTile(
-          key: const Key('dictionaryRecognitionConsentCheckbox'),
-          contentPadding: EdgeInsets.zero,
-          value: _consent,
-          title: const Text('Recognize my contribution publicly'),
-          onChanged: _busy
-              ? null
-              : (value) => setState(() => _consent = value ?? false),
-        ),
-        if (_consent)
-          TextFormField(
-            key: const Key('dictionaryPublicNameField'),
-            controller: _name,
-            maxLength: 80,
-            decoration: const InputDecoration(
-              labelText: 'Public name (optional recognition)',
-            ),
-            validator: (value) =>
-                value == null || value.trim().isEmpty || value.contains('@')
-                ? 'Use a public name without an email address.'
-                : null,
-          ),
-        Text(
-          isGuest
-              ? 'Guests can contribute without an account. Submissions are '
-                    'reviewed before publication, and public recognition '
-                    'requires your consent.'
-              : 'Submissions are reviewed before publication. Linked privately '
-                    'for editorial follow-up while keeping your email private.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: secondaryColor),
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            _error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        ],
-      ],
-    );
-  }
+    final busy = _busy || _uploadBusy;
+    final categoryOptions = widget.availableCategories.isNotEmpty
+        ? widget.availableCategories
+        : const ['Foundations', 'Gaits', 'Groundwork', 'Anatomy', 'Safety'];
 
-  Widget _buildNewTermForm(BuildContext context, bool isGuest) {
-    final secondaryColor = AppTokens.secondaryTextColor(context);
     return Form(
       key: _form,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 12,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              isGuest
-                  ? 'Guests can suggest terms without an account. Creating a '
-                        'free account is optional if you would like private '
-                        'editorial follow-up.'
-                  : 'Signed-in contributions allow private editorial follow-up '
-                        'while keeping your email private.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: secondaryColor),
-            ),
+          Text(
+            'Propose a new horsemanship term with plain-language context '
+            'applicable across disciplines.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: secondaryColor),
           ),
           TextFormField(
+            key: const Key('newTermField_term'),
             controller: _term,
             maxLength: 120,
+            enabled: !busy,
             decoration: const InputDecoration(labelText: 'Term'),
-            validator: (value) =>
-                (value?.trim().isEmpty ?? true) ? 'Enter a term.' : null,
+            validator: (value) {
+              final trimmed = value?.trim() ?? '';
+              if (trimmed.isEmpty) return 'Enter a term.';
+              if (RegExp(
+                r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                caseSensitive: false,
+              ).hasMatch(trimmed)) {
+                return 'Do not include email addresses.';
+              }
+              return null;
+            },
           ),
-          DropdownButtonFormField<String>(
-            initialValue: _kind,
-            decoration: const InputDecoration(labelText: 'Contribution'),
-            items: const [
-              DropdownMenuItem(
-                value: 'missing_term',
-                child: Text('Missing term'),
+          TextFormField(
+            key: const Key('newTermField_definition'),
+            controller: _structuredControllers['definition'],
+            maxLength: 500,
+            minLines: 2,
+            maxLines: 4,
+            enabled: !busy,
+            decoration: const InputDecoration(
+              labelText: 'Short definition',
+              hintText: 'Clear, plain-language definition',
+            ),
+            validator: (value) {
+              final trimmed = value?.trim() ?? '';
+              if (trimmed.isEmpty) return 'Enter a short definition.';
+              if (RegExp(
+                r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                caseSensitive: false,
+              ).hasMatch(trimmed)) {
+                return 'Do not include email addresses.';
+              }
+              return null;
+            },
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 6,
+            children: [
+              Text(
+                'Category (optional)',
+                style: Theme.of(context).textTheme.labelMedium,
               ),
-              DropdownMenuItem(value: 'definition', child: Text('Definition')),
-              DropdownMenuItem(
-                value: 'correction',
-                child: Text('Suggest an Improvement'),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final category in categoryOptions)
+                    FilterChip(
+                      key: Key('newTermCategoryChip_$category'),
+                      label: Text(category),
+                      selected: _selectedCategories.contains(category),
+                      onSelected: busy
+                          ? null
+                          : (selected) => setState(() {
+                              if (selected) {
+                                _selectedCategories.add(category);
+                              } else {
+                                _selectedCategories.remove(category);
+                              }
+                            }),
+                    ),
+                ],
               ),
-              DropdownMenuItem(
-                value: 'regional_usage',
-                child: Text('Regional usage'),
-              ),
-              DropdownMenuItem(
-                value: 'related_term',
-                child: Text('Related terminology'),
+              TextFormField(
+                key: const Key('newTermField_category'),
+                controller: _customCategory,
+                enabled: !busy,
+                decoration: const InputDecoration(
+                  labelText: 'Additional category (optional)',
+                  hintText: 'Or type another category, comma-separated',
+                ),
               ),
             ],
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _kind = value!),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _proposal,
-            maxLength: 4000,
-            minLines: 3,
-            maxLines: 6,
-            decoration: const InputDecoration(
-              labelText: 'Your suggestion and context',
+          for (final spec in DictionaryStructuredFields.specs.where(
+            (s) => s.key != 'definition',
+          ))
+            TextFormField(
+              key: Key('newTermField_${spec.key}'),
+              controller: _structuredControllers[spec.key],
+              maxLength: spec.maxLength,
+              minLines: spec.minLines,
+              maxLines: spec.maxLines,
+              enabled: !busy,
+              decoration: InputDecoration(
+                labelText: spec.isList
+                    ? '${spec.label} (one per line, optional)'
+                    : '${spec.label} (optional)',
+              ),
+              validator: (value) {
+                final trimmed = value?.trim() ?? '';
+                if (RegExp(
+                  r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                  caseSensitive: false,
+                ).hasMatch(trimmed)) {
+                  return 'Do not include email addresses in public wording.';
+                }
+                return null;
+              },
             ),
-            validator: (value) => (value?.trim().isEmpty ?? true)
-                ? 'Describe your suggestion.'
-                : null,
+          DictionaryImagePickerSection(
+            uid: identity.uid,
+            submissionId: _id,
+            items: _images,
+            mediaStorage: widget.mediaStorage,
+            pickImages: widget.pickImages,
+            onItemsChanged: (next) => setState(() => _images = next),
+            onBusyChanged: (isBusy) => setState(() => _uploadBusy = isBusy),
           ),
-          _buildAttributionAndPrivacySection(context, isGuest),
+          TextFormField(
+            key: const Key('suggestionReasonField'),
+            controller: _reason,
+            maxLength: 2000,
+            minLines: 2,
+            maxLines: 3,
+            enabled: !busy,
+            decoration: const InputDecoration(
+              labelText: 'Notes or references for editors (optional)',
+            ),
+          ),
+          DictionaryContributorAttributionSection(
+            requireRightsConfirmation: _images.isNotEmpty,
+            rightsConfirmed: _rightsConfirmed,
+            onRightsChanged: (value) =>
+                setState(() => _rightsConfirmed = value),
+            recognitionConsent: _consent,
+            onRecognitionConsentChanged: (value) =>
+                setState(() => _consent = value),
+            publicNameController: _name,
+            busy: busy,
+            errorText: _error,
+          ),
         ],
       ),
     );
@@ -507,9 +654,9 @@ class _DictionarySuggestionDialogState
 
   @override
   Widget build(BuildContext context) {
-    final appCubit = context.watch<AppCubit?>();
-    final isGuest = appCubit?.state.isGuest ?? true;
+    final identity = DictionaryContributorIdentity.fromContext(context);
     final secondaryColor = AppTokens.secondaryTextColor(context);
+    final busy = _busy || _uploadBusy;
 
     final titleText = _done
         ? 'Thank you'
@@ -517,102 +664,74 @@ class _DictionarySuggestionDialogState
         ? (_reviewingChanges
               ? 'Review Changes · ${widget.entry!.term}'
               : 'Suggest an Improvement · ${widget.entry!.term}')
-        : 'Contribute to the Dictionary';
+        : 'Suggest a New Term';
 
     return PopScope(
       canPop: !_busy,
       child: AppGlassDialog(
-        maxWidth: _isImprovementMode ? 680 : 540,
+        maxWidth: _isImprovementMode ? 680 : 620,
         title: Text(titleText),
-        content: _done
+        content: !identity.canContribute
+            ? DictionaryContributionAuthPrompt(
+                identity: identity,
+                contributionLabel: _isImprovementMode
+                    ? 'suggest improvements to the Dictionary'
+                    : 'suggest a new Dictionary term',
+              )
+            : _done
             ? Column(
+                key: const Key('dictionarySuggestionSuccess'),
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 12,
                 children: [
                   const Text(
-                    'Your suggestion has been submitted for review. '
-                    'You can continue exploring without an account.',
+                    'Your contribution has been submitted for editorial review.',
                   ),
-                  if (isGuest)
-                    Container(
-                      key: const Key('dictionaryGuestAccountPrompt'),
-                      padding: const EdgeInsets.all(AppTokens.spaceSm + 2),
-                      decoration: BoxDecoration(
-                        color: AppTokens.accentColor(
-                          context,
-                        ).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                        border: Border.all(
-                          color: AppTokens.accentColor(
-                            context,
-                          ).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 8,
-                        children: [
-                          Text(
-                            'Want private follow-up on future suggestions and '
-                            'access to the Skill Tree & Training Logbook?',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          OutlinedButton.icon(
-                            key: const Key('dictionaryCreateAccountButton'),
-                            icon: const Icon(
-                              Icons.person_add_alt_1_outlined,
-                              size: 16,
-                            ),
-                            label: const Text('Create a free account'),
-                            onPressed: () {
-                              final router = GoRouter.maybeOf(context);
-                              Navigator.pop(context);
-                              router?.go('/Auth?mode=register');
-                            },
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Text(
-                      'Linked privately to your account in case editors need '
-                      'clarification. Your email address is never shown '
-                      'publicly.',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: secondaryColor),
-                    ),
+                  Text(
+                    'Linked privately to your account so you can follow its '
+                    'review status in My Contributions. Your email address '
+                    'is never shown publicly.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+                  ),
                 ],
               )
             : _isImprovementMode
             ? (_reviewingChanges
                   ? _buildReviewChangesStep(context)
-                  : _buildImprovementEditor(context, isGuest))
-            : _buildNewTermForm(context, isGuest),
+                  : _buildImprovementEditor(context, identity))
+            : _buildNewTermForm(context, identity),
         actions: [
           TextButton(
             onPressed: _busy ? null : () => Navigator.pop(context),
-            child: Text(_done ? 'Close' : 'Cancel'),
+            child: Text(_done || !identity.canContribute ? 'Close' : 'Cancel'),
           ),
-          if (!_done && _isImprovementMode && _reviewingChanges)
+          if (identity.canContribute &&
+              !_done &&
+              _isImprovementMode &&
+              _reviewingChanges)
             OutlinedButton(
               key: const Key('dictionaryBackToEditingButton'),
-              onPressed: _busy
+              onPressed: busy
                   ? null
                   : () => setState(() => _reviewingChanges = false),
               child: const Text('Back to editing'),
             ),
-          if (!_done && _isImprovementMode && !_reviewingChanges)
+          if (identity.canContribute &&
+              !_done &&
+              _isImprovementMode &&
+              !_reviewingChanges)
             OutlinedButton(
               key: const Key('dictionaryReviewChangesButton'),
-              onPressed: _busy ? null : _openReviewChanges,
+              onPressed: busy ? null : _openReviewChanges,
               child: const Text('Review Changes'),
             ),
-          if (!_done)
+          if (identity.canContribute && !_done)
             FilledButton(
               key: const Key('dictionarySubmitSuggestionButton'),
-              onPressed: _busy ? null : _submit,
+              onPressed: busy ? null : _submit,
               child: Text(_busy ? 'Submitting…' : 'Submit suggestion'),
             ),
         ],

@@ -8,7 +8,10 @@ import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/hero_header.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_admin_page.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_contribution_auth.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_image_contribution_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_my_contributions_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_suggestion_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
@@ -57,10 +60,34 @@ class _DictionaryPageState extends State<DictionaryPage> {
     super.dispose();
   }
 
-  Future<void> _suggest(DictionaryEntry? entry) => showAppGlassDialog<void>(
+  List<String> _categoriesFor(List<DictionaryEntry> entries) =>
+      entries.expand((entry) => entry.strings('categories')).toSet().toList()
+        ..sort();
+
+  Future<void> _suggest(
+    DictionaryEntry? entry, {
+    List<String> categories = const [],
+  }) => showAppGlassDialog<void>(
     context: context,
-    builder: (_) =>
-        DictionarySuggestionDialog(repository: repository, entry: entry),
+    builder: (_) => DictionarySuggestionDialog(
+      repository: repository,
+      entry: entry,
+      availableCategories: categories,
+    ),
+  );
+
+  Future<void> _contributeImages(DictionaryEntry entry) =>
+      showAppGlassDialog<void>(
+        context: context,
+        builder: (_) => DictionaryImageContributionDialog(
+          repository: repository,
+          entry: entry,
+        ),
+      );
+
+  Future<void> _openMyContributions() => showAppGlassDialog<void>(
+    context: context,
+    builder: (_) => DictionaryMyContributionsDialog(repository: repository),
   );
 
   String? _matchedSynonym(DictionaryEntry entry, String rawQuery) {
@@ -77,10 +104,12 @@ class _DictionaryPageState extends State<DictionaryPage> {
   @override
   Widget build(BuildContext context) {
     final admin = context.select((AppCubit cubit) => cubit.state.isAdmin);
+    final identity = DictionaryContributorIdentity.fromContext(context);
     return FutureBuilder<List<DictionaryEntry>>(
       future: _entries,
       builder: (context, snapshot) {
         final entries = snapshot.data ?? [];
+        final categories = _categoriesFor(entries);
         final entry = widget.slug == null
             ? null
             : DictionaryRepository.resolve(entries, widget.slug!);
@@ -103,11 +132,27 @@ class _DictionaryPageState extends State<DictionaryPage> {
               AdaptiveAppBarActions(
                 actions: [
                   AdaptiveAppBarAction(
-                    label: 'Suggest a term',
+                    label: entry == null
+                        ? 'Suggest a new term'
+                        : 'Suggest improvement',
                     icon: Icons.add_comment_outlined,
                     priority: 2,
-                    onPressed: () => _suggest(entry),
+                    onPressed: () => _suggest(entry, categories: categories),
                   ),
+                  if (entry != null)
+                    AdaptiveAppBarAction(
+                      label: 'Contribute images',
+                      icon: Icons.add_photo_alternate_outlined,
+                      priority: 2,
+                      onPressed: () => _contributeImages(entry),
+                    ),
+                  if (identity.canContribute)
+                    AdaptiveAppBarAction(
+                      label: 'My contributions',
+                      icon: Icons.history_edu_outlined,
+                      priority: 1,
+                      onPressed: _openMyContributions,
+                    ),
                   if (entry != null)
                     AdaptiveAppBarAction(
                       label: 'Share definition',
@@ -187,9 +232,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
   }
 
   Widget _browse(List<DictionaryEntry> entries) {
-    final categories =
-        entries.expand((entry) => entry.strings('categories')).toSet().toList()
-          ..sort();
+    final identity = DictionaryContributorIdentity.fromContext(context);
+    final categories = _categoriesFor(entries);
     final matches = DictionaryRepository.search(
       entries,
       query: _search.text,
@@ -206,18 +250,51 @@ class _DictionaryPageState extends State<DictionaryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Equestrian words, explained',
-                style: AppTokens.sectionTitleStyle(context),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Equestrian words, explained',
+                          style: AppTokens.sectionTitleStyle(context),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Plain-language horsemanship definitions across '
+                          'English, Western, trail, ranch, driving, and '
+                          'groundwork — free for everyone.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppTokens.secondaryTextColor(context),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Plain-language horsemanship definitions across English, '
-                'Western, trail, ranch, driving, and groundwork — free for '
-                'everyone.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTokens.secondaryTextColor(context),
-                ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    key: const Key('dictionarySuggestNewTermButton'),
+                    onPressed: () => _suggest(null, categories: categories),
+                    icon: const Icon(Icons.add_comment_outlined, size: 18),
+                    label: const Text('Suggest a New Term'),
+                  ),
+                  if (identity.canContribute)
+                    TextButton.icon(
+                      key: const Key('dictionaryMyContributionsButton'),
+                      onPressed: _openMyContributions,
+                      icon: const Icon(Icons.history_edu_outlined, size: 18),
+                      label: const Text('My Contributions'),
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               TextField(
@@ -318,7 +395,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
                   'No matching terms. Try another search or suggest a term.',
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => _suggest(null),
+                  onPressed: () => _suggest(null, categories: categories),
                   icon: const Icon(Icons.add_comment_outlined, size: 18),
                   label: const Text('Suggest this term'),
                 ),
@@ -357,7 +434,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
         Align(
           alignment: Alignment.centerLeft,
           child: OutlinedButton.icon(
-            onPressed: () => _suggest(null),
+            onPressed: () => _suggest(null, categories: categories),
             icon: const Icon(Icons.add),
             label: const Text('Suggest a term'),
           ),
@@ -443,8 +520,13 @@ class _DictionaryPageState extends State<DictionaryPage> {
       (item) => isDictionaryImageUrl(item['url'] as String?),
     );
     final heroItem = firstImageIndex >= 0 ? allMedia[firstImageIndex] : null;
-    final heroUrl = heroItem?['url'] as String?;
-    final heroCaption = (heroItem?['label'] as String?)?.trim() ?? '';
+    final heroMedia = heroItem != null
+        ? DictionaryMediaItem.fromMap(heroItem)
+        : null;
+    final heroUrl = (heroMedia?.url.isNotEmpty ?? false)
+        ? heroMedia!.url
+        : null;
+    final heroCaption = heroMedia?.label ?? '';
     final galleryMedia = [
       for (var i = 0; i < allMedia.length; i++)
         if (i != firstImageIndex) allMedia[i],
@@ -477,13 +559,53 @@ class _DictionaryPageState extends State<DictionaryPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (heroUrl != null && heroCaption.isNotEmpty) ...[
-                    Text(
-                      heroCaption,
+                  if (heroUrl != null &&
+                      (heroCaption.isNotEmpty ||
+                          heroMedia!.explanation.isNotEmpty ||
+                          heroMedia.attribution != null ||
+                          heroMedia.imageType !=
+                              DictionaryImageType.illustrative)) ...[
+                    Column(
                       key: const Key('dictionaryHeroCaption'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTokens.secondaryTextColor(context),
-                      ),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 4,
+                      children: [
+                        if (heroMedia!.imageType !=
+                            DictionaryImageType.illustrative)
+                          Text(
+                            heroMedia.imageType.label,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: AppTokens.accentColor(context),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        if (heroCaption.isNotEmpty)
+                          Text(
+                            heroCaption,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppTokens.secondaryTextColor(context),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        if (heroMedia.explanation.isNotEmpty)
+                          Text(
+                            heroMedia.explanation,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppTokens.secondaryTextColor(context),
+                                ),
+                          ),
+                        if (heroMedia.attribution != null)
+                          Text(
+                            'Contributed by ${heroMedia.attribution}',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: AppTokens.secondaryTextColor(context),
+                                ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -621,9 +743,22 @@ class _DictionaryPageState extends State<DictionaryPage> {
                     runSpacing: 8,
                     children: [
                       OutlinedButton.icon(
-                        onPressed: () => _suggest(entry),
+                        key: const Key('dictionarySuggestImprovementButton'),
+                        onPressed: () => _suggest(
+                          entry,
+                          categories: _categoriesFor(entries),
+                        ),
                         icon: const Icon(Icons.edit_note_outlined, size: 18),
                         label: const Text('Suggest an improvement'),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('dictionaryContributeImagesButton'),
+                        onPressed: () => _contributeImages(entry),
+                        icon: const Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Contribute images'),
                       ),
                       OutlinedButton.icon(
                         onPressed: () => shareAppLink(

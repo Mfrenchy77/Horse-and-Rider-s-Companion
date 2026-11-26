@@ -58,46 +58,150 @@ class ProfilePhoto extends StatelessWidget {
   }
 }
 
-/// Opens the full photo with pinch-to-zoom.
+/// Opens the full photo with pinch-to-zoom and optional educational metadata.
 Future<void> showProfilePhoto(
   BuildContext context,
   String url, {
   String? heroTag,
-}) => showAppGlassDialog<void>(
-  context: context,
-  builder: (context) => Scaffold(
-    backgroundColor: Colors.transparent,
-    appBar: AppBar(
-      backgroundColor: Colors.black.withValues(alpha: .5),
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () => Navigator.maybePop(context),
-      ),
-      elevation: 0,
-    ),
-    body: PhotoView(
-      minScale: PhotoViewComputedScale.contained * 0.8,
-      heroAttributes: heroTag == null
-          ? null
-          : PhotoViewHeroAttributes(
-              tag: heroTag,
-              transitionOnUserGestures: true,
-            ),
-      backgroundDecoration: const BoxDecoration(color: Colors.transparent),
-      imageProvider: NetworkImage(url),
-      errorBuilder: (context, error, stackTrace) => const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.broken_image_outlined, size: 48, color: Colors.white70),
-            SizedBox(height: 8),
-            Text(
-              'Unable to load image',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ],
+  String? caption,
+  String? explanation,
+  String? imageTypeLabel,
+  String? attribution,
+}) {
+  final hasMetadata = [
+    caption,
+    explanation,
+    imageTypeLabel,
+    attribution,
+  ].any((value) => value != null && value.trim().isNotEmpty);
+
+  return showAppGlassDialog<void>(
+    context: context,
+    builder: (context) => Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.black.withValues(alpha: .5),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.maybePop(context),
         ),
+        title: caption != null && caption.trim().isNotEmpty
+            ? Text(
+                caption.trim(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16),
+              )
+            : null,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: PhotoView(
+              minScale: PhotoViewComputedScale.contained * 0.8,
+              heroAttributes: heroTag == null
+                  ? null
+                  : PhotoViewHeroAttributes(
+                      tag: heroTag,
+                      transitionOnUserGestures: true,
+                    ),
+              backgroundDecoration: const BoxDecoration(
+                color: Colors.transparent,
+              ),
+              imageProvider: NetworkImage(url),
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: Colors.white70,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Unable to load image',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (hasMetadata)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: Container(
+                      key: const Key('immersivePhotoMetadataOverlay'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.16),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          if (imageTypeLabel != null &&
+                              imageTypeLabel.trim().isNotEmpty)
+                            Text(
+                              imageTypeLabel.trim(),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          if (caption != null && caption.trim().isNotEmpty)
+                            Text(
+                              caption.trim(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          if (explanation != null &&
+                              explanation.trim().isNotEmpty)
+                            Text(
+                              explanation.trim(),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          if (attribution != null &&
+                              attribution.trim().isNotEmpty)
+                            Text(
+                              'Contributed by ${attribution.trim()}',
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     ),
-  ),
-);
+  );
+}

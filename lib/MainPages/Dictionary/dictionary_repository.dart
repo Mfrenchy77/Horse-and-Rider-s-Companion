@@ -181,6 +181,11 @@ class DictionaryRepository {
   Future<List<Map<String, dynamic>>> loadSuggestions({int limit = 100}) =>
       _store.loadSuggestions(limit: limit);
 
+  Future<List<Map<String, dynamic>>> loadMySuggestions(
+    String contributorUid, {
+    int limit = 50,
+  }) => _store.loadMySuggestions(contributorUid, limit: limit);
+
   Future<List<DictionaryEntry>> loadDrafts() => _store.loadDrafts();
 
   Future<DictionaryEntry?> loadDraft(String entryId) =>

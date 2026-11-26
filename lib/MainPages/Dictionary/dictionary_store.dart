@@ -49,6 +49,13 @@ abstract interface class DictionaryStore {
   /// Loads community suggestions for administrator review, newest first.
   Future<List<Map<String, dynamic>>> loadSuggestions({int limit = 100});
 
+  /// Loads suggestions created by [contributorUid] so contributors can view
+  /// the status of their own submissions, newest first.
+  Future<List<Map<String, dynamic>>> loadMySuggestions(
+    String contributorUid, {
+    int limit = 50,
+  });
+
   /// Loads administrator draft entries.
   Future<List<DictionaryEntry>> loadDrafts();
 
@@ -124,11 +131,27 @@ class InMemoryDictionaryStore implements DictionaryStore {
   ) async {
     executedActions.add((actionName, Map<String, dynamic>.from(data)));
     if (actionName == 'submitDictionarySuggestion') {
-      final id = (data['id'] as String?) ?? 'sug-${_suggestions.length + 1}';
+      final id =
+          (data['submissionId'] as String?) ??
+          (data['id'] as String?) ??
+          'sug-${_suggestions.length + 1}';
+      final rawImages = (data['submittedImages'] as List<dynamic>? ?? [])
+          .whereType<Map<dynamic, dynamic>>()
+          .map(
+            (img) => <String, dynamic>{
+              ...img.cast<String, dynamic>(),
+              'reviewStatus': (img['reviewStatus'] as String?) ?? 'pending',
+            },
+          )
+          .toList();
       _suggestions.insert(0, {
         ...data,
         'id': id,
-        'status': 'pending',
+        if (rawImages.isNotEmpty) 'submittedImages': rawImages,
+        'textDecision': (data['kind'] == 'image_contribution')
+            ? 'rejected'
+            : 'pending',
+        'status': 'submitted',
         'createdAt': DateTime.now().toIso8601String(),
       });
       return;
@@ -138,23 +161,71 @@ class InMemoryDictionaryStore implements DictionaryStore {
     final action = data['action'] as String?;
     final id = data['id'] as String?;
     if (action == 'review' && id != null) {
-      final status = (data['status'] as String?) ?? 'reviewed';
       final note = (data['note'] as String?) ?? '';
+      final imageDecisionsRaw = data['imageDecisions'];
+      final decisionById = <String, Map<String, dynamic>>{};
+      if (imageDecisionsRaw is List) {
+        for (final entry
+            in imageDecisionsRaw.whereType<Map<dynamic, dynamic>>()) {
+          final imgId = entry['id'] as String?;
+          if (imgId != null) {
+            decisionById[imgId] = entry.cast<String, dynamic>();
+          }
+        }
+      }
+      var resolvedStatus = data['status'] as String?;
       for (final item in _suggestions) {
         if (item['id'] == id) {
-          item['status'] = status;
+          final currentImages =
+              (item['submittedImages'] as List<dynamic>? ?? [])
+                  .whereType<Map<dynamic, dynamic>>()
+                  .map(
+                    (e) => Map<String, dynamic>.from(e.cast<String, dynamic>()),
+                  )
+                  .toList();
+          for (final img in currentImages) {
+            final dec = decisionById[img['id']];
+            if (dec != null) {
+              if (dec['status'] != null) img['reviewStatus'] = dec['status'];
+              if (dec['caption'] != null) img['caption'] = dec['caption'];
+              if (dec['explanation'] != null) {
+                img['explanation'] = dec['explanation'];
+              }
+              if (dec['imageType'] != null) img['imageType'] = dec['imageType'];
+            } else if (resolvedStatus == 'rejected') {
+              img['reviewStatus'] = 'rejected';
+            }
+          }
+          if (currentImages.isNotEmpty) {
+            item['submittedImages'] = currentImages;
+          }
+          if (data['textDecision'] != null) {
+            item['textDecision'] = data['textDecision'];
+          } else if (resolvedStatus == 'approved' ||
+              resolvedStatus == 'rejected') {
+            item['textDecision'] = resolvedStatus;
+          }
+          final editedFields = data['editedFields'];
+          if (editedFields is Map) {
+            item['proposedFields'] = Map<String, dynamic>.from(
+              editedFields.cast<String, dynamic>(),
+            );
+          }
+          resolvedStatus ??= (item['status'] as String?) ?? 'reviewed';
+          item['status'] = resolvedStatus;
           break;
         }
       }
       _suggestionHistory.putIfAbsent(id, () => []).insert(0, {
-        'status': status,
+        'status': resolvedStatus ?? 'reviewed',
         'note': note,
         'at': DateTime.now().toIso8601String(),
       });
       return;
     }
 
-    if ((action == 'save_draft' || action == 'publish') && id != null) {
+    if ((action == 'save_draft' || action == 'save' || action == 'publish') &&
+        id != null) {
       final rawEntry = (data['entry'] as Map?)?.cast<String, dynamic>() ?? {};
       final previousRev =
           _draftsById[id]?.data['revision'] as int? ??
@@ -190,6 +261,16 @@ class InMemoryDictionaryStore implements DictionaryStore {
   @override
   Future<List<Map<String, dynamic>>> loadSuggestions({int limit = 100}) async =>
       _suggestions.take(limit).map(Map<String, dynamic>.from).toList();
+
+  @override
+  Future<List<Map<String, dynamic>>> loadMySuggestions(
+    String contributorUid, {
+    int limit = 50,
+  }) async => _suggestions
+      .where((item) => item['contributorUid'] == contributorUid)
+      .take(limit)
+      .map(Map<String, dynamic>.from)
+      .toList();
 
   @override
   Future<List<DictionaryEntry>> loadDrafts() async => _draftsById.values
