@@ -18,6 +18,15 @@ void main() {
   late AppTestHarness harness;
   late InMemorySkillTreeSuggestionsStore suggestionsStore;
   late SkillTreeSuggestionsRepository suggestionsRepo;
+  late List<SkillFamily> baseFamilies;
+  late List<CurriculumSkill> baseSkills;
+
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final loaded = await const AssetCurriculumV2Loader().loadInMemoryStore();
+    baseFamilies = await loaded.fetchFamilies();
+    baseSkills = await loaded.fetchSkills();
+  });
 
   setUp(() async {
     SkillTreeV2View.resetPreviewStoreForTest();
@@ -154,8 +163,10 @@ void main() {
           ),
         );
 
-        final v2Store = await const AssetCurriculumV2Loader()
-            .loadInMemoryStore();
+        final v2Store = InMemorySkillTreeV2Store(
+          families: baseFamilies,
+          skills: baseSkills,
+        );
         final v2Repo = SkillTreeV2Repository(store: v2Store);
 
         await tester.pumpWidget(
