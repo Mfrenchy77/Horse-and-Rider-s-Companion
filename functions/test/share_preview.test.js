@@ -5,9 +5,60 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { sharePreviewHandler } = require('../share_preview');
 
-function fakeDb(docsById, horsesById = {}, dictionaryById = {}) {
+const { hashToken } = require('../invitations');
+
+function fakeDb(
+  docsById,
+  horsesById = {},
+  dictionaryById = {},
+  invitationTokensById = {},
+  invitationsById = {},
+  publicRidersById = {},
+) {
   return {
     collection(name) {
+      if (name === 'InvitationTokens') {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = invitationTokensById[id];
+                return data ?
+                  { exists: true, id, data: () => data } :
+                  { exists: false, id, data: () => undefined };
+              },
+            };
+          },
+        };
+      }
+      if (name === 'Invitations') {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = invitationsById[id];
+                return data ?
+                  { exists: true, id, data: () => data } :
+                  { exists: false, id, data: () => undefined };
+              },
+            };
+          },
+        };
+      }
+      if (name === 'Public_Rider_Profile') {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = publicRidersById[id];
+                return data ?
+                  { exists: true, id, data: () => data } :
+                  { exists: false, id, data: () => undefined };
+              },
+            };
+          },
+        };
+      }
       if (name === 'Horse_Profile') {
         return {
           doc(id) {
@@ -366,4 +417,59 @@ test('sharePreview uses Firebase Storage dictionary_public image URLs for og:ima
       res.body,
       new RegExp(`<meta property="og:image" content="${storageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/&/g, '&amp;')}">`),
   );
+});
+
+test('sharePreview injects public invitation metadata for valid /invite/<token> and protects invalid tokens', async () => {
+  const token = 'valid_invite_token_123456';
+  const db = fakeDb(
+    {},
+    {},
+    {},
+    { [hashToken(token)]: { invitationId: 'inv_123' } },
+    {
+      inv_123: {
+        id: 'inv_123',
+        type: 'student_connection',
+        relationshipRole: 'student',
+        inviterProfileId: 'coach_profile',
+        inviterDisplayName: 'Coach Morgan',
+        inviterEmail: 'coach@private.example.com',
+        inviterPhotoUrl: 'https://cdn.example.org/morgan.jpg',
+        inviterIsTrainer: true,
+        personalMessage: 'Looking forward to our next lesson!',
+        status: 'active',
+        maxUses: 1,
+        redemptionCount: 0,
+        expiresAt: new Date(Date.now() + 86400 * 1000).toISOString(),
+      },
+    },
+    {
+      coach_profile: {
+        name: 'Coach Morgan',
+        isTrainer: true,
+        picUrl: 'https://cdn.example.org/morgan.jpg',
+      },
+    },
+  );
+  const handler = sharePreviewHandler(db, { fetchFn: async () => ({ ok: false }) });
+
+  const validRes = makeRes();
+  await handler(
+    { headers: { host: 'horseandriderscompanion.com' }, path: `/invite/${token}`, query: {} },
+    validRes,
+  );
+  assert.equal(validRes.statusCode, 200);
+  assert.match(validRes.body, /Coach Morgan invited you to connect as their student/);
+  assert.match(validRes.body, /Looking forward to our next lesson!/);
+  assert.match(validRes.body, /https:\/\/cdn\.example\.org\/morgan\.jpg/);
+  assert.doesNotMatch(validRes.body, /coach@private\.example\.com/);
+
+  const invalidRes = makeRes();
+  await handler(
+    { headers: { host: 'horseandriderscompanion.com' }, path: '/invite/nonexistent_token_123456', query: {} },
+    invalidRes,
+  );
+  assert.equal(invalidRes.statusCode, 200);
+  assert.equal(invalidRes.headers['Cache-Control'], 'no-store');
+  assert.match(invalidRes.body, /<title>Invitation — Horse &amp; Rider&#39;s Companion<\/title>/);
 });
