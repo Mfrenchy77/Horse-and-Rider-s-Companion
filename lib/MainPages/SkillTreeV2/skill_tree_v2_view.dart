@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/CommonWidgets/appbar_title.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/guest_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
@@ -1919,11 +1920,15 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
 
             return Scaffold(
               appBar: ThemedAppBar(
+                centerTitle: true,
                 leading: BackButton(
                   key: const Key('skillTreeV2AppBarBackButton'),
                   onPressed: () => _handleAppBarBack(context),
                 ),
-                title: const Text('Skill Tree'),
+                title: const ResponsiveAppBarTitle(
+                  wordmarkKey: Key('skillTreeV2AppBarWordmark'),
+                  compactLogoKey: Key('skillTreeV2AppBarCompactLogo'),
+                ),
                 actions: [
                   ValueListenableBuilder<bool>(
                     valueListenable: SkillTreeSpotlightTour.isTourActive,

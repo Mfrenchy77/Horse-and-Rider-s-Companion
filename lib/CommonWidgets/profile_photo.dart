@@ -85,6 +85,19 @@ Future<void> showProfilePhoto(
             ),
       backgroundDecoration: const BoxDecoration(color: Colors.transparent),
       imageProvider: NetworkImage(url),
+      errorBuilder: (context, error, stackTrace) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.broken_image_outlined, size: 48, color: Colors.white70),
+            SizedBox(height: 8),
+            Text(
+              'Unable to load image',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+      ),
     ),
   ),
 );
