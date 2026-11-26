@@ -16,7 +16,10 @@
       "green-broke",
       "groundwork"
     ],
-    "skillIds": [],
+    "skillIds": [
+      "rider.husbandry.safe_handling",
+      "rider.theory.training_pyramid"
+    ],
     "resourceIds": [],
     "media": [],
     "usage": "",
@@ -51,7 +54,10 @@
       "green",
       "groundwork"
     ],
-    "skillIds": [],
+    "skillIds": [
+      "rider.theory.progressive_conditioning",
+      "rider.theory.ethical_training"
+    ],
     "resourceIds": [],
     "media": [],
     "usage": "",
@@ -89,7 +95,8 @@
     ],
     "skillIds": [
       "rider.mounted.canter",
-      "horse.mounted.canter"
+      "horse.mounted.canter",
+      "rider.theory.gaits_footfalls"
     ],
     "resourceIds": [],
     "media": [],
@@ -124,7 +131,9 @@
     "relatedTerms": [
       "groundwork"
     ],
-    "skillIds": [],
+    "skillIds": [
+      "horse.in_hand.standing_quietly"
+    ],
     "resourceIds": [],
     "media": [],
     "usage": "",
@@ -232,7 +241,12 @@
       "half-halt",
       "shoulder-in"
     ],
-    "skillIds": [],
+    "skillIds": [
+      "rider.theory.training_pyramid",
+      "rider.theory.balance_weight",
+      "rider.mounted.travers",
+      "horse.mounted.travers"
+    ],
     "resourceIds": [],
     "media": [],
     "usage": "",
@@ -304,7 +318,10 @@
       "canter"
     ],
     "skillIds": [
-      "rider.mounted.canter"
+      "rider.mounted.canter",
+      "horse.mounted.canter",
+      "rider.mounted.steering_navigation",
+      "horse.mounted.steering_navigation"
     ],
     "resourceIds": [],
     "media": [],
@@ -336,7 +353,10 @@
     "relatedTerms": [
       "withers"
     ],
-    "skillIds": [],
+    "skillIds": [
+      "rider.theory.bend_flexion_straightness",
+      "rider.theory.tack_fit_function"
+    ],
     "resourceIds": [],
     "media": [],
     "usage": "",
@@ -367,7 +387,11 @@
     "relatedTerms": [
       "poll"
     ],
-    "skillIds": [],
+    "skillIds": [
+      "rider.theory.tack_fit_function",
+      "rider.husbandry.tack",
+      "rider.husbandry.blanketing"
+    ],
     "resourceIds": [],
     "media": [],
     "usage": "",
@@ -378,6 +402,733 @@
     "attributions": [],
     "editorial": {
       "source": "Independently written starter collection",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "trot",
+    "slug": "trot",
+    "term": "Trot",
+    "definition": "A symmetrical two-beat diagonal gait in which opposite front and hind legs move together in alternating pairs.",
+    "explanation": "In a pure trot, the left hind and right foreleg move together, alternating with the right hind and left foreleg. More energetic trots include a brief moment of suspension between beats, while slower, relaxed trots such as a Western jog may have minimal or no visible suspension. Riders may ride the trot rising (posting), sitting, or in two-point depending on the task, discipline, and the horse's comfort.",
+    "synonyms": [
+      "jog",
+      "jogging",
+      "trotting"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "Warm up in a relaxed, even trot on large lines before asking for smaller turns.",
+      "A Western rider sits a quiet jog along the rail while maintaining an even two-beat rhythm."
+    ],
+    "relatedTerms": [
+      "posting-trot",
+      "trot-diagonal",
+      "canter",
+      "half-halt"
+    ],
+    "skillIds": [
+      "rider.mounted.trot",
+      "horse.mounted.trot",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "In Western riding, jog describes a slow, relaxed two-beat trot with little or no suspension that is comfortable to sit for extended periods. Across English, trail, ranch, and driving traditions, trot spans slow working tempos through lengthened and collected strides. Regardless of tempo, a sound trot preserves a clear, even two-beat diagonal pattern.",
+    "regionalUsage": "Jog is standard in North American Western pleasure, ranch, and trail riding; trot is universal across English, driving, dressage, and international communities. Some gaited breeds naturally perform four-beat ambling gaits instead of, or in addition to, a two-beat trot.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 approved curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "posting-trot",
+    "slug": "posting-trot",
+    "term": "Posting Trot",
+    "definition": "A way of riding the trot in which the rider rises gently out of the saddle on one diagonal beat and sits softly back down on the next, matching the horse's two-beat rhythm.",
+    "explanation": "Posting uses the natural upward rhythm of the horse's trot rather than pulling on the reins or pushing heavily off the stirrups. Rising and sitting in balance helps protect the horse's back—particularly during warm-ups, with green horses, or over longer distances—while allowing the rider to stay centered over their base of support.",
+    "synonyms": [
+      "rising trot",
+      "post the trot"
+    ],
+    "categories": [
+      "Riding",
+      "Gaits"
+    ],
+    "examples": [
+      "Begin with a few minutes of balanced posting trot so the horse can warm up its back comfortably.",
+      "Keep your hands quiet during rising trot rather than balancing off the reins."
+    ],
+    "relatedTerms": [
+      "trot",
+      "trot-diagonal",
+      "aids"
+    ],
+    "skillIds": [
+      "rider.mounted.trot",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Widely used across English, trail, endurance, ranch, and general horsemanship during warm-up, conditioning, and brisk trotting. Riders alternate diagonals periodically to distribute work evenly across both sides of the horse.",
+    "regionalUsage": "Called posting trot throughout North America and rising trot across the United Kingdom, Ireland, Europe, Australia, and New Zealand.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 approved curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "trot-diagonal",
+    "slug": "trot-diagonal",
+    "term": "Trot Diagonal",
+    "definition": "One of the two opposite-side diagonal leg pairs moving together in the trot, used by a posting rider to coordinate when they rise and sit.",
+    "explanation": "In the trot, the horse moves its legs in opposite-side diagonal pairs: the outside foreleg with the inside hind leg, alternating with the inside foreleg and outside hind leg. Under the common arena convention ('rise and fall with the leg on the wall'), the rider rises as the outside foreleg and inside hind leg swing forward, and sits as that same outside foreleg and inside hind leg land and bear weight. Changing diagonals by sitting (or standing) for two beats when reversing direction—or periodically on straight trail stretches—helps encourage balanced, symmetrical muscular development in both horse and rider.",
+    "synonyms": [
+      "posting diagonal",
+      "trot diagonals",
+      "posting diagonals",
+      "correct diagonal"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "When changing direction across the arena, sit two beats to switch cleanly to the new trot diagonal.",
+      "On long straight trail stretches, alternate posting diagonals periodically so the horse works evenly on both sides."
+    ],
+    "relatedTerms": [
+      "trot",
+      "posting-trot",
+      "canter-lead"
+    ],
+    "skillIds": [
+      "rider.mounted.trot",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "A diagonal is named for the front leg moving forward as the rider rises (on the right diagonal, the rider rises as the right foreleg and left hind leg swing forward and sits as they land). Riders learn to confirm the diagonal with a brief glance at the outside shoulder and progress to recognizing it by feel.",
+    "regionalUsage": "Standard terminology across English, Working Equitation, and general horsemanship; less emphasized when sitting a slow Western jog, though equally useful whenever posting a faster ranch or trail trot.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 approved curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "canter-lead",
+    "slug": "canter-lead",
+    "term": "Canter Lead",
+    "definition": "The side whose front and hind legs reach farther forward during the canter or lope—typically matching the inside of a turn.",
+    "explanation": "Because the canter is an asymmetrical three-beat gait, one side leads the stride. On a left lead, the footfall order is right hind, then left hind and right foreleg together, then left foreleg reaching farthest forward before suspension; a right lead mirrors that sequence. Riding on the inside lead makes turns easier and more balanced for the horse. A rider may change leads through a simple lead change (via walk or trot) or, at advanced stages, a flying lead change in the air, or deliberately ride counter-canter. Persistent difficulty taking or holding one lead—or frequent cross-cantering—can signal crookedness, conditioning gaps, saddle fit issues, or discomfort rather than stubbornness.",
+    "synonyms": [
+      "lope lead",
+      "canter leads",
+      "lope leads",
+      "inside lead",
+      "outside lead"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "Prepare with a balanced corner so the horse can depart smoothly onto the left canter lead.",
+      "If the horse picks up the outside lead unintentionally, transition calmly back to trot, rebalance, and ask again."
+    ],
+    "relatedTerms": [
+      "canter",
+      "counter-canter",
+      "trot-diagonal",
+      "aids"
+    ],
+    "skillIds": [
+      "rider.mounted.canter",
+      "horse.mounted.canter",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Introductory riders focus on establishing balance and control in the canter before taking responsibility for selecting specific leads. Intermediate riders learn to feel and select leads and perform simple lead changes, while advanced riders refine counter-canter and flying lead changes.",
+    "regionalUsage": "Called canter lead across English, classical, and international disciplines, and lope lead across North American Western, ranch, and trail riding.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 approved curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "aids",
+    "slug": "aids",
+    "term": "Aids / Cues",
+    "definition": "The signals a rider or handler uses to communicate requests to a horse, including natural aids (seat/weight, legs, hands/reins, voice) and optional artificial aids (such as a whip or spurs).",
+    "explanation": "Clear communication follows a consistent hierarchy: ask with the lightest effective signal first, coordinate seat, leg, and rein so requests do not contradict one another, and soften or release the instant the horse responds. Natural aids are every rider's primary language; optional artificial aids are gentle refinements to clarify a light natural request, never tools for punishment or force. Conflicting signals—such as pulling backward on the reins while simultaneously driving forward with the legs—create tension, confusion, and dullness.",
+    "synonyms": [
+      "aids",
+      "cues",
+      "rider aids",
+      "rider cues",
+      "natural aids",
+      "artificial aids"
+    ],
+    "categories": [
+      "Riding",
+      "Training"
+    ],
+    "examples": [
+      "Coordinate your seat and leg aids before asking lightly with the reins.",
+      "Keep cues clear and consistent, releasing pressure promptly as soon as the horse responds."
+    ],
+    "relatedTerms": [
+      "half-halt",
+      "canter-lead",
+      "groundwork"
+    ],
+    "skillIds": [
+      "rider.theory.understanding_rider_aids",
+      "rider.mounted.half_halt",
+      "rider.mounted.transitions"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Both aids and cues describe the same underlying principle of clear, humane, non-conflicting communication, whether riding on steady elastic contact in English disciplines or on a light, draped rein in Western and trail riding.",
+    "regionalUsage": "Aids is standard across English, dressage, Working Equitation, and European traditions; cues is widely used across Western, ranch, trail, natural horsemanship, and learning-theory communities.",
+    "status": "published",
+    "revision": 1,
+    "contextual": false,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 approved curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "rhythm",
+    "slug": "rhythm",
+    "term": "Rhythm",
+    "definition": "The regularity and evenness of a horse's footfalls within a gait, keeping consistent spacing between beats.",
+    "explanation": "Pure rhythm means each stride repeats the gait's natural beat pattern evenly—four even beats in walk, two diagonal beats in trot, and three beats in canter. Rhythm is distinct from tempo (how fast or slow the beats occur): a horse can move at a slow or brisk tempo while keeping pure rhythm, or rush with uneven steps. Monitoring rhythm helps riders preserve balance and notice early signs of fatigue, saddle discomfort, or lameness.",
+    "synonyms": [],
+    "categories": [
+      "Gaits",
+      "Biomechanics",
+      "Training"
+    ],
+    "examples": [
+      "Focus on maintaining even rhythm through the corner before asking for a longer stride.",
+      "Sudden unevenness in trot rhythm calls for slowing down and checking comfort and soundness."
+    ],
+    "relatedTerms": [
+      "trot",
+      "canter",
+      "transitions",
+      "self-carriage"
+    ],
+    "skillIds": [
+      "rider.theory.training_pyramid",
+      "rider.theory.gaits_footfalls",
+      "horse.mounted.walk",
+      "horse.mounted.trot",
+      "horse.mounted.canter"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Foundational across all English, Western, trail, ranch, driving, and gaited disciplines as the baseline measure of calm, sound movement.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "rein-contact",
+    "slug": "rein-contact",
+    "term": "Rein Contact",
+    "definition": "A soft, steady, elastic feel between the rider's hands and the horse's mouth or nose through the reins, maintained without pulling or slack jerking.",
+    "explanation": "Healthy contact follows the natural motion of the horse's head and neck so the horse stays comfortable and confident seeking the bit or noseband. Contact is never created by pulling the head into a set shape or balancing off the reins. Disciplines vary widely in how much contact they carry: many English traditions maintain light, continuous elastic contact, whereas Western, ranch, and trail traditions often ride on a draped or loose rein with brief, soft feel when communicating.",
+    "synonyms": [
+      "elastic contact",
+      "soft contact"
+    ],
+    "categories": [
+      "Riding",
+      "Training"
+    ],
+    "examples": [
+      "Keep elastic rein contact that follows the horse's four-beat nod in the walk.",
+      "Whether riding on steady contact or a draped Western rein, avoid sudden jerks or leaning on the reins for balance."
+    ],
+    "relatedTerms": [
+      "aids",
+      "half-halt",
+      "self-carriage"
+    ],
+    "skillIds": [
+      "rider.theory.training_pyramid",
+      "rider.theory.understanding_rider_aids",
+      "rider.mounted.half_halt",
+      "rider.mounted.walk"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Avoids forcing a single rein style: explains both continuous elastic contact and light-rein/draped-rein communication fairly.",
+    "regionalUsage": "English and dressage traditions emphasize steady elastic contact; Western, ranch, and trail horsemanship often describe light feel or a draped rein with intermittent contact.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion — recommended for editorial review of cross-discipline framing",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "transitions",
+    "slug": "transitions",
+    "term": "Transitions",
+    "definition": "Deliberate changes between gaits, speeds, or stride lengths—such as halt to walk, trot to canter, or lengthening and shortening within a gait.",
+    "explanation": "Progressive transitions step through adjacent gaits (walk to trot to canter), direct transitions skip an intermediate gait (walk to canter or canter to walk), and within-gait transitions adjust stride length or tempo while keeping the same gait. Well-prepared transitions strengthen the hindquarters, improve attentiveness, and test balance without abrupt pulling or rushing.",
+    "synonyms": [
+      "upward transition",
+      "upward transitions",
+      "downward transition",
+      "downward transitions",
+      "direct transition",
+      "direct transitions",
+      "progressive transitions"
+    ],
+    "categories": [
+      "Riding",
+      "Training"
+    ],
+    "examples": [
+      "Prepare with a light half-halt before asking for a smooth downward transition from trot to walk.",
+      "Frequent calm transitions help keep a horse attentive and balanced off the forehand."
+    ],
+    "relatedTerms": [
+      "half-halt",
+      "rhythm",
+      "aids",
+      "self-carriage"
+    ],
+    "skillIds": [
+      "rider.mounted.transitions",
+      "horse.mounted.transitions",
+      "rider.mounted.half_halt"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Used across all riding, groundwork, and driving disciplines to evaluate communication, responsiveness, and balance.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "forehand",
+    "slug": "forehand",
+    "term": "Forehand",
+    "definition": "The front portion of the horse—including the head, neck, shoulders, withers, chest, and front legs.",
+    "explanation": "At rest and in early training, horses naturally carry roughly 55–60% of their body weight on the forehand. Adding a rider initially increases front-end load. Progressive conditioning, transitions, and balanced riding help the horse shift more carrying effort toward the hindquarters, reducing strain on front-limb structures and improving maneuverability.",
+    "synonyms": [],
+    "categories": [
+      "Anatomy",
+      "Biomechanics"
+    ],
+    "examples": [
+      "In a turn on the forehand, the hindquarters step in a circle around a quiet inside front foot.",
+      "Rushing downhill can cause a horse to fall heavily onto the forehand."
+    ],
+    "relatedTerms": [
+      "hindquarters",
+      "withers",
+      "self-carriage",
+      "collection"
+    ],
+    "skillIds": [
+      "rider.theory.balance_weight",
+      "rider.mounted.turn_on_forehand",
+      "horse.mounted.turn_on_forehand"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Common anatomical and biomechanical reference across all equestrian disciplines.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "hindquarters",
+    "slug": "hindquarters",
+    "term": "Hindquarters",
+    "definition": "The rear portion of the horse—including the croup, pelvis, hips, thighs, and hind legs—that generates forward propulsion and carrying power.",
+    "explanation": "The hindquarters act as the horse's engine and shock absorber. Developing supple, symmetrical engagement of both hind legs allows a horse to step further underneath its center of gravity, supporting balanced turns, smooth transitions, stops, and progressive collection across disciplines.",
+    "synonyms": [
+      "haunches",
+      "hind end"
+    ],
+    "categories": [
+      "Anatomy",
+      "Biomechanics"
+    ],
+    "examples": [
+      "During a balanced downward transition, the horse brings its hindquarters underneath rather than leaning on the reins.",
+      "Stepping the haunches smoothly around the forehand helps open a latch gate."
+    ],
+    "relatedTerms": [
+      "forehand",
+      "collection",
+      "self-carriage",
+      "shoulder-in"
+    ],
+    "skillIds": [
+      "rider.theory.balance_weight",
+      "rider.mounted.turn_on_haunches",
+      "horse.mounted.turn_on_haunches",
+      "rider.mounted.travers"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Haunches is widely used in classical, English, and Working Equitation contexts (e.g., turn on the haunches, haunches-in); hindquarters and hind end are common across Western, ranch, and general horsemanship.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "girth-cinch",
+    "slug": "girth-cinch",
+    "term": "Girth / Cinch",
+    "definition": "The strap that passes beneath the horse's barrel behind the elbows to hold a saddle securely in place.",
+    "explanation": "Tighten a girth or cinch gradually in stages—snug enough to prevent saddle slipping without restricting breathing or pinching the skin behind the elbows. Smooth out wrinkles under the strap and re-check snugness after walking a few steps and before mounting. Signs of girthiness (pinning ears, swishing the tail, biting, or flinching) can indicate pinching, ill-fitting tack, or underlying gastric/muscular discomfort and should be investigated rather than ignored.",
+    "synonyms": [
+      "girth",
+      "cinch",
+      "front cinch"
+    ],
+    "categories": [
+      "Tack & Equipment",
+      "Safety"
+    ],
+    "examples": [
+      "Check your girth or cinch after walking the horse a few steps before mounting.",
+      "Choose a clean, properly sized cinch that clears the elbows without rubbing."
+    ],
+    "relatedTerms": [
+      "withers"
+    ],
+    "skillIds": [
+      "rider.husbandry.tack",
+      "rider.theory.tack_fit_function",
+      "rider.mounted.mounting"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "English saddles use a girth (buckled to billets); Western saddles use a front cinch (secured with a latigo) and sometimes a separate, looser back/flank cinch.",
+    "regionalUsage": "Girth is standard in English riding and international usage; cinch is standard in North American Western and ranch riding.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "quick-release-knot",
+    "slug": "quick-release-knot",
+    "term": "Quick-Release Knot",
+    "definition": "A slip knot used when tying a horse that holds under normal tension yet releases immediately with one firm pull on the free tail in an emergency.",
+    "explanation": "Because horses are flight animals that can panic if startled while tied, always tie at or above wither height to a sturdy, safe tie point—ideally using a breakaway loop (such as bailing twine or a breakaway halter) alongside a quick-release knot. Never pass the tail back through the final loop in a way that locks the knot when a horse pulls back, and never tie by the bridle reins.",
+    "synonyms": [
+      "safety knot",
+      "highwayman's hitch"
+    ],
+    "categories": [
+      "Handling",
+      "Safety"
+    ],
+    "examples": [
+      "Tie the lead rope to a breakaway loop with a quick-release knot before grooming.",
+      "Practice tying and releasing the safety knot until you can undo it calmly with one hand."
+    ],
+    "relatedTerms": [
+      "ground-tie",
+      "groundwork"
+    ],
+    "skillIds": [
+      "rider.husbandry.safe_handling",
+      "horse.in_hand.standing_quietly"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Core barn-safety skill across every discipline and management setting.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "vital-signs-tpr",
+    "slug": "vital-signs-tpr",
+    "term": "Vital Signs (TPR)",
+    "definition": "Core baseline health measurements—temperature, pulse (heart rate), and respiration—used to monitor a horse's condition and spot early illness or distress.",
+    "explanation": "Knowing a horse's individual resting baseline makes abnormal changes easier to detect quickly. Typical resting adult horse reference ranges are approximately 99.0–101.0°F (37.2–38.3°C) for rectal temperature, 28–44 beats per minute for heart rate, and 8–16 breaths per minute for respiration, alongside moist pink gums and normal gut sounds. Values vary with age, fitness, ambient heat, and excitement; elevated readings, pale/dark gums, or signs of pain warrant prompt consultation with a licensed veterinarian.",
+    "synonyms": [
+      "TPR",
+      "vital signs",
+      "temperature pulse respiration"
+    ],
+    "categories": [
+      "Health & Welfare",
+      "Husbandry"
+    ],
+    "examples": [
+      "Record your horse's resting TPR while healthy so you know its normal baseline.",
+      "Check vital signs immediately if a horse goes off feed or appears unusually dull."
+    ],
+    "relatedTerms": [],
+    "skillIds": [
+      "rider.husbandry.health_monitoring",
+      "rider.husbandry.first_aid",
+      "horse.in_hand.vet_handling"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Educational reference only—does not replace veterinary diagnosis or emergency care.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion — recommended for clinical/veterinary wording review",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "negative-reinforcement",
+    "slug": "negative-reinforcement",
+    "term": "Negative Reinforcement",
+    "definition": "A learning process in which a behavior becomes more likely because a mild, motivating pressure is removed the instant the horse offers the desired response.",
+    "explanation": "In behavioral science, \"negative\" means subtraction (removing a stimulus), not punishment or harshness. Everyday riding and groundwork—such as releasing halter pressure when a horse steps forward or softening leg pressure when a horse moves off—rely heavily on negative reinforcement (commonly called pressure and release). Accurate timing of the release is what teaches the horse; escalating pressure when a horse is confused, fearful, or physically uncomfortable impairs learning and compromises welfare.",
+    "synonyms": [
+      "pressure and release",
+      "R-"
+    ],
+    "categories": [
+      "Learning Theory",
+      "Training"
+    ],
+    "examples": [
+      "In negative reinforcement, softening the lead rope the exact moment the horse takes a step forward rewards the effort.",
+      "Good pressure and release always starts with the lightest cue and releases promptly."
+    ],
+    "relatedTerms": [
+      "positive-reinforcement",
+      "aids",
+      "groundwork"
+    ],
+    "skillIds": [
+      "rider.theory.how_horses_learn",
+      "rider.theory.timing_reinforcement"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Used across English, Western, ranch, driving, and classical traditions; humane practice emphasizes minimal effective pressure, clear cues, and immediate release.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "positive-reinforcement",
+    "slug": "positive-reinforcement",
+    "term": "Positive Reinforcement",
+    "definition": "A learning process in which a behavior becomes more likely because a desirable reward (such as a small food treat or preferred scratching) is added promptly after the response.",
+    "explanation": "In behavioral science, \"positive\" means addition (adding something the horse values). Many trainers pair positive reinforcement with a crisp marker signal (such as a clicker or short verbal word) to pinpoint the exact moment the horse succeeds. Practicing calm, polite food manners and clear boundaries helps keep reward-based training safe, enjoyable, and effective alongside or complementary to other humane training methods.",
+    "synonyms": [
+      "R+",
+      "clicker training",
+      "reward-based training"
+    ],
+    "categories": [
+      "Learning Theory",
+      "Training"
+    ],
+    "examples": [
+      "Using positive reinforcement can help build calm, willing cooperation for hoof handling or trailer loading.",
+      "Reward the horse promptly after a relaxed breath or step toward an unfamiliar obstacle."
+    ],
+    "relatedTerms": [
+      "negative-reinforcement",
+      "groundwork",
+      "aids"
+    ],
+    "skillIds": [
+      "rider.theory.how_horses_learn",
+      "rider.theory.timing_reinforcement"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Increasingly used across disciplines for confidence-building, cooperative veterinary/husbandry care, and groundwork.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "self-carriage",
+    "slug": "self-carriage",
+    "term": "Self-Carriage",
+    "definition": "The horse's ability to maintain its own balance, rhythm, and posture without leaning on the rider's hands or being held into position by the reins.",
+    "explanation": "A horse in self-carriage stays steady in tempo and balance if the rider momentarily softens or gives the reins (an \"überstreichen\" check or riding on a draped rein). Self-carriage develops gradually through strength, straightness, and clear communication—not by forcing the head down with tight reins or auxiliary gadgets. Both English contact disciplines and Western loose-rein disciplines value genuine self-carriage.",
+    "synonyms": [
+      "self carriage"
+    ],
+    "categories": [
+      "Biomechanics",
+      "Riding"
+    ],
+    "examples": [
+      "Briefly soften your hands for two strides to check whether the horse keeps its rhythm in self-carriage.",
+      "True self-carriage allows light, effortless communication without pulling."
+    ],
+    "relatedTerms": [
+      "rein-contact",
+      "rhythm",
+      "collection",
+      "forehand",
+      "hindquarters"
+    ],
+    "skillIds": [
+      "rider.theory.balance_weight",
+      "rider.theory.training_pyramid",
+      "horse.mounted.trot",
+      "horse.mounted.transitions"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Core benchmark of healthy equine balance across English, Western, Working Equitation, and trail riding.",
+    "regionalUsage": "",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "longeing",
+    "slug": "longeing",
+    "term": "Longeing",
+    "definition": "Working a horse on a circle at the end of a long line while the handler stands near the center, used for communication, rhythm, observation, and conditioning.",
+    "explanation": "Thoughtful longeing teaches clear voice and body-language transitions, allows the handler to observe gait symmetry and saddle fit without a rider, and builds balanced circle work on a generous radius (typically 15–20 m). Welfare caution: repetitive high-speed spinning on small circles or using longeing solely to \"run a horse tired\" places unnecessary torque on joints and tendons—keep sessions short, balanced in both directions, and calm.",
+    "synonyms": [
+      "lunging",
+      "longe line",
+      "lunge line"
+    ],
+    "categories": [
+      "Handling",
+      "Training"
+    ],
+    "examples": [
+      "Use calm voice cues on the longe line to practice balanced walk-to-trot transitions.",
+      "Keep the circle large and limit session duration while lunging to protect the horse's joints."
+    ],
+    "relatedTerms": [
+      "groundwork",
+      "rhythm",
+      "transitions"
+    ],
+    "skillIds": [
+      "rider.in_hand.longeing",
+      "rider.theory.training_equipment"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Supports both cavesson, halter, and bridle setups depending on horse education and handler skill; protective boots and gloves are recommended.",
+    "regionalUsage": "Spelled longeing primarily in North American traditional/classical sources and lunging across the UK, Europe, Oceania, and everyday North American usage.",
+    "status": "published",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 2 curriculum expansion",
       "standardVersion": 1
     },
     "schemaVersion": 1

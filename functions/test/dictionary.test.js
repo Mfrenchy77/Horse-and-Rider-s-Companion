@@ -109,7 +109,7 @@ test('only verified admins edit, publishing is atomic, reviewed, and revision pr
   assert(!JSON.stringify(published).includes('private'));
   assert(db.store.has('DictionaryDrafts/green/Revisions/2'));
   assert.equal(db.store.get('DictionarySuggestions/' + proposal.submissionId).status, 'published');
-  assert.equal([...db.store.keys()].filter((path) => path.startsWith('DictionaryEntries/')).length, 11);
+  assert.equal([...db.store.keys()].filter((path) => path.startsWith('DictionaryEntries/')).length, seeds.length);
   await assert.rejects(edit(request(data, admin)), {code: 'aborted'});
   await edit(request({...data, action: 'save', expectedRevision: 2, entry: {...entry, definition: 'Private draft wording.'}}, admin));
   assert.equal((await publicEntry(db, 'green')).definition, published.definition);

@@ -1,0 +1,222 @@
+[
+  {
+    "id": "trot",
+    "slug": "trot",
+    "term": "Trot",
+    "definition": "A symmetrical two-beat diagonal gait in which opposite front and hind legs move together in alternating pairs.",
+    "explanation": "In a pure trot, the left hind and right foreleg move together, alternating with the right hind and left foreleg. More energetic trots include a brief moment of suspension between beats, while slower, relaxed trots such as a Western jog may have minimal or no visible suspension. Riders may ride the trot rising (posting), sitting, or in two-point depending on the task, discipline, and the horse's comfort.",
+    "synonyms": [
+      "jog",
+      "jogging",
+      "trotting"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "Warm up in a relaxed, even trot on large lines before asking for smaller turns.",
+      "A Western rider sits a quiet jog along the rail while maintaining an even two-beat rhythm."
+    ],
+    "relatedTerms": [
+      "posting-trot",
+      "trot-diagonal",
+      "canter",
+      "half-halt"
+    ],
+    "skillIds": [
+      "rider.mounted.trot",
+      "horse.mounted.trot",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "In Western riding, jog describes a slow, relaxed two-beat trot with little or no suspension that is comfortable to sit for extended periods. Across English, trail, ranch, and driving traditions, trot spans slow working tempos through lengthened and collected strides. Regardless of tempo, a sound trot preserves a clear, even two-beat diagonal pattern.",
+    "regionalUsage": "Jog is standard in North American Western pleasure, ranch, and trail riding; trot is universal across English, driving, dressage, and international communities. Some gaited breeds naturally perform four-beat ambling gaits instead of, or in addition to, a two-beat trot.",
+    "status": "draft",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 curriculum expansion draft — pending owner editorial approval",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "posting-trot",
+    "slug": "posting-trot",
+    "term": "Posting Trot",
+    "definition": "A way of riding the trot in which the rider rises gently out of the saddle on one diagonal beat and sits softly back down on the next, matching the horse's two-beat rhythm.",
+    "explanation": "Posting uses the natural upward rhythm of the horse's trot rather than pulling on the reins or pushing heavily off the stirrups. Rising and sitting in balance helps protect the horse's back—particularly during warm-ups, with green horses, or over longer distances—while allowing the rider to stay centered over their base of support.",
+    "synonyms": [
+      "rising trot",
+      "post the trot"
+    ],
+    "categories": [
+      "Riding",
+      "Gaits"
+    ],
+    "examples": [
+      "Begin with a few minutes of balanced posting trot so the horse can warm up its back comfortably.",
+      "Keep your hands quiet during rising trot rather than balancing off the reins."
+    ],
+    "relatedTerms": [
+      "trot",
+      "trot-diagonal",
+      "aids"
+    ],
+    "skillIds": [
+      "rider.mounted.trot",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Widely used across English, trail, endurance, ranch, and general horsemanship during warm-up, conditioning, and brisk trotting. Riders alternate diagonals periodically to distribute work evenly across both sides of the horse.",
+    "regionalUsage": "Called posting trot throughout North America and rising trot across the United Kingdom, Ireland, Europe, Australia, and New Zealand.",
+    "status": "draft",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 curriculum expansion draft — pending owner editorial approval",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "trot-diagonal",
+    "slug": "trot-diagonal",
+    "term": "Trot Diagonal",
+    "definition": "One of the two opposite-side diagonal leg pairs moving together in the trot, used by a posting rider to coordinate when they rise and sit.",
+    "explanation": "In the trot, the horse moves its legs in opposite-side diagonal pairs: the outside foreleg with the inside hind leg, alternating with the inside foreleg and outside hind leg. Under the common arena convention ('rise and fall with the leg on the wall'), the rider rises as the outside foreleg and inside hind leg swing forward, and sits as that same outside foreleg and inside hind leg land and bear weight. Changing diagonals by sitting (or standing) for two beats when reversing direction—or periodically on straight trail stretches—helps encourage balanced, symmetrical muscular development in both horse and rider.",
+    "synonyms": [
+      "posting diagonal",
+      "trot diagonals",
+      "posting diagonals",
+      "correct diagonal"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "When changing direction across the arena, sit two beats to switch cleanly to the new trot diagonal.",
+      "On long straight trail stretches, alternate posting diagonals periodically so the horse works evenly on both sides."
+    ],
+    "relatedTerms": [
+      "trot",
+      "posting-trot",
+      "canter-lead"
+    ],
+    "skillIds": [
+      "rider.mounted.trot",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "A diagonal is named for the front leg moving forward as the rider rises (on the right diagonal, the rider rises as the right foreleg and left hind leg swing forward and sits as they land). Riders learn to confirm the diagonal with a brief glance at the outside shoulder and progress to recognizing it by feel.",
+    "regionalUsage": "Standard terminology across English, Working Equitation, and general horsemanship; less emphasized when sitting a slow Western jog, though equally useful whenever posting a faster ranch or trail trot.",
+    "status": "draft",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 curriculum expansion draft — pending owner editorial approval",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "canter-lead",
+    "slug": "canter-lead",
+    "term": "Canter Lead",
+    "definition": "The side whose front and hind legs reach farther forward during the canter or lope—typically matching the inside of a turn.",
+    "explanation": "Because the canter is an asymmetrical three-beat gait, one side leads the stride. On a left lead, the footfall order is right hind, then left hind and right foreleg together, then left foreleg reaching farthest forward before suspension; a right lead mirrors that sequence. Riding on the inside lead makes turns easier and more balanced for the horse. A rider may change leads through a simple lead change (via walk or trot) or, at advanced stages, a flying lead change in the air, or deliberately ride counter-canter. Persistent difficulty taking or holding one lead—or frequent cross-cantering—can signal crookedness, conditioning gaps, saddle fit issues, or discomfort rather than stubbornness.",
+    "synonyms": [
+      "lope lead",
+      "canter leads",
+      "lope leads",
+      "inside lead",
+      "outside lead"
+    ],
+    "categories": [
+      "Gaits",
+      "Riding"
+    ],
+    "examples": [
+      "Prepare with a balanced corner so the horse can depart smoothly onto the left canter lead.",
+      "If the horse picks up the outside lead unintentionally, transition calmly back to trot, rebalance, and ask again."
+    ],
+    "relatedTerms": [
+      "canter",
+      "counter-canter",
+      "trot-diagonal",
+      "aids"
+    ],
+    "skillIds": [
+      "rider.mounted.canter",
+      "horse.mounted.canter",
+      "rider.theory.gaits_footfalls"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Introductory riders focus on establishing balance and control in the canter before taking responsibility for selecting specific leads. Intermediate riders learn to feel and select leads and perform simple lead changes, while advanced riders refine counter-canter and flying lead changes.",
+    "regionalUsage": "Called canter lead across English, classical, and international disciplines, and lope lead across North American Western, ranch, and trail riding.",
+    "status": "draft",
+    "revision": 1,
+    "contextual": true,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 curriculum expansion draft — pending owner editorial approval",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  },
+  {
+    "id": "aids",
+    "slug": "aids",
+    "term": "Aids / Cues",
+    "definition": "The signals a rider or handler uses to communicate requests to a horse, including natural aids (seat/weight, legs, hands/reins, voice) and optional artificial aids (such as a whip or spurs).",
+    "explanation": "Clear communication follows a consistent hierarchy: ask with the lightest effective signal first, coordinate seat, leg, and rein so requests do not contradict one another, and soften or release the instant the horse responds. Natural aids are every rider's primary language; optional artificial aids are gentle refinements to clarify a light natural request, never tools for punishment or force. Conflicting signals—such as pulling backward on the reins while simultaneously driving forward with the legs—create tension, confusion, and dullness.",
+    "synonyms": [
+      "aids",
+      "cues",
+      "rider aids",
+      "rider cues",
+      "natural aids",
+      "artificial aids"
+    ],
+    "categories": [
+      "Riding",
+      "Training"
+    ],
+    "examples": [
+      "Coordinate your seat and leg aids before asking lightly with the reins.",
+      "Keep cues clear and consistent, releasing pressure promptly as soon as the horse responds."
+    ],
+    "relatedTerms": [
+      "half-halt",
+      "canter-lead",
+      "groundwork"
+    ],
+    "skillIds": [
+      "rider.theory.understanding_rider_aids",
+      "rider.mounted.half_halt",
+      "rider.mounted.transitions"
+    ],
+    "resourceIds": [],
+    "media": [],
+    "usage": "Both aids and cues describe the same underlying principle of clear, humane, non-conflicting communication, whether riding on steady elastic contact in English disciplines or on a light, draped rein in Western and trail riding.",
+    "regionalUsage": "Aids is standard across English, dressage, Working Equitation, and European traditions; cues is widely used across Western, ranch, trail, natural horsemanship, and learning-theory communities.",
+    "status": "draft",
+    "revision": 1,
+    "contextual": false,
+    "attributions": [],
+    "editorial": {
+      "source": "Batch 1 curriculum expansion draft — pending owner editorial approval",
+      "standardVersion": 1
+    },
+    "schemaVersion": 1
+  }
+]

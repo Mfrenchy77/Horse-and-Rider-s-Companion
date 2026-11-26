@@ -752,10 +752,12 @@
       "Natural aids",
       "Artificial aids",
       "Seat leg hand voice",
-      "Cue hierarchy"
+      "Cue hierarchy",
+      "Cues",
+      "Rider cues"
     ],
-    "summary": "Understanding how natural aids (seat/weight, legs, hands/reins, voice/breath) and optional artificial aids (whip/crop, spurs) communicate clear requests without conflicting signals.",
-    "purpose": "Clear, consistent aids help horses stay relaxed and responsive whether riding on a loose rein in Western/trail work, on light contact in English work, or driving.",
+    "summary": "Understanding how natural aids or cues (seat/weight, legs, hands/reins, voice/breath) and optional artificial aids (whip/crop, spurs) communicate clear requests without conflicting signals.",
+    "purpose": "Clear, consistent aids or cues help horses stay relaxed and responsive whether riding on a loose rein in Western/trail work, on elastic contact in English work, or driving.",
     "safety": [
       "Never pull backward on the reins while simultaneously kicking or driving the horse forward—conflicting aids cause stress, brace, and dangerous reactions.",
       "Artificial aids (whips, spurs) are gentle, precise refinements, never tools for punishment or anger."
@@ -763,10 +765,10 @@
     "availableLevels": ["introductory", "intermediate", "advanced"],
     "levels": {
       "introductory": {
-        "overview": "Identifying the natural and artificial aids and the principle of asking lightly first.",
+        "overview": "Identifying the natural and artificial aids (or cues) and the principle of asking lightly first with prompt release.",
         "components": [
-          {"title": "Natural aids", "description": "Explaining the distinct roles of seat/weight, legs, hands/reins, and voice/breath."},
-          {"title": "Lightest cue first", "description": "Starting with a subtle seat, breath, or light touch before escalating calmly if needed, and releasing as soon as the horse responds."}
+          {"title": "Natural aids and cues", "description": "Explaining the distinct roles of seat/weight, legs, hands/reins, and voice/breath across English, Western, and driving terminology."},
+          {"title": "Lightest cue first and common mistakes", "description": "Starting with a subtle seat, breath, or light touch before escalating calmly if needed, and releasing as soon as the horse responds. Common mistake: skipping straight to strong rein or leg pressure when a horse simply hasn't understood the request yet."}
         ],
         "learning": "Relies almost entirely on reins for steering and stopping, or uses hands and legs simultaneously without noticing.",
         "proficient": "Names all natural and artificial aids, explains their cooperative roles, and describes how to give a light-to-clear cue followed by immediate release.",
@@ -776,7 +778,7 @@
         "overview": "Coordinating independent aids and avoiding contradictory or constant background pressure.",
         "components": [
           {"title": "Aid independence", "description": "Explaining how a rider moves seat, legs, and hands independently without gripping or balancing on the reins."},
-          {"title": "Avoiding nagging/conflicting cues", "description": "Recognizing constant leg squeezing, dead-weight hands, or opposing hand-and-leg cues."}
+          {"title": "Avoiding nagging and conflicting cues", "description": "Recognizing constant leg squeezing (which habituates/dulls the horse to leg cues), dead-weight hands, or opposing hand-and-leg pressure that creates conflict and welfare stress."}
         ],
         "learning": "Understands independent aids in theory but struggles to explain how seat, leg, and rein coordinate in transitions or turns.",
         "proficient": "Explains clear aid coordination for transitions, turns, and lateral requests across loose-rein and contact styles, and spots conflicting aids in observation.",
@@ -785,8 +787,8 @@
       "advanced": {
         "overview": "Refining subtle aid timing, stride-phase coordination, and ethical use of optional refinements.",
         "components": [
-          {"title": "Timing aids to stride", "description": "Matching leg, seat, and half-halt timing to hind-leg swing/stance phases."},
-          {"title": "Refinement and fading", "description": "Evaluating when an aid is truly helpful vs unnecessary clutter, and mentoring riders toward lighter, quieter communication."}
+          {"title": "Timing aids to stride", "description": "Matching leg, seat, and half-halt timing to hind-leg swing and stance phases so the horse can answer easily without losing balance."},
+          {"title": "Refinement, fading, and welfare", "description": "Evaluating when an aid is truly helpful vs unnecessary clutter, checking for discomfort before increasing pressure, and mentoring riders toward lighter, quieter communication."}
         ],
         "learning": "Applies clear aids individually but struggles to diagnose subtle timing clashes in other riders.",
         "proficient": "Analyzes complex aid coordination and biomechanics across disciplines, explaining how to refine cues to near-invisible clarity.",
