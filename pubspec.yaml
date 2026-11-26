@@ -36,6 +36,7 @@ dependencies:
   flutter_native_splash: ^2.4.8
   flutter_network_image: ^0.1.0
   flutter_quill: ^11.6.0
+  flutter_svg: ^2.3.2
   flutter_typeahead: ^6.0.0
   flutter_web_plugins:
     sdk: flutter
@@ -81,6 +82,7 @@ environment:
 flutter:
   assets:
     - assets/
+    - assets/icons/skill_families/
     - curriculum/v2/
     - functions/dictionary_seed.json
   fonts:
