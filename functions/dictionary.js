@@ -822,6 +822,254 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
       await deleteStoragePathsSafely(bucket, pathsToDelete);
       return {id, status: nextStatus};
     }
+    if (action === 'approve_and_publish') {
+      const reviewNote = text(raw.note, 2000, 'review note');
+      const heroImageId = text(raw.heroImageId, 120, 'hero image ID');
+      const decisionMap = normalizeImageDecisionsInput(raw.imageDecisions);
+      const suggestionRef = db.collection('DictionarySuggestions').doc(id);
+      const suggestionSnap = await suggestionRef.get();
+      if (!suggestionSnap.exists) {
+        throw new HttpsError('not-found', 'Suggestion not found.');
+      }
+      const current = suggestionSnap.data();
+      if (current.status === 'published') {
+        throw new HttpsError('failed-precondition', 'This submission has already been published.');
+      }
+      if (current.status === 'rejected') {
+        throw new HttpsError('failed-precondition', 'Rejected submissions cannot be published directly.');
+      }
+      if (current.rightsConfirmed !== true) {
+        throw new HttpsError(
+            'failed-precondition',
+            'Contributor rights confirmation is required before publishing images.',
+        );
+      }
+      const targetId = text(current.termId, 100, 'term ID', true);
+      if (!SLUG.test(targetId)) {
+        throw new HttpsError('invalid-argument', 'Invalid target term ID.');
+      }
+      const currentImages = Array.isArray(current.submittedImages) ? current.submittedImages : [];
+      if (currentImages.length === 0) {
+        throw new HttpsError('failed-precondition', 'No submitted images found on this contribution.');
+      }
+      if (decisionMap) {
+        const validIds = new Set(currentImages.map((img) => img.id));
+        for (const targetImgId of decisionMap.keys()) {
+          if (!validIds.has(targetImgId)) {
+            throw new HttpsError('invalid-argument', `Unknown submitted image ID: ${targetImgId}`);
+          }
+        }
+      }
+      const updatedImages = currentImages.map((img) => {
+        const dec = decisionMap?.get(img.id);
+        const nextStatus = dec?.status || (img.reviewStatus === 'rejected' ? 'rejected' : 'approved');
+        if (nextStatus === 'pending') {
+          throw new HttpsError('invalid-argument', 'Decide approve or reject for every submitted image.');
+        }
+        const next = {
+          ...img,
+          reviewStatus: nextStatus,
+          reviewedAt: at,
+          reviewedByUid: request.auth.uid,
+        };
+        if (dec?.caption !== undefined) next.caption = dec.caption;
+        if (dec?.explanation !== undefined) next.explanation = dec.explanation;
+        if (dec?.imageType !== undefined) next.imageType = dec.imageType;
+        if (dec?.reviewNote !== undefined) next.reviewNote = dec.reviewNote;
+        return next;
+      });
+      const approvedImages = updatedImages.filter((img) => img.reviewStatus === 'approved');
+      const rejectedImages = updatedImages.filter((img) => img.reviewStatus === 'rejected');
+      if (approvedImages.length === 0) {
+        throw new HttpsError('invalid-argument', 'Approve at least one image before publishing.');
+      }
+
+      const draft = db.collection('DictionaryDrafts').doc(targetId);
+      const seedMatch = seed.find((item) => item.id === targetId || item.slug === targetId) || null;
+      const preDraft = await draft.get();
+      const targetSlug = preDraft.data()?.slug || seedMatch?.slug || targetId;
+      const publicRef = db.collection('DictionaryEntries').doc(targetSlug);
+      const prePublic = await publicRef.get();
+      const baseEntry = prePublic.exists ?
+        prePublic.data() :
+        (preDraft.exists ? preDraft.data() : seedMatch);
+      if (!baseEntry) {
+        throw new HttpsError('not-found', 'Target Dictionary entry not found.');
+      }
+
+      const existingMedia = Array.isArray(baseEntry.media) ? baseEntry.media : [];
+      const contributorCredit = current.recognitionConsent === true ?
+        safePublicContributorName(current.publicName) :
+        null;
+      const approvedMediaItems = approvedImages.map((img) => {
+        const item = {
+          url: img.url,
+          label: (img.caption || '').trim() || baseEntry.term || current.term,
+        };
+        if (img.imageType && img.imageType !== 'illustrative') {
+          item.imageType = img.imageType;
+        }
+        if (img.explanation) {
+          item.explanation = img.explanation;
+        }
+        if (contributorCredit) {
+          item.attribution = contributorCredit;
+        }
+        return {id: img.id, item};
+      });
+
+      let combinedMedia;
+      if (heroImageId.startsWith('submitted:')) {
+        const chosenId = heroImageId.slice('submitted:'.length);
+        const heroMatch = approvedMediaItems.find((entryItem) => entryItem.id === chosenId);
+        if (!heroMatch) {
+          throw new HttpsError('invalid-argument', 'Selected hero image must be an approved submitted image.');
+        }
+        combinedMedia = [
+          heroMatch.item,
+          ...existingMedia,
+          ...approvedMediaItems.filter((entryItem) => entryItem.id !== chosenId).map((e) => e.item),
+        ];
+      } else if (heroImageId.startsWith('existing:')) {
+        const idx = Number.parseInt(heroImageId.slice('existing:'.length), 10);
+        if (!Number.isInteger(idx) || idx < 0 || idx >= existingMedia.length) {
+          throw new HttpsError('invalid-argument', 'Selected existing hero image index is invalid.');
+        }
+        combinedMedia = [
+          existingMedia[idx],
+          ...existingMedia.filter((_, i) => i !== idx),
+          ...approvedMediaItems.map((e) => e.item),
+        ];
+      } else {
+        combinedMedia = [
+          ...existingMedia,
+          ...approvedMediaItems.map((e) => e.item),
+        ];
+      }
+      if (combinedMedia.length > 8) {
+        throw new HttpsError(
+            'invalid-argument',
+            'Publishing these images would exceed the 8-image limit on this entry.',
+        );
+      }
+
+      const entry = validateEntry({
+        ...baseEntry,
+        id: targetId,
+        slug: targetSlug,
+        media: combinedMedia,
+      });
+      const approvedSubmissionPaths = approvedSubmissionPathMap({submittedImages: approvedImages});
+      const promotion = await promoteDraftMedia(entry.media, targetId, bucket, {
+        approvedSubmissionPaths,
+        contributorCredit,
+      });
+      entry.media = promotion.media;
+      const promotedFiles = promotion.promotedFiles;
+      const cleanupPaths = updatedImages.map((img) => img?.storagePath).filter(Boolean);
+      let nextRevision = 0;
+
+      try {
+        await db.runTransaction(async (tx) => {
+          const manifestRef = db.collection('DictionaryPublic').doc('catalogue');
+          const manifest = await tx.get(manifestRef);
+          const seedSnapshots = !manifest.exists ?
+            await Promise.all(seed.map((item) => tx.get(db.collection('DictionaryEntries').doc(item.slug)))) :
+            [];
+          const txDraft = await tx.get(draft);
+          const txPublic = await tx.get(publicRef);
+          const txSuggestion = await tx.get(suggestionRef);
+          if (!txSuggestion.exists) {
+            throw new HttpsError('not-found', 'Suggestion not found.');
+          }
+          if (txSuggestion.data().status === 'published') {
+            throw new HttpsError('failed-precondition', 'This submission has already been published.');
+          }
+          const revision = txDraft.data()?.revision || txPublic.data()?.revision || 0;
+          if (raw.expectedRevision != null && raw.expectedRevision !== revision) {
+            throw new HttpsError('aborted', 'This entry changed. Reload before publishing.');
+          }
+          if (txPublic.exists && txPublic.data().id !== targetId) {
+            throw new HttpsError('already-exists', 'This slug belongs to another meaning.');
+          }
+
+          nextRevision = revision + 1;
+          const editor = {updatedAt: at, updatedByUid: request.auth.uid};
+          const draftData = {
+            ...entry,
+            revision: nextRevision,
+            status: 'published',
+            ...editor,
+            suggestionId: null,
+          };
+          tx.set(draft, draftData);
+          tx.create(draft.collection('Revisions').doc(String(nextRevision)), draftData);
+
+          for (let index = 0; index < seedSnapshots.length; index++) {
+            if (!seedSnapshots[index].exists && seed[index].slug !== entry.slug) {
+              tx.create(db.collection('DictionaryEntries').doc(seed[index].slug), seed[index]);
+            }
+          }
+          const priorNames = txPublic.data()?.attributions || [];
+          const attributions = [...new Set([...priorNames, ...(contributorCredit ? [contributorCredit] : [])])];
+          tx.set(publicRef, {
+            ...entry,
+            revision: nextRevision,
+            status: 'published',
+            publishedAt: at,
+            attributions,
+          });
+          tx.set(manifestRef, {initialized: true});
+
+          const decisionStatus = rejectedImages.length > 0 ? 'partially_approved' : 'approved';
+          tx.update(suggestionRef, {
+            status: 'published',
+            textDecision: current.textDecision || 'rejected',
+            submittedImages: updatedImages,
+            entryId: targetId,
+            heroImageId: heroImageId || null,
+            updatedAt: at,
+          });
+          tx.create(suggestionRef.collection('AuditEvents').doc(), {
+            status: decisionStatus,
+            textDecision: current.textDecision || 'rejected',
+            imageDecisions: updatedImages.map((img) => ({
+              id: img.id,
+              status: img.reviewStatus,
+            })),
+            heroImageId: heroImageId || null,
+            note: reviewNote,
+            at,
+            actorUid: request.auth.uid,
+          });
+          tx.create(suggestionRef.collection('AuditEvents').doc(), {
+            status: 'published',
+            entryId: targetId,
+            publishedImageCount: approvedImages.length,
+            rejectedImageCount: rejectedImages.length,
+            note: reviewNote,
+            at: new Date(at.getTime() + 1),
+            actorUid: request.auth.uid,
+          });
+        });
+      } catch (error) {
+        if (promotedFiles.length > 0) {
+          await Promise.allSettled(promotedFiles.map((file) => file.delete()));
+        }
+        throw error;
+      }
+
+      await cleanupEntryDraftMedia(targetId, entry.media, bucket).catch(() => {});
+      await deleteStoragePathsSafely(bucket, cleanupPaths);
+      return {
+        id: targetId,
+        suggestionId: id,
+        status: 'published',
+        revision: nextRevision,
+        publishedImageCount: approvedImages.length,
+        rejectedImageCount: rejectedImages.length,
+      };
+    }
     if (!['save', 'publish'].includes(action)) throw new HttpsError('invalid-argument', 'Invalid action.');
     const entry = validateEntry(raw.entry);
     if (entry.id !== id) throw new HttpsError('invalid-argument', 'ID mismatch.');

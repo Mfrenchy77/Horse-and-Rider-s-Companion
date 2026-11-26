@@ -736,3 +736,171 @@ test('community new_term & image_contribution enforce ownership, limits, rights,
   assert.deepEqual(storedNew.categories, ['Groundwork', 'Gymnastics']);
   assert.equal(storedNew.kind, 'new_term');
 });
+
+test('approve_and_publish enforces admin permissions, hero/gallery selection, partial approval, duplicate protection, rollback, and audit history', async () => {
+  const db = fakeDb();
+  const objects = new Map();
+  const bucket = {
+    name: 'test-bucket',
+    file(path) {
+      return {
+        name: path,
+        path,
+        async exists() {
+          return [objects.has(path)];
+        },
+        async copy(dest) {
+          assert(objects.has(path), 'Source must exist: ' + path);
+          objects.set(dest.path, {...objects.get(path)});
+        },
+        async getMetadata() {
+          return [objects.get(path)];
+        },
+        async setMetadata(meta) {
+          objects.set(path, {...objects.get(path), ...meta});
+        },
+        async delete() {
+          objects.delete(path);
+        },
+      };
+    },
+    async getFiles({prefix} = {}) {
+      const matched = [...objects.entries()]
+          .filter(([path]) => !prefix || path.startsWith(prefix))
+          .map(([path, metadata]) => ({
+            name: path,
+            metadata,
+            async delete() {
+              objects.delete(path);
+            },
+          }));
+      return [matched];
+    },
+  };
+
+  const urlFor = (objectPath) =>
+    'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+    encodeURIComponent(objectPath) +
+    '?alt=media&token=tok';
+
+  const submit = submitDictionarySuggestion(db, {secret: 'test-secret', bucket});
+  const edit = editDictionary(db, {bucket});
+
+  // Seed initial published Canter entry with one existing image.
+  const canterSeed = seeds.find((item) => item.id === 'canter');
+  const existingPublicPath = 'dictionary_public/canter/existing-1.png';
+  objects.set(existingPublicPath, {contentType: 'image/png', size: 1024, timeCreated: '2026-11-20T00:00:00Z'});
+  await edit(request({
+    action: 'publish',
+    id: 'canter',
+    expectedRevision: 0,
+    entry: {
+      ...canterSeed,
+      media: [{url: urlFor(existingPublicPath), label: 'Existing stride diagram'}],
+    },
+  }, admin));
+  assert.equal(db.store.get('DictionaryEntries/canter').revision, 1);
+
+  const subId = randomUUID();
+  const pHero = `dictionary_submissions/${member.uid}/${subId}/hero_lead.png`;
+  const pGallery = `dictionary_submissions/${member.uid}/${subId}/gallery_cadence.jpg`;
+  const pReject = `dictionary_submissions/${member.uid}/${subId}/blurry_skip.jpg`;
+  objects.set(pHero, {contentType: 'image/png', size: 2048, timeCreated: '2026-11-25T10:00:00Z'});
+  objects.set(pGallery, {contentType: 'image/jpeg', size: 2048, timeCreated: '2026-11-25T10:00:00Z'});
+  objects.set(pReject, {contentType: 'image/jpeg', size: 2048, timeCreated: '2026-11-25T10:00:00Z'});
+
+  await submit(request({
+    submissionId: subId,
+    term: 'Canter',
+    termId: 'canter',
+    kind: 'image_contribution',
+    rightsConfirmed: true,
+    recognitionConsent: true,
+    publicName: 'Elena Ranch',
+    submittedImages: [
+      {id: 'img_gallery', url: urlFor(pGallery), sha256: '1'.repeat(64), caption: 'Balanced cadence', imageType: 'photograph'},
+      {id: 'img_hero', url: urlFor(pHero), sha256: '2'.repeat(64), caption: 'Right lead footfalls', explanation: 'Three-beat sequence.', imageType: 'diagram'},
+      {id: 'img_reject', url: urlFor(pReject), sha256: '3'.repeat(64), caption: 'Blurry shot', imageType: 'photograph'},
+    ],
+  }, member));
+
+  const publishReq = (overrides = {}) => ({
+    action: 'approve_and_publish',
+    id: subId,
+    expectedRevision: 1,
+    heroImageId: 'submitted:img_hero',
+    note: 'Approved clear lead diagram and cadence photo; rejected blurry shot.',
+    imageDecisions: [
+      {id: 'img_gallery', status: 'approved', caption: 'Balanced arena cadence', imageType: 'photograph'},
+      {id: 'img_hero', status: 'approved', caption: 'Right lead footfalls', explanation: 'Three-beat sequence.', imageType: 'diagram'},
+      {id: 'img_reject', status: 'rejected'},
+    ],
+    ...overrides,
+  });
+
+  // 1. Permission enforcement: non-admins and unverified admins cannot approve_and_publish.
+  for (const auth of [null, member, {uid: 'mod', token: {moderator: true, email_verified: true}}, {uid: 'unv', token: {admin: true, email_verified: false}}]) {
+    await assert.rejects(edit(request(publishReq(), auth)), {code: 'permission-denied'});
+  }
+
+  // 2. Validation failure: approving 0 images must reject without mutating public entry or promoted files.
+  await assert.rejects(
+      edit(request(publishReq({
+        heroImageId: 'existing:0',
+        imageDecisions: [
+          {id: 'img_gallery', status: 'rejected'},
+          {id: 'img_hero', status: 'rejected'},
+          {id: 'img_reject', status: 'rejected'},
+        ],
+      }), admin)),
+      {code: 'invalid-argument'},
+  );
+  assert.equal(db.store.get('DictionaryEntries/canter').media.length, 1);
+
+  // 3. Stale expectedRevision must abort and roll back any promoted public files.
+  const publicBeforeStale = [...objects.keys()].filter((p) => p.startsWith('dictionary_public/canter/'));
+  await assert.rejects(
+      edit(request(publishReq({expectedRevision: 0}), admin)),
+      {code: 'aborted'},
+  );
+  assert.deepEqual(
+      [...objects.keys()].filter((p) => p.startsWith('dictionary_public/canter/')),
+      publicBeforeStale,
+  );
+
+  // 4. Successful single-action approve_and_publish with hero selection and partial image rejection.
+  const result = await edit(request(publishReq(), admin));
+  assert.equal(result.status, 'published');
+  assert.equal(result.publishedImageCount, 2);
+  assert.equal(result.rejectedImageCount, 1);
+  assert.equal(result.revision, 2);
+
+  const publishedEntry = db.store.get('DictionaryEntries/canter');
+  assert.equal(publishedEntry.revision, 2);
+  assert.equal(publishedEntry.media.length, 3);
+  assert.equal(publishedEntry.media[0].label, 'Right lead footfalls');
+  assert.equal(publishedEntry.media[0].imageType, 'diagram');
+  assert.equal(publishedEntry.media[0].attribution, 'Elena Ranch');
+  assert.equal(publishedEntry.media[1].label, 'Existing stride diagram');
+  assert.equal(publishedEntry.media[2].label, 'Balanced arena cadence');
+  assert.deepEqual(publishedEntry.attributions, ['Elena Ranch']);
+
+  // Temp submission files cleaned up after promotion/rejection.
+  assert(!objects.has(pHero));
+  assert(!objects.has(pGallery));
+  assert(!objects.has(pReject));
+
+  // Audit history preserves both review decision and publication events.
+  const auditEvents = [...db.store.entries()]
+      .filter(([key]) => key.startsWith(`DictionarySuggestions/${subId}/AuditEvents/`))
+      .map(([, val]) => val);
+  assert.equal(auditEvents.length, 2);
+  assert(auditEvents.some((e) => e.status === 'partially_approved'));
+  assert(auditEvents.some((e) => e.status === 'published' && e.publishedImageCount === 2));
+
+  // 5. Duplicate publication protection: second approve_and_publish is rejected cleanly.
+  await assert.rejects(
+      edit(request(publishReq({expectedRevision: 2}), admin)),
+      {code: 'failed-precondition'},
+  );
+});
