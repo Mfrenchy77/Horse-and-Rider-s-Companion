@@ -100,7 +100,11 @@ class _CountingStore implements SkillTreeV2Store {
   );
 }
 
-AppState _buildTestAppState({List<Resource> resources = const []}) {
+AppState _buildTestAppState({
+  List<Resource> resources = const [],
+  bool isForRider = true,
+  HorseProfile? horseProfile,
+}) {
   final rider = RiderProfile(
     id: 'uid-alex',
     email: 'alex@example.com',
@@ -112,7 +116,9 @@ AppState _buildTestAppState({List<Resource> resources = const []}) {
     User(id: 'uid-alex', name: 'Alex Rider', email: 'alex@example.com'),
   ).copyWith(
     isGuest: false,
+    isForRider: isForRider,
     usersProfile: rider,
+    horseProfile: horseProfile,
     hasResourceCatalogue: true,
     resources: resources,
   );
@@ -719,5 +725,157 @@ void main() {
         '$scratch/final_mobile_my_skills.png',
       );
     });
+
+    testWidgets(
+      'displays family SVG icon badge in mobile skill detail header in Dark '
+      'and Light modes (Rider & Horse) and omits duplicate badge on desktop',
+      (tester) async {
+        final inner = await _createSeededProgressStore(
+          families: allFamilies,
+          skills: allSkills,
+        );
+        final counting = _CountingStore(inner);
+        final repo = SkillTreeV2Repository(store: counting);
+        final mockAppCubit = _MockAppCubit();
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.devicePixelRatio = 1;
+
+        for (final entry in [
+          (theme: mainThemeDark, size: const Size(390, 844)),
+          (theme: mainThemeLight, size: const Size(320, 700)),
+        ]) {
+          tester.view.physicalSize = entry.size;
+          when(() => mockAppCubit.state).thenReturn(_buildTestAppState());
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          await tester.pumpWidget(
+            _wrapTree(
+              appCubit: mockAppCubit,
+              repo: repo,
+              settings: settings,
+              themeOverride: _withScreenshotFonts(entry.theme),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final readsBeforeOpen =
+              counting.curriculumReads +
+              counting.progressReads +
+              counting.verificationReads;
+
+          await tester.tap(
+            find.byKey(
+              const Key(
+                'skillFamilyHeader_rider.husbandry.daily_care_grooming',
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+          );
+          await tester.pumpAndSettle();
+
+          final iconFinder = find.byKey(
+            const Key(
+              'skillDetailV2FamilyIcon_rider.husbandry.daily_care_grooming',
+            ),
+          );
+          expect(iconFinder, findsOneWidget);
+          final badge = tester.widget<SkillFamilyIconBadge>(iconFinder);
+          expect(badge.badgeSize, inInclusiveRange(32, 40));
+
+          final svg = tester.widget<SvgPicture>(
+            find.descendant(of: iconFinder, matching: find.byType(SvgPicture)),
+          );
+          final titleFinder = find.descendant(
+            of: find.byType(SkillDetailV2Panel),
+            matching: find.text('Grooming'),
+          );
+          final iconRect = tester.getRect(iconFinder);
+          final titleRect = tester.getRect(titleFinder);
+          expect(iconRect.bottom, lessThanOrEqualTo(titleRect.top));
+
+          expect(
+            svg.colorFilter,
+            ColorFilter.mode(
+              SkillFamilyIcon.resolveColor(
+                tester.element(iconFinder),
+                state: SkillFamilyIconState.selected,
+              ),
+              BlendMode.srcIn,
+            ),
+          );
+
+          final readsAfterOpen =
+              counting.curriculumReads +
+              counting.progressReads +
+              counting.verificationReads;
+          expect(readsAfterOpen, readsBeforeOpen);
+          expect(tester.takeException(), isNull);
+        }
+
+        // Horse context on mobile -> displays Horse family SVG badge.
+        final horseSkill = allSkills.firstWhere(
+          (s) =>
+              s.subject == SkillSubject.horse &&
+              s.realm == SkillCategory.In_Hand,
+        );
+        final horseState = _buildTestAppState(
+          isForRider: false,
+          horseProfile: HorseProfile(id: 'horse-comet', name: 'Comet'),
+        );
+        when(() => mockAppCubit.state).thenReturn(horseState);
+        tester.view.physicalSize = const Size(390, 844);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.pumpWidget(
+          _wrapTree(
+            appCubit: mockAppCubit,
+            repo: repo,
+            settings: settings,
+            themeOverride: _withScreenshotFonts(mainThemeDark),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(Key('skillFamilyHeader_${horseSkill.familyId}')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(Key('skillCard_${horseSkill.id}')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(Key('skillDetailV2FamilyIcon_${horseSkill.familyId}')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+
+        // Desktop master-detail omits the duplicate detail header badge.
+        when(() => mockAppCubit.state).thenReturn(_buildTestAppState());
+        tester.view.physicalSize = const Size(1280, 860);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.pumpWidget(
+          _wrapTree(
+            appCubit: mockAppCubit,
+            repo: repo,
+            settings: settings,
+            themeOverride: _withScreenshotFonts(mainThemeDark),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.descendant(
+            of: find.byType(SkillDetailV2Panel),
+            matching: find.byType(SkillFamilyIconBadge),
+          ),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

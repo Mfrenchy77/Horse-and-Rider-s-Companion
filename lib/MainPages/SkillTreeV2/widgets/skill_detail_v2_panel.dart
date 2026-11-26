@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotligh
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_icon.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class SkillDetailV2Panel extends StatelessWidget {
@@ -79,6 +80,11 @@ class SkillDetailV2Panel extends StatelessWidget {
         : state.skills.where((s) => s.id == skill.replacedBy).firstOrNull;
 
     final isCompact = MediaQuery.sizeOf(context).width < 600;
+    final breadcrumbText =
+        '${subjectDisplayLabel(skill.subject)} · '
+        '${realmDisplayLabel(skill.realm)}'
+        '${family == null ? '' : ' · ${family.name}'}';
+    final showFamilyIconBadge = isCompact || onBack != null;
 
     return AppSurfaceCard(
       key: Key('skillDetailV2_${skill.id}'),
@@ -103,15 +109,42 @@ class SkillDetailV2Panel extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppTokens.spaceXs,
             children: [
-              Text(
-                '${subjectDisplayLabel(skill.subject)} · '
-                '${realmDisplayLabel(skill.realm)}'
-                '${family == null ? '' : ' · ${family.name}'}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppTokens.secondaryTextColor(context),
-                  fontWeight: FontWeight.w600,
+              if (showFamilyIconBadge)
+                Row(
+                  children: [
+                    SkillFamilyIconBadge(
+                      key: Key('skillDetailV2FamilyIcon_${skill.familyId}'),
+                      familyId: skill.familyId,
+                      fallbackRealm: skill.realm,
+                      badgeSize: 38,
+                      iconSize: 26,
+                      state: SkillFamilyIconState.selected,
+                      semanticLabel: family == null
+                          ? realmDisplayLabel(skill.realm)
+                          : '${family.name} family icon',
+                    ),
+                    const SizedBox(width: AppTokens.spaceSm),
+                    Expanded(
+                      child: Text(
+                        breadcrumbText,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppTokens.secondaryTextColor(context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Text(
+                  breadcrumbText,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppTokens.secondaryTextColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
