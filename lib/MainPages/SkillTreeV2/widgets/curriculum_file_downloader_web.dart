@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:js_interop';
+import 'dart:typed_data';
 
-import 'package:universal_html/html.dart' as html;
+import 'package:web/web.dart' as web;
 
 /// Thrown when direct browser file download is unavailable on the current
 /// platform.
@@ -15,18 +17,22 @@ class CurriculumDownloadUnsupportedException implements Exception {
 /// Triggers a browser file download of [content] named [fileName] on Flutter
 /// Web using a UTF-8 JSON Blob and anchor download link.
 Future<void> downloadCurriculumFile(String fileName, String content) async {
-  final bytes = utf8.encode(content);
-  final blob = html.Blob([bytes], 'application/json;charset=utf-8');
-  final url = html.Url.createObjectUrlFromBlob(blob);
+  final bytes = Uint8List.fromList(utf8.encode(content));
+  final blob = web.Blob(
+    <JSUint8Array>[bytes.toJS].toJS,
+    web.BlobPropertyBag(type: 'application/json;charset=utf-8'),
+  );
+  final url = web.URL.createObjectURL(blob);
   try {
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', fileName)
+    final anchor = (web.document.createElement('a') as web.HTMLAnchorElement)
+      ..href = url
+      ..download = fileName
       ..style.display = 'none';
-    html.document.body?.append(anchor);
+    web.document.body?.append(anchor);
     anchor
       ..click()
       ..remove();
   } finally {
-    html.Url.revokeObjectUrl(url);
+    web.URL.revokeObjectURL(url);
   }
 }
