@@ -1180,7 +1180,29 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppCubit>().state;
+    // Watch only the profile, identity, permission, and resource-catalogue slices
+    // used in build() so unrelated AppState updates do not rebuild SkillTreeV2View.
+    context.select(
+      (AppCubit c) => (
+        c.state.isForRider,
+        c.state.isViewing,
+        c.state.isGuest,
+        c.state.isAdmin,
+        c.state.user.id,
+        c.state.user.emailVerified,
+        c.state.usersProfile?.email,
+        c.state.usersProfile?.name,
+        c.state.viewingProfile?.email,
+        c.state.viewingProfile?.name,
+        c.state.horseProfile?.id,
+        c.state.horseProfile?.name,
+        c.state.horseProfile?.currentOwnerId,
+        c.state.horseProfile?.isArchived,
+        c.state.resources.length,
+        c.state.allSkills.length,
+      ),
+    );
+    final appState = context.read<AppCubit>().state;
     final connectionState = context.watch<ConnectionsCubit?>()?.state;
 
     return BlocProvider.value(

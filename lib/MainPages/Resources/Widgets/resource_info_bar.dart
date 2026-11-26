@@ -74,19 +74,40 @@ class ResourceInfoBar extends StatelessWidget {
         : null;
   }
 
+  /// Bounded in-memory cache of extracted Quill plain-text article snippets so
+  /// scrolling through large resource lists never re-parses JSON every frame.
+  static final _articleSnippetCache = <String, String>{};
+  static const _maxSnippetCacheEntries = 200;
+
   /// Plain-text snippet for articles (from stored Quill Delta).
   String _articleSnippet() {
     final jsonStr = resource.content;
     if (jsonStr == null || jsonStr.trim().isEmpty) return 'Article';
+    final cacheKey =
+        '${resource.id ?? ''}:${jsonStr.length}:${jsonStr.hashCode}';
+    final cached = _articleSnippetCache.remove(cacheKey);
+    if (cached != null) {
+      _articleSnippetCache[cacheKey] = cached;
+      return cached;
+    }
+    String result;
     try {
       final decoded = jsonDecode(jsonStr);
-      if (decoded is! List) return 'Article';
-      final doc = Document.fromJson(decoded);
-      final plain = doc.toPlainText().trim();
-      return plain.isEmpty ? 'Article' : plain;
+      if (decoded is! List) {
+        result = 'Article';
+      } else {
+        final doc = Document.fromJson(decoded);
+        final plain = doc.toPlainText().trim();
+        result = plain.isEmpty ? 'Article' : plain;
+      }
     } catch (_) {
-      return 'Article';
+      result = 'Article';
     }
+    _articleSnippetCache[cacheKey] = result;
+    if (_articleSnippetCache.length > _maxSnippetCacheEntries) {
+      _articleSnippetCache.remove(_articleSnippetCache.keys.first);
+    }
+    return result;
   }
 
   void _openLinkOrArticle(BuildContext context) {
@@ -153,9 +174,14 @@ class ResourceInfoBar extends StatelessWidget {
           ),
       child: Material(
         type: MaterialType.transparency,
-        child: BlocBuilder<AppCubit, AppState>(
-          builder: (context, state) {
+        child: Builder(
+          builder: (context) {
             final cubit = context.read<AppCubit>();
+            final allSkills = context.select((AppCubit c) => c.state.allSkills);
+            final isEditMode = context.select((AppCubit c) => c.state.isEdit);
+            final canEdit = context.select(
+              (AppCubit c) => c.canEditResource(resource) && c.state.isEdit,
+            );
             final imageUrl = _primaryImageUrl();
             final title = _titleOrUntitled();
             final isVideo =
@@ -168,9 +194,11 @@ class ResourceInfoBar extends StatelessWidget {
                 ? resource.authorName?.trim() ?? ''
                 : resourceWebUri(resource.url)?.host ?? '';
             final skillIds = resource.skillTreeIds.toSet();
-            final skills = state.allSkills.whereType<Skill>().where(
-              (skill) => skillIds.contains(skill.id),
-            );
+            final skills = skillIds.isEmpty
+                ? const <Skill>[]
+                : allSkills.whereType<Skill>().where(
+                    (skill) => skillIds.contains(skill.id),
+                  );
 
             final canOpenImage = !_isArticle || canOpenArticle;
             final image = InkWell(
@@ -242,8 +270,7 @@ class ResourceInfoBar extends StatelessWidget {
                         ),
                       ),
                       Visibility(
-                        visible:
-                            cubit.canEditResource(resource) && state.isEdit,
+                        visible: isEditMode && canEdit,
                         child: PopupMenuButton<String>(
                           itemBuilder: (BuildContext menuContext) => const [
                             PopupMenuItem<String>(
@@ -256,9 +283,10 @@ class ResourceInfoBar extends StatelessWidget {
                             ),
                           ],
                           onSelected: (String value) {
+                            final appState = cubit.state;
                             switch (value) {
                               case 'Edit':
-                                if (state.usersProfile != null) {
+                                if (appState.usersProfile != null) {
                                   showAppGlassModalBottomSheet<
                                     CreateResourceDialogCubit
                                   >(
@@ -266,8 +294,8 @@ class ResourceInfoBar extends StatelessWidget {
                                     useSafeArea: true,
                                     context: context,
                                     builder: (context) => CreateResourcDialog(
-                                      skills: state.allSkills,
-                                      userProfile: state.usersProfile!,
+                                      skills: appState.allSkills,
+                                      userProfile: appState.usersProfile!,
                                       resource: resource,
                                     ),
                                   );

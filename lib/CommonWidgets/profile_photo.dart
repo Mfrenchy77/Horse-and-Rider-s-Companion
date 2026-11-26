@@ -30,6 +30,9 @@ class ProfilePhoto extends StatelessWidget {
       }
       return null;
     }();
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final radius = size / 3;
+    final cachePx = (radius * 2 * dpr).round().clamp(64, 512);
     return profilePicUrl != null && profilePicUrl!.isNotEmpty
         ? Material(
             type: MaterialType.transparency,
@@ -40,19 +43,27 @@ class ProfilePhoto extends StatelessWidget {
                 heroTag: computedHeroTag,
               ),
               child: CircleAvatar(
-                radius: size / 3,
+                radius: radius,
                 backgroundColor: Colors.grey,
-                backgroundImage: NetworkImage(profilePicUrl!),
+                backgroundImage: ResizeImage.resizeIfNeeded(
+                  cachePx,
+                  null,
+                  NetworkImage(profilePicUrl!),
+                ),
               ),
             ),
           )
         : CircleAvatar(
-            radius: size / 3,
+            radius: radius,
             backgroundColor: Colors.transparent,
-            backgroundImage: AssetImage(
-              isDark
-                  ? 'assets/horse_icon_circle_dark.png'
-                  : 'assets/horse_icon_circle.png',
+            backgroundImage: ResizeImage.resizeIfNeeded(
+              cachePx,
+              null,
+              AssetImage(
+                isDark
+                    ? 'assets/horse_icon_circle_dark.png'
+                    : 'assets/horse_icon_circle.png',
+              ),
             ),
           );
   }

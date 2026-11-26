@@ -237,13 +237,11 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
   }
 
   Future<void> _review(Map<String, dynamic> item, String status) async {
-    final note = TextEditingController();
     await showAppGlassDialog<void>(
       context: context,
       builder: (_) => _ReviewDialog(
         item: item,
         status: status,
-        note: note,
         repository: _repository,
       ),
     );
@@ -1408,20 +1406,26 @@ class _ReviewDialog extends StatefulWidget {
   const _ReviewDialog({
     required this.item,
     required this.status,
-    required this.note,
     required this.repository,
   });
   final Map<String, dynamic> item;
   final String status;
-  final TextEditingController note;
   final DictionaryRepository repository;
   @override
   State<_ReviewDialog> createState() => _ReviewDialogState();
 }
 
 class _ReviewDialogState extends State<_ReviewDialog> {
+  final TextEditingController _note = TextEditingController();
   bool _busy = false;
   String? _error;
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => AppGlassDialog(
     title: Text(widget.status.replaceAll('_', ' ')),
@@ -1430,7 +1434,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
       spacing: 10,
       children: [
         TextField(
-          controller: widget.note,
+          controller: _note,
           maxLength: 2000,
           minLines: 2,
           maxLines: 4,
@@ -1463,7 +1467,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
                     'action': 'review',
                     'id': widget.item['id'],
                     'status': widget.status,
-                    'note': widget.note.text,
+                    'note': _note.text,
                   });
                   if (context.mounted) Navigator.pop(context);
                 } catch (error) {
@@ -2890,9 +2894,8 @@ class _EntryEditorState extends State<_EntryEditor> {
             if (previewEntry.explanation.isNotEmpty)
               DictionaryText(
                 text: previewEntry.explanation,
-                entries: widget.existingEntries
-                    .where((other) => other.id != previewEntry.id)
-                    .toList(),
+                entries: widget.existingEntries,
+                excludeEntryId: previewEntry.id,
               ),
             if (previewEntry.text('usage').isNotEmpty)
               Text('Usage: ${previewEntry.text('usage')}'),

@@ -29,114 +29,104 @@ class ResourcesItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        final cubit = context.read<AppCubit>();
-        final isNew =
-            resource.lastEditDate != null && cubit.isNewResource(resource);
+    final cubit = context.read<AppCubit>();
+    final isNew =
+        resource.lastEditDate != null &&
+        context.select((AppCubit c) => c.isNewResource(resource));
 
-        // Avoid mutating the incoming model in a widget; ensure non-null list
-        final resourceForUi = resource.usersWhoRated == null
-            ? resource.copyWith(usersWhoRated: <BaseListItem>[])
-            : resource;
+    // Avoid mutating the incoming model in a widget; ensure non-null list
+    final resourceForUi = resource.usersWhoRated == null
+        ? resource.copyWith(usersWhoRated: <BaseListItem>[])
+        : resource;
 
-        // Ensure we have a "current user rating item" if already present
-        final currentUserId = state.usersProfile?.email ?? '';
-        resourceForUi.usersWhoRated?.firstWhere(
-          (e) => e.id == currentUserId,
-          orElse: () => BaseListItem(id: currentUserId),
+    final isVideo =
+        resource.type != ResourceType.article &&
+        youtubeWatchUri(resource.url) != null;
+
+    void openComments() {
+      final id = resource.id ?? '';
+      if (id.isEmpty) {
+        cubit.createError('Missing resource id');
+        return;
+      }
+      if (fromSkillTree) {
+        cubit.selectResource(resource);
+        context.goNamed(
+          ResourceCommentPage.name,
+          pathParameters: {ResourceCommentPage.pathParams: id},
         );
+        return;
+      }
+      context.pushNamed(
+        ResourceCommentPage.name,
+        pathParameters: {ResourceCommentPage.pathParams: id},
+      );
+    }
 
-        final isVideo =
-            resource.type != ResourceType.article &&
-            youtubeWatchUri(resource.url) != null;
-
-        void openComments() {
-          final id = resource.id ?? '';
-          if (id.isEmpty) {
-            cubit.createError('Missing resource id');
-            return;
-          }
-          if (fromSkillTree) {
-            cubit.selectResource(resource);
-            context.goNamed(
-              ResourceCommentPage.name,
-              pathParameters: {ResourceCommentPage.pathParams: id},
-            );
-            return;
-          }
-          context.pushNamed(
-            ResourceCommentPage.name,
-            pathParameters: {ResourceCommentPage.pathParams: id},
-          );
-        }
-
-        return AppSurfaceCard(
-          padding: EdgeInsets.zero,
-          child: Stack(
-            children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                hoverColor: AppTokens.hoverOverlay(context),
-                highlightColor: AppTokens.pressOverlay(context),
-                focusColor: AppTokens.focusOverlay(context),
-                splashColor: AppTokens.pressOverlay(context),
-                onTap: isVideo
-                    ? () => cubit.openResource(url: resource.url)
-                    : openComments,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ResourceInfoBar(
-                      key: const Key('ResourceInfoBar'),
-                      resource: resourceForUi,
-                    ),
-                    if (isResourceList)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppTokens.spaceMd,
-                          0,
-                          AppTokens.spaceMd,
-                          AppTokens.spaceSm + 4,
-                        ),
-                        child: Column(
-                          children: [
-                            const Divider(height: AppTokens.spaceMd),
-                            RatingsBar(isNew: isNew, resource: resourceForUi),
-                            ResourceRatingButtons(
-                              key: const Key('ResourceRatingButtons'),
-                              resource: resourceForUi,
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (isVideo && !isResourceList && resource.id != null)
-                      Center(
-                        child: TextButton(
-                          onPressed: openComments,
-                          child: const Text('Comments'),
-                        ),
-                      ),
-                  ],
+    return AppSurfaceCard(
+      padding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+            hoverColor: AppTokens.hoverOverlay(context),
+            highlightColor: AppTokens.pressOverlay(context),
+            focusColor: AppTokens.focusOverlay(context),
+            splashColor: AppTokens.pressOverlay(context),
+            onTap: isVideo
+                ? () => cubit.openResource(url: resource.url)
+                : openComments,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ResourceInfoBar(
+                  key: const Key('ResourceInfoBar'),
+                  resource: resourceForUi,
                 ),
-              ),
-              if (isNew)
-                const Positioned(
-                  top: 0,
-                  left: 0,
-                  child: IgnorePointer(
-                    child: CornerBanner(
-                      bannerColor: Colors.blue,
-                      elevation: 4,
-                      child: Text('New'),
+                if (isResourceList)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTokens.spaceMd,
+                      0,
+                      AppTokens.spaceMd,
+                      AppTokens.spaceSm + 4,
+                    ),
+                    child: Column(
+                      children: [
+                        const Divider(height: AppTokens.spaceMd),
+                        RatingsBar(isNew: isNew, resource: resourceForUi),
+                        ResourceRatingButtons(
+                          key: const Key('ResourceRatingButtons'),
+                          resource: resourceForUi,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-            ],
+                if (isVideo && !isResourceList && resource.id != null)
+                  Center(
+                    child: TextButton(
+                      onPressed: openComments,
+                      child: const Text('Comments'),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        );
-      },
+          if (isNew)
+            const Positioned(
+              top: 0,
+              left: 0,
+              child: IgnorePointer(
+                child: CornerBanner(
+                  bannerColor: Colors.blue,
+                  elevation: 4,
+                  child: Text('New'),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

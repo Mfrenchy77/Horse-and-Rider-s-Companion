@@ -264,6 +264,7 @@ class _HorsePhotoCard extends StatelessWidget {
             'assets/horse_logo.png',
             width: 44,
             height: 44,
+            cacheWidth: 96,
             color: isDark
                 ? Colors.white.withValues(alpha: 0.36)
                 : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
@@ -300,6 +301,10 @@ class _HorsePhotoCard extends StatelessWidget {
                     Image.network(
                       photo,
                       fit: BoxFit.cover,
+                      cacheWidth:
+                          (220 * MediaQuery.devicePixelRatioOf(context))
+                              .round()
+                              .clamp(220, 660),
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return placeholder;

@@ -76,7 +76,7 @@ class SmartImage extends StatelessWidget {
 
     Uri proxyFor(Uri uri) => Uri.parse(
       'https://wsrv.nl/?url=${Uri.encodeComponent(uri.toString())}'
-      '&w=$targetWidth&dpr=${dpr.toStringAsFixed(2)}&we=1'
+      '&w=${max(1, maxLogicalWidth.round())}&dpr=${dpr.toStringAsFixed(2)}&we=1'
       '${config.forceWebP ? '&output=webp' : ''}',
     );
 
@@ -114,7 +114,9 @@ class SmartImage extends StatelessWidget {
                 },
         );
     _previews[key] = preview;
-    if (_previews.length > _cacheLimit) _previews.remove(_previews.keys.first);
+    if (_previews.length > _cacheLimit) {
+      _previews.remove(_previews.keys.first)?.disposeIfUnused();
+    }
 
     return ValueListenableBuilder<Uri?>(
       valueListenable: preview,
@@ -134,7 +136,7 @@ class SmartImage extends StatelessWidget {
                   candidate.host != 'wsrv.nl'
               ? WebHtmlElementStrategy.fallback
               : WebHtmlElementStrategy.never,
-          cacheWidth: kIsWeb ? null : targetWidth,
+          cacheWidth: targetWidth,
           errorBuilder: (context, error, stack) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(preview.advance(candidate));
@@ -204,6 +206,12 @@ class _Preview extends ValueNotifier<Uri?> {
   final List<Uri> _candidates;
   Future<Uri?> Function()? _replacement;
   var _index = 0;
+
+  void disposeIfUnused() {
+    if (!hasListeners) {
+      dispose();
+    }
+  }
 
   Future<void> advance(Uri failed) async {
     if (value != failed) return;

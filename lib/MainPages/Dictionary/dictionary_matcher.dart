@@ -54,6 +54,7 @@ class _CompiledDictionaryIndex {
       }
     }
 
+    final contextualTerms = <String, DictionaryEntry>{};
     for (final entry in published.where((entry) => entry.contextual)) {
       for (final name in {entry.term, ...entry.strings('synonyms')}) {
         final trimmed = name.trim();
@@ -62,22 +63,48 @@ class _CompiledDictionaryIndex {
         if ((meaningsByName[lower]?.length ?? 0) > 1) {
           continue;
         }
-        contextualPatterns.add((
-          RegExp(
-            r'(?<![\p{L}\p{N}_])' +
-                RegExp.escape(trimmed) +
-                r'(?![\p{L}\p{N}_])',
-            caseSensitive: false,
-            unicode: true,
-          ),
-          entry,
-        ));
+        contextualTerms.putIfAbsent(lower, () => entry);
       }
     }
+
+    contextualEntriesByLower = contextualTerms;
+    contextualRegex = _compileAlternation(contextualTerms.keys);
   }
 
-  final List<(RegExp, DictionaryEntry)> contextualPatterns = [];
+  late final RegExp? contextualRegex;
+  late final Map<String, DictionaryEntry> contextualEntriesByLower;
+  final Map<String, RegExp?> _excludedRegexCache = {};
   final Map<String, List<DictionaryEntry>> lookupByKey = {};
+
+  static RegExp? _compileAlternation(Iterable<String> keys) {
+    final sortedTerms = keys.toList()
+      ..sort((a, b) {
+        final byLength = b.length.compareTo(a.length);
+        return byLength == 0 ? a.compareTo(b) : byLength;
+      });
+    if (sortedTerms.isEmpty) return null;
+    // Longest-first alternation lets a single Unicode-aware regex pass
+    // match multiword terms before their shorter sub-terms.
+    final patternSource = sortedTerms.map(RegExp.escape).join('|');
+    return RegExp(
+      r'(?<![\p{L}\p{N}_])(?:' + patternSource + r')(?![\p{L}\p{N}_])',
+      caseSensitive: false,
+      unicode: true,
+    );
+  }
+
+  RegExp? patternExcluding(String? excludeEntryId) {
+    if (excludeEntryId == null || excludeEntryId.isEmpty) {
+      return contextualRegex;
+    }
+    if (_excludedRegexCache.containsKey(excludeEntryId)) {
+      return _excludedRegexCache[excludeEntryId];
+    }
+    final filtered = contextualEntriesByLower.entries
+        .where((e) => e.value.id != excludeEntryId)
+        .map((e) => e.key);
+    return _excludedRegexCache[excludeEntryId] = _compileAlternation(filtered);
+  }
 
   void _addLookup(String key, DictionaryEntry entry) {
     final list = lookupByKey.putIfAbsent(key, () => <DictionaryEntry>[]);
@@ -130,23 +157,31 @@ List<DictionaryMatch> matchDictionaryTerms(
   String text,
   List<DictionaryEntry> entries, {
   int maxMatches = 6,
+  String? excludeEntryId,
 }) {
   if (text.isEmpty || entries.isEmpty || maxMatches <= 0) return const [];
   final index = _indexFor(entries);
-  if (index.contextualPatterns.isEmpty) return const [];
+  final pattern = index.patternExcluding(excludeEntryId);
+  if (pattern == null) return const [];
 
   final candidates = <DictionaryMatch>[];
-  for (final (pattern, entry) in index.contextualPatterns) {
-    for (final match in pattern.allMatches(text)) {
-      candidates.add(DictionaryMatch(match.start, match.end, entry));
-    }
+  for (final match in pattern.allMatches(text)) {
+    final matched = match.group(0);
+    if (matched == null) continue;
+    final entry = index.contextualEntriesByLower[matched.toLowerCase()];
+    if (entry == null) continue;
+    candidates.add(DictionaryMatch(match.start, match.end, entry));
   }
   if (candidates.isEmpty) return const [];
 
-  candidates.sort((a, b) {
-    final length = (b.end - b.start).compareTo(a.end - a.start);
-    return length == 0 ? a.start.compareTo(b.start) : length;
-  });
+  // Preserve longest-expression priority when multiple synonyms of the same
+  // entry appear anywhere (e.g. 'lateral flexion' > 'sidepass').
+  if (candidates.length > 1) {
+    candidates.sort((a, b) {
+      final length = (b.end - b.start).compareTo(a.end - a.start);
+      return length == 0 ? a.start.compareTo(b.start) : length;
+    });
+  }
 
   final selected = <DictionaryMatch>[];
   final ids = <String>{};

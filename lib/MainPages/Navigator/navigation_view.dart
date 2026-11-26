@@ -244,7 +244,7 @@ class _NavigationViewState extends State<NavigationView> {
       child: Builder(
         builder: (context) {
           final isForRider = context.select((AppCubit c) => c.state.isForRider);
-          final screenWidth = MediaQuery.of(context).size.width;
+          final screenWidth = MediaQuery.sizeOf(context).width;
 
           final isMedium = screenWidth >= NavigationView.mediumScreenWidth;
           final isLarge = screenWidth >= NavigationView.largeScreenWidth;

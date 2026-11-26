@@ -70,37 +70,22 @@ class PersonalizedLogbookBackdrop extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Transform.scale(
-                        scale: 1.12,
-                        child: ColorFiltered(
-                          colorFilter: _desaturate,
-                          child: photoWidget,
+                      ImageFiltered(
+                        imageFilter: ui.ImageFilter.blur(
+                          sigmaX: 24,
+                          sigmaY: 24,
+                          tileMode: ui.TileMode.clamp,
                         ),
-                      ),
-                      // Blur tuning (2/3): Stacked BackdropFilter passes
-                      // (keep each sigma <= 30 so WebGL/CanvasKit does not
-                      // clamp or skip the blur; add/remove passes to taste).
-                      Positioned.fill(
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(
-                            sigmaX: 28,
-                            sigmaY: 28,
+                        child: Transform.scale(
+                          scale: 1.12,
+                          child: ColorFiltered(
+                            colorFilter: _desaturate,
+                            child: photoWidget,
                           ),
-                          child: const SizedBox.expand(),
                         ),
                       ),
-                      Positioned.fill(
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(
-                            sigmaX: 28,
-                            sigmaY: 28,
-                          ),
-                          child: const SizedBox.expand(),
-                        ),
-                      ),
-                      // Blur tuning (3/3): Midnight-teal atmospheric scrim
-                      // controlling how much of the blurred photo shows
-                      // through (higher alpha = darker/subtler).
+                      // Midnight-teal atmospheric scrim controlling how much of
+                      // the blurred photo shows through (higher alpha = darker/subtler).
                       DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(

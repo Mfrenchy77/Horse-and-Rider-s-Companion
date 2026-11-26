@@ -13,7 +13,10 @@ class Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    final isSmallScreen = MediaQuery.sizeOf(context).width < 600;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final logicalWidth = isSmallScreen ? 350.0 : 500.0;
+    final cachePx = (logicalWidth * dpr).round().clamp(350, 1200);
     final isDark = SharedPrefs().isDarkMode;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -24,7 +27,8 @@ class Logo extends StatelessWidget {
               : isDark
                   ? 'assets/horse_logo_and_text_dark.png'
                   : 'assets/horse_logo_and_text_light.png',
-          width: isSmallScreen ? 350 : 500,
+          width: logicalWidth,
+          cacheWidth: cachePx,
         ),
         Padding(
           padding: const EdgeInsets.all(16),

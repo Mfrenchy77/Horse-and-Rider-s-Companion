@@ -623,9 +623,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       'In context',
                       DictionaryText(
                         text: entry.explanation,
-                        entries: entries
-                            .where((other) => other.id != entry.id)
-                            .toList(),
+                        entries: entries,
+                        excludeEntryId: entry.id,
                       ),
                     ),
                   if (entry.text('usage').isNotEmpty)
@@ -633,9 +632,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       'Usage',
                       DictionaryText(
                         text: entry.text('usage'),
-                        entries: entries
-                            .where((other) => other.id != entry.id)
-                            .toList(),
+                        entries: entries,
+                        excludeEntryId: entry.id,
                       ),
                     ),
                   if (entry.text('regionalUsage').isNotEmpty)
@@ -643,9 +641,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       'Regional variations',
                       DictionaryText(
                         text: entry.text('regionalUsage'),
-                        entries: entries
-                            .where((other) => other.id != entry.id)
-                            .toList(),
+                        entries: entries,
+                        excludeEntryId: entry.id,
                       ),
                     ),
                   if (entry.strings('examples').isNotEmpty)
@@ -653,9 +650,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       'Examples',
                       DictionaryText(
                         text: entry.strings('examples').join('\n\n'),
-                        entries: entries
-                            .where((other) => other.id != entry.id)
-                            .toList(),
+                        entries: entries,
+                        excludeEntryId: entry.id,
                       ),
                     ),
                   if (entry.strings('relatedTerms').isNotEmpty)

@@ -71,6 +71,10 @@ const _loggedProxy =
     'https://wsrv.nl/?url=https%3A%2F%2Fpracticalhorsemanmag.com'
     '%2Fwp-content%2Fuploads%2Fmigrations%2Fpracticalhorseman'
     '%2FPRC-20-0911-AD4a-370.jpg&w=840&dpr=1.75&we=1&output=webp';
+const _expectedProxy =
+    'https://wsrv.nl/?url=https%3A%2F%2Fpracticalhorsemanmag.com'
+    '%2Fwp-content%2Fuploads%2Fmigrations%2Fpracticalhorseman'
+    '%2FPRC-20-0911-AD4a-370.jpg&w=480&dpr=1.75&we=1&output=webp';
 
 Widget _legacyPreview({String page = _legacyPage}) => MaterialApp(
   home: MediaQuery(
@@ -248,14 +252,14 @@ void main() {
         () async {
           await tester.pumpWidget(_legacyPreview());
           await tester.pumpAndSettle();
-          expect(attempts, [_legacyImage, _loggedProxy]);
+          expect(attempts, [_legacyImage, _expectedProxy]);
           expect(find.text('Image unavailable'), findsOneWidget);
           expect(tester.takeException(), isNull);
 
           await tester.pumpWidget(const SizedBox());
           await tester.pumpWidget(_legacyPreview());
           await tester.pumpAndSettle();
-          expect(attempts, [_legacyImage, _loggedProxy]);
+          expect(attempts, [_legacyImage, _expectedProxy]);
           expect(resolverCalls, 1);
           expect(find.text('Image unavailable'), findsOneWidget);
         },
@@ -293,12 +297,12 @@ void main() {
         () async {
           await tester.pumpWidget(_legacyPreview(page: page));
           await tester.pumpAndSettle();
-          expect(attempts, [_legacyImage, _loggedProxy, replacement]);
+          expect(attempts, [_legacyImage, _expectedProxy, replacement]);
 
           await tester.pumpWidget(const SizedBox());
           await tester.pumpWidget(_legacyPreview(page: page));
           await tester.pumpAndSettle();
-          expect(attempts, [_legacyImage, _loggedProxy, replacement]);
+          expect(attempts, [_legacyImage, _expectedProxy, replacement]);
           expect(resolverCalls, 1);
 
           replacementResponse.complete(_ImageResponse(404));

@@ -37,7 +37,12 @@ class ConnectionPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isGuest = context.select((AppCubit c) => c.state.isGuest);
     final profile = context.select((AppCubit c) => c.state.usersProfile);
-    final appState = context.watch<AppCubit>().state;
+    final hasConversationsError = context.select(
+      (AppCubit c) => c.state.conversationsState == ConversationsState.error,
+    );
+    final requestActionBusy = context.select(
+      (AppCubit c) => c.state.acceptStatus == AcceptStatus.loading,
+    );
     final appCubit = context.read<AppCubit>();
     final cubit = context.watch<ConnectionsCubit?>();
     final state = cubit?.state;
@@ -87,8 +92,7 @@ class ConnectionPanel extends StatelessWidget {
               .length
         : 0;
     final pending = pendingConnections + incomingRequests;
-    final requestsError =
-        ownProfile && appState.conversationsState == ConversationsState.error;
+    final requestsError = ownProfile && hasConversationsError;
     final hasProfileRelationships =
         ownProfile &&
         ((rider?.students?.isNotEmpty ?? false) ||
@@ -96,7 +100,6 @@ class ConnectionPanel extends StatelessWidget {
             (rider?.studentHorses?.isNotEmpty ?? false));
 
     final saving = state.actionInProgress;
-    final requestActionBusy = appState.acceptStatus == AcceptStatus.loading;
 
     final actions = <Widget>[
       if (horse != null &&

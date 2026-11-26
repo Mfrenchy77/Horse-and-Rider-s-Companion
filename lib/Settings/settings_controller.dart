@@ -28,11 +28,14 @@ class SettingsController with ChangeNotifier {
   SkillTreeLayout _skillTreeLayout = SkillTreeLayout.library;
   bool _skillTreeV2Enabled = FeatureFlags.kSkillTreeV2Default;
 
+  late final ThemeData _lightTheme = HorseAndRidersTheme().getLightTheme();
+  late final ThemeData _darkTheme = HorseAndRidersTheme().getDarkTheme();
+
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get darkMode => _darkMode;
   bool get seasonalMode => _seasonalMode;
-  ThemeData get theme => HorseAndRidersTheme().getLightTheme();
-  ThemeData get darkTheme => HorseAndRidersTheme().getDarkTheme();
+  ThemeData get theme => _lightTheme;
+  ThemeData get darkTheme => _darkTheme;
   bool get isHands => _isHands;
   bool get isPounds => _isPounds;
   ResourceLayout get resourceLayout => _resourceLayout;

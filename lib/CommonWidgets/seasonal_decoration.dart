@@ -20,10 +20,17 @@ class SeasonalDecorationWidget extends StatelessWidget {
     if (label == null || asset == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
+    final cachePx = (24 * MediaQuery.devicePixelRatioOf(context)).round();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(asset, width: 24, height: 24, excludeFromSemantics: true),
+        Image.asset(
+          asset,
+          width: 24,
+          height: 24,
+          cacheWidth: cachePx,
+          excludeFromSemantics: true,
+        ),
         const SizedBox(width: 4),
         Text(
           label,

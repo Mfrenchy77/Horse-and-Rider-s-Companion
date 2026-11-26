@@ -2243,33 +2243,76 @@ class AppCubit extends Cubit<AppState> {
   }
 
   bool _sameResources(List<Resource> a, List<Resource> b) {
+    if (identical(a, b)) return true;
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
-      if (!_sameResourceValue(a[i].toMap(), b[i].toMap())) {
-        return false;
+      if (!_sameResource(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  bool _sameResource(Resource a, Resource b) {
+    if (identical(a, b)) return true;
+    if (a.id != b.id ||
+        a.url != b.url ||
+        a.name != b.name ||
+        a.rating != b.rating ||
+        a.numberOfRates != b.numberOfRates ||
+        a.type != b.type ||
+        a.status != b.status ||
+        a.blocksEmbedding != b.blocksEmbedding ||
+        a.coverImageUrl != b.coverImageUrl ||
+        a.thumbnail != b.thumbnail ||
+        a.description != b.description ||
+        a.content != b.content ||
+        a.lastEditBy != b.lastEditBy ||
+        a.lastEditDate != b.lastEditDate ||
+        a.authorId != b.authorId ||
+        a.authorName != b.authorName ||
+        a.authorPhoto != b.authorPhoto ||
+        a.createdAt != b.createdAt) {
+      return false;
+    }
+    if ((a.comments?.length ?? 0) != (b.comments?.length ?? 0) ||
+        (a.usersWhoRated?.length ?? 0) != (b.usersWhoRated?.length ?? 0)) {
+      return false;
+    }
+    if (!_sameStringList(a.skillTreeIds, b.skillTreeIds) ||
+        !_sameStringList(a.tags, b.tags)) {
+      return false;
+    }
+    final ar = a.usersWhoRated;
+    final br = b.usersWhoRated;
+    if (ar != null && br != null) {
+      for (var i = 0; i < ar.length; i++) {
+        if (ar[i].id != br[i].id || ar[i].isSelected != br[i].isSelected) {
+          return false;
+        }
+      }
+    }
+    final ac = a.comments;
+    final bc = b.comments;
+    if (ac != null && bc != null) {
+      for (var i = 0; i < ac.length; i++) {
+        if (ac[i].id != bc[i].id ||
+            ac[i].comment != bc[i].comment ||
+            ac[i].rating != bc[i].rating ||
+            ac[i].date != bc[i].date) {
+          return false;
+        }
       }
     }
     return true;
   }
 
-  bool _sameResourceValue(Object? a, Object? b) {
+  bool _sameStringList(List<String>? a, List<String>? b) {
     if (identical(a, b)) return true;
-    if (a is List && b is List) {
-      if (a.length != b.length) return false;
-      for (var i = 0; i < a.length; i++) {
-        if (!_sameResourceValue(a[i], b[i])) return false;
-      }
-      return true;
+    if (a == null || b == null) return a == null && b == null;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
     }
-    if (a is Map && b is Map) {
-      return a.length == b.length &&
-          a.entries.every(
-            (entry) =>
-                b.containsKey(entry.key) &&
-                _sameResourceValue(entry.value, b[entry.key]),
-          );
-    }
-    return a == b;
+    return true;
   }
 
   List<Skill?> _sortSkillsByCategory(

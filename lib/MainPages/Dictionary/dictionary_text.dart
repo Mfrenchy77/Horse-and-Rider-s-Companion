@@ -424,6 +424,7 @@ class DictionaryText extends StatefulWidget {
     this.style,
     this.enableSelection = true,
     this.maxMatches = 6,
+    this.excludeEntryId,
   });
 
   final String text;
@@ -431,6 +432,7 @@ class DictionaryText extends StatefulWidget {
   final TextStyle? style;
   final bool enableSelection;
   final int maxMatches;
+  final String? excludeEntryId;
 
   @override
   State<DictionaryText> createState() => _DictionaryTextState();
@@ -447,6 +449,7 @@ class _DictionaryTextState extends State<DictionaryText> {
       widget.text,
       widget.entries,
       maxMatches: widget.maxMatches,
+      excludeEntryId: widget.excludeEntryId,
     );
   }
 
@@ -455,11 +458,13 @@ class _DictionaryTextState extends State<DictionaryText> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text ||
         !identical(oldWidget.entries, widget.entries) ||
-        oldWidget.maxMatches != widget.maxMatches) {
+        oldWidget.maxMatches != widget.maxMatches ||
+        oldWidget.excludeEntryId != widget.excludeEntryId) {
       _matches = matchDictionaryTerms(
         widget.text,
         widget.entries,
         maxMatches: widget.maxMatches,
+        excludeEntryId: widget.excludeEntryId,
       );
     }
   }
