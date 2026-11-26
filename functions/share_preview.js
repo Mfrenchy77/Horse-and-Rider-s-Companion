@@ -3,6 +3,7 @@
 'use strict';
 
 const {publicEntry} = require('./dictionary');
+const {resolvePublicInvitationPreview} = require('./invitations');
 
 const DEFAULT_TITLE = 'Horse & Rider\'s Companion';
 const DEFAULT_DESCRIPTION =
@@ -199,12 +200,35 @@ function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
         req.path :
         (typeof req.url === 'string' ? req.url.split('?')[0] : '');
       const horseMatch = reqPath.match(/^\/Profile\/Horse_Profile\/([^/]+)\/?$/);
+      const inviteMatch = reqPath.match(/^\/invite\/([^/]+)\/?$/);
 
       let meta;
       let cacheControl = 'public, max-age=300, s-maxage=600';
 
       const dictionaryMatch = reqPath.match(/^\/Dictionary(?:\/([a-z0-9-]+))?\/?$/);
-      if (dictionaryMatch) {
+      if (inviteMatch) {
+        const rawToken = safeDecodeURIComponent(inviteMatch[1]);
+        const preview = await resolvePublicInvitationPreview(db, rawToken);
+        const canShareRich = preview.tokenValid && preview.canRedeem;
+        const inviter = preview.inviterDisplayName || 'A rider';
+        const isStudent = preview.type === 'student_connection';
+        meta = canShareRich ?
+          {
+            title: isStudent ?
+              `${inviter} invited you to connect as their student — ${DEFAULT_TITLE}` :
+              `${inviter} invited you to join ${DEFAULT_TITLE}`,
+            description: preview.personalMessage || preview.statusMessage || DEFAULT_DESCRIPTION,
+            image: preview.inviterPhotoUrl || `${origin}${DEFAULT_IMAGE_PATH}`,
+            url: `${origin}/invite/${encodeURIComponent(rawToken)}`,
+          } :
+          {
+            title: `Invitation — ${DEFAULT_TITLE}`,
+            description: 'Open this link in Horse & Rider\'s Companion to view your invitation.',
+            image: `${origin}${DEFAULT_IMAGE_PATH}`,
+            url: `${origin}/invite`,
+          };
+        cacheControl = canShareRich ? 'private, max-age=60' : 'no-store';
+      } else if (dictionaryMatch) {
         const entry = dictionaryMatch[1] ? await publicEntry(db, dictionaryMatch[1]) : null;
         meta = {
           title: entry ? entry.term + ' — Equestrian Dictionary — ' + DEFAULT_TITLE :

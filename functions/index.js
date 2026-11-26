@@ -44,8 +44,40 @@ exports.editDictionary = onCall(
     )(request),
 );
 
+const {
+  createInvitationHandler,
+  getInvitationPreviewHandler,
+  redeemInvitationHandler,
+  listMyInvitationsHandler,
+  revokeInvitationHandler,
+} = require('./invitations');
 const {syncPublicHorseProfileHandler} = require('./public_horse_profile');
 const {syncPublicRiderProfileHandler} = require('./public_rider_profile');
+
+exports.createInvitation = onCall(
+    {region: 'us-central1'},
+    (request) => createInvitationHandler(admin.firestore())(request),
+);
+
+exports.getInvitationPreview = onCall(
+    {region: 'us-central1'},
+    (request) => getInvitationPreviewHandler(admin.firestore())(request),
+);
+
+exports.redeemInvitation = onCall(
+    {region: 'us-central1'},
+    (request) => redeemInvitationHandler(admin.firestore(), admin.auth())(request),
+);
+
+exports.listMyInvitations = onCall(
+    {region: 'us-central1'},
+    (request) => listMyInvitationsHandler(admin.firestore())(request),
+);
+
+exports.revokeInvitation = onCall(
+    {region: 'us-central1'},
+    (request) => revokeInvitationHandler(admin.firestore())(request),
+);
 
 exports.coachingConnection = onCall(
     {region: 'us-central1'},

@@ -348,6 +348,10 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     }),
   ]);
   const existing = existingSnap.data();
+  const invRef = (existing && typeof existing.invitationId === 'string' && existing.invitationId && reqRecord) ?
+    db.collection('Invitations').doc(existing.invitationId) :
+    null;
+  const invSnap = invRef ? await tx.get(invRef) : null;
   const grantInstructorUid = () => {
     const authTarget = kind === 'horse' ? targetHorseRecord : learnerRecord;
     if (!authTarget) return;
@@ -361,6 +365,14 @@ async function send(tx, db, auth, data, actor, identity, now, version) {
     if (reqRecord) {
       if (existing.status !== 'accepted') {
         tx.update(ref, {status: 'accepted', updatedAt: now});
+      }
+      if (invSnap?.exists) {
+        tx.update(invRef, {
+          connectionStatus: 'accepted',
+          acceptedAt: now,
+          acceptedCount: 1,
+          updatedAt: now,
+        });
       }
       grantInstructorUid();
       writeRequestResolution(tx, reqRecord, 'accepted', id, now);
@@ -1270,6 +1282,10 @@ function connectionHandler(db, auth) {
           }
         }
       }
+      const syncInvitation = ['accepted', 'declined', 'cancelled'].includes(status) &&
+        status !== link.status && typeof link.invitationId === 'string' && link.invitationId;
+      const invRef = syncInvitation ? db.collection('Invitations').doc(link.invitationId) : null;
+      const invSnap = invRef ? await tx.get(invRef) : null;
       if (status !== link.status) {
         tx.update(ref, {status, updatedAt: now});
         if (targetRecord && status === 'accepted') {
@@ -1282,6 +1298,14 @@ function connectionHandler(db, auth) {
             instructorUids: removeUid(targetRecord.profile.instructorUids, link.coachUid),
           });
         }
+        if (invSnap?.exists) {
+          tx.update(invRef, {
+            connectionStatus: status,
+            updatedAt: now,
+            ...(status === 'accepted' ? {acceptedAt: now, acceptedCount: 1} : {}),
+            ...(status === 'declined' ? {declinedAt: now, declinedCount: 1} : {}),
+          });
+        }
       }
       writeRequestResolution(tx, reqRecord, status, id, now);
       return {id, status};
@@ -1289,4 +1313,4 @@ function connectionHandler(db, auth) {
   };
 }
 
-module.exports = {connectionHandler};
+module.exports = {connectionHandler, key, profileId};

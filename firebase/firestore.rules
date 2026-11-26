@@ -496,6 +496,22 @@ service cloud.firestore {
         || (verifiedAuth() && emailDoc.lower() == verifiedLowerEmail());
     }
 
+    match /Invitations/{invitationId} {
+      allow read, write: if false;
+
+      match /Redemptions/{recipientUid} {
+        allow read, write: if false;
+      }
+    }
+
+    match /InvitationTokens/{tokenHash} {
+      allow read, write: if false;
+    }
+
+    match /InvitationRateLimits/{limitId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
