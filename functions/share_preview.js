@@ -11,7 +11,14 @@ const DEFAULT_DESCRIPTION =
 const DEFAULT_IMAGE_PATH = '/icons/Icon-512.png';
 const DICTIONARY_IMAGE_PATH = '/images/dictionary-share-default.png';
 const PROD_ORIGIN = 'https://horse-and-riders-compani-d2bd4.web.app';
+const ALLOWED_HOSTS = new Set([
+  'horse-and-riders-compani-d2bd4.web.app',
+  'horse-and-riders-compani-d2bd4.firebaseapp.com',
+  'horseandriderscompanion.com',
+  'www.horseandriderscompanion.com',
+]);
 const DOC_ID_REGEX = /^[A-Za-z0-9._-]{1,120}$/;
+const INDEX_HTML_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function escapeHtml(value) {
   return String(value || '')
@@ -22,14 +29,31 @@ function escapeHtml(value) {
       .replace(/'/g, '&#39;');
 }
 
+function isLocalHost(host) {
+  return /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host);
+}
+
+function isAllowedHost(host) {
+  if (!host) return false;
+  const lower = host.toLowerCase();
+  if (ALLOWED_HOSTS.has(lower)) return true;
+  if (isLocalHost(lower)) return true;
+  return false;
+}
+
 function resolveRequestOrigin(req) {
   const forwardedHost = (req.headers['x-forwarded-host'] || '').split(',')[0].trim();
-  const host = forwardedHost || (req.headers.host || '').trim();
+  const rawHost = (req.headers.host || '').trim();
+  const host = isAllowedHost(forwardedHost) ?
+    forwardedHost :
+    (isAllowedHost(rawHost) ? rawHost : '');
   if (!host) return PROD_ORIGIN;
-  const forwardedProto = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
-  const isLocal = host.startsWith('127.0.0.1') || host.startsWith('localhost');
-  const proto = forwardedProto || (isLocal ? 'http' : 'https');
-  return `${proto}://${host}`;
+  if (isLocalHost(host)) {
+    const forwardedProto = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+    const proto = forwardedProto === 'https' ? 'https' : 'http';
+    return `${proto}://${host}`;
+  }
+  return `https://${host}`;
 }
 
 function buildMetaTagsHtml(meta) {
@@ -116,7 +140,7 @@ async function resolvePublicHorse(db, rawHorseId) {
   const horseId = typeof rawHorseId === 'string' ? rawHorseId.trim() : '';
   if (!horseId || !DOC_ID_REGEX.test(horseId)) return null;
 
-  const snap = await db.collection('Horse_Profile').doc(horseId).get();
+  const snap = await db.collection('Public_Horse_Profile').doc(horseId).get();
   if (!snap.exists) return null;
 
   const data = snap.data() || {};
@@ -192,7 +216,39 @@ function dictionaryPreviewImage(entry, origin) {
   return image ? image.url : fallback;
 }
 
-function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
+function sharePreviewHandler(db, {
+  fetchFn = fetch,
+  now = () => Date.now(),
+  indexHtmlCacheTtlMs = INDEX_HTML_CACHE_TTL_MS,
+} = {}) {
+  const htmlCache = new Map();
+
+  async function loadBaseHtml(origin) {
+    if (indexHtmlCacheTtlMs > 0) {
+      const cached = htmlCache.get(origin);
+      if (cached && now() < cached.expiresAt) {
+        return cached.html;
+      }
+    }
+    try {
+      const indexRes = await fetchFn(`${origin}/index.html`, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (indexRes.ok) {
+        const html = await indexRes.text();
+        if (indexHtmlCacheTtlMs > 0 && html) {
+          if (htmlCache.size >= 10) htmlCache.clear();
+          htmlCache.set(origin, {html, expiresAt: now() + indexHtmlCacheTtlMs});
+        }
+        return html;
+      }
+    } catch (_) {
+      // Fall back to minimal Flutter bootstrap shell below.
+    }
+    return '';
+  }
+
   return async (req, res) => {
     try {
       const origin = resolveRequestOrigin(req);
@@ -237,13 +293,13 @@ function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
           image: dictionaryPreviewImage(entry, origin),
           url: origin + '/Dictionary' + (entry ? '/' + entry.slug : ''),
         };
-        if (dictionaryMatch[1] && !entry) cacheControl = 'no-store';
+        if (dictionaryMatch[1] && !entry) cacheControl = 'public, max-age=60, s-maxage=120';
       } else if (horseMatch) {
         const rawHorseId = safeDecodeURIComponent(horseMatch[1]);
         const horse = await resolvePublicHorse(db, rawHorseId);
         meta = buildHorsePreviewMeta(origin, horse);
         if (!horse) {
-          cacheControl = 'no-store';
+          cacheControl = 'public, max-age=60, s-maxage=120';
         }
       } else {
         const rawSkillId = req.query?.skillId || '';
@@ -270,15 +326,7 @@ function sharePreviewHandler(db, {fetchFn = fetch} = {}) {
           };
       }
 
-      let baseHtml = '';
-      try {
-        const indexRes = await fetchFn(`${origin}/index.html`, {redirect: 'follow'});
-        if (indexRes.ok) {
-          baseHtml = await indexRes.text();
-        }
-      } catch (_) {
-        // Fall back to minimal Flutter bootstrap shell below.
-      }
+      const baseHtml = await loadBaseHtml(origin);
 
       const html = baseHtml ?
         injectMetaIntoHtml(baseHtml, meta) :

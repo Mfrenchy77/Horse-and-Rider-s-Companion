@@ -124,3 +124,74 @@ test('syncPublicHorseProfileHandler writes public projection and deletes when pr
   });
   assert.equal(store.has('h1'), false);
 });
+
+test('syncPublicHorseProfileHandler skips redundant writes when public projection is unchanged', async () => {
+  let setCount = 0;
+  let deleteCount = 0;
+  const db = {
+    collection() {
+      return {
+        doc() {
+          return {
+            async set() {
+              setCount += 1;
+            },
+            async delete() {
+              deleteCount += 1;
+            },
+          };
+        },
+      };
+    },
+  };
+  const handler = syncPublicHorseProfileHandler(db);
+
+  await handler({
+    params: {horseId: 'h1'},
+    data: {
+      before: {
+        exists: true,
+        data: () => ({
+          name: 'Starlight',
+          isPublic: true,
+          archiveStatus: 'active',
+          notes: [{id: 'n1', name: 'Before private note'}],
+        }),
+      },
+      after: {
+        exists: true,
+        data: () => ({
+          name: 'Starlight',
+          isPublic: true,
+          archiveStatus: 'active',
+          notes: [{id: 'n2', name: 'Updated private note'}],
+        }),
+      },
+    },
+  });
+
+  await handler({
+    params: {horseId: 'h2'},
+    data: {
+      before: {
+        exists: true,
+        data: () => ({
+          name: 'Private Horse',
+          isPublic: false,
+          notes: [{id: 'a'}],
+        }),
+      },
+      after: {
+        exists: true,
+        data: () => ({
+          name: 'Private Horse',
+          isPublic: false,
+          notes: [{id: 'b'}],
+        }),
+      },
+    },
+  });
+
+  assert.equal(setCount, 0);
+  assert.equal(deleteCount, 0);
+});

@@ -88,6 +88,18 @@ function buildPublicRiderProfile(docId, data) {
   return payload;
 }
 
+function stableSerialize(value) {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableSerialize(item)).join(',')}]`;
+  }
+  const keys = Object.keys(value)
+      .filter((key) => value[key] !== undefined)
+      .sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableSerialize(value[key])}`).join(',')}}`;
+}
+
 function syncPublicRiderProfileHandler(db) {
   return async (event) => {
     const riderId = event.params?.riderId;
@@ -95,6 +107,15 @@ function syncPublicRiderProfileHandler(db) {
 
     const afterData = event.data?.after?.exists ? event.data.after.data() : null;
     const publicPayload = buildPublicRiderProfile(riderId, afterData);
+
+    if (event.data?.before !== undefined) {
+      const beforeData = event.data.before?.exists ? event.data.before.data() : null;
+      const beforePayload = buildPublicRiderProfile(riderId, beforeData);
+      if (stableSerialize(beforePayload) === stableSerialize(publicPayload)) {
+        return;
+      }
+    }
+
     const ref = db.collection(PUBLIC_RIDER_COLLECTION).doc(riderId);
 
     if (!publicPayload) {

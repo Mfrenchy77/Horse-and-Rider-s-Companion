@@ -1,5 +1,6 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -66,6 +67,9 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
         mediaStorage:
             context.read<MediaStorageRepository?>() ??
             context.read<CloudRepository?>(),
+        idTokenProvider: () =>
+            context.read<AuthenticationRepository?>()?.getAccessToken() ??
+            Future<String?>.value(),
       ),
       child: BlocListener<CreateResourceDialogCubit, CreateResourceDialogState>(
         listenWhen: (p, c) =>

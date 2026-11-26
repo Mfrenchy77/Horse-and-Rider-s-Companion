@@ -33,10 +33,13 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     String? previewMetaEndpoint,
     String? fetchReadableEndpoint,
     String? resolveImageEndpoint,
+    Future<String?> Function()? idTokenProvider,
   }) : _debounce = null,
        _storage = mediaStorage,
        // ignore: prefer_initializing_formals
        _linkMetadataService = linkMetadataService,
+       // ignore: prefer_initializing_formals
+       _idTokenProvider = idTokenProvider,
        _previewMetaUrl = (previewMetaEndpoint?.trim().isEmpty ?? true)
            ? _kDefaultPreviewMetaUrl
            : previewMetaEndpoint!.trim(),
@@ -92,6 +95,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
   final String _fetchReadableUrl;
   final String _resolveImageUrl;
   final LinkMetadataService? _linkMetadataService;
+  final Future<String?> Function()? _idTokenProvider;
 
   // ----------------- tiny logger -----------------
   static int _seq = 0;
@@ -202,13 +206,21 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
     required Map<String, dynamic> body,
     Duration timeout = const Duration(seconds: 15),
     String? trace,
+    bool includeAuth = false,
   }) async {
     final sw = Stopwatch()..start();
     _d('HTTP', 'POST $endpoint trace=$trace bodyKeys=${body.keys.toList()}');
     try {
       final uri = Uri.parse(endpoint);
+      var headers = _jsonHeaders;
+      if (includeAuth && _idTokenProvider != null) {
+        final token = (await _idTokenProvider())?.trim();
+        if (token != null && token.isNotEmpty) {
+          headers = {..._jsonHeaders, 'Authorization': 'Bearer $token'};
+        }
+      }
       final resp = await http
-          .post(uri, headers: _jsonHeaders, body: jsonEncode(body))
+          .post(uri, headers: headers, body: jsonEncode(body))
           .timeout(timeout);
       _d(
         'HTTP',
@@ -358,6 +370,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           _previewMetaUrl,
           body: {'url': url},
           trace: trace,
+          includeAuth: true,
         );
         if (!isCurrent()) return;
         if (p?['blocksEmbedding'] == true) {
@@ -367,6 +380,7 @@ class CreateResourceDialogCubit extends Cubit<CreateResourceDialogState> {
           _fetchReadableUrl,
           body: {'url': url},
           trace: trace,
+          includeAuth: true,
         );
 
         _d(

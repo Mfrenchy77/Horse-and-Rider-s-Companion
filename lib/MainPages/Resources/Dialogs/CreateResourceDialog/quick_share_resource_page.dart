@@ -1,3 +1,4 @@
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +25,7 @@ class QuickShareResourcePage extends StatefulWidget {
     final mediaStorage =
         context.read<MediaStorageRepository?>() ??
         context.read<CloudRepository?>();
+    final authRepository = context.read<AuthenticationRepository?>();
     final shared = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider(
@@ -34,6 +36,8 @@ class QuickShareResourcePage extends StatefulWidget {
             usersProfile: profile,
             resourcesRepository: repository,
             mediaStorage: mediaStorage,
+            idTokenProvider: () =>
+                authRepository?.getAccessToken() ?? Future<String?>.value(),
           ),
           child: const QuickShareResourcePage(),
         ),

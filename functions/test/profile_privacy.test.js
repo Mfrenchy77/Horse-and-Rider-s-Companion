@@ -317,3 +317,49 @@ test('backfillProfilePrivacy is dry-run by default and idempotent on apply', asy
   assert.equal(second.horsesUpdated, 0);
   assert.equal(second.publicHorsesDeleted, 0);
 });
+
+test('syncPublicRiderProfileHandler skips redundant writes on private-only updates', async () => {
+  const {syncPublicRiderProfileHandler} = require('../public_rider_profile');
+  let writeCount = 0;
+  let deleteCount = 0;
+  const db = {
+    collection() {
+      return {
+        doc() {
+          return {
+            async set() {
+              writeCount += 1;
+            },
+            async delete() {
+              deleteCount += 1;
+            },
+          };
+        },
+      };
+    },
+  };
+  const handler = syncPublicRiderProfileHandler(db);
+  await handler({
+    params: {riderId: 'rider-1'},
+    data: {
+      before: {
+        exists: true,
+        data: () => ({
+          name: 'Morgan',
+          isTrainer: true,
+          notes: [{id: '1', name: 'Private note 1'}],
+        }),
+      },
+      after: {
+        exists: true,
+        data: () => ({
+          name: 'Morgan',
+          isTrainer: true,
+          notes: [{id: '2', name: 'Private note 2'}],
+        }),
+      },
+    },
+  });
+  assert.equal(writeCount, 0);
+  assert.equal(deleteCount, 0);
+});

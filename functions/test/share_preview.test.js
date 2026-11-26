@@ -59,7 +59,7 @@ function fakeDb(
           },
         };
       }
-      if (name === 'Horse_Profile') {
+      if (name === 'Public_Horse_Profile') {
         return {
           doc(id) {
             return {
@@ -315,7 +315,7 @@ test('sharePreview hides private, archived, and missing horse profiles', async (
       res,
     );
     assert.equal(res.statusCode, 200);
-    assert.equal(res.headers['Cache-Control'], 'no-store');
+    assert.equal(res.headers['Cache-Control'], 'public, max-age=60, s-maxage=120');
     assert.doesNotMatch(res.body, /Hidden Horse|Default Private Horse|Archived Horse|Arabian/);
     assert.match(res.body, /<meta property="og:title" content="Horse &amp; Rider&#39;s Companion">/);
     assert.match(res.body, /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app">/);
@@ -391,7 +391,7 @@ test('sharePreview uses published Dictionary images and protects unpublished ent
   assert.equal(draft.statusCode, 200);
   assert.match(draft.body, /dictionary-share-default\.png/);
   assert.doesNotMatch(draft.body, /Secret Draft|Private definition|private\.jpg/);
-  assert.equal(draft.headers['Cache-Control'], 'no-store');
+  assert.equal(draft.headers['Cache-Control'], 'public, max-age=60, s-maxage=120');
 });
 
 test('sharePreview uses Firebase Storage dictionary_public image URLs for og:image', async () => {
@@ -472,4 +472,64 @@ test('sharePreview injects public invitation metadata for valid /invite/<token> 
   assert.equal(invalidRes.statusCode, 200);
   assert.equal(invalidRes.headers['Cache-Control'], 'no-store');
   assert.match(invalidRes.body, /<title>Invitation — Horse &amp; Rider&#39;s Companion<\/title>/);
+});
+
+test('sharePreview ignores spoofed X-Forwarded-Host and caches index.html across requests', async () => {
+  let fetchCount = 0;
+  const db = fakeDb({
+    'rider.mounted.sidepass': {
+      status: 'active',
+      subject: 'rider',
+      name: 'Sidepass',
+      summary: 'Sideways movement.',
+    },
+  });
+  const handler = sharePreviewHandler(db, {
+    fetchFn: async () => {
+      fetchCount += 1;
+      return {
+        ok: true,
+        text: async () => '<!DOCTYPE html><html><head></head><body>ok</body></html>',
+      };
+    },
+  });
+
+  const first = makeRes();
+  await handler(
+    {
+      headers: {
+        'x-forwarded-host': 'evil.example.com',
+        'host': 'evil.example.com',
+      },
+      query: { skillId: 'rider.mounted.sidepass' },
+    },
+    first,
+  );
+  assert.equal(first.statusCode, 200);
+  assert.match(
+    first.body,
+    /<meta property="og:url" content="https:\/\/horse-and-riders-compani-d2bd4\.web\.app\/SkillTree\?skillId=rider\.mounted\.sidepass">/,
+  );
+
+  const second = makeRes();
+  await handler(
+    {
+      headers: { host: 'horseandriderscompanion.com' },
+      query: { skillId: 'rider.mounted.sidepass' },
+    },
+    second,
+  );
+  assert.equal(second.statusCode, 200);
+
+  const third = makeRes();
+  await handler(
+    {
+      headers: { host: 'horseandriderscompanion.com' },
+      query: { skillId: 'rider.mounted.sidepass' },
+    },
+    third,
+  );
+  assert.equal(third.statusCode, 200);
+  // First call fetches PROD_ORIGIN/index.html; second fetches custom domain; third uses cache.
+  assert.equal(fetchCount, 2);
 });

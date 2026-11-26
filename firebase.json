@@ -118,7 +118,11 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        "test/**",
+        "*.test.js",
+        "backfill_*.js",
+        "scripts/**"
       ],
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run lint"

@@ -16,6 +16,12 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
   const requestIdSet = new Set(existingRequestIds);
   const admin = {
     app() {},
+    auth: () => ({
+      verifyIdToken: async (token) => {
+        if (token === 'test-token') return {uid: 'uid-1', email_verified: true};
+        throw new Error('bad token');
+      },
+    }),
     messaging: () => ({
       sendEachForMulticast: async (message) => pushes.push(message),
     }),
@@ -29,16 +35,35 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
       }}),
     })})}),
   };
+  const realLinkPreview = require('../link_preview');
+  const publicLookup = async () => [{address: '93.184.216.34', family: 4}];
+  const linkPreviewMock = {
+    ...realLinkPreview,
+    createPreviewMetaHandler: (opts = {}) => realLinkPreview.createPreviewMetaHandler({
+      lookupFn: publicLookup,
+      ...opts,
+    }),
+    createFetchReadableHandler: (opts = {}) => realLinkPreview.createFetchReadableHandler({
+      lookupFn: publicLookup,
+      ...opts,
+    }),
+    createResolveImageHandler: (opts = {}) => realLinkPreview.createResolveImageHandler({
+      lookupFn: publicLookup,
+      ...opts,
+    }),
+  };
   const exports = {};
   const mocks = {
     'cors': () => (req, res, next) => next(),
     'firebase-admin': admin,
     'firebase-functions/logger': {error: (...args) => errors.push(args), info() {}},
+    'firebase-functions/params': {defineSecret: () => ({value: () => 'test-secret'})},
     'firebase-functions/v2/https': {onRequest: (_, handler) => handler, onCall: (_, handler) => handler},
     'firebase-functions/v2/firestore': {
       onDocumentCreated: (_, handler) => handler,
       onDocumentWritten: (_, handler) => handler,
     },
+    'firebase-functions/v2/scheduler': {onSchedule: (_, handler) => handler},
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8'), {
     exports, URL, AbortSignal,
@@ -48,6 +73,8 @@ function harness({fetch, conversation, tokens = ['token-1'], existingRequestIds 
       id === './account_deletion' ? require('../account_deletion') :
       id === './suggestions' ? require('../suggestions') :
       id === './dictionary' ? require('../dictionary') :
+      id === './invitations' ? require('../invitations') :
+      id === './link_preview' ? linkPreviewMock :
       id === './curriculum_drafts' ? require('../curriculum_drafts') :
       id === './curriculum_revisions' ? require('../curriculum_revisions') :
       id === './share_preview' ? require('../share_preview') :
@@ -63,14 +90,17 @@ function response({url = 'https://stable.example/guide', status = 200,
     headers: {get: (name) => name === 'content-type' ? type : headers[name]}, text: async () => html, json: async () => []};
 }
 
-async function request(handler, {method = 'POST', body = {}} = {}) {
+async function request(handler, {method = 'POST', body = {}, headers = {authorization: 'Bearer test-token'}} = {}) {
   let status = 200;
   return new Promise((resolve, reject) => {
     const res = {
+      headers: {},
+      set(k, v) { this.headers[k] = v; return this; },
       status(value) { status = value; return this; },
+      send(value) { resolve({status, body: value}); },
       json(value) { resolve({status, body: JSON.parse(JSON.stringify(value))}); },
     };
-    Promise.resolve(handler({method, body}, res)).catch(reject);
+    Promise.resolve(handler({method, body, headers}, res)).catch(reject);
   });
 }
 
