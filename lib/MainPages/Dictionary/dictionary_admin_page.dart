@@ -23,11 +23,13 @@ class _InboxBundle {
     required this.items,
     required this.publishedEntries,
     this.resolvedContributors = const {},
+    this.contributorModeration = const {},
   });
 
   final List<Map<String, dynamic>> items;
   final List<DictionaryEntry> publishedEntries;
   final Map<String, Map<String, dynamic>> resolvedContributors;
+  final Map<String, Map<String, dynamic>> contributorModeration;
 }
 
 class _AdminContributorDetails {
@@ -127,14 +129,20 @@ class _AdminContributorInfoPanel extends StatelessWidget {
     required this.details,
     this.submissionCount,
     this.publishedCount,
+    this.isSuspended = false,
+    this.suspensionReason,
     this.onViewHistory,
+    this.onModerateContributor,
     this.compact = false,
   });
 
   final _AdminContributorDetails details;
   final int? submissionCount;
   final int? publishedCount;
+  final bool isSuspended;
+  final String? suspensionReason;
   final VoidCallback? onViewHistory;
+  final VoidCallback? onModerateContributor;
   final bool compact;
 
   @override
@@ -143,13 +151,18 @@ class _AdminContributorInfoPanel extends StatelessWidget {
     final hasUid = details.uid.isNotEmpty;
     final nameLabel = details.displayName ?? 'Not set';
     final emailLabel = details.email ?? 'Unavailable';
+    final cleanReason = suspensionReason?.trim() ?? '';
 
     return Container(
       padding: EdgeInsets.all(compact ? 10 : 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        border: Border.all(
+          color: isSuspended
+              ? Theme.of(context).colorScheme.error.withValues(alpha: 0.6)
+              : Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +179,11 @@ class _AdminContributorInfoPanel extends StatelessWidget {
                   context,
                 ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
+              if (isSuspended)
+                const AppStatusBadge(
+                  label: 'Dictionary suspended',
+                  tone: AppStatusTone.error,
+                ),
               if (details.isLegacyResolved)
                 const AppStatusBadge(
                   label: 'Resolved from account',
@@ -191,6 +209,13 @@ class _AdminContributorInfoPanel extends StatelessWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: secondaryColor),
           ),
+          if (isSuspended && cleanReason.isNotEmpty)
+            Text(
+              'Suspension reason: $cleanReason',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
           Wrap(
             spacing: 10,
             runSpacing: 4,
@@ -212,10 +237,176 @@ class _AdminContributorInfoPanel extends StatelessWidget {
                   icon: const Icon(Icons.person_search_outlined, size: 15),
                   label: const Text('Contributor history'),
                 ),
+              if (hasUid && onModerateContributor != null)
+                TextButton.icon(
+                  key: Key('adminModerateContributorButton_${details.uid}'),
+                  onPressed: onModerateContributor,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    foregroundColor: isSuspended
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                  icon: Icon(
+                    isSuspended
+                        ? Icons.settings_backup_restore_outlined
+                        : Icons.block_outlined,
+                    size: 15,
+                  ),
+                  label: Text(
+                    isSuspended ? 'Restore privileges' : 'Suspend contributor',
+                  ),
+                ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ContributorModerationDialog extends StatefulWidget {
+  const _ContributorModerationDialog({
+    required this.details,
+    required this.isSuspended,
+    required this.repository,
+  });
+
+  final _AdminContributorDetails details;
+  final bool isSuspended;
+  final DictionaryRepository repository;
+
+  @override
+  State<_ContributorModerationDialog> createState() =>
+      _ContributorModerationDialogState();
+}
+
+class _ContributorModerationDialogState
+    extends State<_ContributorModerationDialog> {
+  final _form = GlobalKey<FormState>();
+  final _reasonController = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_busy || !(_form.currentState?.validate() ?? true)) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final reason = _reasonController.text.trim();
+      if (widget.isSuspended) {
+        await widget.repository.restoreContributor(
+          uid: widget.details.uid,
+          reason: reason,
+        );
+      } else {
+        await widget.repository.suspendContributor(
+          uid: widget.details.uid,
+          reason: reason,
+        );
+      }
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = error.toString();
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    final isRestore = widget.isSuspended;
+    final label = widget.details.displayName ?? widget.details.uid;
+
+    return AppGlassDialog(
+      key: const Key('adminContributorModerationDialog'),
+      maxWidth: 540,
+      title: Text(
+        isRestore
+            ? 'Restore Dictionary privileges · $label'
+            : 'Suspend Dictionary contributor · $label',
+      ),
+      content: Form(
+        key: _form,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 12,
+          children: [
+            Text(
+              isRestore
+                  ? 'Restoring privileges allows this member to submit new '
+                        'Dictionary terms, improvements, and images again.'
+                  : 'Suspending stops this member from submitting new Dictionary '
+                        'terms, improvements, or images. Their main account '
+                        'and existing contributions remain untouched.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+            ),
+            Text(
+              'UID: ${widget.details.uid}'
+              '${widget.details.email != null ? ' · ${widget.details.email}' : ''}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            TextFormField(
+              key: const Key('adminModerationReasonField'),
+              controller: _reasonController,
+              enabled: !_busy,
+              maxLength: 1000,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: isRestore
+                    ? 'Private restoration note (optional)'
+                    : 'Private moderation reason (required)',
+              ),
+              validator: (value) {
+                final trimmed = value?.trim() ?? '';
+                if (!isRestore && trimmed.isEmpty) {
+                  return 'Enter a private reason for this moderation action.';
+                }
+                if (RegExp(
+                  r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}',
+                  caseSensitive: false,
+                ).hasMatch(trimmed)) {
+                  return 'Do not include email addresses in moderation notes.';
+                }
+                return null;
+              },
+            ),
+            if (_error != null)
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const Key('confirmContributorModerationButton'),
+          onPressed: _busy ? null : _submit,
+          child: Text(isRestore ? 'Restore privileges' : 'Suspend contributor'),
+        ),
+      ],
     );
   }
 }
@@ -395,36 +586,58 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     ]);
     final items = results[0] as List<Map<String, dynamic>>;
     final published = results[1] as List<DictionaryEntry>;
+    final allUids = <String>[];
+    final seenAllUids = <String>{};
     final missingUids = <String>[];
-    final seenUids = <String>{};
+    final seenMissingUids = <String>{};
     for (final item in items) {
       final uid = (item['contributorUid'] as String?)?.trim() ?? '';
-      if (uid.isEmpty || _resolvedContributors.containsKey(uid)) continue;
+      if (uid.isEmpty) continue;
+      if (seenAllUids.add(uid)) {
+        allUids.add(uid);
+      }
+      if (_resolvedContributors.containsKey(uid)) continue;
       final rawSnapshot = item['contributorSnapshot'];
       final snapshot = rawSnapshot is Map
           ? rawSnapshot.cast<String, dynamic>()
           : null;
       final snapName = (snapshot?['displayName'] as String?)?.trim() ?? '';
       final snapEmail = (snapshot?['email'] as String?)?.trim() ?? '';
-      if (snapName.isEmpty && snapEmail.isEmpty && seenUids.add(uid)) {
+      if (snapName.isEmpty && snapEmail.isEmpty && seenMissingUids.add(uid)) {
         missingUids.add(uid);
       }
     }
-    if (missingUids.isNotEmpty) {
-      try {
-        final resolved = await _repository.resolveContributorIdentities(
-          missingUids,
-        );
-        _resolvedContributors.addAll(resolved);
-      } catch (_) {
-        // Legacy contributor resolution must never block the review inbox.
-      }
-    }
+    var moderationByUid = const <String, Map<String, dynamic>>{};
+    await Future.wait<void>([
+      if (missingUids.isNotEmpty)
+        () async {
+          try {
+            final resolved = await _repository.resolveContributorIdentities(
+              missingUids,
+            );
+            _resolvedContributors.addAll(resolved);
+          } catch (_) {
+            // Legacy contributor resolution must never block the review inbox.
+          }
+        }(),
+      if (allUids.isNotEmpty)
+        () async {
+          try {
+            moderationByUid = await _repository
+                .loadContributorModerationStatuses(allUids);
+          } catch (_) {
+            // Moderation lookup failure must never block the review inbox.
+          }
+        }(),
+    ]);
     return _InboxBundle(
       items: items,
       publishedEntries: published,
       resolvedContributors: Map<String, Map<String, dynamic>>.unmodifiable(
         _resolvedContributors,
+      ),
+      contributorModeration: Map<String, Map<String, dynamic>>.unmodifiable(
+        moderationByUid,
       ),
     );
   }
@@ -436,10 +649,33 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     });
   }
 
+  Future<bool> _moderateContributor(
+    _AdminContributorDetails details, {
+    required bool isSuspended,
+  }) async {
+    if (details.uid.isEmpty) return false;
+    final changed = await showAppGlassDialog<bool>(
+      context: context,
+      builder: (_) => _ContributorModerationDialog(
+        details: details,
+        isSuspended: isSuspended,
+        repository: _repository,
+      ),
+    );
+    if ((changed ?? false) && mounted) {
+      _contributorHistoryCache.remove(details.uid);
+      _refresh();
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _showContributorHistory(
     _AdminContributorDetails details,
-    List<Map<String, dynamic>> inboxItems,
-  ) async {
+    List<Map<String, dynamic>> inboxItems, {
+    Map<String, dynamic>? moderationStatus,
+    bool canModerate = true,
+  }) async {
     if (details.uid.isEmpty) return;
     var history = _contributorHistoryCache[details.uid];
     if (history == null) {
@@ -455,7 +691,18 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
       }
       _contributorHistoryCache[details.uid] = history;
     }
+    var moderationHistory = const <Map<String, dynamic>>[];
+    try {
+      moderationHistory = await _repository.loadContributorModerationHistory(
+        details.uid,
+      );
+    } catch (_) {
+      moderationHistory = const [];
+    }
     if (!mounted) return;
+    final isSuspended = moderationStatus?['suspended'] == true;
+    final suspensionReason =
+        (moderationStatus?['reason'] as String?)?.trim() ?? '';
     await showAppGlassDialog<void>(
       context: context,
       builder: (ctx) => AppGlassDialog(
@@ -475,8 +722,50 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
               publishedCount: history
                   .where((e) => e['status'] == 'published')
                   .length,
+              isSuspended: isSuspended,
+              suspensionReason: suspensionReason,
+              onModerateContributor: canModerate
+                  ? () async {
+                      Navigator.pop(ctx);
+                      await _moderateContributor(
+                        details,
+                        isSuspended: isSuspended,
+                      );
+                    }
+                  : null,
               compact: true,
             ),
+            if (moderationHistory.isNotEmpty)
+              Container(
+                key: const Key('adminContributorModerationHistory'),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                  border: Border.all(
+                    color: Theme.of(ctx).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 6,
+                  children: [
+                    Text(
+                      'Moderation audit trail',
+                      style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    for (final ev in moderationHistory)
+                      Text(
+                        '${ev['action'] == 'restore' ? 'Restored' : 'Suspended'} · '
+                        '${_formatAdminDateTime(ev['at'])}'
+                        '${((ev['actorUid'] as String?)?.trim().isNotEmpty ?? false) ? ' · by ${ev['actorUid']}' : ''}'
+                        '${((ev['reason'] as String?)?.trim().isNotEmpty ?? false) ? ' — ${ev['reason']}' : ''}',
+                        style: Theme.of(ctx).textTheme.bodySmall,
+                      ),
+                  ],
+                ),
+              ),
             if (history.isEmpty)
               const Text('No Dictionary contributions recorded yet.')
             else
@@ -1348,6 +1637,26 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                                         'published',
                                                   )
                                                   .length;
+                                              final modStatus = uid.isEmpty
+                                                  ? null
+                                                  : bundle
+                                                        .contributorModeration[uid];
+                                              final isSuspended =
+                                                  modStatus?['suspended'] ==
+                                                  true;
+                                              final suspensionReason =
+                                                  modStatus?['reason']
+                                                      as String?;
+                                              final currentAdminUid =
+                                                  context
+                                                      .read<AppCubit?>()
+                                                      ?.state
+                                                      .user
+                                                      .id ??
+                                                  '';
+                                              final canModerate =
+                                                  uid.isNotEmpty &&
+                                                  uid != currentAdminUid;
                                               return _AdminContributorInfoPanel(
                                                 key: Key(
                                                   'adminContributorPanel_${item['id']}',
@@ -1359,6 +1668,9 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                                 publishedCount: uid.isEmpty
                                                     ? null
                                                     : pubCount,
+                                                isSuspended: isSuspended,
+                                                suspensionReason:
+                                                    suspensionReason,
                                                 onViewHistory: uid.isEmpty
                                                     ? null
                                                     : () => _perform(
@@ -1366,8 +1678,23 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                                             _showContributorHistory(
                                                               contribDetails,
                                                               bundle.items,
+                                                              moderationStatus:
+                                                                  modStatus,
+                                                              canModerate:
+                                                                  canModerate,
                                                             ),
                                                       ),
+                                                onModerateContributor:
+                                                    canModerate
+                                                    ? () => _perform(
+                                                        () =>
+                                                            _moderateContributor(
+                                                              contribDetails,
+                                                              isSuspended:
+                                                                  isSuspended,
+                                                            ),
+                                                      )
+                                                    : null,
                                               );
                                             },
                                           ),
@@ -2344,7 +2671,7 @@ class _ApproveAndPublishImagesDialogState
     try {
       await widget.repository.approveAndPublishImages(
         suggestionId: (widget.item['id'] as String?) ?? '',
-        expectedRevision: widget.targetEntry.publishedRevision,
+        expectedRevision: widget.targetEntry.storedRevision,
         heroImageId: _selectedHeroId,
         note: _note.text.trim(),
         imageDecisions: [
@@ -2920,7 +3247,7 @@ class _EntryEditorState extends State<_EntryEditor> {
       }
 
       _revision = _existingDraft || !(widget.initial?.bundled ?? true)
-          ? data['revision'] as int? ?? 0
+          ? (data['revision'] as num?)?.toInt() ?? 0
           : 0;
       _suggestionId =
           data['suggestionId'] as String? ??

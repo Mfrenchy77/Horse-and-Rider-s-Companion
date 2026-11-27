@@ -1022,6 +1022,31 @@ test('Dictionary published entries are public; drafts, identities, limits, and w
   await assertSucceeds(getDoc(doc(admin, 'DictionarySuggestions/proposal')));
   await assertSucceeds(getDoc(doc(admin, 'DictionarySuggestions/proposal/AuditEvents/one')));
   await assertFails(getDoc(doc(admin, 'DictionaryRateLimits/key')));
+
+  // DictionaryContributorModeration & its AuditEvents are strictly private to verified admins.
+  await environment.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'DictionaryContributorModeration/member'), {
+      uid: 'member',
+      suspended: true,
+      reason: 'Private admin note',
+    });
+    await setDoc(doc(db, 'DictionaryContributorModeration/member/AuditEvents/e1'), {
+      action: 'suspend',
+      suspended: true,
+      reason: 'Private admin note',
+    });
+  });
+  for (const db of [guest, member, otherMember, moderator, unverifiedAdmin]) {
+    await assertFails(getDoc(doc(db, 'DictionaryContributorModeration/member')));
+    await assertFails(getDoc(doc(db, 'DictionaryContributorModeration/member/AuditEvents/e1')));
+  }
+  for (const db of [guest, member, moderator, unverifiedAdmin, admin]) {
+    await assertFails(setDoc(doc(db, 'DictionaryContributorModeration/member'), {suspended: false}));
+    await assertFails(setDoc(doc(db, 'DictionaryContributorModeration/member/AuditEvents/e2'), {action: 'restore'}));
+  }
+  await assertSucceeds(getDoc(doc(admin, 'DictionaryContributorModeration/member')));
+  await assertSucceeds(getDoc(doc(admin, 'DictionaryContributorModeration/member/AuditEvents/e1')));
 });
 
 test('staged rollout compatibility: Public profiles, DictionaryPublic manifest, coach list on events, and legacy ownerUid-less profiles', async () => {

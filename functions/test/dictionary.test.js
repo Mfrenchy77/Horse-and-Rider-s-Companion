@@ -1083,3 +1083,227 @@ test('server resolves contributor profile/Auth identity automatically, rejects s
   assert.equal(resolvedRes.contributors['uid-legacy-2'].email, 'legacy2@example.com');
   assert.equal(resolvedRes.contributors['uid-legacy-2'].displayName, 'Legacy Auth Name');
 });
+
+test('approve_and_publish succeeds on seeded DictionaryEntries without publishedAt (Withers regression) while preserving stale-revision aborts', async () => {
+  const db = fakeDb();
+  const objects = new Map();
+  const bucket = {
+    name: 'test-bucket',
+    file: (objectPath) => ({
+      name: objectPath,
+      async exists() { return [objects.has(objectPath)]; },
+      async getMetadata() { return [objects.get(objectPath) || {}]; },
+      async copy(destFile) { objects.set(destFile.name, {...objects.get(objectPath)}); },
+      async setMetadata(meta) {
+        objects.set(objectPath, {
+          ...(objects.get(objectPath) || {}),
+          contentType: meta.contentType,
+          cacheControl: meta.cacheControl,
+        });
+      },
+      async delete() { objects.delete(objectPath); },
+    }),
+    async getFiles({prefix} = {}) {
+      const files = [...objects.keys()]
+          .filter((name) => !prefix || name.startsWith(prefix))
+          .map((name) => ({name, metadata: objects.get(name), async delete() { objects.delete(name); }}));
+      return [files];
+    },
+  };
+  const urlFor = (objectPath) =>
+    'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/' +
+    encodeURIComponent(objectPath) +
+    '?alt=media&token=tok';
+
+  // Production state for seeded entries like "withers": revision: 1, no publishedAt, no DictionaryDrafts doc.
+  const withersSeed = seeds.find((item) => item.id === 'withers');
+  assert(withersSeed);
+  assert.equal(withersSeed.revision, 1);
+  db.store.set('DictionaryEntries/withers', structuredClone(withersSeed));
+  db.store.set('DictionaryPublic/catalogue', {initialized: true, version: 1});
+
+  const submit = submitDictionarySuggestion(db, {secret: 'test-secret', bucket});
+  const edit = editDictionary(db, {bucket});
+
+  const subId = randomUUID();
+  const pWithers = `dictionary_submissions/${member.uid}/${subId}/withers.jpg`;
+  objects.set(pWithers, {contentType: 'image/jpeg', size: 1500, timeCreated: '2026-11-26T10:00:00Z'});
+  await submit(request({
+    submissionId: subId,
+    term: 'Withers',
+    termId: 'withers',
+    kind: 'image_contribution',
+    rightsConfirmed: true,
+    recognitionConsent: false,
+    submittedImages: [
+      {id: 'img_withers', url: urlFor(pWithers), sha256: '4'.repeat(64), caption: 'Measuring height at withers', imageType: 'photograph'},
+    ],
+  }, member));
+
+  // Unrefreshed legacy client passing expectedRevision: 0 on untouched seeded doc also works safely,
+  // while current fixed client passes expectedRevision: 1. Test expectedRevision: 1 first here,
+  // and expectedRevision: 0 in a second seeded entry ('poll').
+  const resWithers = await edit(request({
+    action: 'approve_and_publish',
+    id: subId,
+    expectedRevision: 1,
+    heroImageId: 'submitted:img_withers',
+    note: 'Clear educational photo.',
+    imageDecisions: [
+      {id: 'img_withers', status: 'approved', caption: 'Measuring height at the withers', imageType: 'photograph'},
+    ],
+  }, admin));
+  assert.equal(resWithers.revision, 2);
+  const publishedWithers = db.store.get('DictionaryEntries/withers');
+  assert.equal(publishedWithers.revision, 2);
+  assert(publishedWithers.publishedAt);
+  assert.equal(publishedWithers.media.length, 1);
+  assert(db.store.has('DictionaryDrafts/withers/Revisions/2'));
+
+  // Backward-compatible expectedRevision: 0 on untouched seeded doc ('poll') succeeds too.
+  const pollSeed = seeds.find((item) => item.id === 'poll');
+  db.store.set('DictionaryEntries/poll', structuredClone(pollSeed));
+  const subPoll = randomUUID();
+  const pPoll = `dictionary_submissions/${member.uid}/${subPoll}/poll.jpg`;
+  objects.set(pPoll, {contentType: 'image/jpeg', size: 1500, timeCreated: '2026-11-26T10:00:00Z'});
+  await submit(request({
+    submissionId: subPoll,
+    term: 'Poll',
+    termId: 'poll',
+    kind: 'image_contribution',
+    rightsConfirmed: true,
+    recognitionConsent: false,
+    submittedImages: [{id: 'img_poll', url: urlFor(pPoll), sha256: '5'.repeat(64), caption: 'Poll anatomy'}],
+  }, member));
+  const resPoll = await edit(request({
+    action: 'approve_and_publish',
+    id: subPoll,
+    expectedRevision: 0,
+    heroImageId: 'submitted:img_poll',
+    imageDecisions: [{id: 'img_poll', status: 'approved', caption: 'Poll anatomy'}],
+  }, admin));
+  assert.equal(resPoll.revision, 2);
+
+  // After revision advances to 2 (or a draft exists), stale expectedRevision: 0 or 1 strictly aborts.
+  const subStale = randomUUID();
+  const pStale = `dictionary_submissions/${member.uid}/${subStale}/withers2.jpg`;
+  objects.set(pStale, {contentType: 'image/jpeg', size: 1500, timeCreated: '2026-11-26T10:00:00Z'});
+  await submit(request({
+    submissionId: subStale,
+    term: 'Withers',
+    termId: 'withers',
+    kind: 'image_contribution',
+    rightsConfirmed: true,
+    recognitionConsent: false,
+    submittedImages: [{id: 'img_withers_2', url: urlFor(pStale), sha256: '6'.repeat(64), caption: 'Clearance check'}],
+  }, member));
+  for (const staleRev of [0, 1]) {
+    await assert.rejects(
+        edit(request({
+          action: 'approve_and_publish',
+          id: subStale,
+          expectedRevision: staleRev,
+          imageDecisions: [{id: 'img_withers_2', status: 'approved', caption: 'Clearance check'}],
+        }, admin)),
+        {code: 'aborted'},
+    );
+  }
+});
+
+test('administrators can suspend and restore Dictionary contributors with backend enforcement and private audit trail while preserving existing data', async () => {
+  const db = fakeDb();
+  const submit = submitDictionarySuggestion(db, {secret: 'test-secret'});
+  const edit = editDictionary(db);
+
+  // Existing submission before suspension must remain untouched.
+  const prior = payload({term: 'Collection', proposal: 'Balance with engagement.'});
+  await submit(request(prior, member));
+  assert(db.store.has(`DictionarySuggestions/${prior.submissionId}`));
+
+  // Non-admins cannot suspend or restore contributors; admins cannot self-suspend or omit suspend reason.
+  for (const auth of [null, member, {uid: 'mod', token: {moderator: true, email_verified: true}}, {uid: 'unv', token: {admin: true, email_verified: false}}]) {
+    await assert.rejects(
+        edit(request({action: 'suspend_contributor', uid: member.uid, reason: 'Repeated spam'}, auth)),
+        {code: 'permission-denied'},
+    );
+    await assert.rejects(
+        edit(request({action: 'restore_contributor', uid: member.uid, reason: 'Appeal accepted'}, auth)),
+        {code: 'permission-denied'},
+    );
+  }
+  await assert.rejects(
+      edit(request({action: 'suspend_contributor', uid: admin.uid, reason: 'Self test'}, admin)),
+      {code: 'failed-precondition'},
+  );
+  await assert.rejects(
+      edit(request({action: 'suspend_contributor', uid: member.uid, reason: '   '}, admin)),
+      {code: 'invalid-argument'},
+  );
+
+  // Suspend contributor cleanly.
+  const suspendRes = await edit(request({
+    action: 'suspend_contributor',
+    uid: member.uid,
+    reason: 'Repeated low-effort duplicate submissions.',
+  }, admin));
+  assert.equal(suspendRes.suspended, true);
+  assert.equal(suspendRes.status, 'suspended');
+
+  const modDoc = db.store.get(`DictionaryContributorModeration/${member.uid}`);
+  assert.equal(modDoc.suspended, true);
+  assert.equal(modDoc.reason, 'Repeated low-effort duplicate submissions.');
+
+  // Suspended user is blocked on suggestions, edits, and image contributions.
+  await assert.rejects(submit(request(payload({term: 'Impulsion'}), member)), {code: 'permission-denied'});
+  await assert.rejects(
+      submit(request({
+        submissionId: randomUUID(),
+        term: 'Canter',
+        termId: 'canter',
+        kind: 'correction',
+        proposedFields: {definition: 'Updated wording.', explanation: '', usage: '', regionalUsage: '', examples: [], synonyms: []},
+      }, member)),
+      {code: 'permission-denied'},
+  );
+  const imgSubId = randomUUID();
+  await assert.rejects(
+      submit(request({
+        submissionId: imgSubId,
+        term: 'Canter',
+        termId: 'canter',
+        kind: 'image_contribution',
+        rightsConfirmed: true,
+        submittedImages: [{
+          id: 'img1',
+          url: `https://firebasestorage.googleapis.com/v0/b/test-bucket/o/${encodeURIComponent(`dictionary_submissions/${member.uid}/${imgSubId}/a.png`)}?alt=media&token=t`,
+          caption: 'Photo',
+        }],
+      }, member)),
+      {code: 'permission-denied'},
+  );
+
+  // Existing submission remains intact and un-deleted.
+  assert(db.store.has(`DictionarySuggestions/${prior.submissionId}`));
+
+  // Restore contributor cleanly.
+  const restoreRes = await edit(request({
+    action: 'restore_contributor',
+    uid: member.uid,
+    reason: 'Contributor agreed to review guidelines.',
+  }, admin));
+  assert.equal(restoreRes.suspended, false);
+  assert.equal(restoreRes.status, 'active');
+
+  // Restored contributor can submit again.
+  const afterRestore = payload({term: 'Cadence', proposal: 'Rhythm combined with regularity and impulsion.'});
+  await submit(request(afterRestore, member));
+  assert(db.store.has(`DictionarySuggestions/${afterRestore.submissionId}`));
+
+  // Private audit trail records both suspend and restore events cleanly.
+  const events = [...db.store.entries()]
+      .filter(([key]) => key.startsWith(`DictionaryContributorModeration/${member.uid}/AuditEvents/`))
+      .map(([, val]) => val);
+  assert.equal(events.length, 2);
+  assert(events.some((e) => e.action === 'suspend' && e.suspended === true && e.actorUid === admin.uid));
+  assert(events.some((e) => e.action === 'restore' && e.suspended === false && e.actorUid === admin.uid));
+});

@@ -594,5 +594,277 @@ void main() {
         expect(canterEntry.data['attributions'], isEmpty);
       },
     );
+
+    testWidgets(
+      'Approve & Publish succeeds on seeded DictionaryEntries without publishedAt (Withers regression) and preserves stale revision protection',
+      (tester) async {
+        tester.view.physicalSize = const Size(1180, 980);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        signIn(
+          uid: 'uid-admin',
+          email: 'admin@example.com',
+          profileName: 'Chief Editor',
+          admin: true,
+        );
+
+        // Simulate Firestore-seeded "withers": bundled: false, revision: 1, no publishedAt.
+        final bundledWithers = DictionaryRepository.resolve(
+          seedEntries,
+          'withers',
+        )!;
+        final seededFirestoreWithers = DictionaryEntry({
+          ...bundledWithers.data,
+          'revision': 1,
+          'status': 'published',
+        });
+        expect(seededFirestoreWithers.bundled, isFalse);
+        expect(seededFirestoreWithers.publishedRevision, 0);
+        expect(seededFirestoreWithers.storedRevision, 1);
+
+        final store = _TrackingDictionaryStore(
+          publishedEntries: [
+            for (final e in seedEntries)
+              if (e.id == 'withers') seededFirestoreWithers else e,
+          ],
+          suggestions: [
+            {
+              'id': 'sug-withers-1',
+              'term': 'Withers',
+              'termId': 'withers',
+              'kind': 'image_contribution',
+              'status': 'submitted',
+              'rightsConfirmed': true,
+              'recognitionConsent': false,
+              'contributorUid': 'uid-rider',
+              'contributorSnapshot': {
+                'displayName': 'Morgan Saddle',
+                'email': 'rider@example.com',
+                'source': 'profile',
+              },
+              'createdAt': '2026-11-26T16:00:00Z',
+              'submittedImages': [
+                {
+                  'id': 'img_withers',
+                  'url':
+                      'https://firebasestorage.googleapis.com/v0/b/demo/o/dictionary_submissions%2Fuid-rider%2Fsug-withers-1%2Fwithers.png?alt=media&token=tw1',
+                  'caption': 'Measuring height at the withers',
+                  'reviewStatus': 'pending',
+                },
+              ],
+            },
+          ],
+        );
+        final repo = DictionaryRepository(store: store);
+
+        await tester.pumpWidget(wrap(DictionaryAdminPage(repository: repo)));
+        await tester.pumpAndSettle();
+
+        final approvePublishBtn = find.byKey(
+          const Key('approveAndPublishButton_sug-withers-1'),
+        );
+        await tester.ensureVisible(approvePublishBtn);
+        await tester.tap(approvePublishBtn);
+        await tester.pumpAndSettle();
+
+        final confirmBtn = find.byKey(
+          const Key('confirmApproveAndPublishButton'),
+        );
+        await tester.ensureVisible(confirmBtn);
+        await tester.tap(confirmBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('approveAndPublishSuccessView')),
+          findsOneWidget,
+        );
+        final publishAction = store.executedActions.singleWhere(
+          (call) =>
+              call.$1 == 'editDictionary' &&
+              call.$2['action'] == 'approve_and_publish',
+        );
+        expect(publishAction.$2['expectedRevision'], 1);
+
+        final updatedWithers = (await store.loadPublishedEntries()).firstWhere(
+          (e) => e.id == 'withers',
+        );
+        expect(updatedWithers.storedRevision, 2);
+        expect(updatedWithers.data['media'], hasLength(1));
+
+        // Concurrency protection remains enforced when expectedRevision is stale.
+        await repo.call('submitDictionarySuggestion', {
+          'submissionId': 'sug-withers-2',
+          'term': 'Withers',
+          'termId': 'withers',
+          'kind': 'image_contribution',
+          'rightsConfirmed': true,
+          'submittedImages': [
+            {
+              'id': 'img_withers_2',
+              'url':
+                  'https://firebasestorage.googleapis.com/v0/b/demo/o/dictionary_submissions%2Fuid-rider%2Fsug-withers-2%2Fwithers2.png?alt=media&token=tw2',
+              'caption': 'Saddle clearance',
+            },
+          ],
+        });
+        await expectLater(
+          () => repo.approveAndPublishImages(
+            suggestionId: 'sug-withers-2',
+            expectedRevision: 1,
+            imageDecisions: [
+              {'id': 'img_withers_2', 'status': 'approved'},
+            ],
+          ),
+          throwsStateError,
+        );
+      },
+    );
+
+    testWidgets(
+      'admins can suspend and restore a contributor with backend enforcement, private audit trail, and preserved existing contributions',
+      (tester) async {
+        tester.view.physicalSize = const Size(1180, 980);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        signIn(
+          uid: 'uid-admin',
+          email: 'admin@example.com',
+          profileName: 'Chief Editor',
+          admin: true,
+        );
+
+        final store = _TrackingDictionaryStore(
+          publishedEntries: seedEntries,
+          suggestions: [
+            {
+              'id': 'sug-mod-target-1',
+              'term': 'Withers',
+              'termId': 'withers',
+              'kind': 'missing_term',
+              'proposal': 'Ridge between shoulder blades.',
+              'status': 'submitted',
+              'recognitionConsent': false,
+              'contributorUid': 'uid-member-9',
+              'contributorSnapshot': {
+                'displayName': 'Casey Bridle',
+                'email': 'casey@example.com',
+                'source': 'profile',
+              },
+              'createdAt': '2026-11-26T14:00:00Z',
+            },
+          ],
+        );
+        final repo = DictionaryRepository(store: store);
+
+        await tester.pumpWidget(wrap(DictionaryAdminPage(repository: repo)));
+        await tester.pumpAndSettle();
+
+        // 1. Suspend contributor from the private contributor panel.
+        final suspendBtn = find.byKey(
+          const Key('adminModerateContributorButton_uid-member-9'),
+        );
+        await tester.ensureVisible(suspendBtn);
+        await tester.tap(suspendBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('adminContributorModerationDialog')),
+          findsOneWidget,
+        );
+        // Blank reason is rejected on suspend.
+        await tester.tap(
+          find.byKey(const Key('confirmContributorModerationButton')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Enter a private reason for this moderation action.'),
+          findsOneWidget,
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('adminModerationReasonField')),
+          'Multiple off-topic submissions.',
+        );
+        await tester.tap(
+          find.byKey(const Key('confirmContributorModerationButton')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Dictionary suspended'), findsOneWidget);
+        expect(
+          find.text('Suspension reason: Multiple off-topic submissions.'),
+          findsOneWidget,
+        );
+        // Existing contribution remains intact.
+        expect(find.text('Withers'), findsOneWidget);
+
+        // Backend enforcement rejects new submissions from suspended UID.
+        await expectLater(
+          () => repo.call('submitDictionarySuggestion', {
+            'submissionId': 'sug-blocked-99',
+            'term': 'Poll',
+            'proposal': 'Area behind the ears.',
+            'kind': 'missing_term',
+            'contributorUid': 'uid-member-9',
+            'recognitionConsent': false,
+          }),
+          throwsStateError,
+        );
+
+        // 2. Open Contributor history -> shows private moderation audit trail & Restore option.
+        final historyBtn = find.descendant(
+          of: find.byKey(const Key('adminContributorPanel_sug-mod-target-1')),
+          matching: find.text('Contributor history'),
+        );
+        await tester.ensureVisible(historyBtn);
+        await tester.tap(historyBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('adminContributorModerationHistory')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Suspended'), findsWidgets);
+        await tester.tap(find.text('Close').last);
+        await tester.pumpAndSettle();
+
+        // 3. Restore contributor privileges -> submission works again and audit trail grows.
+        final restoreBtn = find.byKey(
+          const Key('adminModerateContributorButton_uid-member-9'),
+        );
+        await tester.ensureVisible(restoreBtn);
+        await tester.tap(restoreBtn);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const Key('adminModerationReasonField')),
+          'Reviewed expectations together.',
+        );
+        await tester.tap(
+          find.byKey(const Key('confirmContributorModerationButton')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Dictionary suspended'), findsNothing);
+        await repo.call('submitDictionarySuggestion', {
+          'submissionId': 'sug-after-restore',
+          'term': 'Poll',
+          'proposal': 'Top of the head between the ears.',
+          'kind': 'missing_term',
+          'contributorUid': 'uid-member-9',
+          'recognitionConsent': false,
+        });
+        final audit = await store.loadContributorModerationHistory(
+          'uid-member-9',
+        );
+        expect(audit, hasLength(2));
+        expect(audit.first['action'], 'restore');
+        expect(audit.last['action'], 'suspend');
+      },
+    );
   });
 }

@@ -406,4 +406,29 @@ test('legacy profiles without ownerUid remain compatible and dictionary_submissi
       (await readObject('Riders_Photo/legacy-rider-no-uid', null)).status,
       200,
   );
+
+  // Dictionary contributor suspension blocks new dictionary_submissions uploads,
+  // preserves non-Dictionary uploads (Riders_Photo), and re-allows when restored.
+  await seedFirestoreDoc('DictionaryContributorModeration', 'member-1', {
+    uid: {stringValue: 'member-1'},
+    suspended: {booleanValue: true},
+    reason: {stringValue: 'Temporary pause'},
+  });
+  assert.equal(
+      (await uploadObject('dictionary_submissions/member-1/sub-blocked/img.png', Buffer.from('png'), 'image/png', memberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('Riders_Photo/member-1/profile.png', Buffer.from('png'), 'image/png', memberToken)).status,
+      200,
+  );
+  await seedFirestoreDoc('DictionaryContributorModeration', 'member-1', {
+    uid: {stringValue: 'member-1'},
+    suspended: {booleanValue: false},
+    reason: {stringValue: 'Restored'},
+  });
+  assert.equal(
+      (await uploadObject('dictionary_submissions/member-1/sub-restored/img.png', Buffer.from('png'), 'image/png', memberToken)).status,
+      200,
+  );
 });

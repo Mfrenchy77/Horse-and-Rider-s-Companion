@@ -466,7 +466,15 @@ function submitDictionarySuggestion(
       db.collection('DictionaryRateLimits').doc(digest(uid)),
     ];
     const ref = db.collection('DictionarySuggestions').doc(submissionId);
+    const modRef = db.collection('DictionaryContributorModeration').doc(uid);
     await db.runTransaction(async (tx) => {
+      const moderationSnap = await tx.get(modRef);
+      if (moderationSnap.exists && moderationSnap.data()?.suspended === true) {
+        throw new HttpsError(
+            'permission-denied',
+            'Your Dictionary contribution privileges are currently suspended.',
+        );
+      }
       const existing = await tx.get(ref);
       const limits = await Promise.all(buckets.map((limitDoc) => tx.get(limitDoc)));
       const publicSnap = termId ? await tx.get(db.collection('DictionaryEntries').doc(termId)) : null;
@@ -887,6 +895,53 @@ function editDictionary(db, {now = () => new Date(), bucket = null, auth = null}
       return {contributors};
     }
     const at = now();
+    if (action === 'suspend_contributor' || action === 'restore_contributor') {
+      const targetUid = text(raw.uid, 128, 'contributor UID', true);
+      if (targetUid.includes('/') || targetUid === '.' || targetUid === '..') {
+        throw new HttpsError('invalid-argument', 'Invalid contributor UID.');
+      }
+      if (action === 'suspend_contributor' && targetUid === request.auth.uid) {
+        throw new HttpsError(
+            'failed-precondition',
+            'Administrators cannot suspend their own Dictionary privileges.',
+        );
+      }
+      const isSuspend = action === 'suspend_contributor';
+      const reason = text(raw.reason, 1000, 'moderation reason', isSuspend);
+      if (EMAIL_PATTERN.test(reason)) {
+        throw new HttpsError('invalid-argument', 'Moderation reason must not contain email addresses.');
+      }
+      const modRef = db.collection('DictionaryContributorModeration').doc(targetUid);
+      await db.runTransaction(async (tx) => {
+        const currentSnap = await tx.get(modRef);
+        const current = currentSnap.exists ? currentSnap.data() : {};
+        tx.set(modRef, {
+          uid: targetUid,
+          suspended: isSuspend,
+          status: isSuspend ? 'suspended' : 'active',
+          reason,
+          suspendedAt: isSuspend ? at : (current.suspendedAt || null),
+          suspendedByUid: isSuspend ? request.auth.uid : (current.suspendedByUid || null),
+          restoredAt: isSuspend ? (current.restoredAt || null) : at,
+          restoredByUid: isSuspend ? (current.restoredByUid || null) : request.auth.uid,
+          updatedAt: at,
+          updatedByUid: request.auth.uid,
+        });
+        tx.create(modRef.collection('AuditEvents').doc(), {
+          action: isSuspend ? 'suspend' : 'restore',
+          suspended: isSuspend,
+          reason,
+          at,
+          actorUid: request.auth.uid,
+          targetUid,
+        });
+      });
+      return {
+        uid: targetUid,
+        suspended: isSuspend,
+        status: isSuspend ? 'suspended' : 'active',
+      };
+    }
     const id = text(raw.id, 100, 'id', true);
     if (!/^[A-Za-z0-9-]+$/.test(id)) throw new HttpsError('invalid-argument', 'Invalid ID.');
     if (action === 'review') {
@@ -1214,7 +1269,13 @@ function editDictionary(db, {now = () => new Date(), bucket = null, auth = null}
             throw new HttpsError('failed-precondition', 'This submission has already been published.');
           }
           const revision = txDraft.data()?.revision || txPublic.data()?.revision || 0;
-          if (raw.expectedRevision != null && raw.expectedRevision !== revision) {
+          const isUnmodifiedSeededPublic = !txDraft.exists &&
+            txPublic.exists &&
+            !txPublic.data()?.publishedAt &&
+            (txPublic.data()?.revision || 0) === 1;
+          const matchesRevision = raw.expectedRevision === revision ||
+            (isUnmodifiedSeededPublic && raw.expectedRevision === 0);
+          if (raw.expectedRevision != null && !matchesRevision) {
             throw new HttpsError('aborted', 'This entry changed. Reload before publishing.');
           }
           if (txPublic.exists && txPublic.data().id !== targetId) {

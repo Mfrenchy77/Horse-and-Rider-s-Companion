@@ -17,6 +17,12 @@ service firebase.storage {
         && request.auth.token.get('admin', false) == true;
     }
 
+    function isDictionaryContributorSuspended(uid) {
+      let path = /databases/(default)/documents/DictionaryContributorModeration/$(uid);
+      return firestore.exists(path)
+        && firestore.get(path).data.get('suspended', false) == true;
+    }
+
     function isVerifiedEditor() {
       return verifiedUser()
         && request.auth.token.get('editor', false) == true;
@@ -166,6 +172,7 @@ service firebase.storage {
       ) || isAdmin();
       allow create: if verifiedUser()
         && request.auth.uid == uid
+        && !isDictionaryContributorSuspended(uid)
         && isValidDictionaryImage();
       allow update: if false;
     }

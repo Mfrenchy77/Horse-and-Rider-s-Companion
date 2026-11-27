@@ -282,6 +282,31 @@ class DictionaryRepository {
     List<String> uids,
   ) => _store.resolveContributorIdentities(uids);
 
+  Future<Map<String, Map<String, dynamic>>> loadContributorModerationStatuses(
+    List<String> uids,
+  ) => _store.loadContributorModerationStatuses(uids);
+
+  Future<List<Map<String, dynamic>>> loadContributorModerationHistory(
+    String uid, {
+    int limit = 30,
+  }) => _store.loadContributorModerationHistory(uid, limit: limit);
+
+  Future<void> suspendContributor({
+    required String uid,
+    required String reason,
+  }) => _store.executeAction('editDictionary', {
+    'action': 'suspend_contributor',
+    'uid': uid,
+    'reason': reason,
+  });
+
+  Future<void> restoreContributor({required String uid, String reason = ''}) =>
+      _store.executeAction('editDictionary', {
+        'action': 'restore_contributor',
+        'uid': uid,
+        'reason': reason,
+      });
+
   static DictionaryEntry? resolve(List<DictionaryEntry> entries, String value) {
     final needle = value.toLowerCase().trim();
     final published = entries.where((entry) => entry.published);

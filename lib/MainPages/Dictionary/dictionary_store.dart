@@ -22,10 +22,15 @@ class DictionaryEntry {
   bool get contextual => data['contextual'] == true;
   int get publishedRevision {
     if (bundled) return 0;
-    final rev = data['revision'] as int? ?? 0;
+    final rev = (data['revision'] as num?)?.toInt() ?? 0;
     if (data['publishedAt'] == null && rev <= 1) return 0;
     return rev;
   }
+
+  /// Actual revision number persisted on the Firestore document, used for
+  /// optimistic concurrency (`expectedRevision`) checks.
+  int get storedRevision =>
+      bundled ? 0 : (data['revision'] as num?)?.toInt() ?? 0;
 
   List<String> strings(String field) =>
       (data[field] as List<dynamic>? ?? []).cast<String>();
@@ -76,6 +81,19 @@ abstract interface class DictionaryStore {
   Future<Map<String, Map<String, dynamic>>> resolveContributorIdentities(
     List<String> uids,
   );
+
+  /// Loads current Dictionary contributor moderation status keyed by UID
+  /// (admin-only).
+  Future<Map<String, Map<String, dynamic>>> loadContributorModerationStatuses(
+    List<String> uids,
+  );
+
+  /// Loads private moderation audit events for [uid], newest first
+  /// (admin-only).
+  Future<List<Map<String, dynamic>>> loadContributorModerationHistory(
+    String uid, {
+    int limit = 30,
+  });
 }
 
 /// Pure in-memory [DictionaryStore] implementation with zero Firebase
@@ -87,10 +105,15 @@ class InMemoryDictionaryStore implements DictionaryStore {
     List<Map<String, dynamic>> suggestions = const [],
     List<DictionaryEntry> drafts = const [],
     Map<String, Map<String, dynamic>> contributorDirectory = const {},
+    Map<String, Map<String, dynamic>> contributorModeration = const {},
     this.activeContributorUid,
   }) : _skillLabels = Map<String, String>.from(skillLabels),
        _contributorDirectory = {
          for (final entry in contributorDirectory.entries)
+           entry.key: Map<String, dynamic>.from(entry.value),
+       },
+       _moderationByUid = {
+         for (final entry in contributorModeration.entries)
            entry.key: Map<String, dynamic>.from(entry.value),
        } {
     for (final entry in publishedEntries) {
@@ -119,6 +142,8 @@ class InMemoryDictionaryStore implements DictionaryStore {
   final Map<String, List<Map<String, dynamic>>> _suggestionHistory = {};
   final Map<String, List<Map<String, dynamic>>> _revisionsByEntryId = {};
   final Map<String, Map<String, dynamic>> _contributorDirectory;
+  final Map<String, Map<String, dynamic>> _moderationByUid;
+  final Map<String, List<Map<String, dynamic>>> _moderationHistoryByUid = {};
   final String? activeContributorUid;
   final List<(String, Map<String, dynamic>)> executedActions = [];
 
@@ -198,6 +223,11 @@ class InMemoryDictionaryStore implements DictionaryStore {
           (data['contributorUid'] as String?)?.trim() ??
           activeContributorUid ??
           '';
+      if (uid.isNotEmpty && _moderationByUid[uid]?['suspended'] == true) {
+        throw StateError(
+          'Your Dictionary contribution privileges are currently suspended.',
+        );
+      }
       final directoryRecord = uid.isNotEmpty
           ? _contributorDirectory[uid]
           : null;
@@ -239,6 +269,37 @@ class InMemoryDictionaryStore implements DictionaryStore {
 
     if (actionName != 'editDictionary') return;
     final action = data['action'] as String?;
+    if (action == 'suspend_contributor' || action == 'restore_contributor') {
+      final uid = (data['uid'] as String?)?.trim() ?? '';
+      if (uid.isEmpty) {
+        throw StateError('Invalid contributor UID.');
+      }
+      final isSuspend = action == 'suspend_contributor';
+      final reason = (data['reason'] as String?)?.trim() ?? '';
+      if (isSuspend && reason.isEmpty) {
+        throw StateError('Invalid moderation reason.');
+      }
+      final nowIso = DateTime.now().toIso8601String();
+      final existing = _moderationByUid[uid] ?? const <String, dynamic>{};
+      _moderationByUid[uid] = {
+        'uid': uid,
+        'suspended': isSuspend,
+        'status': isSuspend ? 'suspended' : 'active',
+        'reason': reason,
+        'suspendedAt': isSuspend ? nowIso : existing['suspendedAt'],
+        'restoredAt': isSuspend ? existing['restoredAt'] : nowIso,
+        'updatedAt': nowIso,
+      };
+      _moderationHistoryByUid.putIfAbsent(uid, () => []).insert(0, {
+        'action': isSuspend ? 'suspend' : 'restore',
+        'suspended': isSuspend,
+        'reason': reason,
+        'at': nowIso,
+        'actorUid': activeContributorUid ?? 'admin',
+        'targetUid': uid,
+      });
+      return;
+    }
     final id = data['id'] as String?;
     if (action == 'review' && id != null) {
       final note = (data['note'] as String?) ?? '';
@@ -350,8 +411,8 @@ class InMemoryDictionaryStore implements DictionaryStore {
         throw StateError('Target Dictionary entry not found.');
       }
       final currentRevision =
-          _draftsById[targetId]?.data['revision'] as int? ??
-          _publishedById[targetId]?.publishedRevision ??
+          _draftsById[targetId]?.storedRevision ??
+          _publishedById[targetId]?.storedRevision ??
           0;
       final expectedRevision = data['expectedRevision'] as int?;
       if (expectedRevision != null && expectedRevision != currentRevision) {
@@ -592,4 +653,29 @@ class InMemoryDictionaryStore implements DictionaryStore {
       (_revisionsByEntryId[entryId] ?? const [])
           .map(Map<String, dynamic>.from)
           .toList();
+
+  @override
+  Future<Map<String, Map<String, dynamic>>> loadContributorModerationStatuses(
+    List<String> uids,
+  ) async {
+    final result = <String, Map<String, dynamic>>{};
+    for (final rawUid in uids) {
+      final uid = rawUid.trim();
+      if (uid.isEmpty || result.containsKey(uid)) continue;
+      final found = _moderationByUid[uid];
+      if (found != null) {
+        result[uid] = Map<String, dynamic>.from(found);
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> loadContributorModerationHistory(
+    String uid, {
+    int limit = 30,
+  }) async => (_moderationHistoryByUid[uid.trim()] ?? const [])
+      .take(limit)
+      .map(Map<String, dynamic>.from)
+      .toList();
 }

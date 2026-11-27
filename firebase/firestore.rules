@@ -165,6 +165,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /DictionaryContributorModeration/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /AuditEvents/{event} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
     match /SkillFamilies/{familyId} {
       allow read: if true;
       allow write: if false;

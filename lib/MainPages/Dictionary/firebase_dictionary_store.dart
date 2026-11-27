@@ -250,6 +250,53 @@ class FirebaseDictionaryStore implements DictionaryStore {
   }
 
   @override
+  Future<Map<String, Map<String, dynamic>>> loadContributorModerationStatuses(
+    List<String> uids,
+  ) async {
+    final unique = <String>[];
+    final seen = <String>{};
+    for (final uid in uids) {
+      final trimmed = uid.trim();
+      if (trimmed.isEmpty || !seen.add(trimmed)) continue;
+      unique.add(trimmed);
+    }
+    if (unique.isEmpty) return const {};
+
+    final result = <String, Map<String, dynamic>>{};
+    for (var i = 0; i < unique.length; i += 30) {
+      final chunk = unique.sublist(
+        i,
+        i + 30 > unique.length ? unique.length : i + 30,
+      );
+      final snap = await _db
+          .collection('DictionaryContributorModeration')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      for (final doc in snap.docs) {
+        result[doc.id] = <String, dynamic>{...doc.data(), 'uid': doc.id};
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> loadContributorModerationHistory(
+    String uid, {
+    int limit = 30,
+  }) async {
+    final trimmed = uid.trim();
+    if (trimmed.isEmpty) return const [];
+    final snap = await _db
+        .collection('DictionaryContributorModeration')
+        .doc(trimmed)
+        .collection('AuditEvents')
+        .orderBy('at', descending: true)
+        .limit(limit)
+        .get();
+    return snap.docs.map((doc) => doc.data()).toList();
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> loadSuggestions({int limit = 100}) async {
     final snap = await _db
         .collection('DictionarySuggestions')
