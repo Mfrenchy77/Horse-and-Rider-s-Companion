@@ -765,17 +765,19 @@ void main() {
               counting.progressReads +
               counting.verificationReads;
 
-          await tester.tap(
-            find.byKey(
-              const Key(
-                'skillFamilyHeader_rider.husbandry.daily_care_grooming',
-              ),
-            ),
+          final familyHeader = find.byKey(
+            const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
           );
+          await tester.ensureVisible(familyHeader);
           await tester.pumpAndSettle();
-          await tester.tap(
-            find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+          await tester.tap(familyHeader);
+          await tester.pumpAndSettle();
+          final groomingCard = find.byKey(
+            const Key('skillCard_rider.husbandry.grooming'),
           );
+          await tester.ensureVisible(groomingCard);
+          await tester.pumpAndSettle();
+          await tester.tap(groomingCard);
           await tester.pumpAndSettle();
 
           final iconFinder = find.byKey(

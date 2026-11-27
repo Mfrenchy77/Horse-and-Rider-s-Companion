@@ -1434,6 +1434,10 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                   state: effectiveState,
                   hasHorseProfile: horse != null,
                   profileLabel: profileLabel,
+                  showCategoryNavigation:
+                      !(!isWide &&
+                          _mobileShowingDetail &&
+                          effectiveState.selectedSkill != null),
                   onSelectRealm: (realm) {
                     setState(() => _mobileShowingDetail = false);
                     _cubit.selectRealm(realm);
@@ -1486,24 +1490,34 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                     child: SingleChildScrollView(
                                       key: const Key('skillTreeV2ListScroll'),
                                       controller: _listScrollController,
-                                      child: SkillFamilyListV2(
-                                        state: effectiveState,
-                                        isAdminEditMode: isAdminEditActive,
-                                        contributorNames: _contributorNames,
-                                        onSelectSkill: (skill) =>
-                                            _cubit.selectSkill(skill.id),
-                                        onToggleFamily:
-                                            _cubit.toggleFamilyExpanded,
-                                        onEditFamily: (family) =>
-                                            _addOrEditFamily(
-                                              effectiveState,
-                                              initial: family,
-                                            ),
-                                        onAddSkillToFamily: (family) =>
-                                            _addOrEditSkill(
-                                              effectiveState,
-                                              family: family,
-                                            ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        spacing: AppTokens.spaceSm,
+                                        children: [
+                                          _CategoryFamiliesHeading(
+                                            state: effectiveState,
+                                          ),
+                                          SkillFamilyListV2(
+                                            state: effectiveState,
+                                            isAdminEditMode: isAdminEditActive,
+                                            contributorNames: _contributorNames,
+                                            onSelectSkill: (skill) =>
+                                                _cubit.selectSkill(skill.id),
+                                            onToggleFamily:
+                                                _cubit.toggleFamilyExpanded,
+                                            onEditFamily: (family) =>
+                                                _addOrEditFamily(
+                                                  effectiveState,
+                                                  initial: family,
+                                                ),
+                                            onAddSkillToFamily: (family) =>
+                                                _addOrEditSkill(
+                                                  effectiveState,
+                                                  family: family,
+                                                ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -1971,24 +1985,36 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                                           key: const ValueKey(
                                             'mobileFamilyList',
                                           ),
-                                          child: SkillFamilyListV2(
-                                            state: effectiveState,
-                                            isAdminEditMode: isAdminEditActive,
-                                            contributorNames: _contributorNames,
-                                            onSelectSkill: (skill) =>
-                                                _openMobileDetail(skill.id),
-                                            onToggleFamily:
-                                                _cubit.toggleFamilyExpanded,
-                                            onEditFamily: (family) =>
-                                                _addOrEditFamily(
-                                                  effectiveState,
-                                                  initial: family,
-                                                ),
-                                            onAddSkillToFamily: (family) =>
-                                                _addOrEditSkill(
-                                                  effectiveState,
-                                                  family: family,
-                                                ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            spacing: AppTokens.spaceSm,
+                                            children: [
+                                              _CategoryFamiliesHeading(
+                                                state: effectiveState,
+                                              ),
+                                              SkillFamilyListV2(
+                                                state: effectiveState,
+                                                isAdminEditMode:
+                                                    isAdminEditActive,
+                                                contributorNames:
+                                                    _contributorNames,
+                                                onSelectSkill: (skill) =>
+                                                    _openMobileDetail(skill.id),
+                                                onToggleFamily:
+                                                    _cubit.toggleFamilyExpanded,
+                                                onEditFamily: (family) =>
+                                                    _addOrEditFamily(
+                                                      effectiveState,
+                                                      initial: family,
+                                                    ),
+                                                onAddSkillToFamily: (family) =>
+                                                    _addOrEditSkill(
+                                                      effectiveState,
+                                                      family: family,
+                                                    ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                 ),
@@ -2214,6 +2240,57 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
                   .toList(),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryFamiliesHeading extends StatelessWidget {
+  const _CategoryFamiliesHeading({required this.state});
+
+  final SkillTreeV2State state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSearching = state.searchQuery.trim().isNotEmpty;
+    final visible = state.visibleSkills;
+    final familyCount = state.realmFamilies
+        .where((f) => visible.any((s) => s.familyId == f.id))
+        .length;
+    final headingTitle = isSearching
+        ? 'Search Results'
+        : '${realmDisplayLabel(state.realm)} Skill Families';
+    final countLabel = isSearching
+        ? '${visible.length} ${visible.length == 1 ? 'skill' : 'skills'}'
+        : '$familyCount ${familyCount == 1 ? 'family' : 'families'}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTokens.spaceXs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Expanded(
+            child: Text(
+              headingTitle,
+              key: const Key('skillTreeCategoryFamiliesHeading'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTokens.sectionTitleStyle(
+                context,
+              ).copyWith(fontSize: 18),
+            ),
+          ),
+          const SizedBox(width: AppTokens.spaceSm),
+          Text(
+            countLabel,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppTokens.secondaryTextColor(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

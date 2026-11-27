@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/featured_category_navigation.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
@@ -16,6 +16,7 @@ class SkillTreeV2Header extends StatefulWidget {
     required this.onSelectRealm,
     required this.onSelectViewMode,
     required this.onSearchChanged,
+    this.showCategoryNavigation = true,
   });
 
   final SkillTreeV2State state;
@@ -24,6 +25,7 @@ class SkillTreeV2Header extends StatefulWidget {
   final ValueChanged<SkillCategory> onSelectRealm;
   final ValueChanged<SkillTreeV2ViewMode> onSelectViewMode;
   final ValueChanged<String> onSearchChanged;
+  final bool showCategoryNavigation;
 
   @override
   State<SkillTreeV2Header> createState() => _SkillTreeV2HeaderState();
@@ -127,9 +129,9 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
                 else
                   SkillTreeV2ViewMode.summary,
               },
-                onSelectionChanged: (selection) =>
-                    widget.onSelectViewMode(selection.first),
-              ),
+              onSelectionChanged: (selection) =>
+                  widget.onSelectViewMode(selection.first),
+            ),
           ],
         ),
         if (isHorse && !widget.hasHorseProfile)
@@ -158,29 +160,28 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
               ],
             ),
           ),
-        if (state.viewMode == SkillTreeV2ViewMode.browse) ...[
+        if (state.viewMode == SkillTreeV2ViewMode.browse &&
+            widget.showCategoryNavigation) ...[
           ValueListenableBuilder<bool>(
             valueListenable: SkillTreeSpotlightTour.isTourActive,
             builder: (context, tourActive, child) => KeyedSubtree(
               key: tourActive ? SkillTreeSpotlightTour.categoriesKey : null,
               child: child!,
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                spacing: AppTokens.spaceXs,
-                children: [
-                  for (final realm in state.availableRealms)
-                    ChoiceChip(
-                      key: Key('skillTreeV2Realm_${realm.name}'),
-                      label: Text(realmDisplayLabel(realm)),
-                      selected:
-                          state.searchQuery.trim().isEmpty &&
-                          state.realm == realm,
-                      onSelected: (_) => widget.onSelectRealm(realm),
-                    ),
-                ],
-              ),
+            child: FeaturedCategoryNavigation(
+              subject: state.subject,
+              availableRealms: state.availableRealms,
+              selectedRealm: state.realm,
+              familyCountsByRealm: {
+                for (final realm in state.availableRealms)
+                  realm: state.families
+                      .where(
+                        (f) => f.subject == state.subject && f.realm == realm,
+                      )
+                      .length,
+              },
+              isSearching: state.searchQuery.trim().isNotEmpty,
+              onSelectRealm: widget.onSelectRealm,
             ),
           ),
           TextField(

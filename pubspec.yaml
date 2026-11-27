@@ -81,6 +81,7 @@ flutter:
   assets:
     - assets/
     - assets/icons/skill_families/
+    - assets/icons/skill_categories/
     - curriculum/v2/
     - functions/dictionary_seed.json
   fonts:

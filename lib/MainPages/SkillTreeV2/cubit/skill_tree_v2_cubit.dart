@@ -118,12 +118,10 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     }
     final existing = _inFlightProfileLoads[key];
     if (existing != null) return existing;
-    final future = _loadProfileData(
-      subject: subject,
-      profileDocId: trimmed,
-    ).whenComplete(() {
-      _inFlightProfileLoads.remove(key);
-    });
+    final future = _loadProfileData(subject: subject, profileDocId: trimmed)
+        .whenComplete(() {
+          _inFlightProfileLoads.remove(key);
+        });
     _inFlightProfileLoads[key] = future;
     return future;
   }
@@ -161,8 +159,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         ),
       ]);
       final progress = results[0] as Map<String, SkillProgressRecord>;
-      final verifications =
-          results[1] as Map<String, SkillVerificationRecord>;
+      final verifications = results[1] as Map<String, SkillVerificationRecord>;
       final events = results[2] as List<VerificationEvent>;
       _profileCache[key] = _ProfileSkillCache(
         progressBySkillId: progress,
@@ -232,6 +229,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       state.copyWith(
         realm: realm,
         viewMode: SkillTreeV2ViewMode.browse,
+        searchQuery: '',
         expandedFamilyIds: const {},
         selectedSkillId: nextSkill?.id,
         selectedLevel: nextSkill?.availableLevels.firstOrNull,
@@ -300,9 +298,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
               .where((s) => s.matchesQuery(trimmed))
               .toList();
     final keepSelected = filtered.any((s) => s.id == state.selectedSkillId);
-    final nextSkill = keepSelected
-        ? state.selectedSkill
-        : filtered.firstOrNull;
+    final nextSkill = keepSelected ? state.selectedSkill : filtered.firstOrNull;
     emit(
       state.copyWith(
         searchQuery: query,
@@ -321,8 +317,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     }
     final skill = state.skills.where((s) => s.id == skillId).firstOrNull;
     if (skill == null) return;
-    final nextLevel =
-        (level != null && skill.availableLevels.contains(level))
+    final nextLevel = (level != null && skill.availableLevels.contains(level))
         ? level
         : skill.availableLevels.firstOrNull;
     emit(
@@ -457,9 +452,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     emit(
       state.copyWith(
         isSubmitting: false,
-        actionMessage: verified
-            ? 'Level verified.'
-            : 'Verification revoked.',
+        actionMessage: verified ? 'Level verified.' : 'Verification revoked.',
       ),
     );
     SkillTreeV2Sync.notifyProgressChanged(

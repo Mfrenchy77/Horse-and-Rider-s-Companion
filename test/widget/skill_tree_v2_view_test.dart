@@ -347,9 +347,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Open skill detail on mobile
-      await tester.tap(
-        find.byKey(const Key('skillCard_rider.in_hand.turn_on_forehand')),
+      final forehandCard = find.byKey(
+        const Key('skillCard_rider.in_hand.turn_on_forehand'),
       );
+      await tester.ensureVisible(forehandCard);
+      await tester.pumpAndSettle();
+      await tester.tap(forehandCard);
       await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('skillDetailV2_rider.in_hand.turn_on_forehand')),
@@ -363,16 +366,13 @@ void main() {
         find.byKey(const Key('skillDetailV2_rider.in_hand.turn_on_forehand')),
         findsNothing,
       );
-      expect(
-        find.byKey(const Key('skillCard_rider.in_hand.turn_on_forehand')),
-        findsOneWidget,
-      );
+      expect(forehandCard, findsOneWidget);
       verifyNever(() => mockAppCubit.changeIndex(any()));
 
       // Re-open detail and test system Back (Navigator.maybePop)
-      await tester.tap(
-        find.byKey(const Key('skillCard_rider.in_hand.turn_on_forehand')),
-      );
+      await tester.ensureVisible(forehandCard);
+      await tester.pumpAndSettle();
+      await tester.tap(forehandCard);
       await tester.pumpAndSettle();
       final context = tester.element(
         find.byKey(const Key('skillDetailV2_rider.in_hand.turn_on_forehand')),
@@ -1025,11 +1025,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Expand the first family in Husbandry so the list is scrollable.
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
-        ),
+      final safetyHeader = find.byKey(
+        const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
       );
+      await tester.ensureVisible(safetyHeader);
+      await tester.pumpAndSettle();
+      await tester.tap(safetyHeader);
       await tester.pumpAndSettle();
 
       final listScrollFinder = find.byKey(const Key('skillTreeV2ListScroll'));
@@ -1120,11 +1121,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
-        ),
+      final safetyHeader = find.byKey(
+        const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
       );
+      await tester.ensureVisible(safetyHeader);
+      await tester.pumpAndSettle();
+      await tester.tap(safetyHeader);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(find.text('Safe Handling & Restraint'));
@@ -1213,11 +1215,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
-        ),
+      final safetyHeader = find.byKey(
+        const Key('skillFamilyHeader_rider.husbandry.safety_handling'),
       );
+      await tester.ensureVisible(safetyHeader);
+      await tester.pumpAndSettle();
+      await tester.tap(safetyHeader);
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('skillCard_rider.husbandry.safe_handling')),
