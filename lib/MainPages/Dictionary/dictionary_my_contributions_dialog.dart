@@ -220,10 +220,11 @@ class _ContributionStatusCard extends StatelessWidget {
                   ),
               ],
             ),
-          if (item['recognitionConsent'] == true &&
-              ((item['publicName'] as String?)?.trim().isNotEmpty ?? false))
+          if (item['recognitionConsent'] == true)
             Text(
-              'Public credit requested: ${item['publicName']}',
+              ((item['publicName'] as String?)?.trim().isNotEmpty ?? false)
+                  ? 'Public credit requested: ${item['publicName']}'
+                  : 'Public credit requested (no display name set)',
               style: Theme.of(
                 context,
               ).textTheme.labelSmall?.copyWith(color: secondaryColor),

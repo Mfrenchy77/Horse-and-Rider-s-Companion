@@ -169,6 +169,8 @@ class _DictionarySuggestionDialogState
       return;
     }
 
+    final identity = DictionaryContributorIdentity.fromContext(context);
+    final fallbackName = _name.text.trim();
     final submittedImages = _images
         .map((img) => img.toSubmissionMap())
         .toList();
@@ -203,7 +205,10 @@ class _DictionarySuggestionDialogState
         if (submittedImages.isNotEmpty) 'rightsConfirmed': true,
         if (reasonText.isNotEmpty) 'reason': reasonText,
         'recognitionConsent': _consent,
-        'publicName': _consent ? _name.text : '',
+        if (_consent &&
+            !identity.hasSuitablePublicName &&
+            fallbackName.isNotEmpty)
+          'publicName': fallbackName,
         'website': '',
       };
     } else {
@@ -221,7 +226,10 @@ class _DictionarySuggestionDialogState
         if (submittedImages.isNotEmpty) 'rightsConfirmed': true,
         if (reasonText.isNotEmpty) 'reason': reasonText,
         'recognitionConsent': _consent,
-        'publicName': _consent ? _name.text : '',
+        if (_consent &&
+            !identity.hasSuitablePublicName &&
+            fallbackName.isNotEmpty)
+          'publicName': fallbackName,
         'website': '',
       };
     }
@@ -396,6 +404,7 @@ class _DictionarySuggestionDialogState
           ),
           const SizedBox(height: 10),
           DictionaryContributorAttributionSection(
+            identity: identity,
             requireRightsConfirmation: _images.isNotEmpty,
             rightsConfirmed: _rightsConfirmed,
             onRightsChanged: (value) =>
@@ -412,13 +421,22 @@ class _DictionarySuggestionDialogState
     );
   }
 
-  Widget _buildReviewChangesStep(BuildContext context) {
+  Widget _buildReviewChangesStep(
+    BuildContext context,
+    DictionaryContributorIdentity identity,
+  ) {
     final secondaryColor = AppTokens.secondaryTextColor(context);
     final proposed = _currentProposedFields();
     final changedKeys = proposed.changedKeysAgainst(_baseFields);
     final unchangedCount =
         DictionaryStructuredFields.specs.length - changedKeys.length;
     final reasonText = _reason.text.trim();
+    final proposedCredit = identity.hasSuitablePublicName
+        ? identity.resolvedPublicDisplayName
+        : DictionaryContributorIdentity.sanitizePublicDisplayName(
+            _name.text,
+            uid: identity.uid,
+          );
 
     return Column(
       key: const Key('dictionaryReviewChangesView'),
@@ -472,13 +490,17 @@ class _DictionarySuggestionDialogState
               ],
             ),
           ),
-        if (_consent && _name.text.trim().isNotEmpty)
-          Text(
-            'Opt-in public recognition: ${_name.text.trim()}',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: secondaryColor),
-          ),
+        Text(
+          _consent && proposedCredit.isNotEmpty
+              ? 'Public credit if approved: $proposedCredit'
+              : _consent
+              ? 'Public credit requested (no display name set — will publish '
+                    'without public credit)'
+              : 'Public credit: None (private submission)',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+        ),
         if (_error != null)
           Text(
             _error!,
@@ -644,6 +666,7 @@ class _DictionarySuggestionDialogState
             ),
           ),
           DictionaryContributorAttributionSection(
+            identity: identity,
             requireRightsConfirmation: _images.isNotEmpty,
             rightsConfirmed: _rightsConfirmed,
             onRightsChanged: (value) =>
@@ -708,7 +731,7 @@ class _DictionarySuggestionDialogState
               )
             : _isImprovementMode
             ? (_reviewingChanges
-                  ? _buildReviewChangesStep(context)
+                  ? _buildReviewChangesStep(context, identity)
                   : _buildImprovementEditor(context, identity))
             : _buildNewTermForm(context, identity),
         actions: [

@@ -37,6 +37,7 @@ exports.submitDictionarySuggestion = onCall(
       secret: dictionaryRateSecret.value(),
       requireAppCheck: !dictionaryEmulator,
       bucket: admin.storage().bucket(),
+      auth: admin.auth(),
     })(request),
 );
 
@@ -44,7 +45,7 @@ exports.editDictionary = onCall(
     {region: 'us-central1'},
     (request) => editDictionary(
         admin.firestore(),
-        {bucket: admin.storage().bucket()},
+        {bucket: admin.storage().bucket(), auth: admin.auth()},
     )(request),
 );
 

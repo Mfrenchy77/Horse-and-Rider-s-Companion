@@ -342,9 +342,14 @@ void main() {
         await tester.tap(consentCheckbox);
         await tester.pumpAndSettle();
 
-        await tester.enterText(
+        expect(
+          find.byKey(const Key('dictionaryPublicCreditPreview')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Alex Trail'), findsOneWidget);
+        expect(
           find.byKey(const Key('dictionaryPublicNameField')),
-          'Alex Trail',
+          findsNothing,
         );
 
         await tester.ensureVisible(submitBtn);
@@ -360,7 +365,7 @@ void main() {
         expect(recorded.$2['kind'], 'image_contribution');
         expect(recorded.$2['rightsConfirmed'], isTrue);
         expect(recorded.$2['recognitionConsent'], isTrue);
-        expect(recorded.$2['publicName'], 'Alex Trail');
+        expect(recorded.$2.containsKey('publicName'), isFalse);
         expect(recorded.$2['submittedImages'], hasLength(2));
         expect(recorded.$2.toString(), isNot(contains('rider@example.com')));
 
@@ -369,6 +374,7 @@ void main() {
         await repo.call('submitDictionarySuggestion', {
           ...recorded.$2,
           'contributorUid': 'uid-member-1',
+          'publicName': 'Alex Trail',
         });
         await tester.pumpWidget(
           wrap(

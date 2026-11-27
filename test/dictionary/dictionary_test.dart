@@ -478,13 +478,13 @@ void main() {
       expect(repo.submitted?['kind'], 'new_term');
       expect(repo.submitted?['categories'], ['Gaits']);
       expect(repo.submitted?['recognitionConsent'], isFalse);
-      expect(repo.submitted?['publicName'], '');
+      expect(repo.submitted?.containsKey('publicName'), isFalse);
       expect(
         find.textContaining('submitted for editorial review'),
         findsOneWidget,
       );
 
-      // 3. Signed-in improvement flow with opt-in attribution
+      // 3. Signed-in improvement flow with automatic profile attribution preview
       await tester.pumpWidget(
         wrap(
           Scaffold(
@@ -508,10 +508,12 @@ void main() {
         find.byKey(const Key('dictionaryRecognitionConsentCheckbox')),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('dictionaryPublicNameField')),
-        'Alex R.',
+      expect(
+        find.byKey(const Key('dictionaryPublicCreditPreview')),
+        findsOneWidget,
       );
+      expect(find.textContaining('Alex Rider'), findsWidgets);
+      expect(find.byKey(const Key('dictionaryPublicNameField')), findsNothing);
       await _captureView(tester, 'dictionary_signed_in_suggestion.png');
 
       final submitEditBtn = find.byKey(
@@ -522,7 +524,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.submitted?['kind'], 'correction');
       expect(repo.submitted?['recognitionConsent'], isTrue);
-      expect(repo.submitted?['publicName'], 'Alex R.');
+      expect(repo.submitted?.containsKey('publicName'), isFalse);
       expect(
         find.textContaining('email address is never shown publicly'),
         findsOneWidget,
@@ -633,7 +635,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Cavaletti'), findsOneWidget);
       expect(
-        find.textContaining('Opt-in recognition requested as: Taylor Trail'),
+        find.textContaining('Public credit preference: Yes — "Taylor Trail"'),
         findsOneWidget,
       );
       await _captureView(tester, 'dictionary_admin_moderation.png');

@@ -29,9 +29,18 @@ function fakeDb() {
     }),
     where: (field, op, value) => ({
       limit: (count) => ({
-        get: async () => ({docs: [...store.entries()].filter(([key, data]) =>
-          key.startsWith(path + '/') && Array.isArray(data[field]) && data[field].includes(value))
-            .slice(0, count).map(([, data]) => ({data: () => data}))}),
+        get: async () => ({
+          docs: [...store.entries()].filter(([key, data]) => {
+            if (!key.startsWith(path + '/') || key.slice(path.length + 1).includes('/')) {
+              return false;
+            }
+            if (op === '==') return data[field] === value;
+            if (op === 'array-contains') {
+              return Array.isArray(data[field]) && data[field].includes(value);
+            }
+            return false;
+          }).slice(0, count).map(([, data]) => ({data: () => structuredClone(data)})),
+        }),
       }),
     }),
   });
@@ -903,4 +912,174 @@ test('approve_and_publish enforces admin permissions, hero/gallery selection, pa
       edit(request(publishReq({expectedRevision: 2}), admin)),
       {code: 'failed-precondition'},
   );
+});
+
+test('server resolves contributor profile/Auth identity automatically, rejects spoofing, handles missing names safely, and resolves legacy UIDs for admins only', async () => {
+  const db = fakeDb();
+  const riderEmail = 'sierra.rider@example.com';
+  const encodedId = riderEmail
+      .replaceAll('.', '666')
+      .replaceAll('@', '999')
+      .replaceAll('f', '5')
+      .replaceAll('e', '1')
+      .replaceAll('g', '2')
+      .replaceAll('m', '')
+      .replaceAll('a', 'p')
+      .replaceAll('i', 'a')
+      .replaceAll('co', 'l');
+  db.store.set(`Rider_Profile/${encodedId}`, {
+    id: encodedId,
+    name: 'Sierra Profile',
+    email: riderEmail,
+    ownerUid: 'uid-sierra',
+    bio: 'Private full bio that must not be duplicated.',
+    notes: [{title: 'Private training note'}],
+  });
+
+  const authStub = {
+    async getUser(uid) {
+      if (uid === 'uid-auth-only') {
+        return {uid, email: 'auth.only@example.com', displayName: 'Auth Fallback Name'};
+      }
+      if (uid === 'uid-no-name') {
+        return {uid, email: 'anon@example.com', displayName: ''};
+      }
+      if (uid === 'uid-legacy-2') {
+        return {uid, email: 'legacy2@example.com', displayName: 'Legacy Auth Name'};
+      }
+      throw Object.assign(new Error('not found'), {code: 'auth/user-not-found'});
+    },
+    async getUsers(ids) {
+      const users = [];
+      for (const item of ids) {
+        try {
+          users.push(await authStub.getUser(item.uid));
+        } catch (_) {
+          // Ignore missing users in batch response.
+        }
+      }
+      return {users};
+    },
+  };
+
+  const fixedNow = Date.parse('2026-11-26T22:00:00Z');
+  const submit = submitDictionarySuggestion(db, {
+    secret: 'test-secret',
+    now: () => fixedNow,
+    auth: authStub,
+  });
+  const edit = editDictionary(db, {now: () => new Date(fixedNow + 60000), auth: authStub});
+
+  // 1. Suggestion captures server-verified profile identity and ignores spoofed client identity fields.
+  const subProfileId = randomUUID();
+  await submit(request({
+    submissionId: subProfileId,
+    term: 'Collected Trot',
+    proposal: 'Engaged, expressive two-beat diagonal gait.',
+    kind: 'missing_term',
+    contributorUid: 'spoofed-uid',
+    contributorEmail: 'spoof@example.com',
+    contributorSnapshot: {displayName: 'Spoofed Name'},
+    recognitionConsent: true,
+    publicName: 'Spoofed Public Name',
+  }, {
+    uid: 'uid-sierra',
+    token: {email: riderEmail, email_verified: true, name: 'Token Name'},
+  }));
+
+  const storedProfileSub = db.store.get(`DictionarySuggestions/${subProfileId}`);
+  assert.equal(storedProfileSub.contributorUid, 'uid-sierra');
+  assert.equal(storedProfileSub.publicName, 'Sierra Profile');
+  assert.equal(storedProfileSub.contributorSnapshot.displayName, 'Sierra Profile');
+  assert.equal(storedProfileSub.contributorSnapshot.email, riderEmail);
+  assert.equal(storedProfileSub.contributorSnapshot.source, 'profile');
+  assert(!JSON.stringify(storedProfileSub).includes('Private full bio'));
+  assert(!JSON.stringify(storedProfileSub).includes('Private training note'));
+
+  // 2. Fallback to Firebase Auth displayName when profile record is missing.
+  const subAuthId = randomUUID();
+  await submit(request({
+    submissionId: subAuthId,
+    term: 'Canter',
+    termId: 'canter',
+    kind: 'correction',
+    proposedFields: {
+      definition: 'A three-beat gait with a moment of suspension.',
+      explanation: 'Clear explanation across disciplines.',
+      usage: '',
+      regionalUsage: '',
+      examples: [],
+      synonyms: [],
+    },
+    recognitionConsent: true,
+  }, {
+    uid: 'uid-auth-only',
+    token: {email_verified: true},
+  }));
+  const storedAuthSub = db.store.get(`DictionarySuggestions/${subAuthId}`);
+  assert.equal(storedAuthSub.publicName, 'Auth Fallback Name');
+  assert.equal(storedAuthSub.contributorSnapshot.displayName, 'Auth Fallback Name');
+  assert.equal(storedAuthSub.contributorSnapshot.email, 'auth.only@example.com');
+  assert.equal(storedAuthSub.contributorSnapshot.source, 'auth');
+
+  // 3. Missing profile & Auth name: blank optional fallback succeeds cleanly without leaking identity.
+  const subNoNameBlank = randomUUID();
+  await submit(request({
+    submissionId: subNoNameBlank,
+    term: 'Half-Pass',
+    proposal: 'Diagonal lateral movement.',
+    kind: 'missing_term',
+    recognitionConsent: true,
+    publicName: '',
+  }, {
+    uid: 'uid-no-name',
+    token: {email: 'anon@example.com', email_verified: true},
+  }));
+  const storedNoNameBlank = db.store.get(`DictionarySuggestions/${subNoNameBlank}`);
+  assert.equal(storedNoNameBlank.recognitionConsent, true);
+  assert.equal(storedNoNameBlank.publicName, null);
+  assert.equal(storedNoNameBlank.contributorSnapshot.email, 'anon@example.com');
+  assert.equal(storedNoNameBlank.contributorSnapshot.source, 'none');
+
+  // Rejects UID spoofed as optional publicName.
+  await assert.rejects(
+      submit(request({
+        submissionId: randomUUID(),
+        term: 'Volte',
+        proposal: 'Small balanced circle.',
+        kind: 'missing_term',
+        recognitionConsent: true,
+        publicName: 'uid-no-name',
+      }, {uid: 'uid-no-name', token: {email: 'anon@example.com', email_verified: true}})),
+      {code: 'invalid-argument'},
+  );
+
+  // 4. Changing public attribution during admin review preserves private contributorSnapshot and audit trail.
+  await edit(request({
+    action: 'review',
+    id: subProfileId,
+    status: 'approved',
+    recognitionConsent: false,
+    note: 'Contributor withdrew public credit.',
+  }, admin));
+  const updatedSub = db.store.get(`DictionarySuggestions/${subProfileId}`);
+  assert.equal(updatedSub.recognitionConsent, false);
+  assert.equal(updatedSub.publicName, null);
+  assert.equal(updatedSub.contributorUid, 'uid-sierra');
+  assert.equal(updatedSub.contributorSnapshot.displayName, 'Sierra Profile');
+  assert.equal(updatedSub.contributorSnapshot.email, riderEmail);
+
+  // 5. Admin-only resolve_contributors handles legacy UID-only submissions and rejects non-admins.
+  await assert.rejects(
+      edit(request({action: 'resolve_contributors', uids: ['uid-sierra']}, member)),
+      {code: 'permission-denied'},
+  );
+  const resolvedRes = await edit(request({
+    action: 'resolve_contributors',
+    uids: ['uid-sierra', 'uid-legacy-2', 'uid-sierra'],
+  }, admin));
+  assert.equal(resolvedRes.contributors['uid-sierra'].email, riderEmail);
+  assert.equal(resolvedRes.contributors['uid-sierra'].displayName, 'Sierra Profile');
+  assert.equal(resolvedRes.contributors['uid-legacy-2'].email, 'legacy2@example.com');
+  assert.equal(resolvedRes.contributors['uid-legacy-2'].displayName, 'Legacy Auth Name');
 });

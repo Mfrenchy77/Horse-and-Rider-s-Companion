@@ -19,10 +19,205 @@ import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dar
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 class _InboxBundle {
-  const _InboxBundle({required this.items, required this.publishedEntries});
+  const _InboxBundle({
+    required this.items,
+    required this.publishedEntries,
+    this.resolvedContributors = const {},
+  });
 
   final List<Map<String, dynamic>> items;
   final List<DictionaryEntry> publishedEntries;
+  final Map<String, Map<String, dynamic>> resolvedContributors;
+}
+
+class _AdminContributorDetails {
+  const _AdminContributorDetails({
+    required this.uid,
+    required this.displayName,
+    required this.email,
+    required this.isLegacyResolved,
+    required this.submittedAtLabel,
+    required this.recognitionConsent,
+    required this.publicName,
+  });
+
+  final String uid;
+  final String? displayName;
+  final String? email;
+  final bool isLegacyResolved;
+  final String submittedAtLabel;
+  final bool recognitionConsent;
+  final String publicName;
+
+  String get creditLabel {
+    if (recognitionConsent && publicName.isNotEmpty) {
+      return 'Yes — "$publicName"';
+    }
+    if (recognitionConsent) {
+      return 'Yes (no public display name set)';
+    }
+    return 'No (private — do not credit publicly)';
+  }
+}
+
+DateTime? _parseAdminDateTime(Object? raw) {
+  if (raw == null) return null;
+  if (raw is DateTime) return raw.toLocal();
+  if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw).toLocal();
+  if (raw is String) return DateTime.tryParse(raw)?.toLocal();
+  try {
+    final dynamic dyn = raw;
+    // Support Firestore Timestamp without coupling this UI module to cloud_firestore.
+    // ignore: avoid_dynamic_calls
+    final dynamic converted = dyn.toDate();
+    if (converted is DateTime) return converted.toLocal();
+  } catch (_) {
+    // Ignore non-Timestamp objects cleanly.
+  }
+  return null;
+}
+
+String _formatAdminDateTime(Object? raw) {
+  final dt = _parseAdminDateTime(raw);
+  if (dt == null) return 'Unknown date';
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${dt.year}-${two(dt.month)}-${two(dt.day)} '
+      '${two(dt.hour)}:${two(dt.minute)}';
+}
+
+_AdminContributorDetails _resolveAdminContributor(
+  Map<String, dynamic> item,
+  Map<String, Map<String, dynamic>> resolvedByUid,
+) {
+  final uid = (item['contributorUid'] as String?)?.trim() ?? '';
+  final rawSnapshot = item['contributorSnapshot'];
+  final snapshot = rawSnapshot is Map
+      ? rawSnapshot.cast<String, dynamic>()
+      : null;
+  final snapshotName = (snapshot?['displayName'] as String?)?.trim() ?? '';
+  final snapshotEmail = (snapshot?['email'] as String?)?.trim() ?? '';
+  final resolved = uid.isNotEmpty ? resolvedByUid[uid] : null;
+  final resolvedName = (resolved?['displayName'] as String?)?.trim() ?? '';
+  final resolvedEmail = (resolved?['email'] as String?)?.trim() ?? '';
+  final displayName = snapshotName.isNotEmpty
+      ? snapshotName
+      : (resolvedName.isNotEmpty ? resolvedName : null);
+  final email = snapshotEmail.isNotEmpty
+      ? snapshotEmail
+      : (resolvedEmail.isNotEmpty ? resolvedEmail : null);
+  final hasSnapshotIdentity =
+      snapshotName.isNotEmpty || snapshotEmail.isNotEmpty;
+  final isLegacyResolved =
+      !hasSnapshotIdentity &&
+      (resolvedName.isNotEmpty || resolvedEmail.isNotEmpty);
+  return _AdminContributorDetails(
+    uid: uid,
+    displayName: displayName,
+    email: email,
+    isLegacyResolved: isLegacyResolved,
+    submittedAtLabel: _formatAdminDateTime(item['createdAt']),
+    recognitionConsent: item['recognitionConsent'] == true,
+    publicName: (item['publicName'] as String?)?.trim() ?? '',
+  );
+}
+
+class _AdminContributorInfoPanel extends StatelessWidget {
+  const _AdminContributorInfoPanel({
+    super.key,
+    required this.details,
+    this.submissionCount,
+    this.publishedCount,
+    this.onViewHistory,
+    this.compact = false,
+  });
+
+  final _AdminContributorDetails details;
+  final int? submissionCount;
+  final int? publishedCount;
+  final VoidCallback? onViewHistory;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final secondaryColor = AppTokens.secondaryTextColor(context);
+    final hasUid = details.uid.isNotEmpty;
+    final nameLabel = details.displayName ?? 'Not set';
+    final emailLabel = details.email ?? 'Unavailable';
+
+    return Container(
+      padding: EdgeInsets.all(compact ? 10 : 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 4,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                'Private Contributor Audit Record',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              if (details.isLegacyResolved)
+                const AppStatusBadge(
+                  label: 'Resolved from account',
+                  tone: AppStatusTone.info,
+                ),
+              if (submissionCount != null)
+                AppStatusBadge(
+                  label:
+                      '$submissionCount '
+                      '${submissionCount == 1 ? 'submission' : 'submissions'}'
+                      '${(publishedCount ?? 0) > 0 ? ' · $publishedCount published' : ''}',
+                ),
+            ],
+          ),
+          Text(
+            'Profile name: $nameLabel · Email: $emailLabel',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          SelectableText(
+            'UID: ${hasUid ? details.uid : 'Legacy / unavailable'} · '
+            'Submitted: ${details.submittedAtLabel}',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+          ),
+          Wrap(
+            spacing: 10,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                'Public credit preference: ${details.creditLabel}',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+              ),
+              if (hasUid && onViewHistory != null)
+                TextButton.icon(
+                  onPressed: onViewHistory,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  icon: const Icon(Icons.person_search_outlined, size: 15),
+                  label: const Text('Contributor history'),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 bool _detectRevisionMismatch({
@@ -83,6 +278,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
   String? _statusFilter;
   String? _focusedSubmissionId;
   final Map<String, GlobalKey> _submissionCardKeys = {};
+  final Map<String, Map<String, dynamic>> _resolvedContributors = {};
+  final Map<String, List<Map<String, dynamic>>> _contributorHistoryCache = {};
 
   static bool _isPendingSubmission(Map<String, dynamic> item) {
     final status = (item['status'] as String?) ?? 'submitted';
@@ -158,6 +355,7 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
         item: item,
         targetEntry: effectiveTarget,
         allSubmissions: bundle.items,
+        resolvedContributors: bundle.resolvedContributors,
         repository: _repository,
         onPublished: () {
           if (mounted) {
@@ -197,7 +395,38 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     ]);
     final items = results[0] as List<Map<String, dynamic>>;
     final published = results[1] as List<DictionaryEntry>;
-    return _InboxBundle(items: items, publishedEntries: published);
+    final missingUids = <String>[];
+    final seenUids = <String>{};
+    for (final item in items) {
+      final uid = (item['contributorUid'] as String?)?.trim() ?? '';
+      if (uid.isEmpty || _resolvedContributors.containsKey(uid)) continue;
+      final rawSnapshot = item['contributorSnapshot'];
+      final snapshot = rawSnapshot is Map
+          ? rawSnapshot.cast<String, dynamic>()
+          : null;
+      final snapName = (snapshot?['displayName'] as String?)?.trim() ?? '';
+      final snapEmail = (snapshot?['email'] as String?)?.trim() ?? '';
+      if (snapName.isEmpty && snapEmail.isEmpty && seenUids.add(uid)) {
+        missingUids.add(uid);
+      }
+    }
+    if (missingUids.isNotEmpty) {
+      try {
+        final resolved = await _repository.resolveContributorIdentities(
+          missingUids,
+        );
+        _resolvedContributors.addAll(resolved);
+      } catch (_) {
+        // Legacy contributor resolution must never block the review inbox.
+      }
+    }
+    return _InboxBundle(
+      items: items,
+      publishedEntries: published,
+      resolvedContributors: Map<String, Map<String, dynamic>>.unmodifiable(
+        _resolvedContributors,
+      ),
+    );
   }
 
   void _refresh() {
@@ -205,6 +434,106 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     setState(() {
       _inbox = nextInbox;
     });
+  }
+
+  Future<void> _showContributorHistory(
+    _AdminContributorDetails details,
+    List<Map<String, dynamic>> inboxItems,
+  ) async {
+    if (details.uid.isEmpty) return;
+    var history = _contributorHistoryCache[details.uid];
+    if (history == null) {
+      try {
+        history = await _repository.loadMySuggestions(details.uid);
+      } catch (_) {
+        history = const [];
+      }
+      if (history.isEmpty) {
+        history = inboxItems
+            .where((entry) => entry['contributorUid'] == details.uid)
+            .toList();
+      }
+      _contributorHistoryCache[details.uid] = history;
+    }
+    if (!mounted) return;
+    await showAppGlassDialog<void>(
+      context: context,
+      builder: (ctx) => AppGlassDialog(
+        key: const Key('adminContributorHistoryDialog'),
+        maxWidth: 640,
+        title: Text(
+          'Contributor History · ${details.displayName ?? details.uid}',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            _AdminContributorInfoPanel(
+              details: details,
+              submissionCount: history!.length,
+              publishedCount: history
+                  .where((e) => e['status'] == 'published')
+                  .length,
+              compact: true,
+            ),
+            if (history.isEmpty)
+              const Text('No Dictionary contributions recorded yet.')
+            else
+              for (final entry in history)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    border: Border.all(
+                      color: Theme.of(ctx).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            (entry['term'] as String?) ?? 'Dictionary term',
+                            style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          AppStatusBadge(
+                            label: ((entry['status'] as String?) ?? 'submitted')
+                                .replaceAll('_', ' '),
+                          ),
+                          if ((entry['kind'] as String?)?.isNotEmpty ?? false)
+                            AppStatusBadge(
+                              label: dictionaryContributionLabel(
+                                entry['kind'] as String?,
+                              ),
+                            ),
+                        ],
+                      ),
+                      Text(
+                        'Submitted: ${_formatAdminDateTime(entry['createdAt'])}'
+                        '${entry['recognitionConsent'] == true && ((entry['publicName'] as String?)?.trim().isNotEmpty ?? false) ? ' · Public credit: ${entry['publicName']}' : ' · Private'}',
+                        style: Theme.of(ctx).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _perform(Future<void> Function() operation) async {
@@ -244,11 +573,8 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
   Future<void> _review(Map<String, dynamic> item, String status) async {
     await showAppGlassDialog<void>(
       context: context,
-      builder: (_) => _ReviewDialog(
-        item: item,
-        status: status,
-        repository: _repository,
-      ),
+      builder: (_) =>
+          _ReviewDialog(item: item, status: status, repository: _repository),
     );
     if (mounted) _refresh();
   }
@@ -287,55 +613,60 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     if (id == null || id.isEmpty) return;
     final events = await _repository.loadSuggestionHistory(id);
     if (!mounted) return;
+    final details = _resolveAdminContributor(item, _resolvedContributors);
     await showAppGlassDialog<void>(
       context: context,
       builder: (ctx) => AppGlassDialog(
         title: Text('Contribution history · ${item['term'] ?? ''}'),
-        content: events.isEmpty
-            ? const Text('No review decisions recorded yet.')
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 8,
-                children: [
-                  for (final ev in events)
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                        border: Border.all(
-                          color: Theme.of(ctx).colorScheme.outlineVariant,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            _AdminContributorInfoPanel(details: details, compact: true),
+            if (events.isEmpty)
+              const Text('No review decisions recorded yet.')
+            else
+              for (final ev in events)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    border: Border.all(
+                      color: Theme.of(ctx).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Wrap(
-                            spacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                ((ev['status'] as String?) ?? 'event')
-                                    .replaceAll('_', ' '),
-                                style: Theme.of(ctx).textTheme.labelLarge
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              if (ev['proposalEdited'] == true)
-                                const AppStatusBadge(
-                                  label: 'Proposal edited',
-                                  tone: AppStatusTone.info,
-                                ),
-                            ],
+                          Text(
+                            ((ev['status'] as String?) ?? 'event').replaceAll(
+                              '_',
+                              ' ',
+                            ),
+                            style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          if ((ev['note'] as String?)?.trim().isNotEmpty ??
-                              false)
-                            Text(ev['note'] as String),
+                          if (ev['proposalEdited'] == true)
+                            const AppStatusBadge(
+                              label: 'Proposal edited',
+                              tone: AppStatusTone.info,
+                            ),
                         ],
                       ),
-                    ),
-                ],
-              ),
+                      if ((ev['note'] as String?)?.trim().isNotEmpty ?? false)
+                        Text(ev['note'] as String),
+                    ],
+                  ),
+                ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -991,35 +1322,62 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
                                             ],
                                           ),
                                           const SizedBox(height: 10),
+                                          Builder(
+                                            builder: (context) {
+                                              final contribDetails =
+                                                  _resolveAdminContributor(
+                                                    item,
+                                                    bundle.resolvedContributors,
+                                                  );
+                                              final uid = contribDetails.uid;
+                                              final historyItems = uid.isEmpty
+                                                  ? const <
+                                                      Map<String, dynamic>
+                                                    >[]
+                                                  : bundle.items
+                                                        .where(
+                                                          (e) =>
+                                                              e['contributorUid'] ==
+                                                              uid,
+                                                        )
+                                                        .toList();
+                                              final pubCount = historyItems
+                                                  .where(
+                                                    (e) =>
+                                                        e['status'] ==
+                                                        'published',
+                                                  )
+                                                  .length;
+                                              return _AdminContributorInfoPanel(
+                                                key: Key(
+                                                  'adminContributorPanel_${item['id']}',
+                                                ),
+                                                details: contribDetails,
+                                                submissionCount: uid.isEmpty
+                                                    ? null
+                                                    : historyItems.length,
+                                                publishedCount: uid.isEmpty
+                                                    ? null
+                                                    : pubCount,
+                                                onViewHistory: uid.isEmpty
+                                                    ? null
+                                                    : () => _perform(
+                                                        () =>
+                                                            _showContributorHistory(
+                                                              contribDetails,
+                                                              bundle.items,
+                                                            ),
+                                                      ),
+                                              );
+                                            },
+                                          ),
+                                          const SizedBox(height: 10),
                                           _buildSuggestionDiffSection(
                                             context,
                                             item: item,
                                             targetPublished: target,
                                           ),
                                           const SizedBox(height: 10),
-                                          if (item['recognitionConsent'] ==
-                                                  true &&
-                                              ((item['publicName'] as String?)
-                                                      ?.isNotEmpty ??
-                                                  false))
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                bottom: 8,
-                                              ),
-                                              child: Text(
-                                                'Opt-in recognition requested '
-                                                'as: ${item['publicName']}',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.copyWith(
-                                                      color:
-                                                          AppTokens.secondaryTextColor(
-                                                            context,
-                                                          ),
-                                                    ),
-                                              ),
-                                            ),
                                           Wrap(
                                             spacing: 8,
                                             runSpacing: 8,
@@ -1848,6 +2206,7 @@ class _ApproveAndPublishImagesDialog extends StatefulWidget {
     required this.targetEntry,
     required this.allSubmissions,
     required this.repository,
+    this.resolvedContributors = const {},
     this.onPublished,
   });
 
@@ -1855,6 +2214,7 @@ class _ApproveAndPublishImagesDialog extends StatefulWidget {
   final DictionaryEntry targetEntry;
   final List<Map<String, dynamic>> allSubmissions;
   final DictionaryRepository repository;
+  final Map<String, Map<String, dynamic>> resolvedContributors;
   final VoidCallback? onPublished;
 
   @override
@@ -2091,6 +2451,13 @@ class _ApproveAndPublishImagesDialogState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 12,
                 children: [
+                  _AdminContributorInfoPanel(
+                    details: _resolveAdminContributor(
+                      widget.item,
+                      widget.resolvedContributors,
+                    ),
+                    compact: true,
+                  ),
                   Wrap(
                     spacing: 8,
                     runSpacing: 6,

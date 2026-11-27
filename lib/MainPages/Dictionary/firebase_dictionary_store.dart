@@ -161,8 +161,7 @@ class FirebaseDictionaryStore implements DictionaryStore {
   }
 
   /// Uses the same authenticated callable protocol as curriculum suggestions.
-  @override
-  Future<void> executeAction(
+  Future<Map<String, dynamic>> _callCallable(
     String actionName,
     Map<String, dynamic> data,
   ) async {
@@ -213,6 +212,41 @@ class FirebaseDictionaryStore implements DictionaryStore {
         error?['message'] as String? ?? 'Could not complete the request.',
       );
     }
+    return (result['result'] as Map?)?.cast<String, dynamic>() ?? const {};
+  }
+
+  @override
+  Future<void> executeAction(
+    String actionName,
+    Map<String, dynamic> data,
+  ) async {
+    await _callCallable(actionName, data);
+  }
+
+  @override
+  Future<Map<String, Map<String, dynamic>>> resolveContributorIdentities(
+    List<String> uids,
+  ) async {
+    final unique = <String>[];
+    final seen = <String>{};
+    for (final uid in uids) {
+      final trimmed = uid.trim();
+      if (trimmed.isEmpty || !seen.add(trimmed)) continue;
+      unique.add(trimmed);
+      if (unique.length >= 50) break;
+    }
+    if (unique.isEmpty) return const {};
+    final payload = await _callCallable('editDictionary', {
+      'action': 'resolve_contributors',
+      'uids': unique,
+    });
+    final rawContributors = payload['contributors'];
+    if (rawContributors is! Map) return const {};
+    return {
+      for (final entry in rawContributors.entries)
+        if (entry.key is String && entry.value is Map)
+          entry.key as String: (entry.value as Map).cast<String, dynamic>(),
+    };
   }
 
   @override

@@ -70,6 +70,12 @@ abstract interface class DictionaryStore {
 
   /// Loads immutable editorial revision snapshots for [entryId], newest first.
   Future<List<Map<String, dynamic>>> loadEntryRevisions(String entryId);
+
+  /// Resolves private contributor identity metadata for legacy submissions
+  /// that have a UID but lack an embedded `contributorSnapshot` (admin-only).
+  Future<Map<String, Map<String, dynamic>>> resolveContributorIdentities(
+    List<String> uids,
+  );
 }
 
 /// Pure in-memory [DictionaryStore] implementation with zero Firebase
@@ -80,7 +86,13 @@ class InMemoryDictionaryStore implements DictionaryStore {
     Map<String, String> skillLabels = const {},
     List<Map<String, dynamic>> suggestions = const [],
     List<DictionaryEntry> drafts = const [],
-  }) : _skillLabels = Map<String, String>.from(skillLabels) {
+    Map<String, Map<String, dynamic>> contributorDirectory = const {},
+    this.activeContributorUid,
+  }) : _skillLabels = Map<String, String>.from(skillLabels),
+       _contributorDirectory = {
+         for (final entry in contributorDirectory.entries)
+           entry.key: Map<String, dynamic>.from(entry.value),
+       } {
     for (final entry in publishedEntries) {
       _publishedById[entry.id] = DictionaryEntry(
         Map<String, dynamic>.from(entry.data),
@@ -106,6 +118,8 @@ class InMemoryDictionaryStore implements DictionaryStore {
   final List<Map<String, dynamic>> _suggestions = [];
   final Map<String, List<Map<String, dynamic>>> _suggestionHistory = {};
   final Map<String, List<Map<String, dynamic>>> _revisionsByEntryId = {};
+  final Map<String, Map<String, dynamic>> _contributorDirectory;
+  final String? activeContributorUid;
   final List<(String, Map<String, dynamic>)> executedActions = [];
 
   @override
@@ -123,6 +137,42 @@ class InMemoryDictionaryStore implements DictionaryStore {
   @override
   Future<Map<String, String>> loadSkillLabels() async =>
       Map<String, String>.from(_skillLabels);
+
+  static String _safePublicName(String? raw, {String uid = ''}) {
+    if (raw == null) return '';
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty ||
+        trimmed.length > 80 ||
+        trimmed.contains('@') ||
+        trimmed.toLowerCase() == 'guest' ||
+        (uid.isNotEmpty && trimmed == uid)) {
+      return '';
+    }
+    return trimmed;
+  }
+
+  @override
+  Future<Map<String, Map<String, dynamic>>> resolveContributorIdentities(
+    List<String> uids,
+  ) async {
+    final result = <String, Map<String, dynamic>>{};
+    for (final rawUid in uids) {
+      final uid = rawUid.trim();
+      if (uid.isEmpty || result.containsKey(uid)) continue;
+      final found = _contributorDirectory[uid];
+      if (found != null) {
+        result[uid] = {
+          'uid': uid,
+          'displayName': found['displayName'],
+          'email': found['email'],
+          'source': found['source'] ?? 'profile',
+          'resolved': true,
+        };
+      }
+      if (result.length >= 50) break;
+    }
+    return result;
+  }
 
   @override
   Future<void> executeAction(
@@ -144,15 +194,45 @@ class InMemoryDictionaryStore implements DictionaryStore {
             },
           )
           .toList();
+      final uid =
+          (data['contributorUid'] as String?)?.trim() ??
+          activeContributorUid ??
+          '';
+      final directoryRecord = uid.isNotEmpty
+          ? _contributorDirectory[uid]
+          : null;
+      final consent = data['recognitionConsent'] == true;
+      final directoryName = _safePublicName(
+        directoryRecord?['displayName'] as String?,
+        uid: uid,
+      );
+      final clientPublicName = _safePublicName(
+        data['publicName'] as String?,
+        uid: uid,
+      );
+      final resolvedPublicName = consent
+          ? (directoryName.isNotEmpty ? directoryName : clientPublicName)
+          : '';
+      final nowIso = DateTime.now().toIso8601String();
       _suggestions.insert(0, {
         ...data,
         'id': id,
+        if (uid.isNotEmpty) 'contributorUid': uid,
+        if (directoryRecord != null)
+          'contributorSnapshot': {
+            'displayName': directoryRecord['displayName'],
+            'email': directoryRecord['email'],
+            'source': directoryRecord['source'] ?? 'profile',
+            'capturedAt': nowIso,
+          },
+        'recognitionConsent': consent,
+        'publicName': resolvedPublicName.isNotEmpty ? resolvedPublicName : null,
         if (rawImages.isNotEmpty) 'submittedImages': rawImages,
         'textDecision': (data['kind'] == 'image_contribution')
             ? 'rejected'
             : 'pending',
         'status': 'submitted',
-        'createdAt': DateTime.now().toIso8601String(),
+        'createdAt': nowIso,
       });
       return;
     }
@@ -213,12 +293,31 @@ class InMemoryDictionaryStore implements DictionaryStore {
           }
           resolvedStatus ??= (item['status'] as String?) ?? 'reviewed';
           item['status'] = resolvedStatus;
+          if (data.containsKey('recognitionConsent') ||
+              data.containsKey('publicName')) {
+            final nextConsent = data.containsKey('recognitionConsent')
+                ? data['recognitionConsent'] == true
+                : item['recognitionConsent'] == true;
+            item['recognitionConsent'] = nextConsent;
+            if (!nextConsent) {
+              item['publicName'] = null;
+            } else if (data.containsKey('publicName')) {
+              final cleaned = _safePublicName(
+                data['publicName'] as String?,
+                uid: (item['contributorUid'] as String?) ?? '',
+              );
+              item['publicName'] = cleaned.isNotEmpty ? cleaned : null;
+            }
+          }
           break;
         }
       }
       _suggestionHistory.putIfAbsent(id, () => []).insert(0, {
         'status': resolvedStatus ?? 'reviewed',
         'note': note,
+        if (data.containsKey('recognitionConsent') ||
+            data.containsKey('publicName'))
+          'attributionUpdated': true,
         'at': DateTime.now().toIso8601String(),
       });
       return;
@@ -308,8 +407,16 @@ class InMemoryDictionaryStore implements DictionaryStore {
           .toList();
       final approvedMediaEntries = approvedImages.map((img) {
         final caption = (img['caption'] as String?)?.trim() ?? '';
+        final rawUrl = (img['url'] as String?) ?? '';
+        final promotedUrl =
+            (rawUrl.contains('dictionary_submissions/') ||
+                rawUrl.contains('dictionary_submissions%2F'))
+            ? 'https://firebasestorage.googleapis.com/v0/b/demo/o/'
+                  'dictionary_public%2F$targetId%2Fpromoted_'
+                  '${img['id'] ?? 'img'}.png?alt=media&token=promoted'
+            : rawUrl;
         final item = <String, dynamic>{
-          'url': img['url'],
+          'url': promotedUrl,
           'label': caption.isNotEmpty
               ? caption
               : (baseEntry['term'] as String? ?? 'Dictionary image'),

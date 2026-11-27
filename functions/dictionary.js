@@ -187,13 +187,128 @@ function parseSubmissionStoragePath(rawUrl, expectedUid = null, expectedSubmissi
   return {bucketName: parsed.bucketName, objectPath: parsed.objectPath, uid, submissionId};
 }
 
+function profileId(email) {
+  return email.replaceAll('.', '666').replaceAll('@', '999')
+      .replaceAll('f', '5').replaceAll('e', '1').replaceAll('g', '2')
+      .replaceAll('m', '').replaceAll('a', 'p').replaceAll('i', 'a')
+      .replaceAll('co', 'l');
+}
+
+function safeSnapshotDisplayName(rawName) {
+  if (typeof rawName !== 'string') return null;
+  const trimmed = rawName.trim();
+  if (!trimmed || trimmed.length > 80) return null;
+  return trimmed;
+}
+
+function safeSnapshotEmail(rawEmail) {
+  if (typeof rawEmail !== 'string') return null;
+  const trimmed = rawEmail.trim();
+  if (!trimmed || trimmed.length > 254 || !trimmed.includes('@')) return null;
+  return trimmed;
+}
+
+function safePublicAttributionName(rawName, uid = null) {
+  const safe = safePublicContributorName(rawName);
+  if (!safe) return null;
+  if (safe.toLowerCase() === 'guest') return null;
+  if (uid && safe === uid) return null;
+  return safe;
+}
+
+function extractContributorProfileFields(snap, uid) {
+  if (!snap || !snap.exists) return null;
+  const data = typeof snap.data === 'function' ? snap.data() : null;
+  if (!data || typeof data !== 'object') return null;
+  if (data.ownerUid && uid && data.ownerUid !== uid) return null;
+  return {
+    name: safeSnapshotDisplayName(data.name),
+    email: safeSnapshotEmail(data.email),
+  };
+}
+
+async function lookupRiderProfileForContributor(db, {uid, email} = {}) {
+  if (!db || typeof db.collection !== 'function') return {name: null, email: null};
+  const profilesCol = db.collection('Rider_Profile');
+  if (email) {
+    try {
+      const directSnap = await profilesCol.doc(profileId(email.toLowerCase())).get();
+      const extracted = extractContributorProfileFields(directSnap, uid);
+      if (extracted) return extracted;
+    } catch (_) {
+      // Ignore profile lookup errors; fallback below may still resolve.
+    }
+  }
+  if (uid && typeof profilesCol.where === 'function') {
+    try {
+      const qs = await profilesCol.where('ownerUid', '==', uid).limit(1).get();
+      const doc = Array.isArray(qs?.docs) ? qs.docs[0] : null;
+      const extracted = extractContributorProfileFields(doc ? {...doc, exists: true} : null, uid);
+      if (extracted) return extracted;
+    } catch (_) {
+      // Ignore missing index/query support in partial mocks.
+    }
+  }
+  return {name: null, email: null};
+}
+
+async function resolveContributorIdentity(db, auth, {uid, token} = {}) {
+  const tokenEmail = safeSnapshotEmail(token?.email);
+  const tokenDisplayName = safeSnapshotDisplayName(token?.name);
+  let profile = await lookupRiderProfileForContributor(db, {uid, email: tokenEmail});
+  let authEmail = null;
+  let authDisplayName = null;
+
+  if (auth && typeof auth.getUser === 'function' && uid && (!tokenEmail || (!profile.name && !tokenDisplayName))) {
+    try {
+      const userRecord = await auth.getUser(uid);
+      authEmail = safeSnapshotEmail(userRecord?.email);
+      authDisplayName = safeSnapshotDisplayName(userRecord?.displayName);
+      if (!profile.name && authEmail && authEmail.toLowerCase() !== (tokenEmail || '').toLowerCase()) {
+        const directSnap = await db.collection('Rider_Profile').doc(profileId(authEmail.toLowerCase())).get();
+        const extracted = extractContributorProfileFields(directSnap, uid);
+        if (extracted) profile = extracted;
+      }
+    } catch (_) {
+      // Ignore auth/user-not-found or transient errors cleanly.
+    }
+  }
+
+  const displayName = profile.name || tokenDisplayName || authDisplayName || null;
+  const email = tokenEmail || authEmail || profile.email || null;
+  const source = profile.name ? 'profile' : ((tokenDisplayName || authDisplayName) ? 'auth' : 'none');
+  return {uid, displayName, email, source};
+}
+
+function safeAttributionList(rawAttributions, uid = null) {
+  if (!Array.isArray(rawAttributions) || rawAttributions.length > 50) {
+    throw new HttpsError('invalid-argument', 'Invalid attributions list.');
+  }
+  const cleaned = [];
+  const seen = new Set();
+  for (const item of rawAttributions) {
+    const safe = safePublicAttributionName(item, uid);
+    if (!safe) {
+      throw new HttpsError('invalid-argument', 'Public attributions must not contain emails, UIDs, or blanks.');
+    }
+    if (!seen.has(safe)) {
+      seen.add(safe);
+      cleaned.push(safe);
+    }
+  }
+  return cleaned;
+}
+
 function summarizeSubmittedMediaProposal(submittedImages, reason) {
   const count = submittedImages.length;
   const base = count === 1 ? 'Submitted 1 educational image.' : `Submitted ${count} educational images.`;
   return reason ? `${base} Note: ${reason}` : base;
 }
 
-function submitDictionarySuggestion(db, {secret, now = () => Date.now(), requireAppCheck = true, bucket = null} = {}) {
+function submitDictionarySuggestion(
+    db,
+    {secret, now = () => Date.now(), requireAppCheck = true, bucket = null, auth = null} = {},
+) {
   return async (request) => {
     if (requireAppCheck && !request.app) throw new HttpsError('unauthenticated', 'App verification required.');
     if (!request.auth || !request.auth.uid || request.auth.token?.email_verified !== true) {
@@ -322,9 +437,24 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
       throw new HttpsError('invalid-argument', 'Public contributions must not contain email addresses.');
     }
     const recognitionConsent = raw.recognitionConsent === true;
-    const publicName = recognitionConsent ? safePublicContributorName(raw.publicName) : null;
-    if (recognitionConsent && !publicName) throw new HttpsError('invalid-argument', 'A public name is required.');
     if (!secret) throw new HttpsError('failed-precondition', 'Submission protection is not configured.');
+    const identity = await resolveContributorIdentity(db, auth, {uid, token: request.auth.token});
+    const serverPublicName = safePublicAttributionName(identity.displayName, uid);
+    let publicName = null;
+    if (recognitionConsent) {
+      if (serverPublicName) {
+        publicName = serverPublicName;
+      } else if (raw.publicName != null && String(raw.publicName).trim() !== '') {
+        const fallbackName = safePublicAttributionName(raw.publicName, uid);
+        if (!fallbackName) {
+          throw new HttpsError(
+              'invalid-argument',
+              'Public attribution name must be a display name without an email address.',
+          );
+        }
+        publicName = fallbackName;
+      }
+    }
     const at = now();
     const ip = request.rawRequest?.ip || '';
     if (!ip) throw new HttpsError('invalid-argument', 'Missing request address.');
@@ -381,15 +511,22 @@ function submitDictionarySuggestion(db, {secret, now = () => Date.now(), require
       for (let i = 0; i < buckets.length; i++) {
         tx.set(buckets[i], {count: (limits[i].data()?.count || 0) + 1, expiresAt: new Date(at + 172800000)});
       }
+      const createdDate = new Date(at);
       const record = {
         term, proposal, kind, recognitionConsent, publicName,
         termId,
         contributorUid: uid,
+        contributorSnapshot: {
+          displayName: identity.displayName,
+          email: identity.email,
+          source: identity.source,
+          capturedAt: createdDate,
+        },
         requestKey: digest(ip),
         status: 'submitted',
         textDecision: kind === 'image_contribution' ? 'rejected' : 'pending',
         rightsConfirmed,
-        createdAt: new Date(at),
+        createdAt: createdDate,
       };
       if (reason) record.reason = reason;
       if (categories.length > 0) record.categories = categories;
@@ -691,11 +828,64 @@ function normalizeImageDecisionsInput(rawDecisions) {
   return byId;
 }
 
-function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
+async function resolveContributorsBatch(db, auth, rawUids) {
+  if (!Array.isArray(rawUids) || rawUids.length > 50) {
+    throw new HttpsError('invalid-argument', 'Provide up to 50 contributor UIDs.');
+  }
+  const uniqueUids = [];
+  const seen = new Set();
+  for (const rawUid of rawUids) {
+    if (typeof rawUid !== 'string') continue;
+    const trimmed = rawUid.trim();
+    if (!trimmed || trimmed.length > 128 || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    uniqueUids.push(trimmed);
+  }
+  if (uniqueUids.length === 0) return {};
+
+  const authByUid = new Map();
+  if (auth) {
+    if (typeof auth.getUsers === 'function') {
+      try {
+        const res = await auth.getUsers(uniqueUids.map((uid) => ({uid})));
+        for (const userRecord of (res?.users || [])) {
+          if (userRecord?.uid) authByUid.set(userRecord.uid, userRecord);
+        }
+      } catch (_) {
+        // Fallback below handles partial auth lookup failures cleanly.
+      }
+    } else if (typeof auth.getUser === 'function') {
+      const results = await Promise.allSettled(uniqueUids.map((uid) => auth.getUser(uid)));
+      for (let i = 0; i < uniqueUids.length; i++) {
+        if (results[i].status === 'fulfilled' && results[i].value) {
+          authByUid.set(uniqueUids[i], results[i].value);
+        }
+      }
+    }
+  }
+
+  const resolvedEntries = await Promise.all(uniqueUids.map(async (uid) => {
+    const authRecord = authByUid.get(uid) || null;
+    const authEmail = safeSnapshotEmail(authRecord?.email);
+    const authDisplayName = safeSnapshotDisplayName(authRecord?.displayName);
+    const profile = await lookupRiderProfileForContributor(db, {uid, email: authEmail});
+    const displayName = profile.name || authDisplayName || null;
+    const email = authEmail || profile.email || null;
+    const source = profile.name ? 'profile' : (authDisplayName ? 'auth' : 'none');
+    return [uid, {uid, displayName, email, source, resolved: true}];
+  }));
+  return Object.fromEntries(resolvedEntries);
+}
+
+function editDictionary(db, {now = () => new Date(), bucket = null, auth = null} = {}) {
   return async (request) => {
     requireAdmin(request);
     const raw = request.data || {};
     const action = raw.action;
+    if (action === 'resolve_contributors') {
+      const contributors = await resolveContributorsBatch(db, auth, raw.uids);
+      return {contributors};
+    }
     const at = now();
     const id = text(raw.id, 100, 'id', true);
     if (!/^[A-Za-z0-9-]+$/.test(id)) throw new HttpsError('invalid-argument', 'Invalid ID.');
@@ -711,6 +901,9 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
         null;
       if (requestedTextDecision && !TEXT_DECISIONS.has(requestedTextDecision)) {
         throw new HttpsError('invalid-argument', 'Invalid text decision.');
+      }
+      if (raw.recognitionConsent !== undefined && typeof raw.recognitionConsent !== 'boolean') {
+        throw new HttpsError('invalid-argument', 'Invalid recognition consent.');
       }
       const decisionMap = normalizeImageDecisionsInput(raw.imageDecisions);
       const ref = db.collection('DictionarySuggestions').doc(id);
@@ -789,6 +982,33 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
           textDecision,
           updatedAt: at,
         };
+        const hasAttributionUpdate = raw.recognitionConsent !== undefined || raw.publicName !== undefined;
+        if (hasAttributionUpdate) {
+          const nextConsent = raw.recognitionConsent !== undefined ?
+            raw.recognitionConsent === true :
+            current.recognitionConsent === true;
+          let nextPublicName = null;
+          if (nextConsent) {
+            if (raw.publicName !== undefined) {
+              if (raw.publicName != null && String(raw.publicName).trim() !== '') {
+                nextPublicName = safePublicAttributionName(raw.publicName, current.contributorUid);
+                if (!nextPublicName) {
+                  throw new HttpsError(
+                      'invalid-argument',
+                      'Public attribution name must be a display name without an email address.',
+                  );
+                }
+              }
+            } else {
+              nextPublicName = safePublicAttributionName(
+                  current.publicName || current.contributorSnapshot?.displayName,
+                  current.contributorUid,
+              );
+            }
+          }
+          patch.recognitionConsent = nextConsent;
+          patch.publicName = nextPublicName;
+        }
         if (currentImages.length > 0) {
           patch.submittedImages = updatedImages;
           pathsToDelete = updatedImages
@@ -822,6 +1042,7 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
           })),
           note: text(raw.note, 2000, 'review note'),
           proposalEdited: Boolean(editedFields || editedProposal),
+          ...(hasAttributionUpdate ? {attributionUpdated: true} : {}),
           at,
           actorUid: request.auth.uid,
         });
@@ -906,7 +1127,7 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
 
       const existingMedia = Array.isArray(baseEntry.media) ? baseEntry.media : [];
       const contributorCredit = current.recognitionConsent === true ?
-        safePublicContributorName(current.publicName) :
+        safePublicAttributionName(current.publicName, current.contributorUid) :
         null;
       const approvedMediaItems = approvedImages.map((img) => {
         const item = {
@@ -1098,7 +1319,7 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
     const preContribData = preContribSnap?.exists ? preContribSnap.data() : null;
     const approvedSubmissionPaths = approvedSubmissionPathMap(preContribData);
     const contributorCredit = preContribData?.recognitionConsent === true ?
-      safePublicContributorName(preContribData.publicName) :
+      safePublicAttributionName(preContribData.publicName, preContribData.contributorUid) :
       null;
 
     let promotedFiles = [];
@@ -1183,8 +1404,12 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
             }
           }
           const credit = contribution?.data();
-          const publicName = credit?.recognitionConsent === true ? safePublicContributorName(credit.publicName) : null;
-          const priorNames = currentPublic.data()?.attributions || [];
+          const publicName = credit?.recognitionConsent === true ?
+            safePublicAttributionName(credit.publicName, credit.contributorUid) :
+            null;
+          const priorNames = raw.entry?.attributions !== undefined ?
+            safeAttributionList(raw.entry.attributions, credit?.contributorUid) :
+            (currentPublic.data()?.attributions || []);
           const attributions = [...new Set([...priorNames, ...(publicName ? [publicName] : [])])];
           tx.set(publicRef, {...entry, revision: nextRevision, status: 'published', publishedAt: at, attributions});
           tx.set(manifestRef, {
@@ -1235,6 +1460,6 @@ module.exports = {
   validateEntry, validateStructuredFields, extractStructuredFields, computeChangedFields,
   effectivePublishedRevision, parseFirebaseStorageUrl, extractDraftStoragePath,
   parseSubmissionStoragePath, validateMediaOwnership, promoteDraftMedia, cleanupAbandonedDraftMedia,
-  requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry,
+  requireAdmin, submitDictionarySuggestion, editDictionary, publicEntry, resolveContributorIdentity,
   dictionaryEmulator: process.env.FUNCTIONS_EMULATOR === 'true',
 };

@@ -117,6 +117,8 @@ class _DictionaryImageContributionDialogState
       _error = null;
     });
     try {
+      final identity = DictionaryContributorIdentity.fromContext(context);
+      final fallbackName = _publicNameController.text.trim();
       final note = _noteController.text.trim();
       await widget.repository.call('submitDictionarySuggestion', {
         'submissionId': _submissionId,
@@ -127,7 +129,10 @@ class _DictionaryImageContributionDialogState
         'submittedImages': _images.map((e) => e.toSubmissionMap()).toList(),
         'rightsConfirmed': true,
         'recognitionConsent': _recognitionConsent,
-        'publicName': _recognitionConsent ? _publicNameController.text : '',
+        if (_recognitionConsent &&
+            !identity.hasSuitablePublicName &&
+            fallbackName.isNotEmpty)
+          'publicName': fallbackName,
         'website': '',
       });
       if (mounted) {
@@ -225,6 +230,7 @@ class _DictionaryImageContributionDialogState
                       ),
                     ),
                     DictionaryContributorAttributionSection(
+                      identity: identity,
                       requireRightsConfirmation: true,
                       rightsConfirmed: _rightsConfirmed,
                       onRightsChanged: (value) =>

@@ -15,6 +15,8 @@ class DictionaryContributorIdentity {
     required this.isSignedIn,
     required this.emailVerified,
     required this.uid,
+    this.profileDisplayName = '',
+    this.authDisplayName = '',
   });
 
   factory DictionaryContributorIdentity.fromAppState(AppState? appState) {
@@ -31,6 +33,10 @@ class DictionaryContributorIdentity {
       isSignedIn: signedIn,
       emailVerified: signedIn && user.emailVerified,
       uid: signedIn ? user.id : '',
+      profileDisplayName: signedIn
+          ? (appState.usersProfile?.name ?? '').trim()
+          : '',
+      authDisplayName: signedIn ? user.name.trim() : '',
     );
   }
 
@@ -52,11 +58,38 @@ class DictionaryContributorIdentity {
     return DictionaryContributorIdentity.fromAppState(cubit.state);
   }
 
+  /// Sanitizes a candidate public display name, stripping email addresses,
+  /// placeholders such as `'guest'`, UIDs, or overlong strings.
+  static String sanitizePublicDisplayName(String? raw, {String uid = ''}) {
+    if (raw == null) return '';
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty ||
+        trimmed.length > 80 ||
+        trimmed.contains('@') ||
+        trimmed.toLowerCase() == 'guest' ||
+        (uid.isNotEmpty && trimmed == uid)) {
+      return '';
+    }
+    return trimmed;
+  }
+
   final bool isSignedIn;
   final bool emailVerified;
   final String uid;
+  final String profileDisplayName;
+  final String authDisplayName;
 
   bool get canContribute => isSignedIn && emailVerified;
+
+  /// Best available public attribution name resolved automatically from the
+  /// member's app profile, falling back to their Firebase Auth display name.
+  String get resolvedPublicDisplayName {
+    final profileName = sanitizePublicDisplayName(profileDisplayName, uid: uid);
+    if (profileName.isNotEmpty) return profileName;
+    return sanitizePublicDisplayName(authDisplayName, uid: uid);
+  }
+
+  bool get hasSuitablePublicName => resolvedPublicDisplayName.isNotEmpty;
 
   @override
   bool operator ==(Object other) =>
@@ -65,10 +98,18 @@ class DictionaryContributorIdentity {
           runtimeType == other.runtimeType &&
           isSignedIn == other.isSignedIn &&
           emailVerified == other.emailVerified &&
-          uid == other.uid;
+          uid == other.uid &&
+          profileDisplayName == other.profileDisplayName &&
+          authDisplayName == other.authDisplayName;
 
   @override
-  int get hashCode => Object.hash(isSignedIn, emailVerified, uid);
+  int get hashCode => Object.hash(
+    isSignedIn,
+    emailVerified,
+    uid,
+    profileDisplayName,
+    authDisplayName,
+  );
 }
 
 /// Clear friendly guidance for signed-out or unverified visitors who tap a
@@ -164,6 +205,7 @@ class DictionaryContributionAuthPrompt extends StatelessWidget {
 class DictionaryContributorAttributionSection extends StatelessWidget {
   const DictionaryContributorAttributionSection({
     super.key,
+    required this.identity,
     required this.requireRightsConfirmation,
     required this.rightsConfirmed,
     required this.onRightsChanged,
@@ -171,9 +213,11 @@ class DictionaryContributorAttributionSection extends StatelessWidget {
     required this.onRecognitionConsentChanged,
     required this.publicNameController,
     required this.busy,
+    this.onOpenProfile,
     this.errorText,
   });
 
+  final DictionaryContributorIdentity identity;
   final bool requireRightsConfirmation;
   final bool rightsConfirmed;
   final ValueChanged<bool> onRightsChanged;
@@ -181,11 +225,14 @@ class DictionaryContributorAttributionSection extends StatelessWidget {
   final ValueChanged<bool> onRecognitionConsentChanged;
   final TextEditingController publicNameController;
   final bool busy;
+  final VoidCallback? onOpenProfile;
   final String? errorText;
 
   @override
   Widget build(BuildContext context) {
     final secondaryColor = AppTokens.secondaryTextColor(context);
+    final profileName = identity.resolvedPublicDisplayName;
+    final hasProfileName = identity.hasSuitablePublicName;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -238,29 +285,122 @@ class DictionaryContributorAttributionSection extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           controlAffinity: ListTileControlAffinity.leading,
           value: recognitionConsent,
-          title: const Text('Credit me publicly if approved (optional)'),
+          title: const Text(
+            'Credit me publicly if this contribution is approved',
+          ),
           onChanged: busy
               ? null
               : (value) => onRecognitionConsentChanged(value ?? false),
         ),
-        if (recognitionConsent)
-          TextFormField(
-            key: const Key('dictionaryPublicNameField'),
-            controller: publicNameController,
-            maxLength: 80,
-            enabled: !busy,
-            decoration: const InputDecoration(
-              labelText: 'Public attribution name',
-              hintText: 'Name shown if published (never use an email)',
+        if (recognitionConsent && hasProfileName)
+          Container(
+            key: const Key('dictionaryPublicCreditPreview'),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.35),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            validator: (value) =>
-                value == null || value.trim().isEmpty || value.contains('@')
-                ? 'Use a public display name without an email address.'
-                : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 4,
+              children: [
+                Text(
+                  'Proposed public credit: $profileName',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'Using your profile display name. Your email address and '
+                  'account ID are never published.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+                ),
+              ],
+            ),
+          )
+        else if (recognitionConsent)
+          Container(
+            key: const Key('dictionaryMissingProfileNameNotice'),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.35),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      'No public display name is set on your profile yet.',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: secondaryColor),
+                    ),
+                    TextButton.icon(
+                      key: const Key('dictionaryOpenProfileForNameButton'),
+                      onPressed: busy
+                          ? null
+                          : () {
+                              if (onOpenProfile != null) {
+                                onOpenProfile!();
+                                return;
+                              }
+                              final router = GoRouter.maybeOf(context);
+                              Navigator.maybePop(context);
+                              router?.go('/');
+                            },
+                      icon: const Icon(Icons.person_outline, size: 16),
+                      label: const Text('Set name in Profile'),
+                    ),
+                  ],
+                ),
+                TextFormField(
+                  key: const Key('dictionaryPublicNameField'),
+                  controller: publicNameController,
+                  maxLength: 80,
+                  enabled: !busy,
+                  decoration: const InputDecoration(
+                    labelText: 'Optional public attribution name',
+                    hintText:
+                        'Leave blank to publish without credit (never use an email)',
+                  ),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) return null;
+                    if (trimmed.contains('@') ||
+                        DictionaryContributorIdentity.sanitizePublicDisplayName(
+                          trimmed,
+                          uid: identity.uid,
+                        ).isEmpty) {
+                      return 'Use a public display name without an email address.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
           ),
         Text(
           'Submissions are linked privately to your account so you can track '
-          'editorial status. Your email address is never shown publicly.',
+          'editorial status. Your email address and account ID are never '
+          'shown publicly.',
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: secondaryColor),

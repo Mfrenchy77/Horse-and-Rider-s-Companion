@@ -278,6 +278,10 @@ class DictionaryRepository {
   Future<List<Map<String, dynamic>>> loadEntryRevisions(String entryId) =>
       _store.loadEntryRevisions(entryId);
 
+  Future<Map<String, Map<String, dynamic>>> resolveContributorIdentities(
+    List<String> uids,
+  ) => _store.resolveContributorIdentities(uids);
+
   static DictionaryEntry? resolve(List<DictionaryEntry> entries, String value) {
     final needle = value.toLowerCase().trim();
     final published = entries.where((entry) => entry.published);
