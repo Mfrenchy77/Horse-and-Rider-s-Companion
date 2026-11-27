@@ -381,4 +381,29 @@ test('legacy profiles without ownerUid remain compatible and dictionary_submissi
       200,
   );
   assert.ok([200, 204].includes((await deleteObject('dictionary_submissions/member-1/sub-1/img.webp', verifiedAdminToken)).status));
+
+  // Staged deployment compatibility: legacy clients without explicit image/PDF MIME metadata
+  // or uploading new-resource PDFs before creating Resources/{id} are blocked by hardened rules,
+  // confirming why storage rules must deploy before hosting and roll back with hosting if reverted.
+  assert.equal(
+      (await uploadObject('Horses_Photo/legacy-horse-no-uid', Buffer.from('raw'), 'application/octet-stream', memberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('Riders_Photo/legacy-rider-no-uid', Buffer.from('raw'), 'application/octet-stream', memberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('resources/pdfs/uncreated-resource-doc/guide.pdf', Buffer.from('%PDF'), 'application/pdf', memberToken)).status,
+      403,
+  );
+  // New clients with UID-scoped paths succeed even before Firestore docs exist, and legacy GETs stay public.
+  assert.equal(
+      (await uploadObject('resources/pdfs/users/member-1/uncreated-resource-doc/guide.pdf', Buffer.from('%PDF'), 'application/pdf', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await readObject('Riders_Photo/legacy-rider-no-uid', null)).status,
+      200,
+  );
 });

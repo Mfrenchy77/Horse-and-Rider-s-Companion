@@ -304,9 +304,13 @@ service cloud.firestore {
       }
 
       match /SkillVerificationEvents/{eventId} {
-        allow get, list: if canReadVerificationEvent(
-          get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
-        );
+        allow get, list: if (
+            exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+            && isAuthorizedHorseReader(get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data)
+          )
+          || canReadVerificationEvent(
+            get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
+          );
         allow write: if false;
       }
     }
@@ -356,9 +360,13 @@ service cloud.firestore {
       }
 
       match /SkillVerificationEvents/{eventId} {
-        allow get, list: if canReadVerificationEvent(
-          get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
-        );
+        allow get, list: if (
+            exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+            && isAuthorizedRiderReader(get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data)
+          )
+          || canReadVerificationEvent(
+            get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
+          );
         allow write: if false;
       }
     }

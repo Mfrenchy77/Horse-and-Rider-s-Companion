@@ -1,0 +1,523 @@
+// Staged Firestore security rules for the Requests migration.
+// Live firebase/firestore.rules remains untouched until production cutover.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verifiedEmailIs(email) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == email;
+    }
+
+    function verifiedLowerEmail() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        ? request.auth.token.email.lower()
+        : '';
+    }
+
+    function verifiedAuth() {
+      return request.auth != null
+        && request.auth.token.email_verified == true;
+    }
+
+    function isProfileOwner(profileData, fallbackEmail) {
+      return verifiedAuth()
+        && (
+          profileData.keys().hasAll(['ownerUid'])
+            ? request.auth.uid == profileData.ownerUid
+            : verifiedEmailIs(fallbackEmail)
+        );
+    }
+
+    function isVerifiedEditor() {
+      return verifiedAuth()
+        && request.auth.token.get('editor', false) == true;
+    }
+
+    function isAdmin() {
+      return verifiedAuth()
+        && request.auth.token.get('admin', false) == true;
+    }
+
+    function isModerator() {
+      return verifiedAuth()
+        && request.auth.token.get('moderator', false) == true;
+    }
+
+    function isStaff() {
+      return isAdmin() || isModerator();
+    }
+
+    function validSkillProgressLevel(skillData, levelsMap, levelKey) {
+      return !(levelKey in levelsMap)
+        || (
+          resource != null
+          && resource.data.get('levels', null) is map
+          && levelKey in resource.data.levels
+          && levelsMap[levelKey] == resource.data.levels[levelKey]
+        )
+        || (
+          levelKey in skillData.availableLevels
+          && levelsMap[levelKey] is map
+          && levelsMap[levelKey].keys().hasOnly([
+            'state', 'updatedAt', 'updatedByUid', 'updatedByName'
+          ])
+          && levelsMap[levelKey].state in ['LEARNING', 'PROFICIENT']
+          && levelsMap[levelKey].get('updatedByUid', '') == request.auth.uid
+        );
+    }
+
+    function validSkillProgressDoc(skillId, expectedSubject) {
+      let skillDoc = get(/databases/$(database)/documents/SkillsV2/$(skillId));
+      let data = request.resource.data;
+      return exists(/databases/$(database)/documents/SkillsV2/$(skillId))
+        && skillDoc.data.status == 'active'
+        && skillDoc.data.subject == expectedSubject
+        && data.keys().hasOnly([
+          'skillId', 'subject', 'levels', 'updatedAt', 'schemaVersion'
+        ])
+        && data.skillId == skillId
+        && data.subject == expectedSubject
+        && data.schemaVersion == 2
+        && data.levels is map
+        && data.levels.keys().hasOnly(['introductory', 'intermediate', 'advanced'])
+        && data.levels.size() >= 1
+        && data.levels.size() <= 3
+        && validSkillProgressLevel(skillDoc.data, data.levels, 'introductory')
+        && validSkillProgressLevel(skillDoc.data, data.levels, 'intermediate')
+        && validSkillProgressLevel(skillDoc.data, data.levels, 'advanced');
+    }
+
+    function isAuthorizedHorseReader(horseData) {
+      return horseData != null && (
+        isProfileOwner(horseData, horseData.get('currentOwnerId', ''))
+        || (verifiedAuth() && request.auth.uid in horseData.get('instructorUids', []))
+        || isAdmin()
+      );
+    }
+
+    function isAuthorizedRiderReader(riderData) {
+      return riderData != null && (
+        isProfileOwner(riderData, riderData.get('email', ''))
+        || (verifiedAuth() && request.auth.uid in riderData.get('instructorUids', []))
+        || isAdmin()
+      );
+    }
+
+    function canReadVerificationEvent(ownerUid) {
+      return verifiedAuth()
+        && (
+          request.auth.uid == ownerUid
+          || isAdmin()
+          || (
+            resource.data.connectionId is string
+            && exists(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId))
+            && get(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId)).data.status == 'accepted'
+            && request.auth.uid == get(/databases/$(database)/documents/CoachingConnections/$(resource.data.connectionId)).data.coachUid
+          )
+        );
+    }
+
+    match /CoachingConnections/{connectionId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.uid in resource.data.participantUids;
+      allow create, update, delete: if false;
+    }
+
+    match /SharedRidingEntries/{entryId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.uid == resource.data.riderUid;
+      allow create, update, delete: if false;
+    }
+
+    match /DictionaryEntries/{slug} {
+      allow read: if resource.data.status == 'published';
+      allow write: if false;
+    }
+    match /DictionaryPublic/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /DictionaryDrafts/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /Revisions/{revision} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+    match /DictionarySuggestions/{id} {
+      allow read: if isAdmin() || (
+        verifiedAuth()
+        && resource != null
+        && resource.data.contributorUid == request.auth.uid
+      );
+      allow write: if false;
+      match /AuditEvents/{event} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+    match /DictionaryRateLimits/{id} {
+      allow read, write: if false;
+    }
+
+    match /SkillFamilies/{familyId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /SkillsV2/{skillId} {
+      allow read: if resource == null
+        || resource.data.status in ['active', 'retired']
+        || isAdmin();
+      allow write: if false;
+    }
+
+    match /SkillTreeCurriculumDrafts/{draftId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /AuditEvents/{eventId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /SkillTreeCurriculumPublic/{docId} {
+      allow read: if docId == 'active' || docId == 'contributors';
+      allow write: if false;
+    }
+
+    match /SkillTreeCurriculumRevisions/{revisionId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /Chunks/{chunkId} {
+        allow read: if isAdmin()
+          || (
+            exists(/databases/$(database)/documents/SkillTreeCurriculumPublic/active)
+            && get(/databases/$(database)/documents/SkillTreeCurriculumPublic/active).data.activeRevisionId == revisionId
+          );
+        allow write: if false;
+      }
+    }
+
+    match /SkillTreeCurriculumMeta/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /Skills/{skillId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor();
+    }
+
+    match /Levels/{levelId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor();
+    }
+
+    match /Resources/{resourceId} {
+      allow read: if true;
+      allow create: if verifiedAuth()
+        && (
+          isAdmin()
+          || isVerifiedEditor()
+          || (
+            request.resource.data.get('lastEditBy', '') is string
+            && request.resource.data.lastEditBy.lower() == verifiedLowerEmail()
+          )
+        );
+      allow update: if verifiedAuth()
+        && (
+          isAdmin()
+          || isVerifiedEditor()
+          || (
+            resource.data.get('lastEditBy', '') is string
+            && resource.data.lastEditBy.lower() == verifiedLowerEmail()
+            && request.resource.data.get('lastEditBy', '') == resource.data.get('lastEditBy', '')
+          )
+          || (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'comments', 'rating', 'numberOfRatings', 'usersWhoRated'
+            ])
+            && (!('comments' in request.resource.data.diff(resource.data).affectedKeys())
+              || request.resource.data.comments is list)
+          )
+        );
+      allow delete: if verifiedAuth()
+        && (
+          isAdmin()
+          || isVerifiedEditor()
+          || (
+            resource.data.get('lastEditBy', '') is string
+            && resource.data.lastEditBy.lower() == verifiedLowerEmail()
+          )
+        );
+
+      match /usersWhoRated/{ratingUserId} {
+        allow read: if true;
+        allow create, update, delete: if verifiedAuth()
+          && (
+            ratingUserId == request.auth.uid
+            || ratingUserId.lower() == verifiedLowerEmail()
+          );
+      }
+    }
+
+    match /Horse_Profile/{horseId} {
+      allow get: if (resource == null && verifiedAuth())
+        || (resource != null && isAuthorizedHorseReader(resource.data));
+      allow list: if isAuthorizedHorseReader(resource.data);
+      allow create: if verifiedEmailIs(request.resource.data.currentOwnerId)
+        && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
+        && request.resource.data.get('archiveStatus', 'active') == 'active'
+        && !request.resource.data.keys().hasAny([
+          'saleListing', 'transferRequestId', 'ownershipVersion', 'instructorUids'
+        ]);
+      allow update: if isProfileOwner(resource.data, resource.data.currentOwnerId)
+        && request.resource.data.currentOwnerId == resource.data.currentOwnerId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'ownerUid', 'archiveStatus', 'saleListing', 'transferRequestId', 'ownershipVersion', 'instructorUids'
+        ]);
+      // Keep the horse ID reserved for its shared history when archived.
+      allow delete: if false;
+
+      match /SkillProgress/{skillId} {
+        allow read: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+          && isAuthorizedHorseReader(get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data);
+        allow create, update: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
+          && validSkillProgressDoc(skillId, 'horse');
+        allow delete: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '');
+      }
+
+      match /SkillVerifications/{skillId} {
+        allow read: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+          && isAuthorizedHorseReader(get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data);
+        allow write: if false;
+      }
+
+      match /SkillVerificationEvents/{eventId} {
+        allow get, list: if canReadVerificationEvent(
+          get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
+        );
+        allow write: if false;
+      }
+    }
+
+    match /Public_Horse_Profile/{horseId} {
+      allow get: if true;
+      allow list: if verifiedAuth();
+      allow write: if false;
+    }
+
+    match /Public_Rider_Profile/{riderId} {
+      allow read: if verifiedAuth();
+      allow write: if false;
+    }
+
+    match /Rider_Profile/{riderId} {
+      allow get: if (resource == null && verifiedAuth())
+        || (resource != null && isAuthorizedRiderReader(resource.data));
+      allow list: if isAuthorizedRiderReader(resource.data);
+      allow create: if verifiedEmailIs(request.resource.data.email)
+        && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)
+        && request.resource.data.get('editor', false) == false
+        && request.resource.data.get('archivedHorses', []) == []
+        && !request.resource.data.keys().hasAny(['ownershipRosterVersion', 'instructorUids']);
+      allow update: if isProfileOwner(resource.data, resource.data.email)
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.get('archivedHorses', []) == resource.data.get('archivedHorses', [])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'ownerUid', 'editor', 'ownershipRosterVersion', 'instructorUids'
+        ]);
+      allow delete: if isProfileOwner(resource.data, resource.data.email);
+
+      match /SkillProgress/{skillId} {
+        allow read: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+          && isAuthorizedRiderReader(get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data);
+        allow create, update: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
+          && validSkillProgressDoc(skillId, 'rider');
+        allow delete: if verifiedAuth()
+          && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '');
+      }
+
+      match /SkillVerifications/{skillId} {
+        allow read: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+          && isAuthorizedRiderReader(get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data);
+        allow write: if false;
+      }
+
+      match /SkillVerificationEvents/{eventId} {
+        allow get, list: if canReadVerificationEvent(
+          get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
+        );
+        allow write: if false;
+      }
+    }
+
+    match /Requests/{requestId} {
+      allow get: if request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          resource == null
+          || verifiedLowerEmail() in resource.data.partiesIds
+        );
+
+      allow list: if request.auth != null
+        && request.auth.token.email_verified == true
+        && verifiedLowerEmail() in resource.data.partiesIds;
+
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly([
+          'id', 'messageId', 'kind', 'senderEmail', 'senderName',
+          'senderPicUrl', 'recipientEmail', 'recipientName', 'title',
+          'summary', 'parties', 'partiesIds', 'createdAt', 'updatedAt',
+          'isAccepted', 'status', 'horseId', 'horseName', 'horsePicUrl',
+          'horseOwnerId', 'horseOwnerName', 'connectionId'
+        ])
+        && request.resource.data.id == requestId
+        && request.resource.data.senderEmail is string
+        && request.resource.data.recipientEmail is string
+        && request.resource.data.recipientEmail.size() > 0
+        && request.resource.data.recipientEmail == request.resource.data.recipientEmail.lower()
+        && request.resource.data.senderEmail == verifiedLowerEmail()
+        && request.resource.data.get('title', '') is string
+        && request.resource.data.get('title', '').size() <= 200
+        && request.resource.data.get('summary', '') is string
+        && request.resource.data.get('summary', '').size() <= 1000
+        && request.resource.data.partiesIds is list
+        && request.resource.data.partiesIds.size() == 2
+        && request.resource.data.senderEmail in request.resource.data.partiesIds
+        && request.resource.data.recipientEmail in request.resource.data.partiesIds
+        && request.resource.data.senderEmail != request.resource.data.recipientEmail
+        && request.resource.data.status == 'pending'
+        && request.resource.data.get('isAccepted', false) == false
+        && request.resource.data.kind in [
+          'instructor', 'student', 'studentHorse', 'transferHorse'
+        ]
+        && (
+          request.resource.data.kind != 'studentHorse'
+          || (
+            request.resource.data.get('horseId', '') is string
+            && request.resource.data.get('horseId', '').size() > 0
+          )
+        )
+        && (
+          request.resource.data.kind != 'transferHorse'
+          || (
+            request.resource.data.get('horseId', '') is string
+            && request.resource.data.get('horseId', '').size() > 0
+            && request.resource.data.get('horseOwnerId', '') is string
+            && request.resource.data.get('horseOwnerId', '').lower() == verifiedLowerEmail()
+            && request.resource.data.get('connectionId', '') is string
+            && request.resource.data.get('connectionId', '').size() > 0
+            && exists(/databases/$(database)/documents/Horse_Profile/$(request.resource.data.horseId))
+            && get(/databases/$(database)/documents/Horse_Profile/$(request.resource.data.horseId)).data.currentOwnerId.lower() == verifiedLowerEmail()
+            && get(/databases/$(database)/documents/Horse_Profile/$(request.resource.data.horseId)).data.get('transferRequestId', null) == request.resource.data.connectionId
+            && exists(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId))
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.kind == 'transfer'
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.horseId == request.resource.data.horseId
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.sender == verifiedLowerEmail()
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.recipient == request.resource.data.recipientEmail
+            && get(/databases/$(database)/documents/CoachingConnections/$(request.resource.data.connectionId)).data.status == 'pending'
+          )
+        );
+
+      // Clients cannot directly forge 'accepted'. Only Cloud Functions
+      // (Admin SDK) can transition a request to 'accepted'.
+      // Terminal requests (status != 'pending') cannot be reopened or mutated.
+      allow update: if request.auth != null
+        && request.auth.token.email_verified == true
+        && verifiedLowerEmail() in resource.data.partiesIds
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'dismissalNote', 'updatedAt'
+        ])
+        && (
+          !('dismissalNote' in request.resource.data.diff(resource.data).affectedKeys())
+          || (
+            request.resource.data.dismissalNote is string
+            && request.resource.data.dismissalNote.size() <= 500
+          )
+        )
+        && (
+          (request.resource.data.status == 'cancelled'
+            && verifiedLowerEmail() == resource.data.senderEmail)
+          || (request.resource.data.status == 'declined'
+            && verifiedLowerEmail() == resource.data.recipientEmail)
+          || request.resource.data.status == 'dismissed'
+        );
+
+      allow delete: if false;
+    }
+
+    match /DeletionJobs/{uid} {
+      allow read, write: if false;
+    }
+
+    match /SkillTreeSuggestions/{suggestionId} {
+      allow read: if isStaff()
+        || (verifiedAuth()
+          && resource != null
+          && resource.data.submittedByUid == request.auth.uid);
+      allow create, update, delete: if false;
+
+      match /AuditEvents/{eventId} {
+        allow read: if isStaff();
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /Categories/{categoryId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor() || isAdmin();
+    }
+
+    match /SubCategories/{subCategoryId} {
+      allow read: if true;
+      allow write: if isVerifiedEditor() || isAdmin();
+    }
+
+    match /Conversations/{conversationId} {
+      allow read, write: if false;
+
+      match /Messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /RiderProfiles/{emailDoc}/tokens/{tokenId} {
+      allow read, create, update, delete: if verifiedEmailIs(emailDoc)
+        || (verifiedAuth() && emailDoc.lower() == verifiedLowerEmail());
+    }
+
+    match /Invitations/{invitationId} {
+      allow read, write: if false;
+
+      match /Redemptions/{recipientUid} {
+        allow read, write: if false;
+      }
+    }
+
+    match /InvitationTokens/{tokenHash} {
+      allow read, write: if false;
+    }
+
+    match /InvitationRateLimits/{limitId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

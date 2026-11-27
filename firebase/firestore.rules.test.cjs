@@ -6,11 +6,17 @@ const {after, before, test} = require('node:test');
 const {
   assertFails,
   assertSucceeds,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
   initializeTestEnvironment,
-} = require('@firebase/rules-unit-testing');
-const {
-  collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where,
-} = require('firebase/firestore');
+  query,
+  setDoc,
+  updateDoc,
+  where,
+} = require('./rules_test_harness.cjs');
 
 let environment;
 const email = 'owner@example.com';
@@ -94,11 +100,10 @@ test('coaching and journal queries enforce verified membership and block all cli
 
 
 test('the callable preserves shared lessons across archive, restore and transfer', async () => {
-  const {initializeApp, deleteApp} = require('firebase-admin/app');
-  const {getFirestore} = require('firebase-admin/firestore');
+  const admin = require('../functions/node_modules/firebase-admin');
   const {connectionHandler} = require('../functions/connections');
-  const app = initializeApp({projectId: 'demo-horse-rules'}, 'coaching-rules-test');
-  const db = getFirestore(app);
+  const app = admin.initializeApp({projectId: 'demo-horse-rules'}, 'coaching-rules-test');
+  const db = app.firestore();
   const rider = 'rider@example.com';
   const coach = 'coach@example.com';
   const riderRef = db.doc('Rider_Profile/rad1r9991xppl1666l');
@@ -183,7 +188,7 @@ test('the callable preserves shared lessons across archive, restore and transfer
     await assertFails(updateDoc(doc(riderClient, horseRef.path), {name: 'Old owner update'}));
     await assertSucceeds(updateDoc(doc(buyerClient, horseRef.path), {name: 'New owner update'}));
   } finally {
-    await deleteApp(app);
+    await app.delete();
   }
 });
 
@@ -1017,4 +1022,107 @@ test('Dictionary published entries are public; drafts, identities, limits, and w
   await assertSucceeds(getDoc(doc(admin, 'DictionarySuggestions/proposal')));
   await assertSucceeds(getDoc(doc(admin, 'DictionarySuggestions/proposal/AuditEvents/one')));
   await assertFails(getDoc(doc(admin, 'DictionaryRateLimits/key')));
+});
+
+test('staged rollout compatibility: Public profiles, DictionaryPublic manifest, coach list on events, and legacy ownerUid-less profiles', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await Promise.all([
+      setDoc(doc(db, 'Rider_Profile/legacy-rider'), {
+        email: 'legacy@example.com',
+        name: 'Legacy Rider',
+      }),
+      setDoc(doc(db, 'Horse_Profile/legacy-horse'), {
+        currentOwnerId: 'legacy@example.com',
+        name: 'Legacy Horse',
+        ownerUid: 'legacy-owner',
+        instructorUids: ['coach-v2'],
+      }),
+      setDoc(doc(db, 'CoachingConnections/conn-coach'), {
+        coachUid: 'coach-v2',
+        riderUid: 'legacy-owner',
+        status: 'accepted',
+        participantUids: ['coach-v2', 'legacy-owner'],
+      }),
+      setDoc(doc(db, 'CoachingConnections/conn-revoked'), {
+        coachUid: 'former-coach',
+        riderUid: 'legacy-owner',
+        status: 'revoked',
+        participantUids: ['former-coach', 'legacy-owner'],
+      }),
+      setDoc(doc(db, 'Horse_Profile/legacy-horse/SkillVerificationEvents/ev-1'), {
+        connectionId: 'conn-coach',
+        skillId: 'horse.in_hand.leading',
+        at: new Date('2026-11-26T00:00:00Z'),
+      }),
+      setDoc(doc(db, 'Horse_Profile/legacy-horse/SkillVerificationEvents/ev-old'), {
+        connectionId: 'conn-revoked',
+        skillId: 'horse.in_hand.leading',
+        at: new Date('2026-11-25T00:00:00Z'),
+      }),
+      setDoc(doc(db, 'Public_Rider_Profile/legacy-rider'), {
+        email: 'legacy@example.com',
+        name: 'Legacy Rider',
+      }),
+      setDoc(doc(db, 'Public_Horse_Profile/legacy-horse'), {
+        id: 'legacy-horse',
+        name: 'Legacy Horse',
+        isPublic: true,
+        archiveStatus: 'active',
+      }),
+      setDoc(doc(db, 'DictionaryPublic/catalogue'), {
+        initialized: true,
+        version: 1,
+        entryCount: 40,
+      }),
+    ]);
+  });
+
+  const guest = environment.unauthenticatedContext().firestore();
+  const legacyOwner = environment.authenticatedContext('legacy-owner', {
+    email: 'legacy@example.com',
+    email_verified: true,
+  }).firestore();
+  const coach = environment.authenticatedContext('coach-v2', {
+    email: 'coach-v2@example.com',
+    email_verified: true,
+  }).firestore();
+  const outsider = environment.authenticatedContext('outsider', {
+    email: 'outsider@example.com',
+    email_verified: true,
+  }).firestore();
+
+  // Legacy owner without ownerUid on Rider_Profile still updates safe fields cleanly.
+  await assertSucceeds(getDoc(doc(legacyOwner, 'Rider_Profile/legacy-rider')));
+  await assertSucceeds(updateDoc(doc(legacyOwner, 'Rider_Profile/legacy-rider'), {name: 'Updated Legacy'}));
+  await assertFails(updateDoc(doc(outsider, 'Rider_Profile/legacy-rider'), {name: 'Tamper'}));
+
+  // Public_Horse_Profile get is public; list requires verified Auth; writes are blocked.
+  await assertSucceeds(getDoc(doc(guest, 'Public_Horse_Profile/legacy-horse')));
+  await assertFails(getDocs(collection(guest, 'Public_Horse_Profile')));
+  await assertSucceeds(getDocs(collection(outsider, 'Public_Horse_Profile')));
+  await assertFails(setDoc(doc(outsider, 'Public_Horse_Profile/legacy-horse'), {name: 'Hack'}));
+
+  // Public_Rider_Profile requires verified Auth; writes are blocked.
+  await assertFails(getDoc(doc(guest, 'Public_Rider_Profile/legacy-rider')));
+  await assertSucceeds(getDoc(doc(outsider, 'Public_Rider_Profile/legacy-rider')));
+  await assertSucceeds(getDocs(collection(outsider, 'Public_Rider_Profile')));
+  await assertFails(setDoc(doc(outsider, 'Public_Rider_Profile/legacy-rider'), {name: 'Hack'}));
+
+  // DictionaryPublic manifest is readable by all clients and immutable from clients.
+  await assertSucceeds(getDoc(doc(guest, 'DictionaryPublic/catalogue')));
+  await assertSucceeds(getDoc(doc(outsider, 'DictionaryPublic/catalogue')));
+  await assertFails(setDoc(doc(outsider, 'DictionaryPublic/catalogue'), {version: 999}));
+
+  // Active accepted coach can list SkillVerificationEvents; former coach, outsider, and guest are blocked.
+  const formerCoach = environment.authenticatedContext('former-coach', {
+    email: 'former-coach@example.com',
+    email_verified: true,
+  }).firestore();
+  await assertSucceeds(getDocs(collection(coach, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
+  await assertSucceeds(getDocs(collection(legacyOwner, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
+  await assertFails(getDoc(doc(formerCoach, 'Horse_Profile/legacy-horse/SkillVerificationEvents/ev-old')));
+  await assertFails(getDocs(collection(formerCoach, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
+  await assertFails(getDocs(collection(guest, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
+  await assertFails(getDocs(collection(outsider, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
 });
