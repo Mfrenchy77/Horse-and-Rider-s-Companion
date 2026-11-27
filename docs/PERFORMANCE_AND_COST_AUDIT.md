@@ -410,6 +410,9 @@ The following security, performance, caching, and cost-reduction batches were im
 | **Batch 3** | `93b134d` | Made legacy `Skills` collection stream lazy (`AppCubit.ensureLegacySkillsLoaded()`); enabled Firestore Web offline persistence (`FirebaseInitialization`); replaced N live `Resources` listeners in `SkillDetailV2Panel` with deduplicated one-shot fetches; added `SetOptions(merge: true)` on `RiderProfileRepository.createOrUpdateRiderProfile` and `Public_Rider_Profile` fallback on `getRiderProfileByEmail`; added versioned `DictionaryPublic/catalogue` manifest checks + `DictionaryLocalCache` + single-doc `loadDraft(id)` in `DictionaryAdminPage` + `DictionaryRepository.cachedEntries()` in `DictionaryPage`; added `SkillTreeV2Cubit` parallel init, `syncProfile()` deduplication, per-profile cache, optimistic `setSelfAssessment()`, `FirestoreSkillTreeV2Store` snapshot TTL & `.orderBy('at', descending: true).limit(20)` on verification events, and targeted `SkillTreeV2Sync` notifications; fixed `profile_redesign_test.dart` public horse fixture. |
 | **Batch 4** | `047d9f4` | Offloaded SHA-256 hashing (`compute()` for buffers `>= 64 KB`) in `DictionaryImageProcessor`; captured `MediaStorageRepository` in `didChangeDependencies()` across Dictionary community contribution/suggestion dialogs so `dispose()` cleanup works reliably; parallelized `promoteDraftMedia` Storage copy/metadata RPCs in `functions/dictionary.js`; removed 4 unused Firebase v8 JS `<script type="module">` imports from `web/index.html`; removed unused `image_network` and `flutter_network_image` packages; deferred `AdsInitialization.initializeAds()` until after `runApp()`. |
 | **Test & Safety Follow-up** | `9f31be6` | Added `isClosed` guards before async `emit()` calls in `SkillTreeV2Cubit`; guarded `functions/test/profile_privacy_emulator.test.js` with `node:test` emulator-env skipping so offline CI (`npm --prefix functions test`) passes cleanly while preserving full emulator execution. |
+| **Audit Documentation** | `c42f41f` | Added Section 10 optimization and baseline verification summary. |
+| **Stabilization & Routing** | `c5123a8` | Fixed `/SkillTree/Skills` parent redirect in `lib/App/Routes/routes.dart` so legacy `Skill:<id>` deep links preserve `?skillId=<id>` under Skill Tree 2.0; resolved all 4 remaining Flutter test failures (`test/card_visual_preview_test.dart`, `test/widget/horse_archive_test.dart`, `test/widget/resources_visual_test.dart`, `test/routes_flow_test.dart`). |
+| **Emulator & Storage Rules** | `89e4f65` | Expanded `firebase/storage.rules.test.cjs` for legacy `ownerUid`-less `Rider_Profile` / `Horse_Profile` photos and `dictionary_submissions`; fixed stale contributor rate-limit UID reuse in `dictionary_emulator.js`, coach profile ID lookup in `invitations_emulator.js`, and async `syncPublicHorseProfile` convergence polling in `account_deletion_emulator.js`. |
 
 ### 10.2 Verified Measurements
 
@@ -419,21 +422,28 @@ The following security, performance, caching, and cost-reduction batches were im
 - **`DictionaryMatcher` Matching Performance (`test/widget/performance_batch2_test.dart`):**
   - Single-pass longest-first alternation `RegExp` over `100` paragraphs × `500` entries: **`0 ms`**.
 - **Production Web Wasm Build (`flutter build web --release --wasm --no-pub --dart-define-from-file=web_build_config.json`):**
-  - Succeeded cleanly in **`58.9 s`**: `index.html` **`3.3 KB`** (4 unused Firebase v8 external `<script>` imports removed), `main.dart.js` **`6.5 MB`**, `main.dart.mjs` **`55 KB`**, `main.dart.wasm` **`6.1 MB`**, `build/web` total **`61 MB`**.
+  - Succeeded cleanly in **`55.9 s`**: `index.html` **`3.3 KB`**, `main.dart.js` (JS fallback) **`6.5 MB`**, `main.dart.mjs` **`55 KB`**, `main.dart.wasm` **`6.1 MB`**, `flutter_bootstrap.js` **`13 KB`**, `26` bundled SVGs in `build/web/assets/assets/icons/skill_families/`.
 - **Static Analysis & Test Coverage Summary:**
   - `flutter analyze --no-pub lib test packages` & `packages/database_repository` `dart analyze`: **0 issues**.
   - `npm --prefix functions run lint` (`eslint .`): **0 errors / warnings**.
-  - `npm --prefix functions test`: **145 passed, 0 failed, 1 emulator-gated skipped**.
-  - Auth + Firestore Emulator (`functions/test/profile_privacy_emulator.test.js`): **passed**.
-  - Firestore + Storage Emulator (`firebase/storage.rules.test.cjs`): **4 suites passed, 0 failed**.
-  - Targeted Flutter suites (`performance_batch2_test.dart`, `performance_batch3_test.dart`, `profile_redesign_test.dart`, `connection_panel_test.dart`, `resource_card_clipping_test.dart`, `resources_first_load_test.dart`, `glass_dialog_test.dart`, `test/domain/`, `test/cubits/`, `test/dictionary/`): **406 passed, 0 failed**.
-  - Skill Tree V2 widget & suggestions suites (`skill_tree_v2_view_test.dart`, `skill_tree_suggestions_test.dart`): **21 passed, 0 failed**.
-  - Full CI suite (`python3 tool/check.py --no-pub` prior to `9f31be6`): **747 passed, 1 skipped, 10 failed**. After `9f31be6`, `database_independence_audit_test.dart` passes; the 4 remaining pre-existing unrelated Flutter test files (`card_visual_preview_test.dart` missing `/tmp/profile-card-preview.png` golden, `horse_archive_test.dart` unbounded `Column` test overflow, `resources_visual_test.dart` mobile offscreen item assertion, and `routes_flow_test.dart` legacy Skill Tree & pre-privacy horse expectations) were left untouched.
+  - Full CI suite (`python3 tool/check.py --no-pub`, exited `0`):
+    - Flutter + package suite: **`+757 ~1: All tests passed!`** (`0` failures; `1` intentional test skip in existing suite; `database_repository` coverage `69.4%`).
+    - Cloud Functions unit suite: **`145` passed, `0` failed, `1` skipped** (`profile_privacy_emulator.test.js`, offline guard).
+  - Firebase Emulators (`auth,firestore,storage,functions`):
+    - `firebase/storage.rules.test.cjs` + `functions/test/profile_privacy_emulator.test.js`: **`6` passed, `0` failed** (covers legacy `ownerUid`-less uploads, UID-scoped photos/PDFs, `covers`, `dictionary_drafts`/`dictionary_submissions`/`dictionary_public`, owner/instructor/public Firestore projections).
+    - `functions/test/dictionary_emulator.js`: **passed**.
+    - `functions/test/invitations_emulator.js`: **passed**.
+    - `functions/test/account_deletion_emulator.js`: **passed** (`--project demo-account-deletion`).
+    - Note: `firebase/firestore.rules.test.cjs` requires `@firebase/rules-unit-testing`, which is not installed in this offline workspace.
 
-### 10.3 Remaining Deferred Items & Manual Rollout
+### 10.3 Remaining Deferred Items, Manual Rollout & Rollback Plan
 
 - **Remaining architectural items from Section 5 (not implemented in this pass):** Splitting `packages/database_repository` away from Firebase dependencies across UI layers, paginating `Resources` with subcollection `comments`/`usersWhoRated` extraction, paginating `SharedRidingEntries`, scheduled `cleanupAbandonedDraftMedia` cron deployment, and deferred library loading for Web Admin/Quill routes.
-- **Manual deployment order (requires explicit project owner approval):**
-  1. `firebase deploy --only firestore:rules,storage`
-  2. `firebase deploy --only functions`
+- **Manual deployment order (requires explicit project owner approval; target `horse-and-riders-compani-d2bd4`):**
+  1. `firebase deploy --only firestore:rules,storage` (compatible with both old and new Web builds, including legacy `ownerUid`-less `Rider_Profile` / `Horse_Profile` photos).
+  2. `firebase deploy --only functions` (hardened scrapers, `sharePreview`, parallelized `promoteDraftMedia`, diff-guarded public mirrors, `account_deletion` Storage cleanup).
   3. `flutter build web --release --wasm --no-pub --dart-define-from-file=web_build_config.json && firebase deploy --only hosting`
+- **Per-component rollback:**
+  - Hosting: Roll back to the prior Hosting release in Firebase Console → Hosting → Release history (or `firebase hosting:rollback`).
+  - Firestore & Storage Rules: `git checkout <prior-commit> -- firebase/firestore.rules firebase/storage.rules && firebase deploy --only firestore:rules,storage`.
+  - Cloud Functions: `git checkout <prior-commit> -- functions/ && firebase deploy --only functions`.
