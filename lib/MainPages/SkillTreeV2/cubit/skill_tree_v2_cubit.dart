@@ -70,6 +70,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         profileDocId: profileDocId,
       );
       final curriculum = await curriculumFuture;
+      if (isClosed) return;
       final families = curriculum[0] as List<SkillFamily>;
       final skills = curriculum[1] as List<CurriculumSkill>;
       final firstSkill = _firstSkillFor(skills, subject, defaultRealm);
@@ -84,6 +85,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       );
       await profileFuture;
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           isLoading: false,
@@ -167,6 +169,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         verificationsBySkillId: verifications,
         verificationEvents: events,
       );
+      if (isClosed) return;
       emit(
         state.copyWith(
           progressBySkillId: progress,
@@ -176,6 +179,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         ),
       );
     } catch (_) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           progressBySkillId: const {},
@@ -387,6 +391,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         LevelState.PROFICIENT => 'Marked as Proficient.',
         _ => 'Self-assessment cleared.',
       };
+      if (isClosed) return true;
       emit(
         state.copyWith(
           isSubmitting: false,
@@ -401,6 +406,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       );
       return true;
     } catch (e) {
+      if (isClosed) return false;
       emit(
         state.copyWith(
           isSubmitting: false,

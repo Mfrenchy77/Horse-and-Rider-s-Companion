@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const {test} = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 const admin = require('firebase-admin');
@@ -235,7 +236,12 @@ async function main() {
   console.log('ALL PROFILE PRIVACY EMULATOR ASSERTIONS PASSED');
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+const hasEmulators = Boolean(
+    process.env.FIRESTORE_EMULATOR_HOST && process.env.FIREBASE_AUTH_EMULATOR_HOST,
+);
+
+test(
+    'profile privacy rules enforce owner, instructor, and public projections under Firebase emulators',
+    {skip: !hasEmulators && 'Requires FIRESTORE_EMULATOR_HOST and FIREBASE_AUTH_EMULATOR_HOST'},
+    main,
+);
