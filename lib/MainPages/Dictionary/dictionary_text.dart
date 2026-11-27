@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_matcher.
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_media.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_page.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
 export 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_matcher.dart';
@@ -114,11 +115,14 @@ Future<void> showDictionaryDefinitionDialog(
   DictionaryEntry entry, {
   BuildContext? originContext,
   Rect? originRect,
+  KnownTermsRepository? knownTermsRepository,
 }) {
   final synonyms = entry.strings('synonyms');
   final categories = entry.strings('categories');
   final heroMedia = firstPublishedDictionaryImage(entry);
   final navigator = Navigator.of(context, rootNavigator: true);
+  final knownRepo = knownTermsRepository ?? KnownTermsRepository.instance;
+  unawaited(knownRepo.ensureLoaded());
   final localOriginRect = originRect == null
       ? null
       : _convertGlobalRectToOverlay(originRect, navigator);
@@ -252,6 +256,8 @@ Future<void> showDictionaryDefinitionDialog(
                   color: AppTokens.secondaryTextColor(dialogContext),
                 ),
               ),
+            const Divider(height: 8),
+            _KnownTermCheckbox(entryId: entry.id, repository: knownRepo),
           ],
         ),
         actions: [
@@ -281,6 +287,7 @@ Future<void> showSelectedTermDefinition(
   required String selectedText,
   required List<DictionaryEntry> entries,
   Rect? originRect,
+  KnownTermsRepository? knownTermsRepository,
 }) {
   final result = lookupSelectedDictionaryTerm(selectedText, entries);
   if (result.exactMatch case final match?) {
@@ -288,6 +295,7 @@ Future<void> showSelectedTermDefinition(
       context,
       match,
       originRect: originRect,
+      knownTermsRepository: knownTermsRepository,
     );
   }
   final navigator = Navigator.of(context, rootNavigator: true);
@@ -410,6 +418,90 @@ Future<void> showSelectedTermDefinition(
   );
 }
 
+class _KnownTermCheckbox extends StatelessWidget {
+  const _KnownTermCheckbox({required this.entryId, required this.repository});
+
+  final String entryId;
+  final KnownTermsRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = AppTokens.accentColor(context);
+
+    return ListenableBuilder(
+      listenable: repository,
+      builder: (context, _) {
+        final isKnown = repository.isKnown(entryId);
+        return Semantics(
+          container: true,
+          checked: isKnown,
+          label: 'I know this term — stop highlighting it',
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              key: const Key('dictionaryKnownTermTapTarget'),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              onTap: () => unawaited(repository.toggleKnown(entryId)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          key: const Key('dictionaryKnownTermCheckbox'),
+                          value: isKnown,
+                          activeColor: accent,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          onChanged: (_) =>
+                              unawaited(repository.toggleKnown(entryId)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'I know this term — stop highlighting it',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Known terms appear as ordinary text. You can '
+                              'change this anytime.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppTokens.secondaryTextColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Renders [text] with:
 /// 1. Subtle, accessible inline Dictionary highlights for recognized published
 ///    terms (tapping opens a compact definition dialog without leaving the
@@ -425,6 +517,8 @@ class DictionaryText extends StatefulWidget {
     this.enableSelection = true,
     this.maxMatches = 6,
     this.excludeEntryId,
+    this.knownTermsRepository,
+    this.knownTermIdsOverride,
   });
 
   final String text;
@@ -433,40 +527,99 @@ class DictionaryText extends StatefulWidget {
   final bool enableSelection;
   final int maxMatches;
   final String? excludeEntryId;
+  final KnownTermsRepository? knownTermsRepository;
+  final Set<String>? knownTermIdsOverride;
 
   @override
   State<DictionaryText> createState() => _DictionaryTextState();
 }
 
 class _DictionaryTextState extends State<DictionaryText> {
+  late KnownTermsRepository _knownRepo;
   late List<DictionaryMatch> _matches;
   String _selectedText = '';
+
+  Set<String> get _effectiveKnownIds =>
+      widget.knownTermIdsOverride ?? _knownRepo.getKnownTerms();
+
+  List<DictionaryMatch> _computeMatches() => matchDictionaryTerms(
+    widget.text,
+    widget.entries,
+    maxMatches: widget.maxMatches,
+    excludeEntryId: widget.excludeEntryId,
+    knownTermIds: _effectiveKnownIds,
+  );
+
+  bool _matchesEqual(List<DictionaryMatch> a, List<DictionaryMatch> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].start != b[i].start ||
+          a[i].end != b[i].end ||
+          a[i].entry.id != b[i].entry.id) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _handleKnownTermsChanged() {
+    if (!mounted || widget.knownTermIdsOverride != null) return;
+    final next = _computeMatches();
+    if (!_matchesEqual(_matches, next)) {
+      setState(() => _matches = next);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _matches = matchDictionaryTerms(
-      widget.text,
-      widget.entries,
-      maxMatches: widget.maxMatches,
-      excludeEntryId: widget.excludeEntryId,
-    );
+    _knownRepo = widget.knownTermsRepository ?? KnownTermsRepository.instance;
+    if (widget.knownTermIdsOverride == null) {
+      _knownRepo.addListener(_handleKnownTermsChanged);
+      unawaited(_knownRepo.ensureLoaded());
+    }
+    _matches = _computeMatches();
   }
 
   @override
   void didUpdateWidget(covariant DictionaryText oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final nextRepo =
+        widget.knownTermsRepository ?? KnownTermsRepository.instance;
+    final wasListening = oldWidget.knownTermIdsOverride == null;
+    final shouldListen = widget.knownTermIdsOverride == null;
+    if (wasListening && (!shouldListen || !identical(nextRepo, _knownRepo))) {
+      _knownRepo.removeListener(_handleKnownTermsChanged);
+    }
+    _knownRepo = nextRepo;
+    if (shouldListen &&
+        (!wasListening ||
+            !identical(
+              nextRepo,
+              oldWidget.knownTermsRepository ?? KnownTermsRepository.instance,
+            ))) {
+      _knownRepo.addListener(_handleKnownTermsChanged);
+      unawaited(_knownRepo.ensureLoaded());
+    }
+
     if (oldWidget.text != widget.text ||
         !identical(oldWidget.entries, widget.entries) ||
         oldWidget.maxMatches != widget.maxMatches ||
-        oldWidget.excludeEntryId != widget.excludeEntryId) {
-      _matches = matchDictionaryTerms(
-        widget.text,
-        widget.entries,
-        maxMatches: widget.maxMatches,
-        excludeEntryId: widget.excludeEntryId,
-      );
+        oldWidget.excludeEntryId != widget.excludeEntryId ||
+        widget.knownTermIdsOverride != oldWidget.knownTermIdsOverride ||
+        !identical(
+          nextRepo,
+          oldWidget.knownTermsRepository ?? KnownTermsRepository.instance,
+        )) {
+      _matches = _computeMatches();
     }
+  }
+
+  @override
+  void dispose() {
+    _knownRepo.removeListener(_handleKnownTermsChanged);
+    super.dispose();
   }
 
   Widget _buildContent(BuildContext context) {
@@ -502,6 +655,7 @@ class _DictionaryTextState extends State<DictionaryText> {
                   context,
                   match.entry,
                   originContext: termContext,
+                  knownTermsRepository: _knownRepo,
                 ),
                 child: Text(
                   matchedWord,
@@ -560,6 +714,7 @@ class _DictionaryTextState extends State<DictionaryText> {
                     width: 72,
                     height: 24,
                   ),
+                  knownTermsRepository: _knownRepo,
                 );
               },
             ),
@@ -586,6 +741,7 @@ class ContextualDictionaryText extends StatefulWidget {
     this.entriesOverride,
     this.enableSelection = true,
     this.maxMatches = 6,
+    this.knownTermsRepository,
   });
 
   final String text;
@@ -593,6 +749,7 @@ class ContextualDictionaryText extends StatefulWidget {
   final List<DictionaryEntry>? entriesOverride;
   final bool enableSelection;
   final int maxMatches;
+  final KnownTermsRepository? knownTermsRepository;
 
   @override
   State<ContextualDictionaryText> createState() =>
@@ -617,6 +774,7 @@ class _ContextualDictionaryTextState extends State<ContextualDictionaryText> {
         style: widget.style,
         enableSelection: widget.enableSelection,
         maxMatches: widget.maxMatches,
+        knownTermsRepository: widget.knownTermsRepository,
       );
     }
     return ValueListenableBuilder<List<DictionaryEntry>?>(
@@ -627,6 +785,7 @@ class _ContextualDictionaryTextState extends State<ContextualDictionaryText> {
         style: widget.style,
         enableSelection: widget.enableSelection,
         maxMatches: widget.maxMatches,
+        knownTermsRepository: widget.knownTermsRepository,
       ),
     );
   }

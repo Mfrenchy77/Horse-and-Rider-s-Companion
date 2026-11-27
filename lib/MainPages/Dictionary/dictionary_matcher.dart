@@ -151,13 +151,15 @@ String normalizeSelectedDictionaryText(String raw) {
 ///
 /// Prioritizes longer multiword expressions over shorter matches, honors
 /// Unicode whole-word boundaries, is case-insensitive, skips ambiguous terms
-/// shared across multiple published meanings, and highlights each meaning at
-/// most once up to [maxMatches].
+/// shared across multiple published meanings, skips entries whose canonical
+/// ID is in [knownTermIds], and highlights each remaining meaning at most once
+/// up to [maxMatches].
 List<DictionaryMatch> matchDictionaryTerms(
   String text,
   List<DictionaryEntry> entries, {
   int maxMatches = 6,
   String? excludeEntryId,
+  Set<String> knownTermIds = const <String>{},
 }) {
   if (text.isEmpty || entries.isEmpty || maxMatches <= 0) return const [];
   final index = _indexFor(entries);
@@ -187,7 +189,8 @@ List<DictionaryMatch> matchDictionaryTerms(
   final ids = <String>{};
   for (final match in candidates) {
     if (selected.length >= maxMatches) break;
-    if (ids.contains(match.entry.id) ||
+    if (knownTermIds.contains(match.entry.id) ||
+        ids.contains(match.entry.id) ||
         selected.any(
           (item) => match.start < item.end && match.end > item.start,
         )) {

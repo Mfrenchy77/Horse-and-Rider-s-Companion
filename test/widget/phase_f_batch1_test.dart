@@ -46,43 +46,44 @@ void main() {
   testWidgets(
     'OceanCoralAppDialog renders scrollable content without overflow',
     (tester) async {
-    tester.view.physicalSize = const Size(360, 640);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: HorseAndRidersTheme().getDarkTheme(),
-        home: Scaffold(
-          body: OceanCoralAppDialog(
-            scrollable: true,
-            title: const Text('Sample Dialog'),
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < 12; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: TextField(
-                      decoration: InputDecoration(labelText: 'Field $i'),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: HorseAndRidersTheme().getDarkTheme(),
+          home: Scaffold(
+            body: OceanCoralAppDialog(
+              scrollable: true,
+              title: const Text('Sample Dialog'),
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < 12; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TextField(
+                        decoration: InputDecoration(labelText: 'Field $i'),
+                      ),
                     ),
-                  ),
+                ],
+              ),
+              actions: [
+                AppOutlinedButton(label: 'Cancel', onPressed: () {}),
+                AppPrimaryButton(label: 'Save', onPressed: () {}),
               ],
             ),
-            actions: [
-              AppOutlinedButton(label: 'Cancel', onPressed: () {}),
-              AppPrimaryButton(label: 'Save', onPressed: () {}),
-            ],
           ),
         ),
-      ),
-    );
-    await tester.pump();
-    expect(find.byType(OceanCoralSurface), findsOneWidget);
-    expect(find.text('Sample Dialog'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      );
+      await tester.pump();
+      expect(find.byType(OceanCoralSurface), findsOneWidget);
+      expect(find.text('Sample Dialog'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('FormPageBody uses AppScaffoldBackdrop', (tester) async {
     await tester.pumpWidget(
@@ -127,8 +128,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.byType(AppScaffoldBackdrop), findsOneWidget);
-      expect(find.byType(AppSurfaceCard), findsNWidgets(2));
+      expect(find.byType(AppSurfaceCard), findsNWidgets(3));
       expect(find.byKey(const Key('skillTreeLayoutSetting')), findsOneWidget);
+      expect(find.byKey(const Key('knownTermsSettingsCard')), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await _captureScreenshot(tester, entry.key);
@@ -159,9 +161,7 @@ void main() {
               debugShowCheckedModeBanner: false,
               theme: HorseAndRidersTheme().getDarkTheme(),
               home: const Scaffold(
-                body: AppScaffoldBackdrop(
-                  child: Center(child: DeletePage()),
-                ),
+                body: AppScaffoldBackdrop(child: Center(child: DeletePage())),
               ),
             ),
           ),

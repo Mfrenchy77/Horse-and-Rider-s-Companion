@@ -5,6 +5,7 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/themed_app_bar.dart';
 import 'package:horseandriderscompanion/MainPages/Delete/delete_page.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_settings_section.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
@@ -25,9 +26,7 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ThemedAppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: ThemedAppBar(title: const Text('Settings')),
       body: AppScaffoldBackdrop(
         child: SafeArea(
           child: AnimatedBuilder(
@@ -72,8 +71,7 @@ class SettingsView extends StatelessWidget {
                             SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               value: controller.seasonalMode,
-                              onChanged: (_) =>
-                                  controller.updateSeasonalMode(),
+                              onChanged: (_) => controller.updateSeasonalMode(),
                               title: Text(
                                 controller.seasonalMode
                                     ? 'Disable seasonal theme?'
@@ -189,6 +187,10 @@ class SettingsView extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(height: AppTokens.spaceLg),
+                      const AppSectionHeader(title: 'Dictionary'),
+                      const SizedBox(height: AppTokens.spaceSm),
+                      const KnownDictionaryTermsSection(),
                       const _SettingsAccountSection(),
                     ],
                   ),
