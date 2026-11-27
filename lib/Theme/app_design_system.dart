@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:horseandriderscompanion/Theme/card_gradient.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
 
 /// Centralized design tokens for Horse & Rider's Companion.
@@ -220,7 +221,7 @@ class _SelectionInputBorder extends OutlineInputBorder {
   }
 }
 
-/// Atmospheric midnight-teal backdrop for dark-themed pages.
+/// Atmospheric backdrop matching the active light or dark theme surface.
 class AppScaffoldBackdrop extends StatelessWidget {
   const AppScaffoldBackdrop({super.key, required this.child});
 
@@ -228,8 +229,16 @@ class AppScaffoldBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Theme.of(context).brightness != Brightness.dark) {
-      return child;
+    final theme = Theme.of(context);
+    if (theme.brightness != Brightness.dark) {
+      final gradients = theme.extension<SurfaceGradients>();
+      if (gradients != null) {
+        return DecoratedBox(
+          decoration: BoxDecoration(gradient: gradients.background),
+          child: child,
+        );
+      }
+      return ColoredBox(color: theme.colorScheme.surface, child: child);
     }
     return DecoratedBox(
       decoration: AppTokens.midnightBackdrop,

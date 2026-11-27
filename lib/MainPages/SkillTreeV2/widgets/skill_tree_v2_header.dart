@@ -5,6 +5,7 @@ import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotligh
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/featured_category_navigation.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
+import 'package:horseandriderscompanion/Theme/classic_blue_gray.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 
 class SkillTreeV2Header extends StatefulWidget {
@@ -189,6 +190,10 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
             controller: _searchController,
             onChanged: widget.onSearchChanged,
             decoration: InputDecoration(
+              filled: true,
+              fillColor: theme.brightness == Brightness.dark
+                  ? AppTokens.midnightInputFill
+                  : ClassicBlueGray.surface.withValues(alpha: 0.82),
               hintText: 'Search skills, aliases, or components...',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: state.searchQuery.isEmpty

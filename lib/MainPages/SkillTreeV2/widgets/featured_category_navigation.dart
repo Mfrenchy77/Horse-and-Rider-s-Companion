@@ -54,6 +54,7 @@ class FeaturedCategoryNavigation extends StatelessWidget {
         final otherCount = unselectedRealms.length;
         final slotRects = <SkillCategory, Rect>{};
         late final double totalHeight;
+        var compactHorizontalTile = false;
 
         if (isDesktopRibbon) {
           const gap = 12.0;
@@ -72,6 +73,7 @@ class FeaturedCategoryNavigation extends StatelessWidget {
             final remainingWidth = maxWidth - featuredWidth - gap;
             final tileWidth =
                 (remainingWidth - gap * (otherCount - 1)) / otherCount;
+            compactHorizontalTile = tileWidth / cardHeight > 2.25;
             for (var i = 0; i < otherCount; i++) {
               slotRects[unselectedRealms[i]] = Rect.fromLTWH(
                 featuredWidth + gap + i * (tileWidth + gap),
@@ -99,6 +101,7 @@ class FeaturedCategoryNavigation extends StatelessWidget {
           );
           if (otherCount > 0) {
             final tileWidth = (maxWidth - gap * (otherCount - 1)) / otherCount;
+            compactHorizontalTile = tileWidth / tileHeight > 2.25;
             for (var i = 0; i < otherCount; i++) {
               slotRects[unselectedRealms[i]] = Rect.fromLTWH(
                 i * (tileWidth + gap),
@@ -142,6 +145,7 @@ class FeaturedCategoryNavigation extends StatelessWidget {
                     familyCount: familyCountsByRealm[realm] ?? 0,
                     isFeatured: realm == effectiveSelected,
                     isSearching: isSearching,
+                    compactHorizontalTile: compactHorizontalTile,
                     onTap: () => onSelectRealm(realm),
                   ),
                 ),
@@ -161,6 +165,7 @@ class _AnimatedCategoryCard extends StatefulWidget {
     required this.familyCount,
     required this.isFeatured,
     required this.isSearching,
+    required this.compactHorizontalTile,
     required this.onTap,
   });
 
@@ -170,6 +175,7 @@ class _AnimatedCategoryCard extends StatefulWidget {
   final int familyCount;
   final bool isFeatured;
   final bool isSearching;
+  final bool compactHorizontalTile;
   final VoidCallback onTap;
 
   @override
@@ -293,8 +299,8 @@ class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: isDark
-                          ? _buildDarkGlowGradient(glowStrength)
-                          : _buildLightGlowGradient(glowStrength),
+                          ? _buildDarkGlowGradient(glowStrength, t)
+                          : _buildLightGlowGradient(glowStrength, t),
                     ),
                   ),
                 if (t > 0.02)
@@ -372,7 +378,7 @@ class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
     required bool isDark,
     required String countText,
   }) {
-    final compactHorizontal = cardWidth / cardHeight > 2.25;
+    final compactHorizontal = widget.compactHorizontalTile;
     final compactPad = cardWidth < 120 ? 6.0 : 10.0;
 
     // Compact geometry (t == 0)
@@ -480,6 +486,7 @@ class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
     )!;
     final subtitleFactor = ((t - 0.55) / 0.45).clamp(0.0, 1.0);
 
+    final bloom = Curves.easeOutCubic.transform(t);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -489,12 +496,15 @@ class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
           width: artW,
           height: artH,
           child: IgnorePointer(
-            child: SkillCategoryIllustration(
-              subject: widget.subject,
-              realm: widget.realm,
-              color: artColor,
-              width: artW,
-              height: artH,
+            child: Transform.scale(
+              scale: 0.95 + 0.05 * bloom,
+              child: SkillCategoryIllustration(
+                subject: widget.subject,
+                realm: widget.realm,
+                color: artColor,
+                width: artW,
+                height: artH,
+              ),
             ),
           ),
         ),
@@ -570,18 +580,23 @@ class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Color.lerp(ClassicBlueGray.surface, const Color(0xFFDDEAF0), t)!,
-        Color.lerp(ClassicBlueGray.surfaceHigh, const Color(0xFFCEE0E9), t)!,
-        Color.lerp(ClassicBlueGray.surfaceHighest, const Color(0xFFBBD1DC), t)!,
+        Color.lerp(const Color(0xFFEDF4F8), ClassicBlueGray.surface, t)!,
+        Color.lerp(ClassicBlueGray.surface, ClassicBlueGray.surfaceHigh, t)!,
+        Color.lerp(
+          ClassicBlueGray.surfaceHigh,
+          ClassicBlueGray.surfaceHighest,
+          t,
+        )!,
       ],
       stops: const [0.0, 0.52, 1.0],
     );
   }
 
-  RadialGradient _buildDarkGlowGradient(double strength) {
+  RadialGradient _buildDarkGlowGradient(double strength, double t) {
+    final bloom = Curves.easeOutCubic.transform(t);
     return RadialGradient(
       center: const Alignment(0.32, 0.08),
-      radius: 0.92,
+      radius: lerpDouble(0.62, 0.92, bloom)!,
       stops: const [0.0, 0.34, 0.66, 1.0],
       colors: [
         const Color(0xFFF8B49B).withValues(alpha: 0.86 * strength),
@@ -592,10 +607,11 @@ class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
     );
   }
 
-  RadialGradient _buildLightGlowGradient(double strength) {
+  RadialGradient _buildLightGlowGradient(double strength, double t) {
+    final bloom = Curves.easeOutCubic.transform(t);
     return RadialGradient(
       center: const Alignment(0.32, 0.08),
-      radius: 0.96,
+      radius: lerpDouble(0.64, 0.96, bloom)!,
       stops: const [0.0, 0.36, 0.70, 1.0],
       colors: [
         const Color(0xFFF7C3AE).withValues(alpha: 0.84 * strength),

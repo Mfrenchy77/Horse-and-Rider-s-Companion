@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -22,6 +23,7 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_fami
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -168,6 +170,7 @@ Widget _wrapTree({
   required SettingsController settings,
   ThemeData? themeOverride,
   bool disableAnimations = false,
+  bool useAppViewBackdrop = true,
   String? initialSkillId,
 }) {
   final theme = themeOverride ?? mainThemeDark;
@@ -183,16 +186,52 @@ Widget _wrapTree({
         themeMode: theme.brightness == Brightness.dark
             ? ThemeMode.dark
             : ThemeMode.light,
-        builder: disableAnimations
-            ? (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(disableAnimations: true),
-                child: child!,
-              )
-            : null,
+        builder: (context, child) {
+          var result = child ?? const SizedBox.shrink();
+          if (useAppViewBackdrop) {
+            final gradients = Theme.of(context).extension<SurfaceGradients>();
+            result = DecoratedBox(
+              decoration: BoxDecoration(gradient: gradients?.background),
+              child: result,
+            );
+          }
+          if (disableAnimations) {
+            result = MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: result,
+            );
+          }
+          return result;
+        },
         home: SkillTreeV2View(repository: repo, initialSkillId: initialSkillId),
       ),
     ),
   );
+}
+
+Future<List<int>> _samplePixelRgba(
+  WidgetTester tester,
+  GlobalKey key, {
+  required int x,
+  required int y,
+}) async {
+  late List<int> rgba;
+  await tester.runAsync(() async {
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final image = await boundary.toImage();
+    final byteData = await image.toByteData();
+    final width = image.width;
+    image.dispose();
+    final offset = (y * width + x) * 4;
+    rgba = [
+      byteData!.getUint8(offset),
+      byteData.getUint8(offset + 1),
+      byteData.getUint8(offset + 2),
+      byteData.getUint8(offset + 3),
+    ];
+  });
+  return rgba;
 }
 
 Future<void> _captureBoundaryPng(
@@ -608,6 +647,130 @@ void main() {
       },
     );
 
+    testWidgets(
+      'light theme renders opaque Classic Blue-Gray backdrop cleanly even '
+      'without AppView builder, and supports live Rider/Horse, theme, and '
+      'narrow rapid-tap switching',
+      (tester) async {
+        final repo = SkillTreeV2Repository(
+          store: InMemorySkillTreeV2Store(
+            families: allFamilies,
+            skills: allSkills,
+          ),
+        );
+        final mockAppCubit = _MockAppCubit();
+        final stateController = StreamController<AppState>.broadcast();
+        addTearDown(stateController.close);
+
+        final riderState = _buildTestAppState();
+        final horseState = _buildTestAppState(
+          isForRider: false,
+          horseProfile: HorseProfile(id: 'horse-comet', name: 'Comet'),
+        );
+        whenListen(
+          mockAppCubit,
+          stateController.stream,
+          initialState: riderState,
+        );
+
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        // Standalone MaterialApp without AppView gradient builder still renders
+        // an opaque Classic Blue-Gray light backdrop via AppScaffoldBackdrop.
+        final boundaryKey = GlobalKey();
+        await tester.pumpWidget(
+          RepaintBoundary(
+            key: boundaryKey,
+            child: _wrapTree(
+              appCubit: mockAppCubit,
+              repo: repo,
+              settings: settings,
+              themeOverride: _withScreenshotFonts(mainThemeLight),
+              useAppViewBackdrop: false,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final marginRgba = await _samplePixelRgba(
+          tester,
+          boundaryKey,
+          x: 8,
+          y: 260,
+        );
+        expect(marginRgba[3], 255, reason: 'Light backdrop must be opaque');
+        expect(marginRgba[0], greaterThan(170));
+        expect(marginRgba[1], greaterThan(190));
+        expect(marginRgba[2], greaterThan(205));
+
+        // Select Theory & Knowledge (Rider-only category), then switch live to
+        // Horse: stale Other selection must clear to Horse In-Hand cleanly.
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Other')));
+        await tester.pumpAndSettle();
+        expect(find.text('Theory & Knowledge Skill Families'), findsOneWidget);
+
+        when(() => mockAppCubit.state).thenReturn(horseState);
+        stateController.add(horseState);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('skillTreeV2Realm_In_Hand')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('skillTreeV2Realm_Mounted')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('skillTreeV2Realm_Husbandry')),
+          findsNothing,
+        );
+        expect(find.byKey(const Key('skillTreeV2Realm_Other')), findsNothing);
+        expect(find.text('In-Hand Skill Families'), findsOneWidget);
+
+        // Switch Horse to Mounted and verify Explore <-> My Skills.
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('My Skills'));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const Key('skillTreeV2ViewModeSelector')),
+            matching: find.text('Explore Skills'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Mounted Skill Families'), findsOneWidget);
+
+        // Switch live back to Rider and stress-test rapid category taps on
+        // narrow mobile across Dark -> Light theme swap.
+        when(() => mockAppCubit.state).thenReturn(riderState);
+        stateController.add(riderState);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('skillTreeV2Realm_Husbandry')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('skillTreeV2Realm_Other')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_In_Hand')));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Other')));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Husbandry')));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
+        await tester.pumpAndSettle();
+        expect(find.text('Mounted Skill Families'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('captures Skill Tree category screenshots when '
         'CAPTURE_CATEGORY_SCREENSHOTS=1', (tester) async {
       if (Platform.environment['CAPTURE_CATEGORY_SCREENSHOTS'] != '1') return;
@@ -693,6 +856,12 @@ void main() {
         theme: mainThemeDark,
         appState: riderState,
         fileName: 'skill_tree_cat_tablet_dark_rider.png',
+      );
+      await renderAndSnap(
+        size: const Size(768, 1024),
+        theme: mainThemeLight,
+        appState: riderState,
+        fileName: 'skill_tree_cat_tablet_light_rider.png',
       );
       await renderAndSnap(
         size: const Size(1280, 860),
