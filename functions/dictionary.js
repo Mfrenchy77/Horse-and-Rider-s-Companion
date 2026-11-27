@@ -537,15 +537,13 @@ async function promoteDraftMedia(
     checkDraftExists: true,
     approvedSubmissionPaths,
   });
-  const promoted = [];
   const promotedFiles = [];
-  for (const item of media) {
+  const tasks = media.map(async (item) => {
     const parsed = parseFirebaseStorageUrl(item.url);
     const isDraft = Boolean(parsed && parsed.objectPath.startsWith('dictionary_drafts/'));
     const isApprovedSubmission = Boolean(parsed && parsed.objectPath.startsWith('dictionary_submissions/'));
     if (!parsed || (!isDraft && !isApprovedSubmission)) {
-      promoted.push(item);
-      continue;
+      return item;
     }
     const srcFile = bucket.file(parsed.objectPath);
     const [srcMeta] = await srcFile.getMetadata();
@@ -582,7 +580,16 @@ async function promoteDraftMedia(
     } else if (item.attribution) {
       publishedItem.attribution = item.attribution;
     }
-    promoted.push(publishedItem);
+    return publishedItem;
+  });
+  let promoted;
+  try {
+    promoted = await Promise.all(tasks);
+  } catch (err) {
+    if (promotedFiles.length > 0) {
+      await Promise.allSettled(promotedFiles.map((file) => file.delete()));
+    }
+    throw err;
   }
   return {media: promoted, promotedFiles};
 }

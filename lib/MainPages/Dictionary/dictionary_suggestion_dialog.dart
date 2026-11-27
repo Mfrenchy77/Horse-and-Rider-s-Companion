@@ -45,6 +45,7 @@ class _DictionarySuggestionDialogState
   final _selectedCategories = <String>{};
 
   List<CommunityPendingImage> _images = [];
+  MediaStorageRepository? _resolvedStorage;
   bool _rightsConfirmed = false;
   bool _consent = false;
   bool _busy = false;
@@ -54,6 +55,13 @@ class _DictionarySuggestionDialogState
   String? _error;
 
   bool get _isImprovementMode => widget.entry != null;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolvedStorage ??=
+        widget.mediaStorage ?? context.read<MediaStorageRepository?>();
+  }
 
   @override
   void initState() {
@@ -84,15 +92,7 @@ class _DictionarySuggestionDialogState
   }
 
   void _cleanupTempUploads() {
-    MediaStorageRepository? storage;
-    try {
-      storage =
-          widget.mediaStorage ??
-          context.read<MediaStorageRepository?>() ??
-          CloudRepository();
-    } catch (_) {
-      storage = widget.mediaStorage;
-    }
+    final storage = _resolvedStorage ?? widget.mediaStorage;
     if (storage == null) return;
     for (final img in _images) {
       final url = img.uploadedUrl;

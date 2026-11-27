@@ -62,7 +62,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   // App services
   await SharedPrefs().init();
-  await AdsInitialization.initializeAds();
 
   // Remove splash once ready
   FlutterNativeSplash.remove();
@@ -73,4 +72,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   // Run the app
   final root = await builder();
   runApp(root);
+
+  // Initialize mobile ads asynchronously after first frame mount.
+  unawaited(AdsInitialization.initializeAds());
 }

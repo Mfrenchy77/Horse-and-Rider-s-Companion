@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:database_repository/database_repository.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
@@ -79,6 +80,16 @@ class DictionaryMediaItem {
     if (attribution != null && attribution!.trim().isNotEmpty)
       'attribution': attribution!.trim(),
   };
+}
+
+String _computeSha256Hex(Uint8List bytes) =>
+    crypto.sha256.convert(bytes).toString();
+
+Future<String> _hashBytes(Uint8List bytes) {
+  if (bytes.length < 64 * 1024) {
+    return Future<String>.value(_computeSha256Hex(bytes));
+  }
+  return compute(_computeSha256Hex, bytes);
 }
 
 class ProcessedDictionaryImage {
@@ -248,7 +259,7 @@ class DictionaryImageProcessor {
       fileName: fileName,
     );
     final rawHash =
-        precomputedRawHash ?? crypto.sha256.convert(validated.bytes).toString();
+        precomputedRawHash ?? await _hashBytes(validated.bytes);
     final cacheKey = '$rawHash:$maxDimension';
     final cached = _cache[cacheKey];
     if (cached != null) return cached;
@@ -297,7 +308,7 @@ class DictionaryImageProcessor {
               bytes: resizedBytes,
               fileName: '$baseName.png',
               contentType: 'image/png',
-              sha256: crypto.sha256.convert(resizedBytes).toString(),
+              sha256: await _hashBytes(resizedBytes),
               originalByteLength: validated.bytes.length,
               wasResized: true,
             );

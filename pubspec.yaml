@@ -34,7 +34,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_native_splash: ^2.4.8
-  flutter_network_image: ^0.1.0
   flutter_quill: ^11.6.0
   flutter_svg: ^2.3.2
   flutter_typeahead: ^6.0.0
@@ -48,7 +47,6 @@ dependencies:
   graphview: ^1.5.1
   html: ^0.15.7
   http: ^1.6.0
-  image_network: ^2.6.0
   image_picker: ^1.2.4
   intl: ^0.20.3
   numberpicker: ^2.1.2
