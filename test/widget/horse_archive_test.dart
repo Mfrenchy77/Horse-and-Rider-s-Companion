@@ -46,7 +46,9 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             appBar: AppBar(actions: const [HorseProfileOverFlowMenu()]),
-            body: RiderListOfProfiles(profile: rider),
+            body: SingleChildScrollView(
+              child: RiderListOfProfiles(profile: rider),
+            ),
           ),
         ),
       ),

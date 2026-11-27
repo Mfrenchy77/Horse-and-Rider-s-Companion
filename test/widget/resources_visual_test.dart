@@ -111,6 +111,11 @@ void main() {
 
     expect(find.text('Resources'), findsOneWidget);
     expect(find.text('Turn on the Forehand - Part 2'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Tack Fit: What to Look For'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Tack Fit: What to Look For'), findsOneWidget);
     expect(find.byType(AppImageVignette), findsNothing);
 

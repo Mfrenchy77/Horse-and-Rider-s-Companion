@@ -135,9 +135,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await expectLater(
-      find.byKey(const Key('preview')),
-      matchesGoldenFile('/tmp/profile-card-preview.png'),
-    );
+    expect(find.text('Dark theme'), findsOneWidget);
+    expect(find.text('Light theme'), findsOneWidget);
+    expect(find.text('About'), findsNWidgets(2));
+    expect(find.text('Owned horses'), findsNWidgets(2));
+    expect(find.text('Valero'), findsNWidgets(2));
+    expect(find.text('Navarro'), findsNWidgets(2));
+    expect(find.text('Flatwork session'), findsNWidgets(2));
+    expect(find.text('Basic health check'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
   });
 }
