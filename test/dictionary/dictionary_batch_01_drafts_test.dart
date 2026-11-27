@@ -215,8 +215,26 @@ void main() {
           .levelDefinition(DifficultyState.Advanced)!
           .proficient
           .toLowerCase();
-      expect(advCanter, contains('counter-canter'));
-      expect(advCanter, contains('flying lead changes'));
+      expect(advCanter, contains('stride adjustability'));
+      expect(advCanter, contains('within-gait'));
+
+      final counterCanter = skills['rider.mounted.counter_canter']!;
+      expect(
+        counterCanter
+            .levelDefinition(DifficultyState.Intermediate)!
+            .proficient
+            .toLowerCase(),
+        contains('counter-canter'),
+      );
+
+      final flyingChanges = skills['rider.mounted.flying_lead_changes']!;
+      expect(
+        flyingChanges
+            .levelDefinition(DifficultyState.Advanced)!
+            .proficient
+            .toLowerCase(),
+        contains('flying lead changes'),
+      );
     },
   );
 }

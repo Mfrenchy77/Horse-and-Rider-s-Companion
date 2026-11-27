@@ -35,9 +35,9 @@ test('buildExportFiles produces deterministic JSON matching curriculum/v2 file s
     skills: [...skills].reverse(),
   });
 
-  assert.equal(exportA.familyCount, 32);
-  assert.equal(exportA.skillCount, 72);
-  assert.equal(exportA.totalLevels, 154);
+  assert.equal(exportA.familyCount, 33);
+  assert.equal(exportA.skillCount, 79);
+  assert.equal(exportA.totalLevels, 169);
   assert.equal(exportA.checksum, exportB.checksum);
   assert.equal(exportA.files.size, 7);
 
@@ -76,9 +76,9 @@ test('bundleLocalCurriculumForImport builds validated canonical v2 JSON without 
   const bundled = buildCanonicalImportPayload({families, skills});
 
   assert.equal(bundled.payload.schemaVersion, 2);
-  assert.equal(bundled.familyCount, 32);
-  assert.equal(bundled.skillCount, 72);
-  assert.equal(bundled.totalLevels, 154);
+  assert.equal(bundled.familyCount, 33);
+  assert.equal(bundled.skillCount, 79);
+  assert.equal(bundled.totalLevels, 169);
   assert.ok(bundled.json.endsWith('\n'));
   assert.ok(
       DEFAULT_IMPORT_OUT_FILE.endsWith(
@@ -98,8 +98,8 @@ test('bundleLocalCurriculumForImport builds validated canonical v2 JSON without 
     assert.equal(fs.existsSync(outFile), true);
     const parsed = JSON.parse(fs.readFileSync(outFile, 'utf8'));
     assert.equal(parsed.schemaVersion, 2);
-    assert.equal(parsed.families.length, 32);
-    assert.equal(parsed.skills.length, 72);
+    assert.equal(parsed.families.length, 33);
+    assert.equal(parsed.skills.length, 79);
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

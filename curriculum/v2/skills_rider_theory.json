@@ -6,57 +6,65 @@
     "subject": "rider",
     "realm": "Other",
     "familyId": "rider.theory.training_principles",
-    "name": "Understanding the Training Pyramid",
+    "name": "Training Principles & the Training Pyramid",
     "aliases": [
+      "Understanding the Training Pyramid",
       "Training Scale",
       "Skala der Ausbildung",
       "Six elements of training",
-      "Rhythm relaxation connection impulsion straightness collection"
+      "Rhythm relaxation connection impulsion straightness collection",
+      "Training principles"
     ],
-    "summary": "Understanding the six traditional Training Pyramid elements—rhythm, suppleness/relaxation, contact/connection, impulsion, straightness, and collection—as an interdependent, adaptable framework rather than a rigid one-way ladder.",
-    "purpose": "Gives equestrians across Western, English, trail, ranch, driving, and general horsemanship a shared language for evaluating movement quality, mental relaxation, and progressive development without treating any single framework as the only valid path.",
+    "summary": "Applying core progressive horsemanship principles—and using the six Training Pyramid elements (rhythm, relaxation, connection, impulsion, straightness, collection) as a flexible, non-exclusive lens—to support calm, sound development across all disciplines.",
+    "purpose": "Equips equestrians across trail, ranch, Western, English, gaited, driving, and general horsemanship to evaluate physical and mental readiness, prioritize clarity and welfare over force, and adapt training thoughtfully to each horse.",
     "safety": [
-      "Never force advanced elements such as collection or high-energy impulsion before a horse is mentally relaxed, physically warmed up, and sound.",
-      "Do not confuse tension or hurried speed with impulsion or collection."
+      "Never force collection, speed, or demanding exercises when a horse lacks mental relaxation, adequate warm-up, physical comfort, or steady rhythm.",
+      "Do not mistake stiffly tucked heads, hurried tempo, or learned helplessness/shutdown for true relaxation, energy, or collection.",
+      "Reassess comfort, hooves, dental health, tack fit, and emotional load whenever recurring tension disrupts rhythm or willingness."
     ],
     "availableLevels": ["introductory", "intermediate", "advanced"],
     "levels": {
       "introductory": {
-        "overview": "Identifying the six elements of the Training Pyramid and recognizing that it is a flexible, non-exclusive guide.",
+        "overview": "Understanding how core principles—calm mental state, steady rhythm, relaxation, soft non-restrictive connection, and patient progression—apply practically across any horsemanship tradition (using the Training Pyramid as one accessible guide, never a rigid checklist).",
         "components": [
-          {"title": "Six elements", "description": "Naming and defining Rhythm, Suppleness/Relaxation, Contact/Connection, Impulsion, Straightness, and Collection in plain terms."},
-          {"title": "Interdependence", "description": "Explaining why the elements support one another rather than acting as a strict one-time checklist."},
-          {"title": "Broad horsemanship perspective", "description": "Recognizing how rhythm, relaxation, and balance apply equally to trail, ranch, Western, English, driving, and groundwork."}
+          {"title": "One useful map, not the only path", "description": "Explaining the six Training Pyramid concepts (rhythm, suppleness/relaxation, contact/connection, impulsion, straightness, collection) in everyday terms alongside core horse-first priorities—recognizing how they translate equally to loose-rein trail riding, ranch work, driving, gaited horses, positive reinforcement, or arena riding."},
+          {"title": "Relaxation before precision", "description": "Understanding why mental and physical tension block learning and why true connection does not require heavy rein pressure."},
+          {"title": "Common mistakes", "description": "Treating training principles as a rigid one-way ladder, pulling a horse's head into shape without back engagement, or pushing through confusion instead of clarifying."}
         ],
-        "learning": "Can recall some Training Pyramid terms but treats them as a rigid step-by-step ladder or associates them only with competitive dressage.",
-        "proficient": "Accurately explains all six elements in plain language, describes how they interact, and gives examples of how the framework applies across different riding or handling goals.",
-        "standardVersion": 1
+        "learning": "Recognizes terms like rhythm and relaxation, while sometimes treating training steps as a rigid ladder or associating head carriage with balance.",
+        "proficient": "Plainly explains core training priorities and the six Training Pyramid elements as one helpful, non-exclusive framework, describes how mental relaxation and rhythm support any riding or handling tradition, and avoids equating tight headset or speed with healthy training.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Observing and discussing how the six elements appear in real horses and adjusting priorities during training.",
+        "overview": "Observing horses in real situations to recognize which foundational principle needs attention (comfort, emotional composure, rhythm, relaxation, connection, or straightness) and choosing humane, practical next priorities instead of forcing symptoms.",
         "components": [
-          {"title": "Observing quality", "description": "Distinguishing true relaxation and elastic connection from brace, hollowness, or forced head position."},
-          {"title": "Cycling back to foundations", "description": "Explaining when to return to rhythm or relaxation if contact, impulsion, or straightness breaks down."}
+          {"title": "Reading movement and tension clusters", "description": "Spotting false framing, rushing passing as impulsion, braced backs or jaws, and crooked drifting on the ground or under saddle."},
+          {"title": "Cycling back and ethical adjustment", "description": "Explaining when to lower intensity, widen curves, clarify cue timing, or investigate physical comfort when higher qualities break down."},
+          {"title": "Method-neutral comparison", "description": "Recognizing how different legitimate horsemanship traditions build rhythm, relaxation, and clear communication without mandating identical tack or posture."}
         ],
-        "learning": "Identifies elements in theory but struggles to spot which foundational element is missing when a horse becomes tense or crooked.",
-        "proficient": "Observes live or recorded horses and accurately identifies strengths and gaps across rhythm, relaxation, connection, impulsion, straightness, and early collection, explaining sensible next priorities.",
-        "standardVersion": 1
+        "learning": "Spots imbalances in theory or clear video, while still practicing real-time troubleshooting to trace tension back to timing, comfort, or foundational rhythm.",
+        "proficient": "Independently observes horses on the ground or under saddle across contexts, distinguishes calm relaxation and balanced engagement from brace or rushing, and selects sensible, humane next adjustments or comfort checks without escalating force.",
+        "standardVersion": 2
       },
       "advanced": {
-        "overview": "Applying and critiquing the Training Pyramid alongside other horsemanship models for individual horses and disciplines.",
+        "overview": "Independently synthesizing movement principles, learning theory, conditioning limits, and equine welfare to guide complex, ambiguous, or varied horses across disciplines without dogma or coaching prerequisites.",
         "components": [
-          {"title": "Individualized progression", "description": "Adapting emphasis for young, green, older, gaited, ranch, driving, or rehabilitating horses."},
-          {"title": "Comparative frameworks", "description": "Comparing the Training Pyramid with learning-theory and biomechanics-based training models without dogma."}
+          {"title": "Adapting to individual horses and traditions", "description": "Prioritizing thoughtfully for young, senior, gaited/ambling, heavy/draft, ranch, positive-reinforcement, driving, or rehabilitating horses without rigid dogma."},
+          {"title": "Root-cause synthesis and welfare judgment", "description": "Weighing subtle interactions among physical discomfort, hoof/tack mechanics, learning history, emotional thresholds, and conditioning timelines."},
+          {"title": "Ethical stewardship", "description": "Choosing long-term soundness and trust over rushed external timelines or mechanical shortcuts—evaluated strictly on personal horsemanship judgment and practical stewardship choices."}
         ],
-        "learning": "Applies the framework well to familiar horses but struggles to adapt it for diverse conformations, disciplines, or non-traditional training goals.",
-        "proficient": "Synthesizes the six interdependent elements with biomechanics and learning theory to evaluate complex training situations and mentor others clearly across disciplines.",
-        "standardVersion": 1
+        "learning": "Applies adaptable, method-neutral principles comfortably to familiar horse types while refining balanced judgment across unfamiliar conformations, disciplines, or subtle multi-factor cases.",
+        "proficient": "Independently synthesizes movement frameworks, learning theory, conditioning, and welfare ethics to evaluate complex horsemanship situations and adapt long-term training methods thoughtfully across diverse horses and traditions.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
+      {"skillId": "rider.theory.how_horses_learn", "relation": "foundation", "level": "introductory"},
       {"skillId": "rider.theory.balance_weight", "relation": "next"},
       {"skillId": "rider.theory.progressive_conditioning", "relation": "next"},
-      {"skillId": "rider.mounted.half_halt", "relation": "next"}
+      {"skillId": "rider.theory.session_planning", "relation": "next"},
+      {"skillId": "rider.mounted.half_halt", "relation": "next"},
+      {"skillId": "rider.mounted.transitions", "relation": "next"}
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -165,12 +173,12 @@
         "standardVersion": 1
       },
       "advanced": {
-        "overview": "Designing cohesive multi-week training progressions and mentoring others in reflective evaluation.",
+        "overview": "Designing cohesive multi-week training progressions and conducting structured, reflective session evaluations independently.",
         "components": [
           {"title": "Hypothesis-driven troubleshooting", "description": "Testing whether a difficulty stems from physical discomfort, environment, unclear cues, or missing prerequisites."},
           {"title": "Longitudinal tracking", "description": "Using session notes or video review to track subtle changes in symmetry, confidence, and responsiveness."}
         ],
-        "learning": "Tracks progress well individually but struggles to diagnose multi-factor stalls in unfamiliar horse-rider pairs.",
+        "learning": "Tracks individual workouts steadily while still refining systematic multi-factor troubleshooting across varied horses or unfamiliar plateaus.",
         "proficient": "Creates structured, adaptable training plans over weeks and evaluates sessions systematically across physical, emotional, and communication factors.",
         "standardVersion": 1
       }
@@ -296,9 +304,9 @@
           {"title": "Combined reinforcement", "description": "Ethically integrating pressure-release clarity with positive reinforcement (including marker signals) to build motivation and precision."},
           {"title": "Timing audit", "description": "Spotting inadvertent reinforcement of unwanted behaviors (such as releasing when a horse pulls away or tosses its head)."}
         ],
-        "learning": "Applies one reinforcement style well but struggles to audit accidental reinforcement in complex rider-horse interactions.",
-        "proficient": "Diagnoses subtle timing errors in live or video scenarios, designs combined-reinforcement shaping plans, and teaches accurate learning-theory terminology.",
-        "standardVersion": 1
+        "learning": "Applies one reinforcement style well while refining how to audit accidental reinforcement in complex rider-horse interactions.",
+        "proficient": "Diagnoses subtle timing errors in live or video scenarios, designs combined-reinforcement shaping plans, and applies accurate learning-theory principles across contexts.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
@@ -722,12 +730,12 @@
         "standardVersion": 1
       },
       "advanced": {
-        "overview": "Advocating ethical decision-making, end-of-life/retirement stewardship, and welfare accountability.",
+        "overview": "Synthesizing ethical decision-making, end-of-life and retirement stewardship, and welfare accountability across real-world scenarios.",
         "components": [
           {"title": "Long-term stewardship", "description": "Planning ethically for aging horses, career transitions, injury rehabilitation, and humane end-of-life decisions."},
-          {"title": "Mentoring ethical culture", "description": "Modeling calm, evidence-informed, welfare-centered standards in barns, clinics, and competitions."}
+          {"title": "Stewarding ethical standards", "description": "Consistently applying calm, evidence-informed, welfare-centered standards in daily care, training, barns, and competitive venues."}
         ],
-        "learning": "Makes ethical choices personally but struggles to articulate clear, constructive welfare standards for broader barn or community situations.",
+        "learning": "Makes ethical choices in familiar routines while building confidence evaluating complex trade-offs across unfamiliar barn or competition norms.",
         "proficient": "Demonstrates mature, welfare-centered judgment across complex training, management, and stewardship dilemmas while communicating constructively with others.",
         "standardVersion": 1
       }
@@ -788,9 +796,9 @@
         "overview": "Refining subtle aid timing, stride-phase coordination, and ethical use of optional refinements.",
         "components": [
           {"title": "Timing aids to stride", "description": "Matching leg, seat, and half-halt timing to hind-leg swing and stance phases so the horse can answer easily without losing balance."},
-          {"title": "Refinement, fading, and welfare", "description": "Evaluating when an aid is truly helpful vs unnecessary clutter, checking for discomfort before increasing pressure, and mentoring riders toward lighter, quieter communication."}
+          {"title": "Refinement, fading, and welfare", "description": "Evaluating when an aid is truly helpful vs unnecessary clutter, checking for discomfort before increasing pressure, and progressively fading cues toward lighter, quieter communication."}
         ],
-        "learning": "Applies clear aids individually but struggles to diagnose subtle timing clashes in other riders.",
+        "learning": "Applies clear aids comfortably in familiar routines while still diagnosing subtle timing clashes under varied conditions.",
         "proficient": "Analyzes complex aid coordination and biomechanics across disciplines, explaining how to refine cues to near-invisible clarity.",
         "standardVersion": 1
       }
@@ -908,14 +916,14 @@
         "standardVersion": 1
       },
       "advanced": {
-        "overview": "Critically auditing equipment choices across disciplines and teaching minimal, horse-centered gear selection.",
+        "overview": "Critically auditing equipment choices across disciplines and selecting minimal, horse-centered gear responsibly.",
         "components": [
           {"title": "Welfare and biomechanical critique", "description": "Evaluating coercive vs supportive gear in competitive, ranch, trail, and driving contexts."},
           {"title": "Transitioning off training aids", "description": "Planning how temporary safety or guidance tools are phased out as balance and understanding develop."}
         ],
-        "learning": "Evaluates familiar gear well but hesitates to critique traditional gadgets used in other disciplines.",
-        "proficient": "Provides balanced, biomechanically and ethically grounded equipment evaluations across disciplines and mentors others toward safe, minimal gear.",
-        "standardVersion": 1
+        "learning": "Evaluates familiar gear well while building balanced discernment across specialized equipment used in other disciplines.",
+        "proficient": "Provides balanced, biomechanically and ethically grounded equipment evaluations across disciplines and selects safe, minimal gear suited to the individual horse.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [

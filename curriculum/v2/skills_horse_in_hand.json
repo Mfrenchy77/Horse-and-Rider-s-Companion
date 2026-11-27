@@ -282,5 +282,150 @@
     ],
     "legacyIds": [],
     "sortOrder": 10
+  },
+  {
+    "id": "horse.in_hand.yield_hindquarters",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.ground_control_yielding",
+    "name": "Yielding the Hindquarters (In-Hand)",
+    "aliases": ["Turn on the forehand (in-hand)", "Disengage the hindquarters (in-hand)", "Move the hips over (in-hand)", "Yield hindquarters (in-hand)"],
+    "summary": "The horse's calm comprehension, emotional composure, and coordinated hindquarter crossing when asked from the ground to step its hips aside around steadier shoulders.",
+    "purpose": "Builds respectful personal space, calmness during gating, saddling, and care routines, hindquarter balance awareness, and clear groundwork readiness for mounted lateral cues.",
+    "safety": [
+      "Distinguish calm understanding from flinging the hips in fear, spinning to escape, kicking out, or shutting down under excessive pressure.",
+      "Practice on level, non-slip footing and allow the horse to pause and settle promptly upon offering a calm crossing response.",
+      "Repeated one-sided bracing, tail-wringing, or reluctance to cross behind can indicate hip, stifle, hock, or back discomfort—evaluate comfort before repeating asks."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "From halt or a quiet pause, calmly understanding light ground requests in both directions to step the hindquarters aside around relatively steady shoulders and settle softly on release—without flight, spinning, or bracing.",
+        "components": [
+          {"title": "Calm understanding vs. escape", "description": "Stepping smoothly with soft eye, jaw, and breathing rather than whipping the hips away in alarm, pinning ears, or freezing."},
+          {"title": "Developing crossing coordination and pause", "description": "Stepping the inside hind leg comfortably across in front of the outside hind without tangling or rushing, then pausing settled when pressure releases."}
+        ],
+        "learning": "Responds in familiar settings with brief hesitation, crowding, forward or backward drift, hurried steps on one side, or mild tension before settling.",
+        "proficient": "Calmly understands light ground cues from halt to step its hindquarters aside cleanly in both directions with soft expression, comfortable posture, and balanced crossing steps—without fleeing, rushing, or bracing—and settles quietly when the cue releases.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Smooth, rhythmic, coordinated hindquarter yielding in both directions from halt or active walk with minimal unwanted drift, calm adaptability across practical spaces, and relaxed pause on release.",
+        "components": [
+          {"title": "Balance from walk or halt", "description": "Shifting smoothly between straight forward walk and coordinated hindquarter yielding without dropping heavily onto the forehand or stepping backward unintentionally."},
+          {"title": "Adaptability and light responsiveness", "description": "Answering light ground requests calmly in busier settings, doorways, gates, or tight maneuvering areas."}
+        ],
+        "learning": "Connects walk and fuller hindquarter turns in both directions with intermittent forward/backward drift, uneven crossing rhythm, or mild tension around distractions.",
+        "proficient": "Smoothly and reliably yields its hindquarters around steadier shoulders from halt or walk in both directions on light ground cues, maintaining balanced rhythm, minimal unwanted drift, and relaxed attentiveness across everyday and busier settings.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.turn_on_forehand", "relation": "counterpart"},
+      {"skillId": "horse.in_hand.leading", "relation": "foundation", "level": "introductory"},
+      {"skillId": "horse.in_hand.yield_forequarters", "relation": "next"},
+      {"skillId": "horse.in_hand.sidepass_in_hand", "relation": "next"},
+      {"skillId": "horse.mounted.turn_on_forehand", "relation": "next"}
+    ],
+    "legacyIds": [],
+    "sortOrder": 10
+  },
+  {
+    "id": "horse.in_hand.yield_forequarters",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.ground_control_yielding",
+    "name": "Yielding the Forequarters (In-Hand)",
+    "aliases": ["Turn on the haunches (in-hand)", "Move the shoulders over (in-hand)", "Forequarter yield (in-hand)", "Yield shoulders in-hand"],
+    "summary": "The horse's calm comprehension and coordinated shoulder crossing when asked from the ground to step its forequarters aside around steadier hindquarters without crowding or rushing backward.",
+    "purpose": "Develops respectful shoulder boundaries, forehand lightness, and balanced spatial responsiveness for trailer/gate alignment and mounted shoulder control.",
+    "safety": [
+      "Distinguish calm understanding from head-tossing, running backward in worry, or crowding forward into personal space.",
+      "Investigate shoulder, neck, hoof, or knee discomfort if a horse consistently stiffens or resists stepping aside in one direction."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "From halt or quiet walk, calmly understanding light ground requests to step the shoulders aside in both directions without throwing the head defensively, backing abruptly, or crowding forward, and pausing softly on release.",
+        "components": [
+          {"title": "Confidence with shoulder requests", "description": "Accepting cues near the head, neck, and shoulder calmly without feeling trapped or bolting backward."},
+          {"title": "Clean front stepping and boundary respect", "description": "Stepping the front feet cleanly across/around while respecting handler space and settling promptly on release."}
+        ],
+        "learning": "Steps shoulders aside in familiar spaces with occasional backward steps, raised neck tension, crowding toward the handler, or hesitation on the stiffer side.",
+        "proficient": "Calmly understands light ground requests to step its shoulders aside in both directions with relaxed head and neck posture, polite space respect, and settled pauses on release—without rushing backward or crowding.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Coordinated, balanced shoulder yielding around relatively steady hindquarters in both directions from halt or walk on light requests—staying relaxed, avoiding unwanted backing, and adapting calmly in varied spaces.",
+        "components": [
+          {"title": "Coordinated balance over steady hindquarters", "description": "Allowing the hind legs to pivot comfortably without twisting abruptly on a stuck limb or stepping steadily backward while shoulders cross smoothly."},
+          {"title": "Walk-to-yield flow and composure", "description": "Responding softly to shoulder redirection during leading, gate positioning, or busier settings."}
+        ],
+        "learning": "Performs fuller forequarter yields and walk redirections in both directions with intermittent backward drift, rushed front steps, or uneven bend.",
+        "proficient": "Smoothly and reliably yields its forequarters around relatively steady hindquarters from halt or walk in both directions on light ground requests, maintaining balanced foreleg crossing, relaxed posture, and adaptability in varied settings without unintended backing.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.yield_forequarters", "relation": "counterpart"},
+      {"skillId": "horse.in_hand.leading", "relation": "foundation", "level": "introductory"},
+      {"skillId": "horse.in_hand.yield_hindquarters", "relation": "foundation", "level": "introductory"},
+      {"skillId": "horse.in_hand.sidepass_in_hand", "relation": "next"},
+      {"skillId": "horse.mounted.turn_on_haunches", "relation": "next"}
+    ],
+    "legacyIds": [],
+    "sortOrder": 20
+  },
+  {
+    "id": "horse.in_hand.sidepass_in_hand",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.ground_control_yielding",
+    "name": "Lateral Yielding / Sidepass (In-Hand)",
+    "aliases": ["Sidepass (in-hand)", "Sidepass from the ground (horse)", "Full-body lateral yield (in-hand)", "Yielding sideways (in-hand)"],
+    "summary": "The horse's calm comprehension and balanced full-body coordination when stepping sideways from the ground with shoulders and hindquarters moving evenly together.",
+    "purpose": "Integrates front- and hind-end ground communication into smooth, parallel sideways movement for gates, mounting blocks, tight spaces, and future mounted lateral balance.",
+    "safety": [
+      "Introduce sideways coordination on open, level, non-slip ground—allow small relaxed tries without continuous squeezing or trapping.",
+      "Do not add obstacles or rails before the horse understands light sideways cues calmly in open space; assess back, rib, hoof, or limb soreness if chronic unevenness or tension appears."
+    ],
+    "availableLevels": ["introductory", "intermediate"],
+    "levels": {
+      "introductory": {
+        "overview": "Calmly understanding light ground cues on open ground to coordinate both shoulders and hindquarters sideways in both directions with developing straightness, remaining relaxed without fleeing or rushing forward/backward, and pausing quietly on release.",
+        "components": [
+          {"title": "Understanding combined sideways requests", "description": "Translating light ground requests into calm sideways steps rather than whipping the hips around or escaping forward or backward."},
+          {"title": "Developing alignment and emotional composure", "description": "Beginning to move front and hind ends together with soft breathing and settling peacefully when released."}
+        ],
+        "learning": "Attempts sideways steps on open ground with shoulders or hindquarters lagging, occasional forward or backward drifting, hurried steps, or mild tension between sides.",
+        "proficient": "Calmly understands light ground cues on open, flat ground to step both front and hind ends sideways in both directions with unhurried composure, developing straightness, and a relaxed pause when released—without fleeing, crowding, or rushing.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Reliable, coordinated, balanced sideways stepping in both directions with shoulders and hindquarters staying largely parallel on light cues, calmly adaptable across everyday practical contexts (such as gates, mounting areas, or optional ground rails).",
+        "components": [
+          {"title": "Even, parallel lateral coordination", "description": "Crossing both front and hind pairs rhythmically sideways in both directions with minimal shoulder or hip lag and minimal unwanted forward/backward drift."},
+          {"title": "Adaptability in practical contexts", "description": "Applying light sideways positioning calmly near barn doors, mounting areas, trail gates, or optional ground poles without pawing, rushing, or losing composure."}
+        ],
+        "learning": "Moves sideways in both directions with intermittent unevenness between front and hind crossing, minor forward or backward drift, or distraction around gates, mounting blocks, or rails.",
+        "proficient": "Smoothly and reliably steps sideways in both directions on light ground cues with front and hind quarters staying calmly parallel and coordinated, maintaining steady unhurried rhythm and composure across varied practical contexts.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "rider.in_hand.sidepass_in_hand", "relation": "counterpart"},
+      {"skillId": "horse.in_hand.yield_hindquarters", "relation": "foundation", "level": "introductory"},
+      {"skillId": "horse.in_hand.yield_forequarters", "relation": "foundation", "level": "introductory"},
+      {"skillId": "horse.mounted.sidepass", "relation": "next"},
+      {"skillId": "horse.mounted.leg_yield", "relation": "next"}
+    ],
+    "legacyIds": [],
+    "sortOrder": 30
   }
 ]

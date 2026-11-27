@@ -285,10 +285,10 @@ void main() {
   });
 
   group('Phase 3 Skill Tree 2.0 Visual Redesign', () {
-    test('maps all 32 curriculum families to 26 unique clean SVG assets', () {
+    test('maps all 33 curriculum families to 26 unique clean SVG assets', () {
       final jsonText = File('curriculum/v2/families.json').readAsStringSync();
       final decoded = jsonDecode(jsonText) as List<dynamic>;
-      expect(decoded.length, 32);
+      expect(decoded.length, 33);
 
       final familyIds = [
         for (final entry in decoded)
@@ -307,6 +307,16 @@ void main() {
         for (final id in familyIds) SkillFamilyIconAssets.assetForFamily(id)!,
       };
       expect(uniqueAssets.length, 26);
+      expect(
+        SkillFamilyIconAssets.assetForFamily(
+          'horse.in_hand.ground_control_yielding',
+        ),
+        equals(
+          SkillFamilyIconAssets.assetForFamily(
+            'rider.in_hand.ground_control_yielding',
+          ),
+        ),
+      );
 
       // Verify the 6 shared Mounted families share artwork across subjects.
       for (final sharedSuffix in const [

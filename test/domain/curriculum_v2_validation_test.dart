@@ -65,21 +65,23 @@ void main() {
     });
 
     test('contains expected families, skills, and level standards', () {
-      expect(families.length, 32);
-      expect(skills.length, 72);
+      expect(families.length, 33);
+      expect(skills.length, 79);
       final totalLevels = skills.fold<int>(
         0,
         (sum, s) => sum + s.availableLevels.length,
       );
-      expect(totalLevels, 154);
+      expect(totalLevels, 169);
 
-      // Batch 1 & 2 3-level progression checks
+      // Wave 1 & Batch 1/2 3-level progression checks
       for (final id in [
+        'rider.in_hand.longeing',
         'rider.mounted.trot',
         'rider.mounted.canter',
         'rider.mounted.transitions',
         'horse.mounted.trot',
         'horse.mounted.canter',
+        'horse.mounted.rein_back',
       ]) {
         expect(skillById[id]!.availableLevels, [
           DifficultyState.Introductory,
@@ -230,5 +232,138 @@ void main() {
         }
       },
     );
+
+    test('enforces Wave 1 refinements, splits, and Horse In-Hand Yielding parity', () {
+      // 1. Leading: Intro walk-focused, Int versatile, no rigid step counts.
+      final leading = skillById['rider.in_hand.leading']!;
+      expect(leading.availableLevels, [
+        DifficultyState.Introductory,
+        DifficultyState.Intermediate,
+      ]);
+      final leadingIntro = leading.levelDefinition(DifficultyState.Introductory)!;
+      final leadingInt = leading.levelDefinition(DifficultyState.Intermediate)!;
+      expect(leadingIntro.standardVersion, 2);
+      expect(leadingInt.standardVersion, 2);
+      expect(leadingIntro.proficient.contains('2–4'), isFalse);
+      expect(leadingIntro.overview.toLowerCase(), contains('trot leading is not required'));
+      expect(leadingInt.proficient.toLowerCase(), contains('either side'));
+
+      // 2. Longeing: 3 levels without mandatory gait/pole gates.
+      final longeing = skillById['rider.in_hand.longeing']!;
+      expect(longeing.availableLevels, [
+        DifficultyState.Introductory,
+        DifficultyState.Intermediate,
+        DifficultyState.Advanced,
+      ]);
+      expect(longeing.levelDefinition(DifficultyState.Introductory)!.standardVersion, 1);
+      expect(longeing.levelDefinition(DifficultyState.Intermediate)!.standardVersion, 2);
+      expect(longeing.levelDefinition(DifficultyState.Advanced)!.standardVersion, 2);
+      expect(
+        longeing.levelDefinition(DifficultyState.Introductory)!.overview.toLowerCase(),
+        contains('no specific gait'),
+      );
+      expect(
+        longeing.levelDefinition(DifficultyState.Intermediate)!.overview.toLowerCase(),
+        contains('cantering is not mandatory'),
+      );
+      expect(
+        longeing.levelDefinition(DifficultyState.Advanced)!.overview.toLowerCase(),
+        contains('optional, not mandatory'),
+      );
+
+      // 3. Canter split: Counter-Canter and Flying Lead Changes as 2 skill pairs.
+      final riderCounter = skillById['rider.mounted.counter_canter']!;
+      final horseCounter = skillById['horse.mounted.counter_canter']!;
+      final riderFlying = skillById['rider.mounted.flying_lead_changes']!;
+      final horseFlying = skillById['horse.mounted.flying_lead_changes']!;
+      expect(riderCounter.availableLevels, [
+        DifficultyState.Intermediate,
+        DifficultyState.Advanced,
+      ]);
+      expect(horseCounter.availableLevels, [
+        DifficultyState.Intermediate,
+        DifficultyState.Advanced,
+      ]);
+      expect(riderFlying.availableLevels, [DifficultyState.Advanced]);
+      expect(horseFlying.availableLevels, [DifficultyState.Advanced]);
+      expect(
+        riderCounter.relatedSkills.any(
+          (r) => r.skillId == 'horse.mounted.counter_canter' && r.relation == SkillRelationType.counterpart,
+        ),
+        isTrue,
+      );
+      expect(
+        riderFlying.relatedSkills.any(
+          (r) => r.skillId == 'horse.mounted.flying_lead_changes' && r.relation == SkillRelationType.counterpart,
+        ),
+        isTrue,
+      );
+
+      // 4. Training Principles renamed & zero mandatory mentoring in Theory Adv.
+      final pyramid = skillById['rider.theory.training_pyramid']!;
+      expect(pyramid.name, 'Training Principles & the Training Pyramid');
+      for (final s in skills.where(
+        (s) => s.subject == SkillSubject.rider && s.realm == SkillCategory.Other,
+      )) {
+        final adv = s.levelDefinition(DifficultyState.Advanced);
+        if (adv == null) continue;
+        expect(
+          adv.proficient.toLowerCase().contains('mentor'),
+          isFalse,
+          reason: '${s.id} Adv proficient should not mandate mentoring',
+        );
+        expect(
+          adv.overview.toLowerCase().contains('mentor'),
+          isFalse,
+          reason: '${s.id} Adv overview should not mandate mentoring',
+        );
+        for (final comp in adv.components) {
+          expect(
+            comp.title.toLowerCase().contains('mentor') ||
+                comp.description.toLowerCase().contains('mentor'),
+            isFalse,
+            reason: '${s.id} Adv component should not mandate mentoring',
+          );
+        }
+      }
+
+      // 5. Three Horse In-Hand Yielding skills in Ground Control & Yielding.
+      final groundControlFam = familyById['horse.in_hand.ground_control_yielding']!;
+      expect(groundControlFam.name, 'Ground Control & Yielding');
+      expect(groundControlFam.subject, SkillSubject.horse);
+      expect(groundControlFam.realm, SkillCategory.In_Hand);
+      for (final pair in const [
+        ('horse.in_hand.yield_hindquarters', 'rider.in_hand.turn_on_forehand'),
+        ('horse.in_hand.yield_forequarters', 'rider.in_hand.yield_forequarters'),
+        ('horse.in_hand.sidepass_in_hand', 'rider.in_hand.sidepass_in_hand'),
+      ]) {
+        final horseSkill = skillById[pair.$1]!;
+        final riderSkill = skillById[pair.$2]!;
+        expect(horseSkill.familyId, 'horse.in_hand.ground_control_yielding');
+        expect(horseSkill.availableLevels, [
+          DifficultyState.Introductory,
+          DifficultyState.Intermediate,
+        ]);
+        expect(
+          horseSkill.relatedSkills.any(
+            (r) => r.skillId == riderSkill.id && r.relation == SkillRelationType.counterpart,
+          ),
+          isTrue,
+        );
+      }
+
+      // 6. Horse Rein Back: 3 levels without mandatory patterns/step counts.
+      final reinBack = skillById['horse.mounted.rein_back']!;
+      expect(reinBack.availableLevels, [
+        DifficultyState.Introductory,
+        DifficultyState.Intermediate,
+        DifficultyState.Advanced,
+      ]);
+      for (final lvl in reinBack.availableLevels) {
+        final prof = reinBack.levelDefinition(lvl)!.proficient.toLowerCase();
+        expect(prof.contains('l or corridor'), isFalse);
+        expect(prof.contains('3–5'), isFalse);
+      }
+    });
   });
 }

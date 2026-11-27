@@ -143,52 +143,151 @@
     "realm": "Mounted",
     "familyId": "rider.mounted.gaits_rhythm_transitions",
     "name": "Canter",
-    "aliases": ["Lope", "Canter depart", "Canter leads", "Lope leads", "Simple lead change", "Counter-canter", "Flying lead change"],
-    "summary": "Riding the three-beat canter or lope in balance—progressing from establishing the gait to lead selection, simple lead changes, counter-canter, and flying changes.",
-    "purpose": "Allows riders to develop balanced three-beat feel early while progressing toward accurate lead control, balanced turns, and advanced lead changes.",
+    "aliases": ["Lope", "Canter depart", "Canter leads", "Lope leads", "Simple lead change", "Balanced canter", "Canter stride adjustability"],
+    "summary": "Preparing, following, and regulating the three-beat canter or lope with balance, rhythm, clear timing, lead feel, simple lead changes, and within-gait adjustability—prioritizing horse comfort and relaxation across disciplines.",
+    "purpose": "Develops hip suppleness, rhythmic core stability, accurate aid timing, and adaptable three-beat balance without equating speed or specialized maneuvers with horsemanship.",
     "safety": [
-      "Establish reliable walk/trot control and safe arena spacing before cantering."
+      "Establish calm walk and trot control, clear steering, and safe spacing from other horses or hazards before cantering.",
+      "Evaluate footing, traction, slope, and turn radius before asking for canter; avoid tight turns or unbalanced departures on slick, deep, or rocky ground.",
+      "Treat repeated rushing, cross-cantering, hollowing, or one-sided lead resistance as important welfare feedback—slow down and assess saddle fit, soreness, conditioning, footing, or your own alignment."
     ],
     "availableLevels": ["introductory", "intermediate", "advanced"],
     "levels": {
       "introductory": {
-        "overview": "Establishing and maintaining the canter calmly with basic balance and a controlled downward transition; correct lead selection is not required.",
+        "overview": "Preparing a calm depart from walk or trot, following the forward three-beat motion comfortably in a full or light/two-point seat (on light contact or a loose rein), and returning smoothly to trot or walk. Correct lead selection is not required.",
         "components": [
-          {"title": "Establishing and maintaining canter", "description": "Cueing a calm depart, following the three-beat motion in balance without pulling on the reins, and returning safely to trot or walk."}
+          {"title": "Calm preparation vs. running the trot", "description": "Preparing a steady walk or balanced trot before asking lightly, rather than speeding up the trot until the horse trips or rushes into canter."},
+          {"title": "Following 3-beat feel and non-restrictive balance", "description": "Letting hips sweep cleanly with the stride in either full seat or light/two-point seat without gripping knees or balancing off the horse's mouth."},
+          {"title": "Controlled returns", "description": "Exhaling, stabilizing the core quietly, and gliding smoothly down to trot or walk while space remains clear."}
         ],
-        "learning": "Establishes canter for short stretches with guidance; seat or rein steadiness may waver during the depart or downward transition.",
-        "proficient": "Independently establishes and maintains a balanced canter with basic steering for sustained stretches and makes a safe, controlled downward transition. Correct lead selection is not required at this level.",
-        "standardVersion": 2
+        "learning": "Departs into canter for short stretches with guidance; seat, hands, or breathing occasionally brace during transitions, or trot speeds up beforehand.",
+        "proficient": "Independently prepares a balanced walk or trot, asks calmly for canter, follows the three-beat motion comfortably in full or light seat without balancing off the reins, steers simple lines/curves, and makes a controlled downward transition. Correct lead selection is not required at this level.",
+        "standardVersion": 3
       },
       "intermediate": {
-        "overview": "Recognizing and selecting requested leads in both directions, maintaining leads through turns and circles, and performing balanced simple lead changes.",
+        "overview": "Preparing requested left and right leads from walk or trot, feeling which lead the horse is on without looking down, balancing curves and turns smoothly, riding calm simple lead changes, and handling wrong leads constructively.",
         "components": [
-          {"title": "Lead recognition and selection", "description": "Preparing balanced departs on the requested lead, feeling which lead the horse is on, and maintaining that lead through turns and circles."},
-          {"title": "Simple lead changes", "description": "Transitioning cleanly through walk or trot to change leads calmly and in balance without rushing or losing straightness."}
+          {"title": "Lead feel and anatomy without looking down", "description": "Understanding that the lead leg advances farther and feeling the corresponding forward swing of your hip/shoulder silently rather than staring down at the horse's shoulder."},
+          {"title": "Turns, generous curves, and simple lead changes", "description": "Aligning shoulders and weight smoothly around turns and generous circles or sweeping curves without leaning inward; riding calm simple lead changes through walk or trot."},
+          {"title": "Constructive adjustment and welfare", "description": "Recognizing an unintended wrong lead or disunited canter promptly, transitioning calmly back to rebalance instead of yanking, and checking comfort or rider bias if one lead is consistently difficult."}
         ],
-        "learning": "Selects leads, rides turns, and practices simple lead changes with occasional wrong-lead departs, breaking gait on turns, or rushed transitions.",
-        "proficient": "Independently recognizes and selects requested leads in both directions, maintains the lead and steady rhythm through turns and 20 m circles, and performs clean, balanced simple lead changes.",
-        "standardVersion": 2
+        "learning": "Selects leads, balances curves, and practices simple lead changes with occasional wrong-lead departs, looking down to check, leaning inward, or hurried change transitions.",
+        "proficient": "Independently prepares and asks for left and right leads from walk or trot, identifies leads by feel, maintains steady three-beat balance through turns and generous curves on light contact or a loose rein, performs clean simple lead changes, and transitions calmly to rebalance unintended or disunited leads.",
+        "standardVersion": 3
       },
       "advanced": {
-        "overview": "Demonstrating refined canter control, including deliberate counter-canter and clean, balanced flying lead changes.",
+        "overview": "Refined fundamental canter mastery: regulating stride length and balance cleanly within the three-beat gait (without rushing), staying poised and aligned across varied lines, terrain, or transitions suited to the horse, and adapting thoughtfully for equine welfare. Counter-canter and flying lead changes are separate optional skills.",
         "components": [
-          {"title": "Counter-canter balance", "description": "Maintaining deliberate counter-canter through curves and loops with steady rhythm, alignment, and relaxation without swapping leads unintentionally."},
-          {"title": "Flying lead changes", "description": "Preparing and cueing clean, straight, balanced flying lead changes in the moment of suspension without tension, rushing, or late hind changes."}
+          {"title": "Within-gait adjustability (speed is not skill)", "description": "Lengthening and shortening canter stride smoothly through seat, core tone, and release timing while keeping calm three-beat rhythm rather than flattening/accelerating or pulling continuously."},
+          {"title": "Uphill balance, timing, and adaptability", "description": "Delivering subtle, clear aids tailored to stride rhythm across varied lines, curves, terrain, or transitions appropriate to the horse's build and discipline—adapting contact, posture, and pace thoughtfully."},
+          {"title": "Observing subtle fatigue or tension", "description": "Reading stiffening through the back, hurried breathing, or late hind engagement early so demands remain humane and productive."}
         ],
-        "learning": "Practices counter-canter and flying lead changes with occasional unintended lead swaps, late hind changes, crookedness, or tension.",
-        "proficient": "Independently demonstrates refined canter control in both directions, maintaining balanced counter-canter through appropriate lines and executing clean, straight, balanced flying lead changes without rushing or tension.",
-        "standardVersion": 1
+        "learning": "Practices within-gait lengthenings/shortenings and varied balanced canter work with intermittent flattening, bracing on the reins, crookedness, or late posture adjustments.",
+        "proficient": "Independently rides a relaxed, balanced three-beat canter or lope with clear within-gait stride adjustability (lengthening and shortening without rushing), straight alignment, subtle aid timing across varied lines and transitions suited to the horse and footing, and attentive welfare-based adaptation.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
       {"skillId": "horse.mounted.canter", "relation": "counterpart"},
       {"skillId": "rider.mounted.trot", "relation": "foundation", "level": "introductory"},
       {"skillId": "rider.theory.gaits_footfalls", "relation": "theory"},
-      {"skillId": "rider.mounted.steering_navigation", "relation": "next"}
+      {"skillId": "rider.theory.balance_weight", "relation": "theory"},
+      {"skillId": "rider.theory.pain_discomfort_fatigue", "relation": "theory"},
+      {"skillId": "rider.mounted.steering_navigation", "relation": "next"},
+      {"skillId": "rider.mounted.transitions", "relation": "next"},
+      {"skillId": "rider.mounted.counter_canter", "relation": "next"},
+      {"skillId": "rider.mounted.flying_lead_changes", "relation": "next"}
     ],
     "legacyIds": ["rider.mounted.canter"],
     "sortOrder": 30
+  },
+  {
+    "id": "rider.mounted.counter_canter",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Counter-Canter",
+    "aliases": ["Counter-canter", "Outside lead canter", "Counter lope", "Canter on the outside lead"],
+    "summary": "Intentionally riding balanced, relaxed canter or lope on the outside lead through straight lines, shallow loops, and appropriate curves without rushing or causing unintended lead swaps.",
+    "purpose": "Clarifies rider seat alignment, outside-bend balance, and weight control on curved lines while serving as an optional gymnastic or discipline-specific extension of balanced canter.",
+    "safety": [
+      "Build counter-canter gradually from wide shallow loops on good footing—never force tight counter-canter turns before a horse has strength and balance to carry the outside lead comfortably.",
+      "Avoid gripping or tilting to hold a lead by force; if tension builds or the horse swaps early, rebalance calmly on a straight line."
+    ],
+    "availableLevels": ["intermediate", "advanced"],
+    "levels": {
+      "intermediate": {
+        "overview": "Introducing deliberate counter-canter on straight tracks and shallow curves with clear rider alignment and calm three-beat rhythm.",
+        "components": [
+          {"title": "Understanding counter-canter alignment", "description": "Positioning subtle flexion/bend toward the leading (outside) leg while keeping rider weight centered and hips free—not leaning inward to counterbalance."},
+          {"title": "Gradual lines and release", "description": "Riding calm shallow loops off the wall/rail or slight direction changes and transitioning smoothly back to walk or trot before balance unravels."}
+        ],
+        "learning": "Rides straight lines or shallow counter-canter curves with intermittent inward leaning, tension, breaking to trot, or unintended lead swaps.",
+        "proficient": "Independently prepares and maintains balanced, relaxed counter-canter along straight lines and shallow curves in both directions without rushing, tilting, or forcing the horse's neck.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Sustaining poised, adjustable counter-canter through deeper curves, loops, and varied transitions while preserving rhythm, comfort, and light, adaptable aids.",
+        "components": [
+          {"title": "Curve adaptability and timing", "description": "Matching rider weight, rib support, and light outside-lead positioning smoothly as curves deepen or straighten without disturbing three-beat balance."},
+          {"title": "Welfare and readiness awareness", "description": "Reading early hindquarter fatigue or cross-canter warning signs and adjusting bend angle, curve radius, or pace thoughtfully."}
+        ],
+        "learning": "Sustains deeper counter-canter loops and transitions with occasional crookedness, stiff outside shoulder, or delayed alignment adjustments.",
+        "proficient": "Independently maintains poised, balanced, comfortable counter-canter through deeper loops and curves in both directions, adjusting stride and alignment fluidly on light aids without rushing or tension.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.counter_canter", "relation": "counterpart"},
+      {"skillId": "rider.mounted.canter", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.mounted.flying_lead_changes", "relation": "next"},
+      {"skillId": "rider.theory.balance_weight", "relation": "theory"},
+      {"skillId": "rider.theory.bend_flexion_straightness", "relation": "theory"}
+    ],
+    "legacyIds": [],
+    "sortOrder": 34
+  },
+  {
+    "id": "rider.mounted.flying_lead_changes",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.gaits_rhythm_transitions",
+    "name": "Flying Lead Changes",
+    "aliases": ["Flying lead change", "Flying change", "Lead change in the air", "Single flying change"],
+    "summary": "Preparing straight, balanced canter rhythm and delivering clear, light suspension-timed aids to ask for clean flying lead changes in both directions.",
+    "purpose": "Combines straightness, lead literacy, and stride-phase timing for riders choosing specialized flatwork, pattern, or jumping applications—always prioritizing horse relaxation and physical readiness.",
+    "safety": [
+      "Establish calm, straight simple changes and reliable counter-canter readiness before asking for flying changes; never kick, spur harshly, or throw weight abruptly to provoke a panic swap.",
+      "Repeated late hind changes, bucking, pinned ears, or rushing often signal tension, crookedness, conditioning gaps, or back/hock discomfort—step back and evaluate comfort."
+    ],
+    "availableLevels": ["advanced"],
+    "levels": {
+      "advanced": {
+        "overview": "Preparing straightness, balance, and quiet mental focus before asking with light, stride-timed aids for a clean, calm flying change in both directions and adapting thoughtfully to the horse's readiness.",
+        "components": [
+          {"title": "Preparation and straightness over speed", "description": "Rebalancing the canter squarely between seat and light aids before changing leads—never speeding up or throwing torso weight violently side to side."},
+          {"title": "Timing aids to stride suspension", "description": "Delivering calm, coordinated new-lead aids clearly in the preparation/suspension window so front and hind leads change smoothly together."},
+          {"title": "Observing quality and adapting cleanly", "description": "Recognizing early anticipation, rushed changes, or late behind immediately and returning quietly to straight counter-canter, simple changes, or comfort checks as needed."}
+        ],
+        "learning": "Prepares and asks for flying changes with occasional rushed approaches, body twisting, unintended early swaps, late hind changes, or rider tension.",
+        "proficient": "Independently prepares straight, calm, balanced canter lines, delivers clear, light, stride-timed aids for clean simultaneous flying lead changes in both directions without rushing or harshness, evaluates change quality accurately, and adapts smoothly back to simpler preparation whenever readiness or footing calls for it.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {"skillId": "horse.mounted.flying_lead_changes", "relation": "counterpart"},
+      {"skillId": "rider.mounted.canter", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.mounted.counter_canter", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.theory.gaits_footfalls", "relation": "theory"},
+      {"skillId": "rider.theory.balance_weight", "relation": "theory"},
+      {"skillId": "rider.theory.timing_reinforcement", "relation": "theory"}
+    ],
+    "legacyIds": [],
+    "sortOrder": 36
   },
   {
     "id": "rider.mounted.transitions",

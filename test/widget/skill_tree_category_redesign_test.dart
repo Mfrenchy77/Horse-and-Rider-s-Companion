@@ -289,7 +289,7 @@ void main() {
       final familiesJson =
           jsonDecode(File('curriculum/v2/families.json').readAsStringSync())
               as List<dynamic>;
-      expect(familiesJson.length, 32);
+      expect(familiesJson.length, 33);
 
       // Active category mappings for Rider (4) and Horse (2).
       expect(
@@ -767,6 +767,151 @@ void main() {
         await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
         await tester.pumpAndSettle();
         expect(find.text('Mounted Skill Families'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'displays Wave 1 new families and skills cleanly across Rider & Horse '
+      'category navigation',
+      (tester) async {
+        final repo = SkillTreeV2Repository(
+          store: InMemorySkillTreeV2Store(
+            families: allFamilies,
+            skills: allSkills,
+          ),
+        );
+        final mockAppCubit = _MockAppCubit();
+        final stateController = StreamController<AppState>.broadcast();
+        addTearDown(stateController.close);
+
+        final riderState = _buildTestAppState();
+        final horseState = _buildTestAppState(
+          isForRider: false,
+          horseProfile: HorseProfile(id: 'horse-comet', name: 'Comet'),
+        );
+        when(() => mockAppCubit.state).thenReturn(riderState);
+        whenListen(
+          mockAppCubit,
+          stateController.stream,
+          initialState: riderState,
+        );
+
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(1200, 900);
+
+        await tester.pumpWidget(
+          _wrapTree(
+            appCubit: mockAppCubit,
+            repo: repo,
+            settings: settings,
+            disableAnimations: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Rider -> Mounted -> Gaits, Rhythm & Transitions shows Canter,
+        //    Counter-Canter, and Flying Lead Changes.
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(
+            const Key(
+              'skillFamilyHeader_rider.mounted.gaits_rhythm_transitions',
+            ),
+          ),
+        );
+        await tester.tap(
+          find.byKey(
+            const Key(
+              'skillFamilyHeader_rider.mounted.gaits_rhythm_transitions',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('skillCard_rider.mounted.canter')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('skillCard_rider.mounted.counter_canter')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('skillCard_rider.mounted.flying_lead_changes')),
+          findsOneWidget,
+        );
+        await tester.ensureVisible(
+          find.byKey(const Key('skillCard_rider.mounted.flying_lead_changes')),
+        );
+        await tester.tap(
+          find.byKey(const Key('skillCard_rider.mounted.flying_lead_changes')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(
+            const Key('skillDetailV2_rider.mounted.flying_lead_changes'),
+          ),
+          findsOneWidget,
+        );
+
+        // 2. Rider -> Theory & Knowledge shows renamed Training Principles.
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Other')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(
+            const Key('skillFamilyHeader_rider.theory.training_principles'),
+          ),
+        );
+        await tester.tap(
+          find.byKey(
+            const Key('skillFamilyHeader_rider.theory.training_principles'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('skillCard_rider.theory.training_pyramid')),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Training Principles & the Training Pyramid'),
+          findsWidgets,
+        );
+
+        // 3. Horse -> In-Hand shows Ground Control & Yielding with 3 skills.
+        when(() => mockAppCubit.state).thenReturn(horseState);
+        stateController.add(horseState);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_In_Hand')));
+        await tester.pumpAndSettle();
+        final horseYieldHeader = find.byKey(
+          const Key('skillFamilyHeader_horse.in_hand.ground_control_yielding'),
+        );
+        expect(horseYieldHeader, findsOneWidget);
+        await tester.ensureVisible(horseYieldHeader);
+        await tester.tap(horseYieldHeader);
+        await tester.pumpAndSettle();
+        for (final id in const [
+          'horse.in_hand.yield_hindquarters',
+          'horse.in_hand.yield_forequarters',
+          'horse.in_hand.sidepass_in_hand',
+        ]) {
+          expect(find.byKey(Key('skillCard_$id')), findsOneWidget);
+        }
+        final horseHindquartersCard = find.byKey(
+          const Key('skillCard_horse.in_hand.yield_hindquarters'),
+        );
+        await tester.ensureVisible(horseHindquartersCard);
+        await tester.tap(horseHindquartersCard);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(
+            const Key('skillDetailV2_horse.in_hand.yield_hindquarters'),
+          ),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
       },
     );

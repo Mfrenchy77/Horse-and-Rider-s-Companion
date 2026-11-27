@@ -52,38 +52,49 @@
     "realm": "In_Hand",
     "familyId": "rider.in_hand.haltering_leading",
     "name": "Leading",
-    "aliases": ["Lead at walk", "Lead at trot", "Back up from ground", "Present for inspection", "Jogging in hand"],
-    "summary": "Leading a horse calmly at walk, trot, halt, and rein-back from the ground, including presenting for veterinary or pre-purchase inspection.",
-    "purpose": "Forms the foundation for every ground interaction, safe movement around barns, and clear presentation for farriers or veterinarians.",
+    "aliases": ["Lead at walk", "Lead at trot", "Back up from ground", "Present for inspection", "Jogging in hand", "In-hand leading both sides"],
+    "summary": "Communicating direction, pace, pauses, and safe personal boundaries while leading a horse on foot—from calm everyday walk handling to versatile leading and straight, non-restrictive presentation across varied environments.",
+    "purpose": "Turns leading from pulling or holding onto a horse into clear, safe two-way communication that protects horse and handler during daily care, barn movement, outings, and veterinary or farrier checks.",
     "safety": [
-      "Walk beside the shoulder/throat area rather than directly in front or behind.",
-      "Never wrap the lead rope around hands or fingers."
+      "Keep a safe position near the horse's shoulder or throatlatch area with a clear exit route—avoid walking directly ahead of a rushing horse or inside kicking reach.",
+      "Keep excess rope organized and off the ground (for example, neatly folded or in figure-eight loops); never wrap a lead rope around fingers, wrists, or body.",
+      "Keep turns safe, balanced, and uncrowded so the horse does not swing into you or step on your feet (turning the horse away from you is often a useful technique in tight spaces or inspections).",
+      "Create space, slow down, or reset calmly when surroundings become stimulating rather than hauling continuously on the halter or running blindly alongside an anxious horse."
     ],
     "availableLevels": ["introductory", "intermediate"],
     "levels": {
       "introductory": {
-        "overview": "Leading at walk and short trot, halting, turning, and asking for basic backward steps on a cooperative horse.",
+        "overview": "Clear, calm walk communication (starts, halts, turns, everyday doorways/aisles, and calm backward steps) with safe handler positioning and soft lead feel in familiar settings. Trot leading is not required.",
         "components": [
-          {"title": "Position and rope management", "description": "Keeping a safe shoulder-level position and slack/soft contact on the lead."},
-          {"title": "Walk, halt, trot, and back-up", "description": "Guiding smooth starts, halts, turns, brief trot jogs, and a few straight backward steps."}
+          {"title": "Understanding handler posture and clear requests", "description": "Walking beside the shoulder rather than dragging ahead or falling behind; recognizing how your own walk energy, orientation, and stillness signal starts and halts before touching the rope."},
+          {"title": "Feel of a soft lead and timely release", "description": "Keeping gentle slack/drape in the lead rather than steady tension, and releasing promptly when the horse matches pace or shifts weight smoothly into calm backward steps."},
+          {"title": "Observing attention and personal space", "description": "Spotting early crowding, drifting shoulders, or distraction and resetting personal space calmly."},
+          {"title": "Common mistakes and rope safety", "description": "Constantly turning to stare back at the horse's face (which stalls forward flow), pulling steadily instead of asking and releasing, walking backward to pull a horse forward, or wrapping excess line around hands."}
         ],
-        "learning": "Leads a quiet horse at walk and short trot with occasional crowding, lagging, or uneven rope handling.",
-        "proficient": "Independently leads a cooperative horse at walk and trot, halts, turns, and asks for calm backward steps while maintaining safe spacing and soft contact.",
-        "standardVersion": 1
+        "learning": "Practices calm walk starts, halts, turns, and light backward steps on a quiet horse with occasional reminders about shoulder position, slack rope timing, spacing around corners, or looking ahead.",
+        "proficient": "Independently leads a cooperative horse calmly at walk in familiar spaces with safe positioning and organized rope handling; communicates clear starts, settled halts, balanced turns, and calm backward steps on light cues while maintaining comfortable personal space.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Straight, balanced leading and turning for formal inspection (vet/lameness jogs) and handling busier environments.",
+        "overview": "Greater versatility—leading smoothly at walk and controlled trot, handling comfortably from either side, adapting proactively in busier environments, and presenting a horse straight and balanced on a loose, non-restrictive lead.",
         "components": [
-          {"title": "Inspection presentation", "description": "Trotting straight on a loose lead without pulling the head, executing balanced turns away from the handler, and standing square/calmly."}
+          {"title": "Controlled pace and straight presentation", "description": "Matching a controlled in-hand trot beside the shoulder while keeping a non-restrictive lead so the horse's head and neck can move naturally without pulling on the chin or mouth."},
+          {"title": "Balanced turns and inspection versatility", "description": "Choosing safe, clean turns suited to the setting and observer—for veterinary or pre-purchase checks, turning the horse away from you is often a helpful technique for clean line-of-sight and balance—and allowing the horse to stand settled."},
+          {"title": "Both-side handling and environmental adaptation", "description": "Leading calmly from left or right sides as gates, slopes, or surroundings require, and adjusting distance or pausing calmly around mild distractions."},
+          {"title": "Soundness and comfort awareness", "description": "Noticing reluctance to jog, uneven head motion, or tense breathing as welfare feedback rather than escalating force."}
         ],
-        "learning": "Presents a horse for straight trot-ups and turns with occasional loss of straightness or lead tension.",
-        "proficient": "Independently presents a horse calmly for inspection—walking and trotting straight on a light lead, turning cleanly, and standing quietly—even with mild distractions.",
-        "standardVersion": 1
+        "learning": "Practices controlled trot leading, off-side handling, or inspection presentation with occasional lead tension, uneven pace, cramped turns, or late adjustments in busier settings.",
+        "proficient": "Independently leads a prepared horse with versatility at walk and controlled trot from either side, adapts spacing and composure thoughtfully in busier settings, and presents the horse straight on a non-restrictive lead with safe, balanced turns and settled halts.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
       {"skillId": "horse.in_hand.leading", "relation": "counterpart"},
-      {"skillId": "rider.in_hand.turn_on_forehand", "relation": "next"}
+      {"skillId": "rider.in_hand.catch_halter_turnout", "relation": "foundation", "level": "introductory"},
+      {"skillId": "rider.in_hand.turn_on_forehand", "relation": "next"},
+      {"skillId": "rider.in_hand.obstacles_outings", "relation": "next"},
+      {"skillId": "rider.theory.equine_body_language", "relation": "theory"},
+      {"skillId": "rider.theory.timing_reinforcement", "relation": "theory"}
     ],
     "legacyIds": ["rider.in_hand.lead_walk", "rider.in_hand.lead_trot", "rider.in_hand.back_up", "rider.in_hand.present_inspection"],
     "sortOrder": 20
@@ -125,6 +136,7 @@
       }
     },
     "relatedSkills": [
+      {"skillId": "horse.in_hand.yield_hindquarters", "relation": "counterpart"},
       {"skillId": "rider.in_hand.yield_forequarters", "relation": "next"},
       {"skillId": "rider.mounted.turn_on_forehand", "relation": "next"}
     ],
@@ -159,6 +171,7 @@
       }
     },
     "relatedSkills": [
+      {"skillId": "horse.in_hand.yield_forequarters", "relation": "counterpart"},
       {"skillId": "rider.in_hand.turn_on_forehand", "relation": "foundation", "level": "introductory"},
       {"skillId": "rider.in_hand.sidepass_in_hand", "relation": "next"}
     ],
@@ -193,6 +206,7 @@
       }
     },
     "relatedSkills": [
+      {"skillId": "horse.in_hand.sidepass_in_hand", "relation": "counterpart"},
       {"skillId": "rider.in_hand.yield_forequarters", "relation": "foundation", "level": "intermediate"},
       {"skillId": "rider.mounted.sidepass", "relation": "next"}
     ],
@@ -207,37 +221,58 @@
     "realm": "In_Hand",
     "familyId": "rider.in_hand.longeing_long_lining",
     "name": "Longeing",
-    "aliases": ["Lunge walk and trot", "Lunge canter", "Lunging"],
-    "summary": "Working a reasonably prepared horse on a circle with a longe line across gaits and transitions while maintaining safe handler positioning and line control.",
-    "purpose": "Allows assessment of movement, calm warm-up, and rhythmic transition practice from the ground.",
+    "aliases": ["Lunge walk and trot", "Lunge canter", "Lunging", "Circle work on a line", "Sending on a circle", "Longing"],
+    "summary": "Safely preparing, positioning, managing equipment, communicating on a circle, observing movement and emotional state, and adapting circle work thoughtfully for the individual horse.",
+    "purpose": "Develops clear, humane ground communication, line safety, body-position awareness, and an educated eye for equine posture, rhythm, and comfort—distinct from simply sending a horse around in circles.",
     "safety": [
-      "Never wrap the longe line around hands or fingers; wear gloves and safe footwear.",
-      "Work in an enclosed, good-footing area and stay outside the kick zone."
+      "Never wrap or loop a longe line around fingers, hands, wrists, or body, and keep loose line off the ground where you or the horse could tangle; wear sturdy footwear and appropriate gloves.",
+      "Choose an enclosed area with level, non-slip footing, keep circle sizes generous enough to protect joints, and stay outside the horse's kicking zone.",
+      "Select and attach safe headgear thoughtfully (such as a well-fitted halter, longeing cavesson, or appropriate bridle setup)—never clip a heavy snap onto a single bit ring in a way that yanks the bit through the mouth.",
+      "Never chase an anxious, confused, fatigued, or sore horse endlessly in small circles; limit repetitions, work evenly both directions, and stop to assess discomfort when needed."
     ],
-    "availableLevels": ["intermediate", "advanced"],
+    "availableLevels": ["introductory", "intermediate", "advanced"],
     "levels": {
-      "intermediate": {
-        "overview": "Safe line management, clear circle geometry, and transitions across walk, trot, and canter on a prepared horse.",
+      "introductory": {
+        "overview": "Safe preparation, line organization, understanding basic handler positioning (drive line), clear calm circle communication, and noticing early attention or tension cues on a cooperative horse. No specific gait such as trot is required.",
         "components": [
-          {"title": "Line and equipment handling", "description": "Gathering and paying out the line smoothly without dragging loops or tangling."},
-          {"title": "Gait and transition control", "description": "Maintaining a consistent circle size and guiding calm transitions across walk, trot, canter, and halt."}
+          {"title": "Purpose over chasing", "description": "Understanding how calm body alignment and timely release invite attentive circle communication rather than driving a horse around blindly to burn energy."},
+          {"title": "Safe line organization and positioning", "description": "Keeping excess line safely organized off the ground (for example, neatly gathered folds or figure-eight coils) without ever wrapping hands or fingers; staying behind the horse's shoulder/girth drive line to ask forward and avoiding drifting ahead unintentionally."},
+          {"title": "Calm starts, halts, and observation", "description": "Maintaining soft line feel, inviting calm halts or turns inward rather than yanking, and noticing early tension, rushing, or confusion—recognizing that specific line folds and whip styles are flexible examples beyond core safety rules."}
         ],
-        "learning": "Longes at walk, trot, and canter with occasional tangling, drifting circle size, or rushed transitions.",
-        "proficient": "Independently and safely longes a prepared horse in both directions through walk, trot, and canter with smooth line handling, steady circle size, and calm transitions.",
+        "learning": "Sets up the line and handler position on a quiet horse with guidance on safe line organization, staying behind the drive line, keeping loose line off the dirt, or calming transitions.",
+        "proficient": "Independently checks footing, space, and safe attachments, keeps the line organized safely without wrapping or dragging, maintains clear drive-line positioning to guide calm circle starts, halts, and direction changes in both directions on a cooperative horse, and recognizes basic signs of tension or confusion to reset calmly.",
         "standardVersion": 1
       },
-      "advanced": {
-        "overview": "Refining balance, bend, tempo changes, and figure adjustments (moving circles, ground poles) purposefully on the longe.",
+      "intermediate": {
+        "overview": "Consistent circle geometry, elastic non-restrictive line feel, timely communication across appropriate transitions and gaits, active observation of posture, rhythm, and symmetry, and thoughtful adaptation to the horse's needs. Cantering is not mandatory.",
         "components": [
-          {"title": "Within-gait adjustments", "description": "Asking for subtle lengthening/shortening, bending, and smooth transitions over poles without tension."}
+          {"title": "Consistent geometry and elastic feel", "description": "Paying out and gathering line smoothly as distance shifts without sagging loops underfoot or steady pulling."},
+          {"title": "Reading posture, balance, and symmetry", "description": "Observing shoulder drift inward, braced neck, left/right stiffness, or emotional overload rather than escalating cues mindlessly."},
+          {"title": "Coordinated communication and adaptation", "description": "Timing body angle, voice, and optional visual cues clearly for smooth transitions—adjusting circle size, pace, or rest breaks to suit the individual horse's footing, conditioning, and readiness without nagging."}
         ],
-        "learning": "Practices within-gait adjustments and moving circles with intermittent loss of rhythm or contact.",
-        "proficient": "Independently shapes circle size, bend, and within-gait balance across gaits purposefully, maintaining relaxed responsiveness and clear communication.",
-        "standardVersion": 1
+        "learning": "Manages circle geometry, elastic feel, and transitions with intermittent line tangles, missed posture or asymmetry cues, late release, or slow circle-size adjustments.",
+        "proficient": "Independently longes a prepared horse safely in both directions with steady circle geometry, elastic line feel, and clear, timely communication across appropriate gaits and transitions; actively observes rhythm, balance, symmetry, and emotional state and adapts circle size, pace, or rests appropriately.",
+        "standardVersion": 2
+      },
+      "advanced": {
+        "overview": "Purposeful, adaptive longeing tailored to individual physical and mental needs—using minimal, well-timed cues, subtle balance or stride adjustments, varied circle placement or optional gymnastic tools, and sound welfare judgment. Ground poles or specific props are optional, not mandatory.",
+        "components": [
+          {"title": "Minimal cues and subtle shaping", "description": "Communicating gentle balance, alignment, or stride adjustments with breath, torso orientation, energy modulation, and elastic line timing rather than overt gestures."},
+          {"title": "Adaptive space and optional tools", "description": "Varying circle size and arena location (such as moving circles along the arena, gentle spirals, or optional props like ground poles when helpful for a given horse's back or focus) rather than treating any single exercise as mandatory."},
+          {"title": "Diagnostic observation and welfare judgment", "description": "Distinguishing conditioning fatigue, stiffness, or mild asymmetry/lameness from lack of focus, and adapting equipment, workload, or stopping immediately in the horse's best interest."}
+        ],
+        "learning": "Practices minimal-cue adjustments, varied tracks, or subtle shaping with occasional uneven pacing, cramped turns, or delayed adaptation when fatigue or tension appears.",
+        "proficient": "Independently plans and adapts purposeful longeing sessions for diverse prepared horses using subtle body and line timing, thoughtful trajectory or within-gait adjustments suited to the horse, accurate observation of soundness, fatigue, and relaxation, and welfare-first adjustments to equipment or workload.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.ground_driving", "relation": "next"}
+      {"skillId": "rider.in_hand.ground_driving", "relation": "next"},
+      {"skillId": "rider.in_hand.leading", "relation": "foundation", "level": "intermediate"},
+      {"skillId": "rider.theory.progressive_conditioning", "relation": "theory"},
+      {"skillId": "rider.theory.balance_weight", "relation": "theory"},
+      {"skillId": "rider.theory.training_equipment", "relation": "theory"},
+      {"skillId": "rider.theory.timing_reinforcement", "relation": "theory"}
     ],
     "legacyIds": ["rider.in_hand.lunge_walk_trot", "rider.in_hand.lunge_canter"],
     "sortOrder": 10

@@ -107,8 +107,8 @@ void main() {
         );
         final families = await hybrid.fetchFamilies();
         final skills = await hybrid.fetchSkills();
-        expect(families.length, 32);
-        expect(skills.length, 72);
+        expect(families.length, 33);
+        expect(skills.length, 79);
       },
     );
 

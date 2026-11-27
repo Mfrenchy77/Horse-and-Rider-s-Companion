@@ -198,6 +198,15 @@
     "schemaVersion": 2
   },
   {
+    "id": "horse.in_hand.ground_control_yielding",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "name": "Ground Control & Yielding",
+    "description": "Responding calmly and coordinately from the ground to yield the hindquarters, forequarters, and full body sideways.",
+    "sortOrder": 15,
+    "schemaVersion": 2
+  },
+  {
     "id": "horse.in_hand.cooperative_care",
     "subject": "horse",
     "realm": "In_Hand",

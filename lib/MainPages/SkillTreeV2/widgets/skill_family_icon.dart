@@ -68,9 +68,9 @@ class SkillFamilyIconAssets {
   static const String workOnLine =
       'assets/icons/skill_families/work_on_line.svg';
 
-  /// Maps all 32 Skill Tree 2.0 curriculum families to the 26 bundled SVGs
-  /// (the 6 shared Mounted families intentionally share artwork across Rider
-  /// and Horse).
+  /// Maps all 33 Skill Tree 2.0 curriculum families to the 26 bundled SVGs
+  /// (the 6 shared Mounted families plus Ground Control & Yielding share
+  /// artwork across Rider and Horse).
   static const Map<String, String> byFamilyId = {
     'rider.husbandry.safety_handling': safetyHandling,
     'rider.husbandry.daily_care_grooming': dailyCareGrooming,
@@ -94,6 +94,7 @@ class SkillFamilyIconAssets {
     'rider.theory.behavior': horseBehaviorWelfare,
     'rider.theory.rider_equipment': riderKnowledgeEquipment,
     'horse.in_hand.leading_manners': leadingGroundManners,
+    'horse.in_hand.ground_control_yielding': groundControlYielding,
     'horse.in_hand.cooperative_care': handlingCooperativeCare,
     'horse.in_hand.travel_environments': travelEnvironments,
     'horse.in_hand.work_on_line': workOnLine,

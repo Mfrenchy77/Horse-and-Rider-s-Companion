@@ -245,8 +245,8 @@ void main() {
         // 1. Load full V2 curriculum from local assets (zero Firestore reads).
         final families = (await tester.runAsync(skillRepo.fetchFamilies))!;
         final skills = (await tester.runAsync(skillRepo.fetchSkills))!;
-        expect(families, hasLength(32));
-        expect(skills, hasLength(72));
+        expect(families, hasLength(33));
+        expect(skills, hasLength(79));
 
         // 2. Record independent Rider progress and instructor verification.
         await skillRepo.setLevelProgress(
@@ -301,8 +301,8 @@ void main() {
         final savedDraft = await draftRepo.saveDraft(
           SkillTreeCurriculumDraft(families: families, skills: skills),
         );
-        expect(savedDraft.skills, hasLength(72));
-        expect((await draftRepo.fetchDraft())?.families, hasLength(32));
+        expect(savedDraft.skills, hasLength(79));
+        expect((await draftRepo.fetchDraft())?.families, hasLength(33));
 
         final suggestionsStore = InMemorySkillTreeSuggestionsStore();
         await suggestionsStore.submitSuggestion(
