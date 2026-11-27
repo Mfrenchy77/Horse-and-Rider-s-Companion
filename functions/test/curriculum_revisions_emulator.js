@@ -104,8 +104,9 @@ async function main() {
   //    SkillTreeCurriculumPublic/active stays on rev_000001 until resumed.
   const editedSkills = structuredClone(skills);
   const target = editedSkills.find((s) => s.id === 'rider.mounted.shoulder_in');
+  const baseShoulderInVersion = target.levels.intermediate.standardVersion;
   target.levels.intermediate.proficient = `${target.levels.intermediate.proficient} (Updated in rev 2)`;
-  target.levels.intermediate.standardVersion = 2;
+  target.levels.intermediate.standardVersion = baseShoulderInVersion + 1;
 
   await saveDraft({auth: adminAuth, data: {families, skills: editedSkills, note: 'Update shoulder-in'}});
   const interruptedPublish = publishCurriculumDraftHandler(db, {
@@ -166,7 +167,7 @@ async function main() {
   assert.equal(rev3.revision.rollbackOfRevisionId, 'rev_000001');
 
   const liveShoulderIn = (await db.doc('SkillsV2/rider.mounted.shoulder_in').get()).data();
-  assert.equal(liveShoulderIn.levels.intermediate.standardVersion, 3);
+  assert.equal(liveShoulderIn.levels.intermediate.standardVersion, baseShoulderInVersion + 2);
   assert.equal(
       (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data().activeRevisionId,
       'rev_000003',

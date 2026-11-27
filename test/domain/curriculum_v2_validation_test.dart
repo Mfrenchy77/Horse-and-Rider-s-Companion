@@ -71,14 +71,15 @@ void main() {
         0,
         (sum, s) => sum + s.availableLevels.length,
       );
-      expect(totalLevels, 169);
+      expect(totalLevels, 175);
 
-      // Wave 1 & Batch 1/2 3-level progression checks
+      // Wave 1, Wave 2 & Batch 1/2 3-level progression checks
       for (final id in [
         'rider.in_hand.longeing',
         'rider.mounted.trot',
         'rider.mounted.canter',
         'rider.mounted.transitions',
+        'rider.mounted.rein_back',
         'horse.mounted.trot',
         'horse.mounted.canter',
         'horse.mounted.rein_back',
@@ -364,6 +365,83 @@ void main() {
         expect(prof.contains('l or corridor'), isFalse);
         expect(prof.contains('3–5'), isFalse);
       }
+    });
+
+    test('Wave 2 foundational curriculum updates and entry levels preserve consistency', () {
+      // 1. Six genuine Introductory entry levels added without padding.
+      for (final id in const [
+        'rider.husbandry.first_aid',
+        'rider.in_hand.yield_forequarters',
+        'rider.in_hand.sidepass_in_hand',
+        'rider.mounted.rein_back',
+        'horse.in_hand.vet_handling',
+        'horse.in_hand.trailer_loading',
+      ]) {
+        expect(
+          skillById[id]!.availableLevels,
+          contains(DifficultyState.Introductory),
+          reason: '$id should expose an Introductory entry level',
+        );
+      }
+
+      // 2. Formerly orphaned Husbandry skills now link to progression/theory.
+      expect(skillById['rider.husbandry.feeding']!.relatedSkills, isNotEmpty);
+      expect(
+        skillById['rider.husbandry.stable_care']!.relatedSkills,
+        isNotEmpty,
+      );
+
+      // 3. Broad advisory theory links across practical Rider realms.
+      final riderPractical = skills.where(
+        (s) =>
+            s.subject == SkillSubject.rider &&
+            s.realm != SkillCategory.Other,
+      );
+      for (final s in riderPractical) {
+        expect(
+          s.relatedSkills.any((r) => r.relation == SkillRelationType.theory),
+          isTrue,
+          reason: '${s.id} should carry at least one advisory theory link',
+        );
+      }
+
+      // 4. Broad internal Horse progression links beyond counterparts.
+      final horseWithInternal = skills.where(
+        (s) =>
+            s.subject == SkillSubject.horse &&
+            s.relatedSkills.any(
+              (r) =>
+                  r.relation == SkillRelationType.foundation ||
+                  r.relation == SkillRelationType.next,
+            ),
+      );
+      expect(horseWithInternal.length, greaterThanOrEqualTo(24));
+
+      // 5. Rider Trot embraces rising trot OR relaxed sitting jog inclusively.
+      final riderTrotIntro = skillById['rider.mounted.trot']!
+          .levelDefinition(DifficultyState.Introductory)!
+          .proficient
+          .toLowerCase();
+      expect(riderTrotIntro, contains('rising trot'));
+      expect(riderTrotIntro, contains('sitting jog'));
+      expect(riderTrotIntro, contains('regardless of diagonal'));
+
+      // 6. Removed rigid L-corridor, mandatory rail, and degree quotas.
+      final riderReinBackInt = skillById['rider.mounted.rein_back']!
+          .levelDefinition(DifficultyState.Intermediate)!
+          .proficient
+          .toLowerCase();
+      expect(riderReinBackInt.contains('through an l or corridor'), isFalse);
+      final riderSidepass = skillById['rider.mounted.sidepass']!
+          .levelDefinition(DifficultyState.Intermediate)!
+          .proficient
+          .toLowerCase();
+      expect(riderSidepass, contains('optionally'));
+      final horseForehand = skillById['horse.mounted.turn_on_forehand']!
+          .levelDefinition(DifficultyState.Introductory)!
+          .proficient
+          .toLowerCase();
+      expect(horseForehand.contains('90–180°'), isFalse);
     });
   });
 }

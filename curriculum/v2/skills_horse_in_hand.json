@@ -7,38 +7,76 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.leading_manners",
     "name": "Leading & Halter Response",
-    "aliases": ["Lead politely", "Yield to halter pressure"],
+    "aliases": [
+      "Lead politely",
+      "Yield to halter pressure"
+    ],
     "summary": "The horse's ability to yield politely to light halter requests and lead calmly beside a handler.",
     "purpose": "Forms the foundation for safe daily handling, veterinary/farrier care, and groundwork.",
     "safety": [
-      "Introduce halter requests progressively in an enclosed space before working near distractions."
+      "Introduce halter requests in calm, enclosed spaces before expecting steady poise near busy distractions.",
+      "Check halter fit, poll/noseband comfort, and dental ease before assuming pulling or head-shyness is behavioral defiance."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
-        "overview": "Yielding to light halter requests (forward, halt, step back, turn) and leading politely at walk on a loose line in familiar spaces.",
+        "overview": "Yielding willingly to light halter requests (forward, halt, calm step back, turns) and matching walk pace beside the handler in familiar settings.",
         "components": [
-          {"title": "Halter softness", "description": "Stepping forward, halting, backing, and turning lightly without leaning, pulling, or crowding."},
-          {"title": "Polite walk leading", "description": "Matching the handler's pace calmly without forging ahead or lagging."}
+          {
+            "title": "Halter softness and personal space",
+            "description": "Shifting weight smoothly off light halter requests without bracing through the poll, leaning on the handler, or crowding personal space."
+          },
+          {
+            "title": "Relaxed walk matching",
+            "description": "Walking beside the handler on a softly draped lead in steady four-beat rhythm—waiting calmly at halts rather than fidgeting."
+          }
         ],
-        "learning": "Leads and yields to the halter in familiar settings with occasional pushing, lagging, or distraction.",
-        "proficient": "Calmly and reliably yields to light halter requests and leads politely at walk on a relaxed lead without crowding, pulling, or bolting.",
-        "standardVersion": 1
+        "learning": "Leads and yields in quiet areas with occasional pushing into the handler's space, lagging, or head tossing when asked to check pace.",
+        "proficient": "Calmly and reliably yields to light halter requests and leads attentively at walk on a relaxed lead without crowding, dragging, or bolting in familiar spaces.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Leading politely at walk and trot, turning cleanly, and staying attentive in busier or unfamiliar environments.",
+        "overview": "Leading calmly through walk, trot-up, transitions, and narrow spaces while remaining composed around outdoor or herd distractions.",
         "components": [
-          {"title": "Trot-up and distractions", "description": "Trotting beside the handler on a light lead, halting promptly, and maintaining manners around other horses or activity."}
+          {
+            "title": "Trot transitions and busy-setting composure",
+            "description": "Stepping into an active straight trot beside the handler on light invitation, halting squarely without leaning, and staying focused when other horses or activity move nearby."
+          }
         ],
-        "learning": "Leads at trot or in busier spaces with intermittent tension or surging.",
-        "proficient": "Consistently leads calmly at walk and trot on a light lead, halts and backs promptly, and maintains respectful personal space in varied environments.",
-        "standardVersion": 1
+        "learning": "Leads at trot or in novel environments with intermittent rushing, distraction pulling, or surging ahead during transitions.",
+        "proficient": "Consistently leads calmly at walk and trot on a light lead across varied or busy settings, matching pace transitions promptly while honoring personal space.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.leading", "relation": "counterpart"}
+      {
+        "skillId": "rider.in_hand.leading",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.ground_driving",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.trailer_loading",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.walk",
+        "relation": "next"
+      }
     ],
-    "legacyIds": ["horse.in_hand.lead_politely", "horse.in_hand.yield_to_halter"],
+    "legacyIds": [
+      "horse.in_hand.lead_politely",
+      "horse.in_hand.yield_to_halter"
+    ],
     "sortOrder": 10
   },
   {
@@ -49,46 +87,82 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.leading_manners",
     "name": "Standing Quietly",
-    "aliases": ["Stand tied", "Ground tie"],
+    "aliases": [
+      "Stand tied",
+      "Ground tie"
+    ],
     "summary": "The horse's ability to stand calmly and patiently when tied, held, or asked to wait in place.",
     "purpose": "Keeps the horse safe and relaxed during grooming, tacking, waiting at trailers, and farrier or vet visits.",
     "safety": [
-      "Always use safe tie points and breakaway/quick-release arrangements; never ground-tie near traffic or unenclosed hazards."
+      "Always tie with safe hardware and breakaway/quick-release setups; never ask a horse to ground-tie near traffic or unenclosed hazards.",
+      "Look for true relaxation (soft eye, quiet breathing, lower neck/lip) rather than mistaking tense shutdown or freeze for calm standing."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
-        "overview": "Standing calmly when tied in a familiar, quiet location for routine care.",
+        "overview": "Standing calmly with genuine relaxation—not tight freeze tension—when tied safely or held in a familiar spot.",
         "components": [
-          {"title": "Tied patience", "description": "Standing without pulling back, pawing, or crowding when tied safely in a familiar spot."}
+          {
+            "title": "Relaxed standing vs. freeze tension",
+            "description": "Settling calmly for routine grooming or care without pulling back, pawing, or crowding—showing soft breathing and alert-but-easy posture rather than brittle stillness before a spook."
+          }
         ],
-        "learning": "Stands tied for short periods with occasional fidgeting, pawing, or mild tension.",
-        "proficient": "Stands quietly and relaxed when tied in familiar settings for routine grooming and preparation without pulling back or fussing.",
-        "standardVersion": 1
+        "learning": "Stands tied for short periods with occasional shifting, pawing, or tight anxious posture.",
+        "proficient": "Stands quietly with relaxed breathing and soft posture when tied or held in familiar settings for routine care without pulling back, pawing, or crowding.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Standing calmly when tied in busier environments, at trailers, or when nearby horses move away.",
+        "overview": "Maintaining calm composure while tied at trailers, wash areas, or busier venues—even when herd mates step away.",
         "components": [
-          {"title": "Patience around distractions", "description": "Maintaining composure when herd mates leave or activity occurs nearby."}
+          {
+            "title": "Emotional regulation around commotion",
+            "description": "Staying settled when neighboring horses walk past, vehicles move, or unfamiliar sights occur nearby—recovering calmly after mild startles."
+          }
         ],
-        "learning": "Stands tied around mild distractions with intermittent restlessness.",
-        "proficient": "Stands calmly and reliably when tied in varied or busier locations—including trailers and group settings—without panicking or pulling back.",
-        "standardVersion": 1
+        "learning": "Stands in busier environments with intermittent fidgeting, calling, or leaning back against the lead.",
+        "proficient": "Stands calmly and reliably when tied or held in unfamiliar or lively settings—including trailers and group venues—without panicking, pawing excessively, or pulling back.",
+        "standardVersion": 2
       },
       "advanced": {
-        "overview": "Reliable ground-tying (standing in place with lead dropped or slack) in appropriate enclosed or controlled settings.",
+        "overview": "Settling calmly in place on a dropped or completely slack line (ground-tying) in safe enclosed or appropriate settings.",
         "components": [
-          {"title": "Ground-tie discipline", "description": "Waiting calmly in place while the handler steps away briefly and moves around."}
+          {
+            "title": "Composed ground-tie patience",
+            "description": "Waiting steadily in position while the handler steps away and moves calmly around, remaining relaxed without grazing, wandering, or anxious spinning."
+          }
         ],
-        "learning": "Holds position with lead dropped for brief moments in quiet spaces before wandering.",
-        "proficient": "Reliably remains standing calmly in place on a dropped lead while the handler steps away and returns, without wandering or grazing.",
-        "standardVersion": 1
+        "learning": "Waits with lead dropped briefly in quiet arenas before wandering toward grass, gates, or other horses.",
+        "proficient": "Reliably stands calmly in place on a dropped lead in safe settings while the handler steps away and returns, without wandering, grazing, or fussing.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.husbandry.safe_handling", "relation": "counterpart"}
+      {
+        "skillId": "rider.husbandry.safe_handling",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.daily_care_handling",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.standing",
+        "relation": "next"
+      }
     ],
-    "legacyIds": ["horse.in_hand.stand_tied", "horse.in_hand.ground_tie_horse"],
+    "legacyIds": [
+      "horse.in_hand.stand_tied",
+      "horse.in_hand.ground_tie_horse"
+    ],
     "sortOrder": 20
   },
   {
@@ -99,40 +173,87 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.cooperative_care",
     "name": "Daily Care Handling",
-    "aliases": ["Stand for saddling", "Stand for blanketing", "Stand for bathing"],
+    "aliases": [
+      "Stand for saddling",
+      "Stand for blanketing",
+      "Stand for bathing"
+    ],
     "summary": "The horse's calm cooperation during routine care—grooming, blanketing, bathing, and tacking up.",
     "purpose": "Reduces stress and injury risk during everyday care and preparation.",
     "safety": [
-      "Build comfort gradually with sensitive horses; never force acceptance through restraint alone."
+      "Build comfort gradually with positive timing; never overpower sensitivity around ears, girth, or flanks through harsh restraint.",
+      "Always assess physical comfort—recurring girthy biting, ear pinning, or flinching along the back often indicates ulcers, skin irritation, or poorly fitting tack."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
-        "overview": "Standing calmly and accepting routine grooming, blanketing, bathing, and saddling/bridling in familiar settings.",
+        "overview": "Cooperating calmly for routine grooming, blanketing, gentle sponge or leg water rinsing, and familiar tacking/bridling.",
         "components": [
-          {"title": "Grooming and blanketing", "description": "Accepting brushes, blankets, and straps around legs/belly calmly."},
-          {"title": "Bathing and tacking", "description": "Accepting water/hosing and saddle/bridle placement without pinning ears, kicking, or evading."}
+          {
+            "title": "Calm grooming, blanketing, and mild water",
+            "description": "Accepting brushes, blankets, chest/leg straps, and gentle wet-sponge wiping or lower-leg rinsing calmly without biting, kicking, or bracing away."
+          },
+          {
+            "title": "Considerate tacking acceptance and welfare signals",
+            "description": "Standing peacefully while clean pads, saddle, girth/cinch, and bridle are placed; mild ear or girth sensitivity should prompt handlers to check fit and pain early."
+          }
         ],
-        "learning": "Accepts daily care and tacking with mild fidgeting or sensitivity around girth, ears, or water.",
-        "proficient": "Cooperates calmly and stands quietly for routine grooming, blanketing, bathing, and saddling/bridling without bracing, biting, or kicking.",
-        "standardVersion": 1
+        "learning": "Accepts grooming, blanketing, mild water, and tacking with brief ear pinning, shifting away from the girth, or head raising.",
+        "proficient": "Cooperates calmly for routine grooming, blanketing, gentle sponge or lower-leg water care, and familiar saddling and bridling without biting, kicking, or sustained bracing.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Remaining relaxed during full-body bathing, clippers/sprays, and tacking in unfamiliar or busier venues.",
+        "overview": "Remaining relaxed through full-body bathing/hosing, sprays or clippers, and preparation in busy clinics, wash bays, or unfamiliar venues.",
         "components": [
-          {"title": "Confidence in varied settings", "description": "Maintaining calm cooperation at clinics, shows, wash stalls, or around unfamiliar gear."}
+          {
+            "title": "Full bathing and sensory adaptability",
+            "description": "Staying settled through full-body hose rinsing, scraping, fly sprays, body-clipping noise, and tacking up smoothly amid busy unfamiliar sights."
+          }
         ],
-        "learning": "Cooperates with sprays, clippers, or busy wash areas with occasional tension.",
-        "proficient": "Remains relaxed and cooperative during thorough bathing, grooming, blanketing, and tacking even in busy or unfamiliar environments.",
-        "standardVersion": 1
+        "learning": "Accepts full hosing, sprays, or busy prep spaces with occasional fidgeting, tail clamping, or head tossing.",
+        "proficient": "Remains calm and cooperative during full-body bathing, routine sprays or clippers, blanketing, and tacking across unfamiliar or lively venues.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.husbandry.grooming", "relation": "counterpart"},
-      {"skillId": "rider.husbandry.blanketing", "relation": "counterpart"},
-      {"skillId": "rider.husbandry.tack", "relation": "counterpart"}
+      {
+        "skillId": "rider.husbandry.grooming",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "rider.husbandry.blanketing",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "rider.husbandry.tack",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.hoof_handling",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.vet_handling",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.standing",
+        "relation": "next"
+      }
     ],
-    "legacyIds": ["horse.in_hand.stand_for_saddling", "horse.in_hand.stand_for_blanketing", "horse.in_hand.stand_for_bathing"],
+    "legacyIds": [
+      "horse.in_hand.stand_for_saddling",
+      "horse.in_hand.stand_for_blanketing",
+      "horse.in_hand.stand_for_bathing"
+    ],
     "sortOrder": 10
   },
   {
@@ -143,37 +264,65 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.cooperative_care",
     "name": "Hoof Handling",
-    "aliases": ["Stand for hoof handling", "Pick up feet", "Stand for farrier"],
+    "aliases": [
+      "Stand for hoof handling",
+      "Pick up feet",
+      "Stand for farrier"
+    ],
     "summary": "The horse's ability to yield all four hooves willingly, balance calmly, and cooperate for hoof cleaning and farrier care.",
     "purpose": "Essential for safe daily hoof maintenance and stress-free trimming or shoeing.",
     "safety": [
-      "Respect the horse's balance and physical comfort, especially in older or stiff horses."
+      "Honor the horse's physical balance and joint comfort—older, sore, or stiff horses need time to shift weight onto remaining legs before lifting a hoof."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
-        "overview": "Lifting all four hooves willingly on light request and holding them calmly for routine hoof picking.",
+        "overview": "Shifting balance calmly and lifting each hoof willingly on light cue for comfortable routine cleaning.",
         "components": [
-          {"title": "Yielding and holding", "description": "Shifting weight smoothly and holding each hoof briefly without snatching away or leaning heavily."}
+          {
+            "title": "Balanced lifting and comfort signals",
+            "description": "Transferring weight smoothly without throwing itself off balance, holding each foot calmly for picking, and setting it down gently—noting that sudden snatching often indicates joint pain, imbalance, or thrush discomfort."
+          }
         ],
-        "learning": "Picks up feet with hesitation, mild leaning, or snatching back before being released.",
-        "proficient": "Willingly lifts all four hooves on light request, balances comfortably, and holds each foot calmly for thorough cleaning.",
-        "standardVersion": 1
+        "learning": "Yields hooves with hesitation, leaning heavily onto the handler, or snatching a foot back prematurely.",
+        "proficient": "Shifts weight comfortably, yields all four hooves willingly on light cue, and holds each calmly for routine hoof cleaning without snatching or leaning heavily.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Standing patiently for extended farrier work (trimming, rasping, or shoeing) on all four limbs.",
+        "overview": "Holding posture calmly and cooperatively through complete farrier trimming, rasping, hoof-stand rest, or shoeing on all four hooves.",
         "components": [
-          {"title": "Farrier patience", "description": "Accepting hoof stands, rasping, and longer holding intervals calmly without pulling."}
+          {
+            "title": "Farrier stillness and tool composure",
+            "description": "Remaining relaxed around hoof stands, rasp vibration, nippers, or unfamiliar farriers across longer intervals."
+          }
         ],
-        "learning": "Cooperates with farrier work for short intervals before becoming restless.",
-        "proficient": "Stands calmly and cooperatively through complete trimming or shoeing sessions on all four hooves.",
-        "standardVersion": 1
+        "learning": "Cooperates for short trimming segments before growing restless, leaning, or trying to pull away.",
+        "proficient": "Stands calmly and cooperates comfortably through complete farrier trimming or shoeing sessions on all four hooves.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.husbandry.grooming", "relation": "counterpart"}
+      {
+        "skillId": "rider.husbandry.grooming",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.daily_care_handling",
+        "relation": "foundation",
+        "level": "introductory"
+      }
     ],
-    "legacyIds": ["horse.in_hand.hoof_handling"],
+    "legacyIds": [
+      "horse.in_hand.hoof_handling"
+    ],
     "sortOrder": 20
   },
   {
@@ -184,29 +333,70 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.cooperative_care",
     "name": "Veterinary & Medical Handling",
-    "aliases": ["Stand for vet exam", "Accept thermometer", "Accept oral syringe"],
+    "aliases": [
+      "Stand for vet exam",
+      "Accept thermometer",
+      "Accept oral syringe"
+    ],
     "summary": "The horse's calm cooperation during health checks, vital-sign measurement, oral medication, and routine veterinary examinations.",
     "purpose": "Allows accurate vital signs, safe treatment, and calmer emergency care.",
     "safety": [
-      "Prepare horses gradually with positive, low-stress practice rather than waiting for an emergency."
+      "Condition medical touch gradually when the horse is healthy and relaxed—waiting until an urgent injury makes exam stress much harder.",
+      "Respect real pain guarding around injuries, eyes, or abdomen rather than escalating pressure."
     ],
-    "availableLevels": ["intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "intermediate": {
-        "overview": "Standing quietly for physical exams, stethoscope, thermometer, mouth/eye checks, and oral medication.",
+        "overview": "Standing calmly for unfamiliar veterinary handlers, full TPR vital measurements, routine exam procedures, and smooth oral syringe dosing.",
         "components": [
-          {"title": "Cooperative exam behavior", "description": "Accepting unfamiliar handlers, palpation, vital-sign checks, and oral syringes calmly."}
+          {
+            "title": "Unfamiliar handlers, vitals, and oral dosing",
+            "description": "Remaining cooperative when a veterinarian or technician checks temperature, heart/lung sounds, limbs, and oral medication syringes without bolting, striking, or throwing the head violently."
+          }
         ],
-        "learning": "Tolerates routine exam steps with mild tension or head-shyness.",
-        "proficient": "Stands calmly and cooperatively for physical exams, temperature/pulse/respiration checks, and oral administration without panicking or evading.",
+        "learning": "Tolerates unfamiliar veterinary checks or oral syringes with mild tension, clamped tail, or tossing head.",
+        "proficient": "Stands calmly and cooperatively with unfamiliar handlers for thorough physical exams, temperature/pulse/respiration measurement, and calm oral medication without panic or evasion.",
+        "standardVersion": 2
+      },
+      "introductory": {
+        "overview": "Calmly accepting familiar-handler wellness handling—ears, eyes, gums, skin check, stethoscope contact, tail lift, and light limb palpation.",
+        "components": [
+          {
+            "title": "Familiar-handler health-check cooperation",
+            "description": "Standing softly while a known handler checks eyes, parts lips calmly to inspect gums, lifts the tail briefly, glides hands along legs and belly, and rests a cool stethoscope against ribs without flinching or pulling away."
+          }
+        ],
+        "learning": "Permits familiar-handler eye, mouth, leg, or tail checks for brief moments with mild head-shyness or shifting.",
+        "proficient": "Calmly accepts familiar-handler routine wellness handling—eye/lip/gum checks, limb palpation, stethoscope contact, and brief tail lifting—with relaxed posture and no panic.",
         "standardVersion": 1
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.husbandry.health_monitoring", "relation": "counterpart"},
-      {"skillId": "rider.husbandry.medications", "relation": "counterpart"}
+      {
+        "skillId": "rider.husbandry.health_monitoring",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "rider.husbandry.medications",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.daily_care_handling",
+        "relation": "foundation",
+        "level": "introductory"
+      }
     ],
-    "legacyIds": ["horse.in_hand.stand_for_vet"],
+    "legacyIds": [
+      "horse.in_hand.stand_for_vet"
+    ],
     "sortOrder": 30
   },
   {
@@ -217,28 +407,64 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.travel_environments",
     "name": "Trailer Loading",
-    "aliases": ["Load into trailer", "Calm trailering"],
+    "aliases": [
+      "Load into trailer",
+      "Calm trailering"
+    ],
     "summary": "The horse's willingness to walk calmly into a trailer, wait quietly while secured, and unload smoothly without rushing.",
     "purpose": "Supports safe, low-stress transport for travel, outings, and emergencies.",
     "safety": [
-      "Allow time for calm inspection and never rush unloading backward or forward."
+      "Allow calm sniff-and-process pauses at the threshold; rushing or crowding raises panic and teaches horses to bolt backward at full speed."
     ],
-    "availableLevels": ["intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "intermediate": {
-        "overview": "Loading willingly, standing calmly while butt bars/doors are closed, and unloading smoothly.",
+        "overview": "Walking calmly into unfamiliar or closed-style trailers, waiting patiently while dividers/butt bars/doors close, and unloading safely step by step.",
         "components": [
-          {"title": "Calm entry and exit", "description": "Stepping onto the ramp or step-up calmly without bolting in or backing out abruptly."}
+          {
+            "title": "Closing composure and step-by-step unload",
+            "description": "Remaining settled while butt bars and doors fasten before tying (waiting patiently rather than banging or leaning back against restraints) and stepping calmly out only when asked."
+          }
         ],
-        "learning": "Loads with brief hesitation or rushes slightly during loading or unloading.",
-        "proficient": "Steps calmly into the trailer on light request, stands quietly while secured, and unloads smoothly at a controlled walk.",
+        "learning": "Loads in varied trailers or waits for securing with occasional restlessness, pawing, or crowding the exit before release.",
+        "proficient": "Walks calmly into familiar or unfamiliar trailers on light request, waits quietly while dividers and rear doors are secured, stays relaxed when tied, and unloads smoothly at a controlled walk.",
+        "standardVersion": 2
+      },
+      "introductory": {
+        "overview": "Investigating calmly, stepping onto the ramp or step-up into a safe, open, familiar parked trailer, pausing quietly, and exiting calmly on request.",
+        "components": [
+          {
+            "title": "Confident exploration and calm threshold entry",
+            "description": "Dropping the head to assess footing willingly, walking smoothly into an open familiar trailer without lunging forward, standing quietly inside for a moment, and stepping or backing out smoothly without explosive bolting."
+          }
+        ],
+        "learning": "Inspects and steps part or all of the way into an open trailer with hesitation, stopping halfway, or hurried exit steps.",
+        "proficient": "Calmly investigates and walks into an open, parked trailer on light invitation, pauses quietly inside on a relaxed line, and steps out smoothly at walk without panicking or rushing.",
         "standardVersion": 1
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.trailer_loading", "relation": "counterpart"}
+      {
+        "skillId": "rider.in_hand.trailer_loading",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "foundation",
+        "level": "introductory"
+      }
     ],
-    "legacyIds": ["horse.in_hand.load_trailer"],
+    "legacyIds": [
+      "horse.in_hand.load_trailer"
+    ],
     "sortOrder": 10
   },
   {
@@ -249,36 +475,63 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.work_on_line",
     "name": "Ground Driving",
-    "aliases": ["Basic ground driving", "Long-lining (horse)"],
+    "aliases": [
+      "Basic ground driving",
+      "Long-lining (horse)"
+    ],
     "summary": "The horse's learned ability to move forward, halt, and turn calmly in response to two long lines handled from behind or beside it.",
     "purpose": "Builds confidence, steering clarity, and forward acceptance without a rider's weight.",
     "safety": [
-      "Ensure the horse calmly accepts lines touching its sides and hindquarters before driving; early sessions require a handler proficient in Rider Ground Driving."
+      "Ensure calm desensitization to lines brushing legs/quarters before driving solo, and rule out mouth, poll, or back soreness if the horse braces sharply."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
-        "overview": "Calmly accepting driving gear and lines along the body, walking forward, halting, and turning in an enclosed area.",
+        "overview": "Accepting surcingle and long lines comfortably along sides and hips, stepping forward calmly, and halting/turning in an enclosed area.",
         "components": [
-          {"title": "Line acceptance", "description": "Remaining relaxed when two lines rest lightly against sides and quarters."},
-          {"title": "Walk, halt, and basic turns", "description": "Responding to light, steady requests without bracing, rushing, or turning to face the handler."}
+          {
+            "title": "Relaxed line acceptance vs. freeze",
+            "description": "Moving forward softly without clenching the back, clamping the tail, or locking up when two long lines lightly touch sides or hindquarters."
+          },
+          {
+            "title": "Soft walk, halt, and basic turns",
+            "description": "Responding calmly to light steering and halt requests without diving toward the handler or rushing forward."
+          }
         ],
-        "learning": "Accepts lines with mild tension or hesitation; may need a helper at the head or show delayed halts/turns.",
-        "proficient": "Calmly accepts equipment and lines touching its body, walks forward willingly, and halts and turns both ways in an enclosed area on light requests without bracing or rushing.",
-        "standardVersion": 1
+        "learning": "Accepts driving gear and lines with brief stiffness or hesitation; may halt abruptly or turn inward toward the handler.",
+        "proficient": "Calmly accepts long-lining equipment and lines touching sides and legs, walks forward confidently, and halts and turns both ways in an enclosed space on light requests.",
+        "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Moving forward confidently at walk and trot with steady rhythm, straightness, prompt transitions, and composure in varied settings.",
+        "overview": "Working forward smoothly at walk and trot on long lines with balanced alignment, prompt transitions, and composure in varied spaces.",
         "components": [
-          {"title": "Trot straightness and adaptability", "description": "Following figures and transitions smoothly at walk and trot and staying calm if lines brush legs unexpectedly."}
+          {
+            "title": "Trot balance, straightness, and line composure",
+            "description": "Holding straight tracks, clean turns, and prompt walk–trot transitions while staying relaxed if lines touch hocks unexpectedly."
+          }
         ],
-        "learning": "Drives at trot or outside the arena with occasional rushing, bracing, or loss of straightness.",
-        "proficient": "Drives forward confidently at walk and trot with steady rhythm and straightness, makes prompt transitions, follows figures cleanly, and stays calm in varied settings.",
-        "standardVersion": 1
+        "learning": "Works at trot or varied venues with occasional rushing, leaning against one line, or crookedness through turns.",
+        "proficient": "Moves forward confidently at walk and trot in steady rhythm and straightness, completes prompt transitions and clean turns on light requests, and stays composed across varied settings.",
+        "standardVersion": 2
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.ground_driving", "relation": "counterpart"}
+      {
+        "skillId": "rider.in_hand.ground_driving",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "intermediate"
+      },
+      {
+        "skillId": "horse.mounted.steering_navigation",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -291,7 +544,12 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.ground_control_yielding",
     "name": "Yielding the Hindquarters (In-Hand)",
-    "aliases": ["Turn on the forehand (in-hand)", "Disengage the hindquarters (in-hand)", "Move the hips over (in-hand)", "Yield hindquarters (in-hand)"],
+    "aliases": [
+      "Turn on the forehand (in-hand)",
+      "Disengage the hindquarters (in-hand)",
+      "Move the hips over (in-hand)",
+      "Yield hindquarters (in-hand)"
+    ],
     "summary": "The horse's calm comprehension, emotional composure, and coordinated hindquarter crossing when asked from the ground to step its hips aside around steadier shoulders.",
     "purpose": "Builds respectful personal space, calmness during gating, saddling, and care routines, hindquarter balance awareness, and clear groundwork readiness for mounted lateral cues.",
     "safety": [
@@ -299,13 +557,22 @@
       "Practice on level, non-slip footing and allow the horse to pause and settle promptly upon offering a calm crossing response.",
       "Repeated one-sided bracing, tail-wringing, or reluctance to cross behind can indicate hip, stifle, hock, or back discomfort—evaluate comfort before repeating asks."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
         "overview": "From halt or a quiet pause, calmly understanding light ground requests in both directions to step the hindquarters aside around relatively steady shoulders and settle softly on release—without flight, spinning, or bracing.",
         "components": [
-          {"title": "Calm understanding vs. escape", "description": "Stepping smoothly with soft eye, jaw, and breathing rather than whipping the hips away in alarm, pinning ears, or freezing."},
-          {"title": "Developing crossing coordination and pause", "description": "Stepping the inside hind leg comfortably across in front of the outside hind without tangling or rushing, then pausing settled when pressure releases."}
+          {
+            "title": "Calm understanding vs. escape",
+            "description": "Stepping smoothly with soft eye, jaw, and breathing rather than whipping the hips away in alarm, pinning ears, or freezing."
+          },
+          {
+            "title": "Developing crossing coordination and pause",
+            "description": "Stepping the inside hind leg comfortably across in front of the outside hind without tangling or rushing, then pausing settled when pressure releases."
+          }
         ],
         "learning": "Responds in familiar settings with brief hesitation, crowding, forward or backward drift, hurried steps on one side, or mild tension before settling.",
         "proficient": "Calmly understands light ground cues from halt to step its hindquarters aside cleanly in both directions with soft expression, comfortable posture, and balanced crossing steps—without fleeing, rushing, or bracing—and settles quietly when the cue releases.",
@@ -314,8 +581,14 @@
       "intermediate": {
         "overview": "Smooth, rhythmic, coordinated hindquarter yielding in both directions from halt or active walk with minimal unwanted drift, calm adaptability across practical spaces, and relaxed pause on release.",
         "components": [
-          {"title": "Balance from walk or halt", "description": "Shifting smoothly between straight forward walk and coordinated hindquarter yielding without dropping heavily onto the forehand or stepping backward unintentionally."},
-          {"title": "Adaptability and light responsiveness", "description": "Answering light ground requests calmly in busier settings, doorways, gates, or tight maneuvering areas."}
+          {
+            "title": "Balance from walk or halt",
+            "description": "Shifting smoothly between straight forward walk and coordinated hindquarter yielding without dropping heavily onto the forehand or stepping backward unintentionally."
+          },
+          {
+            "title": "Adaptability and light responsiveness",
+            "description": "Answering light ground requests calmly in busier settings, doorways, gates, or tight maneuvering areas."
+          }
         ],
         "learning": "Connects walk and fuller hindquarter turns in both directions with intermittent forward/backward drift, uneven crossing rhythm, or mild tension around distractions.",
         "proficient": "Smoothly and reliably yields its hindquarters around steadier shoulders from halt or walk in both directions on light ground cues, maintaining balanced rhythm, minimal unwanted drift, and relaxed attentiveness across everyday and busier settings.",
@@ -323,11 +596,27 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.turn_on_forehand", "relation": "counterpart"},
-      {"skillId": "horse.in_hand.leading", "relation": "foundation", "level": "introductory"},
-      {"skillId": "horse.in_hand.yield_forequarters", "relation": "next"},
-      {"skillId": "horse.in_hand.sidepass_in_hand", "relation": "next"},
-      {"skillId": "horse.mounted.turn_on_forehand", "relation": "next"}
+      {
+        "skillId": "rider.in_hand.turn_on_forehand",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.yield_forequarters",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.sidepass_in_hand",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.turn_on_forehand",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -340,20 +629,34 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.ground_control_yielding",
     "name": "Yielding the Forequarters (In-Hand)",
-    "aliases": ["Turn on the haunches (in-hand)", "Move the shoulders over (in-hand)", "Forequarter yield (in-hand)", "Yield shoulders in-hand"],
+    "aliases": [
+      "Turn on the haunches (in-hand)",
+      "Move the shoulders over (in-hand)",
+      "Forequarter yield (in-hand)",
+      "Yield shoulders in-hand"
+    ],
     "summary": "The horse's calm comprehension and coordinated shoulder crossing when asked from the ground to step its forequarters aside around steadier hindquarters without crowding or rushing backward.",
     "purpose": "Develops respectful shoulder boundaries, forehand lightness, and balanced spatial responsiveness for trailer/gate alignment and mounted shoulder control.",
     "safety": [
       "Distinguish calm understanding from head-tossing, running backward in worry, or crowding forward into personal space.",
       "Investigate shoulder, neck, hoof, or knee discomfort if a horse consistently stiffens or resists stepping aside in one direction."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
         "overview": "From halt or quiet walk, calmly understanding light ground requests to step the shoulders aside in both directions without throwing the head defensively, backing abruptly, or crowding forward, and pausing softly on release.",
         "components": [
-          {"title": "Confidence with shoulder requests", "description": "Accepting cues near the head, neck, and shoulder calmly without feeling trapped or bolting backward."},
-          {"title": "Clean front stepping and boundary respect", "description": "Stepping the front feet cleanly across/around while respecting handler space and settling promptly on release."}
+          {
+            "title": "Confidence with shoulder requests",
+            "description": "Accepting cues near the head, neck, and shoulder calmly without feeling trapped or bolting backward."
+          },
+          {
+            "title": "Clean front stepping and boundary respect",
+            "description": "Stepping the front feet cleanly across/around while respecting handler space and settling promptly on release."
+          }
         ],
         "learning": "Steps shoulders aside in familiar spaces with occasional backward steps, raised neck tension, crowding toward the handler, or hesitation on the stiffer side.",
         "proficient": "Calmly understands light ground requests to step its shoulders aside in both directions with relaxed head and neck posture, polite space respect, and settled pauses on release—without rushing backward or crowding.",
@@ -362,8 +665,14 @@
       "intermediate": {
         "overview": "Coordinated, balanced shoulder yielding around relatively steady hindquarters in both directions from halt or walk on light requests—staying relaxed, avoiding unwanted backing, and adapting calmly in varied spaces.",
         "components": [
-          {"title": "Coordinated balance over steady hindquarters", "description": "Allowing the hind legs to pivot comfortably without twisting abruptly on a stuck limb or stepping steadily backward while shoulders cross smoothly."},
-          {"title": "Walk-to-yield flow and composure", "description": "Responding softly to shoulder redirection during leading, gate positioning, or busier settings."}
+          {
+            "title": "Coordinated balance over steady hindquarters",
+            "description": "Allowing the hind legs to pivot comfortably without twisting abruptly on a stuck limb or stepping steadily backward while shoulders cross smoothly."
+          },
+          {
+            "title": "Walk-to-yield flow and composure",
+            "description": "Responding softly to shoulder redirection during leading, gate positioning, or busier settings."
+          }
         ],
         "learning": "Performs fuller forequarter yields and walk redirections in both directions with intermittent backward drift, rushed front steps, or uneven bend.",
         "proficient": "Smoothly and reliably yields its forequarters around relatively steady hindquarters from halt or walk in both directions on light ground requests, maintaining balanced foreleg crossing, relaxed posture, and adaptability in varied settings without unintended backing.",
@@ -371,11 +680,28 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.yield_forequarters", "relation": "counterpart"},
-      {"skillId": "horse.in_hand.leading", "relation": "foundation", "level": "introductory"},
-      {"skillId": "horse.in_hand.yield_hindquarters", "relation": "foundation", "level": "introductory"},
-      {"skillId": "horse.in_hand.sidepass_in_hand", "relation": "next"},
-      {"skillId": "horse.mounted.turn_on_haunches", "relation": "next"}
+      {
+        "skillId": "rider.in_hand.yield_forequarters",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.yield_hindquarters",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.sidepass_in_hand",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.turn_on_haunches",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 20
@@ -388,20 +714,34 @@
     "realm": "In_Hand",
     "familyId": "horse.in_hand.ground_control_yielding",
     "name": "Lateral Yielding / Sidepass (In-Hand)",
-    "aliases": ["Sidepass (in-hand)", "Sidepass from the ground (horse)", "Full-body lateral yield (in-hand)", "Yielding sideways (in-hand)"],
+    "aliases": [
+      "Sidepass (in-hand)",
+      "Sidepass from the ground (horse)",
+      "Full-body lateral yield (in-hand)",
+      "Yielding sideways (in-hand)"
+    ],
     "summary": "The horse's calm comprehension and balanced full-body coordination when stepping sideways from the ground with shoulders and hindquarters moving evenly together.",
     "purpose": "Integrates front- and hind-end ground communication into smooth, parallel sideways movement for gates, mounting blocks, tight spaces, and future mounted lateral balance.",
     "safety": [
       "Introduce sideways coordination on open, level, non-slip ground—allow small relaxed tries without continuous squeezing or trapping.",
       "Do not add obstacles or rails before the horse understands light sideways cues calmly in open space; assess back, rib, hoof, or limb soreness if chronic unevenness or tension appears."
     ],
-    "availableLevels": ["introductory", "intermediate"],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
     "levels": {
       "introductory": {
         "overview": "Calmly understanding light ground cues on open ground to coordinate both shoulders and hindquarters sideways in both directions with developing straightness, remaining relaxed without fleeing or rushing forward/backward, and pausing quietly on release.",
         "components": [
-          {"title": "Understanding combined sideways requests", "description": "Translating light ground requests into calm sideways steps rather than whipping the hips around or escaping forward or backward."},
-          {"title": "Developing alignment and emotional composure", "description": "Beginning to move front and hind ends together with soft breathing and settling peacefully when released."}
+          {
+            "title": "Understanding combined sideways requests",
+            "description": "Translating light ground requests into calm sideways steps rather than whipping the hips around or escaping forward or backward."
+          },
+          {
+            "title": "Developing alignment and emotional composure",
+            "description": "Beginning to move front and hind ends together with soft breathing and settling peacefully when released."
+          }
         ],
         "learning": "Attempts sideways steps on open ground with shoulders or hindquarters lagging, occasional forward or backward drifting, hurried steps, or mild tension between sides.",
         "proficient": "Calmly understands light ground cues on open, flat ground to step both front and hind ends sideways in both directions with unhurried composure, developing straightness, and a relaxed pause when released—without fleeing, crowding, or rushing.",
@@ -410,8 +750,14 @@
       "intermediate": {
         "overview": "Reliable, coordinated, balanced sideways stepping in both directions with shoulders and hindquarters staying largely parallel on light cues, calmly adaptable across everyday practical contexts (such as gates, mounting areas, or optional ground rails).",
         "components": [
-          {"title": "Even, parallel lateral coordination", "description": "Crossing both front and hind pairs rhythmically sideways in both directions with minimal shoulder or hip lag and minimal unwanted forward/backward drift."},
-          {"title": "Adaptability in practical contexts", "description": "Applying light sideways positioning calmly near barn doors, mounting areas, trail gates, or optional ground poles without pawing, rushing, or losing composure."}
+          {
+            "title": "Even, parallel lateral coordination",
+            "description": "Crossing both front and hind pairs rhythmically sideways in both directions with minimal shoulder or hip lag and minimal unwanted forward/backward drift."
+          },
+          {
+            "title": "Adaptability in practical contexts",
+            "description": "Applying light sideways positioning calmly near barn doors, mounting areas, trail gates, or optional ground poles without pawing, rushing, or losing composure."
+          }
         ],
         "learning": "Moves sideways in both directions with intermittent unevenness between front and hind crossing, minor forward or backward drift, or distraction around gates, mounting blocks, or rails.",
         "proficient": "Smoothly and reliably steps sideways in both directions on light ground cues with front and hind quarters staying calmly parallel and coordinated, maintaining steady unhurried rhythm and composure across varied practical contexts.",
@@ -419,11 +765,28 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.in_hand.sidepass_in_hand", "relation": "counterpart"},
-      {"skillId": "horse.in_hand.yield_hindquarters", "relation": "foundation", "level": "introductory"},
-      {"skillId": "horse.in_hand.yield_forequarters", "relation": "foundation", "level": "introductory"},
-      {"skillId": "horse.mounted.sidepass", "relation": "next"},
-      {"skillId": "horse.mounted.leg_yield", "relation": "next"}
+      {
+        "skillId": "rider.in_hand.sidepass_in_hand",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.yield_hindquarters",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.yield_forequarters",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.mounted.sidepass",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.leg_yield",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 30

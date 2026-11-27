@@ -181,9 +181,10 @@ async function main() {
   // 3. Administrator incorporates suggestion into draft (never auto-published) & marks incorporated + credit.
   const draftSkills = structuredClone(skills);
   const target = draftSkills.find((s) => s.id === 'rider.mounted.shoulder_in');
+  const baseShoulderInVersion = target.levels.intermediate.standardVersion;
   target.levels.intermediate.proficient =
     `${target.levels.intermediate.proficient} Supports outside shoulder before asking for angle.`;
-  target.levels.intermediate.standardVersion = 2;
+  target.levels.intermediate.standardVersion = baseShoulderInVersion + 1;
 
   await saveDraft({
     auth: adminAuth,
@@ -241,7 +242,7 @@ async function main() {
         fs.readFileSync(path.join(tmpExportDir, 'skills_rider_mounted.json'), 'utf8'),
     );
     const exportedShoulderIn = exportedMounted.find((s) => s.id === 'rider.mounted.shoulder_in');
-    assert.equal(exportedShoulderIn.levels.intermediate.standardVersion, 2);
+    assert.equal(exportedShoulderIn.levels.intermediate.standardVersion, baseShoulderInVersion + 1);
   } finally {
     fs.rmSync(tmpExportDir, {recursive: true, force: true});
   }
