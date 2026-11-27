@@ -572,7 +572,12 @@ async function main() {
     }
 
     // Public active transferred horse remains readable via Public_Horse_Profile
-    const pubRes = await fsGet('Public_Horse_Profile/horse-sale', null);
+    // and converges without stale saleListing after queued triggers drain.
+    let pubRes = await fsGet('Public_Horse_Profile/horse-sale', null);
+    for (let attempt = 0; attempt < 50 && pubRes.body?.fields?.saleListing !== undefined; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      pubRes = await fsGet('Public_Horse_Profile/horse-sale', null);
+    }
     assert.equal(pubRes.status, 200);
     assert.equal(pubRes.body.fields.saleListing, undefined);
 

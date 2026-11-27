@@ -42,8 +42,9 @@ async function main() {
 
   // Verify structured improvement + concurrent revision mismatch protection on real Firestore transactions.
   const structuredId = 'dictionary-structured-' + suffix;
+  const secondMemberAuth = {uid: 'emulator-member-2-' + suffix, token: {email_verified: true}};
   await submit({
-    auth: memberAuth,
+    auth: secondMemberAuth,
     rawRequest: {ip: 'dictionary-emulator-2-' + suffix},
     data: {
       submissionId: structuredId,

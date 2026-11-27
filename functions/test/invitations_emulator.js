@@ -12,6 +12,7 @@
 
 const assert = require('node:assert/strict');
 const admin = require('firebase-admin');
+const {profileId} = require('../connections');
 
 const PROJECT_ID = process.env.GCLOUD_PROJECT || 'demo-horse-rules';
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
@@ -52,11 +53,13 @@ async function callFn(name, data, idToken = null) {
 }
 
 async function main() {
-  const coachToken = await createSignedInUser('emu-coach@example.com', 'password123', 'Emu Coach');
-  const studentToken = await createSignedInUser('emu-student@example.com', 'password123', 'Emu Student');
+  const coachEmail = 'emu-coach@example.com';
+  const studentEmail = 'emu-student@example.com';
+  const coachToken = await createSignedInUser(coachEmail, 'password123', 'Emu Coach');
+  const studentToken = await createSignedInUser(studentEmail, 'password123', 'Emu Student');
 
-  await db.collection('Rider_Profile').doc('1m-l666l').set({
-    email: 'emu-coach@example.com',
+  await db.collection('Rider_Profile').doc(profileId(coachEmail)).set({
+    email: coachEmail,
     name: 'Emu Coach',
     isTrainer: true,
   });

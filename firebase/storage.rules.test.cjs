@@ -330,3 +330,55 @@ test('Riders_Photo, Horses_Photo, covers, and resources/pdfs enforce ownership, 
       403,
   );
 });
+
+test('legacy profiles without ownerUid remain compatible and dictionary_submissions enforce privacy', async () => {
+  await seedFirestoreDoc('Rider_Profile', 'legacy-rider-no-uid', {
+    email: {stringValue: 'MEMBER@example.com'},
+  });
+  await seedFirestoreDoc('Horse_Profile', 'legacy-horse-no-uid', {
+    currentOwnerId: {stringValue: 'Member@Example.com'},
+  });
+
+  // Legacy owner without ownerUid can upload and delete via email / currentOwnerId fallback.
+  assert.equal(
+      (await uploadObject('Riders_Photo/legacy-rider-no-uid', Buffer.from('jpg'), 'image/jpeg', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/legacy-horse-no-uid', Buffer.from('png'), 'image/png', memberToken)).status,
+      200,
+  );
+  // Different user is denied even when legacy doc lacks ownerUid.
+  assert.equal(
+      (await uploadObject('Riders_Photo/legacy-rider-no-uid', Buffer.from('pwn'), 'image/jpeg', otherMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('Horses_Photo/legacy-horse-no-uid', Buffer.from('pwn'), 'image/png', otherMemberToken)).status,
+      403,
+  );
+  assert.ok([200, 204].includes((await deleteObject('Horses_Photo/legacy-horse-no-uid', memberToken)).status));
+
+  // Dictionary submissions: owner creates & reads own file; other user denied; admin reads & deletes.
+  assert.equal(
+      (await uploadObject('dictionary_submissions/member-1/sub-1/img.webp', Buffer.from('webp'), 'image/webp', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await readObject('dictionary_submissions/member-1/sub-1/img.webp', memberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await readObject('dictionary_submissions/member-1/sub-1/img.webp', otherMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await uploadObject('dictionary_submissions/member-1/sub-2/spoof.png', Buffer.from('png'), 'image/png', otherMemberToken)).status,
+      403,
+  );
+  assert.equal(
+      (await readObject('dictionary_submissions/member-1/sub-1/img.webp', verifiedAdminToken)).status,
+      200,
+  );
+  assert.ok([200, 204].includes((await deleteObject('dictionary_submissions/member-1/sub-1/img.webp', verifiedAdminToken)).status));
+});
