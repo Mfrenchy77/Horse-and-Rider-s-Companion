@@ -47,6 +47,9 @@ class _DictionaryPageState extends State<DictionaryPage> {
     } catch (_) {
       _skillLabels = {};
     }
+    if (widget.repository == null && repository.usesDefaultBackend) {
+      return DictionaryRepository.cachedEntries();
+    }
     return repository.load();
   }
 

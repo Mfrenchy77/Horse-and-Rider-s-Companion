@@ -171,6 +171,7 @@ void main() {
       name: 'Atlas',
       locationName: 'Bend, Oregon',
       breed: 'Mustang',
+      isPublic: true,
       saleListing: (
         price: '100000',
         location: 'Central Oregon',

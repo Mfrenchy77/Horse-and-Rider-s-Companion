@@ -40,7 +40,7 @@ class RiderProfileRepository implements RiderProfileStore {
     try {
       await _riderProfileDatabaseReference
           .doc(_convertEmailToPath(email: riderProfile.email))
-          .set(riderProfile);
+          .set(riderProfile, SetOptions(merge: true));
     } on FirebaseException catch (e) {
       handleFirebaseException(e);
       throw RepositoryException.fromFirebase(e);
@@ -168,10 +168,20 @@ class RiderProfileRepository implements RiderProfileStore {
     required String email,
     bool serverOnly = false,
   }) async {
-    final snap = await _riderProfileDatabaseReference
-        .doc(_convertEmailToPath(email: email))
-        .get(serverOnly ? const GetOptions(source: Source.server) : null);
-    return snap.data();
+    final docId = _convertEmailToPath(email: email);
+    final options = serverOnly ? const GetOptions(source: Source.server) : null;
+    try {
+      final snap = await _riderProfileDatabaseReference
+          .doc(docId)
+          .get(options);
+      if (snap.exists) return snap.data();
+    } on FirebaseException catch (e) {
+      if (e.code != 'permission-denied') rethrow;
+    }
+    final publicSnap = await _publicRiderProfileDatabaseReference
+        .doc(docId)
+        .get(options);
+    return publicSnap.data();
   }
 
   /// Retrieve the sanitized public rider profile using [email]

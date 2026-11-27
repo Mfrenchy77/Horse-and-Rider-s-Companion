@@ -87,6 +87,15 @@ class _ProfileSkillsState extends State<ProfileSkills> {
 
   void _handleProgressRevision() {
     if (!mounted || !_canQueryV2) return;
+    final targetSubject = SkillTreeV2Sync.lastUpdatedSubject;
+    final targetProfile = SkillTreeV2Sync.lastUpdatedProfileDocId;
+    if (targetSubject != null &&
+        targetProfile != null &&
+        targetProfile.isNotEmpty &&
+        (targetSubject != widget.subject ||
+            targetProfile != widget.profileDocId?.trim())) {
+      return;
+    }
     unawaited(_loadV2Skills());
   }
 

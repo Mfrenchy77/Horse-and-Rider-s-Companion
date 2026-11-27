@@ -77,8 +77,11 @@ abstract class SkillTreeV2Store {
 /// partially published revision. Falls back cleanly to `SkillFamilies` /
 /// `SkillsV2` when no active pointer exists yet or if verification fails.
 class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
-  FirestoreSkillTreeV2Store({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirestoreSkillTreeV2Store({
+    FirebaseFirestore? firestore,
+    this.verificationEventLimit = 20,
+    this.cacheTtl = const Duration(minutes: 5),
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   static const _publicCollection = 'SkillTreeCurriculumPublic';
   static const _publicActiveDocId = 'active';
@@ -86,8 +89,11 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
   static const _chunksSubcollection = 'Chunks';
 
   final FirebaseFirestore _firestore;
+  final int verificationEventLimit;
+  final Duration cacheTtl;
   _AtomicCurriculumSnapshot? _cachedSnapshot;
   _AtomicCurriculumSnapshot? _lastVerifiedSnapshot;
+  DateTime? _cachedAt;
   Future<_AtomicCurriculumSnapshot?>? _inFlightSnapshot;
 
   /// Clears the active in-memory snapshot cache so subsequent reads re-check
@@ -95,6 +101,7 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
   /// as a safe fallback if a newly activated revision is temporarily corrupt.
   void invalidateCache() {
     _cachedSnapshot = null;
+    _cachedAt = null;
     _inFlightSnapshot = null;
   }
 
@@ -102,6 +109,13 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
       subject == SkillSubject.rider ? 'Rider_Profile' : 'Horse_Profile';
 
   Future<_AtomicCurriculumSnapshot?> _loadAtomicSnapshot() {
+    final cached = _cachedSnapshot;
+    final cachedAt = _cachedAt;
+    if (cached != null &&
+        cachedAt != null &&
+        DateTime.now().difference(cachedAt) < cacheTtl) {
+      return Future.value(cached);
+    }
     final existing = _inFlightSnapshot;
     if (existing != null) return existing;
     final future = _fetchAndVerifyAtomicSnapshot();
@@ -147,10 +161,11 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
         );
       }
 
-      final cached = _cachedSnapshot;
-      if (cached != null && cached.revisionId == activeRevisionId) {
-        return cached;
-      }
+        final cached = _cachedSnapshot;
+        if (cached != null && cached.revisionId == activeRevisionId) {
+          _cachedAt = DateTime.now();
+          return cached;
+        }
 
       try {
         final chunksSnap = await _firestore
@@ -263,6 +278,7 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
           skills: List<CurriculumSkill>.unmodifiable(visibleSkills),
         );
         _cachedSnapshot = snapshot;
+        _cachedAt = DateTime.now();
         _lastVerifiedSnapshot = snapshot;
         return snapshot;
       } catch (err) {
@@ -357,6 +373,8 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
         .collection(_profileCollection(subject))
         .doc(profileDocId)
         .collection('SkillVerificationEvents')
+        .orderBy('at', descending: true)
+        .limit(verificationEventLimit)
         .get();
     final events = snap.docs
         .map((d) => SkillProgressV2FirestoreMapper.eventFromFirestore(d, null))

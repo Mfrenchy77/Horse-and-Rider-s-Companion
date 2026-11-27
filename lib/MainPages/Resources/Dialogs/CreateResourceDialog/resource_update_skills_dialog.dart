@@ -81,7 +81,7 @@ class _UpdateResourceSkillsState extends State<UpdateResourceSkills> {
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppCubit>();
+    final app = context.watch<AppCubit>()..ensureLegacySkillsLoaded();
     final canEdit = _canEdit(app) && (widget.resource.id?.isNotEmpty ?? false);
     final skills = app.state.allSkills.whereType<Skill>().toList()
       ..sort((a, b) => a.skillName.compareTo(b.skillName));

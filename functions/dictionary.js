@@ -1019,7 +1019,11 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
             publishedAt: at,
             attributions,
           });
-          tx.set(manifestRef, {initialized: true});
+          tx.set(manifestRef, {
+            initialized: true,
+            version: (manifest.data()?.version || 0) + 1,
+            updatedAt: at,
+          }, {merge: true});
 
           const decisionStatus = rejectedImages.length > 0 ? 'partially_approved' : 'approved';
           tx.update(suggestionRef, {
@@ -1176,7 +1180,11 @@ function editDictionary(db, {now = () => new Date(), bucket = null} = {}) {
           const priorNames = currentPublic.data()?.attributions || [];
           const attributions = [...new Set([...priorNames, ...(publicName ? [publicName] : [])])];
           tx.set(publicRef, {...entry, revision: nextRevision, status: 'published', publishedAt: at, attributions});
-          tx.set(db.collection('DictionaryPublic').doc('catalogue'), {initialized: true});
+          tx.set(manifestRef, {
+            initialized: true,
+            version: (manifest.data()?.version || 0) + 1,
+            updatedAt: at,
+          }, {merge: true});
           if (suggestion) {
             if (Array.isArray(credit?.submittedImages)) {
               cleanupSubmissionPaths = credit.submittedImages

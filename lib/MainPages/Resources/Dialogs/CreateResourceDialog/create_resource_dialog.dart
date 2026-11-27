@@ -5,6 +5,7 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:horseandriderscompanion/App/app.dart';
 import 'package:horseandriderscompanion/CommonWidgets/gap.dart';
 import 'package:horseandriderscompanion/CommonWidgets/max_width_box.dart';
 import 'package:horseandriderscompanion/CommonWidgets/resource_icon.dart';
@@ -43,6 +44,12 @@ class _CreateResourcDialogState extends State<CreateResourcDialog> {
   late final imageController = TextEditingController(
     text: widget.resource?.thumbnail,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<AppCubit?>()?.ensureLegacySkillsLoaded();
+  }
 
   @override
   void dispose() {

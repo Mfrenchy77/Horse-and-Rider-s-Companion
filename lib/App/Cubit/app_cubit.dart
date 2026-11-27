@@ -81,7 +81,6 @@ class AppCubit extends Cubit<AppState> {
   bool _verificationReloadInProgress = false;
 
   void _beginListeningForUserChanges() {
-    _getSkillTreeLists();
     _userSubscription = _authenticationRepository.user.listen(
       (user) => _handleAuthUser(user ?? User.empty),
     );
@@ -1673,11 +1672,9 @@ class AppCubit extends Cubit<AppState> {
 
 ***************************************************************************** */
 
-  /// Retrieves the Skills from the database if needed
-  void _getSkillTreeLists() {
-    _getSkills();
-    // Skills are shared by the rider profile and Skill Tree.
-  }
+  /// Loads the legacy `Skills` collection stream on demand when legacy
+  /// Skill Tree or skill-link editing UI requires it.
+  void ensureLegacySkillsLoaded() => _getSkills();
 
   void _getSkills() {
     if (_skillsSubscription != null) return;

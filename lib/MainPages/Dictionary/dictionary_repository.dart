@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_local_cache.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_store.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/firebase_dictionary_store.dart';
 
@@ -51,11 +52,13 @@ class DictionaryRepository {
   static Future<List<DictionaryEntry>>? _cachedEntriesFuture;
   static Future<List<DictionaryEntry>>? _refreshingFuture;
   static List<DictionaryEntry>? _resolvedCachedEntries;
+  static int? _cachedVersion;
+  static int? _cachedUpdatedAtMs;
   static DateTime? _cachedAt;
 
   /// How long cached published entries remain fresh before a single
   /// deduplicated background refresh runs on next access.
-  static Duration cacheTtl = const Duration(minutes: 10);
+  static Duration cacheTtl = const Duration(minutes: 30);
 
   /// Clock hook for deterministic TTL testing.
   @visibleForTesting
@@ -86,19 +89,72 @@ class DictionaryRepository {
     return clock().difference(cachedAt) >= cacheTtl;
   }
 
-  static List<DictionaryEntry> _storeCache(List<DictionaryEntry> items) {
+  static List<DictionaryEntry> _storeCache(
+    List<DictionaryEntry> items, {
+    int? version,
+    int? updatedAtMs,
+    bool persist = false,
+  }) {
     final publishedOnly = List<DictionaryEntry>.unmodifiable(
       items.where((entry) => entry.published),
     );
     _resolvedCachedEntries = publishedOnly;
+    if (version != null) _cachedVersion = version;
+    if (updatedAtMs != null) _cachedUpdatedAtMs = updatedAtMs;
     _cachedAt = clock();
     entriesNotifier.value = publishedOnly;
+    if (persist) {
+      unawaited(
+        DictionaryLocalCache.write(
+          entries: publishedOnly,
+          version: version,
+          updatedAtMs: updatedAtMs,
+        ),
+      );
+    }
     return publishedOnly;
   }
 
-  /// Returns published Dictionary entries cached in memory for contextual
-  /// highlighting across Skill Tree and Resources without repeated network or
-  /// asset reads.
+  Future<List<DictionaryEntry>> _loadVersionAware({
+    bool forceServer = false,
+  }) async {
+    final store = _store;
+    if (store is FirebaseDictionaryStore) {
+      var seedEntries = _resolvedCachedEntries;
+      var seedVersion = _cachedVersion;
+      var seedUpdatedAtMs = _cachedUpdatedAtMs;
+      if (!forceServer && seedEntries == null && usesDefaultBackend) {
+        final local = await DictionaryLocalCache.read();
+        if (local != null) {
+          seedEntries = local.entries;
+          seedVersion = local.version;
+          seedUpdatedAtMs = local.updatedAtMs;
+          _resolvedCachedEntries ??= local.entries;
+          entriesNotifier.value ??= local.entries;
+        }
+      }
+      final result = await store.loadPublishedEntriesVersioned(
+        cachedEntries: seedEntries,
+        cachedVersion: seedVersion,
+        cachedUpdatedAtMs: seedUpdatedAtMs,
+        forceServer: forceServer,
+      );
+      if (usesDefaultBackend) {
+        return _storeCache(
+          result.entries,
+          version: result.version,
+          updatedAtMs: result.updatedAtMs,
+          persist: result.version != null || result.updatedAtMs != null,
+        );
+      }
+      return result.entries;
+    }
+    return load();
+  }
+
+  /// Returns published Dictionary entries cached in memory and persisted
+  /// locally for contextual highlighting across Skill Tree, Dictionary, and
+  /// Resources without repeated network or asset reads.
   ///
   /// Uses a stale-while-revalidate strategy: if cached entries are older than
   /// [cacheTtl], returns the current entries immediately while triggering one
@@ -126,8 +182,7 @@ class DictionaryRepository {
       return Future.value(_resolvedCachedEntries!);
     }
     return _cachedEntriesFuture ??= DictionaryRepository()
-        .load()
-        .then(_storeCache)
+        ._loadVersionAware()
         .catchError((Object _) {
           _cachedEntriesFuture = null;
           return _resolvedCachedEntries ?? const <DictionaryEntry>[];
@@ -144,16 +199,21 @@ class DictionaryRepository {
     FirebaseFirestore? firestore,
     AssetBundle? bundle,
   }) {
-    return _refreshingFuture ??=
-        DictionaryRepository(store: store, firestore: firestore, bundle: bundle)
-            .load()
-            .then(_storeCache)
-            .catchError((Object _) {
-              return _resolvedCachedEntries ?? const <DictionaryEntry>[];
-            })
-            .whenComplete(() {
-              _refreshingFuture = null;
-            });
+    final repo = DictionaryRepository(
+      store: store,
+      firestore: firestore,
+      bundle: bundle,
+    );
+    final loader = repo.usesDefaultBackend
+        ? repo._loadVersionAware()
+        : repo.load().then(_storeCache);
+    return _refreshingFuture ??= loader
+        .catchError((Object _) {
+          return _resolvedCachedEntries ?? const <DictionaryEntry>[];
+        })
+        .whenComplete(() {
+          _refreshingFuture = null;
+        });
   }
 
   /// Clears the session cache (used after admin publication or in tests).
@@ -161,8 +221,11 @@ class DictionaryRepository {
     _cachedEntriesFuture = null;
     _refreshingFuture = null;
     _resolvedCachedEntries = null;
+    _cachedVersion = null;
+    _cachedUpdatedAtMs = null;
     _cachedAt = null;
     entriesNotifier.value = null;
+    unawaited(DictionaryLocalCache.clear());
   }
 
   Future<Map<String, String>> skillLabels() => _store.loadSkillLabels();

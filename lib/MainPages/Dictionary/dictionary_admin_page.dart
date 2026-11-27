@@ -148,10 +148,10 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
     DictionaryEntry target,
     _InboxBundle bundle,
   ) async {
-    final drafts = await _repository.loadDrafts();
+    final draftMatch = await _repository.loadDraft(target.id);
     if (!mounted) return;
-    final draftMatch = drafts.where((d) => d.id == target.id).firstOrNull;
     final effectiveTarget = draftMatch ?? target;
+    var refreshed = false;
     final selectedNext = await showAppGlassDialog<Map<String, dynamic>?>(
       context: context,
       builder: (_) => _ApproveAndPublishImagesDialog(
@@ -160,12 +160,17 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
         allSubmissions: bundle.items,
         repository: _repository,
         onPublished: () {
-          if (mounted) _refresh();
+          if (mounted) {
+            refreshed = true;
+            _refresh();
+          }
         },
       ),
     );
     if (!mounted) return;
-    _refresh();
+    if (!refreshed) {
+      _refresh();
+    }
     if (selectedNext != null) {
       final refreshedBundle = await (_inbox ?? _load());
       if (!mounted) return;
@@ -343,21 +348,33 @@ class _DictionaryAdminPageState extends State<DictionaryAdminPage> {
 
   Future<void> _edit({Map<String, dynamic>? suggestion}) async {
     final published = await _repository.load();
-    final drafts = await _repository.loadDrafts();
-    if (!mounted) return;
-    final entriesById = {for (final entry in published) entry.id: entry};
-    for (final draft in drafts) {
-      entriesById[draft.id] = draft;
-    }
-    final allEntries = entriesById.values.toList()
-      ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
     final publishedTarget = suggestion == null
         ? null
         : _resolveSuggestionTarget(published, suggestion);
+    final entriesById = {for (final entry in published) entry.id: entry};
+    DictionaryEntry? draftMatch;
+    if (publishedTarget != null) {
+      draftMatch = await _repository.loadDraft(publishedTarget.id);
+      if (draftMatch != null) entriesById[draftMatch.id] = draftMatch;
+    } else if (suggestion != null) {
+      final termId = (suggestion['termId'] as String?)?.trim() ?? '';
+      if (termId.isNotEmpty) {
+        draftMatch = await _repository.loadDraft(termId);
+        if (draftMatch != null) entriesById[draftMatch.id] = draftMatch;
+      }
+      if (draftMatch == null) {
+        for (final draft in await _repository.loadDrafts()) {
+          entriesById[draft.id] = draft;
+        }
+      }
+    }
+    if (!mounted) return;
+    final allEntries = entriesById.values.toList()
+      ..sort((a, b) => a.term.toLowerCase().compareTo(b.term.toLowerCase()));
     final initial = suggestion == null
         ? null
         : (publishedTarget != null
-              ? entriesById[publishedTarget.id] ?? publishedTarget
+              ? draftMatch ?? publishedTarget
               : _resolveSuggestionTarget(allEntries, suggestion));
     await showAppGlassDialog<void>(
       context: context,

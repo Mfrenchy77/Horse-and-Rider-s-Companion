@@ -1147,7 +1147,10 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
           subject: skill.subject,
           profileDocId: profileDocId,
         );
-        SkillTreeV2Sync.notifyProgressChanged();
+        SkillTreeV2Sync.notifyProgressChanged(
+          subject: skill.subject,
+          profileDocId: profileDocId,
+        );
       }
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

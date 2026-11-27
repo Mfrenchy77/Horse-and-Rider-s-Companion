@@ -519,65 +519,55 @@ class _SkillV2ResourcesSection extends StatefulWidget {
 
 class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
   final Map<String, List<Resource>> _resourcesByLookupId = {};
-  final List<StreamSubscription<List<Resource>>> _subscriptions = [];
-  Set<String> _subscribedIds = const {};
+  Set<String> _loadedLookupIds = const {};
+  int _fetchGeneration = 0;
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _cancelSubscriptions();
-    super.dispose();
-  }
-
-  void _cancelSubscriptions() {
-    for (final sub in _subscriptions) {
-      sub.cancel();
-    }
-    _subscriptions.clear();
-  }
-
-  void _ensureSubscriptions({
+  void _ensureResourcesFetched({
     required bool hasCatalogue,
     required Set<String> lookupIds,
     required ResourcesStore? store,
   }) {
     if (hasCatalogue || store == null) {
-      if (_subscriptions.isNotEmpty) {
-        _cancelSubscriptions();
-        _subscribedIds = const {};
+      if (_loadedLookupIds.isNotEmpty || _isLoading) {
+        _fetchGeneration++;
+        _loadedLookupIds = const {};
+        _isLoading = false;
       }
       return;
     }
-    if (_subscribedIds.length == lookupIds.length &&
-        _subscribedIds.containsAll(lookupIds)) {
+    if (_loadedLookupIds.length == lookupIds.length &&
+        _loadedLookupIds.containsAll(lookupIds)) {
       return;
     }
-    _cancelSubscriptions();
     _resourcesByLookupId.clear();
-    _subscribedIds = lookupIds;
-    _isLoading = lookupIds.isNotEmpty;
-
-    for (final id in lookupIds) {
-      final sub = store
-          .getResourcesForSkill(skillId: id)
-          .listen(
-            (items) {
-              if (!mounted) return;
-              setState(() {
-                _resourcesByLookupId[id] = items;
-                _isLoading = false;
-              });
-            },
-            onError: (_) {
-              if (!mounted) return;
-              setState(() {
-                _resourcesByLookupId.putIfAbsent(id, () => const []);
-                _isLoading = false;
-              });
-            },
-          );
-      _subscriptions.add(sub);
+    _loadedLookupIds = lookupIds;
+    if (lookupIds.isEmpty) {
+      _isLoading = false;
+      return;
     }
+    final generation = ++_fetchGeneration;
+    _isLoading = true;
+
+    unawaited(() async {
+      final fetched = <String, List<Resource>>{};
+      await Future.wait(
+        lookupIds.map((id) async {
+          try {
+            fetched[id] = await store.getResourcesForSkill(skillId: id).first;
+          } catch (_) {
+            fetched[id] = const <Resource>[];
+          }
+        }),
+      );
+      if (!mounted || generation != _fetchGeneration) return;
+      setState(() {
+        _resourcesByLookupId
+          ..clear()
+          ..addAll(fetched);
+        _isLoading = false;
+      });
+    }());
   }
 
   List<Resource> _deduplicatedStreamedResources() {
@@ -596,23 +586,29 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = context.watch<AppCubit>().state;
+    final hasCatalogue = context.select(
+      (AppCubit c) => c.state.hasResourceCatalogue,
+    );
+    final catalogueResources = context.select(
+      (AppCubit c) => c.state.resources,
+    );
+    final allSkills = context.select((AppCubit c) => c.state.allSkills);
     final store =
         context.read<ResourcesStore?>() ?? context.read<ResourcesRepository?>();
     final lookupIds = effectiveResourceLookupIds(
       skill: widget.skill,
-      legacySkills: appState.allSkills,
+      legacySkills: allSkills,
     );
 
-    _ensureSubscriptions(
-      hasCatalogue: appState.hasResourceCatalogue,
+    _ensureResourcesFetched(
+      hasCatalogue: hasCatalogue,
       lookupIds: lookupIds,
       store: store,
     );
 
-    final candidateResources = appState.hasResourceCatalogue
-        ? (appState.resources.isNotEmpty
-              ? appState.resources
+    final candidateResources = hasCatalogue
+        ? (catalogueResources.isNotEmpty
+              ? catalogueResources
               : widget.fallbackResources)
         : (store != null
               ? _deduplicatedStreamedResources()
@@ -621,7 +617,7 @@ class _SkillV2ResourcesSectionState extends State<_SkillV2ResourcesSection> {
     final relatedResources = filterAndRankResourcesForSkill(
       skill: widget.skill,
       allResources: candidateResources,
-      legacySkills: appState.allSkills,
+      legacySkills: allSkills,
       sort: widget.sort,
     );
 

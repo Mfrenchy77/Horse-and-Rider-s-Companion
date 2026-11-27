@@ -5,6 +5,18 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_sync.dart';
 
+class _ProfileSkillCache {
+  const _ProfileSkillCache({
+    required this.progressBySkillId,
+    required this.verificationsBySkillId,
+    required this.verificationEvents,
+  });
+
+  final Map<String, SkillProgressRecord> progressBySkillId;
+  final Map<String, SkillVerificationRecord> verificationsBySkillId;
+  final List<VerificationEvent> verificationEvents;
+}
+
 class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
   SkillTreeV2Cubit({
     required this.repository,
@@ -17,6 +29,8 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
        );
 
   final SkillTreeV2Repository repository;
+  final Map<String, _ProfileSkillCache> _profileCache = {};
+  final Map<String, Future<void>> _inFlightProfileLoads = {};
 
   SkillTreeV2Store get store => repository.store;
 
@@ -47,8 +61,17 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       ),
     );
     try {
-      final families = await repository.fetchFamilies();
-      final skills = await repository.fetchSkills();
+      final curriculumFuture = Future.wait<Object>([
+        repository.fetchFamilies(),
+        repository.fetchSkills(),
+      ]);
+      final profileFuture = syncProfile(
+        subject: subject,
+        profileDocId: profileDocId,
+      );
+      final curriculum = await curriculumFuture;
+      final families = curriculum[0] as List<SkillFamily>;
+      final skills = curriculum[1] as List<CurriculumSkill>;
       final firstSkill = _firstSkillFor(skills, subject, defaultRealm);
       emit(
         state.copyWith(
@@ -59,7 +82,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
           selectedLevel: firstSkill?.availableLevels.firstOrNull,
         ),
       );
-      await syncProfile(subject: subject, profileDocId: profileDocId);
+      await profileFuture;
     } catch (e) {
       emit(
         state.copyWith(
@@ -74,11 +97,33 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     required SkillSubject subject,
     required String? profileDocId,
   }) async {
-    final key = profileDocId == null || profileDocId.isEmpty
+    final trimmed = profileDocId?.trim();
+    final key = (trimmed == null || trimmed.isEmpty)
         ? '${subject.name}:none'
-        : '${subject.name}:$profileDocId';
+        : '${subject.name}:$trimmed';
     if (key == state.loadedProfileKey) return;
-    await _loadProfileData(subject: subject, profileDocId: profileDocId);
+    final cached = _profileCache[key];
+    if (cached != null) {
+      emit(
+        state.copyWith(
+          progressBySkillId: cached.progressBySkillId,
+          verificationsBySkillId: cached.verificationsBySkillId,
+          verificationEvents: cached.verificationEvents,
+          loadedProfileKey: key,
+        ),
+      );
+      return;
+    }
+    final existing = _inFlightProfileLoads[key];
+    if (existing != null) return existing;
+    final future = _loadProfileData(
+      subject: subject,
+      profileDocId: trimmed,
+    ).whenComplete(() {
+      _inFlightProfileLoads.remove(key);
+    });
+    _inFlightProfileLoads[key] = future;
+    return future;
   }
 
   Future<void> refreshProfileData({
@@ -103,25 +148,31 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
       return;
     }
 
+    final key = '${subject.name}:$trimmed';
     try {
-      final progress = await repository.fetchProgress(
-        subject: subject,
-        profileDocId: trimmed,
-      );
-      final verifications = await repository.fetchVerifications(
-        subject: subject,
-        profileDocId: trimmed,
-      );
-      final events = await repository.fetchVerificationEvents(
-        subject: subject,
-        profileDocId: trimmed,
+      final results = await Future.wait<Object>([
+        repository.fetchProgress(subject: subject, profileDocId: trimmed),
+        repository.fetchVerifications(subject: subject, profileDocId: trimmed),
+        repository.fetchVerificationEvents(
+          subject: subject,
+          profileDocId: trimmed,
+        ),
+      ]);
+      final progress = results[0] as Map<String, SkillProgressRecord>;
+      final verifications =
+          results[1] as Map<String, SkillVerificationRecord>;
+      final events = results[2] as List<VerificationEvent>;
+      _profileCache[key] = _ProfileSkillCache(
+        progressBySkillId: progress,
+        verificationsBySkillId: verifications,
+        verificationEvents: events,
       );
       emit(
         state.copyWith(
           progressBySkillId: progress,
           verificationsBySkillId: verifications,
           verificationEvents: events,
-          loadedProfileKey: '${subject.name}:$trimmed',
+          loadedProfileKey: key,
         ),
       );
     } catch (_) {
@@ -130,7 +181,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
           progressBySkillId: const {},
           verificationsBySkillId: const {},
           verificationEvents: const [],
-          loadedProfileKey: '${subject.name}:$trimmed',
+          loadedProfileKey: key,
         ),
       );
     }
@@ -167,7 +218,7 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         clearActionMessage: true,
       ),
     );
-    await _loadProfileData(subject: subject, profileDocId: profileDocId);
+    await syncProfile(subject: subject, profileDocId: profileDocId);
   }
 
   void selectRealm(SkillCategory realm) {
@@ -294,17 +345,60 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         actorUid: actorUid,
         actorName: actorName,
       );
-      await _loadProfileData(
-        subject: state.subject,
-        profileDocId: profileDocId,
+      final updatedProgress = Map<String, SkillProgressRecord>.from(
+        state.progressBySkillId,
+      );
+      final existing = updatedProgress[skillId];
+      final nextLevels = Map<DifficultyState, LevelProgress>.from(
+        existing?.levels ?? const {},
+      );
+      final now = DateTime.now().toUtc();
+      if (levelState == null || levelState == LevelState.NO_PROGRESS) {
+        nextLevels.remove(level);
+      } else {
+        nextLevels[level] = LevelProgress(
+          state: levelState == LevelState.VERIFIED
+              ? LevelState.PROFICIENT
+              : levelState,
+          updatedAt: now,
+          updatedByUid: actorUid,
+          updatedByName: actorName,
+        );
+      }
+      if (nextLevels.isEmpty) {
+        updatedProgress.remove(skillId);
+      } else {
+        updatedProgress[skillId] = SkillProgressRecord(
+          skillId: skillId,
+          subject: state.subject,
+          levels: nextLevels,
+          updatedAt: now,
+        );
+      }
+      final trimmedProfile = profileDocId.trim();
+      final cacheKey = '${state.subject.name}:$trimmedProfile';
+      _profileCache[cacheKey] = _ProfileSkillCache(
+        progressBySkillId: updatedProgress,
+        verificationsBySkillId: state.verificationsBySkillId,
+        verificationEvents: state.verificationEvents,
       );
       final label = switch (levelState) {
         LevelState.LEARNING => 'Marked as Learning.',
         LevelState.PROFICIENT => 'Marked as Proficient.',
         _ => 'Self-assessment cleared.',
       };
-      emit(state.copyWith(isSubmitting: false, actionMessage: label));
-      SkillTreeV2Sync.notifyProgressChanged();
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          progressBySkillId: updatedProgress,
+          loadedProfileKey: cacheKey,
+          actionMessage: label,
+        ),
+      );
+      SkillTreeV2Sync.notifyProgressChanged(
+        subject: state.subject,
+        profileDocId: trimmedProfile,
+      );
       return true;
     } catch (e) {
       emit(
@@ -349,7 +443,10 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
             : 'Verification revoked.',
       ),
     );
-    SkillTreeV2Sync.notifyProgressChanged();
+    SkillTreeV2Sync.notifyProgressChanged(
+      subject: skill.subject,
+      profileDocId: profileDocId,
+    );
     return true;
   }
 

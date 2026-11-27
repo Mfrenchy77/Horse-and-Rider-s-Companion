@@ -50,10 +50,28 @@ class FirebaseDictionaryStore implements DictionaryStore {
 
   @override
   Future<List<DictionaryEntry>> loadPublishedEntries() async {
+    final result = await loadPublishedEntriesVersioned();
+    return result.entries;
+  }
+
+  /// Loads published Dictionary entries, checking `DictionaryPublic/catalogue`
+  /// first so callers with a matching local [cachedVersion] or
+  /// [cachedUpdatedAtMs] avoid scanning every doc in `DictionaryEntries`.
+  Future<({List<DictionaryEntry> entries, int? version, int? updatedAtMs})>
+  loadPublishedEntriesVersioned({
+    List<DictionaryEntry>? cachedEntries,
+    int? cachedVersion,
+    int? cachedUpdatedAtMs,
+    bool forceServer = false,
+  }) async {
     if (firestore != null || Firebase.apps.isNotEmpty) {
       final db = _db;
+      final getOptions = forceServer
+          ? const GetOptions(source: Source.server)
+          : null;
       // A manifest distinguishes an intentionally empty catalogue from the
-      // initial bundled collection before server publication begins.
+      // initial bundled collection before server publication begins, and tracks
+      // catalogue version updates to avoid unnecessary collection scans.
       final DocumentSnapshot<Map<String, dynamic>> manifest;
       try {
         manifest = await db
@@ -77,20 +95,54 @@ class FirebaseDictionaryStore implements DictionaryStore {
         // A previously observed publication must never revert to starters when
         // access is subsequently denied.
         if (cachedManifest?.data()?['initialized'] == true) rethrow;
-        return _loadBundledEntries();
+        return (
+          entries: await _loadBundledEntries(),
+          version: null,
+          updatedAtMs: null,
+        );
       }
-      if (manifest.data()?['initialized'] == true) {
+      final manifestData = manifest.data();
+      if (manifestData?['initialized'] == true) {
+        final remoteVersion = (manifestData?['version'] as num?)?.toInt();
+        final remoteUpdatedAtMs = _sortTimestampMs(manifestData?['updatedAt']);
+        final hasMatchingCache =
+            !forceServer &&
+            cachedEntries != null &&
+            cachedEntries.isNotEmpty &&
+            ((remoteVersion != null &&
+                    remoteVersion > 0 &&
+                    cachedVersion == remoteVersion) ||
+                (remoteVersion == null &&
+                    remoteUpdatedAtMs > 0 &&
+                    cachedUpdatedAtMs == remoteUpdatedAtMs));
+        if (hasMatchingCache) {
+          return (
+            entries: cachedEntries,
+            version: remoteVersion,
+            updatedAtMs: remoteUpdatedAtMs > 0 ? remoteUpdatedAtMs : null,
+          );
+        }
+
         final docs = await db
             .collection('DictionaryEntries')
             .where('status', isEqualTo: 'published')
-            .get(const GetOptions(source: Source.server));
-        return docs.docs
+            .get(getOptions);
+        final loaded = docs.docs
             .map((doc) => DictionaryEntry(doc.data()))
             .where((entry) => entry.published)
             .toList();
+        return (
+          entries: loaded,
+          version: remoteVersion,
+          updatedAtMs: remoteUpdatedAtMs > 0 ? remoteUpdatedAtMs : null,
+        );
       }
     }
-    return _loadBundledEntries();
+    return (
+      entries: await _loadBundledEntries(),
+      version: null,
+      updatedAtMs: null,
+    );
   }
 
   Future<List<DictionaryEntry>> _loadBundledEntries() async {

@@ -60,6 +60,7 @@ class _SkillTreeViewState extends State<SkillTreeView> {
   @override
   void initState() {
     super.initState();
+    context.read<AppCubit?>()?.ensureLegacySkillsLoaded();
     _syncRouteSkill();
   }
 
