@@ -1,6 +1,6 @@
-# Horse and Rider's Companion — Skill Tree 2.0 Curriculum Guide
+# Horse and Rider's Companion — Skill Tree Curriculum Guide
 
-> **Purpose & Status:** Permanent architectural, pedagogical, and editorial reference for the Skill Tree 2.0 curriculum (`curriculum/v2/`). This guide governs how skills, difficulty levels, components, and Skill Families are organized, authored, reviewed, and maintained by human trainers, administrators, and AI development agents.
+> **Purpose & Status:** Permanent architectural, pedagogical, and editorial reference for the Skill Tree curriculum (`curriculum/v2/`). This guide governs how skills, difficulty levels, components, and Skill Families are organized, authored, reviewed, and maintained by human trainers, administrators, and AI development agents.
 
 ---
 
@@ -133,7 +133,7 @@ Compare `Leg Yield`, `Shoulder-In`, and `Half-Pass`:
 
 ### 4.1 Two Orthogonal Dimensions
 
-Skill Tree 2.0 strictly separates **what standard is being attempted** (Difficulty Level) from **how well the rider or horse currently performs that standard** (Proficiency State):
+The Skill Tree strictly separates **what standard is being attempted** (Difficulty Level) from **how well the rider or horse currently performs that standard** (Proficiency State):
 
 | Dimension | Values | Who Controls It | Meaning |
 | :--- | :--- | :--- | :--- |
@@ -386,7 +386,7 @@ Evolving the curriculum over years must **never** corrupt or silently invalidate
 
 ### 8.5 Resource Link Continuity
 - Educational `Resources` store `skillTreeIds: List<String>`.
-- Skill Tree V2 resolves resources for a skill by matching `skill.id` **and** every ID in `skill.legacyIds[]`.
+- The Skill Tree resolves resources for a skill by matching `skill.id` **and** every ID in `skill.legacyIds[]`.
 - Therefore, **never remove an ID from `legacyIds[]`**. All 84 original production skill IDs must remain mapped in `legacyIds[]` and `curriculum/v2/legacy_mapping.json`.
 
 ### 8.6 Validation & Publication Safeguards
@@ -413,8 +413,8 @@ When curated updates in `curriculum/v2/` are ready for administrator review and 
 2. **Generate a canonical import JSON bundle:**
    - Run `node tool/export_curriculum_v2.js --bundle --write` to write the validated canonical payload (`{ "schemaVersion": 2, "families": [...], "skills": [...] }`) to `build/curriculum/skill_tree_v2_import.json`.
    - This format matches `buildCanonicalCurriculumExportJson()` cleanly and preserves all stable skill IDs, `legacyIds`, difficulty `standardVersion` values, and relationships.
-3. **Import into the Admin Draft inside Skill Tree 2.0:**
-   - Sign in as an administrator, open Skill Tree 2.0, open the Overflow Menu → **Edit Curriculum (Draft)**, and click **Import Curriculum**.
+3. **Import into the Admin Draft inside the Skill Tree:**
+   - Sign in as an administrator, open the Skill Tree, open the Overflow Menu → **Edit Curriculum (Draft)**, and click **Import Curriculum**.
    - Upload `build/curriculum/skill_tree_v2_import.json` (or paste JSON). The importer validates the entire schema, relationships, and published-skill preservation rules before touching the draft, and previews differences against both the published curriculum and the current saved draft.
    - Confirm **Import into Draft** (or **Cancel** to leave the draft untouched). Importing never publishes automatically.
 4. **Save, Preview, and Publish Revision:**

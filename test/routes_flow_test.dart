@@ -22,7 +22,6 @@ import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_pag
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
@@ -186,7 +185,6 @@ void main() {
     AboutPage.name: '/About',
     DeletePage.name: '/Delete',
     SkillTreePage.name: '/SkillTree',
-    SkillTreeView.skillsListName: '/SkillTree/Skills',
     ResourcesPage.name: '/Resources',
   };
   for (final entry in locations.entries) {
@@ -208,7 +206,6 @@ void main() {
     ViewingProfilePage.name: {
       ViewingProfilePage.pathParams: 'rider+tag@example.com',
     },
-    SkillTreeView.skillLevelName: {SkillTreeView.skillPathParam: 'Skill::one'},
     ResourceCommentPage.name: {
       ResourceCommentPage.pathParams: 'resource?part=1',
     },
@@ -261,10 +258,7 @@ void main() {
       appCubit.emit(
         appCubit.state.copyWith(allSkills: [skill], sortedSkills: [skill]),
       );
-      router.goNamed(
-        SkillTreeView.skillLevelName,
-        pathParameters: {SkillTreeView.skillPathParam: skill.id},
-      );
+      router.go('/SkillTree/Skills/Skill:${skill.id}');
       await tester.pumpAndSettle();
       expect(router.routerDelegate.currentConfiguration.isError, isFalse);
       expect(
@@ -272,7 +266,7 @@ void main() {
         SkillTreePage.path,
       );
       expect(
-        router.routeInformationProvider.value.uri.queryParameters[SkillTreeView
+        router.routeInformationProvider.value.uri.queryParameters[SkillTreePage
             .skillPathParam],
         's1',
       );
@@ -419,10 +413,7 @@ void main() {
     appCubit.emit(
       appCubit.state.copyWith(allSkills: [skill], sortedSkills: [skill]),
     );
-    router.goNamed(
-      SkillTreeView.skillLevelName,
-      pathParameters: {SkillTreeView.skillPathParam: skill.id},
-    );
+    router.go('/SkillTree/Skills/Skill:${skill.id}');
     await tester.pumpAndSettle();
     expect(
       tester.widget<NavigationRail>(find.byType(NavigationRail)).selectedIndex,
@@ -470,7 +461,6 @@ void main() {
   testWidgets(
     'an unknown skill URL does not display the previously selected skill',
     (tester) async {
-      await settingsController.updateSkillTreeV2Enabled(enabled: false);
       final router = Routes().router(
         settingsContoller: settingsController,
         appCubit: appCubit,
@@ -478,26 +468,20 @@ void main() {
       addTearDown(router.dispose);
       await tester.pumpWidget(buildApp(router));
       await tester.pumpAndSettle();
-      final skill = Skill(
-        id: 'old',
-        skillName: 'Old skill',
-        rider: true,
-        position: 0,
-        lastEditBy: 'editor',
-        lastEditDate: DateTime.utc(2025),
-        description: '',
-        learningDescription: '',
-        proficientDescription: '',
-      );
-      appCubit.emit(appCubit.state.copyWith(allSkills: [skill], skill: skill));
       router.goNamed(
-        SkillTreeView.skillLevelName,
-        pathParameters: {SkillTreeView.skillPathParam: 'missing'},
+        SkillTreePage.name,
+        queryParameters: {SkillTreePage.skillPathParam: 'v2-leading'},
       );
       await tester.pumpAndSettle();
-      expect(appCubit.state.skill, isNull);
-      expect(find.text('Skill Not Found'), findsOneWidget);
-      expect(find.text('Old skill'), findsNothing);
+      expect(find.text('Leading safely'), findsOneWidget);
+
+      router.go('/SkillTree/Skills/Skill:missing');
+      await tester.pumpAndSettle();
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        SkillTreePage.path,
+      );
+      expect(find.text('Leading safely'), findsNothing);
     },
   );
 
@@ -822,8 +806,8 @@ void main() {
   });
 
   testWidgets(
-    'ResourceCommentPage and SkillTreeView manage route state via lifecycle '
-    'and observers without re-emitting on rebuilds',
+    'ResourceCommentPage manages route state via lifecycle and observers '
+    'without re-emitting on rebuilds',
     (tester) async {
       final resource = Resource(
         id: 'res-1',

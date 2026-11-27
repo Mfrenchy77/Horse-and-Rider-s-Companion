@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:horseandriderscompanion/Settings/feature_flags.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Settings/skill_tree_layout.dart';
@@ -26,7 +25,6 @@ class SettingsController with ChangeNotifier {
   late bool _isPounds;
   ResourceLayout _resourceLayout = ResourceLayout.vertical;
   SkillTreeLayout _skillTreeLayout = SkillTreeLayout.library;
-  bool _skillTreeV2Enabled = FeatureFlags.kSkillTreeV2Default;
 
   late final ThemeData _lightTheme = HorseAndRidersTheme().getLightTheme();
   late final ThemeData _darkTheme = HorseAndRidersTheme().getDarkTheme();
@@ -40,7 +38,6 @@ class SettingsController with ChangeNotifier {
   bool get isPounds => _isPounds;
   ResourceLayout get resourceLayout => _resourceLayout;
   SkillTreeLayout get skillTreeLayout => _skillTreeLayout;
-  bool get skillTreeV2Enabled => _skillTreeV2Enabled;
   bool get onBoardingStatus => _settingsService.getOnboardingStatus();
 
   /// Load the user's settings from the SettingsService. It may load from a
@@ -54,7 +51,6 @@ class SettingsController with ChangeNotifier {
       _isPounds = _settingsService.getHorseWeightUnit();
       _resourceLayout = _settingsService.getResourceLayout();
       _skillTreeLayout = _settingsService.getSkillTreeLayout();
-      _skillTreeV2Enabled = _settingsService.getSkillTreeV2Enabled();
       notifyListeners();
     } catch (e, stackTrace) {
       AppLogger.warning(
@@ -78,13 +74,6 @@ class SettingsController with ChangeNotifier {
     _skillTreeLayout = layout;
     notifyListeners();
     await _settingsService.updateSkillTreeLayout(layout);
-  }
-
-  Future<void> updateSkillTreeV2Enabled({required bool enabled}) async {
-    if (enabled == _skillTreeV2Enabled) return;
-    _skillTreeV2Enabled = enabled;
-    notifyListeners();
-    await _settingsService.updateSkillTreeV2Enabled(enabled: enabled);
   }
 
   /// Update and persist the ThemeMode based on the user's selection.

@@ -87,7 +87,7 @@ String buildInvitationShareMessage({
   return '$header\n\nOpen your invitation: $url';
 }
 
-/// Builds the canonical shareable URL for a Skill Tree 2.0 skill.
+/// Builds the canonical shareable URL for a Skill Tree skill.
 String buildSkillShareUrl(String skillId, {Uri? baseUri}) {
   final origin = resolveShareOrigin(baseUri);
   return '$origin/SkillTree?skillId=${Uri.encodeComponent(skillId)}';

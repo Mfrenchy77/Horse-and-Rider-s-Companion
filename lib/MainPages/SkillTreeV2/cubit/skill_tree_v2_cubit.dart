@@ -254,6 +254,19 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
     emit(state.copyWith(viewMode: mode, clearActionMessage: true));
   }
 
+  /// Clears any active skill selection (e.g., when navigating to an unknown
+  /// skill URL so a stale previously selected skill does not remain open).
+  void clearSelection() {
+    if (state.selectedSkillId == null && state.selectedLevel == null) return;
+    emit(
+      state.copyWith(
+        clearSelectedSkill: true,
+        clearSelectedLevel: true,
+        clearActionMessage: true,
+      ),
+    );
+  }
+
   void openSkillInExplore(CurriculumSkill skill, {DifficultyState? level}) {
     emit(
       state.copyWith(

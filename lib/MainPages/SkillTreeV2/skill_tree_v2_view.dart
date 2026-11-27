@@ -806,7 +806,13 @@ class _SkillTreeV2ViewState extends State<SkillTreeV2View> {
     final resolved =
         state.skills.where((s) => s.id == targetId).firstOrNull ??
         state.skills.where((s) => s.legacyIds.contains(targetId)).firstOrNull;
-    if (resolved == null) return;
+    if (resolved == null) {
+      _cubit.clearSelection();
+      if (_mobileShowingDetail) {
+        _returnToBrowsingList();
+      }
+      return;
+    }
 
     final resolvedLevel =
         targetLevel != null && resolved.availableLevels.contains(targetLevel)

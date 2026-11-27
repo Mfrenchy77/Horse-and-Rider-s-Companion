@@ -23,7 +23,6 @@ import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_pag
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_view.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -102,23 +101,9 @@ class Routes {
       onPush: (route, previousRoute) {
         if (route.settings.name == SkillTreePage.name) {
           appCubit.setSkillTree();
-        } else if (route.settings.name == SkillTreeView.skillsListName) {
-          appCubit
-            ..setSkillTree()
-            ..navigateToSkillsList()
-            ..setSkillTreeTabIndex(0);
-        } else if (route.settings.name == SkillTreeView.skillLevelName) {
-          appCubit.setSkillTree();
         }
       },
-      onPop: (route, previousRoute) {
-        if (route.settings.name == SkillTreeView.skillLevelName &&
-            previousRoute?.settings.name == SkillTreeView.skillsListName) {
-          appCubit
-            ..navigateToSkillsList()
-            ..setSkillTreeTabIndex(0);
-        }
-      },
+      onPop: (_, __) {},
     );
 
     final routeObserverResources = RouteObserverWithCallback(
@@ -302,7 +287,7 @@ class Routes {
               ],
             ),
 
-            // ── Branch 1: Skill Tree (already sliding) ───────────────────────
+            // ── Branch 1: Skill Tree ─────────────────────────────────────
             StatefulShellBranch(
               observers: [routeObserverSkillTree],
               navigatorKey: skillTreeNavigatorKey,
@@ -312,7 +297,7 @@ class Routes {
                   name: SkillTreePage.name,
                   builder: (context, state) {
                     final skillId =
-                        state.uri.queryParameters[SkillTreeView.skillPathParam];
+                        state.uri.queryParameters[SkillTreePage.skillPathParam];
                     final levelParam = state.uri.queryParameters['level'];
                     final level = levelParam == null
                         ? null
@@ -325,54 +310,37 @@ class Routes {
                     );
                   },
                   routes: [
+                    // Legacy deep-link compatibility redirects to canonical /SkillTree
                     GoRoute(
-                      path: SkillTreeView.skillsListPath,
-                      name: SkillTreeView.skillsListName,
+                      path: SkillTreePage.legacySkillsListPath,
                       redirect: (_, state) {
-                        if (!settingsContoller.skillTreeV2Enabled) {
-                          return null;
-                        }
                         final id =
-                            state.pathParameters[SkillTreeView.skillPathParam];
+                            state.pathParameters[SkillTreePage.skillPathParam];
                         if (id != null && id.isNotEmpty) {
                           return null;
                         }
                         if (state.uri.path.contains(
-                          '${SkillTreeView.skillsListPath}/Skill:',
+                          '/${SkillTreePage.legacySkillsListPath}/Skill:',
                         )) {
                           return null;
                         }
                         return SkillTreePage.path;
                       },
-                      builder: (context, state) => const SkillTreeView(),
                       routes: [
                         GoRoute(
-                          path: SkillTreeView.skillLevelPath,
-                          name: SkillTreeView.skillLevelName,
+                          path: SkillTreePage.legacySkillLevelPath,
                           redirect: (_, state) {
-                            if (!settingsContoller.skillTreeV2Enabled) {
-                              return null;
-                            }
                             final id = state
-                                .pathParameters[SkillTreeView.skillPathParam];
+                                .pathParameters[SkillTreePage.skillPathParam];
                             if (id == null || id.isEmpty) {
                               return SkillTreePage.path;
                             }
                             return Uri(
                               path: SkillTreePage.path,
                               queryParameters: {
-                                SkillTreeView.skillPathParam: id,
+                                SkillTreePage.skillPathParam: id,
                               },
                             ).toString();
-                          },
-                          pageBuilder: (context, state) {
-                            final id = state
-                                .pathParameters[SkillTreeView.skillPathParam]!;
-                            return _horizontalSlidePage(
-                              key: state.pageKey,
-                              name: state.name,
-                              child: SkillTreeView(skillId: id),
-                            );
                           },
                         ),
                       ],

@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
@@ -20,17 +19,7 @@ import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class _MockAuth extends Mock implements AuthenticationRepository {}
-
-class _MockSkills extends Mock implements SkillTreeRepository {}
-
 class _MockResources extends Mock implements ResourcesRepository {}
-
-class _MockMessages extends Mock implements MessagesRepository {}
-
-class _MockRiders extends Mock implements RiderProfileRepository {}
-
-class _MockHorses extends Mock implements HorseProfileRepository {}
 
 class _MockAppCubit extends MockCubit<AppState> implements AppCubit {}
 
@@ -99,64 +88,18 @@ void main() {
   }
 
   testWidgets(
-    'feature flag defaults to true and preserves legacy SkillTreeView when '
-    'rolled back',
-    (tester) async {
-    final auth = _MockAuth();
-    final skills = _MockSkills();
-    final resources = _MockResources();
-    when(() => auth.currentUser).thenReturn(User.empty);
-    when(() => auth.user).thenAnswer((_) => const Stream.empty());
-    when(skills.getSkills).thenAnswer((_) => const Stream.empty());
-    when(resources.getResources).thenAnswer((_) => const Stream.empty());
-    final appCubit = AppCubit(
-      authenticationRepository: auth,
-      skillTreeRepository: skills,
-      resourcesRepository: resources,
-      messagesRepository: _MockMessages(),
-      riderProfileRepository: _MockRiders(),
-      horseProfileRepository: _MockHorses(),
-    );
-    addTearDown(appCubit.close);
-
-    expect(settings.skillTreeV2Enabled, isTrue);
-
-    await settings.updateSkillTreeV2Enabled(enabled: false);
-    expect(settings.skillTreeV2Enabled, isFalse);
-
-    await tester.pumpWidget(
-      SettingsControllerScope(
-        controller: settings,
-        child: BlocProvider<AppCubit>.value(
-          value: appCubit,
-          child: const MaterialApp(home: Scaffold(body: SkillTreePage())),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.byKey(const Key('skillTreeView')), findsOneWidget);
-    expect(find.byKey(const Key('skillTreeV2PageView')), findsNothing);
-  });
-
-  testWidgets(
-    'SkillTreePage with V2 enabled renders without an outer Scaffold',
+    'SkillTreePage always mounts permanent Skill Tree without legacy toggle',
     (tester) async {
       final mockAppCubit = _MockAppCubit();
       final appState = authenticatedRiderState();
       when(() => mockAppCubit.state).thenReturn(appState);
-
-      await settings.updateSkillTreeV2Enabled(enabled: true);
-      expect(settings.skillTreeV2Enabled, isTrue);
 
       await tester.pumpWidget(
         SettingsControllerScope(
           controller: settings,
           child: BlocProvider<AppCubit>.value(
             value: mockAppCubit,
-            child: const MaterialApp(
-              home: SkillTreePage(),
-            ),
+            child: const MaterialApp(home: SkillTreePage()),
           ),
         ),
       );
@@ -166,7 +109,7 @@ void main() {
         );
         await tester.pump();
         if (find
-            .byKey(const Key('skillTreeV2Realm_Husbandry'))
+            .byKey(const Key('skillTreeV2PageView'))
             .evaluate()
             .isNotEmpty) {
           break;
@@ -174,199 +117,210 @@ void main() {
       }
 
       expect(find.byKey(const Key('skillTreeV2PageView')), findsOneWidget);
-      expect(
-        find.byKey(const Key('skillTreeV2Realm_Husbandry')),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('skillTreeView')), findsNothing);
     },
   );
 
-  testWidgets(
-    'Rider has 4 realms, Horse has 2 realms and browses freely',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('SkillTreePage renders without an outer Scaffold', (
+    tester,
+  ) async {
+    final mockAppCubit = _MockAppCubit();
+    final appState = authenticatedRiderState();
+    when(() => mockAppCubit.state).thenReturn(appState);
 
-      final mockAppCubit = _MockAppCubit();
-      final appState = authenticatedRiderState();
-      when(() => mockAppCubit.state).thenReturn(appState);
-
-      await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
-      await tester.pumpAndSettle();
-
-      // Rider realms: Husbandry, In-Hand, Mounted, Theory & Knowledge
-      expect(
-        find.byKey(const Key('skillTreeV2Realm_Husbandry')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const Key('skillTreeV2Realm_In_Hand')), findsOneWidget);
-      expect(find.byKey(const Key('skillTreeV2Realm_Mounted')), findsOneWidget);
-      expect(find.byKey(const Key('skillTreeV2Realm_Other')), findsOneWidget);
-
-      // No completion percentages on families and no Rider/Horse toggle
-      expect(find.textContaining('%'), findsNothing);
-      expect(
-        find.byKey(const Key('skillTreeV2SubjectSelector')),
-        findsNothing,
-      );
-
-      // Re-mount in Horse context without a selected HorseProfile
-      final horseState = authenticatedRiderState().copyWith(isForRider: false);
-      when(() => mockAppCubit.state).thenReturn(horseState);
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('skillTreeV2Realm_In_Hand')), findsOneWidget);
-      expect(find.byKey(const Key('skillTreeV2Realm_Mounted')), findsOneWidget);
-      expect(find.byKey(const Key('skillTreeV2Realm_Husbandry')), findsNothing);
-      expect(find.byKey(const Key('skillTreeV2Realm_Other')), findsNothing);
-      expect(
-        find.textContaining('No horse profile selected'),
-        findsOneWidget,
-      );
-
-      // Shoulder-In offers Intermediate & Advanced, not Introductory
-      await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(
-        find.byKey(
-          const Key('skillFamilyHeader_horse.mounted.lateral_movements'),
+    await tester.pumpWidget(
+      SettingsControllerScope(
+        controller: settings,
+        child: BlocProvider<AppCubit>.value(
+          value: mockAppCubit,
+          child: const MaterialApp(home: SkillTreePage()),
         ),
+      ),
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 25)),
       );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_horse.mounted.lateral_movements'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(
-        find.byKey(const Key('skillCard_horse.mounted.shoulder_in')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('skillCard_horse.mounted.shoulder_in')),
-      );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      if (find
+          .byKey(const Key('skillTreeV2Realm_Husbandry'))
+          .evaluate()
+          .isNotEmpty) {
+        break;
+      }
+    }
 
-      expect(
-        find.byKey(
-          const Key('levelTab_horse.mounted.shoulder_in_Introductory'),
-        ),
-        findsNothing,
-      );
-      expect(
-        find.byKey(
-          const Key('levelTab_horse.mounted.shoulder_in_Intermediate'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('levelTab_horse.mounted.shoulder_in_Advanced')),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(find.byKey(const Key('skillTreeV2PageView')), findsOneWidget);
+    expect(find.byKey(const Key('skillTreeV2Realm_Husbandry')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
-  testWidgets(
-    'Self-assessment, verification, search, summary & matrix work',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('Rider has 4 realms, Horse has 2 realms and browses freely', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final mockAppCubit = _MockAppCubit();
-      final appState = authenticatedRiderState();
-      when(() => mockAppCubit.state).thenReturn(appState);
+    final mockAppCubit = _MockAppCubit();
+    final appState = authenticatedRiderState();
+    when(() => mockAppCubit.state).thenReturn(appState);
 
-      await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
+    await tester.pumpAndSettle();
 
-      // Search by component terminology ("hoof picking" -> Grooming)
-      await tester.enterText(
-        find.byKey(const Key('skillTreeV2SearchField')),
-        'hoof picking',
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
-        findsOneWidget,
-      );
+    // Rider realms: Husbandry, In-Hand, Mounted, Theory & Knowledge
+    expect(find.byKey(const Key('skillTreeV2Realm_Husbandry')), findsOneWidget);
+    expect(find.byKey(const Key('skillTreeV2Realm_In_Hand')), findsOneWidget);
+    expect(find.byKey(const Key('skillTreeV2Realm_Mounted')), findsOneWidget);
+    expect(find.byKey(const Key('skillTreeV2Realm_Other')), findsOneWidget);
 
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
-      );
-      await tester.pumpAndSettle();
+    // No completion percentages on families and no Rider/Horse toggle
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.byKey(const Key('skillTreeV2SubjectSelector')), findsNothing);
 
-      // Self-assess Introductory as Proficient
-      await tester.ensureVisible(
-        find.byKey(
-          const Key(
-            'assessProficient_rider.husbandry.grooming_Introductory',
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(
-          const Key(
-            'assessProficient_rider.husbandry.grooming_Introductory',
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+    // Re-mount in Horse context without a selected HorseProfile
+    final horseState = authenticatedRiderState().copyWith(isForRider: false);
+    when(() => mockAppCubit.state).thenReturn(horseState);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
+    await tester.pumpAndSettle();
 
-      // Verify as Instructor
-      await tester.ensureVisible(
-        find.byKey(
-          const Key('verifyLevel_rider.husbandry.grooming_Introductory'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(
-          const Key('verifyLevel_rider.husbandry.grooming_Introductory'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Verify'));
-      await tester.pumpAndSettle();
+    expect(find.byKey(const Key('skillTreeV2Realm_In_Hand')), findsOneWidget);
+    expect(find.byKey(const Key('skillTreeV2Realm_Mounted')), findsOneWidget);
+    expect(find.byKey(const Key('skillTreeV2Realm_Husbandry')), findsNothing);
+    expect(find.byKey(const Key('skillTreeV2Realm_Other')), findsNothing);
+    expect(find.textContaining('No horse profile selected'), findsOneWidget);
 
-      expect(find.textContaining('Verified by Alex Rider'), findsOneWidget);
+    // Shoulder-In offers Intermediate & Advanced, not Introductory
+    await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(
+        const Key('skillFamilyHeader_horse.mounted.lateral_movements'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const Key('skillFamilyHeader_horse.mounted.lateral_movements'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('skillCard_horse.mounted.shoulder_in')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('skillCard_horse.mounted.shoulder_in')),
+    );
+    await tester.pumpAndSettle();
 
-      // Switch to My Skills view
-      await tester.ensureVisible(find.text('My Skills'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('My Skills'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('1 Proficient'), findsOneWidget);
-      expect(find.textContaining('1 Instructor Verified'), findsOneWidget);
-      expect(find.text('Browse category'), findsWidgets);
-      expect(
-        find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
-        findsOneWidget,
-      );
+    expect(
+      find.byKey(const Key('levelTab_horse.mounted.shoulder_in_Introductory')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('levelTab_horse.mounted.shoulder_in_Intermediate')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('levelTab_horse.mounted.shoulder_in_Advanced')),
+      findsOneWidget,
+    );
+  });
 
-      // Authorized instructor can open Review Verifications grid
-      await tester.tap(find.byKey(const Key('reviewVerificationsButton')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('matrixFilter_verified')));
-      await tester.pumpAndSettle();
-      expect(find.text('Category'), findsOneWidget);
-      expect(find.text('Grooming'), findsOneWidget);
+  testWidgets('Self-assessment, verification, search, summary & matrix work', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.binding.setSurfaceSize(const Size(430, 850));
-      await tester.pumpAndSettle();
-      expect(find.text('Grooming'), findsOneWidget);
-    },
-  );
+    final mockAppCubit = _MockAppCubit();
+    final appState = authenticatedRiderState();
+    when(() => mockAppCubit.state).thenReturn(appState);
+
+    await tester.pumpWidget(wrapV2(appCubit: mockAppCubit));
+    await tester.pumpAndSettle();
+
+    // Search by component terminology ("hoof picking" -> Grooming)
+    await tester.enterText(
+      find.byKey(const Key('skillTreeV2SearchField')),
+      'hoof picking',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(
+        const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+    );
+    await tester.pumpAndSettle();
+
+    // Self-assess Introductory as Proficient
+    await tester.ensureVisible(
+      find.byKey(
+        const Key('assessProficient_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const Key('assessProficient_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify as Instructor
+    await tester.ensureVisible(
+      find.byKey(
+        const Key('verifyLevel_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const Key('verifyLevel_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verify'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Verified by Alex Rider'), findsOneWidget);
+
+    // Switch to My Skills view
+    await tester.ensureVisible(find.text('My Skills'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Skills'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1 Proficient'), findsOneWidget);
+    expect(find.textContaining('1 Instructor Verified'), findsOneWidget);
+    expect(find.text('Browse category'), findsWidgets);
+    expect(
+      find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
+      findsOneWidget,
+    );
+
+    // Authorized instructor can open Review Verifications grid
+    await tester.tap(find.byKey(const Key('reviewVerificationsButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('matrixFilter_verified')));
+    await tester.pumpAndSettle();
+    expect(find.text('Category'), findsOneWidget);
+    expect(find.text('Grooming'), findsOneWidget);
+
+    await tester.binding.setSurfaceSize(const Size(430, 850));
+    await tester.pumpAndSettle();
+    expect(find.text('Grooming'), findsOneWidget);
+  });
 
   testWidgets(
     'App-bar back and system back return from detail before exiting Skill Tree',
@@ -379,10 +333,7 @@ void main() {
       when(() => mockAppCubit.state).thenReturn(appState);
 
       await tester.pumpWidget(
-        wrapV2(
-          appCubit: mockAppCubit,
-          surfaceSize: const Size(430, 850),
-        ),
+        wrapV2(appCubit: mockAppCubit, surfaceSize: const Size(430, 850)),
       );
       await tester.pumpAndSettle();
 
@@ -441,95 +392,92 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Legacy Resources appear under V2 skills before catalogue load',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('Legacy Resources appear under V2 skills before catalogue load', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final mockAppCubit = _MockAppCubit();
-      final mockResources = _MockResources();
-      final hoofResource = Resource(
-        id: 'res-hoof',
-        name: 'Hoof Picking Guide',
-        url: 'https://example.com/hoof',
-        type: ResourceType.link,
-        rating: 5,
-        numberOfRates: 10,
-        skillTreeIds: const ['rider.husbandry.pick_hooves'],
-      );
-      final legacyIdResource = Resource(
-        id: 'res-legacy-id',
-        name: 'Legacy Hoof Video',
-        url: 'https://example.com/legacy-hoof',
-        type: ResourceType.link,
-        rating: 4,
-        numberOfRates: 4,
-        skillTreeIds: const ['legacy-doc-99'],
-      );
-      final legacySkill = Skill(
-        id: 'legacy-doc-99',
-        skillName: 'Pick hooves',
-        category: SkillCategory.Husbandry,
-        rider: true,
-        position: 1,
-        description: '',
-        learningDescription: '',
-        proficientDescription: '',
-        lastEditBy: 'admin',
-        lastEditDate: DateTime(2026),
-      );
+    final mockAppCubit = _MockAppCubit();
+    final mockResources = _MockResources();
+    final hoofResource = Resource(
+      id: 'res-hoof',
+      name: 'Hoof Picking Guide',
+      url: 'https://example.com/hoof',
+      type: ResourceType.link,
+      rating: 5,
+      numberOfRates: 10,
+      skillTreeIds: const ['rider.husbandry.pick_hooves'],
+    );
+    final legacyIdResource = Resource(
+      id: 'res-legacy-id',
+      name: 'Legacy Hoof Video',
+      url: 'https://example.com/legacy-hoof',
+      type: ResourceType.link,
+      rating: 4,
+      numberOfRates: 4,
+      skillTreeIds: const ['legacy-doc-99'],
+    );
+    final legacySkill = Skill(
+      id: 'legacy-doc-99',
+      skillName: 'Pick hooves',
+      category: SkillCategory.Husbandry,
+      rider: true,
+      position: 1,
+      description: '',
+      learningDescription: '',
+      proficientDescription: '',
+      lastEditBy: 'admin',
+      lastEditDate: DateTime(2026),
+    );
 
-      when(
-        () => mockResources.getResourcesForSkill(
-          skillId: any(named: 'skillId'),
-        ),
-      ).thenAnswer((invocation) {
-        final id = invocation.namedArguments[#skillId] as String;
-        if (id == 'rider.husbandry.pick_hooves') {
-          return Stream.value([hoofResource]);
-        }
-        if (id == 'legacy-doc-99') {
-          return Stream.value([legacyIdResource]);
-        }
-        return Stream.value(const <Resource>[]);
-      });
+    when(
+      () => mockResources.getResourcesForSkill(skillId: any(named: 'skillId')),
+    ).thenAnswer((invocation) {
+      final id = invocation.namedArguments[#skillId] as String;
+      if (id == 'rider.husbandry.pick_hooves') {
+        return Stream.value([hoofResource]);
+      }
+      if (id == 'legacy-doc-99') {
+        return Stream.value([legacyIdResource]);
+      }
+      return Stream.value(const <Resource>[]);
+    });
 
-      final appState = authenticatedRiderState().copyWith(
-        hasResourceCatalogue: false,
-        resources: const <Resource>[],
-        allSkills: [legacySkill],
-      );
-      when(() => mockAppCubit.state).thenReturn(appState);
-      when(() => mockAppCubit.isNewResource(any())).thenReturn(false);
-      when(() => mockAppCubit.canEditResource(any())).thenReturn(false);
-      when(() => mockAppCubit.isRatingPositive(any())).thenReturn(false);
-      when(() => mockAppCubit.isRatingNegative(any())).thenReturn(false);
+    final appState = authenticatedRiderState().copyWith(
+      hasResourceCatalogue: false,
+      resources: const <Resource>[],
+      allSkills: [legacySkill],
+    );
+    when(() => mockAppCubit.state).thenReturn(appState);
+    when(() => mockAppCubit.isNewResource(any())).thenReturn(false);
+    when(() => mockAppCubit.canEditResource(any())).thenReturn(false);
+    when(() => mockAppCubit.isRatingPositive(any())).thenReturn(false);
+    when(() => mockAppCubit.isRatingNegative(any())).thenReturn(false);
 
-      await tester.pumpWidget(
-        RepositoryProvider<ResourcesStore?>.value(
-          value: mockResources,
-          child: wrapV2(appCubit: mockAppCubit),
-        ),
-      );
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      RepositoryProvider<ResourcesStore?>.value(
+        value: mockResources,
+        child: wrapV2(appCubit: mockAppCubit),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
-      );
-      await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.text('Related Resources (2)'), findsOneWidget);
-      expect(find.text('Hoof Picking Guide'), findsOneWidget);
-      expect(find.text('Legacy Hoof Video'), findsOneWidget);
-    },
-  );
+    expect(find.text('Related Resources (2)'), findsOneWidget);
+    expect(find.text('Hoof Picking Guide'), findsOneWidget);
+    expect(find.text('Legacy Hoof Video'), findsOneWidget);
+  });
 
   testWidgets(
     'Uses custom horse icon, two-tab navigation, Category terminology, '
@@ -543,18 +491,12 @@ void main() {
       when(() => mockAppCubit.state).thenReturn(appState);
 
       await tester.pumpWidget(
-        wrapV2(
-          appCubit: mockAppCubit,
-          enableLocalInstructorPreview: false,
-        ),
+        wrapV2(appCubit: mockAppCubit, enableLocalInstructorPreview: false),
       );
       await tester.pumpAndSettle();
 
       // No Rider/Horse toggle in profile-context mode
-      expect(
-        find.byKey(const Key('skillTreeV2SubjectSelector')),
-        findsNothing,
-      );
+      expect(find.byKey(const Key('skillTreeV2SubjectSelector')), findsNothing);
       expect(find.text('Rider Skills · Alex Rider'), findsOneWidget);
 
       // Two-tab navigation: Explore Skills | My Skills
@@ -576,10 +518,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const Key('reviewVerificationsButton')),
-        findsNothing,
-      );
+      expect(find.byKey(const Key('reviewVerificationsButton')), findsNothing);
 
       // Empty state action returns to Explore Skills
       await tester.tap(find.byKey(const Key('mySkillsEmptyExploreButton')));
@@ -596,10 +535,7 @@ void main() {
       when(() => mockAppCubit.state).thenReturn(horseState);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(
-        wrapV2(
-          appCubit: mockAppCubit,
-          enableLocalInstructorPreview: false,
-        ),
+        wrapV2(appCubit: mockAppCubit, enableLocalInstructorPreview: false),
       );
       await tester.pumpAndSettle();
       expect(find.byIcon(HorseAndRiderIcons.horseIcon), findsOneWidget);
@@ -764,112 +700,111 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Per-level progress stays independent across Grooming levels, '
-    'level chips show status, and My Skills shows both levels',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('Per-level progress stays independent across Grooming levels, '
+      'level chips show status, and My Skills shows both levels', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final mockAppCubit = _MockAppCubit();
-      final appState = authenticatedRiderState();
-      when(() => mockAppCubit.state).thenReturn(appState);
+    final mockAppCubit = _MockAppCubit();
+    final appState = authenticatedRiderState();
+    when(() => mockAppCubit.state).thenReturn(appState);
 
-      await tester.pumpWidget(
-        wrapV2(appCubit: mockAppCubit, enableLocalInstructorPreview: false),
-      );
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      wrapV2(appCubit: mockAppCubit, enableLocalInstructorPreview: false),
+    );
+    await tester.pumpAndSettle();
 
-      // 1. Open Rider -> Husbandry -> Grooming
-      await tester.tap(
-        find.byKey(
-          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('skillCard_rider.husbandry.grooming')),
-      );
-      await tester.pumpAndSettle();
+    // 1. Open Rider -> Husbandry -> Grooming
+    await tester.tap(
+      find.byKey(
+        const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('skillCard_rider.husbandry.grooming')),
+    );
+    await tester.pumpAndSettle();
 
-      // 2. Set Introductory to Proficient
-      await tester.ensureVisible(
-        find.byKey(
-          const Key('assessProficient_rider.husbandry.grooming_Introductory'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(
-          const Key('assessProficient_rider.husbandry.grooming_Introductory'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Marked as Proficient.'), findsOneWidget);
+    // 2. Set Introductory to Proficient
+    await tester.ensureVisible(
+      find.byKey(
+        const Key('assessProficient_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const Key('assessProficient_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Marked as Proficient.'), findsOneWidget);
 
-      // 3. Switch to Intermediate and set it to Learning
-      await tester.ensureVisible(
-        find.byKey(const Key('levelTab_rider.husbandry.grooming_Intermediate')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('levelTab_rider.husbandry.grooming_Intermediate')),
-      );
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(
-        find.byKey(
-          const Key('assessLearning_rider.husbandry.grooming_Intermediate'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(
-          const Key('assessLearning_rider.husbandry.grooming_Intermediate'),
-        ),
-      );
-      await tester.pumpAndSettle();
+    // 3. Switch to Intermediate and set it to Learning
+    await tester.ensureVisible(
+      find.byKey(const Key('levelTab_rider.husbandry.grooming_Intermediate')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('levelTab_rider.husbandry.grooming_Intermediate')),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(
+        const Key('assessLearning_rider.husbandry.grooming_Intermediate'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const Key('assessLearning_rider.husbandry.grooming_Intermediate'),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      // Level selector chips show both statuses simultaneously
-      expect(find.text('Introductory · Proficient'), findsOneWidget);
-      expect(find.text('Intermediate · Learning'), findsOneWidget);
+    // Level selector chips show both statuses simultaneously
+    expect(find.text('Introductory · Proficient'), findsOneWidget);
+    expect(find.text('Intermediate · Learning'), findsOneWidget);
 
-      // 4. Return to Introductory and confirm Proficient remains selected
-      await tester.ensureVisible(
-        find.byKey(const Key('levelTab_rider.husbandry.grooming_Introductory')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('levelTab_rider.husbandry.grooming_Introductory')),
-      );
-      await tester.pumpAndSettle();
-      final introProficientChip = tester.widget<ChoiceChip>(
-        find.byKey(
-          const Key('assessProficient_rider.husbandry.grooming_Introductory'),
-        ),
-      );
-      expect(introProficientChip.selected, isTrue);
+    // 4. Return to Introductory and confirm Proficient remains selected
+    await tester.ensureVisible(
+      find.byKey(const Key('levelTab_rider.husbandry.grooming_Introductory')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('levelTab_rider.husbandry.grooming_Introductory')),
+    );
+    await tester.pumpAndSettle();
+    final introProficientChip = tester.widget<ChoiceChip>(
+      find.byKey(
+        const Key('assessProficient_rider.husbandry.grooming_Introductory'),
+      ),
+    );
+    expect(introProficientChip.selected, isTrue);
 
-      // 5. Open My Skills and confirm Grooming displays both levels
-      await tester.ensureVisible(find.text('My Skills'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('My Skills'));
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
-        findsOneWidget,
-      );
-      expect(find.text('Introductory · Proficient'), findsOneWidget);
-      expect(find.text('Intermediate · Learning'), findsOneWidget);
+    // 5. Open My Skills and confirm Grooming displays both levels
+    await tester.ensureVisible(find.text('My Skills'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Skills'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
+      findsOneWidget,
+    );
+    expect(find.text('Introductory · Proficient'), findsOneWidget);
+    expect(find.text('Intermediate · Learning'), findsOneWidget);
 
-      // 6. Return to Grooming and confirm neither assessment was overwritten
-      await tester.tap(
-        find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Introductory · Proficient'), findsOneWidget);
-      expect(find.text('Intermediate · Learning'), findsOneWidget);
-    },
-  );
+    // 6. Return to Grooming and confirm neither assessment was overwritten
+    await tester.tap(
+      find.byKey(const Key('mySkillCard_rider.husbandry.grooming')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Introductory · Proficient'), findsOneWidget);
+    expect(find.text('Intermediate · Learning'), findsOneWidget);
+  });
 
   testWidgets(
     'Default preview store saves locally without Firestore and persists '
@@ -892,9 +827,7 @@ void main() {
         controller: settings,
         child: BlocProvider<AppCubit>.value(
           value: mockAppCubit,
-          child: const MaterialApp(
-            home: SkillTreeV2View(),
-          ),
+          child: const MaterialApp(home: SkillTreeV2View()),
         ),
       );
 
@@ -1125,10 +1058,7 @@ void main() {
 
       // Tap a Related Skill ActionChip inside the detail panel.
       final firstChip = find
-          .descendant(
-            of: detailScrollFinder,
-            matching: find.byType(ActionChip),
-          )
+          .descendant(of: detailScrollFinder, matching: find.byType(ActionChip))
           .first;
       await tester.ensureVisible(firstChip);
       await tester.pumpAndSettle();
@@ -1214,10 +1144,7 @@ void main() {
       expect(mobileScroll.controller!.offset, greaterThan(0));
 
       final relatedChip = find
-          .descendant(
-            of: mobileScrollFinder,
-            matching: find.byType(ActionChip),
-          )
+          .descendant(of: mobileScrollFinder, matching: find.byType(ActionChip))
           .first;
       await tester.ensureVisible(relatedChip);
       await tester.pumpAndSettle();
@@ -1226,10 +1153,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(mobileScroll.controller!.offset, 0);
-      expect(
-        find.byKey(const Key('skillDetailV2BackButton')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('skillDetailV2BackButton')), findsOneWidget);
     },
   );
 
@@ -1316,15 +1240,10 @@ void main() {
         find.byKey(const Key('editResourceButton_res-other')),
         findsNothing,
       );
-      expect(
-        find.byKey(const Key('editResourceButton_res-own')),
-        findsNothing,
-      );
+      expect(find.byKey(const Key('editResourceButton_res-own')), findsNothing);
 
       // Unauthorized resource overflow menu hides Edit Resource & Manage Links.
-      final otherMenu = find.byKey(
-        const Key('resourceOverflowMenu_res-other'),
-      );
+      final otherMenu = find.byKey(const Key('resourceOverflowMenu_res-other'));
       await tester.ensureVisible(otherMenu);
       await tester.pumpAndSettle();
       await tester.tap(otherMenu);
@@ -1366,9 +1285,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Ordinary user cannot see admin curriculum edit controls in menu.
-      await tester.tap(
-        find.byKey(const Key('skillTreeV2AppBarOverflowMenu')),
-      );
+      await tester.tap(find.byKey(const Key('skillTreeV2AppBarOverflowMenu')));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('skillTreeV2MenuToggleAdminEdit')),
@@ -1378,9 +1295,8 @@ void main() {
   );
 
   testWidgets(
-    'SkillTreeView.openSkill routes Rider and Horse links (including legacy '
-    'IDs and level) into Skill Tree 2.0 at top of detail and preserves '
-    'rollback',
+    'SkillTreePage.openSkill routes Rider and Horse links (including legacy '
+    'IDs and level) into Skill Tree at top of detail and legacy URLs redirect',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -1397,9 +1313,8 @@ void main() {
       whenListen(mockAppCubit, controller.stream, initialState: currentState);
       when(() => mockAppCubit.state).thenAnswer((_) => currentState);
       when(
-        () => mockAppCubit.setSkillSubject(
-          isForRider: any(named: 'isForRider'),
-        ),
+        () =>
+            mockAppCubit.setSkillSubject(isForRider: any(named: 'isForRider')),
       ).thenAnswer((invocation) {
         final isForRider = invocation.namedArguments[#isForRider] as bool;
         currentState = currentState.copyWith(isForRider: isForRider);
@@ -1416,7 +1331,7 @@ void main() {
             name: SkillTreePage.name,
             builder: (context, state) {
               final skillId =
-                  state.uri.queryParameters[SkillTreeView.skillPathParam];
+                  state.uri.queryParameters[SkillTreePage.skillPathParam];
               final levelParam = state.uri.queryParameters['level'];
               final level = levelParam == null
                   ? null
@@ -1430,17 +1345,27 @@ void main() {
             },
             routes: [
               GoRoute(
-                path: SkillTreeView.skillsListPath,
-                name: SkillTreeView.skillsListName,
-                builder: (_, __) => const SizedBox(),
+                path: SkillTreePage.legacySkillsListPath,
+                redirect: (_, state) {
+                  if (state.uri.path.contains(
+                    '/${SkillTreePage.legacySkillsListPath}/Skill:',
+                  )) {
+                    return null;
+                  }
+                  return SkillTreePage.path;
+                },
                 routes: [
                   GoRoute(
-                    path: SkillTreeView.skillLevelPath,
-                    name: SkillTreeView.skillLevelName,
-                    builder: (_, state) => Text(
-                      'LEGACY:'
-                      '${state.pathParameters[SkillTreeView.skillPathParam]}',
-                    ),
+                    path: SkillTreePage.legacySkillLevelPath,
+                    redirect: (_, state) => Uri(
+                      path: SkillTreePage.path,
+                      queryParameters: {
+                        SkillTreePage.skillPathParam:
+                            state.pathParameters[SkillTreePage
+                                .skillPathParam] ??
+                            '',
+                      },
+                    ).toString(),
                   ),
                 ],
               ),
@@ -1478,18 +1403,15 @@ void main() {
             () => Future<void>.delayed(const Duration(milliseconds: 25)),
           );
           await tester.pump();
-          if (find
-              .byKey(const Key('skillTreeV2View'))
-              .evaluate()
-              .isNotEmpty) {
+          if (find.byKey(const Key('skillTreeV2View')).evaluate().isNotEmpty) {
             break;
           }
         }
         await tester.pumpAndSettle();
       }
 
-      // 1. Rider legacy skill ID + Intermediate level -> opens V2 skill at top.
-      SkillTreeView.openSkill(
+      // 1. Rider legacy skill ID + Intermediate level -> opens at top.
+      SkillTreePage.openSkill(
         router,
         'rider.husbandry.pick_hooves',
         level: DifficultyState.Intermediate,
@@ -1513,7 +1435,7 @@ void main() {
 
       // 2. Horse legacy skill ID -> switches to Horse context, opens Sidepass,
       //    and resets detail scroll to 0.
-      SkillTreeView.openSkill(router, 'horse.mounted.sidepass_horse');
+      SkillTreePage.openSkill(router, 'horse.mounted.sidepass_horse');
       await tester.pumpAndSettle();
 
       expect(
@@ -1523,15 +1445,11 @@ void main() {
       expect(find.text('Horse Skills · Comet'), findsOneWidget);
       expect(detailScroll.controller!.offset, 0);
 
-      // 3. Emergency rollback (useV2: false) uses legacy SkillLevel route.
-      SkillTreeView.openSkill(
-        router,
-        'rider.husbandry.pick_hooves',
-        useV2: false,
-      );
+      // 3. Legacy /SkillTree/Skills/Skill:<id> deep link redirects cleanly.
+      router.go('/SkillTree/Skills/Skill:rider.husbandry.pick_hooves');
       await tester.pumpAndSettle();
       expect(
-        find.text('LEGACY:rider.husbandry.pick_hooves'),
+        find.byKey(const Key('skillDetailV2_rider.husbandry.grooming')),
         findsOneWidget,
       );
     },

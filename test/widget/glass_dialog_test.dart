@@ -8,8 +8,6 @@ import 'package:horseandriderscompanion/MainPages/About/about_page.dart';
 import 'package:horseandriderscompanion/MainPages/Auth/Widgets/email_verification_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddLogEntryDialog/add_log_entry_dialog_view.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_level_select_confirmation_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Dialogs/skill_sort_dialog.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:mocktail/mocktail.dart';
@@ -367,89 +365,6 @@ void main() {
       }
       debugPrint('Backdrop pixel luminance range: min=$minLum, max=$maxLum');
       expect(maxLum - minLum, lessThan(40));
-    },
-  );
-
-  testWidgets(
-    'SkillSortDialog and SkillLevelSelectedConfimationDialog use glass dialog',
-    (tester) async {
-      final harness = await AppTestHarness.create();
-      addTearDown(harness.close);
-      final skill = Skill(
-        id: 'skill-1',
-        skillName: 'Shoulder-in',
-        difficulty: DifficultyState.Intermediate,
-        rider: true,
-        position: 0,
-        description: 'Lateral movement',
-        learningDescription: 'Learning shoulder-in',
-        proficientDescription: 'Proficient shoulder-in',
-        lastEditBy: 'matt@example.com',
-        lastEditDate: DateTime(2026),
-      );
-      harness.cubit.emit(
-        harness.cubit.state.copyWith(
-          isGuest: false,
-          isForRider: true,
-          skill: skill,
-          usersProfile: RiderProfile(
-            id: 'rider-1',
-            email: 'matt@example.com',
-            name: 'Matt French',
-          ),
-        ),
-      );
-
-      await tester.pumpWidget(
-        BlocProvider.value(
-          value: harness.cubit,
-          child: MaterialApp(
-            theme: HorseAndRidersTheme().getDarkTheme(),
-            home: Builder(
-              builder: (context) => Scaffold(
-                body: Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => showAppGlassDialog<void>(
-                        context: context,
-                        builder: (_) => const SkillSortDialog(),
-                      ),
-                      child: const Text('Sort'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => showAppGlassDialog<void>(
-                        context: context,
-                        builder: (_) =>
-                            const SkillLevelSelectedConfimationDialog(
-                              levelState: LevelState.PROFICIENT,
-                            ),
-                      ),
-                      child: const Text('Confirm'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Sort'));
-      await tester.pumpAndSettle();
-      expect(find.byType(AppGlassDialog), findsOneWidget);
-      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
-      expect(find.text('Sort Skills'), findsOneWidget);
-      await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Confirm'));
-      await tester.pumpAndSettle();
-      expect(find.byType(AppGlassDialog), findsOneWidget);
-      expect(find.byType(BackdropFilter), findsAtLeastNWidgets(1));
-      expect(find.text('Confirm Skill Level'), findsOneWidget);
-      await tester.tap(find.text('No'));
-      await tester.pumpAndSettle();
-      expect(find.byType(AppGlassDialog), findsNothing);
     },
   );
 

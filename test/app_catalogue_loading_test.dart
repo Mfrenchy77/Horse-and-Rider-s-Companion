@@ -7,7 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_resources_list.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -171,29 +172,73 @@ void main() {
     );
     addTearDown(cubit.close);
 
-    Future<void> showSkill(String id) => tester.pumpWidget(
-      RepositoryProvider<ResourcesRepository>.value(
-        value: resources,
-        child: BlocProvider.value(
-          value: cubit,
-          child: MaterialApp(
-            home: Scaffold(
-              body: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [SkillResouresList(skillId: id)],
+    Future<void> showSkill(String id) async {
+      final skill = CurriculumSkill(
+        id: id,
+        subject: SkillSubject.rider,
+        realm: SkillCategory.In_Hand,
+        familyId: 'rider.in_hand.haltering_leading',
+        name: 'Skill $id',
+        summary: 'Summary',
+        purpose: 'Purpose',
+        availableLevels: const [DifficultyState.Introductory],
+        levels: const {
+          DifficultyState.Introductory: SkillLevelDefinition(
+            overview: 'Overview',
+            learning: 'Learning',
+            proficient: 'Proficient',
+          ),
+        },
+      );
+      await tester.pumpWidget(
+        RepositoryProvider<ResourcesStore?>.value(
+          value: null,
+          child: RepositoryProvider<ResourcesRepository>.value(
+            value: resources,
+            child: BlocProvider.value(
+              value: cubit,
+              child: MaterialApp(
+                home: Scaffold(
+                  body: SingleChildScrollView(
+                    child: SkillDetailV2Panel(
+                      state: SkillTreeV2State(
+                        families: const [
+                          SkillFamily(
+                            id: 'rider.in_hand.haltering_leading',
+                            subject: SkillSubject.rider,
+                            realm: SkillCategory.In_Hand,
+                            name: 'Haltering & Leading',
+                            description: 'Safe haltering and leading.',
+                          ),
+                        ],
+                        skills: [skill],
+                        selectedSkillId: skill.id,
+                        selectedLevel: DifficultyState.Introductory,
+                      ),
+                      skill: skill,
+                      allResources: const [],
+                      canSelfAssess: false,
+                      selfAssessDisabledReason: null,
+                      canVerify: false,
+                      onSelectLevel: (_) {},
+                      onSelfAssess: (_, __) {},
+                      onVerifyLevel: (_, {required bool verified}) {},
+                      onSelectRelatedSkill: (_) {},
+                      onChangeResourceSort: (_) {},
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
 
     await showSkill('first');
-    final indicator = find.byType(CircularProgressIndicator);
-    expect(tester.getSize(indicator), const Size.square(24));
-    linkedResources.add([linked]);
     await tester.pump();
-    expect(indicator, findsNothing);
+    linkedResources.add([linked]);
+    await tester.pumpAndSettle();
     verify(() => resources.getResourcesForSkill(skillId: 'first')).called(1);
     verifyNever(resources.getResources);
     expect(
@@ -204,6 +249,7 @@ void main() {
     cubit.loadResourcesIfNeeded();
     await tester.pump();
     await showSkill('second');
+    await tester.pumpAndSettle();
     expect(
       tester.widget<ResourcesItem>(find.byType(ResourcesItem)).resource.id,
       'linked',

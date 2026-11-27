@@ -35,13 +35,6 @@ class SharedPrefs {
   Future<bool> setSkillTreeLayout(String layout) =>
       _sharedPrefs.setString(_skillTreeLayoutKey, layout);
 
-  static const String _skillTreeV2Key = 'SkillTreeV2Preview';
-
-  bool? get skillTreeV2Enabled => _sharedPrefs.getBool(_skillTreeV2Key);
-
-  Future<bool> setSkillTreeV2Enabled({required bool enabled}) =>
-      _sharedPrefs.setBool(_skillTreeV2Key, enabled);
-
   /// The instance of [SharedPreferences] used for
   ///  storing and retrieving preferences.
   static late SharedPreferences _sharedPrefs;

@@ -10,12 +10,9 @@ import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/skill_progress_badge.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/profile_spotlight_tour.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_sync.dart';
-import 'package:horseandriderscompanion/Settings/feature_flags.dart';
-import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/skill_level_audit.dart';
 import 'package:horseandriderscompanion/horse_and_rider_icons.dart';
@@ -218,12 +215,9 @@ class _ProfileSkillsState extends State<ProfileSkills> {
     context.read<AppCubit>()
       ..setSkillSubject(isForRider: skill.subject == SkillSubject.rider)
       ..setSkillTree();
-    SkillTreeView.openSkill(
+    SkillTreePage.openSkill(
       GoRouter.of(context),
       skill.id,
-      useV2:
-          SettingsControllerScope.maybeOf(context)?.skillTreeV2Enabled ??
-          FeatureFlags.kSkillTreeV2Default,
       level: level,
     );
   }
@@ -1294,14 +1288,9 @@ class _LegacyProfileSkillsFallback extends StatelessWidget {
                     : () {
                         context.read<AppCubit>().setSkillTree();
                         final skill = skills[level.skillId];
-                        SkillTreeView.openSkill(
+                        SkillTreePage.openSkill(
                           GoRouter.of(context),
                           level.skillId,
-                          useV2:
-                              SettingsControllerScope.maybeOf(
-                                context,
-                              )?.skillTreeV2Enabled ??
-                              FeatureFlags.kSkillTreeV2Default,
                           level:
                               skill == null ||
                                   skill.difficulty == DifficultyState.All

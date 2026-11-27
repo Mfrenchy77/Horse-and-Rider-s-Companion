@@ -14,10 +14,8 @@ import 'package:horseandriderscompanion/MainPages/Resources/Dialogs/CreateResour
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_image.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_comment_page.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resource_web_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
-import 'package:horseandriderscompanion/Settings/feature_flags.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Settings/resource_layout.dart';
-import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/resource_urls.dart';
 
@@ -387,14 +385,9 @@ class ResourceInfoBar extends StatelessWidget {
                                         color: AppTokens.midnightButtonBorder,
                                       )
                                     : null,
-                                onPressed: () => SkillTreeView.openSkill(
+                                onPressed: () => SkillTreePage.openSkill(
                                   GoRouter.of(context),
                                   skill.id,
-                                  useV2:
-                                      SettingsControllerScope.maybeOf(
-                                        context,
-                                      )?.skillTreeV2Enabled ??
-                                      FeatureFlags.kSkillTreeV2Default,
                                   level: skill.difficulty == DifficultyState.All
                                       ? null
                                       : skill.difficulty,

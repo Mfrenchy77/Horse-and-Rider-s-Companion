@@ -7,7 +7,7 @@ const {resolvePublicInvitationPreview} = require('./invitations');
 
 const DEFAULT_TITLE = 'Horse & Rider\'s Companion';
 const DEFAULT_DESCRIPTION =
-  'Track Rider and Horse horsemanship skills, explore Skill Tree 2.0, and share educational resources.';
+  'Track Rider and Horse horsemanship skills, explore the Skill Tree, and share educational resources.';
 const DEFAULT_IMAGE_PATH = '/icons/Icon-512.png';
 const DICTIONARY_IMAGE_PATH = '/images/dictionary-share-default.png';
 const PROD_ORIGIN = 'https://horse-and-riders-compani-d2bd4.web.app';
@@ -319,7 +319,7 @@ function sharePreviewHandler(db, {
             url: `${origin}${canonicalPath}`,
           } :
           {
-            title: `Skill Tree 2.0 — ${DEFAULT_TITLE}`,
+            title: `Skill Tree — ${DEFAULT_TITLE}`,
             description: DEFAULT_DESCRIPTION,
             image: `${origin}${DEFAULT_IMAGE_PATH}`,
             url: `${origin}${canonicalPath}`,

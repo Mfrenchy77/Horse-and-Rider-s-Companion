@@ -214,7 +214,7 @@ test('sharePreview resolves legacy skill ID to canonical og:url and hides draft 
   );
   assert.equal(resDraft.statusCode, 200);
   assert.doesNotMatch(resDraft.body, /Secret Draft/);
-  assert.match(resDraft.body, /Skill Tree 2\.0/);
+  assert.match(resDraft.body, /Skill Tree — Horse/);
 });
 
 test('sharePreview serves public active horse metadata without leaking private fields', async () => {

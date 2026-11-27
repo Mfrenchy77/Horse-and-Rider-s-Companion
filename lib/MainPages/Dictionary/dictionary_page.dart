@@ -16,7 +16,7 @@ import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_reposito
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_suggestion_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Utilities/share_helper.dart';
 
@@ -696,7 +696,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
                                     _skillLabels[id] ??
                                     'Explore related skill',
                               ),
-                              onPressed: () => SkillTreeView.openSkill(
+                              onPressed: () => SkillTreePage.openSkill(
                                 GoRouter.of(context),
                                 id,
                               ),

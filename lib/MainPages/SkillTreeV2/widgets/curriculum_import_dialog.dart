@@ -141,7 +141,7 @@ class _CurriculumImportDialogState extends State<CurriculumImportDialog> {
             spacing: AppTokens.spaceMd,
             children: [
               Text(
-                'Upload or paste canonical Skill Tree 2.0 JSON '
+                'Upload or paste canonical Skill Tree JSON '
                 '({"schemaVersion": 2, "families": [...], "skills": [...]}). '
                 'Validation and change preview run before modifying your draft.',
                 style: theme.textTheme.bodySmall?.copyWith(

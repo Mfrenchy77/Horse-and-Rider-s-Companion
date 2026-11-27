@@ -12,8 +12,6 @@ import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connectio
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/Cubit/add_horse_dialog_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Dialogs/AddHorseDialog/add_horse_dialog.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_item.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/Widgets/skill_level_view.dart';
 import 'package:horseandriderscompanion/Utilities/notifications/fcm_service.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -194,136 +192,6 @@ void main() {
     expect(find.text('Ownership transferred.'), findsOneWidget);
     expect(find.text('Add training record'), findsNothing);
   });
-  testWidgets(
-    'selected student skill verifies without opening the lesson editor',
-    (tester) async {
-      final harness = await AppTestHarness.create();
-      addTearDown(harness.close);
-      const coach = 'coach@example.com';
-      const learner = 'student@example.com';
-      final app = harness.cubit;
-      final skill = Skill(
-        id: 'leading',
-        rider: true,
-        position: 0,
-        skillName: 'Lead at the walk',
-        lastEditBy: null,
-        lastEditDate: null,
-        description: null,
-        learningDescription: null,
-        proficientDescription: null,
-      );
-      app.emit(
-        app.state.copyWith(
-          isGuest: false,
-          isViewing: true,
-          isForRider: true,
-          index: 1,
-          pageStatus: AppPageStatus.skillTree,
-          user: const User(id: 'coach', email: coach, name: 'Coach'),
-          usersProfile: RiderProfile(id: 'coach', email: coach, name: 'Coach'),
-          viewingProfile: RiderProfile(
-            id: 'student',
-            email: learner,
-            name: 'Testy',
-          ),
-          skill: skill,
-          allSkills: [skill],
-        ),
-      );
-      final updated = app.state.viewingProfile!.copyWith(
-        skillLevels: [
-          SkillLevel(
-            skillId: skill.id,
-            skillName: skill.skillName,
-            verified: true,
-            lastEditBy: coach,
-            lastEditDate: DateTime.utc(2026),
-            levelState: LevelState.PROFICIENT,
-          ),
-        ],
-      );
-      var persisted = app.state.viewingProfile!;
-      when(
-        () => harness.riders.getRiderProfileByEmail(
-          email: learner,
-          serverOnly: true,
-        ),
-      ).thenAnswer((_) async => persisted);
-      final repo = _Repository();
-      final links = StreamController<List<CoachingConnection>>();
-      when(() => repo.watch('coach')).thenAnswer((_) => links.stream);
-      when(() => repo.submit(any())).thenAnswer((_) async {
-        persisted = updated;
-        return {'verified': true};
-      });
-      when(
-        () => harness.resources.getResourcesForSkill(skillId: skill.id),
-      ).thenAnswer((_) => const Stream.empty());
-      final connections = ConnectionsCubit(repo, app);
-      addTearDown(() async {
-        await connections.close();
-        await links.close();
-      });
-      await tester.pumpWidget(
-        MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider<ConnectionRepository>.value(value: repo),
-            RepositoryProvider<RiderProfileRepository>.value(
-              value: harness.riders,
-            ),
-            RepositoryProvider<ResourcesRepository>.value(
-              value: harness.resources,
-            ),
-          ],
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider.value(value: app),
-              BlocProvider.value(value: connections),
-            ],
-            child: MaterialApp(
-              home: Scaffold(body: SkillLevelView(skillId: skill.id)),
-            ),
-          ),
-        ),
-      );
-      expect(find.text('Verify as proficient'), findsNothing);
-      links.add([
-        CoachingConnection('link', {
-          'kind': 'rider',
-          'status': 'accepted',
-          'version': 'v1',
-          'coach': coach,
-          'coachName': 'Coach',
-          'learner': learner,
-          'learnerName': 'Testy',
-          'sender': learner,
-          'recipient': coach,
-        }),
-      ]);
-      await tester.pumpAndSettle();
-      expect(find.text('Progress · Testy'), findsOneWidget);
-      await tester.tap(find.text('Verify as proficient'));
-      await tester.pumpAndSettle();
-      expect(find.text('Verify skill'), findsOneWidget);
-      expect(find.byType(TextFormField), findsNothing);
-      await tester.tap(find.text('Confirm verification'));
-      await tester.pumpAndSettle();
-      final payload =
-          verify(() => repo.submit(captureAny())).captured.single
-              as Map<String, Object?>;
-      expect(payload['action'], 'verifySkill');
-      expect(payload['skillId'], skill.id);
-      expect(payload['level'], 'PROFICIENT');
-      expect(payload.containsKey('notes'), isFalse);
-
-      expect(find.byType(SkillLevelView), findsOneWidget);
-      expect(find.text('Verified'), findsOneWidget);
-      expect(app.state.index, 1);
-      expect(app.state.pageStatus, AppPageStatus.skillTree);
-      expect(app.state.skill?.id, skill.id);
-    },
-  );
   testWidgets(
     'horse training record dialog stays open on failed save and closes '
     'on retry',
@@ -539,16 +407,6 @@ void main() {
             home: Scaffold(
               body: Column(
                 children: [
-                  SkillItem(
-                    name: skill.skillName,
-                    skill: skill,
-                    onTap: () {},
-                    onEdit: () {},
-                    isGuest: false,
-                    verified: false,
-                    levelState: LevelState.LEARNING,
-                    isEditState: false,
-                  ),
                   SkillLevelCard(
                     onTap: () {},
                     category: SkillCategory.Other,
@@ -568,7 +426,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(Placeholder), findsNothing);
-      expect(find.byIcon(Icons.school_outlined), findsNWidgets(3));
+      expect(find.byIcon(Icons.school_outlined), findsNWidgets(2));
     },
   );
   test('FcmService.platformName resolves platform strings without dart:io', () {

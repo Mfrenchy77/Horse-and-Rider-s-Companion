@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
-import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_view.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
@@ -24,7 +24,7 @@ DifficultyState? parsePracticedDifficultyLevel(String? raw) =>
       _ => null,
     };
 
-/// Opens a practiced Skill Tree 2.0 skill in [SkillTreeV2View] via [GoRouter]
+/// Opens a practiced Skill Tree skill via [GoRouter]
 /// when available, falling back to a direct route push in standalone contexts.
 void openPracticedSkillInTree(
   BuildContext context,
@@ -37,7 +37,7 @@ void openPracticedSkillInTree(
     Navigator.of(context).pop();
   }
   if (router != null) {
-    SkillTreeView.openSkill(router, tag.skillId, level: level);
+    SkillTreePage.openSkill(router, tag.skillId, level: level);
     return;
   }
   if (!context.mounted) return;
