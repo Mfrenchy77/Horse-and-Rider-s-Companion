@@ -10,6 +10,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:form_inputs/form_inputs.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Onboarding/onboarding_prefs.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/Connections/connection_failure.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/string_constants.dart';
@@ -33,6 +34,7 @@ class AppCubit extends Cubit<AppState> {
     required AuthGateway authenticationRepository,
     this._accountDeletionRepository,
     PushNotificationService? pushNotificationService,
+    KnownTermsRepository? knownTermsRepository,
     this._submitCoachingAction,
     this._fetchConnection,
   }) : _connectionRequestRepository =
@@ -44,11 +46,18 @@ class AppCubit extends Cubit<AppState> {
                : FirestoreConnectionRequestStore()),
        _authenticationRepository = authenticationRepository,
        _pushNotificationService = pushNotificationService ?? const FcmService(),
+       _knownTermsRepository =
+           knownTermsRepository ?? KnownTermsRepository.instance,
        super(
          authenticationRepository.currentUser.isNotEmpty
              ? AppState.authenticated(authenticationRepository.currentUser)
              : const AppState.unauthenticated(),
        ) {
+    unawaited(
+      _knownTermsRepository.setActiveUserId(
+        _knownTermsUidFor(authenticationRepository.currentUser),
+      ),
+    );
     _beginListeningForUserChanges();
   }
 
@@ -61,6 +70,7 @@ class AppCubit extends Cubit<AppState> {
   final AuthGateway _authenticationRepository;
   final AccountDeletionRepository? _accountDeletionRepository;
   final PushNotificationService _pushNotificationService;
+  final KnownTermsRepository _knownTermsRepository;
   final Future<Map<String, dynamic>> Function(Map<String, Object?>)?
   _submitCoachingAction;
   final Future<Map<String, dynamic>?> Function(String connectionId)?
@@ -80,6 +90,12 @@ class AppCubit extends Cubit<AppState> {
   User? _lastAuthUser;
   bool _verificationReloadInProgress = false;
 
+  static String? _knownTermsUidFor(User user) {
+    if (user.isEmpty || user.isGuest || !user.emailVerified) return null;
+    final uid = user.id.trim();
+    return uid.isEmpty ? null : uid;
+  }
+
   void _beginListeningForUserChanges() {
     _userSubscription = _authenticationRepository.user.listen(
       (user) => _handleAuthUser(user ?? User.empty),
@@ -90,6 +106,7 @@ class AppCubit extends Cubit<AppState> {
     final previous = _lastAuthUser;
     if (user == previous) return;
     _lastAuthUser = user;
+    unawaited(_knownTermsRepository.setActiveUserId(_knownTermsUidFor(user)));
     if (previous != null &&
         previous.id == user.id &&
         previous.email == user.email &&
@@ -1107,6 +1124,7 @@ class AppCubit extends Cubit<AppState> {
       final uiStatus = result.status == AccountDeletionStatus.scheduled
           ? AccountDeletionUiStatus.scheduled
           : AccountDeletionUiStatus.completed;
+      unawaited(_knownTermsRepository.setActiveUserId(null));
       emit(
         state.copyWith(
           status: AppStatus.unauthenticated,

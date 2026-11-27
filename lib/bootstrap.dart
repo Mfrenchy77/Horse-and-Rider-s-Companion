@@ -13,7 +13,6 @@ import 'package:horseandriderscompanion/App/bloc_observer.dart';
 import 'package:horseandriderscompanion/Initialization/ads_initialization.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_emulators.dart';
 import 'package:horseandriderscompanion/Initialization/firebase_initialization.dart';
-import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
 import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs.dart';
 import 'package:horseandriderscompanion/Utilities/app_logger.dart';
 
@@ -63,7 +62,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   // App services
   await SharedPrefs().init();
-  await KnownTermsRepository.instance.load();
 
   // Remove splash once ready
   FlutterNativeSplash.remove();

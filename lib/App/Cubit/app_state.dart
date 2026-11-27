@@ -151,6 +151,14 @@ class AppState extends Equatable {
   /// Whether the user is a guest or not.
   final bool isGuest;
 
+  /// Whether the current session belongs to a signed-in, verified,
+  /// non-guest user with a non-empty UID.
+  bool get isSignedInUser =>
+      !isGuest &&
+      !user.isGuest &&
+      user.emailVerified &&
+      user.id.trim().isNotEmpty;
+
   /// Whether the authenticated, verified user has the `admin: true` claim.
   bool get isAdmin =>
       !isGuest && !user.isGuest && user.emailVerified && user.isAdmin;

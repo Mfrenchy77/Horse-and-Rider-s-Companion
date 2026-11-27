@@ -15,6 +15,7 @@ import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_my_contr
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_suggestion_dialog.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/profile_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
@@ -26,11 +27,13 @@ class DictionaryPage extends StatefulWidget {
     this.slug,
     this.initialQuery = '',
     this.repository,
+    this.knownTermsRepository,
   });
   static const path = '/Dictionary';
   final String? slug;
   final String initialQuery;
   final DictionaryRepository? repository;
+  final KnownTermsRepository? knownTermsRepository;
 
   @override
   State<DictionaryPage> createState() => _DictionaryPageState();
@@ -621,6 +624,16 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       'Also called',
                       Text(entry.strings('synonyms').join(' · ')),
                     ),
+                  KeyedSubtree(
+                    key: const Key('dictionaryPageKnownTermSection'),
+                    child: DictionaryKnownTermToggle(
+                      entryId: entry.id,
+                      repository: widget.knownTermsRepository,
+                      topSpacing: 12,
+                      showTopDivider: true,
+                      showBottomDivider: true,
+                    ),
+                  ),
                   if (entry.explanation.isNotEmpty)
                     _section(
                       'In context',
@@ -628,6 +641,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
                         text: entry.explanation,
                         entries: entries,
                         excludeEntryId: entry.id,
+                        knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
                   if (entry.text('usage').isNotEmpty)
@@ -637,6 +651,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
                         text: entry.text('usage'),
                         entries: entries,
                         excludeEntryId: entry.id,
+                        knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
                   if (entry.text('regionalUsage').isNotEmpty)
@@ -646,6 +661,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
                         text: entry.text('regionalUsage'),
                         entries: entries,
                         excludeEntryId: entry.id,
+                        knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
                   if (entry.strings('examples').isNotEmpty)
@@ -655,6 +671,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
                         text: entry.strings('examples').join('\n\n'),
                         entries: entries,
                         excludeEntryId: entry.id,
+                        knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
                   if (entry.strings('relatedTerms').isNotEmpty)

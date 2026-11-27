@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_local_cache.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
@@ -157,14 +159,23 @@ class _KnownDictionaryTermsSectionState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final secondaryColor = AppTokens.secondaryTextColor(context);
+    AppCubit? cubit;
+    try {
+      cubit = context.read<AppCubit>();
+    } catch (_) {
+      cubit = null;
+    }
 
-    return AppSurfaceCard(
-      key: const Key('knownTermsSettingsCard'),
-      child: ListenableBuilder(
+    Widget buildCard(BuildContext context) {
+      final theme = Theme.of(context);
+      final secondaryColor = AppTokens.secondaryTextColor(context);
+
+      return ListenableBuilder(
         listenable: _repository,
         builder: (context, _) {
+          if (!_repository.isEnabled) {
+            return const SizedBox.shrink();
+          }
           final knownIds = _repository.getKnownTerms().toList();
           final resolved =
               [
@@ -192,137 +203,162 @@ class _KnownDictionaryTermsSectionState
           final count = resolved.length;
           final countLabel = '$count ${count == 1 ? 'term' : 'terms'}';
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Known Dictionary Terms',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+          return AppSurfaceCard(
+            key: const Key('knownTermsSettingsCard'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Known Dictionary Terms',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppTokens.spaceSm),
-                  AppStatusBadge(
-                    key: const Key('knownTermsCountBadge'),
-                    label: countLabel,
-                    tone: count > 0 ? AppStatusTone.coral : AppStatusTone.info,
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTokens.spaceXs),
-              Text(
-                "Terms you've marked as understood won't be automatically "
-                'highlighted while you read.',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Saved locally on this device/browser (not synced across '
-                'devices).',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: secondaryColor,
+                    const SizedBox(width: AppTokens.spaceSm),
+                    AppStatusBadge(
+                      key: const Key('knownTermsCountBadge'),
+                      label: countLabel,
+                      tone: count > 0
+                          ? AppStatusTone.coral
+                          : AppStatusTone.info,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: AppTokens.spaceMd),
-              if (count == 0)
-                Container(
-                  key: const Key('knownTermsEmptyState'),
-                  padding: const EdgeInsets.all(AppTokens.spaceMd),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.25 : 0.55,
-                    ),
-                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                const SizedBox(height: AppTokens.spaceXs),
+                Text(
+                  "Terms you've marked as understood won't be automatically "
+                  'highlighted while you read.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Saved locally for this account on this device/browser '
+                  '(not synced across devices).',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: secondaryColor,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.menu_book_outlined,
-                        size: 20,
-                        color: secondaryColor,
-                      ),
-                      const SizedBox(width: AppTokens.spaceSm),
-                      Expanded(
-                        child: Text(
-                          'No terms marked as known yet. Tap any highlighted '
-                          'term while reading and check "I know this term" to '
-                          'keep your reading view uncluttered.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: secondaryColor,
+                ),
+                const SizedBox(height: AppTokens.spaceMd),
+                if (count == 0)
+                  Container(
+                    key: const Key('knownTermsEmptyState'),
+                    padding: const EdgeInsets.all(AppTokens.spaceMd),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(
+                            alpha: theme.brightness == Brightness.dark
+                                ? 0.25
+                                : 0.55,
+                          ),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.menu_book_outlined,
+                          size: 20,
+                          color: secondaryColor,
+                        ),
+                        const SizedBox(width: AppTokens.spaceSm),
+                        Expanded(
+                          child: Text(
+                            'No terms marked as known yet. Tap any '
+                            'highlighted term while reading and check '
+                            '"I know this term" to keep your reading view '
+                            'uncluttered.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: secondaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  if (count > 4) ...[
+                    TextField(
+                      key: const Key('knownTermsSearchField'),
+                      controller: _searchController,
+                      onChanged: (value) => setState(() => _query = value),
+                      decoration: InputDecoration(
+                        hintText: 'Filter known terms...',
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'Clear filter',
+                                icon: const Icon(Icons.close, size: 18),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _query = '');
+                                },
+                              ),
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTokens.radiusSm,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                )
-              else ...[
-                if (count > 4) ...[
-                  TextField(
-                    key: const Key('knownTermsSearchField'),
-                    controller: _searchController,
-                    onChanged: (value) => setState(() => _query = value),
-                    decoration: InputDecoration(
-                      hintText: 'Filter known terms...',
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      suffixIcon: _query.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: 'Clear filter',
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _query = '');
-                              },
-                            ),
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppTokens.spaceSm),
-                ],
-                if (filtered.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppTokens.spaceSm,
-                    ),
-                    child: Text(
-                      'No known terms match "${_query.trim()}".',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: secondaryColor,
-                      ),
-                    ),
-                  )
-                else
-                  for (var i = 0; i < filtered.length; i++) ...[
-                    if (i > 0) const Divider(height: 1),
-                    _KnownTermRow(
-                      item: filtered[i],
-                      onRemove: () =>
-                          unawaited(_repository.markUnknown(filtered[i].id)),
-                    ),
+                    const SizedBox(height: AppTokens.spaceSm),
                   ],
-                const SizedBox(height: AppTokens.spaceMd),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppOutlinedButton(
-                    key: const Key('clearAllKnownTermsButton'),
-                    icon: Icons.visibility_outlined,
-                    label: 'Highlight all terms again',
-                    onPressed: () => _confirmClearAll(context, count),
+                  if (filtered.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppTokens.spaceSm,
+                      ),
+                      child: Text(
+                        'No known terms match "${_query.trim()}".',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: secondaryColor,
+                        ),
+                      ),
+                    )
+                  else
+                    for (var i = 0; i < filtered.length; i++) ...[
+                      if (i > 0) const Divider(height: 1),
+                      _KnownTermRow(
+                        item: filtered[i],
+                        onRemove: () =>
+                            unawaited(_repository.markUnknown(filtered[i].id)),
+                      ),
+                    ],
+                  const SizedBox(height: AppTokens.spaceMd),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: AppOutlinedButton(
+                      key: const Key('clearAllKnownTermsButton'),
+                      icon: Icons.visibility_outlined,
+                      label: 'Highlight all terms again',
+                      onPressed: () => _confirmClearAll(context, count),
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           );
         },
-      ),
+      );
+    }
+
+    if (cubit == null) {
+      return buildCard(context);
+    }
+    return BlocSelector<AppCubit, AppState, bool>(
+      bloc: cubit,
+      selector: (state) => state.isSignedInUser,
+      builder: (context, isSignedIn) {
+        if (!isSignedIn) {
+          return const SizedBox.shrink();
+        }
+        return buildCard(context);
+      },
     );
   }
 }

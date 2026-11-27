@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/Animations/app_dialog.dart';
+import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/CommonWidgets/profile_photo.dart';
 import 'package:horseandriderscompanion/CommonWidgets/smart_image.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_matcher.dart';
@@ -108,6 +110,14 @@ Rect? _convertGlobalRectToOverlay(Rect globalRect, NavigatorState navigator) {
   return overlayRect.overlaps(rect) ? rect : null;
 }
 
+AppCubit? _maybeReadAppCubit(BuildContext context) {
+  try {
+    return context.read<AppCubit?>();
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Opens a compact glass dialog showing a published Dictionary [entry] without
 /// navigating away from the current screen.
 Future<void> showDictionaryDefinitionDialog(
@@ -121,6 +131,7 @@ Future<void> showDictionaryDefinitionDialog(
   final categories = entry.strings('categories');
   final heroMedia = firstPublishedDictionaryImage(entry);
   final navigator = Navigator.of(context, rootNavigator: true);
+  final appCubit = _maybeReadAppCubit(context);
   final knownRepo = knownTermsRepository ?? KnownTermsRepository.instance;
   unawaited(knownRepo.ensureLoaded());
   final localOriginRect = originRect == null
@@ -256,8 +267,12 @@ Future<void> showDictionaryDefinitionDialog(
                   color: AppTokens.secondaryTextColor(dialogContext),
                 ),
               ),
-            const Divider(height: 8),
-            _KnownTermCheckbox(entryId: entry.id, repository: knownRepo),
+            DictionaryKnownTermToggle(
+              entryId: entry.id,
+              repository: knownRepo,
+              appCubit: appCubit,
+              showTopDivider: true,
+            ),
           ],
         ),
         actions: [
@@ -418,85 +433,135 @@ Future<void> showSelectedTermDefinition(
   );
 }
 
-class _KnownTermCheckbox extends StatelessWidget {
-  const _KnownTermCheckbox({required this.entryId, required this.repository});
+/// Auth-gated compact toggle allowing signed-in users to mark a Dictionary
+/// term as already understood ("I know this term") so it is no longer
+/// automatically highlighted while reading.
+///
+/// Renders nothing (`SizedBox.shrink()`) for guests / signed-out visitors.
+class DictionaryKnownTermToggle extends StatelessWidget {
+  const DictionaryKnownTermToggle({
+    super.key,
+    required this.entryId,
+    this.repository,
+    this.appCubit,
+    this.showTopDivider = false,
+    this.showBottomDivider = false,
+    this.topSpacing = 0,
+  });
 
   final String entryId;
-  final KnownTermsRepository repository;
+  final KnownTermsRepository? repository;
+  final AppCubit? appCubit;
+  final bool showTopDivider;
+  final bool showBottomDivider;
+  final double topSpacing;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = AppTokens.accentColor(context);
+    final effectiveRepo = repository ?? KnownTermsRepository.instance;
+    final effectiveCubit = appCubit ?? _maybeReadAppCubit(context);
 
-    return ListenableBuilder(
-      listenable: repository,
-      builder: (context, _) {
-        final isKnown = repository.isKnown(entryId);
-        return Semantics(
-          container: true,
-          checked: isKnown,
-          label: 'I know this term — stop highlighting it',
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              key: const Key('dictionaryKnownTermTapTarget'),
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              onTap: () => unawaited(repository.toggleKnown(entryId)),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 2,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: Checkbox(
-                          key: const Key('dictionaryKnownTermCheckbox'),
-                          value: isKnown,
-                          activeColor: accent,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          onChanged: (_) =>
-                              unawaited(repository.toggleKnown(entryId)),
+    Widget buildToggle() {
+      return ListenableBuilder(
+        listenable: effectiveRepo,
+        builder: (context, _) {
+          if (!effectiveRepo.isEnabled) {
+            return const SizedBox.shrink();
+          }
+          final theme = Theme.of(context);
+          final accent = AppTokens.accentColor(context);
+          final isKnown = effectiveRepo.isKnown(entryId);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (topSpacing > 0) SizedBox(height: topSpacing),
+              if (showTopDivider) const Divider(height: 12),
+              Semantics(
+                container: true,
+                checked: isKnown,
+                label: 'I know this term — stop highlighting it',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    key: const Key('dictionaryKnownTermTapTarget'),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    onTap: () => unawaited(effectiveRepo.toggleKnown(entryId)),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 2,
+                          vertical: 4,
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'I know this term — stop highlighting it',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                key: const Key('dictionaryKnownTermCheckbox'),
+                                value: isKnown,
+                                activeColor: accent,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                onChanged: (_) => unawaited(
+                                  effectiveRepo.toggleKnown(entryId),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Known terms appear as ordinary text. You can '
-                              'change this anytime.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppTokens.secondaryTextColor(context),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'I know this term — stop highlighting it',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Known terms appear as ordinary text. You '
+                                    'can change this anytime.',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppTokens.secondaryTextColor(
+                                        context,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-        );
+              if (showBottomDivider) const Divider(height: 12),
+            ],
+          );
+        },
+      );
+    }
+
+    if (effectiveCubit == null) {
+      return buildToggle();
+    }
+    return BlocSelector<AppCubit, AppState, bool>(
+      bloc: effectiveCubit,
+      selector: (state) => state.isSignedInUser,
+      builder: (context, isSignedIn) {
+        if (!isSignedIn) {
+          return const SizedBox.shrink();
+        }
+        return buildToggle();
       },
     );
   }

@@ -128,9 +128,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.byType(AppScaffoldBackdrop), findsOneWidget);
-      expect(find.byType(AppSurfaceCard), findsNWidgets(3));
+      expect(find.byType(AppSurfaceCard), findsNWidgets(2));
       expect(find.byKey(const Key('skillTreeLayoutSetting')), findsOneWidget);
-      expect(find.byKey(const Key('knownTermsSettingsCard')), findsOneWidget);
+      expect(find.byKey(const Key('knownTermsSettingsCard')), findsNothing);
       expect(tester.takeException(), isNull);
 
       await _captureScreenshot(tester, entry.key);

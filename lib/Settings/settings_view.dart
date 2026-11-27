@@ -187,10 +187,7 @@ class SettingsView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: AppTokens.spaceLg),
-                      const AppSectionHeader(title: 'Dictionary'),
-                      const SizedBox(height: AppTokens.spaceSm),
-                      const KnownDictionaryTermsSection(),
+                      const _SettingsDictionarySection(),
                       const _SettingsAccountSection(),
                     ],
                   ),
@@ -200,6 +197,38 @@ class SettingsView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SettingsDictionarySection extends StatelessWidget {
+  const _SettingsDictionarySection();
+
+  @override
+  Widget build(BuildContext context) {
+    AppCubit? cubit;
+    try {
+      cubit = context.read<AppCubit>();
+    } catch (_) {
+      cubit = null;
+    }
+    if (cubit == null) return const SizedBox.shrink();
+
+    return BlocSelector<AppCubit, AppState, bool>(
+      bloc: cubit,
+      selector: (state) => state.isSignedInUser,
+      builder: (context, isSignedIn) {
+        if (!isSignedIn) return const SizedBox.shrink();
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(height: AppTokens.spaceLg),
+            AppSectionHeader(title: 'Dictionary'),
+            SizedBox(height: AppTokens.spaceSm),
+            KnownDictionaryTermsSection(),
+          ],
+        );
+      },
     );
   }
 }
