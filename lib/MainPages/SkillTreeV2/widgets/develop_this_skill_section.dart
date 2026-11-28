@@ -122,8 +122,11 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
         ? orderedExercises.sublist(1)
         : const <SkillPracticeExercise>[];
     final relatedSkills = _resolveRelatedSkills(guide);
-    final isNarrow = MediaQuery.sizeOf(context).width < 420;
-    final outerPadding = isNarrow ? 14.0 : 18.0;
+    final isNarrow = MediaQuery.sizeOf(context).width < 440;
+    final outerPadding = isNarrow ? 12.0 : 18.0;
+    final gapAfterHeader = isNarrow ? 11.0 : 14.0;
+    final gapBetweenDisclosures = isNarrow ? 8.0 : 10.0;
+    final gapBeforePrinciples = isNarrow ? 10.0 : 12.0;
 
     return Container(
       key: const Key('developThisSkillSection'),
@@ -142,25 +145,27 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
             palette: palette,
           ),
           if (featuredExercise != null) ...[
-            const SizedBox(height: 14),
+            SizedBox(height: gapAfterHeader),
             _ExerciseCard(
               key: const Key('developSkillFeaturedExerciseCard'),
               exercise: featuredExercise,
               entriesOverride: widget.dictionaryEntriesOverride,
               palette: palette,
+              isCompact: isNarrow,
             ),
           ],
           if (secondaryExercises.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: gapBetweenDisclosures),
             _DisclosureCard(
               toggleKey: const Key('developSkillMoreExercisesToggle'),
               icon: Icons.add_circle_outline,
               title: secondaryExercises.length == 1
-                  ? 'Additional practice: ${secondaryExercises.first.title}'
+                  ? 'Additional practice'
                   : 'Additional practice (${secondaryExercises.length})',
               subtitle: secondaryExercises.length == 1
-                  ? _focusBadgeText(secondaryExercises.first) ??
-                        'Optional progression'
+                  ? '${secondaryExercises.first.title} · '
+                        '${_focusBadgeText(secondaryExercises.first) ??
+                            'Optional progression'}'
                   : 'Optional ways to vary and progress',
               expanded: _showMoreExercises,
               onToggle: () =>
@@ -176,13 +181,14 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
                       exercise: secondaryExercises[i],
                       entriesOverride: widget.dictionaryEntriesOverride,
                       palette: palette,
+                      isCompact: isNarrow,
                     ),
                 ],
               ),
             ),
           ],
           if (guide.hasCommonDifficulties) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: gapBetweenDisclosures),
             _DisclosureCard(
               toggleKey: const Key('developSkillCommonDifficultiesToggle'),
               icon: Icons.help_outline_rounded,
@@ -204,15 +210,16 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
             ),
           ],
           if (guide.hasTrainerInsight || guide.hasWelfareNote) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: gapBeforePrinciples),
             _InsightAndWelfareRow(
               trainerInsight: guide.trainerInsight,
               welfareNote: guide.welfareNote,
               entriesOverride: widget.dictionaryEntriesOverride,
               palette: palette,
+              isCompact: isNarrow,
             ),
           ],
-          const SizedBox(height: 14),
+          SizedBox(height: gapAfterHeader),
           if (widget.dictionaryEntriesOverride case final overrideEntries?)
             _FooterRow(
               dictionaryEntries: _resolveDictionaryEntries(
@@ -312,11 +319,13 @@ class _ExerciseCard extends StatelessWidget {
     required this.exercise,
     required this.entriesOverride,
     required this.palette,
+    this.isCompact = false,
   });
 
   final SkillPracticeExercise exercise;
   final List<DictionaryEntry>? entriesOverride;
   final _DevelopSkillPalette palette;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +346,7 @@ class _ExerciseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         border: Border.all(color: palette.innerBorder),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isCompact ? 13 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -357,12 +366,12 @@ class _ExerciseCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: isCompact ? 8 : 10),
           Text(
             exercise.title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 17,
+              fontSize: isCompact ? 16 : 17,
               height: 1.25,
               color: palette.primaryText,
             ),
@@ -378,7 +387,7 @@ class _ExerciseCard extends StatelessWidget {
           ),
           if (notice != null && notice.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: isCompact ? 10 : 14),
               child: Divider(
                 height: 1,
                 thickness: 1,
@@ -582,12 +591,14 @@ class _InsightAndWelfareRow extends StatelessWidget {
     required this.welfareNote,
     required this.entriesOverride,
     required this.palette,
+    this.isCompact = false,
   });
 
   final String? trainerInsight;
   final String? welfareNote;
   final List<DictionaryEntry>? entriesOverride;
   final _DevelopSkillPalette palette;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -603,6 +614,7 @@ class _InsightAndWelfareRow extends StatelessWidget {
             body: trainerInsight!.trim(),
             entriesOverride: entriesOverride,
             palette: palette,
+            isCompact: isCompact,
           )
         : null;
 
@@ -614,6 +626,7 @@ class _InsightAndWelfareRow extends StatelessWidget {
             body: welfareNote!.trim(),
             entriesOverride: entriesOverride,
             palette: palette,
+            isCompact: isCompact,
           )
         : null;
 
@@ -653,6 +666,7 @@ class _PrincipleCard extends StatelessWidget {
     required this.body,
     required this.entriesOverride,
     required this.palette,
+    this.isCompact = false,
   });
 
   final IconData icon;
@@ -660,6 +674,7 @@ class _PrincipleCard extends StatelessWidget {
   final String body;
   final List<DictionaryEntry>? entriesOverride;
   final _DevelopSkillPalette palette;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -670,7 +685,7 @@ class _PrincipleCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         border: Border.all(color: palette.innerBorder),
       ),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(isCompact ? 12 : 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -946,15 +961,11 @@ class _DevelopSkillPalette {
         outerGradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0C2227), Color(0xFF08191D)],
+          colors: [AppTokens.midnightBase, AppTokens.midnightDeep],
         ),
         outerBorder: Color(0x475E8288),
-        innerGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF153137), Color(0xFF112A30)],
-        ),
-        innerBorder: Color(0x3D628388),
+        innerGradient: AppTokens.cardSurfaceGradient,
+        innerBorder: AppTokens.cardBorderDark,
         badgeBackground: Color(0xFF214046),
         badgeText: Color(0xFFD5E4E7),
         primaryText: AppTokens.primaryTextDark,
@@ -969,23 +980,23 @@ class _DevelopSkillPalette {
       outerGradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFF3F8F9), Color(0xFFE9F3F5)],
+        colors: [Color(0xFFF2F7F8), Color(0xFFE7F1F4)],
       ),
-      outerBorder: theme.colorScheme.outlineVariant.withValues(alpha: 0.75),
+      outerBorder: theme.colorScheme.outlineVariant.withValues(alpha: 0.8),
       innerGradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFFFFFFF), Color(0xFFF7FAFB)],
+        colors: [Color(0xFFFFFFFF), Color(0xFFF6FAFB)],
       ),
-      innerBorder: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-      badgeBackground: const Color(0xFFE0ECEF),
-      badgeText: const Color(0xFF1A434B),
-      primaryText: theme.colorScheme.onSurface,
-      bodyText: theme.colorScheme.onSurface.withValues(alpha: 0.90),
-      secondaryText: theme.colorScheme.onSurfaceVariant,
-      linkText: const Color(0xFF124E59),
-      coral: const Color(0xFFC45B43),
-      dividerColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+      innerBorder: theme.colorScheme.outlineVariant.withValues(alpha: 0.65),
+      badgeBackground: const Color(0xFFDCECEF),
+      badgeText: const Color(0xFF153D45),
+      primaryText: const Color(0xFF132A2F),
+      bodyText: const Color(0xFF1E373D),
+      secondaryText: const Color(0xFF3E595F),
+      linkText: const Color(0xFF0E4A55),
+      coral: const Color(0xFFBA4E36),
+      dividerColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
     );
   }
 

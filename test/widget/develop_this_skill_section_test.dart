@@ -386,19 +386,19 @@ void main() {
       );
 
       // Expand progressive disclosure toggles
-      expect(find.text('Straight Back, Quiet Reset Forward'), findsNothing);
+      expect(find.text('Straight Line, Quiet Reset Forward'), findsNothing);
       await tester.tap(
         find.byKey(const Key('developSkillMoreExercisesToggle')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Straight Back, Quiet Reset Forward'), findsOneWidget);
+      expect(find.text('Straight Line, Quiet Reset Forward'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const Key('developSkillCommonDifficultiesToggle')),
       );
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('Maintaining rein pressure'),
+        find.textContaining('Maintaining rein tension'),
         findsOneWidget,
       );
 
@@ -426,7 +426,7 @@ void main() {
         theme: HorseAndRidersTheme().getDarkTheme(),
         selectedLevel: DifficultyState.Intermediate,
       );
-      expect(find.text('Straight Back, Quiet Reset Forward'), findsOneWidget);
+      expect(find.text('Straight Line, Quiet Reset Forward'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // Mobile Light: stacked 1-column cards without overflow
@@ -448,6 +448,42 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('renders all six refined Phase 1 learning guides cleanly', (
+    tester,
+  ) async {
+    final skills = await baseStore.fetchSkills();
+    const expectedIds = [
+      'rider.in_hand.leading',
+      'rider.mounted.seat_balance',
+      'rider.mounted.rein_back',
+      'horse.in_hand.leading',
+      'horse.in_hand.longeing',
+      'horse.mounted.rein_back',
+    ];
+    for (final id in expectedIds) {
+      final skill = skills.firstWhere((s) => s.id == id);
+      expect(skill.learningGuide?.hasContent, isTrue, reason: '$id guide');
+      await tester.pumpWidget(
+        wrapIsolated(
+          theme: HorseAndRidersTheme().getDarkTheme(),
+          child: DevelopThisSkillSection(
+            skill: skill,
+            selectedLevel: skill.availableLevels.first,
+            allSkills: skills,
+            dictionaryEntriesOverride: sampleEntries,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('developThisSkillSection')), findsOneWidget);
+      expect(
+        find.textContaining('Practical guidance for '),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    }
+  });
 
   testWidgets(
     'SkillTreeV2View keeps assessment & verification unchanged and incurs zero extra per-card backend reads',
