@@ -100,6 +100,11 @@ test('bundleLocalCurriculumForImport builds validated canonical v2 JSON without 
     assert.equal(parsed.schemaVersion, 2);
     assert.equal(parsed.families.length, 33);
     assert.equal(parsed.skills.length, 84);
+    const reinBack = parsed.skills.find((s) => s.id === 'rider.mounted.rein_back');
+    assert.ok(reinBack.learningGuide);
+    assert.ok(reinBack.learningGuide.exercises.length >= 1);
+    const unrelated = parsed.skills.find((s) => s.id === 'rider.husbandry.grooming');
+    assert.equal(unrelated.learningGuide, undefined);
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

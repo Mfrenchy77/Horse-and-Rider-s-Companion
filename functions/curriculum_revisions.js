@@ -162,7 +162,52 @@ function normalizeSkillForSnapshot(s) {
     sortOrder: Number.isInteger(s.sortOrder) ? s.sortOrder : 0,
   };
   if (s.replacedBy) normalized.replacedBy = s.replacedBy;
+  const learningGuide = normalizeLearningGuideForSnapshot(s.learningGuide);
+  if (learningGuide) normalized.learningGuide = learningGuide;
   return normalized;
+}
+
+function normalizeLearningGuideForSnapshot(guide) {
+  if (!guide || typeof guide !== 'object') return null;
+  const exercises = [];
+  for (const raw of guide.exercises || []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const title = typeof raw.title === 'string' ? raw.title.trim() : '';
+    const summary = typeof raw.summary === 'string' ? raw.summary.trim() : '';
+    if (!title && !summary) continue;
+    const entry = {title, summary};
+    const badge = typeof raw.badge === 'string' ? raw.badge.trim() : '';
+    const whatToNotice = typeof raw.whatToNotice === 'string' ? raw.whatToNotice.trim() : '';
+    if (badge) entry.badge = badge;
+    if (whatToNotice) entry.whatToNotice = whatToNotice;
+    if (raw.focusLevel) entry.focusLevel = raw.focusLevel;
+    exercises.push(entry);
+  }
+  const commonDifficulties = [];
+  for (const raw of guide.commonDifficulties || []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const issue = typeof raw.issue === 'string' ? raw.issue.trim() : '';
+    const guidance = typeof raw.guidance === 'string' ? raw.guidance.trim() : '';
+    if (!issue && !guidance) continue;
+    commonDifficulties.push({issue, guidance});
+  }
+  const trainerInsight = typeof guide.trainerInsight === 'string' ? guide.trainerInsight.trim() : '';
+  const welfareNote = typeof guide.welfareNote === 'string' ? guide.welfareNote.trim() : '';
+  const relatedDictionaryTerms = (guide.relatedDictionaryTerms || [])
+      .filter((t) => typeof t === 'string' && t.trim())
+      .map((t) => t.trim());
+  const relatedSkillIds = (guide.relatedSkillIds || [])
+      .filter((id) => typeof id === 'string' && id.trim())
+      .map((id) => id.trim());
+
+  const out = {};
+  if (exercises.length > 0) out.exercises = exercises;
+  if (commonDifficulties.length > 0) out.commonDifficulties = commonDifficulties;
+  if (trainerInsight) out.trainerInsight = trainerInsight;
+  if (welfareNote) out.welfareNote = welfareNote;
+  if (relatedDictionaryTerms.length > 0) out.relatedDictionaryTerms = relatedDictionaryTerms;
+  if (relatedSkillIds.length > 0) out.relatedSkillIds = relatedSkillIds;
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 function canonicalizeCurriculum({families, skills}) {
@@ -1295,6 +1340,7 @@ module.exports = {
   canonicalizeCurriculum,
   canonicalJsonStringify,
   computeCurriculumChecksum,
+  normalizeLearningGuideForSnapshot,
   splitIntoChunks,
   reassembleAndVerifySnapshot,
   computeCurriculumDiff,

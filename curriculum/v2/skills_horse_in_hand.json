@@ -170,7 +170,47 @@
       "horse.in_hand.lead_politely",
       "horse.in_hand.yield_to_halter"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Soft Feel, Calm Steps, and Settled Halts",
+          "focusLevel": "introductory",
+          "summary": "In a familiar, uncluttered space, invite the horse to respond off subtle halter feel—stepping forward into an unhurried four-beat walk, settling into a quiet halt, and offering a calm backward weight shift. Rest peacefully after soft responses so yielding stays comfortable and predictable.",
+          "whatToNotice": "Watch for softening at the poll and jaw, steady walking rhythm on a draped lead, and quiet standing without leaning, fidgeting, or crowding into the handler's space."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Calm Rhythm Through Pace and Environment Shifts",
+          "focusLevel": "intermediate",
+          "summary": "Lead through smooth transitions between walk, brief halts, balanced turns, and—where physically comfortable—a relaxed straight trot-up past mild everyday distractions while maintaining comfortable personal space.",
+          "whatToNotice": "Does the horse stay balanced through the shoulders and attentive to light requests near mild activity, rather than surging ahead, lagging behind, or swinging away?"
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Bracing or leaning into halter pressure",
+          "guidance": "Pressing back often signals confusion or tension rather than stubbornness. Ask with smaller, quieter pauses, reward the tiniest weight shift, and verify the halter fits comfortably."
+        },
+        {
+          "issue": "Crowding the handler or drifting distractedly",
+          "guidance": "Over-arousal or unclear boundaries scatter attention. Return briefly to lower-distraction ground, keep cues calm and consistent, and acknowledge relaxed focus."
+        }
+      ],
+      "trainerInsight": "A horse that trusts light halter communication carries that calmness into veterinary handling, trailering, and under-saddle work.",
+      "welfareNote": "Sudden head-shyness, poll stiffness, dragging hooves, or reluctance to trot up can reflect halter pressure points, dental pain, hoof tenderness, or anxiety—assess physical comfort and lower arousal before continuing.",
+      "relatedDictionaryTerms": [
+        "groundwork",
+        "rhythm",
+        "poll",
+        "arousal-threshold"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.leading",
+        "horse.in_hand.standing_quietly"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.standing_quietly",
@@ -760,7 +800,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 5
+    "sortOrder": 5,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Generous Arcs at a Settled Walk",
+          "focusLevel": "introductory",
+          "summary": "On level, non-slip footing, ask the horse calmly onto a generous working arc at a comfortable pace such as walk in both directions. Halt peacefully out on the arc and invite the horse politely inward for quiet rests—without requiring faster gaits.",
+          "whatToNotice": "Observe whether the horse holds a comfortable distance on a lightly draped line with steady breathing, soft ears, and unhurried footing rather than pulling outward, drifting in, or turning defensively."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Balanced Transitions Across Varied Tracks",
+          "focusLevel": "intermediate",
+          "summary": "Along generous circles or moving ovals in both directions, encourage smooth transitions between walk, halt, and any faster gait appropriate to the horse's age, fitness, and footing—changing directions often so both sides develop evenly.",
+          "whatToNotice": "Look for growing side-to-side symmetry through the inside shoulder and ribcage instead of persistent falling inward, rushing, or bracing through the poll on one direction."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Rushing or pulling steadily outward on the line",
+          "guidance": "Tight arcs or worrying driving energy often overwhelm balance. Enlarge the track, step calmly into open arena space, settle back to walk, and reward relaxed rhythm."
+        },
+        {
+          "issue": "Turning abruptly to face or stopping unexpectedly",
+          "guidance": "This frequently reflects confusing sending angles, uncertainty, or early fatigue. Keep sessions brief, clarify polite personal space when pausing, and match requests to current fitness."
+        }
+      ],
+      "trainerInsight": "Good longeing builds relaxed comprehension and curved balance—never speed, exhaustion, or endless tight circling.",
+      "welfareNote": "Repetitive small circles place high strain on joints and soft tissues—use generous, level footing, keep sessions appropriately short, and evaluate persistent one-sided stiffness, head bobbing, or resistance for soreness.",
+      "relatedDictionaryTerms": [
+        "longeing",
+        "self-carriage",
+        "asymmetry",
+        "cavesson"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.longeing",
+        "horse.in_hand.leading"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.ground_driving",

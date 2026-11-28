@@ -195,6 +195,9 @@ List<String> _diffSkill(
   }
   if (pub.sortOrder != draft.sortOrder) changed.add('sortOrder');
   if (pub.schemaVersion != draft.schemaVersion) changed.add('schemaVersion');
+  if (pub.learningGuide != draft.learningGuide) {
+    changed.add('learningGuide');
+  }
 
   final allLevels = <DifficultyState>{
     ...pub.availableLevels,

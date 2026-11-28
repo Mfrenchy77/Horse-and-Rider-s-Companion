@@ -519,6 +519,7 @@ class _EditCurriculumSkillDialogState extends State<EditCurriculumSkillDialog> {
       replacedBy: initial?.replacedBy,
       updatedAt: initial?.updatedAt,
       updatedBy: initial?.updatedBy,
+      learningGuide: initial?.learningGuide,
     );
 
     Navigator.of(context).pop(skill);

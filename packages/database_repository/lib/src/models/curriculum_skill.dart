@@ -2,6 +2,7 @@
 
 import 'package:database_repository/src/models/skill.dart';
 import 'package:database_repository/src/models/skill_family.dart';
+import 'package:flutter/foundation.dart';
 
 /// Lifecycle status of a [CurriculumSkill] document.
 enum CurriculumSkillStatus {
@@ -140,6 +141,279 @@ class SkillLevelDefinition {
   }
 }
 
+/// Non-assessed practical exercise helping develop a [CurriculumSkill].
+///
+/// Exercises are purely educational and adaptable; they never affect
+/// proficiency state, difficulty standards, or instructor verification.
+@immutable
+class SkillPracticeExercise {
+  const SkillPracticeExercise({
+    this.badge,
+    required this.title,
+    required this.summary,
+    this.whatToNotice,
+    this.focusLevel,
+  });
+
+  factory SkillPracticeExercise.fromMap(Map<String, dynamic> data) {
+    final badgeRaw = (data['badge'] as String?)?.trim();
+    final noticeRaw = (data['whatToNotice'] as String?)?.trim();
+    return SkillPracticeExercise(
+      badge: badgeRaw != null && badgeRaw.isNotEmpty ? badgeRaw : null,
+      title: (data['title'] as String? ?? '').trim(),
+      summary: (data['summary'] as String? ?? '').trim(),
+      whatToNotice:
+          noticeRaw != null && noticeRaw.isNotEmpty ? noticeRaw : null,
+      focusLevel: parseOptionalDifficulty(data['focusLevel'] as String?),
+    );
+  }
+
+  final String? badge;
+  final String title;
+  final String summary;
+  final String? whatToNotice;
+  final DifficultyState? focusLevel;
+
+  Map<String, Object?> toMap() {
+    final cleanBadge = badge?.trim();
+    final cleanNotice = whatToNotice?.trim();
+    return {
+      if (cleanBadge != null && cleanBadge.isNotEmpty) 'badge': cleanBadge,
+      'title': title.trim(),
+      'summary': summary.trim(),
+      if (cleanNotice != null && cleanNotice.isNotEmpty)
+        'whatToNotice': cleanNotice,
+      if (focusLevel != null) 'focusLevel': difficultyToKey(focusLevel!),
+    };
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SkillPracticeExercise &&
+        (badge ?? '').trim() == (other.badge ?? '').trim() &&
+        title.trim() == other.title.trim() &&
+        summary.trim() == other.summary.trim() &&
+        (whatToNotice ?? '').trim() == (other.whatToNotice ?? '').trim() &&
+        focusLevel == other.focusLevel;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    (badge ?? '').trim(),
+    title.trim(),
+    summary.trim(),
+    (whatToNotice ?? '').trim(),
+    focusLevel,
+  );
+}
+
+/// Typical difficulty or misunderstanding with a calm, humane adjustment.
+@immutable
+class SkillCommonDifficulty {
+  const SkillCommonDifficulty({
+    required this.issue,
+    required this.guidance,
+  });
+
+  factory SkillCommonDifficulty.fromMap(Map<String, dynamic> data) {
+    return SkillCommonDifficulty(
+      issue: (data['issue'] as String? ?? '').trim(),
+      guidance: (data['guidance'] as String? ?? '').trim(),
+    );
+  }
+
+  final String issue;
+  final String guidance;
+
+  Map<String, Object?> toMap() {
+    return {
+      'issue': issue.trim(),
+      'guidance': guidance.trim(),
+    };
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SkillCommonDifficulty &&
+        issue.trim() == other.issue.trim() &&
+        guidance.trim() == other.guidance.trim();
+  }
+
+  @override
+  int get hashCode => Object.hash(issue.trim(), guidance.trim());
+}
+
+/// Optional non-assessed "Develop This Skill" learning guidance attached to a
+/// [CurriculumSkill].
+@immutable
+class SkillLearningGuide {
+  const SkillLearningGuide({
+    this.exercises = const [],
+    this.commonDifficulties = const [],
+    this.trainerInsight,
+    this.welfareNote,
+    this.relatedDictionaryTerms = const [],
+    this.relatedSkillIds = const [],
+  });
+
+  static SkillLearningGuide? fromMapOrNull(Object? raw) {
+    if (raw is! Map) return null;
+    final data = Map<String, dynamic>.from(raw);
+    final rawExercises = data['exercises'] as List<dynamic>? ?? const [];
+    final exercises = rawExercises
+        .whereType<Map<dynamic, dynamic>>()
+        .map(
+          (e) => SkillPracticeExercise.fromMap(Map<String, dynamic>.from(e)),
+        )
+        .where((e) => e.title.isNotEmpty || e.summary.isNotEmpty)
+        .toList();
+
+    final rawDifficulties =
+        data['commonDifficulties'] as List<dynamic>? ?? const [];
+    final commonDifficulties = rawDifficulties
+        .whereType<Map<dynamic, dynamic>>()
+        .map(
+          (d) => SkillCommonDifficulty.fromMap(Map<String, dynamic>.from(d)),
+        )
+        .where((d) => d.issue.isNotEmpty || d.guidance.isNotEmpty)
+        .toList();
+
+    final insightRaw = (data['trainerInsight'] as String?)?.trim();
+    final welfareRaw = (data['welfareNote'] as String?)?.trim();
+
+    final dictionaryTerms =
+        (data['relatedDictionaryTerms'] as List<dynamic>? ?? const [])
+            .whereType<String>()
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+
+    final relatedIds = (data['relatedSkillIds'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    final guide = SkillLearningGuide(
+      exercises: exercises,
+      commonDifficulties: commonDifficulties,
+      trainerInsight:
+          insightRaw != null && insightRaw.isNotEmpty ? insightRaw : null,
+      welfareNote:
+          welfareRaw != null && welfareRaw.isNotEmpty ? welfareRaw : null,
+      relatedDictionaryTerms: dictionaryTerms,
+      relatedSkillIds: relatedIds,
+    );
+    return guide.hasContent ? guide : null;
+  }
+
+  final List<SkillPracticeExercise> exercises;
+  final List<SkillCommonDifficulty> commonDifficulties;
+  final String? trainerInsight;
+  final String? welfareNote;
+  final List<String> relatedDictionaryTerms;
+  final List<String> relatedSkillIds;
+
+  bool get hasExercises => exercises.isNotEmpty;
+  bool get hasCommonDifficulties => commonDifficulties.isNotEmpty;
+  bool get hasTrainerInsight =>
+      trainerInsight != null && trainerInsight!.trim().isNotEmpty;
+  bool get hasWelfareNote =>
+      welfareNote != null && welfareNote!.trim().isNotEmpty;
+  bool get hasRelatedDictionaryTerms => relatedDictionaryTerms.isNotEmpty;
+  bool get hasRelatedSkillIds => relatedSkillIds.isNotEmpty;
+  bool get hasContent =>
+      hasExercises ||
+      hasCommonDifficulties ||
+      hasTrainerInsight ||
+      hasWelfareNote ||
+      hasRelatedDictionaryTerms ||
+      hasRelatedSkillIds;
+  bool get isEmpty => !hasContent;
+
+  Map<String, Object?> toMap() {
+    final cleanInsight = trainerInsight?.trim();
+    final cleanWelfare = welfareNote?.trim();
+    final cleanTerms = relatedDictionaryTerms
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final cleanSkills = relatedSkillIds
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    return {
+      if (exercises.isNotEmpty)
+        'exercises': exercises.map((e) => e.toMap()).toList(),
+      if (commonDifficulties.isNotEmpty)
+        'commonDifficulties':
+            commonDifficulties.map((d) => d.toMap()).toList(),
+      if (cleanInsight != null && cleanInsight.isNotEmpty)
+        'trainerInsight': cleanInsight,
+      if (cleanWelfare != null && cleanWelfare.isNotEmpty)
+        'welfareNote': cleanWelfare,
+      if (cleanTerms.isNotEmpty) 'relatedDictionaryTerms': cleanTerms,
+      if (cleanSkills.isNotEmpty) 'relatedSkillIds': cleanSkills,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! SkillLearningGuide) return false;
+    if (exercises.length != other.exercises.length) return false;
+    for (var i = 0; i < exercises.length; i++) {
+      if (exercises[i] != other.exercises[i]) return false;
+    }
+    if (commonDifficulties.length != other.commonDifficulties.length) {
+      return false;
+    }
+    for (var i = 0; i < commonDifficulties.length; i++) {
+      if (commonDifficulties[i] != other.commonDifficulties[i]) return false;
+    }
+    if ((trainerInsight ?? '').trim() !=
+        (other.trainerInsight ?? '').trim()) {
+      return false;
+    }
+    if ((welfareNote ?? '').trim() != (other.welfareNote ?? '').trim()) {
+      return false;
+    }
+    if (!_stringListsEqual(
+      relatedDictionaryTerms,
+      other.relatedDictionaryTerms,
+    )) {
+      return false;
+    }
+    return _stringListsEqual(relatedSkillIds, other.relatedSkillIds);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    Object.hashAll(exercises),
+    Object.hashAll(commonDifficulties),
+    (trainerInsight ?? '').trim(),
+    (welfareNote ?? '').trim(),
+    Object.hashAll(
+      relatedDictionaryTerms.map((e) => e.trim()).where((e) => e.isNotEmpty),
+    ),
+    Object.hashAll(
+      relatedSkillIds.map((e) => e.trim()).where((e) => e.isNotEmpty),
+    ),
+  );
+}
+
+bool _stringListsEqual(List<String> a, List<String> b) {
+  final ca = a.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  final cb = b.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  if (ca.length != cb.length) return false;
+  for (var i = 0; i < ca.length; i++) {
+    if (ca[i] != cb[i]) return false;
+  }
+  return true;
+}
+
 /// Skill Tree 2.0 canonical skill representing a meaningful ability with
 /// 1 to 3 progressive [DifficultyState] standards.
 class CurriculumSkill {
@@ -163,6 +437,7 @@ class CurriculumSkill {
     this.replacedBy,
     this.updatedAt,
     this.updatedBy,
+    this.learningGuide,
   });
 
   factory CurriculumSkill.fromMap(Map<String, dynamic> data) {
@@ -214,6 +489,7 @@ class CurriculumSkill {
       replacedBy: data['replacedBy'] as String?,
       updatedAt: parseFlexibleDateTime(data['updatedAt']),
       updatedBy: data['updatedBy'] as String?,
+      learningGuide: SkillLearningGuide.fromMapOrNull(data['learningGuide']),
     );
   }
 
@@ -236,6 +512,7 @@ class CurriculumSkill {
   final String? replacedBy;
   final DateTime? updatedAt;
   final String? updatedBy;
+  final SkillLearningGuide? learningGuide;
 
   bool hasLevel(DifficultyState level) =>
       availableLevels.contains(level) && levels.containsKey(level);
@@ -244,6 +521,55 @@ class CurriculumSkill {
 
   /// All skill IDs (canonical + legacy) that Resource `skillTreeIds` may match.
   List<String> get allResourceLookupIds => <String>[id, ...legacyIds];
+
+  CurriculumSkill copyWith({
+    String? id,
+    int? schemaVersion,
+    CurriculumSkillStatus? status,
+    SkillSubject? subject,
+    SkillCategory? realm,
+    String? familyId,
+    String? name,
+    List<String>? aliases,
+    String? summary,
+    String? purpose,
+    List<String>? safety,
+    List<DifficultyState>? availableLevels,
+    Map<DifficultyState, SkillLevelDefinition>? levels,
+    List<RelatedSkill>? relatedSkills,
+    List<String>? legacyIds,
+    int? sortOrder,
+    String? replacedBy,
+    DateTime? updatedAt,
+    String? updatedBy,
+    SkillLearningGuide? learningGuide,
+    bool clearLearningGuide = false,
+  }) {
+    return CurriculumSkill(
+      id: id ?? this.id,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      status: status ?? this.status,
+      subject: subject ?? this.subject,
+      realm: realm ?? this.realm,
+      familyId: familyId ?? this.familyId,
+      name: name ?? this.name,
+      aliases: aliases ?? this.aliases,
+      summary: summary ?? this.summary,
+      purpose: purpose ?? this.purpose,
+      safety: safety ?? this.safety,
+      availableLevels: availableLevels ?? this.availableLevels,
+      levels: levels ?? this.levels,
+      relatedSkills: relatedSkills ?? this.relatedSkills,
+      legacyIds: legacyIds ?? this.legacyIds,
+      sortOrder: sortOrder ?? this.sortOrder,
+      replacedBy: replacedBy ?? this.replacedBy,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedBy: updatedBy ?? this.updatedBy,
+      learningGuide: clearLearningGuide
+          ? null
+          : (learningGuide ?? this.learningGuide),
+    );
+  }
 
   /// Accent- and case-insensitive match against name, aliases, and component titles.
   bool matchesQuery(String query) {
@@ -290,6 +616,8 @@ class CurriculumSkill {
             ? updatedAt
             : updatedAt!.toIso8601String(),
       if (updatedBy != null) 'updatedBy': updatedBy,
+      if (learningGuide != null && learningGuide!.hasContent)
+        'learningGuide': learningGuide!.toMap(),
     };
   }
 }

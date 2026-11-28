@@ -10,6 +10,7 @@ import 'package:horseandriderscompanion/MainPages/Onboarding/skill_tree_spotligh
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_helpers.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/develop_this_skill_section.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_family_icon.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 
@@ -319,6 +320,13 @@ class SkillDetailV2Panel extends StatelessWidget {
                   onVerifyLevel(selectedLevel, verified: verified),
             ),
           ],
+          if (skill.learningGuide?.hasContent ?? false)
+            DevelopThisSkillSection(
+              skill: skill,
+              selectedLevel: selectedLevel,
+              allSkills: state.skills,
+              onSelectRelatedSkill: onSelectRelatedSkill,
+            ),
           if (skill.relatedSkills.isNotEmpty) ...[
             Text(
               'Related skills',

@@ -292,3 +292,72 @@ test('validateCurriculum checks single-document draft size thresholds', () => {
   assert.equal(res.ok, false);
   assert.ok(res.errors.some((e) => e.includes('exceeds safe single-document limit')));
 });
+
+test('validateCurriculum validates optional learningGuide without requiring standardVersion bumps', () => {
+  const family = makeFamily();
+  const secondary = makeSkill({id: 'rider.mounted.halt', legacyIds: [], name: 'Halt'});
+  const base = makeSkill({
+    relatedSkills: [{skillId: 'rider.mounted.halt', relation: 'foundation'}],
+  });
+
+  const withValidGuide = makeSkill({
+    relatedSkills: [{skillId: 'rider.mounted.halt', relation: 'foundation'}],
+    learningGuide: {
+      exercises: [
+        {
+          badge: 'Foundation Exercise',
+          title: 'Quiet Halt Check',
+          focusLevel: 'introductory',
+          summary: 'Ask gently for a calm halt and release forward right away.',
+          whatToNotice: 'Does the horse settle softly without raising the head?',
+        },
+      ],
+      commonDifficulties: [
+        {
+          issue: 'Holding tension too long',
+          guidance: 'Release the instant weight shifts smoothly.',
+        },
+      ],
+      trainerInsight: 'Soft timing beats stronger hands.',
+      welfareNote: 'Check back and tack comfort if tension persists.',
+      relatedDictionaryTerms: ['half-halt', 'rein-contact'],
+      relatedSkillIds: ['rider.mounted.halt'],
+    },
+  });
+
+  const validRes = validateCurriculum({
+    families: [family],
+    skills: [withValidGuide, secondary],
+    publishedSkills: [base, secondary],
+  });
+  assert.equal(validRes.ok, true, validRes.errors.join('; '));
+  assert.equal(validRes.skills[0].learningGuide.exercises.length, 1);
+
+  const emptyGuideSkill = makeSkill({
+    relatedSkills: [{skillId: 'rider.mounted.halt', relation: 'foundation'}],
+    learningGuide: {exercises: [], relatedDictionaryTerms: []},
+  });
+  const emptyRes = validateCurriculum({
+    families: [family],
+    skills: [emptyGuideSkill, secondary],
+  });
+  assert.equal(emptyRes.ok, true, emptyRes.errors.join('; '));
+  assert.equal(emptyRes.skills[0].learningGuide, undefined);
+
+  const badGuideSkill = makeSkill({
+    learningGuide: {
+      exercises: [{title: '', summary: ''}],
+      relatedDictionaryTerms: ['Not A Valid Slug!'],
+      relatedSkillIds: ['rider.mounted.neutral_pelvis', 'does.not.exist'],
+    },
+  });
+  const badRes = validateCurriculum({
+    families: [family],
+    skills: [badGuideSkill],
+  });
+  assert.equal(badRes.ok, false);
+  assert.ok(badRes.errors.some((e) => e.includes('learningGuide.exercises[0].title is required')));
+  assert.ok(badRes.errors.some((e) => e.includes('valid Dictionary slug')));
+  assert.ok(badRes.errors.some((e) => e.includes('cannot reference itself')));
+  assert.ok(badRes.errors.some((e) => e.includes('target "does.not.exist" not found')));
+});

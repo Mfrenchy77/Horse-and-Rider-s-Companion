@@ -605,3 +605,41 @@ test('rollback creates a new forward revision, bumps standardVersion, and refuse
   );
   assert.equal(diffCheck.hasChanges, true);
 });
+
+test('curriculum snapshots preserve learningGuide while keeping legacy skills checksum-identical', () => {
+  const family = makeFamily();
+  const baseSkill = makeSkill();
+  const baseChecksum = computeCurriculumChecksum({families: [family], skills: [baseSkill]}).checksum;
+  const withEmptyGuide = makeSkill({learningGuide: {exercises: []}});
+  assert.equal(
+      computeCurriculumChecksum({families: [family], skills: [withEmptyGuide]}).checksum,
+      baseChecksum,
+  );
+
+  const guidedSkill = makeSkill({
+    learningGuide: {
+      exercises: [
+        {
+          badge: 'Foundation Exercise',
+          title: 'Breathe & Follow',
+          focusLevel: 'introductory',
+          summary: 'Follow the walk calmly without holding the reins for balance.',
+          whatToNotice: 'Unlocked hips and quiet elbows.',
+        },
+      ],
+      trainerInsight: 'Alignment precedes rein aids.',
+      relatedDictionaryTerms: ['independent-seat'],
+    },
+  });
+  const snap = computeCurriculumChecksum({families: [family], skills: [guidedSkill]});
+  assert.notEqual(snap.checksum, baseChecksum);
+  assert.equal(snap.canonical.skills[0].learningGuide.exercises[0].title, 'Breathe & Follow');
+
+  const diff = computeCurriculumDiff(
+      {families: [family], skills: [baseSkill]},
+      {families: [family], skills: [guidedSkill]},
+  );
+  assert.equal(diff.hasChanges, true);
+  assert.deepEqual(diff.modifiedSkillIds, ['rider.mounted.neutral_pelvis']);
+  assert.deepEqual(diff.revisedStandards, []);
+});

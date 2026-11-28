@@ -10,6 +10,7 @@ const int _warnDraftDocBytes = 700 * 1024;
 const int _maxDraftDocBytes = 900 * 1024;
 
 final RegExp _docIdRegex = RegExp(r'^[A-Za-z0-9._-]{1,120}$');
+final RegExp _dictionarySlugRegex = RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$');
 
 const Set<String> _validSubjects = {'rider', 'horse'};
 const Set<String> _validRealms = {'Husbandry', 'In_Hand', 'Mounted', 'Other'};
@@ -478,6 +479,233 @@ SkillLevelDefinition? _validateLevel(
   );
 }
 
+SkillLearningGuide? _validateLearningGuide(
+  Object? rawValue,
+  String? skillId,
+  String label,
+  List<String> errors,
+) {
+  if (rawValue == null) return null;
+  final prefix = '$label.learningGuide';
+  if (rawValue is! Map<dynamic, dynamic>) {
+    errors.add('Skill $prefix must be an object.');
+    return null;
+  }
+  final raw = Map<String, dynamic>.from(rawValue);
+
+  final exercises = <SkillPracticeExercise>[];
+  final rawExercises = raw['exercises'];
+  if (rawExercises != null) {
+    if (rawExercises is! List<dynamic>) {
+      errors.add('Skill $prefix.exercises must be an array.');
+    } else {
+      if (rawExercises.length > 4) {
+        errors.add(
+          'Skill $prefix.exercises must contain at most 4 items.',
+        );
+      }
+      final limit = rawExercises.length < 4 ? rawExercises.length : 4;
+      for (var i = 0; i < limit; i++) {
+        final item = rawExercises[i];
+        if (item is! Map<dynamic, dynamic>) {
+          errors.add('Skill $prefix.exercises[$i] must be an object.');
+          continue;
+        }
+        final ex = Map<String, dynamic>.from(item);
+        final badgeRaw = ex['badge'] == null
+            ? ''
+            : _checkOptionalString(
+                ex['badge'],
+                60,
+                '$prefix.exercises[$i].badge',
+                errors,
+              );
+        final title = _checkRequiredString(
+          ex['title'],
+          120,
+          '$prefix.exercises[$i].title',
+          errors,
+        );
+        final summary = _checkRequiredString(
+          ex['summary'],
+          600,
+          '$prefix.exercises[$i].summary',
+          errors,
+        );
+        final whatToNoticeRaw = ex['whatToNotice'] == null
+            ? ''
+            : _checkOptionalString(
+                ex['whatToNotice'],
+                400,
+                '$prefix.exercises[$i].whatToNotice',
+                errors,
+              );
+        DifficultyState? focusLevel;
+        if (ex['focusLevel'] != null) {
+          final focusKey = _checkEnum(
+            ex['focusLevel'],
+            _levelOrder.toSet(),
+            '$prefix.exercises[$i].focusLevel',
+            errors,
+          );
+          if (focusKey != null) {
+            focusLevel = parseOptionalDifficulty(focusKey);
+          }
+        }
+        if (title != null && summary != null) {
+          exercises.add(
+            SkillPracticeExercise(
+              badge: badgeRaw != null && badgeRaw.isNotEmpty ? badgeRaw : null,
+              title: title,
+              summary: summary,
+              whatToNotice:
+                  whatToNoticeRaw != null && whatToNoticeRaw.isNotEmpty
+                  ? whatToNoticeRaw
+                  : null,
+              focusLevel: focusLevel,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  final commonDifficulties = <SkillCommonDifficulty>[];
+  final rawDifficulties = raw['commonDifficulties'];
+  if (rawDifficulties != null) {
+    if (rawDifficulties is! List<dynamic>) {
+      errors.add('Skill $prefix.commonDifficulties must be an array.');
+    } else {
+      if (rawDifficulties.length > 6) {
+        errors.add(
+          'Skill $prefix.commonDifficulties must contain at most 6 items.',
+        );
+      }
+      final limit = rawDifficulties.length < 6 ? rawDifficulties.length : 6;
+      for (var i = 0; i < limit; i++) {
+        final item = rawDifficulties[i];
+        if (item is! Map<dynamic, dynamic>) {
+          errors.add('Skill $prefix.commonDifficulties[$i] must be an object.');
+          continue;
+        }
+        final diff = Map<String, dynamic>.from(item);
+        final issue = _checkRequiredString(
+          diff['issue'],
+          140,
+          '$prefix.commonDifficulties[$i].issue',
+          errors,
+        );
+        final guidance = _checkRequiredString(
+          diff['guidance'],
+          400,
+          '$prefix.commonDifficulties[$i].guidance',
+          errors,
+        );
+        if (issue != null && guidance != null) {
+          commonDifficulties.add(
+            SkillCommonDifficulty(issue: issue, guidance: guidance),
+          );
+        }
+      }
+    }
+  }
+
+  final trainerInsightRaw = raw['trainerInsight'] == null
+      ? ''
+      : _checkOptionalString(
+          raw['trainerInsight'],
+          400,
+          '$prefix.trainerInsight',
+          errors,
+        );
+  final welfareNoteRaw = raw['welfareNote'] == null
+      ? ''
+      : _checkOptionalString(
+          raw['welfareNote'],
+          500,
+          '$prefix.welfareNote',
+          errors,
+        );
+
+  final dictionaryTerms = <String>[];
+  final rawTerms = raw['relatedDictionaryTerms'];
+  if (rawTerms != null) {
+    if (rawTerms is! List<dynamic>) {
+      errors.add('Skill $prefix.relatedDictionaryTerms must be an array.');
+    } else {
+      if (rawTerms.length > 8) {
+        errors.add(
+          'Skill $prefix.relatedDictionaryTerms must contain at most 8 items.',
+        );
+      }
+      final seen = <String>{};
+      final limit = rawTerms.length < 8 ? rawTerms.length : 8;
+      for (var i = 0; i < limit; i++) {
+        final item = rawTerms[i];
+        if (item is! String) {
+          errors.add('$prefix.relatedDictionaryTerms[$i] must be a string.');
+          continue;
+        }
+        final slug = item.trim();
+        if (slug.isEmpty) continue;
+        if (slug.length > 100 || !_dictionarySlugRegex.hasMatch(slug)) {
+          errors.add(
+            '$prefix.relatedDictionaryTerms[$i] must be a valid Dictionary '
+            'slug (e.g. "half-halt").',
+          );
+          continue;
+        }
+        if (seen.add(slug)) dictionaryTerms.add(slug);
+      }
+    }
+  }
+
+  final relatedIds = <String>[];
+  final rawRelatedIds = raw['relatedSkillIds'];
+  if (rawRelatedIds != null) {
+    if (rawRelatedIds is! List<dynamic>) {
+      errors.add('Skill $prefix.relatedSkillIds must be an array.');
+    } else {
+      if (rawRelatedIds.length > 8) {
+        errors.add(
+          'Skill $prefix.relatedSkillIds must contain at most 8 items.',
+        );
+      }
+      final seen = <String>{};
+      final limit = rawRelatedIds.length < 8 ? rawRelatedIds.length : 8;
+      for (var i = 0; i < limit; i++) {
+        final targetId = _checkId(
+          rawRelatedIds[i],
+          '$prefix.relatedSkillIds[$i]',
+          errors,
+        );
+        if (targetId == null) continue;
+        if (skillId != null && targetId == skillId) {
+          errors.add('Skill $prefix.relatedSkillIds cannot reference itself.');
+          continue;
+        }
+        if (seen.add(targetId)) relatedIds.add(targetId);
+      }
+    }
+  }
+
+  final guide = SkillLearningGuide(
+    exercises: exercises,
+    commonDifficulties: commonDifficulties,
+    trainerInsight:
+        trainerInsightRaw != null && trainerInsightRaw.isNotEmpty
+        ? trainerInsightRaw
+        : null,
+    welfareNote:
+        welfareNoteRaw != null && welfareNoteRaw.isNotEmpty
+        ? welfareNoteRaw
+        : null,
+    relatedDictionaryTerms: dictionaryTerms,
+    relatedSkillIds: relatedIds,
+  );
+  return guide.hasContent ? guide : null;
+}
+
 CurriculumSkill? _validateSkill(
   Object? rawValue,
   int index,
@@ -727,6 +955,12 @@ CurriculumSkill? _validateSkill(
   final updatedBy = raw['updatedBy'] == null
       ? null
       : _checkOptionalString(raw['updatedBy'], 120, '$label.updatedBy', errors);
+  final learningGuide = _validateLearningGuide(
+    raw['learningGuide'],
+    id,
+    label,
+    errors,
+  );
 
   if (id == null ||
       statusStr == null ||
@@ -758,6 +992,7 @@ CurriculumSkill? _validateSkill(
     replacedBy: replacedBy,
     updatedAt: updatedAt,
     updatedBy: updatedBy != null && updatedBy.isEmpty ? null : updatedBy,
+    learningGuide: learningGuide,
   );
 }
 
@@ -863,6 +1098,18 @@ _validateGraphAndReferences(
           'Skill ${s.id}: relatedSkill "${rel.skillId}" '
           'does not offer level "${difficultyToKey(rel.level!)}".',
         );
+      }
+    }
+
+    final guide = s.learningGuide;
+    if (guide != null) {
+      for (final targetId in guide.relatedSkillIds) {
+        if (!skillMap.containsKey(targetId)) {
+          errors.add(
+            'Skill ${s.id}: learningGuide.relatedSkillIds target '
+            '"$targetId" not found.',
+          );
+        }
       }
     }
   }

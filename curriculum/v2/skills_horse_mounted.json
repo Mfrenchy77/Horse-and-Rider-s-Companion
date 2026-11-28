@@ -907,7 +907,47 @@
       "horse.mounted.rein_back_horse",
       "horse.mounted.back_L_horse"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Unhurried Weight Shift to Quiet Halt",
+          "focusLevel": "introductory",
+          "summary": "Once the horse stands settled under saddle and steps back calmly in hand, ask on flat, open footing for an unhurried backward weight shift or a single relaxed step within natural, unbraced posture, then pause quietly on a soft rein so backing feels clear and safe.",
+          "whatToNotice": "Look for a soft jaw, steady breathing, and calm stillness upon release rather than rushing backward, hollowing defensively, or surging forward out of the halt."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Rhythmic Diagonal Pairs and Calm Walk Exits",
+          "focusLevel": "intermediate",
+          "summary": "Along a quiet open line, build a few unhurried backward steps focusing on clear, even two-beat diagonal footfalls without dragging toes, pausing briefly and stepping calmly forward into walk so balance and willingness stay intact.",
+          "whatToNotice": "Does each diagonal front-and-hind pair lift and place evenly within comfortable posture suited to the horse's build, and can the horse walk smoothly out without tension?"
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Hollowing the back, raising the head, or bracing on the bit",
+          "guidance": "Forcing an outline or asking faster than the horse can organize often creates brace. Return briefly to calm in-hand backing or a single quiet weight shift and allow natural neck posture."
+        },
+        {
+          "issue": "Dragging hooves or swinging crookedly",
+          "guidance": "Dragging or wandering hindquarters can come from developing strength, fatigue, or hind-end soreness. Keep repetitions very short and check physical comfort if it persists."
+        }
+      ],
+      "trainerInsight": "Confident, rhythmic diagonal backing develops out of physical comfort and unhurried clarity—never from forcing a headset or chasing fixed step counts.",
+      "welfareNote": "Stepping backward requires comfortable flexion through the hocks, stifles, and lumbar back; repeated toe dragging, head tossing, or refusal under light cues warrants checking hind-end soundness, back, dental, and saddle comfort.",
+      "relatedDictionaryTerms": [
+        "rein-back",
+        "diagonal-pairs",
+        "hollowing",
+        "hindquarters"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.rein_back",
+        "horse.mounted.transitions"
+      ]
+    }
   },
   {
     "id": "horse.mounted.sidepass",

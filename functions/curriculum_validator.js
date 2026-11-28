@@ -13,6 +13,7 @@ const LEVELS = new Set(LEVEL_ORDER);
 const RELATIONS = new Set(['counterpart', 'foundation', 'next', 'theory']);
 const STATUSES = new Set(['draft', 'active', 'retired']);
 const DOC_ID_REGEX = /^[A-Za-z0-9._-]{1,120}$/;
+const DICTIONARY_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const MAX_FAMILIES = 100;
 const MAX_SKILLS = 250;
@@ -428,6 +429,12 @@ function validateSkillRecord(raw, index, errors) {
   const updatedBy = raw.updatedBy == null ?
     null :
     checkOptionalString(raw.updatedBy, 120, `${label}.updatedBy`, errors);
+  const learningGuide = validateLearningGuide(
+      raw.learningGuide,
+      id,
+      label,
+      errors,
+  );
 
   if (!id || !status || !subject || !realm || !familyId || !name || summary == null || purpose == null) {
     return null;
@@ -454,7 +461,178 @@ function validateSkillRecord(raw, index, errors) {
   if (replacedBy) sanitized.replacedBy = replacedBy;
   if (updatedAt) sanitized.updatedAt = updatedAt;
   if (updatedBy) sanitized.updatedBy = updatedBy;
+  if (learningGuide) sanitized.learningGuide = learningGuide;
   return sanitized;
+}
+
+function validateLearningGuide(raw, skillId, label, errors) {
+  if (raw == null) return null;
+  const prefix = `${label}.learningGuide`;
+  if (!isPlainObject(raw)) {
+    errors.push(`Skill ${prefix} must be an object.`);
+    return null;
+  }
+
+  const exercises = [];
+  if (raw.exercises != null) {
+    if (!Array.isArray(raw.exercises)) {
+      errors.push(`Skill ${prefix}.exercises must be an array.`);
+    } else {
+      if (raw.exercises.length > 4) {
+        errors.push(`Skill ${prefix}.exercises must contain at most 4 items.`);
+      }
+      for (let i = 0; i < raw.exercises.length && i < 4; i += 1) {
+        const item = raw.exercises[i];
+        if (!isPlainObject(item)) {
+          errors.push(`Skill ${prefix}.exercises[${i}] must be an object.`);
+          continue;
+        }
+        const badge = item.badge == null ?
+          '' :
+          checkOptionalString(item.badge, 60, `${prefix}.exercises[${i}].badge`, errors);
+        const title = checkRequiredString(
+            item.title,
+            120,
+            `${prefix}.exercises[${i}].title`,
+            errors,
+        );
+        const summary = checkRequiredString(
+            item.summary,
+            600,
+            `${prefix}.exercises[${i}].summary`,
+            errors,
+        );
+        const whatToNotice = item.whatToNotice == null ?
+          '' :
+          checkOptionalString(
+              item.whatToNotice,
+              400,
+              `${prefix}.exercises[${i}].whatToNotice`,
+              errors,
+          );
+        let focusLevel = null;
+        if (item.focusLevel != null) {
+          focusLevel = checkEnum(
+              item.focusLevel,
+              LEVELS,
+              `${prefix}.exercises[${i}].focusLevel`,
+              errors,
+          );
+        }
+        if (title && summary) {
+          const ex = {title, summary};
+          if (badge) ex.badge = badge;
+          if (whatToNotice) ex.whatToNotice = whatToNotice;
+          if (focusLevel) ex.focusLevel = focusLevel;
+          exercises.push(ex);
+        }
+      }
+    }
+  }
+
+  const commonDifficulties = [];
+  if (raw.commonDifficulties != null) {
+    if (!Array.isArray(raw.commonDifficulties)) {
+      errors.push(`Skill ${prefix}.commonDifficulties must be an array.`);
+    } else {
+      if (raw.commonDifficulties.length > 6) {
+        errors.push(`Skill ${prefix}.commonDifficulties must contain at most 6 items.`);
+      }
+      for (let i = 0; i < raw.commonDifficulties.length && i < 6; i += 1) {
+        const item = raw.commonDifficulties[i];
+        if (!isPlainObject(item)) {
+          errors.push(`Skill ${prefix}.commonDifficulties[${i}] must be an object.`);
+          continue;
+        }
+        const issue = checkRequiredString(
+            item.issue,
+            140,
+            `${prefix}.commonDifficulties[${i}].issue`,
+            errors,
+        );
+        const guidance = checkRequiredString(
+            item.guidance,
+            400,
+            `${prefix}.commonDifficulties[${i}].guidance`,
+            errors,
+        );
+        if (issue && guidance) {
+          commonDifficulties.push({issue, guidance});
+        }
+      }
+    }
+  }
+
+  const trainerInsight = raw.trainerInsight == null ?
+    '' :
+    checkOptionalString(raw.trainerInsight, 400, `${prefix}.trainerInsight`, errors);
+  const welfareNote = raw.welfareNote == null ?
+    '' :
+    checkOptionalString(raw.welfareNote, 500, `${prefix}.welfareNote`, errors);
+
+  const relatedDictionaryTerms = [];
+  if (raw.relatedDictionaryTerms != null) {
+    if (!Array.isArray(raw.relatedDictionaryTerms)) {
+      errors.push(`Skill ${prefix}.relatedDictionaryTerms must be an array.`);
+    } else {
+      if (raw.relatedDictionaryTerms.length > 8) {
+        errors.push(`Skill ${prefix}.relatedDictionaryTerms must contain at most 8 items.`);
+      }
+      const seen = new Set();
+      for (let i = 0; i < raw.relatedDictionaryTerms.length && i < 8; i += 1) {
+        const item = raw.relatedDictionaryTerms[i];
+        if (typeof item !== 'string') {
+          errors.push(`${prefix}.relatedDictionaryTerms[${i}] must be a string.`);
+          continue;
+        }
+        const slug = item.trim();
+        if (!slug) continue;
+        if (slug.length > 100 || !DICTIONARY_SLUG_REGEX.test(slug)) {
+          errors.push(
+              `${prefix}.relatedDictionaryTerms[${i}] must be a valid Dictionary slug (e.g. "half-halt").`,
+          );
+          continue;
+        }
+        if (!seen.has(slug)) {
+          seen.add(slug);
+          relatedDictionaryTerms.push(slug);
+        }
+      }
+    }
+  }
+
+  const relatedSkillIds = [];
+  if (raw.relatedSkillIds != null) {
+    if (!Array.isArray(raw.relatedSkillIds)) {
+      errors.push(`Skill ${prefix}.relatedSkillIds must be an array.`);
+    } else {
+      if (raw.relatedSkillIds.length > 8) {
+        errors.push(`Skill ${prefix}.relatedSkillIds must contain at most 8 items.`);
+      }
+      const seen = new Set();
+      for (let i = 0; i < raw.relatedSkillIds.length && i < 8; i += 1) {
+        const targetId = checkId(raw.relatedSkillIds[i], `${prefix}.relatedSkillIds[${i}]`, errors);
+        if (!targetId) continue;
+        if (skillId && targetId === skillId) {
+          errors.push(`Skill ${prefix}.relatedSkillIds cannot reference itself.`);
+          continue;
+        }
+        if (!seen.has(targetId)) {
+          seen.add(targetId);
+          relatedSkillIds.push(targetId);
+        }
+      }
+    }
+  }
+
+  const out = {};
+  if (exercises.length > 0) out.exercises = exercises;
+  if (commonDifficulties.length > 0) out.commonDifficulties = commonDifficulties;
+  if (trainerInsight) out.trainerInsight = trainerInsight;
+  if (welfareNote) out.welfareNote = welfareNote;
+  if (relatedDictionaryTerms.length > 0) out.relatedDictionaryTerms = relatedDictionaryTerms;
+  if (relatedSkillIds.length > 0) out.relatedSkillIds = relatedSkillIds;
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 function validateGraphAndReferences(families, skills, errors) {
@@ -535,6 +713,14 @@ function validateGraphAndReferences(families, skills, errors) {
       }
       if (rel.level && !target.availableLevels.includes(rel.level)) {
         errors.push(`Skill ${s.id}: relatedSkill "${rel.skillId}" does not offer level "${rel.level}".`);
+      }
+    }
+
+    if (s.learningGuide && Array.isArray(s.learningGuide.relatedSkillIds)) {
+      for (const targetId of s.learningGuide.relatedSkillIds) {
+        if (!skillMap.has(targetId)) {
+          errors.push(`Skill ${s.id}: learningGuide.relatedSkillIds target "${targetId}" not found.`);
+        }
       }
     }
   }

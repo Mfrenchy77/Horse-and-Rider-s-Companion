@@ -144,5 +144,35 @@ void main() {
         );
       },
     );
+
+    test(
+      'learningGuide edits do not trigger standardVersionChanges',
+      () {
+        final pubSkill = buildSkill();
+        final guidedDraft = pubSkill.copyWith(
+          learningGuide: const SkillLearningGuide(
+            exercises: [
+              SkillPracticeExercise(
+                badge: 'Foundation Exercise',
+                title: 'Walk Pause Feel',
+                summary: 'Practice calm halts and instant softening.',
+              ),
+            ],
+            trainerInsight: 'Soft timing precedes heavier aids.',
+          ),
+        );
+
+        final diff = CurriculumDraftDiff.compute(
+          publishedFamilies: [family],
+          publishedSkills: [pubSkill],
+          draftFamilies: [family],
+          draftSkills: [guidedDraft],
+        );
+        expect(diff.hasChanges, isTrue);
+        expect(diff.modifiedSkills, hasLength(1));
+        expect(diff.modifiedSkills.single.changedFields, ['learningGuide']);
+        expect(diff.modifiedSkills.single.standardVersionChanges, isEmpty);
+      },
+    );
   });
 }

@@ -198,7 +198,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Breathe, Follow, and Check Your Hands",
+          "focusLevel": "introductory",
+          "summary": "At an unhurried walk on a quiet horse, exhale slowly over several strides while letting hips, knees, and ankles unlock so your pelvis follows the ribcage swing. Carry light reins (or rest lightly near mane or neck strap if helpful) without ever pulling on the mouth to steady your torso.",
+          "whatToNotice": "Can your elbows remain soft and elastic while the horse's walk moves your pelvis, or do knees clamp, toes brace forward, and shoulders tip when strides change?"
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Flow Between Full Seat and Light Seat",
+          "focusLevel": "intermediate",
+          "summary": "Along straight lines and wide arcs in a comfortable gait, fold quietly over your ankles and knees into a balanced light or two-point position for a few strides, then settle gently back toward the saddle—staying centered without dropping heavily onto the horse's back or grabbing the reins.",
+          "whatToNotice": "Check left-to-right balance across both stirrups and seat bones in both directions, noticing if one hip collapses or one knee grips harder during upward or downward transitions."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Gripping with the knees or calves to feel secure",
+          "guidance": "Pinching upward lifts you out of the horse's center of gravity and tightens the horse's back. Exhale, release thigh tension downward, and work at a slower, steadier pace until ease returns."
+        },
+        {
+          "issue": "Borrowing the reins as a balancing strap in transitions",
+          "guidance": "Even brief backward catches stiffen the horse's jaw and neck. Prepare transitions earlier with your breath and posture, and use a simple neck strap when building stability."
+        }
+      ],
+      "trainerInsight": "True security comes from shock-absorbing alignment over your base—never from holding on with your hands or pinching with your knees.",
+      "welfareNote": "Persistent rider crookedness, bouncing, or a saddle that sits unevenly transfers strain straight into the horse's spine—check stirrup balance, saddle fit, and early signs of back tension promptly.",
+      "relatedDictionaryTerms": [
+        "independent-seat",
+        "two-point-position",
+        "asymmetry",
+        "rein-contact"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.balance_weight",
+        "rider.theory.pain_discomfort_fatigue"
+      ]
+    }
   },
   {
     "id": "rider.mounted.emergency_control",
@@ -1316,7 +1356,47 @@
       "rider.mounted.rein_back",
       "rider.mounted.back_through_L"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "One Calm Step at a Time",
+          "focusLevel": "introductory",
+          "summary": "Begin from a balanced, quiet halt with open space behind you. Keep thighs soft so you do not clamp the saddle, ask lightly for a single backward weight shift or step, release your aids forward immediately, and let the horse settle before repeating.",
+          "whatToNotice": "Does the horse understand the request without bracing, rushing, or hollowing its back—and did your hands soften forward the instant the weight shifted?"
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Straight Back, Quiet Reset Forward",
+          "focusLevel": "intermediate",
+          "summary": "From a square, unhurried halt along an open line, invite a calm sequence of backward steps while keeping quiet, even leg channels to discourage drifting hips. Pause softly, then walk quietly forward so backward work stays balanced and willing.",
+          "whatToNotice": "Notice whether you guide drifting hindquarters subtly with aligned seat and legs instead of pulling harder on one rein."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Maintaining rein pressure after the horse begins stepping back",
+          "guidance": "Holding tension once the horse tries teaches bracing or hurried scuttling. Reward the earliest backward shift with clear forward softness in the hands."
+        },
+        {
+          "issue": "Leaning back or pinching thighs during the request",
+          "guidance": "Clamping knees and driving seat weight heavily downward often blocks the horse's back. Sit tall and balanced, leave space for the back to lift, and pause forward to reset if tension rises."
+        }
+      ],
+      "trainerInsight": "The release is part of the lesson, not simply the end of it.",
+      "welfareNote": "Persistent resistance, head tossing, hollowing, or toe dragging can indicate discomfort or confusion—pause, simplify, and check hock, back, dental, and saddle comfort rather than pulling harder.",
+      "relatedDictionaryTerms": [
+        "half-halt",
+        "rein-contact",
+        "rein-back",
+        "negative-reinforcement"
+      ],
+      "relatedSkillIds": [
+        "horse.mounted.rein_back",
+        "rider.theory.timing_reinforcement"
+      ]
+    }
   },
   {
     "id": "rider.mounted.sidepass",

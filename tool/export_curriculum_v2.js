@@ -11,6 +11,7 @@ const {
   PUBLIC_COLLECTION,
   PUBLIC_ACTIVE_DOC_ID,
   computeCurriculumChecksum,
+  normalizeLearningGuideForSnapshot,
   reassembleAndVerifySnapshot,
 } = require('../functions/curriculum_revisions');
 
@@ -130,6 +131,8 @@ function cleanSkillForExport(s) {
     sortOrder: Number.isInteger(s.sortOrder) ? s.sortOrder : 0,
   };
   if (s.replacedBy) out.replacedBy = s.replacedBy;
+  const learningGuide = normalizeLearningGuideForSnapshot(s.learningGuide);
+  if (learningGuide) out.learningGuide = learningGuide;
   return out;
 }
 

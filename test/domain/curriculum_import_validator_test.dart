@@ -303,5 +303,56 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'validates learningGuide fields and allows adding guide without standardVersion bump',
+      () {
+        final publishedParsed = parseAndValidateCurriculumImportJson(
+          jsonEncode(_basePayload()),
+        );
+
+        final updated = _basePayload();
+        ((updated['skills'] as List)[0] as Map<String, dynamic>)['learningGuide'] = {
+          'exercises': [
+            {
+              'badge': 'Foundation Exercise',
+              'title': 'Posting Rhythm Count',
+              'focusLevel': 'introductory',
+              'summary': 'Count two calm beats out loud at walk and trot.',
+              'whatToNotice': 'Balanced shoulders and relaxed knees.',
+            },
+          ],
+          'trainerInsight': 'Follow motion softly.',
+          'relatedDictionaryTerms': ['posting-trot'],
+          'relatedSkillIds': ['horse.mounted.trot'],
+        };
+
+        final validRes = parseAndValidateCurriculumImportJson(
+          jsonEncode(updated),
+          publishedFamilies: publishedParsed.families!,
+          publishedSkills: publishedParsed.skills!,
+        );
+        expect(validRes.isValid, isTrue, reason: validRes.errors.join('\n'));
+        expect(validRes.skills!.first.learningGuide?.exercises, hasLength(1));
+
+        final invalid = _basePayload();
+        ((invalid['skills'] as List)[0] as Map<String, dynamic>)['learningGuide'] = {
+          'relatedDictionaryTerms': ['bad slug'],
+          'relatedSkillIds': ['missing.skill'],
+        };
+        final invalidRes = parseAndValidateCurriculumImportJson(
+          jsonEncode(invalid),
+        );
+        expect(invalidRes.isValid, isFalse);
+        expect(
+          invalidRes.errors.any((e) => e.contains('valid Dictionary slug')),
+          isTrue,
+        );
+        expect(
+          invalidRes.errors.any((e) => e.contains('target "missing.skill" not found')),
+          isTrue,
+        );
+      },
+    );
   });
 }

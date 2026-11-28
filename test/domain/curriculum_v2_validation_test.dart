@@ -568,5 +568,62 @@ void main() {
         expect(def.proficient.contains('~1 m'), isFalse);
       }
     });
+
+    test(
+      'Develop This Skill sample guides populate the 6 initial skills with valid Dictionary & skill links',
+      () {
+        final dictRaw =
+            jsonDecode(File('functions/dictionary_seed.json').readAsStringSync())
+                as List<dynamic>;
+        final validSlugs = dictRaw
+            .map((e) => (e as Map<String, dynamic>)['slug'] as String)
+            .toSet();
+
+        const targetIds = [
+          'rider.in_hand.leading',
+          'rider.mounted.seat_balance',
+          'rider.mounted.rein_back',
+          'horse.in_hand.leading',
+          'horse.in_hand.longeing',
+          'horse.mounted.rein_back',
+        ];
+
+        for (final id in targetIds) {
+          final skill = skillById[id]!;
+          final guide = skill.learningGuide;
+          expect(guide, isNotNull, reason: '$id should have learningGuide');
+          expect(guide!.hasContent, isTrue);
+          expect(
+            guide.exercises.length,
+            inInclusiveRange(1, 2),
+            reason: '$id should have 1-2 practical exercises',
+          );
+          for (final ex in guide.exercises) {
+            expect(ex.title.trim(), isNotEmpty);
+            expect(ex.summary.trim(), isNotEmpty);
+            expect(ex.whatToNotice?.trim() ?? '', isNotEmpty);
+          }
+          expect(guide.commonDifficulties, isNotEmpty);
+          expect(guide.trainerInsight?.trim() ?? '', isNotEmpty);
+          expect(guide.welfareNote?.trim() ?? '', isNotEmpty);
+          expect(guide.relatedDictionaryTerms, isNotEmpty);
+          for (final slug in guide.relatedDictionaryTerms) {
+            expect(
+              validSlugs.contains(slug),
+              isTrue,
+              reason: '$id references unknown Dictionary slug "$slug"',
+            );
+          }
+          expect(guide.relatedSkillIds, isNotEmpty);
+          for (final relId in guide.relatedSkillIds) {
+            expect(
+              skillById.containsKey(relId),
+              isTrue,
+              reason: '$id references unknown related skill "$relId"',
+            );
+          }
+        }
+      },
+    );
   });
 }
