@@ -1,0 +1,2638 @@
+{
+  "proposalStatus": "PROPOSAL_ONLY_NOT_APPROVED",
+  "generatedDate": "2026-11-27",
+  "canonicalDictionarySource": "functions/dictionary_seed.json",
+  "curriculumBaseline": {
+    "families": 33,
+    "skills": 84,
+    "difficultyStandards": 187,
+    "legacyMappings": 84
+  },
+  "existingPublishedSeedCount": 28,
+  "candidateCountByPriority": {
+    "A": 14,
+    "B": 24,
+    "C": 18,
+    "total": 56
+  },
+  "importOrderRecommendation": [
+    "Stage 0 — Existing Seed Updates: Apply non-breaking skillIds and missing hyphen/plural synonyms on the 10 existing entries in functions/dictionary_seed.json; archive or remove superseded curriculum/dictionary/batch_01_drafts.json.",
+    "Stage 1 — Priority A (14 entries): Publish beginner-critical safety, seat, groundwork, and husbandry health vocabulary after clinical/welfare review of colic, lameness, choke, thrush, and learned-helplessness.",
+    "Stage 2 — Priority B (24 entries): Import intermediate biomechanics, lateral communication, learning theory, and laminitis/digital-pulse entries (with training-pyramid, laminitis, and digital-pulse review).",
+    "Stage 3 — Priority C (18 entries): Import specialized/advanced dressage, welfare science, equipment, and optional biomechanics terms (with five-domains-model, equine-pain-ethogram, capillary-refill-time, synovial-structure, and cavesson review)."
+  ],
+  "existingEntryImprovements": [
+    {
+      "id": "counter-canter",
+      "recommendedChanges": "Add Wave 1 split skill IDs rider.mounted.counter_canter and horse.mounted.counter_canter (keep existing canter and steering_navigation links).",
+      "proposedSynonymsAdd": [
+        "counter canters"
+      ],
+      "proposedSkillIdsAdd": [
+        "rider.mounted.counter_canter",
+        "horse.mounted.counter_canter"
+      ]
+    },
+    {
+      "id": "longeing",
+      "recommendedChanges": "Add Wave 3 Horse counterpart horse.in_hand.longeing plus bare verb/noun synonyms (\"longe\", \"lunge\") which appear in curriculum.",
+      "proposedSynonymsAdd": [
+        "longe",
+        "lunge"
+      ],
+      "proposedSkillIdsAdd": [
+        "horse.in_hand.longeing",
+        "rider.theory.progressive_conditioning"
+      ]
+    },
+    {
+      "id": "half-halt",
+      "recommendedChanges": "Add \"half-halts\" (hyphenated plural matches 1 hit in curriculum where seed only had space-separated \"half halts\") plus horse.mounted.transitions and rider.theory.understanding_rider_aids.",
+      "proposedSynonymsAdd": [
+        "half-halts"
+      ],
+      "proposedSkillIdsAdd": [
+        "horse.mounted.transitions",
+        "rider.theory.understanding_rider_aids",
+        "rider.theory.balance_weight"
+      ]
+    },
+    {
+      "id": "ground-tie",
+      "recommendedChanges": "Add \"ground-tying\" (hyphenated gerund matches 1 hit in horse.in_hand.standing_quietly) and \"ground ties\"; add counterpart link to rider.husbandry.safe_handling.",
+      "proposedSynonymsAdd": [
+        "ground-tying",
+        "ground ties"
+      ],
+      "proposedSkillIdsAdd": [
+        "rider.husbandry.safe_handling"
+      ]
+    },
+    {
+      "id": "groundwork",
+      "recommendedChanges": "Add Wave 1/3 groundwork skills (longeing, ground driving, catching, yielding) so Glossary learners discover the full In-Hand category.",
+      "proposedSynonymsAdd": [],
+      "proposedSkillIdsAdd": [
+        "rider.in_hand.longeing",
+        "horse.in_hand.longeing",
+        "rider.in_hand.ground_driving",
+        "horse.in_hand.yield_hindquarters"
+      ]
+    },
+    {
+      "id": "canter-lead",
+      "recommendedChanges": "Connect Wave 1 counter-canter and flying-lead-change split IDs plus singular \"lead change\" synonym.",
+      "proposedSynonymsAdd": [],
+      "proposedSkillIdsAdd": [
+        "rider.mounted.counter_canter",
+        "rider.mounted.flying_lead_changes",
+        "horse.mounted.flying_lead_changes"
+      ]
+    },
+    {
+      "id": "negative-reinforcement",
+      "recommendedChanges": "Add hyphenated \"pressure-and-release\" synonym alongside existing space-separated \"pressure and release\", and link rider.in_hand.leading & trailer_loading.",
+      "proposedSynonymsAdd": [
+        "pressure-and-release"
+      ],
+      "proposedSkillIdsAdd": [
+        "rider.in_hand.leading",
+        "rider.in_hand.trailer_loading"
+      ]
+    },
+    {
+      "id": "self-carriage",
+      "recommendedChanges": "Connect Wave 3 horse.in_hand.longeing, horse.mounted.canter, and rider.mounted.travers.",
+      "proposedSynonymsAdd": [],
+      "proposedSkillIdsAdd": [
+        "horse.in_hand.longeing",
+        "horse.mounted.canter",
+        "rider.mounted.travers"
+      ]
+    },
+    {
+      "id": "girth-cinch",
+      "recommendedChanges": "Add \"girths\", \"cinches\", \"girthiness\", \"girthy\" (9 hits in Wave 3 husbandry & horse handling care), keeping explanation note on ulcer/tack discomfort intact.",
+      "proposedSynonymsAdd": [
+        "girths",
+        "cinches",
+        "girthiness",
+        "girthy"
+      ],
+      "proposedSkillIdsAdd": [
+        "horse.in_hand.daily_care_handling"
+      ]
+    },
+    {
+      "id": "transitions",
+      "recommendedChanges": "Add singular forms (\"transition\", \"progressive transition\") and \"within-gait transitions\" plus rider.theory.understanding_rider_aids.",
+      "proposedSynonymsAdd": [
+        "transition",
+        "progressive transition",
+        "within-gait transitions"
+      ],
+      "proposedSkillIdsAdd": [
+        "rider.theory.understanding_rider_aids"
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "independent-seat",
+      "slug": "independent-seat",
+      "term": "Independent Seat",
+      "priority": "A",
+      "definition": "The rider's ability to stay centered and absorb the horse's motion with relaxed pelvis, core, and legs without hanging onto the reins or clamping defensively.",
+      "explanation": "An independent seat separates balance from communication: the rider's hands, legs, and weight can give quiet, clear cues because none of those body parts is desperately gripping to stay aboard. It applies equally whether riding a deep classical dressage seat, a relaxed Western seat, or a balanced light/two-point seat over trails and terrain.",
+      "synonyms": [
+        "balanced seat",
+        "following seat"
+      ],
+      "categories": [
+        "Riding",
+        "Biomechanics"
+      ],
+      "examples": [
+        "During walk and trot warm-ups, soften through your hips so you maintain an independent seat without stiffening onto the reins."
+      ],
+      "relatedTerms": [
+        "two-point-position",
+        "rein-contact",
+        "aids",
+        "asymmetry"
+      ],
+      "skillIds": [
+        "rider.mounted.seat_balance",
+        "rider.mounted.walk",
+        "rider.mounted.trot",
+        "rider.mounted.terrain_obstacles"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Foundational across English, Western, trail, ranch, and therapeutic riding; enables non-restrictive rein feel and protects the horse's mouth and back.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Depending on the reins for balance pulls the horse's mouth and hollow-braces its back; build tempo gradually and use a neck strap or grab strap while developing balance.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "two-point-position",
+      "slug": "two-point-position",
+      "term": "Two-Point Position",
+      "priority": "A",
+      "definition": "A forward, balanced riding position in which the seat lifts cleanly slightly out of the saddle so rider weight is absorbed symmetrically through flexible ankles, knees, and hips.",
+      "explanation": "Using two-point or a lighter half-seat relieves continuous saddle weight over the horse's lumbar back during brisk trots, canter conditioning, steep climbs, ground poles, and jumping. In genuine two-point, the rider stays balanced over their own base of support rather than tipping forward onto the horse's neck or bracing off the reins.",
+      "synonyms": [
+        "two-point",
+        "half-seat",
+        "light seat"
+      ],
+      "categories": [
+        "Riding"
+      ],
+      "examples": [
+        "Shift smoothly into a light two-point position on moderate uphill climbs while offering generous rein freedom for balance."
+      ],
+      "relatedTerms": [
+        "independent-seat",
+        "forage",
+        "trot",
+        "canter"
+      ],
+      "skillIds": [
+        "rider.mounted.seat_balance",
+        "rider.mounted.canter",
+        "rider.mounted.terrain_obstacles"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Common across jumping, eventing, endurance, trail climbing, and conditioning work; half-seat keeps light tailbone brush without fully standing in stirrups.",
+      "regionalUsage": "Two-point and half-seat are common in North America; light seat or jumping position are common internationally.",
+      "welfareAndSafetyNotes": "Avoid standing rigidly straight or gripping knees; unlocked ankle and hip shock absorption protects both horse back comfort and rider stability on hills.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "rein-back",
+      "slug": "rein-back",
+      "term": "Rein Back",
+      "priority": "A",
+      "definition": "A deliberate, unhurried movement in which a horse steps straight or along a guided line backward in symmetrical two-beat diagonal footfall pairs.",
+      "explanation": "Whether asked from the ground or under saddle, a healthy rein back shifts weight politely toward the hindquarters while keeping the jaw, poll, and back soft. Each step moves an opposite-side front and hind foot together. It serves practical horsemanship everyday—at gates, trailers, tight barn spaces, and trail turnarounds—without requiring fixed step counts or narrow corridor patterns at entry levels.",
+      "synonyms": [
+        "rein-back",
+        "backing up",
+        "reculer"
+      ],
+      "categories": [
+        "Riding",
+        "Handling",
+        "Gaits"
+      ],
+      "examples": [
+        "Prepare a settled halt first, invite one or two calm diagonal steps of rein back, and soften promptly back to halt or walk."
+      ],
+      "relatedTerms": [
+        "diagonal-pairs",
+        "half-halt",
+        "transitions",
+        "turn-on-the-forehand"
+      ],
+      "skillIds": [
+        "rider.mounted.rein_back",
+        "horse.mounted.rein_back",
+        "rider.in_hand.leading",
+        "rider.theory.gaits_footfalls"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "In mounted work, riders soften hands forward immediately once the horse yields backward rather than pulling continuously; in-hand backing uses clear personal-space cues.",
+      "regionalUsage": "Rein back (or rein-back) is common in English, classical, and European usage (reculer in French); back-up or backing is everyday Western and groundwork phrasing.",
+      "welfareAndSafetyNotes": "Stepping backward flexes hocks, stifles, and lumbar spine; repeated head-throwing, toe-dragging, or refusal warrants checking saddle fit, dental comfort, and hind-limb soundness—never see-saw or haul hard backward.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "turn-on-the-forehand",
+      "slug": "turn-on-the-forehand",
+      "term": "Turn on the Forehand",
+      "priority": "A",
+      "definition": "A stationary or slow-stepping maneuver—in-hand or under saddle—in which the horse steps its hindquarters laterally around a relatively steady front end.",
+      "explanation": "Practiced on both left and right sides, yielding the hindquarters teaches the horse to answer a light lateral leg or ground cue cleanly while the inside hind leg crosses politely in front of the outside hind leg. Handlers and riders use it to open gates, align beside mounting blocks, soften crookedness, and de-escalate crowding safely without twisting the horse backward.",
+      "synonyms": [
+        "turns on the forehand",
+        "disengage the hindquarters",
+        "yielding the hindquarters"
+      ],
+      "categories": [
+        "Riding",
+        "Handling"
+      ],
+      "examples": [
+        "Ask from a quiet halt for a calm turn on the forehand to step the hips clear of the gate latch."
+      ],
+      "relatedTerms": [
+        "forehand",
+        "hindquarters",
+        "turn-on-the-haunches",
+        "leg-yield"
+      ],
+      "skillIds": [
+        "rider.in_hand.turn_on_forehand",
+        "horse.in_hand.yield_hindquarters",
+        "rider.mounted.turn_on_forehand",
+        "horse.mounted.turn_on_forehand"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "In Western and groundwork traditions, yielding or disengaging the hindquarters also serves as a calming redirection; classical and English traditions treat it as a structured lateral foundation.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Avoid holding stiff backward rein pressure that traps the horse into running backward or pulling against the bit/halter; stand clear of the kicking arc when working from the ground.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "turn-on-the-haunches",
+      "slug": "turn-on-the-haunches",
+      "term": "Turn on the Haunches",
+      "priority": "A",
+      "definition": "A turning movement—on foot or from active walk under saddle—in which the horse steps its shoulders smoothly around steadier hindquarters without backing or spinning abruptly.",
+      "explanation": "Unlike a turn on the forehand, the hindquarters stay closer to the center of the arc while the outside front leg crosses smoothly around the inside front leg, preserving steady walk rhythm and forward intention. Across disciplines—from opening narrow trail gates to preparing balanced arena corners—quality is measured by preparation, clear shoulder guidance, sound footing judgment, and straight exits rather than arbitrary degree angles.",
+      "synonyms": [
+        "turns on the haunches",
+        "turn on the hindquarters",
+        "turn around the hindquarters"
+      ],
+      "categories": [
+        "Riding",
+        "Handling"
+      ],
+      "examples": [
+        "Maintain active four-beat walk flow while guiding the shoulders calmly around the haunches to face the trail gate."
+      ],
+      "relatedTerms": [
+        "hindquarters",
+        "turn-on-the-forehand",
+        "half-halt",
+        "lateral-movement"
+      ],
+      "skillIds": [
+        "rider.mounted.turn_on_haunches",
+        "horse.mounted.turn_on_haunches",
+        "rider.in_hand.yield_forequarters",
+        "horse.in_hand.yield_forequarters"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "English, trail, ranch, and classical horsemen all use controlled turns around the haunches; radius starts generous in introductory stages and becomes more compact as strength and coordination grow.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Keep footing non-slippery and keep the horse stepping forward in walk rather than wrenching the neck inward or pivoting forcefully on a twisted hock.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "reinforcement",
+      "slug": "reinforcement",
+      "term": "Reinforcement",
+      "priority": "A",
+      "definition": "Any training event that makes a horse's response more likely to happen again—either by removing mild motivating pressure (negative reinforcement) or adding a valued reward (positive reinforcement).",
+      "explanation": "Every time pressure releases right as a horse yields or a treat/scratch follows a desired try, reinforcement shapes future behavior. In learning theory, reinforcement strengthens behavior whereas punishment weakens it; effective trainers carefully time whichever quadrant fits the horse and task so the horse clearly knows what succeeded without confusion or escalating force.",
+      "synonyms": [
+        "positive and negative reinforcement",
+        "reinforcement schedule"
+      ],
+      "categories": [
+        "Learning Theory",
+        "Training"
+      ],
+      "examples": [
+        "Immediate timing matters most in reinforcement: waiting three seconds after the horse stops rushing teaches less clearly than releasing on the very first calm step."
+      ],
+      "relatedTerms": [
+        "negative-reinforcement",
+        "positive-reinforcement",
+        "operant-conditioning",
+        "classical-conditioning"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "rider.theory.timing_reinforcement",
+        "rider.in_hand.longeing"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Umbrella term linking pressure-and-release (R−) and reward-based training (R+) neutrally across all equestrian philosophies.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Accidental reinforcement—such as dropping the lead when a horse pulls away—quickly trains unwanted habits; slow down, simplify requests, and check comfort rather than relying on punishment.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "learned-helplessness",
+      "slug": "learned-helplessness",
+      "term": "Learned Helplessness",
+      "priority": "A",
+      "definition": "A welfare-compromising behavioral state in which a horse stops trying to respond, avoid, or escape after repeated exposure to unavoidable, excessive, or confusing aversive pressure.",
+      "explanation": "A shut-down horse may stand superficially still with dull eyes, tight muzzle, braced muscles, or slow shuffling steps—causing inexperienced observers to mistake exhaustion or psychological defeat for calm obedience. Genuine relaxation looks markedly different: soft breathing, blinking eyes, curious ear movement, and responsive, willing weight shifts.",
+      "synonyms": [
+        "equine shutdown"
+      ],
+      "categories": [
+        "Learning Theory",
+        "Health & Welfare",
+        "Behavior"
+      ],
+      "examples": [
+        "Never mistake a frozen horse that stops reacting out of learned helplessness for a genuinely confident horse during trailer loading or haltering."
+      ],
+      "relatedTerms": [
+        "negative-reinforcement",
+        "flooding",
+        "arousal-threshold",
+        "habituation"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "rider.theory.stress_fear_confidence",
+        "rider.theory.ethical_training",
+        "horse.in_hand.catching_turnout",
+        "rider.theory.training_pyramid"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Essential welfare concept in behavioral science, ethical groundwork, desensitization, and safe catching/handling assessment.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Shutdown carries high welfare and safety risk because suppressed horses can either suffer silently with stress ulcers/pain or erupt suddenly when pushed past an unseen threshold.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "colic",
+      "slug": "colic",
+      "term": "Colic",
+      "priority": "A",
+      "definition": "Abdominal pain in horses—a broad clinical sign ranging from mild gas cramping to life-threatening intestinal displacement or impaction requiring prompt veterinary assessment.",
+      "explanation": "Common outward signs include pawing, turning to look or bite at the flanks, curling the upper lip, restlessness, repeatedly lying down and getting back up, rolling, decreased appetite, quiet or absent gut sounds, elevated heart rate, and reduced or dry manure. Because mild episodes can worsen rapidly, baseline vital-sign tracking and early vet contact save lives.",
+      "synonyms": [
+        "colicking",
+        "equine colic"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Husbandry"
+      ],
+      "examples": [
+        "Withhold hay and grain from a horse showing signs of colic, note temperature/pulse/respiration and gut sounds, and call your veterinarian immediately."
+      ],
+      "relatedTerms": [
+        "vital-signs-tpr",
+        "forage",
+        "laminitis",
+        "capillary-refill-time"
+      ],
+      "skillIds": [
+        "rider.husbandry.health_monitoring",
+        "rider.husbandry.first_aid",
+        "rider.husbandry.feeding"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Educational symptom reference only—always consult a licensed veterinarian promptly and never administer pain medication before consulting your vet.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Safety priority: do not force a colicking horse to walk endlessly to exhaustion, and keep people clear if the horse drops suddenly to roll.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "lameness",
+      "slug": "lameness",
+      "term": "Lameness",
+      "priority": "A",
+      "definition": "An abnormality or asymmetry in a horse's gait or stance caused by pain, mechanical restriction, or neurological impairment in one or more limbs, hooves, or the spine.",
+      "explanation": "Lameness can range from obvious reluctance to bear weight to subtle shortened strides, head bobbing at trot, choppy downhill steps, or repeated resistance to one canter lead. Because subtle lameness is frequently misread as behavioral stubbornness, monitoring resting posture, straight in-hand trot-ups, digital pulses, and movement symmetry protects horse welfare.",
+      "synonyms": [
+        "unsoundness"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Biomechanics"
+      ],
+      "examples": [
+        "If trot rhythm stays uneven after checking for a packed stone in the hoof, stop riding and schedule a lameness assessment."
+      ],
+      "relatedTerms": [
+        "rhythm",
+        "asymmetry",
+        "laminitis",
+        "equine-pain-ethogram"
+      ],
+      "skillIds": [
+        "rider.husbandry.health_monitoring",
+        "rider.in_hand.leading",
+        "rider.in_hand.longeing",
+        "rider.theory.pain_discomfort_fatigue",
+        "rider.theory.gaits_footfalls"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Clinical and biomechanical assessment belongs with a licensed veterinarian and farrier; riders/handlers learn early observation rather than self-diagnosing.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never mask lameness with medication or harsher training aids to keep riding; rest and professional diagnosis prevent chronic injury.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "choke",
+      "slug": "choke",
+      "term": "Choke",
+      "priority": "A",
+      "definition": "An esophageal obstruction in which feed or foreign material lodges in the horse's throat/esophagus—not the windpipe—blocking normal swallowing.",
+      "explanation": "Unlike human airway choking, a horse with choke can usually still breathe, though feed-stained saliva draining from one or both nostrils, coughing, stretched neck, and repeated swallowing attempts signal urgency. Common triggers include bolting dry pellets without water, swollen unsoaked beet pulp, eating rapidly when stressed, or poor dental chewing. Remove all feed and water and contact a veterinarian promptly because secondary aspiration pneumonia is a serious complication.",
+      "synonyms": [
+        "equine choke",
+        "esophageal choke"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Husbandry"
+      ],
+      "examples": [
+        "Soaking senior pellets into a soft mash helps prevent choke in horses with worn teeth or eager eating habits."
+      ],
+      "relatedTerms": [
+        "forage",
+        "colic",
+        "vital-signs-tpr"
+      ],
+      "skillIds": [
+        "rider.husbandry.feeding",
+        "rider.husbandry.health_monitoring",
+        "rider.husbandry.first_aid"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Educational warning—requires prompt veterinary guidance; soak pelleted/beet-pulp mashes thoroughly when indicated and slow fast eaters.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Marked contextual=false to avoid false highlighting on non-medical English usage while remaining searchable and available via manual Define.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": false,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "thrush",
+      "slug": "thrush",
+      "term": "Thrush",
+      "priority": "A",
+      "definition": "A common bacterial and fungal breakdown of tissue in the grooves alongside or center of the horse's hoof frog, marked by dark, foul-smelling discharge.",
+      "explanation": "Thrush thrives in damp, muddy, manure-soaked bedding or deep packed hoof crevices with little air circulation. Daily thorough hoof picking, dry footing, regular farrier trimming to open deep pockets, and targeted care recommended by a vet or farrier keep the frog healthy and firm. Advanced central-sulcus thrush can cause genuine heel soreness and reluctance during hoof handling.",
+      "synonyms": [
+        "hoof thrush"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Husbandry"
+      ],
+      "examples": [
+        "Clean the frog grooves daily while picking hooves so early thrush is caught before deep heel soreness develops."
+      ],
+      "relatedTerms": [
+        "lameness",
+        "forage"
+      ],
+      "skillIds": [
+        "rider.husbandry.grooming",
+        "rider.husbandry.stable_care",
+        "horse.in_hand.hoof_handling"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Routine stable and hoof hygiene concern; involve your farrier or veterinarian if bleeding, deep cleft pain, or persistent infection occurs.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Use cautious, mild farrier-recommended cleansers rather than caustic household chemicals that damage healthy hoof tissue.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "wither-clearance",
+      "slug": "wither-clearance",
+      "term": "Wither Clearance",
+      "priority": "A",
+      "definition": "The vertical and side-to-side space between a saddle gullet or blanket neckline and the horse's withers needed to protect delicate spinal tissues from pinching or pressure.",
+      "explanation": "With the rider seated in the saddle, adequate clearance lets the horse lift its back, move its shoulder blades freely, and carry weight without bruising the spinous processes or rubbing raw sores over the withers. Excessively tight blanket necks pull down hard on the withers when the horse lowers its head to graze—just as an overly narrow or wide saddle tree creates focal pressure.",
+      "synonyms": [
+        "gullet clearance"
+      ],
+      "categories": [
+        "Tack & Equipment",
+        "Health & Welfare"
+      ],
+      "examples": [
+        "Always verify comfortable wither clearance once you are mounted, since saddle compression lowers the pommel under weight."
+      ],
+      "relatedTerms": [
+        "withers",
+        "girth-cinch",
+        "forehand"
+      ],
+      "skillIds": [
+        "rider.husbandry.tack",
+        "rider.husbandry.blanketing",
+        "rider.theory.tack_fit_function"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Static clearance at halt is only a starting check; saddle pads, rider weight, and motion all reduce clearance under saddle.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never stuff overly thick pads under a narrow saddle to fix low wither clearance—padding narrows space even more like wearing thick socks inside tight boots.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "blind-spot",
+      "slug": "blind-spot",
+      "term": "Blind Spot",
+      "priority": "A",
+      "definition": "Zones directly in front of the horse's nose/forehead and directly behind the hindquarters/tail where equine eye placement prevents the horse from seeing clearly.",
+      "explanation": "Because a horse's eyes sit on the sides of its head, horses have broad nearly circular monocular vision with two key blind spots: a small triangle right beneath/in front of the muzzle and a narrow wedge straight behind the tail. Approaching toward the shoulder while speaking gently keeps you visible; darting silently into a blind spot easily startles a flight animal into defensive kicking or backing.",
+      "synonyms": [
+        "blind spots",
+        "equine blind spots"
+      ],
+      "categories": [
+        "Safety",
+        "Behavior"
+      ],
+      "examples": [
+        "Announce yourself softly toward the shoulder before walking around the hindquarters so you do not startle the horse in a blind spot."
+      ],
+      "relatedTerms": [
+        "quick-release-knot",
+        "groundwork"
+      ],
+      "skillIds": [
+        "rider.husbandry.safe_handling",
+        "rider.theory.equine_body_language",
+        "rider.in_hand.obstacles_outings"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Universal safety basic taught before haltering, grooming, tying, or loading.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Pass either well out of kicking range behind the horse or very close with a calm hand maintaining steady contact along the hip.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "forage",
+      "slug": "forage",
+      "term": "Forage",
+      "priority": "A",
+      "definition": "Fibrous plant feed—principally pasture grass, hay, or soaked hay cubes/pellets—that forms the healthy digestive foundation of a horse's diet.",
+      "explanation": "Horses evolved as continuous trickle grazers whose stomachs produce acid steadily and whose hindguts rely on microbial fiber fermentation. Prioritizing clean, mold-free forage offered frequently throughout day and night supports gut motility, reduces stomach ulcer and colic risk, satisfies natural chewing needs, and minimizes stable boredom.",
+      "synonyms": [
+        "roughage"
+      ],
+      "categories": [
+        "Husbandry",
+        "Health & Welfare"
+      ],
+      "examples": [
+        "Inspect hay flakes daily for dust, mold, or toxic weeds before feeding because clean forage is the cornerstone of digestive health."
+      ],
+      "relatedTerms": [
+        "colic",
+        "choke",
+        "laminitis"
+      ],
+      "skillIds": [
+        "rider.husbandry.feeding",
+        "rider.theory.ethical_training",
+        "rider.theory.pain_discomfort_fatigue"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Forage-first nutrition underpins English, Western, ranch, trail, endurance, and therapeutic stable management.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Sudden changes in hay batches or turning unacclimated horses onto lush high-sugar spring pasture raises colic and laminitis risk.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "engagement",
+      "slug": "engagement",
+      "term": "Engagement",
+      "priority": "B",
+      "definition": "Active flexion of the horse's hind-limb joints (hips, stifles, hocks) stepping forward under the body to carry more weight and lift the forehand.",
+      "explanation": "True engagement comes from increased hindquarter reach and joint bending rather than faster leg tempo or pulling the head backward with the reins. Transitions, gentle hill climbing, and exercises like shoulder-in build engagement progressively as conditioning develops.",
+      "synonyms": [
+        "hindquarter engagement"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Riding",
+        "Training"
+      ],
+      "examples": [
+        "Well-timed transitions encourage hindquarter engagement so the horse steps up underneath itself instead of leaning onto the hands."
+      ],
+      "relatedTerms": [
+        "hindquarters",
+        "impulsion",
+        "collection",
+        "self-carriage"
+      ],
+      "skillIds": [
+        "rider.theory.balance_weight",
+        "rider.mounted.canter",
+        "rider.mounted.shoulder_in",
+        "horse.mounted.transitions"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Used across English, dressage, Western working/reining transitions, ranch work, and Working Equitation.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Demanding sustained engagement from an unconditioned or sore horse strains hocks, stifles, and lumbar muscles; build gradually in brief reps.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "impulsion",
+      "slug": "impulsion",
+      "term": "Impulsion",
+      "priority": "B",
+      "definition": "Controlled, elastic forward energy generated by engaged hindquarters moving cleanly through an unbraced, swinging back—distinct from hurried speed.",
+      "explanation": "A horse can rush frantically with zero impulsion (hollow back, flat legs, leaning forward) or carry tremendous quiet impulsion at a controlled tempo (elastic stride, alert responsiveness, light forehand). In training frameworks such as the Training Pyramid, impulsion builds upon rhythm, relaxation, and soft connection.",
+      "synonyms": [],
+      "categories": [
+        "Biomechanics",
+        "Training"
+      ],
+      "examples": [
+        "Ask for balanced impulsion off a light leg aid without letting the trot quicken into rushing."
+      ],
+      "relatedTerms": [
+        "engagement",
+        "rhythm",
+        "collection",
+        "training-pyramid"
+      ],
+      "skillIds": [
+        "rider.theory.training_pyramid",
+        "rider.mounted.shoulder_in",
+        "rider.mounted.trot"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Often misunderstood as going fast; applies to energetic, springy movement in any discipline rather than dressage alone.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Chasing speed against tight reins creates tension and joint concussion rather than genuine athletic impulsion.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "straightness",
+      "slug": "straightness",
+      "term": "Straightness",
+      "priority": "B",
+      "definition": "Alignment in which the horse's hind legs follow the track of its front legs cleanly on straight lines and curved arcs, using both sides evenly.",
+      "explanation": "Like humans, horses are naturally asymmetric and tend to bulge one shoulder or drift the hindquarters inward when unguided. Straightness on a circle means the spine mirrors the curve uniformly so inside and outside hind legs share carrying work fairly rather than letting the haunches fall out.",
+      "synonyms": [],
+      "categories": [
+        "Biomechanics",
+        "Training"
+      ],
+      "examples": [
+        "Work on gradual straightness in walk and trot so the horse's hindquarters track behind the shoulders instead of drifting toward the rail."
+      ],
+      "relatedTerms": [
+        "asymmetry",
+        "bend",
+        "engagement",
+        "training-pyramid"
+      ],
+      "skillIds": [
+        "rider.theory.bend_flexion_straightness",
+        "rider.theory.training_pyramid",
+        "rider.mounted.steering_navigation",
+        "rider.in_hand.ground_driving"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Key principle across vet trot-ups, groundwork, trail riding, and arena schooling. Everyday bare adjective \"straight\" is kept unhighlighted to avoid line-geometry noise.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Chronic crookedness overloads specific front tendons or hocks over time; symmetrical bilateral schooling supports long-term soundness.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "bend",
+      "slug": "bend",
+      "term": "Bend",
+      "priority": "B",
+      "definition": "A smooth, slight lateral curve through the horse's entire spine—from poll to tail—matching the radius of a turn or lateral exercise without cranking just the neck.",
+      "explanation": "True bend relies on soft ribcage yielding around the rider's inside leg supported by the outside rein/leg boundaries. Over-bending only the neck sideways while the outside shoulder bulges out breaks alignment and unbalances the horse. Bare \"bend\" is kept non-contextual to avoid false hits on general phrases like \"high-stress bends\" or \"bend safely\".",
+      "synonyms": [
+        "lateral bend",
+        "inward bend",
+        "true bend"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Riding"
+      ],
+      "examples": [
+        "Encourage even bend around a generous circle instead of pulling the nose sharply inward while the outside shoulder drifts out."
+      ],
+      "relatedTerms": [
+        "flexion",
+        "straightness",
+        "asymmetry",
+        "shoulder-in"
+      ],
+      "skillIds": [
+        "rider.theory.bend_flexion_straightness",
+        "rider.mounted.steering_navigation",
+        "rider.mounted.shoulder_in",
+        "rider.mounted.travers"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Gentle true bend matches circle size; tight turns demand slightly more bend, while straight lines use only subtle lateral alignment.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never crank the neck sideways with inside rein force—an anatomical over-bend stresses cervical joints and blocks hind-leg forward step.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": false,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "flexion",
+      "slug": "flexion",
+      "term": "Flexion",
+      "priority": "B",
+      "definition": "Soft, voluntary yielding at the horse's poll and jaw—laterally or longitudinally—without tilting the head, fixing the neck, or forcing posture.",
+      "explanation": "Unlike full-body bend along a curve, flexion refers specifically to joint softness at the poll/upper neck. Healthy longitudinal flexion lengthens the topline comfortably while allowing the horse's nose to stay slightly ahead of vertical; lateral flexion yields softly left or right for suppleness and safety checks. Bare \"flexion\" stays non-contextual to avoid matching anatomical \"hock/knee flexion\" clauses.",
+      "synonyms": [
+        "poll flexion",
+        "lateral flexion",
+        "jaw flexion"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Riding"
+      ],
+      "examples": [
+        "Reward brief voluntary lateral flexion on a soft rein rather than holding sustained tension against a braced jaw."
+      ],
+      "relatedTerms": [
+        "bend",
+        "poll",
+        "self-carriage",
+        "hollowing"
+      ],
+      "skillIds": [
+        "rider.theory.bend_flexion_straightness",
+        "rider.theory.ethical_training",
+        "rider.mounted.leg_yield"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Both English soft contact and Western one-rein/give-to-pressure groundwork teach gentle voluntary flexion without force.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Forcing the chin tightly toward the chest (hyperflexion / rollkur) compromises airway comfort, vision, and welfare.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": false,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "suppleness",
+      "slug": "suppleness",
+      "term": "Suppleness",
+      "priority": "B",
+      "definition": "Elastic, tension-free freedom of movement across the horse's muscles and joints—including both physical looseness and mental willingness.",
+      "explanation": "Longitudinal suppleness lets the back swing and the topline stretch forward and down (such as in free walk) as easily as stepping into shorter strides; lateral suppleness lets ribs and shoulders bend comfortably left and right. Without suppleness, exercises feel stiff, rushed, or mechanical.",
+      "synonyms": [
+        "lateral suppleness",
+        "longitudinal suppleness"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Training"
+      ],
+      "examples": [
+        "Alternating gentle serpentines with stretching free-walk breaks helps develop balanced suppleness before harder work."
+      ],
+      "relatedTerms": [
+        "hollowing",
+        "bend",
+        "rhythm",
+        "free-walk"
+      ],
+      "skillIds": [
+        "rider.theory.training_pyramid",
+        "rider.mounted.walk",
+        "horse.mounted.walk",
+        "rider.mounted.leg_yield"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Matches the second rung of many training scales (relaxation/suppleness) and applies to warm-ups in every discipline.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Warm up gently—asking cold muscles for tight bends or collection risks strain and defensive bracing.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "asymmetry",
+      "slug": "asymmetry",
+      "term": "Asymmetry",
+      "priority": "B",
+      "definition": "Natural one-sided preference or uneven muscular tension in either horse or rider—making left and right turns, leads, or straight tracking feel noticeably different.",
+      "explanation": "Just as riders favor a dominant hand or drop onto one hip, every horse naturally stiffens more easily on one side and hollows on the other. Recognizing both rider asymmetry and equine crookedness helps pairs work evenly in both directions without punishing the horse's stiffer side.",
+      "synonyms": [
+        "natural crookedness",
+        "equine asymmetry",
+        "rider asymmetry"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Training"
+      ],
+      "examples": [
+        "Notice whether consistent outside shoulder drift comes from equine asymmetry or the rider collapsing one waist."
+      ],
+      "relatedTerms": [
+        "straightness",
+        "bend",
+        "independent-seat",
+        "lameness"
+      ],
+      "skillIds": [
+        "rider.mounted.seat_balance",
+        "rider.theory.balance_weight",
+        "rider.theory.bend_flexion_straightness",
+        "rider.in_hand.longeing"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Explains why alternating trot diagonals, practicing longeing both ways, and checking rider hip symmetry matter.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Sudden new asymmetry or acute one-sided resistance warrants checking lameness, dental balance, or saddle flocking before blaming habit.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "hollowing",
+      "slug": "hollowing",
+      "term": "Hollowing",
+      "priority": "B",
+      "definition": "A posture in which the horse drops its back downward, raises or tightens the neck/head defensively, and trails the hindquarters out behind rather than stepping smoothly underneath.",
+      "explanation": "Hollowing often appears during poorly prepared transitions, abrupt pulling on the mouth, heavy rider bouncing, or pinching saddles. Rather than forcing the head down mechanically, resolving hollowness addresses rider balance, gentle preparation, emotional comfort, and saddle/physical fit.",
+      "synonyms": [
+        "hollow back",
+        "hollowed"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Behavior"
+      ],
+      "examples": [
+        "Smooth downward half-halt preparation keeps the horse stepping smoothly rather than hollowing its back and tossing its head."
+      ],
+      "relatedTerms": [
+        "self-carriage",
+        "suppleness",
+        "wither-clearance",
+        "equine-pain-ethogram"
+      ],
+      "skillIds": [
+        "rider.mounted.transitions",
+        "horse.mounted.transitions",
+        "horse.mounted.rein_back",
+        "rider.theory.balance_weight"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Important visual and kinesthetic clue across transitions, mounting, backing, and gait work.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Sustained hollow movement strains the spine and sacroiliac structures; investigate back soreness, saddle fit, or heavy hands early.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "lateral-movement",
+      "slug": "lateral-movement",
+      "term": "Lateral Movement",
+      "priority": "B",
+      "definition": "Any controlled movement—on foot or mounted—in which the horse steps sideways or simultaneously forward and sideways to build coordination, suppleness, and body control.",
+      "explanation": "In Horse and Rider's Companion, in-hand yielding builds foundational lateral communication before mounted skills progress from leg yield and sidepass through shoulder-in and travers. Different lateral movements vary spinal bend, track count (two, three, or four tracks), and carrying effort.",
+      "synonyms": [
+        "lateral work",
+        "lateral movements",
+        "lateral yielding",
+        "lateral yield"
+      ],
+      "categories": [
+        "Riding",
+        "Training",
+        "Biomechanics"
+      ],
+      "examples": [
+        "Practicing gentle lateral work at walk helps improve shoulder responsiveness before asking for trot figures."
+      ],
+      "relatedTerms": [
+        "leg-yield",
+        "sidepass",
+        "shoulder-in",
+        "travers"
+      ],
+      "skillIds": [
+        "rider.mounted.leg_yield",
+        "rider.mounted.shoulder_in",
+        "rider.mounted.travers",
+        "rider.in_hand.sidepass_in_hand"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Cross-discipline umbrella covering both practical ranch/trail gating (sidepass) and gymnastic schooling (leg yield, shoulder-in, travers).",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Keep early lateral segments short on level, non-slip footing so crossing hooves stay relaxed and balanced.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "leg-yield",
+      "slug": "leg-yield",
+      "term": "Leg Yield",
+      "priority": "B",
+      "definition": "A progressive lateral movement in which the horse travels forward and sideways simultaneously along a diagonal line with a straight body or slight flexion away from the direction of movement.",
+      "explanation": "Grounded in walk before advancing to trot, leg yield teaches the horse to move calmly away from light inside leg cues toward an elastic outside rein without racing through the outside shoulder or trailing the haunches behind.",
+      "synonyms": [
+        "leg-yield",
+        "leg yields",
+        "leg-yields"
+      ],
+      "categories": [
+        "Riding",
+        "Training"
+      ],
+      "examples": [
+        "Guide a relaxed walk leg yield away from the quarter line toward the rail while preserving even rhythm."
+      ],
+      "relatedTerms": [
+        "lateral-movement",
+        "turn-on-the-forehand",
+        "shoulder-in",
+        "straightness"
+      ],
+      "skillIds": [
+        "rider.mounted.leg_yield",
+        "horse.mounted.leg_yield",
+        "rider.theory.bend_flexion_straightness"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Foundational gymanstic movement bridging stationary pivots into bend-demanding shoulder-in.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Avoid hauling backward on the reins while squeezing sideways; keep angle shallow enough that forward rhythm never stalls.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "sidepass",
+      "slug": "sidepass",
+      "term": "Sidepass",
+      "priority": "B",
+      "definition": "Stepping directly sideways with minimal forward or backward travel as front and hind legs cross evenly along a parallel track.",
+      "explanation": "Used in open space, alongside fences/mounting blocks, at trail gates, or optionally over a stable ground rail, a true sidepass balances shoulder and hip guidance so neither end rushes ahead or lags behind.",
+      "synonyms": [
+        "side-pass",
+        "side pass",
+        "sidepasses"
+      ],
+      "categories": [
+        "Riding",
+        "Handling"
+      ],
+      "examples": [
+        "Line up parallel beside the mounting block or trail gate and ask for three calm steps of sidepass."
+      ],
+      "relatedTerms": [
+        "lateral-movement",
+        "turn-on-the-forehand",
+        "leg-yield"
+      ],
+      "skillIds": [
+        "rider.mounted.sidepass",
+        "horse.mounted.sidepass",
+        "rider.in_hand.sidepass_in_hand",
+        "horse.in_hand.sidepass_in_hand"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Core practical maneuver in Western, ranch, trail, Working Equitation, and ground manners.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Do not force tight sideways crossing over an optional ground pole before the horse clearly understands sideways cues in open space.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "simple-lead-change",
+      "slug": "simple-lead-change",
+      "term": "Simple Lead Change",
+      "priority": "B",
+      "definition": "A deliberate change of canter lead accomplished calmly through an intermediate downward transition to walk or trot, rebalancing briefly, and departing onto the new lead.",
+      "explanation": "A smooth simple lead change gives intermediate riders and developing horses a clear, low-stress way to switch leads across serpentines, figure-eights, or trail turns without rushing into crooked flying swaps.",
+      "synonyms": [
+        "simple lead changes",
+        "simple change",
+        "simple changes"
+      ],
+      "categories": [
+        "Gaits",
+        "Riding"
+      ],
+      "examples": [
+        "Plan a balanced simple lead change through calm trot before riding the second loop of a figure-eight."
+      ],
+      "relatedTerms": [
+        "canter-lead",
+        "flying-lead-change",
+        "counter-canter",
+        "transitions"
+      ],
+      "skillIds": [
+        "rider.mounted.canter",
+        "horse.mounted.canter",
+        "rider.mounted.steering_navigation"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "In general riding and trail patterns, transitions pass through walk or trot; specific competition rules may define exact walk step limits.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Use clean downward transitions to rebalance rather than popping the horse awkwardly off the forehand into the opposite lead.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "cross-canter",
+      "slug": "cross-canter",
+      "term": "Cross-Canter",
+      "priority": "B",
+      "definition": "An unbalanced four-beat or jarring canter stride in which the horse leads with one side in front and the opposite side behind.",
+      "explanation": "Normally a horse's inside hind and inside fore share the same lead side. When cross-cantering (disunited canter), a horse may take left lead in front while staying on right lead behind, creating a rough rolling feel in the saddle. Transition calmly back to trot or walk to rebalance rather than pushing onward.",
+      "synonyms": [
+        "cross canter",
+        "cross-cantering",
+        "disunited canter",
+        "cross-firing"
+      ],
+      "categories": [
+        "Gaits",
+        "Biomechanics"
+      ],
+      "examples": [
+        "If your horse lands in a rough cross-canter after a turn, smoothly bring it back to trot, check straightness, and ask cleanly again."
+      ],
+      "relatedTerms": [
+        "canter-lead",
+        "canter",
+        "flying-lead-change",
+        "lameness"
+      ],
+      "skillIds": [
+        "rider.mounted.canter",
+        "horse.mounted.canter",
+        "rider.mounted.counter_canter",
+        "rider.theory.gaits_footfalls"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Equally useful indicator in English, Western lope, trail, and breeding/young-horse conditioning.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Persistent cross-cantering or swapping behind alone often signals hock, stifle, sacroiliac, or saddle discomfort—investigate before repeating drills.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "diagonal-pairs",
+      "slug": "diagonal-pairs",
+      "term": "Diagonal Pairs",
+      "priority": "B",
+      "definition": "Coordinated footfalls in which opposite-side front and hind legs (left front with right hind, alternating with right front and left hind) lift and land together—the mechanical basis of both trot and clean rein back.",
+      "explanation": "Recognizing diagonal pairs explains why trot and quality rein-back share a steady two-beat feel, whereas lateral pacing (same-side front and hind moving together) indicates stiffness, restricted walk neck freedom, or breed gait characteristics.",
+      "synonyms": [
+        "diagonal pair",
+        "two-beat diagonal",
+        "diagonal two-beat"
+      ],
+      "categories": [
+        "Gaits",
+        "Biomechanics"
+      ],
+      "examples": [
+        "In a clean rein back, the horse steps backward calmly in steady diagonal pairs rather than dragging toes or pacing laterally."
+      ],
+      "relatedTerms": [
+        "trot-diagonal",
+        "trot",
+        "rein-back",
+        "rhythm"
+      ],
+      "skillIds": [
+        "horse.mounted.rein_back",
+        "rider.theory.gaits_footfalls",
+        "horse.mounted.trot"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Complements Trot Diagonal (which specifically covers rider posting rhythm) by explaining limb biomechanics across gaits.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Loss of clean diagonal pairs into lateral pacing at walk/rein-back often signals rider hand tension or physical stiffness.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "ground-driving",
+      "slug": "ground-driving",
+      "term": "Ground Driving",
+      "priority": "B",
+      "definition": "Guiding a horse from behind or diagonally behind-and-to-the-side using two long lines attached to a halter, cavesson, or bridle without a rider's weight.",
+      "explanation": "Ground driving teaches forward confidence, bilateral steering, straightness, transitions, and preparedness for riding or harness work. Handlers keep a safe offset outside direct kick range, manage both lines without wrapping fingers, and build comfortable line touch along the horse's barrel and hocks gradually.",
+      "synonyms": [
+        "long-lining",
+        "long reining",
+        "two-line ground work"
+      ],
+      "categories": [
+        "Handling",
+        "Training"
+      ],
+      "examples": [
+        "Ground driving around calm arena turns helps confirm steering clarity before mounting a young horse."
+      ],
+      "relatedTerms": [
+        "groundwork",
+        "longeing",
+        "surcingle",
+        "aids"
+      ],
+      "skillIds": [
+        "rider.in_hand.ground_driving",
+        "horse.in_hand.ground_driving",
+        "rider.theory.training_equipment"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Practiced across driving prep, young-horse starting, Classical In-Hand, and rehabilitative conditioning.",
+      "regionalUsage": "Ground driving and long-lining are common in North America; long reining and double lunging appear widely in Europe and the UK.",
+      "welfareAndSafetyNotes": "Never tie or clip two long lines rigidly when starting; verify a horse calmly accepts lines touching its hips and hocks with a skilled helper first.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "training-pyramid",
+      "slug": "training-pyramid",
+      "term": "Training Pyramid",
+      "priority": "B",
+      "definition": "An interdependent six-element framework—rhythm, relaxation (suppleness), connection (contact), impulsion, straightness, and collection—used to evaluate and guide progressive equine development.",
+      "explanation": "Originally organized in European classical/cavalry manuals, the Training Pyramid serves best as a flexible, cyclical reference rather than a rigid one-way staircase: riders regularly return to relaxation or rhythm whenever difficulty rises. It is one helpful model alongside behavioral learning theory and Western/ranch/gaited horsemanship principles—never the sole legitimate training philosophy.",
+      "synonyms": [
+        "Training Scale",
+        "Skala der Ausbildung"
+      ],
+      "categories": [
+        "Training",
+        "Theory"
+      ],
+      "examples": [
+        "When straightness falls apart on a circle, look back down the Training Pyramid to check whether tension disrupted rhythm and relaxation first."
+      ],
+      "relatedTerms": [
+        "rhythm",
+        "suppleness",
+        "rein-contact",
+        "impulsion",
+        "straightness",
+        "collection"
+      ],
+      "skillIds": [
+        "rider.theory.training_pyramid",
+        "rider.theory.balance_weight",
+        "rider.theory.progressive_conditioning"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Framed inclusively without dogma so trail, Western, ranch, gaited, and classical equestrians can apply its core balance and relaxation ideas.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never use the pyramid to justify forced headsets or pushing collection before emotional calm and physical conditioning exist.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "operant-conditioning",
+      "slug": "operant-conditioning",
+      "term": "Operant Conditioning",
+      "priority": "B",
+      "definition": "Learning in which a horse changes how often it offers a voluntary behavior based on the immediate consequences—reinforcement or punishment—that follow.",
+      "explanation": "Every time a handler removes pressure (R−) or delivers a food/scratch reward (R+) right after a step, operant conditioning strengthens that step. Conversely, adding startling punishment (P+) or taking away something desirable (P−) suppresses behavior—carrying higher risk of fear or confusion when overused.",
+      "synonyms": [],
+      "categories": [
+        "Learning Theory",
+        "Training"
+      ],
+      "examples": [
+        "Through clean operant conditioning, releasing halter tension on the very first calm step sideways builds rapid lightness."
+      ],
+      "relatedTerms": [
+        "reinforcement",
+        "negative-reinforcement",
+        "positive-reinforcement",
+        "classical-conditioning"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "rider.theory.timing_reinforcement"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Scientific foundation explaining how timing and release create calm, willing communication across every discipline.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Relying primarily on punishment raises cortisol, suppresses communication signals, and undermines trust.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "classical-conditioning",
+      "slug": "classical-conditioning",
+      "term": "Classical Conditioning",
+      "priority": "B",
+      "definition": "Learning through association in which a previously neutral cue or place (like a word, clicker sound, or calm corner) becomes linked with an expected outcome or emotional state.",
+      "explanation": "Horses form classical associations continuously—both helpful (a verbal cue predicting walk, or the rattle of a treat bucket signaling calm) and fearful (a sharp voice cue or cramped trailer triggering brace if repeatedly paired with stress). Pairing light signals ahead of tactile cues lets trainers fade physical pressure gently.",
+      "synonyms": [
+        "associative learning"
+      ],
+      "categories": [
+        "Learning Theory"
+      ],
+      "examples": [
+        "Wait a split second after giving a soft voice cue before adding light rope feel so classical conditioning transfers response to the lighter signal."
+      ],
+      "relatedTerms": [
+        "operant-conditioning",
+        "desensitization",
+        "habituation",
+        "reinforcement"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "rider.theory.timing_reinforcement"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Pairs directly with operant timing across positive and negative reinforcement approaches.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Be mindful of unintended fearful associations (poisoned cues) when harsh pressure happens right alongside a normal halter or mounting cue.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "habituation",
+      "slug": "habituation",
+      "term": "Habituation",
+      "priority": "B",
+      "definition": "A natural decrease in a horse's startle or attention response to a harmless repeated sound, sight, or touch once the horse learns nothing bad happens.",
+      "explanation": "Unlike intentional therapeutic counter-conditioning, everyday habituation occurs steadily when a horse encounters rustling leaves, fluttering tarps, clippers, or barn activity at a tolerable intensity where curiosity can replace alarm.",
+      "synonyms": [],
+      "categories": [
+        "Learning Theory",
+        "Behavior"
+      ],
+      "examples": [
+        "Letting a green horse pause to sniff a stationary tarp before stepping over allows natural habituation instead of defensive leaping."
+      ],
+      "relatedTerms": [
+        "desensitization",
+        "flooding",
+        "arousal-threshold",
+        "learned-helplessness"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "horse.in_hand.obstacles_outings",
+        "rider.in_hand.obstacles_outings"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Key distinction from flooding: true habituation lets the horse process below panic level rather than trapping it until it shuts down.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Repeating a loud frightening stimulus too intensely causes sensitization (growing fear) rather than calm habituation.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "desensitization",
+      "slug": "desensitization",
+      "term": "Desensitization",
+      "priority": "B",
+      "definition": "Systematic, gradual exposure to an unfamiliar object, sound, or touch at low intensity—staying below the horse's fear threshold—so confidence builds step by step.",
+      "explanation": "Effective systematic desensitization pairs tiny manageable steps (such as seeing clippers turned on across the aisle before touching a shoulder) with prompt retreat of stimulus or pleasant reward as soon as the horse relaxes, progressing only while the horse stays curious and calm.",
+      "synonyms": [],
+      "categories": [
+        "Learning Theory",
+        "Behavior"
+      ],
+      "examples": [
+        "Use patient desensitization with long lines sliding lightly across a green horse's legs before solo ground driving."
+      ],
+      "relatedTerms": [
+        "habituation",
+        "counter-conditioning",
+        "arousal-threshold",
+        "flooding"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "horse.in_hand.ground_driving",
+        "horse.in_hand.trailer_loading",
+        "horse.mounted.object_handling"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Essential across trailer loading, spray bottles, medical prep, ground-driving lines, and obstacle schooling.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Do not trap a frightened horse in a small stall with scary objects—forcing exposure above threshold is flooding, not healthy desensitization.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "arousal-threshold",
+      "slug": "arousal-threshold",
+      "term": "Arousal Threshold",
+      "priority": "B",
+      "definition": "The stress or stimulation point past which a horse's emotional alarm overtakes calm attention, impairing learning and raising flight, freeze, or defensive reactions.",
+      "explanation": "Working below threshold—when the horse still blinks, breathes slowly, chews or looks softly, and eats/responds cleanly—keeps training safe and memorable. Once a horse crosses its arousal threshold (high rigid head, wide eye, held breath, prancing, or shutdown), handlers pause, increase distance, or simplify rather than pushing harder.",
+      "synonyms": [
+        "arousal thresholds",
+        "sub-threshold"
+      ],
+      "categories": [
+        "Behavior",
+        "Learning Theory",
+        "Safety"
+      ],
+      "examples": [
+        "Step back a few yards when passing noisy equipment so the horse stays under its arousal threshold and can think clearly."
+      ],
+      "relatedTerms": [
+        "trigger-stacking",
+        "desensitization",
+        "habituation",
+        "learned-helplessness"
+      ],
+      "skillIds": [
+        "rider.theory.stress_fear_confidence",
+        "rider.theory.how_horses_learn",
+        "rider.in_hand.obstacles_outings",
+        "horse.in_hand.trailer_loading"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Bare \"threshold\" stays unhighlighted to avoid general vocabulary noise; \"arousal threshold\" and \"sub-threshold\" highlight accurately.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Ignoring early micro-signs near threshold invites explosive reactions or learned helplessness.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "trigger-stacking",
+      "slug": "trigger-stacking",
+      "term": "Trigger Stacking",
+      "priority": "B",
+      "definition": "The buildup of emotional stress when multiple mild worries occur close together without recovery time, eventually pushing a usually calm horse past its coping threshold.",
+      "explanation": "A horse might calmly tolerate a breezy day alone, a busy wash bay alone, and an unfamiliar arena alone—yet bolt at a flapping jacket after experiencing all three in one hour. Recognizing trigger stacking explains sudden unexpected spooks and helps riders adjust plans compassionately.",
+      "synonyms": [],
+      "categories": [
+        "Behavior",
+        "Safety"
+      ],
+      "examples": [
+        "Factor in wind, separation from herd mates, and clinic commotion as potential trigger stacking before asking a green horse for difficult tasks."
+      ],
+      "relatedTerms": [
+        "arousal-threshold",
+        "learned-helplessness",
+        "desensitization"
+      ],
+      "skillIds": [
+        "rider.theory.stress_fear_confidence",
+        "rider.mounted.emergency_control",
+        "horse.in_hand.standing_quietly"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Practical safety lens across trail outings, clinic environments, vet days, and mounted emergency prevention.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Building recovery pauses and ending on small positive steps prevents cumulative stress overload.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "laminitis",
+      "slug": "laminitis",
+      "term": "Laminitis",
+      "priority": "B",
+      "definition": "Painful inflammation of the sensitive laminae bonding the hoof wall to the coffin bone inside the horse's foot—a medical emergency that can cause permanent structural rotation if untreated.",
+      "explanation": "Early clues include bounding digital pulses, warm hooves, shifted weight rocking onto the hindquarters, choppy reluctant turns on hard ground, and metabolic sensitivity. Triggers include sudden excess sugars/starches (lush spring pasture or grain overload), endocrine illness, systemic infection, or severe weight-bearing overload on a limb.",
+      "synonyms": [
+        "founder",
+        "laminitic"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Husbandry"
+      ],
+      "examples": [
+        "Restrict grazing and monitor digital pulses closely on horses prone to metabolic syndrome or spring-grass laminitis."
+      ],
+      "relatedTerms": [
+        "digital-pulse",
+        "lameness",
+        "forage",
+        "colic"
+      ],
+      "skillIds": [
+        "rider.husbandry.feeding",
+        "rider.husbandry.health_monitoring"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Founder commonly refers to chronic mechanical sinking/rotation following acute laminitis; requires immediate veterinary and farrier care.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never force a laminitic horse to exercise—keep on deep supportive bedding and call a veterinarian immediately.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "digital-pulse",
+      "slug": "digital-pulse",
+      "term": "Digital Pulse",
+      "priority": "B",
+      "definition": "The arterial pulse felt along the back sides of the horse's fetlock and pastern supplying blood to the hoof, which grows noticeably stronger (\"bounding\") during hoof inflammation or abscess.",
+      "explanation": "Knowing what a faint, normal resting digital pulse feels like on your horse's healthy legs lets you recognize abnormal pounding warmth immediately when checking soreness, laminitis risk, stone bruises, or subsolar abscesses.",
+      "synonyms": [
+        "digital pulses"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Husbandry"
+      ],
+      "examples": [
+        "Palpate the digital pulse at both front fetlocks if a horse suddenly steps gingerly over gravel."
+      ],
+      "relatedTerms": [
+        "vital-signs-tpr",
+        "laminitis",
+        "lameness"
+      ],
+      "skillIds": [
+        "rider.husbandry.health_monitoring",
+        "rider.husbandry.grooming"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Standard part of intermediate Barn/Rider Health Monitoring alongside temperature, pulse, respiration, and capillary refill.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Strong bounding digital pulses across multiple feet warrant urgent veterinary attention to rule out acute laminitis.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "flying-lead-change",
+      "slug": "flying-lead-change",
+      "term": "Flying Lead Change",
+      "priority": "C",
+      "definition": "An advanced maneuver in which a cantering horse switches its leading front and hind legs cleanly together during the moment of suspension without dropping into trot or walk.",
+      "explanation": "True flying changes require straight alignment, balanced collection/impulsion, and accurate stride-phase timing from the rider so front and hind legs swap simultaneously rather than leaving the hind legs behind (cross-cantering). They are an optional advanced specialization rather than a requirement for general horsemanship.",
+      "synonyms": [
+        "flying lead changes",
+        "flying change",
+        "flying changes"
+      ],
+      "categories": [
+        "Gaits",
+        "Riding"
+      ],
+      "examples": [
+        "Establish straight, balanced simple changes and counter-canter before introducing an isolated flying lead change across a diagonal."
+      ],
+      "relatedTerms": [
+        "canter-lead",
+        "simple-lead-change",
+        "counter-canter",
+        "cross-canter"
+      ],
+      "skillIds": [
+        "rider.mounted.flying_lead_changes",
+        "horse.mounted.flying_lead_changes",
+        "rider.mounted.canter"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Used in dressage, show jumping/equitation, Working Equitation, and Western reining/ranch riding patterns.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Demanding repeated flying changes before strength and balance exist creates crooked rushing, sour tension, and hind-end strain.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "travers",
+      "slug": "travers",
+      "term": "Travers",
+      "priority": "C",
+      "definition": "An advanced lateral movement at walk or trot in which the horse bends slightly in the direction of travel, keeping the forehand along the track while carrying the hindquarters inward.",
+      "explanation": "Unlike shoulder-in (where bend faces away from travel), travers asks the horse to bend lightly toward the inside while moving along the rail on three or four tracks, increasing weight-bearing flexion on the inside hind leg. Because carrying load rises noticeably, work stays brief with frequent straight forward breaks.",
+      "synonyms": [
+        "haunches-in"
+      ],
+      "categories": [
+        "Riding",
+        "Biomechanics"
+      ],
+      "examples": [
+        "Use subtle outside-leg timing and a quiet inside seat bone to keep the forehand on the track during travers."
+      ],
+      "relatedTerms": [
+        "shoulder-in",
+        "lateral-movement",
+        "collection",
+        "bend"
+      ],
+      "skillIds": [
+        "rider.mounted.travers",
+        "horse.mounted.travers"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Classical/English lateral gymnastic exercise directly preceding half-pass.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never pull the head hard inward or crank the haunches over steeply; monitor hock and lumbosacral comfort carefully.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "shoulder-fore",
+      "slug": "shoulder-fore",
+      "term": "Shoulder-Fore",
+      "priority": "C",
+      "definition": "A mild, preparatory version of shoulder-in bringing the horse's shoulders slightly off the track (far shallower than full three-track shoulder-in) to align the inside hind leg toward the center of mass.",
+      "explanation": "Shoulder-fore serves as an accessible intermediate stepping stone at walk or trot to straighten crooked horses, free the outside shoulder, and build strength gradually without over-taxing hocks or neck.",
+      "synonyms": [
+        "shoulder fore"
+      ],
+      "categories": [
+        "Riding",
+        "Training"
+      ],
+      "examples": [
+        "Introduce a few strides of shallow shoulder-fore at walk before asking for full shoulder-in along the rail."
+      ],
+      "relatedTerms": [
+        "shoulder-in",
+        "straightness",
+        "bend",
+        "lateral-movement"
+      ],
+      "skillIds": [
+        "rider.mounted.shoulder_in",
+        "horse.mounted.shoulder_in"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Common across classical dressage, sport-horse schooling, and straightness training.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Keeping angle subtle protects young or stiff horses from dropping awkwardly onto the inside shoulder.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "ambling-gait",
+      "slug": "ambling-gait",
+      "term": "Ambling Gait",
+      "priority": "C",
+      "definition": "A smooth, symmetrical four-beat intermediate gait naturally performed by many gaited horse breeds in which footfalls strike independently with minimal vertical bounce.",
+      "explanation": "Instead of a two-beat diagonal trot, breeds such as Tennessee Walking Horses, Icelandic Horses (tölt), Paso Finos, Rocky Mountain Horses, and Standardbreds perform variations of rapid four-beat ambling gaits (running walk, rack, fox trot, etc.). Recognizing ambling footfalls ensures Skill Tree gait and rider seat standards treat gaited traditions inclusively while noticing when tension turns a pure walk into unintended stiff pacing.",
+      "synonyms": [
+        "ambling gaits",
+        "ambling",
+        "running walk",
+        "tölt"
+      ],
+      "categories": [
+        "Gaits"
+      ],
+      "examples": [
+        "Study four-beat ambling gait footfalls alongside standard walk, trot, and canter so breed differences are evaluated accurately."
+      ],
+      "relatedTerms": [
+        "rhythm",
+        "trot",
+        "free-walk",
+        "independent-seat"
+      ],
+      "skillIds": [
+        "rider.theory.gaits_footfalls",
+        "rider.mounted.walk",
+        "rider.mounted.trot"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Regional breed names vary widely; pace-like hard two-beat lateral stiffness in non-pacing breeds often signals tension or rider hand restriction.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Distinguish natural genetic smoothness from artificial mechanical shoeing/action devices or tense, hollow-backed pacing under tight reins.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "free-walk",
+      "slug": "free-walk",
+      "term": "Free Walk",
+      "priority": "C",
+      "definition": "A relaxed, ground-covering four-beat walk on a long or loose rein in which the horse stretches its head and neck willingly forward and down while swinging evenly over its back.",
+      "explanation": "Riding between an active working walk and a genuine free walk tests back suppleness, mental relaxation, and whether the horse keeps clear four-beat rhythm without constant rein support.",
+      "synonyms": [
+        "stretchy walk"
+      ],
+      "categories": [
+        "Gaits",
+        "Riding"
+      ],
+      "examples": [
+        "Allow the reins to lengthen smoothly so the horse can stretch forward and down into a swinging free walk."
+      ],
+      "relatedTerms": [
+        "suppleness",
+        "self-carriage",
+        "rhythm",
+        "rein-contact"
+      ],
+      "skillIds": [
+        "rider.mounted.walk",
+        "horse.mounted.walk"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Valued in English dressage tests, warm-ups, trail cool-downs, and Western relaxation walks alike.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Avoid holding rigid elbows or nagging legs during free walk, which blocks neck nod and causes tight hurrying.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "cadence",
+      "slug": "cadence",
+      "term": "Cadence",
+      "priority": "C",
+      "definition": "The marked rhythm, springiness, and expressive balance of a horse's strides produced by clear impulsion and self-carriage.",
+      "explanation": "While basic rhythm simply means regular beat spacing, cadence adds elastic lift and airiness—most visible in developed trot and canter work without rushing or stiffness.",
+      "synonyms": [],
+      "categories": [
+        "Gaits",
+        "Biomechanics"
+      ],
+      "examples": [
+        "Preserve pure cadence across within-gait trot lengthenings rather than letting strides flatten into rushing."
+      ],
+      "relatedTerms": [
+        "rhythm",
+        "impulsion",
+        "tempo",
+        "self-carriage"
+      ],
+      "skillIds": [
+        "horse.mounted.trot",
+        "horse.mounted.transitions",
+        "horse.mounted.shoulder_in"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Common in upper-level flatwork and biomechanics; should never be confused with hurried high knee action from tension.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "True cadence requires relaxation and conditioning; forcing animated steps through heavy bits/spurs creates joint stress.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "tempo",
+      "slug": "tempo",
+      "term": "Tempo",
+      "priority": "C",
+      "definition": "The rate or speed of a horse's footfall beats—how quickly steps repeat per minute—distinct from stride length or rhythm regularity.",
+      "explanation": "A horse can rush a quick tempo with short choppy steps or keep a calm, consistent tempo while lengthening or shortening stride length. Controlling tempo separates hurried running from authentic athletic adjustability.",
+      "synonyms": [],
+      "categories": [
+        "Gaits",
+        "Biomechanics"
+      ],
+      "examples": [
+        "Keep a steady trot tempo into the corner instead of accelerating to lengthen stride."
+      ],
+      "relatedTerms": [
+        "rhythm",
+        "cadence",
+        "transitions"
+      ],
+      "skillIds": [
+        "rider.mounted.trot",
+        "horse.mounted.trot",
+        "rider.mounted.transitions",
+        "rider.theory.gaits_footfalls"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Helpful across all gaits, ground driving, longeing, and trot diagonal symmetry.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Soreness or rider anxiety often shows up first as sudden speeding tempo before an obvious gait break.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "counter-conditioning",
+      "slug": "counter-conditioning",
+      "term": "Counter-Conditioning",
+      "priority": "C",
+      "definition": "Deliberately changing a horse's learned emotional response to a worrying stimulus from fear or tension to calm anticipation by repeatedly pairing low-level exposure with something positive (such as food, scratching, or gentle rest).",
+      "explanation": "Counter-conditioning differs from simple habituation or desensitization by actively building a pleasant association (e.g., an oral syringe or trailer step predicts a tasty reward) while staying calmly below arousal threshold.",
+      "synonyms": [
+        "counter conditioning"
+      ],
+      "categories": [
+        "Learning Theory",
+        "Training"
+      ],
+      "examples": [
+        "Combine sub-threshold exposure with pleasant scratches or small food rewards as counter-conditioning for a horse worried about clippers."
+      ],
+      "relatedTerms": [
+        "desensitization",
+        "classical-conditioning",
+        "positive-reinforcement",
+        "arousal-threshold"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "horse.in_hand.vet_handling"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Used widely in veterinary prep, cooperative care, head-shyness rehabilitation, and trailer confidence.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "If the horse refuses a reward because worry is too high, move farther away and lower intensity first.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "flooding",
+      "slug": "flooding",
+      "term": "Flooding",
+      "priority": "C",
+      "definition": "Forcing continuous, inescapable exposure to a frightening stimulus at high intensity—preventing flight or relief—until the horse stops reacting out of exhaustion or shutdown.",
+      "explanation": "Sometimes mistaken for \"desensitization,\" flooding traps the horse past its arousal threshold (such as tying tightly while waving tarps relentlessly). Rather than true trust, flooding commonly creates high cortisol spikes, traumatic sensitization, defensive explosions, or learned helplessness. Marked contextual=false so weather/water discussions never false-highlight.",
+      "synonyms": [],
+      "categories": [
+        "Learning Theory",
+        "Health & Welfare",
+        "Behavior"
+      ],
+      "examples": [
+        "Avoid flooding a panicked horse in a tight stall; step back below threshold where genuine curiosity and calm choices can develop."
+      ],
+      "relatedTerms": [
+        "learned-helplessness",
+        "desensitization",
+        "habituation",
+        "arousal-threshold"
+      ],
+      "skillIds": [
+        "rider.theory.how_horses_learn",
+        "horse.in_hand.obstacles_outings"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Included strictly as a welfare contrast against humane sub-threshold desensitization.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "High risk of severe injury to both horse and handler plus lasting behavioral trauma.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": false,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "five-domains-model",
+      "slug": "five-domains-model",
+      "term": "Five Domains Model",
+      "priority": "C",
+      "definition": "A contemporary animal-welfare framework evaluating Nutrition, Physical Environment, Health, and Behavioral Interactions—and how those four physical/social areas shape the horse's fifth domain: Mental State.",
+      "explanation": "Developed by animal welfare scientist David Mellor and colleagues, the Five Domains moves welfare beyond merely preventing starvation or overt cruelty to promoting positive mental experiences (comfort, foraging choice, companionship, confidence, and agency) alongside pain and stress mitigation.",
+      "synonyms": [
+        "Five Domains"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Theory"
+      ],
+      "examples": [
+        "Evaluate stall confinement, turnout buddies, and tight nosebands through the Five Domains Model to spot hidden welfare stress."
+      ],
+      "relatedTerms": [
+        "forage",
+        "learned-helplessness",
+        "equine-pain-ethogram"
+      ],
+      "skillIds": [
+        "rider.theory.ethical_training",
+        "rider.husbandry.stable_care"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Academic/scientific welfare standard applied to barn management, training equipment audits, and ethical training decisions.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Supports evidence-based evaluation of housing, nutrition, gear, and training stress.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "equine-pain-ethogram",
+      "slug": "equine-pain-ethogram",
+      "term": "Equine Pain Ethogram",
+      "priority": "C",
+      "definition": "A structured, research-backed catalog of subtle facial, postural, and behavioral cues—such as fixed stare, pinned ears, exposed sclera, mouth-opening, tail swishing, or crooked gait changes—used to recognize musculoskeletal pain in horses.",
+      "explanation": "Research led by Sue Dyson (including the 24-behavior Ridden Horse Pain Ethogram) showed that clusters of these subtle behaviors correlate reliably with underlying orthopedic or saddle pain rather than naughtiness. Recognizing clustered signs prompts riders to stop, check tack fit, and involve a veterinarian.",
+      "synonyms": [
+        "pain ethogram",
+        "ridden horse pain ethogram"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Behavior"
+      ],
+      "examples": [
+        "Use principles from the Equine Pain Ethogram—like tense eyes, open mouth, and tail swishing—as early warning signs to check comfort first."
+      ],
+      "relatedTerms": [
+        "lameness",
+        "hollowing",
+        "five-domains-model",
+        "asymmetry"
+      ],
+      "skillIds": [
+        "rider.theory.pain_discomfort_fatigue",
+        "rider.theory.equine_body_language",
+        "rider.husbandry.health_monitoring"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Practical observation tool connecting daily handling/riding behavior to early pain screening rather than formal clinical diagnosis.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Do not label pain-ethogram clusters as attitude problems or try to restrain mouth opening with tighter nosebands.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "capillary-refill-time",
+      "slug": "capillary-refill-time",
+      "term": "Capillary Refill Time",
+      "priority": "C",
+      "definition": "A simple circulation check performed by pressing gently on the horse's pink upper gum until it blanches white, then counting how quickly pink color returns (normally 1 to 2 seconds).",
+      "explanation": "Assessed alongside gum color/moistness and heart rate in routine health monitoring, delayed capillary refill (over 2 seconds) or dark red, pale, muddy, or bluish gums can indicate dehydration, shock, or systemic illness requiring immediate veterinary evaluation.",
+      "synonyms": [
+        "capillary refill",
+        "CRT"
+      ],
+      "categories": [
+        "Health & Welfare",
+        "Husbandry"
+      ],
+      "examples": [
+        "Check gum moistness and capillary refill time along with TPR when monitoring a horse suspected of colic or heat stress."
+      ],
+      "relatedTerms": [
+        "vital-signs-tpr",
+        "colic",
+        "digital-pulse"
+      ],
+      "skillIds": [
+        "rider.husbandry.health_monitoring",
+        "horse.in_hand.vet_handling"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Part of intermediate vital-sign monitoring; always handle the mouth gently from a safe shoulder angle.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Educational reference only; abnormal CRT or discolored gums warrant urgent veterinary contact.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "synovial-structure",
+      "slug": "synovial-structure",
+      "term": "Synovial Structure",
+      "priority": "C",
+      "definition": "Fluid-filled protective capsules—including joint capsules, tendon sheaths, and bursae—that lubricate moving equine joints and lower-limb tendons.",
+      "explanation": "Even a tiny puncture wound near a fetlock, hock, knee, or digital flexor tendon sheath can introduce bacteria directly into a synovial structure, causing life-threatening septic arthritis or tenosynovitis. Recognizing high-risk anatomical zones stops handlers from scrubbing deep punctures or waiting too long to call a veterinarian.",
+      "synonyms": [
+        "synovial structures",
+        "tendon sheath",
+        "tendon sheaths"
+      ],
+      "categories": [
+        "Anatomy",
+        "Health & Welfare"
+      ],
+      "examples": [
+        "A small puncture right over a fetlock tendon sheath may involve a synovial structure and needs urgent veterinary evaluation even if bleeding is minimal."
+      ],
+      "relatedTerms": [
+        "lameness",
+        "colic",
+        "capillary-refill-time"
+      ],
+      "skillIds": [
+        "rider.husbandry.first_aid",
+        "rider.husbandry.leg_wraps"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Critical anatomical triage knowledge in intermediate equine First Aid.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Never inject unapproved salves or flush deeply into suspected synovial punctures before veterinary examination.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "cavesson",
+      "slug": "cavesson",
+      "term": "Cavesson",
+      "priority": "C",
+      "definition": "A fitted headpiece featuring a structured noseband—often equipped with swivel rings—used in longeing and classical in-hand groundwork to communicate directly around the nose without pulling on a bit.",
+      "explanation": "Well-fitted soft leather or padded cavessons sit smoothly below the cheekbone and protect a young or sensitive horse's mouth from line drag during circle work. Handlers also distinguish gentle flat/leather cavessons from harsh serrated metal nosebands (serreta) that risk skin or nasal-bone damage.",
+      "synonyms": [
+        "longeing cavesson",
+        "lungeing cavesson"
+      ],
+      "categories": [
+        "Tack & Equipment",
+        "Handling"
+      ],
+      "examples": [
+        "Attach the longe line to the center ring of a padded cavesson so circle cues do not yank sideways on the bit."
+      ],
+      "relatedTerms": [
+        "longeing",
+        "groundwork",
+        "hackamore-bosal",
+        "poll"
+      ],
+      "skillIds": [
+        "rider.theory.training_equipment",
+        "rider.in_hand.longeing",
+        "horse.in_hand.longeing"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Common in English, classical, and European longeing; well-fitted flat rope or leather halters also serve safely when fitted thoughtfully.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Ensure at least two fingers of space under the noseband so chewing and breathing stay relaxed; avoid rigid metal-edged nosebands.",
+      "editorialReviewRequired": true,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "surcingle",
+      "slug": "surcingle",
+      "term": "Surcingle",
+      "priority": "C",
+      "definition": "A wide strap fastened securely around the horse's barrel behind the withers—either used as a belly strap on blankets or equipped with upper rings for ground driving and groundwork.",
+      "explanation": "When used for long-lining or longeing prep, a padded surcingle guides two long lines cleanly along the horse's sides without requiring a full saddle. Just like a girth or cinch, it needs spine/wither clearance over a pad and gradual tightening.",
+      "synonyms": [
+        "surcingles",
+        "longeing surcingle",
+        "belly surcingle",
+        "belly surcingles"
+      ],
+      "categories": [
+        "Tack & Equipment",
+        "Handling"
+      ],
+      "examples": [
+        "Place a clean pad beneath the training surcingle and check wither clearance before threading ground-driving lines."
+      ],
+      "relatedTerms": [
+        "girth-cinch",
+        "wither-clearance",
+        "ground-driving",
+        "longeing"
+      ],
+      "skillIds": [
+        "rider.theory.training_equipment",
+        "rider.in_hand.ground_driving",
+        "horse.in_hand.ground_driving",
+        "rider.husbandry.blanketing"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Dual context covers both training surcingles/rollers (Europe/UK) and belly surcingles under turnout/stable blankets.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Adjust blanket belly surcingles so a flat hand fits cleanly beneath; sagging loops invite hoof entrapment while tight straps pinch.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "hackamore-bosal",
+      "slug": "hackamore-bosal",
+      "term": "Hackamore / Bosal",
+      "priority": "C",
+      "definition": "Bitless bridle designs that communicate through gentle pressure around the nose, chin groove, and poll rather than through a bit inside the horse's mouth.",
+      "explanation": "In traditional Western vaquero horsemanship, the true hackamore features a braided rawhide or leather bosal suspended by a hanger with horsehair mecate reins—emphasizing light feel, release, and progressive neck-rein self-carriage. Modern mechanical or sidepull hackamores operate differently; mechanical shanks multiply leverage strongly over delicate nasal bones if misused.",
+      "synonyms": [
+        "hackamore",
+        "bosal"
+      ],
+      "categories": [
+        "Tack & Equipment",
+        "Riding"
+      ],
+      "examples": [
+        "Check that any hackamore or bosal rests comfortably above the fragile nasal tip without pinching cheeks or multiplying harsh poll leverage."
+      ],
+      "relatedTerms": [
+        "rein-contact",
+        "aids",
+        "poll",
+        "cavesson"
+      ],
+      "skillIds": [
+        "rider.husbandry.tack",
+        "rider.theory.tack_fit_function",
+        "horse.mounted.transitions"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Covers bitless riding thoughtfully across Western vaquero, trail, endurance, and general horsemanship.",
+      "regionalUsage": "Bosal refers specifically to the rigid nosepiece of a traditional Western jaquima/hackamore; sidepulls and English mechanical hackamores are distinct designs.",
+      "welfareAndSafetyNotes": "\"Bitless\" does not automatically mean mild—fit height above the delicate cartilage of the nose carefully and avoid heavy steady leverage.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "garrocha",
+      "slug": "garrocha",
+      "term": "Garrocha",
+      "priority": "C",
+      "definition": "A lightweight wooden pole carried one-handed in traditional Iberian ranch work and Working Equitation to test rider balance, steering clarity, and horse composure.",
+      "explanation": "Carrying and maneuvering a long pole smoothly around markers or rings while riding one-handed shows how well horse and rider coordinate via seat, leg, and poise rather than needing two hands on the reins.",
+      "synonyms": [],
+      "categories": [
+        "Riding",
+        "Tack & Equipment"
+      ],
+      "examples": [
+        "Introduce the garrocha quietly at walk from the ground before carrying it beside the saddle at trot or canter."
+      ],
+      "relatedTerms": [
+        "independent-seat",
+        "aids",
+        "sidepass"
+      ],
+      "skillIds": [
+        "rider.mounted.object_handling",
+        "horse.mounted.object_handling"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Discipline-specific object-handling application—optional rather than required for general foundational horsemanship.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Desensitize gradually to the long pole moving near the horse's eye and hip; drop or pause cleanly rather than poking or trapping the horse.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    },
+    {
+      "id": "proprioception",
+      "slug": "proprioception",
+      "term": "Proprioception",
+      "priority": "C",
+      "definition": "The body's internal sensory awareness of limb position, joint angle, weight shift, and movement in space without having to look directly at the feet.",
+      "explanation": "Developing proprioception benefits both partners: calm riders build proprioceptive feel for saddle symmetry, trot diagonals, and canter leads without staring down, while thoughtful groundwork, varied terrain, and slow pole work heighten a horse's sure-footed awareness of where all four hooves step.",
+      "synonyms": [
+        "proprioceptive"
+      ],
+      "categories": [
+        "Biomechanics",
+        "Theory"
+      ],
+      "examples": [
+        "Slow, unhurried walking over uneven ground poles encourages equine proprioception and thoughtful hoof placement."
+      ],
+      "relatedTerms": [
+        "independent-seat",
+        "trot-diagonal",
+        "canter-lead",
+        "asymmetry"
+      ],
+      "skillIds": [
+        "rider.mounted.seat_balance",
+        "rider.mounted.trot",
+        "rider.theory.balance_weight",
+        "horse.mounted.terrain_obstacles"
+      ],
+      "resourceIds": [],
+      "media": [],
+      "usage": "Note: does not currently appear verbatim in curriculum/v2/*.json (0 current hits); proposed as optional scientific biomechanics vocabulary.",
+      "regionalUsage": "",
+      "welfareAndSafetyNotes": "Fatigue impairs proprioception in both horse and rider—finish demanding footwork tasks cleanly before tired stumbling begins.",
+      "editorialReviewRequired": false,
+      "status": "proposed",
+      "revision": 1,
+      "contextual": true,
+      "attributions": [],
+      "editorial": {
+        "source": "Wave 3 Skill Tree Vocabulary & Dictionary Integration Audit — PROPOSAL ONLY (not approved or published)",
+        "standardVersion": 1
+      },
+      "schemaVersion": 1
+    }
+  ]
+}
