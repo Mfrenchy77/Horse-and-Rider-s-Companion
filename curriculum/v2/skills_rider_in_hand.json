@@ -87,7 +87,47 @@
       "rider.in_hand.catch_and_halter",
       "rider.in_hand.turn_out"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Soft Approach, Clean Fit, and Gate Release",
+          "focusLevel": "introductory",
+          "summary": "Approach toward the horse’s shoulder at an easy angle with spare rope folded cleanly, let the horse acknowledge you before slipping the halter on with comfortable noseband clearance, and at turnout walk inside the gate, close it behind you, and turn the horse to face you before unclipping.",
+          "whatToNotice": "Notice whether you rush straight at the head or unclip while the horse already faces away—turning smoothly back toward the gate keeps release polite and kicks pointed away."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Reading Herd Space at Pasture Gates",
+          "focusLevel": "intermediate",
+          "summary": "When catching or releasing in a group pasture, pause outside the gate to map herd spacing, avoid cornering a reluctant horse, and use patient approach-and-retreat if tension rises rather than chasing across the field.",
+          "whatToNotice": "Notice who moves whom in the herd before opening the latch—keeping loose horses comfortably back from the gate protects both you and the horse on your lead."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Chasing a hesitant horse faster around the paddock",
+          "guidance": "Escalating pursuit confirms worry about being caught. Pause, soften your angle, step slightly back when the horse looks comfortably your way, and build pleasant catch-and-release visits."
+        },
+        {
+          "issue": "Letting the horse surge out through a half-open gate",
+          "guidance": "Squeezing through a narrow opening invites bruised hips and frantic exits. Open the gate wide, ask for a brief pause before stepping through, and latch cleanly behind you."
+        }
+      ],
+      "trainerInsight": "Catching goes best when your arrival does not always predict hard work—occasionally halter, scratch, and turn right back loose.",
+      "welfareNote": "Avoid turning horses out in non-breakaway rope halters, and investigate sudden reluctance to be caught for tack pain, social stress, or overly demanding work.",
+      "relatedDictionaryTerms": [
+        "groundwork",
+        "arousal-threshold",
+        "blind-spot",
+        "negative-reinforcement"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.catching_turnout",
+        "rider.in_hand.leading"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.leading",
@@ -325,7 +365,47 @@
     "legacyIds": [
       "rider.in_hand.yield_hindquarters"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Clear Space and One Hind Step Aside",
+          "focusLevel": "introductory",
+          "summary": "Standing safely beside the shoulder out of kicking arc, hold a soft lead with light head freedom and direct smooth energy toward the flank or hip until the inside hind foot crosses over once. Drop your body posture and release immediately.",
+          "whatToNotice": "Notice whether your lead hand inadvertently pulls backward—trapping the nose locks the front feet or drives rushing backward instead of a soft hindquarter step."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Flowing Hindquarter Alignment From Walk",
+          "focusLevel": "intermediate",
+          "summary": "Walking on level footing in either direction, slow your forward step slightly, shift your gaze toward the hip, and invite two or three rhythmic crossing steps around steadier shoulders before walking straight forward again.",
+          "whatToNotice": "Feel whether minimal body angle and prompt stillness cue smooth alignment without needing repeated tapping or stepping into the horse’s kick zone."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Stepping too far back near the hip while cueing",
+          "guidance": "Moving behind the girth enters kicking reach and often sends the horse circling forward instead of yielding. Stay framed beside the shoulder and clarify intention without crowding."
+        },
+        {
+          "issue": "Holding the cue until the horse spins fast",
+          "guidance": "Flinging the hips away is escape, not understanding. Ask for a single crossing step, relax completely as soon as weight shifts, and keep breathing slow."
+        }
+      ],
+      "trainerInsight": "A good hindquarter yield stays measured—if the horse starts spinning to escape, soften your timing rather than adding energy.",
+      "welfareNote": "Work on even, non-slip ground and check hind-end, hock, or back comfort if one direction consistently triggers tail wringing, bracing, or reluctance to cross behind.",
+      "relatedDictionaryTerms": [
+        "turn-on-the-forehand",
+        "hindquarters",
+        "negative-reinforcement",
+        "groundwork"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.yield_hindquarters",
+        "rider.in_hand.yield_forequarters"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.yield_forequarters",
@@ -405,7 +485,47 @@
     "legacyIds": [
       "rider.in_hand.yield_forequarters"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "One Polite Shoulder Step Away",
+          "focusLevel": "introductory",
+          "summary": "From a settled halt beside the shoulder, keep your feet well clear of front hooves, offer light softness at the poll without snapping the nose inward, and direct clear space-claiming intention toward the chest or shoulder for one lateral step away, releasing immediately.",
+          "whatToNotice": "Check whether your hand rises or pulls toward you—lifting abruptly braces the neck, while steady intention beside the shoulder opens room for front legs to cross."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Balanced Multi-Step Shoulder Turns Both Ways",
+          "focusLevel": "intermediate",
+          "summary": "From halt or slow walk on both left and right sides, guide several even forequarter steps around steadier hindquarters without letting the horse drift backward or push into your space, pausing softly on release.",
+          "whatToNotice": "Notice whether the inside front foot crosses cleanly around a steady pivot while your own feet keep safe spacing on both sides."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Horse running backward instead of stepping sideways",
+          "guidance": "Standing directly in front of the nose or pulling back on the halter invites backing. Angle slightly beside the shoulder and offer light sideways guidance rather than backward pressure."
+        },
+        {
+          "issue": "Pulling the head inward while shoulders fall toward you",
+          "guidance": "Over-bending the neck toward you shifts weight onto the near shoulder. Keep the head straighter and clarify your space boundary beside the chest."
+        }
+      ],
+      "trainerInsight": "If the shoulders drift toward you, soften the pull on the head—a bent neck often pushes the shoulder out.",
+      "welfareNote": "Stop and reassess shoulder, neck, or front-hoof comfort if the horse repeatedly throws its head or resists stepping sideways in one direction.",
+      "relatedDictionaryTerms": [
+        "turn-on-the-haunches",
+        "forehand",
+        "groundwork",
+        "negative-reinforcement"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.yield_forequarters",
+        "rider.in_hand.sidepass_in_hand"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.sidepass_in_hand",
@@ -480,7 +600,47 @@
     "legacyIds": [
       "rider.in_hand.sidepass_in_hand"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Fence-Guided Single Sideways Steps",
+          "focusLevel": "introductory",
+          "summary": "Position the horse facing a straight fence or arena wall with ample room for head comfort, stand safely beside the barrel clear of hooves, and ask softly for one or two sideways steps with shoulders and hips moving together. Pause and release immediately.",
+          "whatToNotice": "Notice whether front and hind feet begin moving together or if one end races ahead—your own position opposite shoulder or hip gently balances whichever end lags."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Open-Ground Sidepass Balancing Both Ends",
+          "focusLevel": "intermediate",
+          "summary": "Stepping away from the rail onto open level ground, guide several straight sideways steps in both directions while keeping your torso parallel to the horse and adjusting softly if shoulders or hips drift ahead.",
+          "whatToNotice": "Watch whether you stay organized beside the ribcage without walking backward directly across the horse’s path or nagging continuously."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Hips swinging away faster than the shoulders",
+          "guidance": "Too much cueing near the flank turns sidepass into a hindquarter yield. Shift your posture slightly forward toward the shoulder and pause to reset alignment."
+        },
+        {
+          "issue": "Horse rushing forward out of the sideways line",
+          "guidance": "Asking rapidly before the horse understands creates forward tension. Return near a fence line for slow single steps and reward stillness after each step."
+        }
+      ],
+      "trainerInsight": "Sidepass is simply balancing a shoulder cue and a hip cue together—fix whichever end lags instead of asking louder everywhere.",
+      "welfareNote": "Keep open-ground sidepass bouts short on level footing and avoid adding ground rails until light open steps stay relaxed and even on both sides.",
+      "relatedDictionaryTerms": [
+        "sidepass",
+        "lateral-movement",
+        "straightness",
+        "negative-reinforcement"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.sidepass_in_hand",
+        "rider.mounted.sidepass"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.longeing",
@@ -608,7 +768,47 @@
       "rider.in_hand.lunge_walk_trot",
       "rider.in_hand.lunge_canter"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Line Handling and the Walk Drive-Line Triangle",
+          "focusLevel": "introductory",
+          "summary": "In an enclosed area on level footing with gloves on, fold spare longe line neatly in smooth loops—never wrapped around hands—attached to a fitted halter or cavesson. Practice holding an open drive-line triangle behind the shoulder at walk in both directions, halting cleanly out on the circle before inviting the horse inward.",
+          "whatToNotice": "Check whether your feet pivot smoothly in a small center zone and your line stays gently draped without dragging underfoot or snapping the headgear."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Elastic Feel and Purposeful Circle Placement",
+          "focusLevel": "intermediate",
+          "summary": "Move purposefully along the arena so the horse works wide circles and shifting ovals rather than wearing one fixed rut. Practice timely transitions across whatever gaits suit the horse’s soundness and fitness, observing balance, bend, and breathing evenly in both directions.",
+          "whatToNotice": "Notice early shifts in tempo, leaning inward, or head tilt—adjusting your own shoulder angle or opening the circle often restores balance without louder cues."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Stepping ahead of the horse’s shoulder while sending forward",
+          "guidance": "Blocking the front edge accidentally acts like a halt cue. Stay angled comfortably toward the girth/hip drive line when inviting forward, and soften your posture once rhythm steadies."
+        },
+        {
+          "issue": "Letting the line pile under hooves or wrap fingers",
+          "guidance": "Shorten and lengthen smoothly by feeding folded loops hand to hand while keeping eyes on both the horse and footing."
+        }
+      ],
+      "trainerInsight": "Walking a smaller circle yourself opens up straighter tracks for your horse and saves both your balance and their joints.",
+      "welfareNote": "Never clip a heavy longe snap onto a single bit ring that pulls through the mouth, avoid endless tight circling, and stop early if footing slips or one-sided soreness appears.",
+      "relatedDictionaryTerms": [
+        "longeing",
+        "cavesson",
+        "asymmetry",
+        "self-carriage"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.longeing",
+        "rider.in_hand.ground_driving"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.ground_driving",
@@ -688,7 +888,47 @@
     "legacyIds": [
       "rider.in_hand.ground_driving"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Two-Line Organization on an Experienced Partner",
+          "focusLevel": "intermediate",
+          "summary": "With knowledgeable guidance if you are new to long lines, verify surcingle and headgear comfort in an enclosed arena on a horse already confident with lines around its sides. Hold folded excess cleanly without wrapping hands, walk slightly behind-and-to-the-side out of direct kick range, and practice walk, halts, and wide turns.",
+          "whatToNotice": "Check that outside and inside lines stay free of tangles behind the hocks and that both hands soften immediately when the horse halts or turns smoothly."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Elastic Feel Through Walk Figures and Transitions",
+          "focusLevel": "advanced",
+          "summary": "Guide balanced straight lines, wide circles, and gentle changes of direction at walk—and trot only where balance and fitness fit—maintaining even elastic feel on both lines without trapping the jaw or crowding behind the tail.",
+          "whatToNotice": "Notice whether the outside line supports straightness smoothly through corners while your own spacing adjusts cleanly around turns."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Lines drooping underneath a hock or getting tangled during turns",
+          "guidance": "Keep consistent light drape through surcingle rings and gather excess neatly before changing direction; if a line slips under a tail or leg, halt smoothly and clear it without jerking."
+        },
+        {
+          "issue": "Standing directly behind the tail when learning",
+          "guidance": "Offsetting slightly to an angled diagonal position gives you a clearer view of the horse’s ears and shoulders while staying safer from sudden kicks."
+        }
+      ],
+      "trainerInsight": "Long lines magnify everything your hands do—keep both lines light, organized, and completely free of loops around your body.",
+      "welfareNote": "Never ground-drive a green horse solo before calm line desensitization with a skilled helper; stop immediately if lines trigger panic, mouth bracing, or surcingle discomfort.",
+      "relatedDictionaryTerms": [
+        "ground-driving",
+        "surcingle",
+        "rein-contact",
+        "straightness"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.ground_driving",
+        "rider.in_hand.longeing"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.obstacles_outings",
@@ -770,7 +1010,47 @@
       "rider.in_hand.obstacles_in_hand",
       "rider.in_hand.hand_walk_trail"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Inspect First, Then Lead Through Simple Features",
+          "focusLevel": "introductory",
+          "summary": "Walk a ground pole, low cone corridor, or quiet barn lane on foot first to check traction and hazards. Lead up to the feature at an easy walk, pause to let the horse look and lower its head if curious, and invite smooth steps forward without dragging on the halter.",
+          "whatToNotice": "Notice whether pausing when the horse inspects lets curiosity replace tension—rushing forward usually turns a brief look into a sudden leap."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Threshold Reading on Outdoor Hand-Walks",
+          "focusLevel": "intermediate",
+          "summary": "During hand-walks along varied paths, slopes, or mild outdoor activity, wear sturdy boots and gloves, keep spare rope unlooped, and monitor ear fixation, head height, and breathing so you can add distance before stress stacks up.",
+          "whatToNotice": "Watch for early arousal cues—shortened steps, held breath, or staring past you—and ask whether adding space now prevents an explosive spook ten steps later."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Standing directly in front of the horse to coax it across",
+          "guidance": "Standing dead ahead puts you in the jump zone if the horse decides to leap over a pole or puddle. Stay beside the shoulder with a clear side exit."
+        },
+        {
+          "issue": "Pushing forward once multiple triggers start stacking",
+          "guidance": "Wind, traffic, and unfamiliar ground add up fast. Turning back smoothly while the horse can still think builds more confidence than forcing a tense mile."
+        }
+      ],
+      "trainerInsight": "Give the horse a moment to look before asking them to cross—curiosity is the bridge across every unfamiliar object.",
+      "welfareNote": "Check bridge planking, mud depth, and traffic sightlines before approaching, use high-visibility gear near roads, and never flood an overwhelmed horse past its ability to cope.",
+      "relatedDictionaryTerms": [
+        "desensitization",
+        "arousal-threshold",
+        "trigger-stacking",
+        "groundwork"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.obstacles_outings",
+        "rider.mounted.terrain_obstacles"
+      ]
+    }
   },
   {
     "id": "rider.in_hand.trailer_loading",
@@ -837,6 +1117,46 @@
     "legacyIds": [
       "rider.in_hand.trailer_loading"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Practical Exercise",
+          "title": "Pre-Load Safety Walk and Unhurried Threshold Prep",
+          "focusLevel": "intermediate",
+          "summary": "Before bringing a horse near the trailer, verify the hitch, safety chains, wheel chocks, solid non-slip floor, latched dividers, and open interior light. Walk up to the threshold with a clear exit beside you, letting the horse inspect and releasing promptly on any smooth forward try.",
+          "whatToNotice": "Confirm you never step into a pinch zone between horse and divider or ahead of a rushing chest—your safety positioning stays non-negotiable on every step."
+        },
+        {
+          "badge": "Practical Exercise",
+          "title": "Strict Load and Unload Latch Sequence",
+          "focusLevel": "intermediate",
+          "summary": "Rehearse the exact safety order every time on a cooperative horse: secure the butt bar and rear door completely BEFORE clipping the tie, and untie the horse completely BEFORE touching the butt bar on exit so a backing horse never hits a fixed tie.",
+          "whatToNotice": "Check whether you pause briefly after loading and before unloading so patient waiting—not frantic scrambling—becomes the horse’s expected habit."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Tying the horse first before closing the rear bar",
+          "guidance": "If a tied horse pulls backward with the rear open, panic and serious injury happen fast. Build the habit of securing the rear barrier first (ideally with a trained helper) every single time."
+        },
+        {
+          "issue": "Practicing loading only on show or vet mornings under deadline",
+          "guidance": "Time pressure breeds escalation. Practice short, relaxed threshold and loading sessions on ordinary days with nowhere you have to be."
+        }
+      ],
+      "trainerInsight": "Butt bar closed before tying; untied before opening the butt bar—never shortcut that order, even with a seasoned traveler.",
+      "welfareNote": "Avoid forceful pulling, crowded whips, or flooding reluctant loaders; seek experienced in-person help for frightened horses and verify trailer ventilation, floor soundness, and lighting.",
+      "relatedDictionaryTerms": [
+        "negative-reinforcement",
+        "arousal-threshold",
+        "quick-release-knot",
+        "desensitization"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.trailer_loading",
+        "rider.theory.timing_reinforcement"
+      ]
+    }
   }
 ]

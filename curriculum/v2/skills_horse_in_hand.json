@@ -77,7 +77,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 5
+    "sortOrder": 5,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Greeting, Haltering, and Gate Wait",
+          "focusLevel": "introductory",
+          "summary": "In a familiar stall or paddock, give the horse time to greet easily as you approach the shoulder, lower or soften its head comfortably for haltering, walk smoothly through the gate without crowding, and pause facing you quietly before unclipping at release.",
+          "whatToNotice": "Look for soft blinking, relaxed ears, and settled stillness during unclipping rather than pinned ears, raised tension, or wheeling away the instant the gate opens."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Composed Catching and Turnout Around Herd Mates",
+          "focusLevel": "intermediate",
+          "summary": "Practice polite haltering, roomy gate spacing, and steady release in larger pastures or lively weather with companions nearby, rewarding the horse for maintaining soft attention and polite personal space rather than dashing off.",
+          "whatToNotice": "Observe whether curiosity about herd mates stays manageable—can the horse glance at friends and settle smoothly back onto your cue?"
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Spinning and bolting the moment the halter slips off",
+          "guidance": "Rushing off often builds from anticipation or gate crowding. Walk farther into the paddock, pause facing the gate, offer a gentle scratch, and slip the halter smoothly only once feet stay settled."
+        },
+        {
+          "issue": "Walking away repeatedly when approached in pasture",
+          "guidance": "Avoidance can reflect uncomfortable work, ear sensitivity, or past chasing. Visit peacefully without demanding work every time and assess physical comfort if avoidance appeared suddenly."
+        }
+      ],
+      "trainerInsight": "How a horse leaves you at turnout reveals how comfortable they felt during the time they just spent with you.",
+      "welfareNote": "Do not mistake a frozen, glassy-eyed horse standing rigid in a corner for happy cooperation; watch breathing, muscle ease, and social pressure from pasture mates.",
+      "relatedDictionaryTerms": [
+        "groundwork",
+        "habituation",
+        "arousal-threshold",
+        "learned-helplessness"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.catch_halter_turnout",
+        "horse.in_hand.leading"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.leading",
@@ -296,7 +336,47 @@
       "horse.in_hand.stand_tied",
       "horse.in_hand.ground_tie_horse"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Genuine Relaxation While Held or Safely Tied",
+          "focusLevel": "introductory",
+          "summary": "In a familiar spot with a safe breakaway or quick-release setup, ask the horse to wait for brief, comfortable intervals while you groom or stand nearby—ending each wait while breathing stays soft rather than waiting for restlessness.",
+          "whatToNotice": "Watch for a resting hip, soft eye, regular breathing, and lowered neck tension rather than rigid frozen stillness or pawing."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Composure at Busy Venues and Optional Ground-Tying",
+          "focusLevel": "intermediate",
+          "summary": "Gradually expose the horse to brief waits near wash areas, trailers, or when a companion steps away—and for advanced horses in enclosed, hazard-free spaces only, introduce settling in place on a draped lead before returning to reward.",
+          "whatToNotice": "Observe how smoothly the horse settles back after a passing sound or departing barn mate without pulling against the tie or pacing tightly."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Pawing or fidgeting persistently while tied",
+          "guidance": "Restlessness often stems from boredom, hunger, isolation stress, or waiting too long. Shorten wait sessions, confirm forage or companion comfort nearby, and reward moments of settled standing."
+        },
+        {
+          "issue": "Pulling back sharply when feeling rope tension",
+          "guidance": "Panic against fixed resistance escalates dangerously. Always use breakaway hardware, teach soft poll yielding in hand first, and never leave a worried pull-back horse tied unattended."
+        }
+      ],
+      "trainerInsight": "True patience is a relaxed mind and soft breath—never a tight horse holding its breath waiting for permission to flee.",
+      "welfareNote": "Always use safe breakaway setups, avoid tying horses alone for long stretches without forage or water, and never practice ground-tying near roads, open gates, or hazards.",
+      "relatedDictionaryTerms": [
+        "ground-tie",
+        "quick-release-knot",
+        "learned-helplessness",
+        "arousal-threshold"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.safe_handling",
+        "horse.in_hand.daily_care_handling"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.daily_care_handling",
@@ -387,7 +467,47 @@
       "horse.in_hand.stand_for_blanketing",
       "horse.in_hand.stand_for_bathing"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Touch Across Sensitive Care Zones",
+          "focusLevel": "introductory",
+          "summary": "During everyday grooming, blanketing, gentle leg rinsing, and familiar tacking, pause and soften whenever the horse shows relaxed acceptance near ears, chest, belly, or saddle area so care feels predictable rather than rushed.",
+          "whatToNotice": "Look for soft lips, relaxed tail, and even weight across all four legs rather than tucked flanks, swishing, or bracing as the girth or bridle approaches."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Steady Cooperation for Bathing, Sprays, and New Spaces",
+          "focusLevel": "intermediate",
+          "summary": "Introduce full hosing, fly sprays, clippers, or tacking in busier wash bays gradually—starting at neutral shoulder areas at low intensity and pausing immediately when tension drops rather than forcing through panic.",
+          "whatToNotice": "Notice whether muscle tension softens within a few seconds of pausing—if stress climbs steadily, step back to an easier distance or lighter tool."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Ears pinning or snapping when the girth or saddle appears",
+          "guidance": "Girthiness is one of the clearest physical comfort signals horses offer. Rule out saddle pinch, gastric discomfort, or rushing the cinch before treating it as a training issue."
+        },
+        {
+          "issue": "Flinching away from sprays or buzzing clippers",
+          "guidance": "Spraying straight into a worried horse’s flank builds avoidance. Spray onto a cloth first or introduce gentle sound at a distance where curiosity stays intact."
+        }
+      ],
+      "trainerInsight": "Cooperative care grows from hundreds of small moments where your horse learns that relaxing makes rushing stop.",
+      "welfareNote": "Never overpower ear, mouth, or belly sensitivity with harsh restraint; persistent defensive behavior during routine care warrants checking tack fit, skin, teeth, and digestive comfort.",
+      "relatedDictionaryTerms": [
+        "desensitization",
+        "girth-cinch",
+        "counter-conditioning",
+        "equine-pain-ethogram"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.grooming",
+        "horse.in_hand.hoof_handling"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.hoof_handling",
@@ -456,7 +576,47 @@
     "legacyIds": [
       "horse.in_hand.hoof_handling"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Balanced Weight Shift and Willing Hoof Lift",
+          "focusLevel": "introductory",
+          "summary": "Standing on level non-slip footing, encourage the horse gently to shift weight onto the supporting legs before lifting a hoof just to comfortable height for a few settled seconds, setting it down smoothly before balance wobbles or the foot snatches back.",
+          "whatToNotice": "Watch whether the horse organizes balance easily onto the remaining three legs and yields the hoof softly without leaning heavily on your shoulder."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Farrier-Ready Stamina and Comfortable Hoof Rest",
+          "focusLevel": "intermediate",
+          "summary": "Build comfortable holding duration gradually across all four feet, including gentle tapping on the hoof wall or resting forward on a hoof stand so full trimming and rasping sessions stay predictable and comfortable.",
+          "whatToNotice": "Check for uneven stiffness between left and right sides or front and hind limbs—holding a stiff hock too high or too far back triggers understandable resistance."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Snatching a hoof back abruptly mid-cleaning",
+          "guidance": "Snatching frequently signals lost balance, joint stiffness, or holding too high. Lower the hoof slightly, keep holds brief, and return the foot smoothly once the leg relaxes."
+        },
+        {
+          "issue": "Leaning all body weight onto the handler",
+          "guidance": "Leaning makes picking feet exhausting and unsafe. Pause before lifting, invite a small shift onto the opposite leg first, and check older or stiff horses for joint discomfort."
+        }
+      ],
+      "trainerInsight": "Set the foot down while your horse is still balanced and comfortable, and they will hold it willingly far longer next time.",
+      "welfareNote": "Respect joint range of motion—senior, arthritic, or stiff horses often need lower hoof height, soft footing, and short breaks during trimming.",
+      "relatedDictionaryTerms": [
+        "thrush",
+        "lameness",
+        "proprioception",
+        "positive-reinforcement"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.grooming",
+        "horse.in_hand.daily_care_handling"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.vet_handling",
@@ -530,7 +690,47 @@
     "legacyIds": [
       "horse.in_hand.stand_for_vet"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Wellness Touch on Healthy Days",
+          "focusLevel": "introductory",
+          "summary": "When the horse is completely healthy and settled, practice brief handling of ears, eyelids, gums, tail lift, flanks, and lower limbs—plus resting a cool spoon or stethoscope lightly behind the elbow—ending each brief touch with rest.",
+          "whatToNotice": "Observe whether breathing stays steady and the jaw remains soft as each area is touched, spotting sensitive zones long before an urgent exam."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Unfamiliar-Handler Exams and Easy Oral Dosing",
+          "focusLevel": "intermediate",
+          "summary": "Practice settled standing while a familiar helper mimics unfamiliar veterinary routines—listening to gut quadrants, checking digital pulses, lifting the tail for thermometer prep, or offering benign oral syringe taste rehearsals on an empty mouth.",
+          "whatToNotice": "Notice how rapidly the horse settles when a second person stands beside the shoulder—predictable routines cut emergency clinic stress dramatically."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Clamping the tail tightly or dancing away from hind checks",
+          "guidance": "Surprise touch near the hindquarters feels threatening. Announce softly at the hip first, touch briefly and withdraw before tension spikes, and keep positioning safe."
+        },
+        {
+          "issue": "Resisting handling only when genuinely hurt or colicky",
+          "guidance": "Pain guarding around eyes, wounds, or abdomen is protective, not defiant. Respect discomfort and let your veterinarian guide safe handling or sedation when needed."
+        }
+      ],
+      "trainerInsight": "The best time to teach your horse to trust a thermometer, stethoscope, and syringe is on an ordinary healthy Tuesday.",
+      "welfareNote": "Never escalate force against pain guarding; cooperative preparation lowers stress, while real medical pain always deserves gentle veterinary care.",
+      "relatedDictionaryTerms": [
+        "vital-signs-tpr",
+        "counter-conditioning",
+        "capillary-refill-time",
+        "equine-pain-ethogram"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.health_monitoring",
+        "rider.husbandry.medications"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.obstacles_outings",
@@ -620,7 +820,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 5
+    "sortOrder": 5,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Open Curiosity Around Simple Ground Features",
+          "focusLevel": "introductory",
+          "summary": "On safe, flat ground, let the horse approach a single pole, low mat, or quiet barn lane at an easy pace, lower its neck to inspect and sniff, and step through smoothly at walk with thoughtful foot placement.",
+          "whatToNotice": "Look for ears turning forward with curiosity, head lowering to judge footing, and measured stepping rather than leaping high or rushing past."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Adaptable Footwork and Recovery Outside the Arena",
+          "focusLevel": "intermediate",
+          "summary": "Explore gentle outdoor paths, mild terrain slopes, or unfamiliar safe ground features while allowing pauses to process passing sounds or sights, rewarding quick return to loose breathing and even footwork.",
+          "whatToNotice": "Observe how rapidly breathing and muscle tension settle after a brief look—steady recovery matters far more than pretending nothing ever startles a horse."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Planting feet and staring rigidly at an unfamiliar surface",
+          "guidance": "Freezing is a horse gathering information. Give a brief pause without pulling on the halter, let the horse inspect at an easier distance, and reward the first relaxed step forward."
+        },
+        {
+          "issue": "Bolting past the object once halfway across",
+          "guidance": "Rushing off signals lingering worry. Pause once clear, let breathing drop, and make the next approach simpler and wider rather than repeating rapidly."
+        }
+      ],
+      "trainerInsight": "A confident horse is not one that never looks—it is one that can look, breathe, think, and place its feet safely.",
+      "welfareNote": "Never drag or flood a frightened horse across an unstable surface; verify traction and overhead clearance first and respect personal space if a startle occurs.",
+      "relatedDictionaryTerms": [
+        "habituation",
+        "desensitization",
+        "proprioception",
+        "trigger-stacking"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.obstacles_outings",
+        "horse.in_hand.trailer_loading"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.trailer_loading",
@@ -693,7 +933,47 @@
     "legacyIds": [
       "horse.in_hand.load_trailer"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Threshold Inspection and First Steps",
+          "focusLevel": "introductory",
+          "summary": "With a hitched, bright, open trailer on flat ground, allow the horse to sniff the ramp or step-up without crowding, step one or two hooves smoothly onto the entry, pause peacefully to breathe, and step neatly back off on cue before asking further.",
+          "whatToNotice": "Watch for a lowered neck, deliberate step placement, and settled stillness on the ramp rather than wide eyes, rushed lunging forward, or flying backward."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Settled Waiting Inside and Measured Unloading",
+          "focusLevel": "intermediate",
+          "summary": "Build toward walking evenly all the way inside, standing relaxed while dividers and rear barriers settle safely, and stepping down on request one careful stride at a time without rushing the ramp.",
+          "whatToNotice": "Observe whether the horse breathes evenly inside the stall and waits for a soft exit cue rather than backing out explosively as soon as the barrier opens."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Scrambling backward rapidly off the ramp",
+          "guidance": "Fast backing comes from feeling trapped. Practice asking gently for one small backward step before the horse panics, keeping loading sessions short and ending on relaxed stillness."
+        },
+        {
+          "issue": "Entering willingly but growing anxious when doors close",
+          "guidance": "Claustrophobia responds best to tiny increments—spend quiet time standing inside with doors open and hay available before closing dividers gradually with a calm helper."
+        }
+      ],
+      "trainerInsight": "When a horse discovers the trailer is a safe place to pause and rest, loading stops feeling like a battle.",
+      "welfareNote": "Rushing, shouting, or crowding a worried horse into a trailer creates lasting loading trauma and serious ramp injury risks; slow down or enlist skilled in-person help.",
+      "relatedDictionaryTerms": [
+        "desensitization",
+        "arousal-threshold",
+        "negative-reinforcement",
+        "habituation"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.trailer_loading",
+        "horse.in_hand.obstacles_outings"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.longeing",
@@ -914,7 +1194,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Acceptance of Surcingle and Lines",
+          "focusLevel": "introductory",
+          "summary": "With a confident handler in an enclosed arena—and an experienced helper for early sessions—let the horse grow comfortable wearing a padded surcingle and feeling soft lines brush along flanks and hips before walking smoothly forward, halting, and making wide turns.",
+          "whatToNotice": "Look for loose tail carriage, steady walking rhythm, and relaxed acceptance when lines brush lightly against the hindquarters rather than clamping down or kicking out."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Aligned Walk and Trot Steering on Two Lines",
+          "focusLevel": "intermediate",
+          "summary": "Once line acceptance and walk turns feel natural, build balanced straight lines, wide circles, and smooth walk-to-halt or walk-to-trot transitions on light, even feel across varied safe arena patterns.",
+          "whatToNotice": "Observe whether the horse bends softly through the ribs on turns and accepts light half-halts without bracing behind the bit or rushing ahead."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Tucking the tail tightly or kicking when a line touches a leg",
+          "guidance": "Unexpected hind-leg contact triggers startle reflexes. Step back to stationary line desensitization with a helper until the horse stays completely loose before walking on."
+        },
+        {
+          "issue": "Rushing forward or ducking sharply on turns",
+          "guidance": "Sudden speed signals confusion or heavy rein feel. Simplify back to straight walk-halt clarity on an open line and verify bit, halter, and surcingle fit."
+        }
+      ],
+      "trainerInsight": "Comfortable acceptance of lines around the hindquarters comes first; steering and transitions grow easily once the horse trusts the gear.",
+      "welfareNote": "Do not rush solo driving on an unprepared horse, verify comfortable padded surcingle wither clearance, and check poll, mouth, or back comfort if sharp bracing appears.",
+      "relatedDictionaryTerms": [
+        "ground-driving",
+        "surcingle",
+        "desensitization",
+        "straightness"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.ground_driving",
+        "horse.in_hand.longeing"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.yield_hindquarters",
@@ -999,7 +1319,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Soft Crossing Steps Around Steadier Shoulders",
+          "focusLevel": "introductory",
+          "summary": "From a settled halt on flat footing, invite the horse to shift weight gently and step its inside hind leg cleanly underneath and across in response to light ground cues, then relax promptly into a brief pause on release.",
+          "whatToNotice": "Watch for a rhythmic crossing step with relaxed ears and soft jaw rather than swinging the hips rapidly out of worry or stepping backward."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Smooth Hindquarter Control From Walk and Tighter Spaces",
+          "focusLevel": "intermediate",
+          "summary": "From an active four-beat walk on both sides, encourage smooth, rhythmic crossing steps around balanced shoulders with minimal forward drift, pausing settled whenever pressure drops.",
+          "whatToNotice": "Check whether both left and right hips cross with similar ease and looseness—one-sided stiffness highlights where extra patience or physical checks help."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Flinging the hindquarters fast or kicking out defensively",
+          "guidance": "Sharp movement usually means cues felt startling or too intense. Soften energy, reward the earliest gentle weight shift, and let breathing stay slow."
+        },
+        {
+          "issue": "Stepping forward in a circle instead of crossing behind",
+          "guidance": "Forward drifting means the shoulders stayed moving. Reset smoothly from a brief halt and ask for just one clear crossing step at a time."
+        }
+      ],
+      "trainerInsight": "When a horse understands yielding the hindquarters smoothly, it builds physical suppleness and an easy way to release tension.",
+      "welfareNote": "Distinguish genuine comprehension from anxious spinning or shutdown, work on non-slip ground, and check hock, stifle, hip, or back comfort if one direction consistently resists.",
+      "relatedDictionaryTerms": [
+        "turn-on-the-forehand",
+        "hindquarters",
+        "suppleness",
+        "asymmetry"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.turn_on_forehand",
+        "horse.in_hand.yield_forequarters"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.yield_forequarters",
@@ -1084,7 +1444,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Measured Shoulder Crossing Without Backing",
+          "focusLevel": "introductory",
+          "summary": "From a settled halt on even ground, encourage the horse to shift weight slightly off the forehand and cross its front legs smoothly sideways away from light ground cues for one or two steps, settling softly as soon as cues drop.",
+          "whatToNotice": "Look for relaxed poll carriage and clean front-leg crossing around steadier hindquarters rather than tossing the head up or scuttling backward."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Balanced Multi-Step Shoulder Turns Both Sides",
+          "focusLevel": "intermediate",
+          "summary": "From halt or slow walk on both left and right sides, build several balanced forequarter steps around steadier hind feet with light, consistent rhythm and soft pauses on release.",
+          "whatToNotice": "Observe whether the horse steps freely across the chest in both directions without crowding forward or pinning ears."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Backing up abruptly when asked to move the shoulders",
+          "guidance": "Backing indicates the horse feels crowded in front. Keep the line light and ask gently beside the shoulder rather than pushing backward at the nose."
+        },
+        {
+          "issue": "Stiffening one shoulder and leaning into the handler",
+          "guidance": "Natural asymmetry or soreness can make one direction harder. Ask for a single small try, praise softly, and check front hoof, knee, or shoulder comfort if stiffness persists."
+        }
+      ],
+      "trainerInsight": "Light shoulder yielding teaches the horse to carry weight back onto its hindquarters rather than falling onto its front end.",
+      "welfareNote": "Avoid forcing rapid turns on slick footing and investigate persistent one-sided shoulder stiffness, head tossing, or resistance for front-limb or neck discomfort.",
+      "relatedDictionaryTerms": [
+        "turn-on-the-haunches",
+        "forehand",
+        "suppleness",
+        "asymmetry"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.yield_forequarters",
+        "horse.in_hand.sidepass_in_hand"
+      ]
+    }
   },
   {
     "id": "horse.in_hand.sidepass_in_hand",
@@ -1169,6 +1569,46 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Coordinated First Sideways Steps on Open Ground",
+          "focusLevel": "introductory",
+          "summary": "On flat, non-slip ground—using a fence smoothly ahead if helpful—invite the horse to organize shoulders and hindquarters together for one or two relaxed sideways steps in each direction, pausing promptly as soon as both ends respond.",
+          "whatToNotice": "Look for steady breathing and even crossing of front and hind legs rather than rushing sideways, hollowing the back, or trailing the hips far behind."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Parallel Sideways Steps for Gates and Everyday Spaces",
+          "focusLevel": "intermediate",
+          "summary": "Develop several parallel sideways steps in open space on both sides, applying that poised coordination beside gates, mounting blocks, or an optional stable ground rail once open steps stay relaxed.",
+          "whatToNotice": "Check whether the horse keeps a soft back and steady tempo across both directions without speeding up to escape the request."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Crossing one end while the other stays planted",
+          "guidance": "Full-body lateral coordination takes mental processing. Break practice back into brief alternating hindquarter and forequarter steps, then reconnect smoothly for one unified step."
+        },
+        {
+          "issue": "Hurrying sideways with a high tense head",
+          "guidance": "Speed signals worry or over-cueing. Ask for a single slow step, let the horse stand and breathe, and avoid adding ground poles until open steps feel easy."
+        }
+      ],
+      "trainerInsight": "Even sideways stepping grows from clarity and body awareness—one balanced step beats six frantic ones.",
+      "welfareNote": "Keep sessions short on sound footing and evaluate chronic one-sided resistance, tripping, or back tension for hoof, limb, rib, or back soreness.",
+      "relatedDictionaryTerms": [
+        "sidepass",
+        "lateral-movement",
+        "proprioception",
+        "straightness"
+      ],
+      "relatedSkillIds": [
+        "rider.in_hand.sidepass_in_hand",
+        "horse.mounted.sidepass"
+      ]
+    }
   }
 ]

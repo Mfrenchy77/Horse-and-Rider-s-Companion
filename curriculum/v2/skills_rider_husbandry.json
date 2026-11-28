@@ -84,7 +84,47 @@
       "rider.husbandry.approach_safely",
       "rider.husbandry.tie_safely"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Predictable Approach and Clear Exits",
+          "focusLevel": "introductory",
+          "summary": "Practice approaching a settled horse at the shoulder using a calm voice before light touch, keeping a hand smoothly along the body when passing behind or stepping well clear of kicking reach. Finish by tying to a solid above-wither ring with a quick-release knot you can untie with one tug.",
+          "whatToNotice": "Notice where your own body stands relative to blind spots and stall exits—do you stay relaxed and easy to read without crowding the horse or trapping yourself in a corner?"
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Matching Restraint to the Moment",
+          "focusLevel": "intermediate",
+          "summary": "Before tying or cross-tying in a busy aisle or unfamiliar venue, pause to read ear angle, breathing, and tension. Decide whether holding on a loose lead, single-tying with a breakaway loop, or stepping to a quieter space sets the horse up best.",
+          "whatToNotice": "Observe early muscle tightening or shifting weight before tying—choosing a calmer holding option early prevents pull-back panics later."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Tying tightly out of habit when a horse fidgets",
+          "guidance": "Shortening the rope tightly often increases claustrophobia and pulling back. Step back, check what is worrying the horse, and use a breakaway tie or hold the lead calmly until tension drops."
+        },
+        {
+          "issue": "Looping spare rope over fingers while moving",
+          "guidance": "A sudden startle can cinch wrapped rope around hands instantly. Practice folding excess line neatly back and forth so it releases freely if needed."
+        }
+      ],
+      "trainerInsight": "Safe handling begins with reading the horse in front of you before clipping a single snap.",
+      "welfareNote": "A horse standing completely motionless with a high head and held breath may be frozen in worry rather than relaxed—watch blinking, ear mobility, and breathing before proceeding.",
+      "relatedDictionaryTerms": [
+        "blind-spot",
+        "quick-release-knot",
+        "arousal-threshold",
+        "groundwork"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.standing_quietly",
+        "rider.theory.equine_body_language"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.grooming",
@@ -180,7 +220,47 @@
       "rider.husbandry.pick_hooves",
       "rider.husbandry.bathing_basics"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Hands-On Grooming and Hoof Check",
+          "focusLevel": "introductory",
+          "summary": "Before brushing, run a flat, steady hand from poll to pasterns to note normal skin warmth, smoothness, and sensitive spots. Groom with brushes matched to coat thickness, then stay balanced beside each leg while picking hooves cleanly from heel to toe.",
+          "whatToNotice": "Pay attention to skin twitches, ear flicks, or subtle shifts away from the brush—they tell you where pressure needs to lighten or where a rub, tick, or sore spot is starting."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Weather-Smart Bathing and Coat Care",
+          "focusLevel": "intermediate",
+          "summary": "When bathing on safe non-slip footing, start lukewarm water at lower legs before working upward, rinse soap completely, scrape excess water, and walk or cooler-dry according to wind and temperature. Compare limb warmth and hoof odor before and after.",
+          "whatToNotice": "Check whether water pooling, slippery concrete, or drafts create tension, and watch for early thrush odor, scratches, or skin dryness along girth and pasterns."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Brushing stiffly over bony or thin-skinned areas",
+          "guidance": "Hard bristles over the face, withers, or belly make grooming unpleasant. Switch to a soft brush or hand rub over bony spots and soften your stroke wherever the skin ripples."
+        },
+        {
+          "issue": "Leaning into the horse while picking hooves",
+          "guidance": "Pushing sideways throws the horse off balance and makes picking up a foot feel hard. Cue a gentle weight shift onto the other legs first and crouch safely ready to step out."
+        }
+      ],
+      "trainerInsight": "Grooming is your best daily health exam; your palms catch small changes long before they become vet bills.",
+      "welfareNote": "Repeated ear pinning, skin flinching, or biting near the belly or back during brushing often points to tack rubs, skin irritation, or gastric/muscular soreness rather than bad manners.",
+      "relatedDictionaryTerms": [
+        "thrush",
+        "withers",
+        "girth-cinch",
+        "equine-pain-ethogram"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.daily_care_handling",
+        "horse.in_hand.hoof_handling"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.blanketing",
@@ -256,7 +336,47 @@
     "legacyIds": [
       "rider.husbandry.blanketing_basics"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Fold, Place, and Fasten in Order",
+          "focusLevel": "introductory",
+          "summary": "Fold the clean blanket neatly so it rests smoothly over the withers without tossing it toward the head, slide it back along the hair coat, and fasten chest buckles first before belly surcingles and leg straps. Reverse the exact order on removal.",
+          "whatToNotice": "Check that straps never dangle toward the hocks while you work and that you can slide a flat hand comfortably along the chest, withers, and shoulders once buckled."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Fit, Warmth, and Dryness Check",
+          "focusLevel": "intermediate",
+          "summary": "Before blanketing after work or ahead of a weather swing, feel behind the elbows and under the mane for sweat or chill, check shoulder seam tension as the horse lowers its head to eat, and inspect high-wear points for flattened hair or rubs.",
+          "whatToNotice": "Notice whether the neckline presses on the withers when the head drops—tight chest cuts restrict grazing and create pressure sores quickly."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Blanket sliding sideways or pulling backward",
+          "guidance": "Slippage usually means unbalanced surcingles, mismatched chest width, or a shell cut too narrow at the shoulders. Re-adjust straps evenly and check fit when the horse walks a few strides."
+        },
+        {
+          "issue": "Uncertain whether a horse actually needs a layer",
+          "guidance": "Horses tolerate cool dry air far better than humans do; feel under the armpit or behind the ears rather than guessing from your own jacket, and never seal damp sweat under a heavy shell."
+        }
+      ],
+      "trainerInsight": "Chest straps go on first and come off last—that one habit prevents most blanketing wrecks.",
+      "welfareNote": "Over-blanketing or trapping sweat under non-breathable layers causes chilling, skin infections, and restless discomfort; adjust layers promptly as sun, wind, and moisture shift.",
+      "relatedDictionaryTerms": [
+        "withers",
+        "wither-clearance",
+        "surcingle",
+        "five-domains-model"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.daily_care_handling",
+        "rider.husbandry.health_monitoring"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.health_monitoring",
@@ -338,7 +458,47 @@
       "rider.husbandry.basic_health_check",
       "rider.husbandry.vital_signs"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Two-Minute Daily Baseline Scan",
+          "focusLevel": "introductory",
+          "summary": "Before turning out or tacking up, pause to note your horse’s bright eye, posture, water level, leftover feed, manure quantity, and all four legs for heat or swelling. Jot simple baselines on a barn card so normal stays concrete rather than guessed.",
+          "whatToNotice": "Compare today against your horse’s usual personality—subtle dullness, untouched hay, or resting an unusual hind foot often shows up hours before obvious illness."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Resting Vital Signs Practice Log",
+          "focusLevel": "intermediate",
+          "summary": "On a relaxed day at rest, practice checking resting heart rate, breathing rate, gum color, capillary refill time, gut sounds, digital pulses, and rectal temperature from safe hip positioning, then sanitize the thermometer and record the numbers.",
+          "whatToNotice": "Notice how calm resting numbers feel under your fingers and stethoscope so elevated pulses or quiet gut quadrants stand out immediately when a veterinarian asks."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Struggling to find the digital pulse or heart rate",
+          "guidance": "Pressing too firmly flattens the vessel. Use two relaxed fingertips along the back of the fetlock or under the jawbone on a healthy horse regularly so your touch learns normal faintness."
+        },
+        {
+          "issue": "Waiting to see if an abnormal sign resolves alone",
+          "guidance": "Early objective phone updates help veterinarians triage safely. Call with concrete numbers, timeline, and behavior rather than guessing at a diagnosis."
+        }
+      ],
+      "trainerInsight": "You only recognize abnormal quickly when you already know what normal looks and feels like at rest.",
+      "welfareNote": "Keep sick or feverish horses isolated from shared water troughs and wash hands and tools between horses; contact a veterinarian promptly for sustained elevated vitals, colic signs, or acute lameness.",
+      "relatedDictionaryTerms": [
+        "vital-signs-tpr",
+        "capillary-refill-time",
+        "digital-pulse",
+        "colic"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.vet_handling",
+        "rider.husbandry.first_aid"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.first_aid",
@@ -419,7 +579,47 @@
     "legacyIds": [
       "rider.husbandry.basic_first_aid"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Emergency Readiness Walk-Through",
+          "focusLevel": "introductory",
+          "summary": "Before an injury happens, locate posted veterinarian and backup numbers, trailer access, clean water hose, and first-aid supplies at your barn. Walk through how you would keep bystanders safe, hold the horse safely, and report location and symptoms cleanly to a veterinarian.",
+          "whatToNotice": "Check whether emergency contacts, street address, and clean dressings are actually reachable in under a minute without rummaging through cluttered tack trunks."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Calm Triage and Vet-Ready Wound Prep",
+          "focusLevel": "intermediate",
+          "summary": "Audit a practical barn kit (saline, non-stick sterile pads, clean wraps, bandage scissors, thermometer) and rehearse the triage boundary: gentle cool rinsing for superficial scrapes versus applying clean pressure for heavy bleeding and leaving deep cuts, eye injuries, or joint proximity untouched for the veterinarian.",
+          "whatToNotice": "Practice spotting high-risk areas—especially near joints, tendon sheaths, eyes, or embedded objects—where withholding ointments and calling the vet immediately protects recovery."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Reaching automatically for topical sprays or powders",
+          "guidance": "Heavy ointments and powders trap debris and complicate suturing or joint evaluation. Stick to clean water or sterile saline unless your veterinarian directs otherwise."
+        },
+        {
+          "issue": "Forgetting personal safety around a painful horse",
+          "guidance": "Even gentle horses may kick, strike, or drop suddenly in acute pain. Work with a calm helper whenever possible and step clear rather than wrestling alone."
+        }
+      ],
+      "trainerInsight": "Good first aid buys safe time and clean information for the veterinarian—it never tries to replace one.",
+      "welfareNote": "Never pull an embedded nail or foreign object from a hoof or deep wound, never apply human eye drops without veterinary direction, and withhold feed from suspected colic or choke until examined.",
+      "relatedDictionaryTerms": [
+        "synovial-structure",
+        "colic",
+        "choke",
+        "vital-signs-tpr"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.health_monitoring",
+        "rider.husbandry.leg_wraps"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.medications",
@@ -483,7 +683,47 @@
     "legacyIds": [
       "rider.husbandry.oral_medication"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Practical Exercise",
+          "title": "Five-Check Verification and Empty-Mouth Prep",
+          "focusLevel": "intermediate",
+          "summary": "Before administering any veterinarian-prescribed or approved oral medication, verify label details aloud—right horse, medication, dose, route, and time—and confirm the horse’s mouth is clear of hay or grain. Practice gentle cheek touch and applesauce syringe rehearsals on non-treatment days so actual dosing stays easy.",
+          "whatToNotice": "Observe whether the horse swallows freely with a relaxed head rather than clenching its jaw, tossing upward, or dribbling paste mixed with unchewed hay."
+        },
+        {
+          "badge": "Practical Exercise",
+          "title": "Consistent Dose Logging and Team Handoff",
+          "focusLevel": "intermediate",
+          "summary": "Keep a clear written dose log noting date, time, full-intake confirmation, and any appetite or manure changes during treatment. Ask your veterinarian ahead of time what to do if a dose is partially spat out rather than guessing at re-dosing.",
+          "whatToNotice": "Check that every barn helper sees the same written log so doses are neither skipped nor accidentally doubled."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Horse flinging its head up when seeing a syringe",
+          "guidance": "Forcing the head upward builds lasting fear. Lower your energy, place a calm hand along the cheek, slide the tip gently into the toothless interdental space, and reward small relaxed tries."
+        },
+        {
+          "issue": "Hiding bitter medicine in a large meal that goes uneaten",
+          "guidance": "If a horse leaves half its ration, you cannot verify the dose received. Discuss vet-approved small carriers or oral paste technique before switching methods."
+        }
+      ],
+      "trainerInsight": "Five seconds verifying the label and clearing the mouth prevents wasted medicine and head-shy horses.",
+      "welfareNote": "Only give prescription medications under veterinary guidance, never double a missed or spit-out dose without consulting your veterinarian, and never attempt injections without direct veterinary training.",
+      "relatedDictionaryTerms": [
+        "positive-reinforcement",
+        "choke",
+        "vital-signs-tpr",
+        "arousal-threshold"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.vet_handling",
+        "rider.husbandry.health_monitoring"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.leg_wraps",
@@ -544,7 +784,47 @@
     "legacyIds": [
       "rider.husbandry.leg_bandaging_basics"
     ],
-    "sortOrder": 40
+    "sortOrder": 40,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Practical Exercise",
+          "title": "Even-Tension Practice Before Wrapping a Horse",
+          "focusLevel": "intermediate",
+          "summary": "Before wrapping a live leg, practice rolling clean cotton quilts and knit bandages smoothly around a fence post or under experienced guidance. Aim for flat, wrinkle-free padding from below the knee or hock to the fetlock, pulling tension gently front-to-back across the cannon bone—never sharply across the back tendons.",
+          "whatToNotice": "Slide a finger under top and bottom edges to confirm uniform snugness with smooth overlap and zero tight ridges, creases, or exposed bandage rubbing bare skin."
+        },
+        {
+          "badge": "Practical Exercise",
+          "title": "Post-Wrap Safety and Circulation Audit",
+          "focusLevel": "intermediate",
+          "summary": "When standing or shipping wraps are appropriate, confirm legs are clean and dry first, wrap pairs evenly unless a veterinarian directs single-limb bandaging, and plan timely removal intervals to inspect skin warmth, dryness, and comfort.",
+          "whatToNotice": "Watch for pawing, leg shaking, heat buildup, slipping padding, or moisture soaking into the quilt—any of those calls for removing and reassessing promptly."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Bandage bunching or slipping down toward the pastern",
+          "guidance": "Uneven layer overlap or damp hair lets wraps slide into dangerous tight rings. Unwrap completely and start fresh with dry padding rather than tightening the bottom turn."
+        },
+        {
+          "issue": "Wrapping routinely when bare legs would stay healthier",
+          "guidance": "Trapped tendon heat during exercise can strain soft tissues. Clarify the exact purpose of any wrap—or ask a veterinarian—before bandaging routinely."
+        }
+      ],
+      "trainerInsight": "A poorly applied bandage causes far more harm than no bandage at all; if you feel a wrinkle, unwrap and redo it.",
+      "welfareNote": "Squat balanced beside the leg rather than kneeling on both knees, avoid pulling across flexor tendons, and seek veterinary direction for wound or acute-swelling bandaging.",
+      "relatedDictionaryTerms": [
+        "synovial-structure",
+        "lameness",
+        "digital-pulse",
+        "five-domains-model"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.first_aid",
+        "rider.theory.training_equipment"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.feeding",
@@ -624,7 +904,47 @@
     "legacyIds": [
       "rider.husbandry.feeding_basics"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Quality Check and Accurate Ration Delivery",
+          "focusLevel": "introductory",
+          "summary": "Before feeding, open hay flakes to check smell, dust, and mold, verify water troughs are clean and ice-free, and weigh rations rather than guessing by scoop size. Confirm feed-room latches click shut and feed group-housed horses with ample spacing to limit chasing.",
+          "whatToNotice": "Notice how eagerly the horse eats, whether hay is quidded or dropped half-chewed, and how much water disappears over each 24-hour cycle."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Forage-First Routine and Change Plan",
+          "focusLevel": "intermediate",
+          "summary": "Review your horse’s daily forage proportion, body condition along ribs and topline, workload, and seasonal grass shifts. Map how any hay, pasture, or concentrate change would stretch gradually across at least 7–14 days, soaking pelleted mashes whenever dental wear or choke risk applies.",
+          "whatToNotice": "Check neck-crest firmness, hoof warmth, and seasonal weight drift early—small forage or grazing adjustments prevent far bigger metabolic setbacks."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Feeding by scoop volume across different feeds",
+          "guidance": "Pellets, textured grains, and beet pulp differ sharply in weight per scoop. Hang a simple scale in the feed room so every ration matches actual weight."
+        },
+        {
+          "issue": "Offering large concentrate meals right after hard work",
+          "guidance": "Wait until breathing and heart rate settle comfortably before full grain meals, while keeping clean water and forage appropriately accessible."
+        }
+      ],
+      "trainerInsight": "Equine digestion thrives on steady forage, clean water, and slow changes—almost every feeding crisis starts by rushing one of those three.",
+      "welfareNote": "Horses with metabolic sensitivity, obesity, senior dental wear, or past laminitis or colic benefit from an individualized ration plan with your veterinarian or qualified equine nutritionist.",
+      "relatedDictionaryTerms": [
+        "forage",
+        "colic",
+        "laminitis",
+        "choke"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.health_monitoring",
+        "rider.husbandry.stable_care"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.stable_care",
@@ -688,7 +1008,47 @@
     "legacyIds": [
       "rider.husbandry.stall_cleaning_basics"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Air Quality and Hazard Sweep",
+          "focusLevel": "introductory",
+          "summary": "Step into an empty stall or shelter at horse nose height and check for ammonia odor or lingering dust before freshening dry bedding and scrubbing water buckets. Walk fence lines, gates, latches, and aisle edges checking for loose nails, exposed tools, or toxic weeds.",
+          "whatToNotice": "Notice where moisture gathers, where dust lifts when sweeping, and whether any pitchfork, hose, or protruding latch sits within reach of a curious nose or swinging hip."
+        },
+        {
+          "badge": "Foundation Exercise",
+          "title": "Low-Dust Routine Around Stabled Horses",
+          "focusLevel": "introductory",
+          "summary": "Organize deep cleaning and aisle sweeping while horses are turned out whenever possible, keep walkways free of wheelbarrows and cords, and test trough heaters or automatic waterers for steady flow and safe footing around drinking zones.",
+          "whatToNotice": "Watch whether fresher barn air and drier resting corners improve coughing, hoof comfort, or how willingly horses lie down to sleep."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Mucking briskly right beside a horse eating hay",
+          "guidance": "Stirring bedding dust and ammonia next to a horse’s nostrils irritates sensitive airways. Turn horses out before deep cleaning or work slowly with well-ventilated doors open."
+        },
+        {
+          "issue": "Overlooking subtle turnout hazards after storms",
+          "guidance": "Wind brings downed branches, sagging wire, and slippery mud around gates. A two-minute perimeter glance before turnout catches hazards before hooves find them."
+        }
+      ],
+      "trainerInsight": "If the stall air smells sharp at your height, it is far harsher down where your horse eats and sleeps.",
+      "welfareNote": "Clean air, dry resting spots, safe footing, and daily movement protect hooves, lungs, and mental wellbeing just as deeply as anything done in the arena.",
+      "relatedDictionaryTerms": [
+        "thrush",
+        "forage",
+        "five-domains-model",
+        "blind-spot"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.safe_handling",
+        "rider.theory.ethical_training"
+      ]
+    }
   },
   {
     "id": "rider.husbandry.tack",
@@ -776,6 +1136,46 @@
       "rider.husbandry.tack_check_and_fit",
       "rider.husbandry.clean_tack_and_equipment"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Staged Tacking and Hardware Inspection",
+          "focusLevel": "introductory",
+          "summary": "Before placing tack, flex billets, stirrup leathers, cinch/latigo ties, and rein stitching to confirm no dry cracking or loose keepers. Place the saddle smoothly forward and slide it back into position, tighten the girth or cinch in gentle stages, and verify comfortable bit or bitless noseband clearance.",
+          "whatToNotice": "Watch the horse’s ears, jaw, and breathing as the saddle lands and as each girth hole adjusts—flinching or tail swishing gives immediate feedback worth heeding."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Static and Sweat-Pattern Fit Check",
+          "focusLevel": "intermediate",
+          "summary": "Standing on level ground without a thick pad hiding contours, inspect wither clearance, spine channel width, even panel contact along the ribcage, and tree angle behind the shoulder. After a normal ride, read dust or sweat marks under the saddle pad for dry pinch spots or uneven pressure.",
+          "whatToNotice": "Check whether sweat appears evenly along both sides of the spine—dry white spots, rubbed hair, or sliding sideways signal fit issues that thicker pads rarely fix."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Tightening the girth all at once right after saddling",
+          "guidance": "Sudden squeezing causes discomfort and teaches girthiness. Snug gently at first, walk a few steps, and finish adjusting smoothly before mounting."
+        },
+        {
+          "issue": "Using extra pads to compensate for a narrow saddle",
+          "guidance": "Stacking thick pads inside a tight tree acts like wearing thick socks in tight boots—it increases pressure. Consult a qualified fitter when panels bridge or pinch."
+        }
+      ],
+      "trainerInsight": "Tack should disappear quietly into comfortable communication; the moment it pinches, every training question gets louder.",
+      "welfareNote": "Horses change shape across seasons, age, and conditioning—recheck saddle balance, bridle pressure points, and noseband breathing room regularly rather than assuming past fit still holds.",
+      "relatedDictionaryTerms": [
+        "wither-clearance",
+        "girth-cinch",
+        "withers",
+        "hackamore-bosal"
+      ],
+      "relatedSkillIds": [
+        "horse.in_hand.daily_care_handling",
+        "rider.theory.tack_fit_function"
+      ]
+    }
   }
 ]
