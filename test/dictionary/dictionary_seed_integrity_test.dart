@@ -43,14 +43,20 @@ void main() {
     test(
       'every seed entry has unique id/slug, valid skillIds, and valid relatedTerms',
       () {
-        expect(seedEntries, hasLength(28));
+        expect(seedEntries, hasLength(84));
         expect(seedIds, hasLength(seedEntries.length));
         expect(
           seedEntries.map((e) => e.slug).toSet(),
           hasLength(seedEntries.length),
         );
 
+        final nameOwners = <String, Set<String>>{};
         for (final entry in seedEntries) {
+          for (final rawName in [entry.term, ...entry.strings('synonyms')]) {
+            final key = rawName.trim().toLowerCase();
+            if (key.isEmpty) continue;
+            nameOwners.putIfAbsent(key, () => <String>{}).add(entry.id);
+          }
           expect(
             entry.published,
             isTrue,
@@ -81,16 +87,43 @@ void main() {
             );
           }
         }
+
+        final collisions = nameOwners.entries
+            .where((e) => e.value.length > 1)
+            .toList();
+        expect(
+          collisions,
+          isEmpty,
+          reason: 'Terms and synonyms must not collide across meanings',
+        );
+
+        final nonContextualIds = seedEntries
+            .where((e) => !e.contextual)
+            .map((e) => e.id)
+            .toSet();
+        expect(nonContextualIds, {
+          'green',
+          'collection',
+          'poll',
+          'aids',
+          'bend',
+          'flexion',
+          'choke',
+          'flooding',
+          'engagement',
+        });
       },
     );
 
     test(
-      'Batch 2 terms auto-highlight cleanly while ambiguous standalone words stay quiet',
+      'Batch 2 and Wave 3 terms auto-highlight cleanly while ambiguous standalone words stay quiet',
       () {
-        // Bare ambiguous words ('contact', 'posting', 'aids', 'cues', 'lead', 'diagonal', 'green', 'collection', 'poll') must NOT auto-highlight.
+        // Bare/ambiguous terms must NOT auto-highlight in ordinary language.
         final ambiguous = matchDictionaryTerms(
           'Please contact support about posting aids, cues, a green collection, '
-          'a poll, a diagonal line, or a lead.',
+          'a poll, a diagonal line, backing up, a founder, a simple change, '
+          'a transition, a lunge, bend, knee flexion, choke, flooding, '
+          'engagement, or a lead.',
           seedEntries,
         );
         expect(ambiguous, isEmpty);
@@ -98,7 +131,7 @@ void main() {
         // Specific Batch 2 equestrian terms & synonyms DO auto-highlight.
         final hits = matchDictionaryTerms(
           'Check your cinch and TPR, then work on rhythm, rein contact, '
-          'pressure and release, and self-carriage.',
+          'pressure-and-release, and self-carriage.',
           seedEntries,
         );
         expect(hits.map((m) => m.entry.id), [
@@ -110,19 +143,56 @@ void main() {
           'self-carriage',
         ]);
 
+        // Wave 3 Priority A/B/C terms + upgraded hyphen/plural variants highlight cleanly.
+        final wave3Hits = matchDictionaryTerms(
+          'Develop an independent seat and two-point position before learning '
+          'rein back, avoiding learned helplessness, checking for colic and '
+          'laminitis, and respecting half-halts and ground-tying.',
+          seedEntries,
+          maxMatches: 12,
+        );
+        expect(
+          wave3Hits.map((m) => m.entry.id),
+          containsAll([
+            'independent-seat',
+            'two-point-position',
+            'rein-back',
+            'learned-helplessness',
+            'colic',
+            'laminitis',
+            'half-halt',
+            'ground-tie',
+          ]),
+        );
+
+        // Known Terms suppresses selected Wave 3 IDs immediately.
+        final suppressed = matchDictionaryTerms(
+          'Build an independent seat and avoid learned helplessness.',
+          seedEntries,
+          knownTermIds: const {'independent-seat', 'learned-helplessness'},
+        );
+        expect(suppressed, isEmpty);
+
         // Manual Define resolves both contextual and non-contextual terms/synonyms.
         for (final pair in [
           ('cinch', 'girth-cinch'),
-          ('girth', 'girth-cinch'),
+          ('girthiness', 'girth-cinch'),
           ('lunging', 'longeing'),
           ('haunches', 'hindquarters'),
           ('R+', 'positive-reinforcement'),
           ('R-', 'negative-reinforcement'),
+          ('pressure-and-release', 'negative-reinforcement'),
           ('elastic contact', 'rein-contact'),
           ('safety knot', 'quick-release-knot'),
           ('aids', 'aids'),
           ('cues', 'aids'),
           ('green', 'green'),
+          ('bend', 'bend'),
+          ('flexion', 'flexion'),
+          ('choke', 'choke'),
+          ('flooding', 'flooding'),
+          ('engagement', 'engagement'),
+          ('proprioception', 'proprioception'),
         ]) {
           expect(
             lookupSelectedDictionaryTerm(pair.$1, seedEntries).exactMatch?.id,

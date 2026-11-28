@@ -1,9 +1,9 @@
 # Horse & Rider's Companion — Skill Tree Vocabulary & Dictionary Integration Audit
 
-> **Status: PROPOSAL & EDITORIAL AUDIT ONLY (Not Approved / Not Published)**  
-> **Scope:** Wave 3 local Skill Tree 2.0 curriculum ([curriculum/v2](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/curriculum/v2/families.json): **33 Skill Families, 84 Active Skills, 187 Difficulty Standards, 84 Legacy Mappings**) compared against the canonical Dictionary starter source ([dictionary_seed.json](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/functions/dictionary_seed.json): **28 published entries**) and matching engine ([dictionary_matcher.dart](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/lib/MainPages/Dictionary/dictionary_matcher.dart)).  
-> **Companion Machine-Readable Proposal:** [skill_tree_dictionary_candidates_proposal.json](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/docs/skill_tree_dictionary_candidates_proposal.json) (**56 proposed new entries** + **10 recommended updates to existing entries**).  
-> **Governing Principles:** [EQUESTRIAN_DICTIONARY_GUIDING_PRINCIPLES.md](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/docs/EQUESTRIAN_DICTIONARY_GUIDING_PRINCIPLES.md) & [SKILL_TREE_CURRICULUM_GUIDE.md](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/docs/SKILL_TREE_CURRICULUM_GUIDE.md). No production Dictionary entries, curriculum JSON files, Cloud Functions, Firestore rules, or Known Terms preferences were modified.
+> **Status: IMPLEMENTED LOCALLY IN \`functions/dictionary_seed.json\` (84 Canonical Entries — Unpublished / Not Deployed)**  
+> **Scope:** Wave 3 local Skill Tree 2.0 curriculum ([curriculum/v2](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/curriculum/v2/families.json): **33 Skill Families, 84 Active Skills, 187 Difficulty Standards, 84 Legacy Mappings**) compared against the canonical Dictionary starter source ([dictionary_seed.json](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/functions/dictionary_seed.json): **84 published seed entries** after applying the 56 additions and 10 improvements) and matching engine ([dictionary_matcher.dart](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/lib/MainPages/Dictionary/dictionary_matcher.dart)).  
+> **Historical Reference Proposal:** [skill_tree_dictionary_candidates_proposal.json](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/docs/skill_tree_dictionary_candidates_proposal.json) preserved unchanged for historical reference.  
+> **Governing Principles:** [EQUESTRIAN_DICTIONARY_GUIDING_PRINCIPLES.md](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/docs/EQUESTRIAN_DICTIONARY_GUIDING_PRINCIPLES.md) & [SKILL_TREE_CURRICULUM_GUIDE.md](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/docs/SKILL_TREE_CURRICULUM_GUIDE.md). Production Firestore, security rules, Cloud Functions, Known Terms behavior, and Skill Tree JSON remain unmodified.
 
 ---
 
@@ -889,4 +889,23 @@ Inspected [dictionary_matcher.dart](file:///home/matteo/Pictures/Projects/Horse-
    - Group B2 (12 canter, learning theory & hoof health terms: `simple-lead-change`, `cross-canter`, `ground-driving`, `training-pyramid`, `operant-conditioning`, `classical-conditioning`, `habituation`, `desensitization`, `arousal-threshold`, `trigger-stacking`, `laminitis`, `digital-pulse`). Review `training-pyramid`, `laminitis`, and `digital-pulse`.
 4. **Stage 3 — Priority C Import (18 Entries):**
    - Matt reviews the `5` clinical/welfare/gear entries (`five-domains-model`, `equine-pain-ethogram`, `capillary-refill-time`, `synovial-structure`, `cavesson`) and confirms whether `proprioception` should publish now or wait until future curriculum copy adopts it.
+
+---
+
+## 9. Implementation Summary & Editorial Refinements Applied
+
+All **56** new entries (`14` Priority A, `24` Priority B, `18` Priority C) and **10** existing-entry upgrades are now implemented locally in [dictionary_seed.json](file:///home/matteo/Pictures/Projects/Horse-and-Rider-s-Companion/functions/dictionary_seed.json) (**84** total entries: `75` `contextual: true`, `9` `contextual: false`).
+
+### Anti-Ambiguity & Editorial Refinements Made During Implementation
+
+1. **`engagement` set to `contextual: false`:** Prevents accidental contextual highlights on general non-equine phrases such as `"user engagement"` or `"community engagement"` while preserving `"hindquarter engagement"` and manual `"Define"` / Dictionary search access.
+2. **High-noise synonyms removed from contextual lists:**
+   - Removed bare `"founder"` from `laminitis` (replaced with `"equine founder"`, keeping founder explained in `usage`).
+   - Removed bare `"backing up"` from `rein-back` (kept in `regionalUsage` note).
+   - Removed bare `"simple change"` and `"simple changes"` from `simple-lead-change` (retained `"simple lead changes"`).
+   - Omitted bare `"lunge"` from `longeing` (avoiding `"lunging forward"`) and bare `"transition"` from `transitions` (avoiding `"feed transition"`).
+3. **Additional unambiguous surface forms added:** `"half-halts"`, `"ground-tying"`, `"ground ties"`, `"pressure-and-release"`, `"girths"`, `"cinches"`, `"girthy"`, `"girthiness"`, `"progressive transition"`, `"within-gait transition"`, `"within-gait transitions"`, `"two point"`, `"half seat"`, `"disengaging the hindquarters"`, `"yielding the hindquarters"`, `"yield the hindquarters"`, `"turns on the hindquarters"`, `"equine blind spot"`, `"equine blind spots"`, `"leg yielding"`, `"sidepassing"`, `"cross cantering"`, `"long lining"`, `"long-reining"`, `"trigger-stacking"`, `"haunches in"`, and `"longeing cavessons"`.
+4. **Cleaned schema & cross-links:** Folded all `welfareAndSafetyNotes` cleanly into `explanation`, added clear non-diagnosis clinical disclaimers to `usage` on all `9` health/pain terms (`colic`, `lameness`, `choke`, `thrush`, `laminitis`, `digital-pulse`, `capillary-refill-time`, `synovial-structure`, `equine-pain-ethogram`), fixed typo on `leg-yield`, and tightened `relatedTerms` on `two-point-position` (`forage` -> `self-carriage`), `thrush` (`forage` -> `laminitis`, `digital-pulse`), and `synovial-structure` (`colic` -> `vital-signs-tpr`, `digital-pulse`).
+5. **Remaining Items Flagged for Matt's Review Prior to Production Publication:** Clinical/veterinary phrasing (`colic`, `lameness`, `choke`, `thrush`, `laminitis`, `digital-pulse`, `capillary-refill-time`, `synovial-structure`), welfare science phrasing (`learned-helplessness`, `five-domains-model`, `equine-pain-ethogram`), `training-pyramid` / `cavesson` framing, and optional `proprioception` inclusion (`0` current verbatim Skill Tree hits).
+
 

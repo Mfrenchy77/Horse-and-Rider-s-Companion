@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
@@ -453,6 +454,107 @@ void main() {
             findsOneWidget,
           );
           expect(find.byType(SelectionArea), findsWidgets);
+          expect(tester.takeException(), isNull);
+        }
+      },
+    );
+
+    testWidgets(
+      'Wave 3 Skill Tree terms highlight cleanly on mobile/desktop and honor Known Terms without extra reads',
+      (tester) async {
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.devicePixelRatio = 1;
+
+        final knownRepo = KnownTermsRepository.instance..resetForTest();
+        addTearDown(knownRepo.resetForTest);
+        expect(seedEntries, hasLength(84));
+
+        const skill = CurriculumSkill(
+          id: 'rider.mounted.seat_balance',
+          familyId: 'rider.mounted.position_balance_safety',
+          name: 'Independent Seat, Position & Balance',
+          subject: SkillSubject.rider,
+          realm: SkillCategory.Mounted,
+          summary:
+              'Developing an independent seat before asking for rein back.',
+          purpose: 'Protects balance and avoids learned helplessness.',
+          safety: [
+            'Maintain an independent seat without bracing on the reins.',
+          ],
+          availableLevels: [DifficultyState.Introductory],
+          levels: {
+            DifficultyState.Introductory: SkillLevelDefinition(
+              overview: 'Balanced alignment at walk and trot.',
+              learning: 'Practices following motion.',
+              proficient: 'Rides with balanced alignment.',
+            ),
+          },
+        );
+        const state = SkillTreeV2State(
+          realm: SkillCategory.Mounted,
+          skills: [skill],
+          selectedSkillId: 'rider.mounted.seat_balance',
+          selectedLevel: DifficultyState.Introductory,
+        );
+
+        for (final size in [const Size(390, 844), const Size(1200, 900)]) {
+          tester.view.physicalSize = size;
+          // Guest mode sees all highlights cleanly.
+          knownRepo.resetForTest();
+          await tester.pumpWidget(
+            BlocProvider<AppCubit>.value(
+              value: harness.cubit,
+              child: MaterialApp(
+                theme: mainThemeDark,
+                home: Scaffold(
+                  body: SingleChildScrollView(
+                    child: SkillDetailV2Panel(
+                      state: state,
+                      skill: skill,
+                      allResources: const [],
+                      canSelfAssess: false,
+                      selfAssessDisabledReason: null,
+                      canVerify: false,
+                      onSelectLevel: (_) {},
+                      onSelfAssess: (_, _) {},
+                      onVerifyLevel: (_, {required verified}) {},
+                      onSelectRelatedSkill: (_) {},
+                      onChangeResourceSort: (_) {},
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(
+            find.widgetWithText(TextButton, 'independent seat'),
+            findsWidgets,
+          );
+          expect(
+            find.widgetWithText(TextButton, 'rein back'),
+            findsOneWidget,
+          );
+          expect(
+            find.widgetWithText(TextButton, 'learned helplessness'),
+            findsOneWidget,
+          );
+
+          // Signed-in user marking independent-seat known hides it immediately.
+          knownRepo.resetForTest(activeUserId: 'signed-in-rider');
+          await knownRepo.markKnown('independent-seat');
+          await tester.pumpAndSettle();
+
+          expect(
+            find.widgetWithText(TextButton, 'independent seat'),
+            findsNothing,
+          );
+          expect(
+            find.widgetWithText(TextButton, 'rein back'),
+            findsOneWidget,
+          );
           expect(tester.takeException(), isNull);
         }
       },

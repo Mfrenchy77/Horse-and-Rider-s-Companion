@@ -42,7 +42,7 @@ void main() {
         FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'),
       );
       final entries = await DictionaryRepository(firestore: db).load();
-      expect(entries, hasLength(28));
+      expect(entries, hasLength(84));
       expect(
         entries.every((entry) => entry.bundled && entry.published),
         isTrue,
@@ -92,7 +92,7 @@ void main() {
         'definition': 'Private unfinished definition.',
       });
       final entries = await DictionaryRepository(firestore: db).load();
-      expect(entries, hasLength(28));
+      expect(entries, hasLength(84));
       expect(
         entries.every((entry) => entry.bundled && entry.published),
         isTrue,

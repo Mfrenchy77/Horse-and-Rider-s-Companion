@@ -92,7 +92,7 @@ void main() {
   test(
     'starter, Batch 1, and Batch 2 meanings cover all requested terms, cross-discipline unity, synonyms, categories, and ambiguous words',
     () {
-      expect(entries, hasLength(28));
+      expect(entries, hasLength(84));
       const starterTerms = [
         'Green',
         'Green Broke',
@@ -160,11 +160,14 @@ void main() {
       );
       expect(
         DictionaryRepository.search(entries, category: 'Anatomy'),
-        hasLength(4),
+        hasLength(5),
       );
       expect(
-        DictionaryRepository.search(entries, letter: 'W').single.slug,
-        'withers',
+        DictionaryRepository.search(
+          entries,
+          letter: 'W',
+        ).map((entry) => entry.slug),
+        unorderedEquals(['withers', 'wither-clearance']),
       );
       expect(
         DictionaryRepository.search(entries, query: 'no-such-term'),
