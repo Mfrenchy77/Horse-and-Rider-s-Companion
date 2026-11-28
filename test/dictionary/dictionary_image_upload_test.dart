@@ -36,6 +36,7 @@ class _FakeMediaStorage implements MediaStorageRepository {
       [];
   final List<String> deletedUrls = [];
   bool shouldThrow = false;
+  MediaStorageException? errorToThrow;
   int _counter = 0;
 
   @override
@@ -58,6 +59,9 @@ class _FakeMediaStorage implements MediaStorageRepository {
     void Function(double progress)? onProgress,
   }) async {
     onProgress?.call(0.5);
+    if (errorToThrow != null) {
+      throw errorToThrow!;
+    }
     if (shouldThrow) {
       throw const MediaStorageException('Permission denied.');
     }
@@ -559,6 +563,68 @@ void main() {
         expect(find.text('Inside lead alignment'), findsOneWidget);
         // Non-image HTTPS resource remains a clickable link button.
         expect(find.text('Read biomechanics guide'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'DictionaryImagePickerSection surfaces actionable error guidance for unauthorized and unauthenticated upload failures',
+      (tester) async {
+        final storage = _FakeMediaStorage()
+          ..errorToThrow = const MediaStorageException(
+            'User is not authorized to perform the desired action.',
+            code: 'unauthorized',
+          );
+        var items = <CommunityPendingImage>[];
+
+        await tester.pumpWidget(
+          wrap(
+            StatefulBuilder(
+              builder: (context, setState) => Scaffold(
+                body: SingleChildScrollView(
+                  child: DictionaryImagePickerSection(
+                    uid: 'uid-contrib',
+                    submissionId: 'sub-trot-1',
+                    items: items,
+                    mediaStorage: storage,
+                    pickImages: () async => [
+                      (name: 'trot.png', bytes: _pngBytes()),
+                    ],
+                    onItemsChanged: (next) => setState(() => items = next),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(
+          find.byKey(const Key('dictionaryPickCommunityImagesButton')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('communityImageUploadError_0')),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Upload failed (unauthorized)'),
+          findsOneWidget,
+        );
+
+        storage.errorToThrow = const MediaStorageException(
+          'Unauthenticated',
+          code: 'unauthenticated',
+        );
+        await tester.tap(
+          find.byKey(
+            Key('dictionaryRetryCommunityImage_${items.first.id}'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining('please sign in again before uploading images'),
+          findsOneWidget,
+        );
       },
     );
   });

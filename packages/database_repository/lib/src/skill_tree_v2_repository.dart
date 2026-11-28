@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:database_repository/src/logging/app_logger.dart';
 import 'package:database_repository/src/mappers/curriculum_skill_firestore_mapper.dart';
 import 'package:database_repository/src/mappers/skill_family_firestore_mapper.dart';
 import 'package:database_repository/src/mappers/skill_progress_v2_firestore_mapper.dart';
@@ -11,6 +12,8 @@ import 'package:database_repository/src/models/skill.dart';
 import 'package:database_repository/src/models/skill_family.dart';
 import 'package:database_repository/src/models/skill_level.dart';
 import 'package:database_repository/src/models/skill_progress_v2.dart';
+import 'package:database_repository/src/repository_exception.dart';
+import 'package:database_repository/src/rider_profile_repository.dart';
 
 /// Thrown when an active versioned curriculum snapshot is incomplete or
 /// corrupt and cannot be safely served.
@@ -107,6 +110,18 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
 
   String _profileCollection(SkillSubject subject) =>
       subject == SkillSubject.rider ? 'Rider_Profile' : 'Horse_Profile';
+
+  /// Resolves the canonical Firestore profile document ID.
+  ///
+  /// `Rider_Profile` documents are keyed by [RiderProfileRepository.profileDocIdForEmail],
+  /// while callers may pass the rider's raw email or an already-encoded doc ID.
+  static String resolveProfileDocId(SkillSubject subject, String profileDocId) {
+    final trimmed = profileDocId.trim();
+    if (subject == SkillSubject.rider && trimmed.contains('@')) {
+      return RiderProfileRepository.profileDocIdForEmail(trimmed);
+    }
+    return trimmed;
+  }
 
   Future<_AtomicCurriculumSnapshot?> _loadAtomicSnapshot() {
     final cached = _cachedSnapshot;
@@ -334,15 +349,26 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
     required SkillSubject subject,
     required String profileDocId,
   }) async {
-    final snap = await _firestore
-        .collection(_profileCollection(subject))
-        .doc(profileDocId)
-        .collection('SkillProgress')
-        .get();
-    return {
-      for (final doc in snap.docs)
-        doc.id: SkillProgressV2FirestoreMapper.progressFromFirestore(doc, null),
-    };
+    final resolvedDocId = resolveProfileDocId(subject, profileDocId);
+    try {
+      final snap = await _firestore
+          .collection(_profileCollection(subject))
+          .doc(resolvedDocId)
+          .collection('SkillProgress')
+          .get();
+      return {
+        for (final doc in snap.docs)
+          doc.id: SkillProgressV2FirestoreMapper.progressFromFirestore(doc, null),
+      };
+    } on FirebaseException catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Failed to fetch SkillProgress (${e.code}) [subject=${subject.toWireString()}]',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      throw RepositoryException.fromFirebase(e);
+    }
   }
 
   @override
@@ -350,18 +376,29 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
     required SkillSubject subject,
     required String profileDocId,
   }) async {
-    final snap = await _firestore
-        .collection(_profileCollection(subject))
-        .doc(profileDocId)
-        .collection('SkillVerifications')
-        .get();
-    return {
-      for (final doc in snap.docs)
-        doc.id: SkillProgressV2FirestoreMapper.verificationFromFirestore(
-          doc,
-          null,
-        ),
-    };
+    final resolvedDocId = resolveProfileDocId(subject, profileDocId);
+    try {
+      final snap = await _firestore
+          .collection(_profileCollection(subject))
+          .doc(resolvedDocId)
+          .collection('SkillVerifications')
+          .get();
+      return {
+        for (final doc in snap.docs)
+          doc.id: SkillProgressV2FirestoreMapper.verificationFromFirestore(
+            doc,
+            null,
+          ),
+      };
+    } on FirebaseException catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Failed to fetch SkillVerifications (${e.code}) [subject=${subject.toWireString()}]',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      throw RepositoryException.fromFirebase(e);
+    }
   }
 
   @override
@@ -369,20 +406,31 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
     required SkillSubject subject,
     required String profileDocId,
   }) async {
-    final snap = await _firestore
-        .collection(_profileCollection(subject))
-        .doc(profileDocId)
-        .collection('SkillVerificationEvents')
-        .orderBy('at', descending: true)
-        .limit(verificationEventLimit)
-        .get();
-    final events = snap.docs
-        .map((d) => SkillProgressV2FirestoreMapper.eventFromFirestore(d, null))
-        .toList()
-      ..sort(
-        (a, b) => (b.at ?? DateTime(0)).compareTo(a.at ?? DateTime(0)),
+    final resolvedDocId = resolveProfileDocId(subject, profileDocId);
+    try {
+      final snap = await _firestore
+          .collection(_profileCollection(subject))
+          .doc(resolvedDocId)
+          .collection('SkillVerificationEvents')
+          .orderBy('at', descending: true)
+          .limit(verificationEventLimit)
+          .get();
+      final events = snap.docs
+          .map((d) => SkillProgressV2FirestoreMapper.eventFromFirestore(d, null))
+          .toList()
+        ..sort(
+          (a, b) => (b.at ?? DateTime(0)).compareTo(a.at ?? DateTime(0)),
+        );
+      return events;
+    } on FirebaseException catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Failed to fetch SkillVerificationEvents (${e.code}) [subject=${subject.toWireString()}]',
+        error: e,
+        stackTrace: stackTrace,
       );
-    return events;
+      throw RepositoryException.fromFirebase(e);
+    }
   }
 
   @override
@@ -395,52 +443,63 @@ class FirestoreSkillTreeV2Store implements SkillTreeV2Store {
     required String actorUid,
     String? actorName,
   }) async {
+    final resolvedDocId = resolveProfileDocId(subject, profileDocId);
     final ref = _firestore
         .collection(_profileCollection(subject))
-        .doc(profileDocId)
+        .doc(resolvedDocId)
         .collection('SkillProgress')
         .doc(skillId);
 
-    await _firestore.runTransaction((tx) async {
-      final snap = await tx.get(ref);
-      final current = snap.exists && snap.data() != null
-          ? SkillProgressV2FirestoreMapper.progressFromMap(
-              snap.data()!,
-              docId: snap.id,
-            )
-          : SkillProgressRecord(
-              skillId: skillId,
-              subject: subject,
-              levels: const {},
-            );
+    try {
+      await _firestore.runTransaction((tx) async {
+        final snap = await tx.get(ref);
+        final current = snap.exists && snap.data() != null
+            ? SkillProgressV2FirestoreMapper.progressFromMap(
+                snap.data()!,
+                docId: snap.id,
+              )
+            : SkillProgressRecord(
+                skillId: skillId,
+                subject: subject,
+                levels: const {},
+              );
 
-      final updatedLevels = Map<DifficultyState, LevelProgress>.from(
-        current.levels,
-      );
-      if (state == null || state == LevelState.NO_PROGRESS) {
-        updatedLevels.remove(level);
-      } else {
-        updatedLevels[level] = LevelProgress(
-          state: state == LevelState.VERIFIED ? LevelState.PROFICIENT : state,
-          updatedAt: DateTime.now().toUtc(),
-          updatedByUid: actorUid,
-          updatedByName: actorName,
+        final updatedLevels = Map<DifficultyState, LevelProgress>.from(
+          current.levels,
         );
-      }
+        if (state == null || state == LevelState.NO_PROGRESS) {
+          updatedLevels.remove(level);
+        } else {
+          updatedLevels[level] = LevelProgress(
+            state: state == LevelState.VERIFIED ? LevelState.PROFICIENT : state,
+            updatedAt: DateTime.now().toUtc(),
+            updatedByUid: actorUid,
+            updatedByName: actorName,
+          );
+        }
 
-      if (updatedLevels.isEmpty) {
-        if (snap.exists) tx.delete(ref);
-        return;
-      }
+        if (updatedLevels.isEmpty) {
+          if (snap.exists) tx.delete(ref);
+          return;
+        }
 
-      final next = SkillProgressRecord(
-        skillId: skillId,
-        subject: subject,
-        levels: updatedLevels,
-        updatedAt: DateTime.now().toUtc(),
+        final next = SkillProgressRecord(
+          skillId: skillId,
+          subject: subject,
+          levels: updatedLevels,
+          updatedAt: DateTime.now().toUtc(),
+        );
+        tx.set(ref, SkillProgressV2FirestoreMapper.progressToFirestore(next));
+      });
+    } on FirebaseException catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Failed to save SkillProgress (${e.code}) [subject=${subject.toWireString()}, skillId=$skillId, level=${difficultyToKey(level)}]',
+        error: e,
+        stackTrace: stackTrace,
       );
-      tx.set(ref, SkillProgressV2FirestoreMapper.progressToFirestore(next));
-    });
+      throw RepositoryException.fromFirebase(e);
+    }
   }
 }
 

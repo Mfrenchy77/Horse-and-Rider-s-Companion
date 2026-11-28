@@ -1151,3 +1151,154 @@ test('staged rollout compatibility: Public profiles, DictionaryPublic manifest, 
   await assertFails(getDocs(collection(guest, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
   await assertFails(getDocs(collection(outsider, 'Horse_Profile/legacy-horse/SkillVerificationEvents')));
 });
+
+test('SkillProgress saves cleanly against encoded Rider_Profile docIds and legacy ownerUid-less profiles across rev_000004 skills', async () => {
+  const riderEmail = 'rider.test@example.com';
+  const encodedRiderDocId = riderEmail
+    .replaceAll('.', '666')
+    .replaceAll('@', '999')
+    .replaceAll('f', '5')
+    .replaceAll('e', '1')
+    .replaceAll('g', '2')
+    .replaceAll('m', '')
+    .replaceAll('a', 'p')
+    .replaceAll('i', 'a')
+    .replaceAll('co', 'l');
+  const legacyEmail = 'legacy.progress@example.com';
+  const encodedLegacyRiderDocId = legacyEmail
+    .replaceAll('.', '666')
+    .replaceAll('@', '999')
+    .replaceAll('f', '5')
+    .replaceAll('e', '1')
+    .replaceAll('g', '2')
+    .replaceAll('m', '')
+    .replaceAll('a', 'p')
+    .replaceAll('i', 'a')
+    .replaceAll('co', 'l');
+
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await Promise.all([
+      // Active rev_000004 skills: existing updated skill (stdVer 2) + Wave 3 skill
+      setDoc(doc(db, 'SkillsV2/rider.in_hand.leading'), {
+        id: 'rider.in_hand.leading',
+        subject: 'rider',
+        status: 'active',
+        availableLevels: ['introductory', 'intermediate'],
+      }),
+      setDoc(doc(db, 'SkillsV2/rider.mounted.seat_balance'), {
+        id: 'rider.mounted.seat_balance',
+        subject: 'rider',
+        status: 'active',
+        availableLevels: ['introductory', 'intermediate', 'advanced'],
+      }),
+      setDoc(doc(db, 'SkillsV2/horse.in_hand.longeing'), {
+        id: 'horse.in_hand.longeing',
+        subject: 'horse',
+        status: 'active',
+        availableLevels: ['introductory', 'intermediate', 'advanced'],
+      }),
+      setDoc(doc(db, `Rider_Profile/${encodedRiderDocId}`), {
+        email: riderEmail,
+        name: 'Normal Verified Rider',
+        ownerUid: 'uid-normal-rider',
+      }),
+      setDoc(doc(db, `Rider_Profile/${encodedLegacyRiderDocId}`), {
+        email: legacyEmail,
+        name: 'Legacy Rider Without UID',
+      }),
+      setDoc(doc(db, 'Horse_Profile/legacy-horse-no-uid'), {
+        currentOwnerId: legacyEmail,
+        name: 'Legacy Horse Without UID',
+      }),
+    ]);
+  });
+
+  const normalRiderDb = environment.authenticatedContext('uid-normal-rider', {
+    email: riderEmail,
+    email_verified: true,
+  }).firestore();
+  const legacyOwnerDb = environment.authenticatedContext('uid-legacy-no-field', {
+    email: legacyEmail,
+    email_verified: true,
+  }).firestore();
+  const outsiderDb = environment.authenticatedContext('uid-outsider-check', {
+    email: 'outsider@example.com',
+    email_verified: true,
+  }).firestore();
+  const unverifiedDb = environment.authenticatedContext('uid-legacy-no-field', {
+    email: legacyEmail,
+    email_verified: false,
+  }).firestore();
+
+  // Regression reproduction: writing to non-existent raw email docId MUST fail,
+  // while writing to canonical encoded Rider_Profile/{encodedDocId} succeeds.
+  await assertFails(setDoc(
+    doc(normalRiderDb, `Rider_Profile/${riderEmail}/SkillProgress/rider.in_hand.leading`),
+    {
+      skillId: 'rider.in_hand.leading',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-normal-rider'}},
+    },
+  ));
+  await assertSucceeds(setDoc(
+    doc(normalRiderDb, `Rider_Profile/${encodedRiderDocId}/SkillProgress/rider.in_hand.leading`),
+    {
+      skillId: 'rider.in_hand.leading',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {
+        introductory: {state: 'LEARNING', updatedByUid: 'uid-normal-rider'},
+        intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-normal-rider'},
+      },
+    },
+  ));
+  await assertSucceeds(setDoc(
+    doc(normalRiderDb, `Rider_Profile/${encodedRiderDocId}/SkillProgress/rider.mounted.seat_balance`),
+    {
+      skillId: 'rider.mounted.seat_balance',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {introductory: {state: 'LEARNING', updatedByUid: 'uid-normal-rider'}},
+    },
+  ));
+
+  // Legacy ownerUid-less profiles remain compatible for verified owners and blocked for outsiders/unverified.
+  await assertSucceeds(setDoc(
+    doc(legacyOwnerDb, `Rider_Profile/${encodedLegacyRiderDocId}/SkillProgress/rider.in_hand.leading`),
+    {
+      skillId: 'rider.in_hand.leading',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-legacy-no-field'}},
+    },
+  ));
+  await assertSucceeds(setDoc(
+    doc(legacyOwnerDb, 'Horse_Profile/legacy-horse-no-uid/SkillProgress/horse.in_hand.longeing'),
+    {
+      skillId: 'horse.in_hand.longeing',
+      subject: 'horse',
+      schemaVersion: 2,
+      levels: {introductory: {state: 'LEARNING', updatedByUid: 'uid-legacy-no-field'}},
+    },
+  ));
+  await assertFails(setDoc(
+    doc(outsiderDb, `Rider_Profile/${encodedLegacyRiderDocId}/SkillProgress/rider.in_hand.leading`),
+    {
+      skillId: 'rider.in_hand.leading',
+      subject: 'rider',
+      schemaVersion: 2,
+      levels: {intermediate: {state: 'PROFICIENT', updatedByUid: 'uid-outsider-check'}},
+    },
+  ));
+  await assertFails(setDoc(
+    doc(unverifiedDb, 'Horse_Profile/legacy-horse-no-uid/SkillProgress/horse.in_hand.longeing'),
+    {
+      skillId: 'horse.in_hand.longeing',
+      subject: 'horse',
+      schemaVersion: 2,
+      levels: {introductory: {state: 'LEARNING', updatedByUid: 'uid-legacy-no-field'}},
+    },
+  ));
+});

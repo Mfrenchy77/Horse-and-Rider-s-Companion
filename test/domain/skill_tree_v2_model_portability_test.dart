@@ -262,5 +262,103 @@ void main() {
 
       expect(matches, ['res-1', 'res-2']);
     });
+
+    test(
+      'FirestoreSkillTreeV2Store normalizes Rider emails to encoded Rider_Profile docIds across progress and verifications',
+      () async {
+        final fs = FakeFirebaseFirestore();
+        final store = FirestoreSkillTreeV2Store(firestore: fs);
+        const rawEmail = 'Alex@Example.com';
+        final encodedId = RiderProfileRepository.profileDocIdForEmail(rawEmail);
+        expect(encodedId, 'pl1x9991xppl1666l');
+        expect(
+          FirestoreSkillTreeV2Store.resolveProfileDocId(
+            SkillSubject.rider,
+            rawEmail,
+          ),
+          encodedId,
+        );
+        expect(
+          FirestoreSkillTreeV2Store.resolveProfileDocId(
+            SkillSubject.rider,
+            encodedId,
+          ),
+          encodedId,
+        );
+        expect(
+          FirestoreSkillTreeV2Store.resolveProfileDocId(
+            SkillSubject.horse,
+            'horse-atlas-123',
+          ),
+          'horse-atlas-123',
+        );
+
+        await store.setLevelProgress(
+          subject: SkillSubject.rider,
+          profileDocId: rawEmail,
+          skillId: 'rider.in_hand.leading',
+          level: DifficultyState.Intermediate,
+          state: LevelState.PROFICIENT,
+          actorUid: 'uid-alex',
+          actorName: 'Alex Rider',
+        );
+
+        final directSnap = await fs
+            .collection('Rider_Profile')
+            .doc(encodedId)
+            .collection('SkillProgress')
+            .doc('rider.in_hand.leading')
+            .get();
+        expect(directSnap.exists, isTrue);
+        expect(
+          (await fs
+                  .collection('Rider_Profile')
+                  .doc(rawEmail)
+                  .collection('SkillProgress')
+                  .doc('rider.in_hand.leading')
+                  .get())
+              .exists,
+          isFalse,
+        );
+
+        final fetchedProgress = await store.fetchProgress(
+          subject: SkillSubject.rider,
+          profileDocId: rawEmail,
+        );
+        expect(
+          fetchedProgress['rider.in_hand.leading']
+              ?.levels[DifficultyState.Intermediate]
+              ?.state,
+          LevelState.PROFICIENT,
+        );
+
+        await fs
+            .collection('Rider_Profile')
+            .doc(encodedId)
+            .collection('SkillVerifications')
+            .doc('rider.in_hand.leading')
+            .set({
+              'skillId': 'rider.in_hand.leading',
+              'levels': {
+                'intermediate': {
+                  'verifiedState': 'PROFICIENT',
+                  'verifiedByUid': 'uid-coach',
+                  'verifiedByName': 'Coach Sam',
+                  'standardVersion': 2,
+                },
+              },
+            });
+        final verifs = await store.fetchVerifications(
+          subject: SkillSubject.rider,
+          profileDocId: rawEmail,
+        );
+        expect(
+          verifs['rider.in_hand.leading']
+              ?.levels[DifficultyState.Intermediate]
+              ?.verifiedByName,
+          'Coach Sam',
+        );
+      },
+    );
   });
 }

@@ -893,6 +893,24 @@ class _DictionaryImagePickerSectionState
     }
   }
 
+  String _formatUploadError(Object error) {
+    if (error is MediaStorageException) {
+      switch (error.code) {
+        case 'unauthorized':
+          return 'Upload failed (unauthorized): your account could not be '
+              'authorized for image upload. Confirm your email is verified and '
+              'try again, or contact support if this persists.';
+        case 'unauthenticated':
+          return 'Upload failed: please sign in again before uploading images.';
+        case 'retry-limit-exceeded':
+          return 'Upload timed out due to a network issue. Please try again.';
+        case 'canceled':
+          return 'Upload was canceled. Retry when ready.';
+      }
+    }
+    return 'Upload failed: $error';
+  }
+
   Future<void> _uploadPending(
     CommunityPendingImage pending,
     Uint8List bytes, {
@@ -948,12 +966,18 @@ class _DictionaryImagePickerSectionState
             ..errorMessage = null;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.storage,
+        'Dictionary image upload failed [contentType=${pending.contentType}, bytes=${bytes.length}]',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() {
         pending
           ..isUploading = false
-          ..errorMessage = 'Upload failed: $e';
+          ..errorMessage = _formatUploadError(e);
       });
     }
     if (mounted) {

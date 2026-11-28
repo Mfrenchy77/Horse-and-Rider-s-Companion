@@ -4,11 +4,15 @@ import 'package:image_picker/image_picker.dart';
 
 /// Backend-neutral exception thrown when media storage operations fail.
 class MediaStorageException implements Exception {
-  /// Creates a [MediaStorageException] with a user-facing [message].
-  const MediaStorageException(this.message);
+  /// Creates a [MediaStorageException] with a user-facing [message] and
+  /// optional backend [code].
+  const MediaStorageException(this.message, {this.code});
 
   /// Error message describing the failure.
   final String message;
+
+  /// Optional Firebase Storage error code (for example `unauthorized`).
+  final String? code;
 
   @override
   String toString() => message;

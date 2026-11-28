@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTree/skill_tree_page.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_cubit.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller.dart';
 import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
@@ -1457,4 +1458,272 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'Self-assessment persists Leading, Seat Balance, and Horse Longeing',
+    (tester) async {
+      final mockAppCubit = _MockAppCubit();
+      final horse = HorseProfile(
+        id: 'horse-star-1',
+        name: 'Star',
+        currentOwnerId: 'alex@example.com',
+        currentOwnerName: 'Alex Rider',
+      );
+      when(() => mockAppCubit.state).thenReturn(
+        authenticatedRiderState(horseProfile: horse).copyWith(
+          user: const User(
+            id: 'uid-alex',
+            name: 'Alex Rider',
+            email: 'alex@example.com',
+            isGuest: false,
+            emailVerified: true,
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        SettingsControllerScope(
+          controller: settings,
+          child: BlocProvider<AppCubit>.value(
+            value: mockAppCubit,
+            child: MaterialApp(
+              home: SkillTreeV2View(
+                repository: repository,
+                initialSkillId: 'rider.in_hand.leading',
+                initialLevel: DifficultyState.Intermediate,
+              ),
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 30; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 25)),
+        );
+        await tester.pump();
+        if (find
+            .byKey(const Key('skillDetailV2_rider.in_hand.leading'))
+            .evaluate()
+            .isNotEmpty) {
+          break;
+        }
+      }
+
+      // Mark Leading Intermediate Proficient.
+      await tester.ensureVisible(
+        find.byKey(
+          const Key('assessProficient_rider.in_hand.leading_Intermediate'),
+        ),
+      );
+      await tester.tap(
+        find.byKey(
+          const Key('assessProficient_rider.in_hand.leading_Intermediate'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final riderProgress = await store.fetchProgress(
+        subject: SkillSubject.rider,
+        profileDocId: 'alex@example.com',
+      );
+      expect(
+        riderProgress['rider.in_hand.leading']
+            ?.levels[DifficultyState.Intermediate]
+            ?.state,
+        LevelState.PROFICIENT,
+      );
+
+      // Mark Wave 3 skill (Seat Balance) Introductory Learning.
+      await store.setLevelProgress(
+        subject: SkillSubject.rider,
+        profileDocId: 'alex@example.com',
+        skillId: 'rider.mounted.seat_balance',
+        level: DifficultyState.Introductory,
+        state: LevelState.LEARNING,
+        actorUid: 'uid-alex',
+        actorName: 'Alex Rider',
+      );
+      await store.setLevelProgress(
+        subject: SkillSubject.horse,
+        profileDocId: 'horse-star-1',
+        skillId: 'horse.in_hand.longeing',
+        level: DifficultyState.Introductory,
+        state: LevelState.LEARNING,
+        actorUid: 'uid-alex',
+        actorName: 'Alex Rider',
+      );
+      expect(
+        (await store.fetchProgress(
+          subject: SkillSubject.rider,
+          profileDocId: 'alex@example.com',
+        ))['rider.mounted.seat_balance']
+            ?.levels[DifficultyState.Introductory]
+            ?.state,
+        LevelState.LEARNING,
+      );
+      expect(
+        (await store.fetchProgress(
+          subject: SkillSubject.horse,
+          profileDocId: 'horse-star-1',
+        ))['horse.in_hand.longeing']
+            ?.levels[DifficultyState.Introductory]
+            ?.state,
+        LevelState.LEARNING,
+      );
+    },
+  );
+
+  testWidgets(
+    'SkillTreeV2View shows actionable permission error when saving assessment '
+    'fails',
+    (tester) async {
+      // Verify actionable error mapping on RepositoryException.
+      final failingStore = _ErroringV2Store(store);
+      final failingRepo = SkillTreeV2Repository(store: failingStore);
+      final mockFailAppCubit = _MockAppCubit();
+      when(() => mockFailAppCubit.state).thenReturn(
+        authenticatedRiderState().copyWith(
+          user: const User(
+            id: 'uid-alex',
+            name: 'Alex Rider',
+            email: 'alex@example.com',
+            isGuest: false,
+            emailVerified: true,
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        SettingsControllerScope(
+          controller: settings,
+          child: BlocProvider<AppCubit>.value(
+            value: mockFailAppCubit,
+            child: MaterialApp(
+              home: SkillTreeV2View(
+                key: const ValueKey('failing-v2-view'),
+                repository: failingRepo,
+                initialSkillId: 'rider.in_hand.leading',
+                initialLevel: DifficultyState.Intermediate,
+              ),
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 30; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 25)),
+        );
+        await tester.pump();
+        if (find
+            .byKey(const Key('skillDetailV2_rider.in_hand.leading'))
+            .evaluate()
+            .isNotEmpty) {
+          break;
+        }
+      }
+      await tester.ensureVisible(
+        find.byKey(
+          const Key('assessLearning_rider.in_hand.leading_Intermediate'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const Key('assessLearning_rider.in_hand.leading_Intermediate'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Please verify your email or sign in again.'),
+        findsOneWidget,
+      );
+
+      // Verify remaining RepositoryFailureKind branches via SkillTreeV2Cubit.
+      final cubit = SkillTreeV2Cubit(repository: failingRepo);
+      addTearDown(cubit.close);
+      failingStore.nextErrorKind = RepositoryFailureKind.unavailable;
+      expect(
+        await cubit.setSelfAssessment(
+          skillId: 'rider.in_hand.leading',
+          level: DifficultyState.Intermediate,
+          levelState: LevelState.LEARNING,
+          profileDocId: 'alex@example.com',
+          actorUid: 'uid-alex',
+        ),
+        isFalse,
+      );
+      expect(
+        cubit.state.actionMessage,
+        contains('network is unavailable'),
+      );
+
+      failingStore.nextErrorKind = RepositoryFailureKind.unexpected;
+      expect(
+        await cubit.setSelfAssessment(
+          skillId: 'rider.in_hand.leading',
+          level: DifficultyState.Intermediate,
+          levelState: LevelState.LEARNING,
+          profileDocId: 'alex@example.com',
+          actorUid: 'uid-alex',
+        ),
+        isFalse,
+      );
+      expect(
+        cubit.state.actionMessage,
+        'Could not save assessment. Please try again.',
+      );
+    },
+  );
+}
+
+class _ErroringV2Store implements SkillTreeV2Store {
+  _ErroringV2Store(this._delegate);
+  final InMemorySkillTreeV2Store _delegate;
+  RepositoryFailureKind nextErrorKind = RepositoryFailureKind.permissionDenied;
+
+  @override
+  Future<List<SkillFamily>> fetchFamilies() => _delegate.fetchFamilies();
+
+  @override
+  Future<List<CurriculumSkill>> fetchSkills() => _delegate.fetchSkills();
+
+  @override
+  Future<Map<String, SkillProgressRecord>> fetchProgress({
+    required SkillSubject subject,
+    required String profileDocId,
+  }) => _delegate.fetchProgress(subject: subject, profileDocId: profileDocId);
+
+  @override
+  Future<Map<String, SkillVerificationRecord>> fetchVerifications({
+    required SkillSubject subject,
+    required String profileDocId,
+  }) => _delegate.fetchVerifications(
+    subject: subject,
+    profileDocId: profileDocId,
+  );
+
+  @override
+  Future<List<VerificationEvent>> fetchVerificationEvents({
+    required SkillSubject subject,
+    required String profileDocId,
+  }) => _delegate.fetchVerificationEvents(
+    subject: subject,
+    profileDocId: profileDocId,
+  );
+
+  @override
+  Future<void> setLevelProgress({
+    required SkillSubject subject,
+    required String profileDocId,
+    required String skillId,
+    required DifficultyState level,
+    required LevelState? state,
+    required String actorUid,
+    String? actorName,
+  }) async {
+    throw RepositoryException(
+      kind: nextErrorKind,
+      message: 'Simulated failure ($nextErrorKind).',
+      code: nextErrorKind.name,
+    );
+  }
 }

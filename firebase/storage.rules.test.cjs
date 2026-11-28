@@ -431,4 +431,17 @@ test('legacy profiles without ownerUid remain compatible and dictionary_submissi
       (await uploadObject('dictionary_submissions/member-1/sub-restored/img.png', Buffer.from('png'), 'image/png', memberToken)).status,
       200,
   );
+  // Regression check: verified non-suspended user uploading PNG to Trot submission path succeeds and stays private.
+  assert.equal(
+      (await uploadObject('dictionary_submissions/member-2/sub-trot/1795835000_trot.png', Buffer.from('png'), 'image/png', otherMemberToken)).status,
+      200,
+  );
+  assert.equal(
+      (await readObject('dictionary_submissions/member-2/sub-trot/1795835000_trot.png', null)).status,
+      403,
+  );
+  assert.equal(
+      (await readObject('dictionary_submissions/member-2/sub-trot/1795835000_trot.png', otherMemberToken)).status,
+      200,
+  );
 });

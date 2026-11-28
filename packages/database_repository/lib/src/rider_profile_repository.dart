@@ -283,6 +283,11 @@ class RiderProfileRepository implements RiderProfileStore {
     }
   }
 
+  /// Returns the canonical Firestore `Rider_Profile` document ID for [email].
+  static String profileDocIdForEmail(String email) {
+    return _convertEmailToPath(email: email.trim().toLowerCase());
+  }
+
   /// converts email to a path
   static String _convertEmailToPath({required String? email}) {
     var convertedEmail = email!.replaceAll('.', '666');

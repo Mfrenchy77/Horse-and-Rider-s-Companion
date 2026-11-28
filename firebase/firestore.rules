@@ -24,9 +24,13 @@ service cloud.firestore {
     function isProfileOwner(profileData, fallbackEmail) {
       return verifiedAuth()
         && (
-          profileData.keys().hasAll(['ownerUid'])
+          profileData.get('ownerUid', '') != ''
             ? request.auth.uid == profileData.ownerUid
-            : verifiedEmailIs(fallbackEmail)
+            : (
+              fallbackEmail is string
+              && fallbackEmail.size() > 0
+              && fallbackEmail.lower() == verifiedLowerEmail()
+            )
         );
     }
 
@@ -300,11 +304,17 @@ service cloud.firestore {
       match /SkillProgress/{skillId} {
         allow read: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
           && isAuthorizedHorseReader(get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data);
-        allow create, update: if verifiedAuth()
-          && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '')
+        allow create, update: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+          && isProfileOwner(
+            get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data,
+            get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('currentOwnerId', '')
+          )
           && validSkillProgressDoc(skillId, 'horse');
-        allow delete: if verifiedAuth()
-          && request.auth.uid == get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('ownerUid', '');
+        allow delete: if exists(/databases/$(database)/documents/Horse_Profile/$(horseId))
+          && isProfileOwner(
+            get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data,
+            get(/databases/$(database)/documents/Horse_Profile/$(horseId)).data.get('currentOwnerId', '')
+          );
       }
 
       match /SkillVerifications/{skillId} {
@@ -356,11 +366,17 @@ service cloud.firestore {
       match /SkillProgress/{skillId} {
         allow read: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
           && isAuthorizedRiderReader(get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data);
-        allow create, update: if verifiedAuth()
-          && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '')
+        allow create, update: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+          && isProfileOwner(
+            get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data,
+            get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('email', '')
+          )
           && validSkillProgressDoc(skillId, 'rider');
-        allow delete: if verifiedAuth()
-          && request.auth.uid == get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('ownerUid', '');
+        allow delete: if exists(/databases/$(database)/documents/Rider_Profile/$(riderId))
+          && isProfileOwner(
+            get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data,
+            get(/databases/$(database)/documents/Rider_Profile/$(riderId)).data.get('email', '')
+          );
       }
 
       match /SkillVerifications/{skillId} {

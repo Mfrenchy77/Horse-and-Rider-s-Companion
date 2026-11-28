@@ -161,8 +161,20 @@ class CloudRepository implements MediaStorageRepository {
         await sub?.cancel();
       }
       return await snapshot.ref.getDownloadURL();
-    } on FirebaseException catch (e) {
-      throw MediaStorageException(e.message ?? e.code);
+    } on FirebaseException catch (e, stackTrace) {
+      final firstSegment = path.trim().split('/').firstWhere(
+        (s) => s.isNotEmpty,
+        orElse: () => 'root',
+      );
+      AppLogger.warning(
+        LogCategory.storage,
+        'Firebase storage uploadBytes failed (${e.code}) '
+        '[prefix=$firstSegment, contentType=${contentType ?? 'unknown'}, '
+        'bytes=${bytes.length}]',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      throw MediaStorageException(e.message ?? e.code, code: e.code);
     }
   }
 
@@ -172,7 +184,7 @@ class CloudRepository implements MediaStorageRepository {
       await (_storage ?? FirebaseStorage.instance).refFromURL(url).delete();
     } on FirebaseException catch (e) {
       if (e.code == 'object-not-found') return;
-      throw MediaStorageException(e.message ?? e.code);
+      throw MediaStorageException(e.message ?? e.code, code: e.code);
     }
   }
 }

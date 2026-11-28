@@ -175,7 +175,14 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
           loadedProfileKey: key,
         ),
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'Failed to load Skill Tree profile data '
+        '[subject=${subject.toWireString()}]',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -413,16 +420,43 @@ class SkillTreeV2Cubit extends Cubit<SkillTreeV2State> {
         profileDocId: trimmedProfile,
       );
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.warning(
+        LogCategory.skillTree,
+        'SkillTreeV2 setSelfAssessment failed '
+        '[subject=${state.subject.toWireString()}, skillId=$skillId, '
+        'level=${difficultyToKey(level)}]',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (isClosed) return false;
       emit(
         state.copyWith(
           isSubmitting: false,
-          actionMessage: 'Could not save assessment. Please try again.',
+          actionMessage: _formatSaveAssessmentError(e),
         ),
       );
       return false;
     }
+  }
+
+  String _formatSaveAssessmentError(Object error) {
+    if (error is RepositoryException) {
+      switch (error.kind) {
+        case RepositoryFailureKind.permissionDenied:
+        case RepositoryFailureKind.unauthenticated:
+          return 'Could not save assessment. Please verify your email or '
+              'sign in again.';
+        case RepositoryFailureKind.unavailable:
+          return 'Could not save assessment because the network is '
+              'unavailable. Please try again.';
+        case RepositoryFailureKind.notFound:
+        case RepositoryFailureKind.invalidArgument:
+        case RepositoryFailureKind.unexpected:
+          break;
+      }
+    }
+    return 'Could not save assessment. Please try again.';
   }
 
   Future<bool> applyLocalVerification({
