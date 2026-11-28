@@ -561,7 +561,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 34
+    "sortOrder": 34,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Balanced Outside Lead on Straight Lines and Shallow Curves",
+          "focusLevel": "intermediate",
+          "summary": "From a calm true-lead canter on level ground, let the horse carry the same steady three-beat lead effortlessly onto straight quarterlines and wide shallow loops back to the wall—preserving soft back swing and even rhythm without hurrying.",
+          "whatToNotice": "Watch for smooth three-beat symmetry and soft ears—rushing or hopping behind signals balance hasn’t organized yet for deeper bends."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Poised Outside-Lead Balance Through Sweeping Turns",
+          "focusLevel": "advanced",
+          "summary": "Develop calm self-carriage through deeper half-turns, wide serpentines, and gentle transitions while staying willingly on the outside lead with relaxed jaw carriage and comfortable hind engagement.",
+          "whatToNotice": "Check whether both left and right counter-canter directions feel similarly strong and poised before deepening curves."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Swapping abruptly back to the inside lead on turns",
+          "guidance": "Unintended lead changes usually reflect losing lateral balance on curves. Return calmly to straight lines and shallower loops before bending deeper."
+        },
+        {
+          "issue": "Hollowing the back and leaning inward into the outside shoulder",
+          "guidance": "Supporting straightness at walk and trot first helps the horse carry outside-lead weight comfortably without tension."
+        }
+      ],
+      "trainerInsight": "Balanced counter-canter teaches a horse genuine straightness and hind-end carrying strength without forced headsets.",
+      "welfareNote": "Build counter-canter strength progressively on good footing; repeated cross-cantering or tension on one lead warrants checking saddle fit and stifle/SI comfort.",
+      "relatedDictionaryTerms": [
+        "counter-canter",
+        "self-carriage",
+        "straightness",
+        "cross-canter"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.counter_canter",
+        "horse.mounted.flying_lead_changes"
+      ]
+    }
   },
   {
     "id": "horse.mounted.flying_lead_changes",
@@ -619,7 +659,47 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 36
+    "sortOrder": 36,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Calm Straight Simple Changes Before Air Changes",
+          "focusLevel": "advanced",
+          "summary": "Along open straight tracks, settle the horse comfortably into straight balanced canter, make calm upward-and-downward simple changes through brief walk strides cleanly in both directions, and check relaxation before asking for any airborne swap.",
+          "whatToNotice": "Observe whether the horse stays straight in the ribcage and calm in tempo before, during, and after each simple transition."
+        },
+        {
+          "badge": "Refinement Exercise",
+          "title": "Simultaneous Front-and-Hind Swap on Light Cues",
+          "focusLevel": "advanced",
+          "summary": "Out of a poised, straight three-beat canter, encourage a simultaneous front-and-hind lead swap during the suspension phase on light aids—continuing calmly forward on a balanced straight track with quiet breathing and soft tail.",
+          "whatToNotice": "Watch that hind legs change cleanly together with the front legs (`clean behind`) without hopping cross-canter, kicking out, or surging faster afterward."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Changing in front cleanly while trailing late behind (cross-canter)",
+          "guidance": "Late hind changes reflect insufficient hind-leg engagement or crookedness. Strengthen balanced counter-canter and transitions first rather than rushing more attempts."
+        },
+        {
+          "issue": "Anticipating changes wildly along every diagonal",
+          "guidance": "Vary lines unpredictably—riding straight counter-canter past expected swap points rewards listening rather than guessing anxiously."
+        }
+      ],
+      "trainerInsight": "Clean flying changes blossom out of straight, relaxed counter-canter balance—rushing them only builds crooked habits.",
+      "welfareNote": "Only introduce flying changes once balance and strength are ready; bucking, pinned ears, or repeated late changes warrant a back, hock, and saddle evaluation.",
+      "relatedDictionaryTerms": [
+        "flying-lead-change",
+        "simple-lead-change",
+        "cross-canter",
+        "engagement"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.flying_lead_changes",
+        "horse.mounted.counter_canter"
+      ]
+    }
   },
   {
     "id": "horse.mounted.transitions",
@@ -1325,7 +1405,47 @@
     "legacyIds": [
       "horse.mounted.sidepass_horse"
     ],
-    "sortOrder": 40
+    "sortOrder": 40,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Straight Sideways Crossing Without Hurrying",
+          "focusLevel": "intermediate",
+          "summary": "From a calm halt on flat ground, invite the horse to cross both front and hind legs cleanly sideways in open space or beside a fence/gate on light cues—keeping body alignment straight and pausing promptly on soft tries.",
+          "whatToNotice": "Watch for even, relaxed side-steps (`front and hind arriving together`) with soft ears rather than hollowing the back or rushing forward."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Measured Sidepass Beside Gates or Optional Ground Rail",
+          "focusLevel": "intermediate",
+          "summary": "Apply steady sideways responsiveness beside gate latches, mounting blocks, or calmly aligned over an optional stable ground rail once open sideways stepping is settled both ways.",
+          "whatToNotice": "Check whether crossing steps stay calm and similar left and right without knocking hooves hastily or backing diagonally out of line."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Shoulders rushing sideways while hips trail far behind",
+          "guidance": "Uneven coordination makes sideways travel crooked. Reset squarely at halt, confirm simple hindquarter and shoulder yields separately, then reunite gently."
+        },
+        {
+          "issue": "Getting tense over an optional ground pole",
+          "guidance": "Return cleanly to open ground until sideways responsiveness stays soft and unhurried before reintroducing any pole smoothly."
+        }
+      ],
+      "trainerInsight": "Even sideways steps are calm, athletic balance—never a hurried scramble across the dirt.",
+      "welfareNote": "Keep sideways repetitions concise on even footing and check limb, rib, or back comfort if chronic unevenness or tension persists on one side.",
+      "relatedDictionaryTerms": [
+        "sidepass",
+        "lateral-movement",
+        "straightness",
+        "suppleness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.sidepass",
+        "horse.mounted.object_handling"
+      ]
+    }
   },
   {
     "id": "horse.mounted.leg_yield",
@@ -1494,7 +1614,47 @@
     "legacyIds": [
       "horse.mounted.shoulder_in_horse"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Walk Shoulder-Fore With Inside-Hind Reach",
+          "focusLevel": "intermediate",
+          "summary": "Out of a rounded walk corner, let the horse carry gentle inward rib bend while stepping straight down the wall with shoulders carried softly off the track for brief, balanced stretches before returning straight forward.",
+          "whatToNotice": "Look for calm, fluid walk tempo and soft outside-rein reach without neck over-flexion or dropping into the inside shoulder."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Supple Trot Shoulder-In Along Straight Tracks",
+          "focusLevel": "advanced",
+          "summary": "In balanced trot along straight lines in both directions, encourage light three-track shoulder-in posture where the inside hind foot steps willingly underneath the center of mass without rushing tempo or pulling the head rigidly.",
+          "whatToNotice": "Feel for buoyant upward swing in the back and even rhythm rather than heavy leaning on either rein."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Swinging the neck far inward while outside shoulder drifts out",
+          "guidance": "Neck twisting loses real longitudinal alignment. Reduce angle back to mild shoulder-fore so the inside hind steps smoothly forward-and-under."
+        },
+        {
+          "issue": "Losing rhythm and grinding slower mid-segment",
+          "guidance": "Working slightly inward costs real muscle effort; straighten cleanly onto active forward lines before fatigue steals cadence."
+        }
+      ],
+      "trainerInsight": "Shoulder-in transforms natural crookedness into balanced carrying strength—five good strides trump an entire strained wall.",
+      "welfareNote": "Keep angles moderate and segments concise; evaluate persistent one-sided resistance for saddle pinch or hock/stifle soreness.",
+      "relatedDictionaryTerms": [
+        "shoulder-in",
+        "shoulder-fore",
+        "engagement",
+        "straightness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.shoulder_in",
+        "horse.mounted.travers"
+      ]
+    }
   },
   {
     "id": "horse.mounted.travers",
@@ -1548,7 +1708,47 @@
     "legacyIds": [
       "horse.mounted.haunches_in_horse"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Gentle Walk Haunches-In From a Balanced Curve",
+          "focusLevel": "advanced",
+          "summary": "Out of an elastic walk curve, allow the horse to maintain its forehand comfortably straight along the rail while flexing smoothly inward through the ribs and carrying hindquarters gently inward (~30°) for brief stretches before straightening.",
+          "whatToNotice": "Observe steady walk cadence and willing inside-hind crossing without stiffening the neck or dropping behind rider leg."
+        },
+        {
+          "badge": "Refinement Exercise",
+          "title": "Elastic Trot Travers With Engaged Hindquarters",
+          "focusLevel": "advanced",
+          "summary": "Carry smooth travers poise into balanced trot along straight tracks in both directions, combining comfortable inward bend with lively forward flow and frequent straight forward stretches.",
+          "whatToNotice": "Check whether both sides hold easy balance without twisting hocks or dragging hind toes on the steeper bend."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Collapsing hindquarters steeply across four tracks while stalling",
+          "guidance": "Steep crossing slows forward energy. Open back onto a straight energetic line and ask only for subtle haunches-in positioning."
+        },
+        {
+          "issue": "Bending sharply in the neck without bringing hindquarters in",
+          "guidance": "Allow neck flexion to match soft rib bend calmly while refreshing clarity from in-hand or elementary pivots if needed."
+        }
+      ],
+      "trainerInsight": "When travers stays loose and willing, the horse feels lighter in front because its hindquarters gladly carry more share.",
+      "welfareNote": "Keep travers sessions brief with regular straight stretches; check hind limbs, SI joint, and saddle comfort if carrying haunches feels sticky.",
+      "relatedDictionaryTerms": [
+        "travers",
+        "bend",
+        "engagement",
+        "suppleness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.travers",
+        "horse.mounted.shoulder_in"
+      ]
+    }
   },
   {
     "id": "horse.mounted.terrain_obstacles",
@@ -1636,7 +1836,47 @@
       "horse.mounted.bridge_horse",
       "horse.mounted.water_horse"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Thoughtful Walk Crossing With Visual Inspection",
+          "focusLevel": "introductory",
+          "summary": "Invite the horse quietly up to poles, low wooden bridges, tarps, or shallow puddles at walk, granting clear visual pause time on a soft rein so it can drop its head, judge traction, and step across with thoughtful footwork.",
+          "whatToNotice": "Look for lowered ears-forward attention, careful foot placement, and calm recovery afterward rather than rushing or lunging blindly over features."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Sure-Footed Terrain Balance and Prompt Downward Yielding",
+          "focusLevel": "intermediate",
+          "summary": "Develop balanced climbing, controlled descending, confident water entries, and steady trot or appropriate canter terrain work—prioritizing responsive pace control whenever footing or grade calls for slowing back to walk.",
+          "whatToNotice": "Observe whether the horse takes steady shorter balancing steps down hills rather than sliding rushed on locked shoulders."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Freezing before unfamiliar bridges or water reflections",
+          "guidance": "Water mirrors sky and bridges echo; letting the horse inspect patiently at walk (or following a calm companion) builds steady confidence without force."
+        },
+        {
+          "issue": "Leaping far over small obstacles from tension",
+          "guidance": "High jumping shows anxiety, not ease. Return cleanly to simple ground poles at walk and reward relaxed, regular stepping."
+        }
+      ],
+      "trainerInsight": "A sure-footed trail or obstacle horse uses its eyes and brain first—never force speed when feet need clarity.",
+      "welfareNote": "Honor visual inspection pauses, verify obstacle stability and water depth first, and keep conditioning matched to steep natural terrain.",
+      "relatedDictionaryTerms": [
+        "habituation",
+        "proprioception",
+        "desensitization",
+        "arousal-threshold"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.terrain_obstacles",
+        "horse.in_hand.obstacles_outings"
+      ]
+    }
   },
   {
     "id": "horse.mounted.object_handling",
@@ -1722,6 +1962,46 @@
     "legacyIds": [
       "horse.mounted.gate_horse"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Calm Stillness Alongside Objects and Assisted Gates",
+          "focusLevel": "introductory",
+          "summary": "After introducing harmless props cleanly on the ground, ask the horse to stand settled or walk steadily while you reach down, carry, ring a bell, or shift light objects near the saddle—rewarding relaxed curiosity without rushing off.",
+          "whatToNotice": "Watch ear relaxation and quiet feet while objects move within peripheral sight beside the shoulder."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Patient Positioning at Gates and Steady Task Focus",
+          "focusLevel": "intermediate",
+          "summary": "Practice stepping gently forward, backward, or sideways beside latches at walk and standing quietly as gates swing open and close cleanly—extending non-latch object poise smoothly into trot or canter only where balance stays relaxed.",
+          "whatToNotice": "Notice whether the horse ignores distracting swinging movements calmly while staying attentive to subtle seat and leg nudges."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Shying laterally away from an object carried near the shoulder",
+          "guidance": "Novel shapes in blind or peripheral zones trigger natural flight instincts. Step back calmly to ground habituation near the saddle before carrying while riding."
+        },
+        {
+          "issue": "Fidgeting impatiently while latches open or close",
+          "guidance": "Practicing quiet pauses beside a gate without rushing through afterward teaches patience around latches."
+        }
+      ],
+      "trainerInsight": "Calm object handling proves a horse trusts both your hands near its space and your seat cues underneath it.",
+      "welfareNote": "Introduce every rattling or flapping prop gently from the ground beforehand, avoid trapping a worried horse beside heavy swinging gates, and keep latch handling strictly at walk or halt.",
+      "relatedDictionaryTerms": [
+        "desensitization",
+        "garrocha",
+        "sidepass",
+        "blind-spot"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.object_handling",
+        "horse.mounted.sidepass"
+      ]
+    }
   }
 ]
