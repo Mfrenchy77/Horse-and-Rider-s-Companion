@@ -643,3 +643,43 @@ test('curriculum snapshots preserve learningGuide while keeping legacy skills ch
   assert.deepEqual(diff.modifiedSkillIds, ['rider.mounted.neutral_pelvis']);
   assert.deepEqual(diff.revisedStandards, []);
 });
+
+test('84-skill curriculum v2 local bundle canonicalizes, chunks, and reassembles with learningGuides intact', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const v2Dir = path.resolve(__dirname, '../../curriculum/v2');
+  const families = JSON.parse(fs.readFileSync(path.join(v2Dir, 'families.json'), 'utf8'));
+  const skillFiles = [
+    'skills_rider_husbandry.json',
+    'skills_rider_in_hand.json',
+    'skills_rider_mounted.json',
+    'skills_rider_theory.json',
+    'skills_horse_in_hand.json',
+    'skills_horse_mounted.json',
+  ];
+  const skills = skillFiles.flatMap((file) =>
+    JSON.parse(fs.readFileSync(path.join(v2Dir, file), 'utf8')),
+  );
+
+  assert.equal(families.length, 33);
+  assert.equal(skills.length, 84);
+  for (const skill of skills) {
+    assert.ok(skill.learningGuide, `${skill.id} missing learningGuide`);
+    assert.ok(
+      Array.isArray(skill.learningGuide.exercises) && skill.learningGuide.exercises.length >= 2,
+      `${skill.id} missing exercises`,
+    );
+  }
+
+  const snap = computeCurriculumChecksum({families, skills});
+  assert.equal(snap.canonical.skills.length, 84);
+  const chunks = splitIntoChunks(snap.serialized);
+  assert.ok(chunks.length >= 1);
+  const header = {id: 'rev_local', chunkCount: chunks.length, checksum: snap.checksum};
+  const reassembled = reassembleAndVerifySnapshot(header, chunks);
+  assert.equal(reassembled.skills.length, 84);
+  assert.equal(reassembled.checksum, snap.checksum);
+  assert.equal(reassembled.byteLength, snap.byteLength);
+  assert.deepEqual(reassembled.families, snap.canonical.families);
+  assert.deepEqual(reassembled.skills, snap.canonical.skills);
+});

@@ -570,7 +570,7 @@ void main() {
     });
 
     test(
-      'Develop This Skill sample guides populate the 6 initial skills with valid Dictionary & skill links',
+      'Develop This Skill guides populate all 84 active skills with valid Dictionary & skill links',
       () {
         final dictRaw =
             jsonDecode(File('functions/dictionary_seed.json').readAsStringSync())
@@ -579,34 +579,116 @@ void main() {
             .map((e) => (e as Map<String, dynamic>)['slug'] as String)
             .toSet();
 
-        const targetIds = [
-          'rider.in_hand.leading',
-          'rider.mounted.seat_balance',
-          'rider.mounted.rein_back',
-          'horse.in_hand.leading',
-          'horse.in_hand.longeing',
-          'horse.mounted.rein_back',
-        ];
+        const allowedTheoryBadges = {
+          'Observation Exercise',
+          'Scenario Check',
+          'Practical Application',
+          'Session Reflection',
+        };
+        final seenExerciseTitles = <String, String>{};
+        final seenInsights = <String, String>{};
 
-        for (final id in targetIds) {
-          final skill = skillById[id]!;
+        const allowedGuideKeys = {
+          'exercises',
+          'commonDifficulties',
+          'trainerInsight',
+          'welfareNote',
+          'relatedDictionaryTerms',
+          'relatedSkillIds',
+        };
+        const skillFiles = [
+          'curriculum/v2/skills_rider_husbandry.json',
+          'curriculum/v2/skills_rider_in_hand.json',
+          'curriculum/v2/skills_rider_mounted.json',
+          'curriculum/v2/skills_rider_theory.json',
+          'curriculum/v2/skills_horse_in_hand.json',
+          'curriculum/v2/skills_horse_mounted.json',
+        ];
+        for (final path in skillFiles) {
+          final rawList =
+              jsonDecode(File(path).readAsStringSync()) as List<dynamic>;
+          for (final raw in rawList) {
+            final map = raw as Map<String, dynamic>;
+            final guideMap = map['learningGuide'] as Map<String, dynamic>?;
+            expect(
+              guideMap,
+              isNotNull,
+              reason: '${map['id']} missing raw learningGuide',
+            );
+            for (final key in guideMap!.keys) {
+              expect(
+                allowedGuideKeys.contains(key),
+                isTrue,
+                reason:
+                    '${map['id']} has unsupported learningGuide key "$key"',
+              );
+            }
+          }
+        }
+
+        expect(skills.length, 84);
+        for (final skill in skills) {
+          final id = skill.id;
           final guide = skill.learningGuide;
           expect(guide, isNotNull, reason: '$id should have learningGuide');
           expect(guide!.hasContent, isTrue);
           expect(
             guide.exercises.length,
-            inInclusiveRange(1, 2),
-            reason: '$id should have 1-2 practical exercises',
+            inInclusiveRange(1, 3),
+            reason: '$id should have 1-3 practical exercises',
           );
           for (final ex in guide.exercises) {
             expect(ex.title.trim(), isNotEmpty);
             expect(ex.summary.trim(), isNotEmpty);
             expect(ex.whatToNotice?.trim() ?? '', isNotEmpty);
+            if (ex.focusLevel != null) {
+              expect(
+                skill.levels.containsKey(ex.focusLevel),
+                isTrue,
+                reason:
+                    '$id exercise "${ex.title}" references unavailable level ${ex.focusLevel}',
+              );
+            }
+            if (id.startsWith('rider.theory.')) {
+              expect(
+                allowedTheoryBadges.contains(ex.badge),
+                isTrue,
+                reason:
+                    '$id theory exercise "${ex.title}" has unexpected badge "${ex.badge}"',
+              );
+            }
+            final normalizedTitle = ex.title.trim().toLowerCase();
+            expect(
+              seenExerciseTitles.containsKey(normalizedTitle),
+              isFalse,
+              reason:
+                  'Duplicate exercise title "${ex.title}" in $id and ${seenExerciseTitles[normalizedTitle]}',
+            );
+            seenExerciseTitles[normalizedTitle] = id;
           }
           expect(guide.commonDifficulties, isNotEmpty);
-          expect(guide.trainerInsight?.trim() ?? '', isNotEmpty);
+          final insight = guide.trainerInsight?.trim() ?? '';
+          expect(insight, isNotEmpty);
+          final normalizedInsight = insight.toLowerCase();
+          expect(
+            seenInsights.containsKey(normalizedInsight),
+            isFalse,
+            reason:
+                'Duplicate trainerInsight in $id and ${seenInsights[normalizedInsight]}',
+          );
+          seenInsights[normalizedInsight] = id;
+
           expect(guide.welfareNote?.trim() ?? '', isNotEmpty);
-          expect(guide.relatedDictionaryTerms, isNotEmpty);
+          expect(
+            guide.relatedDictionaryTerms.length,
+            inInclusiveRange(1, 4),
+            reason: '$id should link 1-4 Dictionary terms',
+          );
+          expect(
+            guide.relatedDictionaryTerms.toSet().length,
+            guide.relatedDictionaryTerms.length,
+            reason: '$id has duplicate Dictionary term links',
+          );
           for (final slug in guide.relatedDictionaryTerms) {
             expect(
               validSlugs.contains(slug),
@@ -621,6 +703,7 @@ void main() {
               isTrue,
               reason: '$id references unknown related skill "$relId"',
             );
+            expect(relId, isNot(id), reason: '$id cannot link to itself');
           }
         }
       },

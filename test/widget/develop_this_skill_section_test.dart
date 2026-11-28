@@ -587,4 +587,161 @@ void main() {
       expect(countingDictStore.loadPublishedCalls, initialDictReads);
     },
   );
+
+  testWidgets(
+    'changing selectedLevel collapses expanded additional practice and promotes matching exercise',
+    (tester) async {
+      final allSkills = await baseStore.fetchSkills();
+      final reinBack = allSkills.firstWhere(
+        (s) => s.id == 'rider.mounted.rein_back',
+      );
+      final theme = HorseAndRidersTheme().getDarkTheme();
+
+      await tester.pumpWidget(
+        wrapIsolated(
+          theme: theme,
+          child: DevelopThisSkillSection(
+            skill: reinBack,
+            allSkills: allSkills,
+            selectedLevel: DifficultyState.Introductory,
+            dictionaryEntriesOverride: sampleEntries,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byKey(const Key('developSkillMoreExercisesToggle')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('developSkillSecondaryExercise_0')),
+        findsOneWidget,
+      );
+
+      await tester.pumpWidget(
+        wrapIsolated(
+          theme: theme,
+          child: DevelopThisSkillSection(
+            skill: reinBack,
+            allSkills: allSkills,
+            selectedLevel: DifficultyState.Intermediate,
+            dictionaryEntriesOverride: sampleEntries,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('developSkillSecondaryExercise_0')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('developSkillFeaturedExerciseCard')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'Theory & Knowledge skills use observational badges and disclosure subtitles',
+    (tester) async {
+      final allSkills = await baseStore.fetchSkills();
+      final theorySkill = allSkills.firstWhere(
+        (s) => s.id == 'rider.theory.training_pyramid',
+      );
+
+      await tester.pumpWidget(
+        wrapIsolated(
+          theme: HorseAndRidersTheme().getDarkTheme(),
+          child: DevelopThisSkillSection(
+            skill: theorySkill,
+            allSkills: allSkills,
+            selectedLevel: DifficultyState.Introductory,
+            dictionaryEntriesOverride: sampleEntries,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text(
+          'Practical guidance for Rider · Training Principles & the Training Pyramid',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('OBSERVATION EXERCISE'), findsOneWidget);
+      expect(find.text('Additional explorations (2)'), findsOneWidget);
+      expect(
+        find.text('Optional ways to observe and apply'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('2 common misconceptions & perspectives'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'handles unknown links gracefully and smoke-renders all 84 active skills without errors',
+    (tester) async {
+      final allSkills = await baseStore.fetchSkills();
+      expect(allSkills.length, 84);
+
+      final sampleSkill = allSkills.first;
+      final baseGuide = sampleSkill.learningGuide!;
+      final badLinksSkill = sampleSkill.copyWith(
+        learningGuide: SkillLearningGuide(
+          exercises: baseGuide.exercises,
+          commonDifficulties: baseGuide.commonDifficulties,
+          trainerInsight: baseGuide.trainerInsight,
+          welfareNote: baseGuide.welfareNote,
+          relatedDictionaryTerms: const ['nonexistent-term-slug'],
+          relatedSkillIds: const ['nonexistent.skill.id'],
+        ),
+      );
+
+      await tester.pumpWidget(
+        wrapIsolated(
+          theme: HorseAndRidersTheme().getLightTheme(),
+          child: DevelopThisSkillSection(
+            skill: badLinksSkill,
+            allSkills: allSkills,
+            selectedLevel: badLinksSkill.availableLevels.first,
+            dictionaryEntriesOverride: sampleEntries,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('developThisSkillSection')), findsOneWidget);
+
+      final darkTheme = HorseAndRidersTheme().getDarkTheme();
+      final lightTheme = HorseAndRidersTheme().getLightTheme();
+      for (var i = 0; i < allSkills.length; i++) {
+        final skill = allSkills[i];
+        await tester.pumpWidget(
+          wrapIsolated(
+            theme: i.isEven ? darkTheme : lightTheme,
+            child: DevelopThisSkillSection(
+              skill: skill,
+              allSkills: allSkills,
+              selectedLevel: skill.availableLevels.first,
+              dictionaryEntriesOverride: sampleEntries,
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'Unexpected exception rendering ${skill.id}',
+        );
+        expect(
+          find.byKey(const Key('developThisSkillSection')),
+          findsOneWidget,
+          reason: 'Missing section for ${skill.id}',
+        );
+      }
+    },
+  );
 }
