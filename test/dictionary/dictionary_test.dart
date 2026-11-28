@@ -737,4 +737,126 @@ void main() {
     expect(find.byTooltip('More actions'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'full Dictionary page renders educational hierarchy in order, omits empty headings, and quick dialog stays compact',
+    (tester) async {
+      tester.view.physicalSize = const Size(960, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // 1. Entry with full sections and 2 examples shows plural heading and exact vertical hierarchy.
+      await tester.pumpWidget(
+        wrap(
+          DictionaryPage(
+            slug: 'trot',
+            repository: RecordingDictionary(entries),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final defRect = tester.getRect(
+        find.byKey(const Key('dictionaryConciseDefinition')),
+      );
+      final explRect = tester.getRect(find.text('Detailed explanation'));
+      final exRect = tester.getRect(find.text('Practical examples'));
+      final usageRect = tester.getRect(find.text('Discipline & usage'));
+      final regionalRect = tester.getRect(find.text('Regional variations'));
+      final relatedRect = tester.getRect(find.text('Related terminology'));
+      final skillsRect = tester.getRect(find.text('Related skills'));
+
+      expect(explRect.top, greaterThan(defRect.bottom));
+      expect(exRect.top, greaterThan(explRect.bottom));
+      expect(usageRect.top, greaterThan(exRect.bottom));
+      expect(regionalRect.top, greaterThan(usageRect.bottom));
+      expect(relatedRect.top, greaterThan(regionalRect.bottom));
+      expect(skillsRect.top, greaterThan(relatedRect.bottom));
+
+      // 2. Entry with 1 example uses singular heading, and unresolvable relatedTerms omits empty heading.
+      final sparseEntries = [
+        DictionaryEntry({
+          'id': 'sparse-term',
+          'slug': 'sparse-term',
+          'term': 'Sparse Term',
+          'definition': 'A brief plain-language definition.',
+          'explanation': 'More depth on how the concept works in practice.',
+          'usage': '',
+          'regionalUsage': '',
+          'examples': ['A realistic everyday horsemanship scenario.'],
+          'categories': ['Foundations'],
+          'synonyms': const <String>[],
+          'relatedTerms': ['missing-unrelated-id'],
+          'skillIds': const <String>[],
+          'resourceIds': const <String>[],
+          'media': const <Map<String, dynamic>>[],
+          'status': 'published',
+          'contextual': true,
+        }),
+      ];
+      await tester.pumpWidget(
+        wrap(
+          DictionaryPage(
+            key: const Key('sparseDictionaryPage'),
+            slug: 'sparse-term',
+            repository: RecordingDictionary(sparseEntries),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Practical example'), findsOneWidget);
+      expect(find.text('Practical examples'), findsNothing);
+      expect(find.text('Also called'), findsNothing);
+      expect(find.text('Discipline & usage'), findsNothing);
+      expect(find.text('Regional variations'), findsNothing);
+      expect(find.text('Related terminology'), findsNothing);
+      expect(find.text('Related skills'), findsNothing);
+
+      // 3. Compact quick definition dialog keeps detailed explanation and examples out.
+      final richEntry = DictionaryEntry({
+        'id': 'quick-check',
+        'slug': 'quick-check',
+        'term': 'Quick Check',
+        'definition': 'Concise meaning only.',
+        'explanation': 'Detailed explanation text that stays on the full page.',
+        'examples': ['Detailed practical example excluded from popup.'],
+        'categories': ['Theory'],
+        'status': 'published',
+        'contextual': true,
+      });
+      await tester.pumpWidget(
+        wrap(
+          Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: FilledButton(
+                  onPressed: () =>
+                      showDictionaryDefinitionDialog(context, richEntry),
+                  child: const Text('Open popup'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open popup'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quick Check'), findsOneWidget);
+      expect(find.text('Concise meaning only.'), findsOneWidget);
+      expect(find.text('View full definition'), findsOneWidget);
+      expect(
+        find.text('Detailed explanation text that stays on the full page.'),
+        findsNothing,
+      );
+      expect(
+        find.text('Detailed practical example excluded from popup.'),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

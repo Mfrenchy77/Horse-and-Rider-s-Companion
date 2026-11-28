@@ -1,19 +1,33 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
+import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_page.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/dictionary_text.dart';
 import 'package:horseandriderscompanion/MainPages/Dictionary/known_terms_repository.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/comment_page_header.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/asset_curriculum_v2_loader.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/cubit/skill_tree_v2_state.dart';
+import 'package:horseandriderscompanion/MainPages/SkillTreeV2/skill_tree_v2_view.dart';
 import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_detail_v2_panel.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller.dart';
+import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart';
+import 'package:horseandriderscompanion/Settings/settings_service.dart';
+import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/app_test_harness.dart';
 
@@ -557,6 +571,345 @@ void main() {
           );
           expect(tester.takeException(), isNull);
         }
+      },
+    );
+  });
+
+  group('Screenshots (CAPTURE_DICTIONARY_RELEASE_SCREENSHOTS=1)', () {
+    Future<void> loadScreenshotFonts() async {
+      Future<void> register(String family, List<String> paths) async {
+        final loader = FontLoader(family);
+        var loaded = false;
+        for (final path in paths) {
+          final file = File(path);
+          if (file.existsSync()) {
+            final bytes = await file.readAsBytes();
+            loader.addFont(Future<ByteData>.value(ByteData.view(bytes.buffer)));
+            loaded = true;
+          }
+        }
+        if (loaded) await loader.load();
+      }
+
+      await register('Roboto', [
+        '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf',
+        '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf',
+      ]);
+      await register('Georgia', [
+        '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif.ttf',
+        '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif-Bold.ttf',
+      ]);
+      await register('MaterialIcons', [
+        'build/web/assets/fonts/MaterialIcons-Regular.otf',
+      ]);
+      await register('HorseAndRiderIcons', ['fonts/HorseAndRiderIcons.ttf']);
+    }
+
+    ThemeData withReleaseFonts(ThemeData base) => base.copyWith(
+      textTheme: base.textTheme.apply(fontFamily: 'Roboto'),
+      primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Roboto'),
+      appBarTheme: base.appBarTheme.copyWith(
+        titleTextStyle: (base.appBarTheme.titleTextStyle ?? const TextStyle())
+            .copyWith(fontFamily: 'Roboto'),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        labelStyle: (base.chipTheme.labelStyle ?? const TextStyle()).copyWith(
+          fontFamily: 'Roboto',
+        ),
+      ),
+    );
+
+    Future<void> capturePng(
+      WidgetTester tester,
+      GlobalKey key,
+      String outputPath,
+    ) async {
+      await tester.runAsync(() async {
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = await boundary.toImage(pixelRatio: 1.5);
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        if (byteData != null) {
+          final file = File(outputPath);
+          file.parent.createSync(recursive: true);
+          await file.writeAsBytes(byteData.buffer.asUint8List());
+        }
+      });
+    }
+
+    testWidgets(
+      'captures Dark and Light release review screenshots across Skill Tree V2 and polished Dictionary UI',
+      (tester) async {
+        if (Platform.environment['CAPTURE_DICTIONARY_RELEASE_SCREENSHOTS'] !=
+            '1') {
+          return;
+        }
+
+        const outDir =
+            '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7';
+        late List<DictionaryEntry> preloadedSeed;
+        late SkillTreeV2Repository skillRepo;
+        await tester.runAsync(() async {
+          await loadScreenshotFonts();
+          DictionaryRepository.invalidateCache();
+          preloadedSeed = await DictionaryRepository.cachedEntries();
+          final inMemoryStore = await const AssetCurriculumV2Loader()
+              .loadInMemoryStore();
+          skillRepo = SkillTreeV2Repository(store: inMemoryStore);
+        });
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.devicePixelRatio = 1;
+
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final knownRepo = KnownTermsRepository(preferences: prefs)
+          ..resetForTest();
+        addTearDown(knownRepo.resetForTest);
+
+        final dictRepo = DictionaryRepository(
+          store: InMemoryDictionaryStore(publishedEntries: preloadedSeed),
+        );
+
+        final settings = SettingsController(SettingsService());
+        await settings.loadSettings();
+        addTearDown(settings.dispose);
+
+        final harness = await AppTestHarness.create();
+        addTearDown(harness.close);
+
+        Future<void> renderTree({
+          required ThemeData theme,
+          required Size size,
+          required String fileName,
+          String? skillId,
+        }) async {
+          tester.view.physicalSize = size;
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          final boundaryKey = GlobalKey();
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: boundaryKey,
+              child: SettingsControllerScope(
+                controller: settings,
+                child: BlocProvider<AppCubit>.value(
+                  value: harness.cubit,
+                  child: MaterialApp(
+                    debugShowCheckedModeBanner: false,
+                    theme: withReleaseFonts(theme),
+                    builder: (context, child) {
+                      final gradients = Theme.of(
+                        context,
+                      ).extension<SurfaceGradients>();
+                      return DecoratedBox(
+                        decoration: BoxDecoration(gradient: gradients?.background),
+                        child: child ?? const SizedBox.shrink(),
+                      );
+                    },
+                    home: SkillTreeV2View(
+                      repository: skillRepo,
+                      initialSkillId: skillId,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle(const Duration(milliseconds: 250));
+          await capturePng(tester, boundaryKey, '$outDir/$fileName');
+        }
+
+        Future<void> renderDictPage({
+          required ThemeData theme,
+          required Size size,
+          required String slug,
+          required String fileName,
+        }) async {
+          tester.view.physicalSize = size;
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          final boundaryKey = GlobalKey();
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: boundaryKey,
+              child: BlocProvider<AppCubit>.value(
+                value: harness.cubit,
+                child: MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  theme: withReleaseFonts(theme),
+                  builder: (context, child) {
+                    final gradients = Theme.of(
+                      context,
+                    ).extension<SurfaceGradients>();
+                    return DecoratedBox(
+                      decoration: BoxDecoration(gradient: gradients?.background),
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
+                  home: DictionaryPage(
+                    slug: slug,
+                    repository: dictRepo,
+                    knownTermsRepository: knownRepo,
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await capturePng(tester, boundaryKey, '$outDir/$fileName');
+        }
+
+        Future<void> renderQuickDialog({
+          required ThemeData theme,
+          required DictionaryEntry entry,
+          required bool signedIn,
+          required String fileName,
+        }) async {
+          harness.cubit.emit(
+            harness.cubit.state.copyWith(
+              isGuest: !signedIn,
+              user: signedIn
+                  ? const User(
+                      id: 'uid-preview',
+                      email: 'rider@example.com',
+                      name: 'Preview Rider',
+                      isGuest: false,
+                      emailVerified: true,
+                    )
+                  : User.empty,
+            ),
+          );
+          knownRepo.resetForTest(
+            activeUserId: signedIn ? 'uid-preview' : null,
+          );
+
+          tester.view.physicalSize = const Size(460, 700);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          final boundaryKey = GlobalKey();
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: boundaryKey,
+              child: BlocProvider<AppCubit>.value(
+                value: harness.cubit,
+                child: MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  theme: withReleaseFonts(theme),
+                  builder: (context, child) {
+                    final gradients = Theme.of(
+                      context,
+                    ).extension<SurfaceGradients>();
+                    return DecoratedBox(
+                      decoration: BoxDecoration(gradient: gradients?.background),
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
+                  home: Scaffold(
+                    backgroundColor: Colors.transparent,
+                    body: Builder(
+                      builder: (context) => Align(
+                        alignment: Alignment.topLeft,
+                        child: Opacity(
+                          opacity: 0.01,
+                          child: TextButton(
+                            onPressed: () => showDictionaryDefinitionDialog(
+                              context,
+                              entry,
+                              knownTermsRepository: knownRepo,
+                            ),
+                            child: const Text('Define'),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Define'));
+          await tester.pumpAndSettle();
+          await capturePng(tester, boundaryKey, '$outDir/$fileName');
+        }
+
+        // 1. Skill Tree V2 highlighting (Mobile Dark/Light + Desktop Dark/Light + Categories unchanged).
+        await renderTree(
+          theme: mainThemeDark,
+          size: const Size(390, 844),
+          skillId: 'rider.theory.training_pyramid',
+          fileName: 'release_skill_tree_mobile_dark.png',
+        );
+        await renderTree(
+          theme: mainThemeLight,
+          size: const Size(390, 844),
+          skillId: 'rider.theory.training_pyramid',
+          fileName: 'release_skill_tree_mobile_light.png',
+        );
+        await renderTree(
+          theme: mainThemeDark,
+          size: const Size(1280, 860),
+          skillId: 'rider.mounted.seat_balance',
+          fileName: 'release_skill_tree_desktop_dark.png',
+        );
+        await renderTree(
+          theme: mainThemeLight,
+          size: const Size(1280, 860),
+          skillId: 'rider.husbandry.health_monitoring',
+          fileName: 'release_skill_tree_desktop_light.png',
+        );
+        await renderTree(
+          theme: mainThemeDark,
+          size: const Size(1280, 860),
+          fileName: 'release_skill_tree_categories_dark.png',
+        );
+
+        // 2. Full Dictionary Page (Mobile + Desktop, Dark + Light).
+        await renderDictPage(
+          theme: mainThemeDark,
+          size: const Size(430, 932),
+          slug: 'laminitis',
+          fileName: 'release_dictionary_full_mobile_dark.png',
+        );
+        await renderDictPage(
+          theme: mainThemeLight,
+          size: const Size(430, 932),
+          slug: 'laminitis',
+          fileName: 'release_dictionary_full_mobile_light.png',
+        );
+        await renderDictPage(
+          theme: mainThemeDark,
+          size: const Size(1280, 860),
+          slug: 'rein-back',
+          fileName: 'release_dictionary_full_desktop_dark.png',
+        );
+        await renderDictPage(
+          theme: mainThemeLight,
+          size: const Size(1280, 860),
+          slug: 'rein-back',
+          fileName: 'release_dictionary_full_desktop_light.png',
+        );
+
+        // 3. Compact Quick Definition Dialog (Signed-In Dark vs Guest Light).
+        final independentSeat = DictionaryRepository.resolve(
+          preloadedSeed,
+          'independent-seat',
+        )!;
+        final colicEntry = DictionaryRepository.resolve(preloadedSeed, 'colic')!;
+        await renderQuickDialog(
+          theme: mainThemeDark,
+          entry: independentSeat,
+          signedIn: true,
+          fileName: 'release_dictionary_quick_dialog_dark.png',
+        );
+        await renderQuickDialog(
+          theme: mainThemeLight,
+          entry: colicEntry,
+          signedIn: false,
+          fileName: 'release_dictionary_quick_dialog_light.png',
+        );
       },
     );
   });

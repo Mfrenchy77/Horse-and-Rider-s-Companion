@@ -516,8 +516,27 @@ class _DictionaryPageState extends State<DictionaryPage> {
   }
 
   Widget _detail(DictionaryEntry entry, List<DictionaryEntry> entries) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = AppTokens.accentColor(context);
     final app = context.read<AppCubit>().state;
     final categories = entry.strings('categories');
+    final synonyms = entry.strings('synonyms');
+    final explanation = entry.explanation.trim();
+    final usage = entry.text('usage').trim();
+    final regionalUsage = entry.text('regionalUsage').trim();
+    final examples = entry
+        .strings('examples')
+        .where((item) => item.trim().isNotEmpty)
+        .toList();
+    final resolvedRelated = [
+      for (final id in entry.strings('relatedTerms'))
+        if (DictionaryRepository.resolve(entries, id) case final related?)
+          related,
+    ];
+    final skillIds = entry.strings('skillIds');
+    final resourceIds = entry.strings('resourceIds');
+    final attributions = entry.strings('attributions');
     final allMedia = (entry.data['media'] as List<dynamic>? ?? [])
         .whereType<Map<dynamic, dynamic>>()
         .map((item) => item.cast<String, dynamic>())
@@ -580,49 +599,66 @@ class _DictionaryPageState extends State<DictionaryPage> {
                             DictionaryImageType.illustrative)
                           Text(
                             heroMedia.imageType.label,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: AppTokens.accentColor(context),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: accent,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         if (heroCaption.isNotEmpty)
                           Text(
                             heroCaption,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: AppTokens.secondaryTextColor(context),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppTokens.secondaryTextColor(context),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         if (heroMedia.explanation.isNotEmpty)
                           Text(
                             heroMedia.explanation,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: AppTokens.secondaryTextColor(context),
-                                ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppTokens.secondaryTextColor(context),
+                            ),
                           ),
                         if (heroMedia.attribution != null)
                           Text(
                             'Contributed by ${heroMedia.attribution}',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: AppTokens.secondaryTextColor(context),
-                                ),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppTokens.secondaryTextColor(context),
+                            ),
                           ),
                       ],
                     ),
                     const SizedBox(height: 12),
                   ],
-                  Text(
-                    entry.definition,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  DecoratedBox(
+                    key: const Key('dictionaryConciseDefinition'),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHigh.withValues(
+                        alpha: isDark ? 0.36 : 0.6,
+                      ),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                      border: Border(
+                        left: BorderSide(color: accent, width: 3),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      child: Text(
+                        entry.definition,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          height: 1.45,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                   ),
-                  if (entry.strings('synonyms').isNotEmpty)
+                  if (synonyms.isNotEmpty)
                     _section(
                       'Also called',
-                      Text(entry.strings('synonyms').join(' · ')),
+                      Text(synonyms.join(' · ')),
                     ),
                   KeyedSubtree(
                     key: const Key('dictionaryPageKnownTermSection'),
@@ -634,72 +670,98 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       showBottomDivider: true,
                     ),
                   ),
-                  if (entry.explanation.isNotEmpty)
+                  if (explanation.isNotEmpty)
                     _section(
-                      'In context',
+                      'Detailed explanation',
                       DictionaryText(
-                        text: entry.explanation,
+                        text: explanation,
                         entries: entries,
                         excludeEntryId: entry.id,
                         knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
-                  if (entry.text('usage').isNotEmpty)
+                  if (examples.isNotEmpty)
                     _section(
-                      'Usage',
+                      examples.length == 1
+                          ? 'Practical example'
+                          : 'Practical examples',
+                      DecoratedBox(
+                        key: const Key('dictionaryPracticalExamplesCard'),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHigh
+                              .withValues(alpha: isDark ? 0.28 : 0.5),
+                          borderRadius: BorderRadius.circular(
+                            AppTokens.radiusMd,
+                          ),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant.withValues(
+                              alpha: 0.45,
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: 10,
+                            children: [
+                              for (final example in examples)
+                                DictionaryText(
+                                  text: example,
+                                  entries: entries,
+                                  excludeEntryId: entry.id,
+                                  knownTermsRepository:
+                                      widget.knownTermsRepository,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (usage.isNotEmpty)
+                    _section(
+                      'Discipline & usage',
                       DictionaryText(
-                        text: entry.text('usage'),
+                        text: usage,
                         entries: entries,
                         excludeEntryId: entry.id,
                         knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
-                  if (entry.text('regionalUsage').isNotEmpty)
+                  if (regionalUsage.isNotEmpty)
                     _section(
                       'Regional variations',
                       DictionaryText(
-                        text: entry.text('regionalUsage'),
+                        text: regionalUsage,
                         entries: entries,
                         excludeEntryId: entry.id,
                         knownTermsRepository: widget.knownTermsRepository,
                       ),
                     ),
-                  if (entry.strings('examples').isNotEmpty)
-                    _section(
-                      'Examples',
-                      DictionaryText(
-                        text: entry.strings('examples').join('\n\n'),
-                        entries: entries,
-                        excludeEntryId: entry.id,
-                        knownTermsRepository: widget.knownTermsRepository,
-                      ),
-                    ),
-                  if (entry.strings('relatedTerms').isNotEmpty)
+                  if (resolvedRelated.isNotEmpty)
                     _section(
                       'Related terminology',
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (final id in entry.strings('relatedTerms'))
-                            if (DictionaryRepository.resolve(entries, id)
-                                case final related?)
-                              ActionChip(
-                                label: Text(related.term),
-                                onPressed: () =>
-                                    context.push('/Dictionary/${related.slug}'),
-                              ),
+                          for (final related in resolvedRelated)
+                            ActionChip(
+                              label: Text(related.term),
+                              onPressed: () =>
+                                  context.push('/Dictionary/${related.slug}'),
+                            ),
                         ],
                       ),
                     ),
-                  if (entry.strings('skillIds').isNotEmpty)
+                  if (skillIds.isNotEmpty)
                     _section(
                       'Related skills',
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (final id in entry.strings('skillIds'))
+                          for (final id in skillIds)
                             ActionChip(
                               avatar: const Icon(
                                 Icons.account_tree_outlined,
@@ -721,13 +783,13 @@ class _DictionaryPageState extends State<DictionaryPage> {
                         ],
                       ),
                     ),
-                  if (entry.strings('resourceIds').isNotEmpty)
+                  if (resourceIds.isNotEmpty)
                     _section(
                       'Related Resources',
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (final id in entry.strings('resourceIds'))
+                          for (final id in resourceIds)
                             TextButton(
                               onPressed: () => context.push(
                                 '/Resources/Comments/${Uri.encodeComponent(id)}',
@@ -748,10 +810,10 @@ class _DictionaryPageState extends State<DictionaryPage> {
                       'Educational media',
                       DictionaryMediaGallery(media: galleryMedia),
                     ),
-                  if (entry.strings('attributions').isNotEmpty)
+                  if (attributions.isNotEmpty)
                     _section(
                       'Community contributors',
-                      Text(entry.strings('attributions').join(', ')),
+                      Text(attributions.join(', ')),
                     ),
                   const SizedBox(height: 20),
                   Wrap(

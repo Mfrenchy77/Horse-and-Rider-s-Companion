@@ -287,6 +287,11 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
         await tester.pump(const Duration(milliseconds: 100));
+        await tester.scrollUntilVisible(
+          find.text('Canter'),
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
         await tester.tap(find.text('Canter'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));

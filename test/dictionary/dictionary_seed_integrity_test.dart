@@ -112,6 +112,39 @@ void main() {
           'flooding',
           'engagement',
         });
+
+        final leakedPattern = RegExp(
+          'contextual=|manual Define|Welfare and safety note:|'
+          'Clinical and welfare caution:|Welfare caution:|curriculum/v2',
+          caseSensitive: false,
+        );
+        for (final entry in seedEntries) {
+          final combinedText = [
+            entry.definition,
+            entry.explanation,
+            entry.text('usage'),
+            entry.text('regionalUsage'),
+            ...entry.strings('examples'),
+          ].join(' ');
+          expect(
+            leakedPattern.hasMatch(combinedText),
+            isFalse,
+            reason:
+                '${entry.id} must not expose internal audit/technical strings',
+          );
+          expect(
+            entry.definition.length,
+            lessThanOrEqualTo(500),
+            reason: '${entry.id} definition must stay concise',
+          );
+          for (final ex in entry.strings('examples')) {
+            expect(
+              ex.length,
+              lessThanOrEqualTo(240),
+              reason: '${entry.id} examples must fit validation limit',
+            );
+          }
+        }
       },
     );
 

@@ -644,7 +644,7 @@ void main() {
             findsOneWidget,
           );
           expect(find.text('Also called'), findsOneWidget);
-          expect(find.text('In context'), findsOneWidget);
+          expect(find.text('Detailed explanation'), findsOneWidget);
           expect(
             find.byKey(const Key('dictionaryKnownTermCheckbox')),
             findsNothing,
@@ -779,7 +779,7 @@ void main() {
 
           expect(checkboxFinder, findsOneWidget);
           expect(tester.widget<Checkbox>(checkboxFinder).value, isTrue);
-          expect(find.text('In context'), findsOneWidget);
+          expect(find.text('Detailed explanation'), findsOneWidget);
           expect(find.text('Related terminology'), findsOneWidget);
           expect(find.text('Related skills'), findsOneWidget);
           expect(find.text('Suggest an improvement'), findsOneWidget);
@@ -792,9 +792,11 @@ void main() {
             find.text('A three-beat gait with a moment of suspension.'),
           );
           final pageCheckboxRect = tester.getRect(checkboxFinder);
-          final inContextRect = tester.getRect(find.text('In context'));
+          final detailedExplanationRect = tester.getRect(
+            find.text('Detailed explanation'),
+          );
           expect(pageCheckboxRect.top, greaterThan(pageDefRect.bottom));
-          expect(pageCheckboxRect.bottom, lessThan(inContextRect.top));
+          expect(pageCheckboxRect.bottom, lessThan(detailedExplanationRect.top));
 
           // Verify KnownDictionaryTermsSection shows Canter in sync.
           await tester.pumpWidget(
