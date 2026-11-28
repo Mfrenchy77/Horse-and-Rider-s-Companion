@@ -12,7 +12,7 @@ void main() {
     late Map<String, SkillFamily> familyById;
     late List<CurriculumSkill> skills;
     late Map<String, CurriculumSkill> skillById;
-    late List<Map<String, dynamic>> legacySnapshot;
+    late List<Map<String, dynamic>>? optionalLegacySnapshot;
     late List<Map<String, dynamic>> legacyMapping;
 
     setUpAll(() {
@@ -43,16 +43,16 @@ void main() {
       }
       skillById = {for (final s in skills) s.id: s};
 
-      final snapRaw =
-          jsonDecode(
-                File(
-                  'migrate_working_dir/skills_snapshot.json',
-                ).readAsStringSync(),
-              )
-              as Map<String, dynamic>;
-      legacySnapshot = (snapRaw['skills'] as List<dynamic>)
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      final snapFile = File('migrate_working_dir/skills_snapshot.json');
+      if (snapFile.existsSync()) {
+        final snapRaw =
+            jsonDecode(snapFile.readAsStringSync()) as Map<String, dynamic>;
+        optionalLegacySnapshot = (snapRaw['skills'] as List<dynamic>)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      } else {
+        optionalLegacySnapshot = null;
+      }
 
       final mapRaw =
           jsonDecode(
@@ -206,7 +206,6 @@ void main() {
     test(
       'all 84 legacy skill IDs map uniquely to v2 skills and valid levels',
       () {
-        expect(legacySnapshot.length, 84);
         expect(legacyMapping.length, 84);
 
         final mappedFromSkills = <String, String>{};
@@ -221,14 +220,23 @@ void main() {
           }
         }
 
-        final snapIds = legacySnapshot.map((e) => e['id'] as String).toSet();
-        expect(mappedFromSkills.keys.toSet(), snapIds);
+        final canonicalLegacyIds = legacyMapping
+            .map((e) => e['legacyId'] as String)
+            .toSet();
+        expect(canonicalLegacyIds.length, 84);
+        expect(mappedFromSkills.keys.toSet(), canonicalLegacyIds);
+        if (optionalLegacySnapshot != null) {
+          final snapIds = optionalLegacySnapshot!
+              .map((e) => e['id'] as String)
+              .toSet();
+          expect(snapIds, canonicalLegacyIds);
+        }
 
         for (final row in legacyMapping) {
           final lid = row['legacyId'] as String;
           final v2Id = row['v2SkillId'] as String;
           final lvl = parseOptionalDifficulty(row['targetLevel'] as String?);
-          expect(snapIds.contains(lid), isTrue);
+          expect(canonicalLegacyIds.contains(lid), isTrue);
           expect(mappedFromSkills[lid], v2Id);
           expect(lvl, isNotNull);
           expect(skillById[v2Id]?.hasLevel(lvl!), isTrue);

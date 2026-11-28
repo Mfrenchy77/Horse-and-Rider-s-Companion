@@ -110,28 +110,32 @@ class _SkillTreeV2HeaderState extends State<SkillTreeV2Header> {
               onPressed: () => context.push('/Dictionary'),
               icon: const Icon(Icons.menu_book_outlined),
             ),
-            SegmentedButton<SkillTreeV2ViewMode>(
-              key: const Key('skillTreeV2ViewModeSelector'),
-              segments: const [
-                ButtonSegment(
-                  value: SkillTreeV2ViewMode.browse,
-                  icon: Icon(Icons.account_tree_outlined),
-                  label: Text('Explore Skills'),
-                ),
-                ButtonSegment(
-                  value: SkillTreeV2ViewMode.summary,
-                  icon: Icon(Icons.insights_outlined),
-                  label: Text('My Skills'),
-                ),
-              ],
-              selected: {
-                if (state.viewMode == SkillTreeV2ViewMode.browse)
-                  SkillTreeV2ViewMode.browse
-                else
-                  SkillTreeV2ViewMode.summary,
-              },
-              onSelectionChanged: (selection) =>
-                  widget.onSelectViewMode(selection.first),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: SegmentedButton<SkillTreeV2ViewMode>(
+                key: const Key('skillTreeV2ViewModeSelector'),
+                segments: const [
+                  ButtonSegment(
+                    value: SkillTreeV2ViewMode.browse,
+                    icon: Icon(Icons.account_tree_outlined),
+                    label: Text('Explore Skills'),
+                  ),
+                  ButtonSegment(
+                    value: SkillTreeV2ViewMode.summary,
+                    icon: Icon(Icons.insights_outlined),
+                    label: Text('My Skills'),
+                  ),
+                ],
+                selected: {
+                  if (state.viewMode == SkillTreeV2ViewMode.browse)
+                    SkillTreeV2ViewMode.browse
+                  else
+                    SkillTreeV2ViewMode.summary,
+                },
+                onSelectionChanged: (selection) =>
+                    widget.onSelectViewMode(selection.first),
+              ),
             ),
           ],
         ),

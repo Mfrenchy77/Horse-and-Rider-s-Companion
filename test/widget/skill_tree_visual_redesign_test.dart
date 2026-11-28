@@ -7,7 +7,6 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +23,8 @@ import 'package:horseandriderscompanion/Settings/settings_controller_scope.dart'
 import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../support/visual_test_helpers.dart';
 
 class _MockAppCubit extends MockCubit<AppState> implements AppCubit {}
 
@@ -186,34 +187,7 @@ ThemeData _withScreenshotFonts(ThemeData base) {
   );
 }
 
-Future<void> _loadScreenshotFonts() async {
-  Future<void> register(String family, List<String> paths) async {
-    final loader = FontLoader(family);
-    var loadedAny = false;
-    for (final path in paths) {
-      final file = File(path);
-      if (file.existsSync()) {
-        final bytes = await file.readAsBytes();
-        loader.addFont(Future<ByteData>.value(ByteData.view(bytes.buffer)));
-        loadedAny = true;
-      }
-    }
-    if (loadedAny) await loader.load();
-  }
-
-  await register('Roboto', [
-    '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf',
-    '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf',
-  ]);
-  await register('Georgia', [
-    '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif.ttf',
-    '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif-Bold.ttf',
-  ]);
-  await register('MaterialIcons', [
-    'build/web/assets/fonts/MaterialIcons-Regular.otf',
-  ]);
-  await register('HorseAndRiderIcons', ['fonts/HorseAndRiderIcons.ttf']);
-}
+Future<void> _loadScreenshotFonts() => loadPortableTestFonts();
 
 Widget _wrapTree({
   required AppCubit appCubit,
@@ -447,20 +421,21 @@ void main() {
 
         // Expand Daily Care & Grooming: description & compact rows appear,
         // without 2-line skill summaries inside rows.
-        await tester.tap(
-          find.byKey(
-            const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
-          ),
+        final groomingFamilyHeader = find.byKey(
+          const Key('skillFamilyHeader_rider.husbandry.daily_care_grooming'),
         );
+        await tester.ensureVisible(groomingFamilyHeader);
+        await tester.pumpAndSettle();
+        await tester.tap(groomingFamilyHeader);
         await tester.pumpAndSettle();
 
         final groomingSummary = allSkills
             .firstWhere((s) => s.id == 'rider.husbandry.grooming')
             .summary;
-        expect(
-          find.byKey(const Key('skillCard_rider.husbandry.grooming')),
-          findsOneWidget,
+        final groomingCard = find.byKey(
+          const Key('skillCard_rider.husbandry.grooming'),
         );
+        expect(groomingCard, findsOneWidget);
         expect(find.text('Intro'), findsWidgets);
         // Full summary stays in SkillDetailV2Panel, not in the compact row.
         expect(
@@ -469,9 +444,9 @@ void main() {
         );
 
         // Selecting a skill opens full detail content.
-        await tester.tap(
-          find.byKey(const Key('skillCard_rider.husbandry.grooming')),
-        );
+        await tester.ensureVisible(groomingCard);
+        await tester.pumpAndSettle();
+        await tester.tap(groomingCard);
         await tester.pumpAndSettle();
         expect(find.byType(SkillDetailV2Panel), findsOneWidget);
         expect(
@@ -482,7 +457,10 @@ void main() {
         // Return to list and switch to My Skills: progress bars & family icons.
         await tester.tap(find.byKey(const Key('skillDetailV2BackButton')));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('My Skills'));
+        final mySkillsSegment = find.text('My Skills');
+        await tester.ensureVisible(mySkillsSegment);
+        await tester.pumpAndSettle();
+        await tester.tap(mySkillsSegment);
         await tester.pumpAndSettle();
 
         expect(find.byType(AbilitySummaryV2View), findsOneWidget);
@@ -629,9 +607,7 @@ void main() {
       final mockAppCubit = _MockAppCubit();
       when(() => mockAppCubit.state).thenReturn(_buildTestAppState());
 
-      const scratch =
-          '/home/matteo/.gemini/antigravity/brain/'
-          '9959963d-cf2a-4c61-946a-61af8edc96d7/scratch';
+      final scratch = resolveVisualTestOutputDir(fallbackToTempDir: true)!;
 
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);

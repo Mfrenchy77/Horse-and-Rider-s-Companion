@@ -1,12 +1,10 @@
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:horseandriderscompanion/Utilities/Constants/color_constants.dart';
+
+import '../support/visual_test_helpers.dart';
 
 void main() {
   testWidgets(
@@ -146,20 +144,12 @@ void main() {
       expect(destructiveBg, ColorConst.errorDarkBlueGrey);
       expect(destructiveBg, isNot(AppTokens.coralAccent));
 
-      await tester.runAsync(() async {
-        final boundary =
-            shotKey.currentContext!.findRenderObject()!
-                as RenderRepaintBoundary;
-        final image = await boundary.toImage(pixelRatio: 2);
-        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        if (byteData != null) {
-          final file = File(
-            '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch/phase_a_design_system.png',
-          );
-          await file.parent.create(recursive: true);
-          await file.writeAsBytes(byteData.buffer.asUint8List());
-        }
-      });
+      await captureBoundaryArtifact(
+        tester,
+        find.byKey(shotKey),
+        'phase_a_design_system.png',
+        pixelRatio: 2,
+      );
     },
   );
 }

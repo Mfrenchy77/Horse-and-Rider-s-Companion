@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/CommonWidgets/logbook_entry_card.dart';
@@ -18,9 +16,7 @@ import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 import '../support/app_test_harness.dart';
-
-const _scratchDir =
-    '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch';
+import '../support/visual_test_helpers.dart';
 
 Future<Uint8List> _createSamplePhotoBytes() async {
   final recorder = ui.PictureRecorder();
@@ -46,21 +42,12 @@ Future<Uint8List> _createSamplePhotoBytes() async {
   return byteData!.buffer.asUint8List();
 }
 
-Future<void> _captureScreenshot(WidgetTester tester, String filename) async {
-  await tester.runAsync(() async {
-    final boundary =
-        tester.renderObject(find.byType(RepaintBoundary).first)
-            as RenderRepaintBoundary;
-    final image = await boundary.toImage();
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData != null) {
-      final dir = Directory(_scratchDir);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-      final file = File('$_scratchDir/$filename');
-      await file.writeAsBytes(byteData.buffer.asUint8List());
-    }
-  });
-}
+Future<void> _captureScreenshot(WidgetTester tester, String filename) =>
+    captureBoundaryArtifact(
+      tester,
+      find.byType(RepaintBoundary).first,
+      filename,
+    );
 
 void main() {
   final sampleRiderEntries = <BaseListItem>[

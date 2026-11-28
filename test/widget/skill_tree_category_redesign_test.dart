@@ -8,7 +8,6 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +25,8 @@ import 'package:horseandriderscompanion/Settings/settings_service.dart';
 import 'package:horseandriderscompanion/Theme/surface_gradients.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../support/visual_test_helpers.dart';
 
 class _MockAppCubit extends MockCubit<AppState> implements AppCubit {}
 
@@ -135,34 +136,7 @@ ThemeData _withScreenshotFonts(ThemeData base) {
   );
 }
 
-Future<void> _loadScreenshotFonts() async {
-  Future<void> register(String family, List<String> paths) async {
-    final loader = FontLoader(family);
-    var loadedAny = false;
-    for (final path in paths) {
-      final file = File(path);
-      if (file.existsSync()) {
-        final bytes = await file.readAsBytes();
-        loader.addFont(Future<ByteData>.value(ByteData.view(bytes.buffer)));
-        loadedAny = true;
-      }
-    }
-    if (loadedAny) await loader.load();
-  }
-
-  await register('Roboto', [
-    '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf',
-    '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf',
-  ]);
-  await register('Georgia', [
-    '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif.ttf',
-    '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif-Bold.ttf',
-  ]);
-  await register('MaterialIcons', [
-    'build/web/assets/fonts/MaterialIcons-Regular.otf',
-  ]);
-  await register('HorseAndRiderIcons', ['fonts/HorseAndRiderIcons.ttf']);
-}
+Future<void> _loadScreenshotFonts() => loadPortableTestFonts();
 
 Widget _wrapTree({
   required AppCubit appCubit,
@@ -1014,8 +988,7 @@ void main() {
         'CAPTURE_CATEGORY_SCREENSHOTS=1', (tester) async {
       if (Platform.environment['CAPTURE_CATEGORY_SCREENSHOTS'] != '1') return;
 
-      const outDir =
-          '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7';
+      final outDir = resolveVisualTestOutputDir(fallbackToTempDir: true)!;
       final repo = SkillTreeV2Repository(
         store: InMemorySkillTreeV2Store(
           families: allFamilies,

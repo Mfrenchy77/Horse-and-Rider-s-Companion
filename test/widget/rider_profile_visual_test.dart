@@ -1,9 +1,5 @@
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/app.dart';
@@ -11,24 +7,18 @@ import 'package:horseandriderscompanion/MainPages/Profiles/RiderProfile/rider_pr
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
 Future<void> _captureBoundary(
   WidgetTester tester,
   GlobalKey key,
-  String outPath,
-) async {
-  await tester.runAsync(() async {
-    final boundary =
-        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 2);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData != null) {
-      final file = File(outPath);
-      await file.parent.create(recursive: true);
-      await file.writeAsBytes(byteData.buffer.asUint8List());
-    }
-  });
-}
+  String outFilename,
+) => captureBoundaryArtifact(
+  tester,
+  find.byKey(key),
+  outFilename,
+  pixelRatio: 2,
+);
 
 void main() {
   testWidgets(
@@ -128,7 +118,7 @@ void main() {
         await _captureBoundary(
           tester,
           shotKey,
-          '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch/rider_profile_${entry.key}.png',
+          'rider_profile_${entry.key}.png',
         );
       }
 

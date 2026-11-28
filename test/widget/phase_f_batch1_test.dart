@@ -1,8 +1,4 @@
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/CommonWidgets/form_page_body.dart';
@@ -17,25 +13,14 @@ import 'package:horseandriderscompanion/Utilities/SharedPreferences/shared_prefs
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
-const _scratchDir =
-    '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch';
-
-Future<void> _captureScreenshot(WidgetTester tester, String filename) async {
-  await tester.runAsync(() async {
-    final boundary =
-        tester.renderObject(find.byType(RepaintBoundary).first)
-            as RenderRepaintBoundary;
-    final image = await boundary.toImage();
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData != null) {
-      final dir = Directory(_scratchDir);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-      final file = File('$_scratchDir/$filename');
-      await file.writeAsBytes(byteData.buffer.asUint8List());
-    }
-  });
-}
+Future<void> _captureScreenshot(WidgetTester tester, String filename) =>
+    captureBoundaryArtifact(
+      tester,
+      find.byType(RepaintBoundary).first,
+      filename,
+    );
 
 void main() {
   setUp(() async {

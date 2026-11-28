@@ -1,9 +1,5 @@
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/resources_view.dart';
@@ -12,6 +8,7 @@ import 'package:horseandriderscompanion/Theme/app_design_system.dart';
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
 void main() {
   Future<void> captureResources(
@@ -119,18 +116,12 @@ void main() {
     expect(find.text('Tack Fit: What to Look For'), findsOneWidget);
     expect(find.byType(AppImageVignette), findsNothing);
 
-    await tester.runAsync(() async {
-      final boundary =
-          tester.renderObject(find.byKey(const ValueKey('resourcesShot')))
-              as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: 2);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData != null) {
-        final file = File(outPath);
-        await file.parent.create(recursive: true);
-        await file.writeAsBytes(byteData.buffer.asUint8List());
-      }
-    });
+    await captureBoundaryArtifact(
+      tester,
+      find.byKey(const ValueKey('resourcesShot')),
+      outPath,
+      pixelRatio: 2,
+    );
   }
 
   testWidgets('Phase C Resources renders cleanly on desktop (3 columns)', (
@@ -139,8 +130,7 @@ void main() {
     await captureResources(
       tester,
       size: const Size(1200, 800),
-      outPath:
-          '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch/phase_c_resources_desktop.png',
+      outPath: 'phase_c_resources_desktop.png',
     );
   });
 
@@ -150,8 +140,7 @@ void main() {
     await captureResources(
       tester,
       size: const Size(412, 860),
-      outPath:
-          '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch/phase_c_resources_mobile.png',
+      outPath: 'phase_c_resources_mobile.png',
     );
   });
 }

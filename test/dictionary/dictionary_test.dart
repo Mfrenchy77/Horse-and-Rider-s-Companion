@@ -1,14 +1,10 @@
 // ignore_for_file: lines_longer_than_80_chars
 
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -26,27 +22,14 @@ import 'package:horseandriderscompanion/MainPages/SkillTreeV2/widgets/skill_deta
 import 'package:horseandriderscompanion/Theme/theme.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
-const _scratchDir =
-    '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch';
-
-Future<void> _captureView(WidgetTester tester, String filename) async {
-  await tester.runAsync(() async {
-    final boundaryFinder = find.byKey(const Key('dictionaryCaptureBoundary'));
-    if (boundaryFinder.evaluate().isEmpty) return;
-    final boundary =
-        tester.renderObject(boundaryFinder) as RenderRepaintBoundary;
-    final image = await boundary.toImage();
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData != null) {
-      final dir = Directory(_scratchDir);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-      await File(
-        '$_scratchDir/$filename',
-      ).writeAsBytes(byteData.buffer.asUint8List());
-    }
-  });
-}
+Future<void> _captureView(WidgetTester tester, String filename) =>
+    captureBoundaryArtifact(
+      tester,
+      find.byKey(const Key('dictionaryCaptureBoundary')),
+      filename,
+    );
 
 class RecordingDictionary extends DictionaryRepository {
   RecordingDictionary(this.entries, {super.firestore});

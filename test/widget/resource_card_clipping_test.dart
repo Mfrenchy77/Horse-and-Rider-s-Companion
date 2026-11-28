@@ -1,9 +1,5 @@
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/MainPages/Resources/Widgets/resource_item.dart';
@@ -13,6 +9,7 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:super_banners/super_banners.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
 void main() {
   testWidgets(
@@ -93,20 +90,12 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.runAsync(() async {
-        final boundary =
-            shotKey.currentContext!.findRenderObject()!
-                as RenderRepaintBoundary;
-        final image = await boundary.toImage(pixelRatio: 2);
-        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        if (byteData != null) {
-          final file = File(
-            '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7/scratch/resource_card_clipping.png',
-          );
-          await file.parent.create(recursive: true);
-          await file.writeAsBytes(byteData.buffer.asUint8List());
-        }
-      });
+      await captureBoundaryArtifact(
+        tester,
+        find.byKey(shotKey),
+        'resource_card_clipping.png',
+        pixelRatio: 2,
+      );
     },
   );
 }

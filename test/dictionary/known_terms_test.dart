@@ -9,7 +9,6 @@ import 'package:authentication_repository/authentication_repository.dart';
 import 'package:database_repository/database_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:horseandriderscompanion/App/Cubit/app_cubit.dart';
@@ -30,6 +29,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
 class _TrackingDictionaryRepository extends DictionaryRepository {
   _TrackingDictionaryRepository(List<DictionaryEntry> entries)
@@ -172,33 +172,7 @@ ThemeData _withScreenshotFonts(ThemeData base) => base.copyWith(
   ),
 );
 
-Future<void> _loadScreenshotFonts() async {
-  Future<void> register(String family, List<String> paths) async {
-    final loader = FontLoader(family);
-    var loadedAny = false;
-    for (final path in paths) {
-      final file = File(path);
-      if (file.existsSync()) {
-        final bytes = await file.readAsBytes();
-        loader.addFont(Future<ByteData>.value(ByteData.view(bytes.buffer)));
-        loadedAny = true;
-      }
-    }
-    if (loadedAny) await loader.load();
-  }
-
-  await register('Roboto', [
-    '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf',
-    '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf',
-  ]);
-  await register('Georgia', [
-    '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif.ttf',
-    '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif-Bold.ttf',
-  ]);
-  await register('MaterialIcons', [
-    'build/web/assets/fonts/MaterialIcons-Regular.otf',
-  ]);
-}
+Future<void> _loadScreenshotFonts() => loadPortableTestFonts();
 
 Widget _wrapWithTheme({
   required ThemeData theme,
@@ -987,7 +961,13 @@ void main() {
 
           expect(find.widgetWithText(TextButton, 'canter'), findsNothing);
           expect(find.widgetWithText(TextButton, 'half-halt'), findsWidgets);
-          await tester.tap(find.widgetWithText(ActionChip, 'Posting Trot'));
+          final postingTrotChip = find.widgetWithText(
+            ActionChip,
+            'Posting Trot',
+          );
+          await tester.ensureVisible(postingTrotChip);
+          await tester.pumpAndSettle();
+          await tester.tap(postingTrotChip);
           await tester.pumpAndSettle();
           expect(tappedRelatedId, 'rider.mounted.posting_trot');
 
@@ -1166,8 +1146,7 @@ void main() {
           return;
         }
 
-        const outDir =
-            '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7';
+        final outDir = resolveVisualTestOutputDir(fallbackToTempDir: true)!;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         tester.view.devicePixelRatio = 1;

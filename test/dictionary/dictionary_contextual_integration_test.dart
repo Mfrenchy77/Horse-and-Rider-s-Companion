@@ -8,7 +8,6 @@ import 'package:database_repository/database_repository.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +29,7 @@ import 'package:horseandriderscompanion/Theme/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/app_test_harness.dart';
+import '../support/visual_test_helpers.dart';
 
 DictionaryEntry _entry({
   required String id,
@@ -576,34 +576,7 @@ void main() {
   });
 
   group('Screenshots (CAPTURE_DICTIONARY_RELEASE_SCREENSHOTS=1)', () {
-    Future<void> loadScreenshotFonts() async {
-      Future<void> register(String family, List<String> paths) async {
-        final loader = FontLoader(family);
-        var loaded = false;
-        for (final path in paths) {
-          final file = File(path);
-          if (file.existsSync()) {
-            final bytes = await file.readAsBytes();
-            loader.addFont(Future<ByteData>.value(ByteData.view(bytes.buffer)));
-            loaded = true;
-          }
-        }
-        if (loaded) await loader.load();
-      }
-
-      await register('Roboto', [
-        '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf',
-        '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf',
-      ]);
-      await register('Georgia', [
-        '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif.ttf',
-        '/usr/share/fonts/dejavu-serif-fonts/DejaVuSerif-Bold.ttf',
-      ]);
-      await register('MaterialIcons', [
-        'build/web/assets/fonts/MaterialIcons-Regular.otf',
-      ]);
-      await register('HorseAndRiderIcons', ['fonts/HorseAndRiderIcons.ttf']);
-    }
+    Future<void> loadScreenshotFonts() => loadPortableTestFonts();
 
     ThemeData withReleaseFonts(ThemeData base) => base.copyWith(
       textTheme: base.textTheme.apply(fontFamily: 'Roboto'),
@@ -646,8 +619,7 @@ void main() {
           return;
         }
 
-        const outDir =
-            '/home/matteo/.gemini/antigravity/brain/9959963d-cf2a-4c61-946a-61af8edc96d7';
+        final outDir = resolveVisualTestOutputDir(fallbackToTempDir: true)!;
         late List<DictionaryEntry> preloadedSeed;
         late SkillTreeV2Repository skillRepo;
         await tester.runAsync(() async {
