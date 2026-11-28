@@ -239,10 +239,13 @@ void main() {
     'FirestoreSkillTreeV2Store bounds events to 20 and caches snapshot',
     () async {
       final db = FakeFirebaseFirestore();
+      final riderDocId = RiderProfileRepository.profileDocIdForEmail(
+        'rider@example.com',
+      );
       for (var i = 0; i < 30; i++) {
         await db
             .collection('Rider_Profile')
-            .doc('rider@example.com')
+            .doc(riderDocId)
             .collection('SkillVerificationEvents')
             .doc('evt-$i')
             .set({
