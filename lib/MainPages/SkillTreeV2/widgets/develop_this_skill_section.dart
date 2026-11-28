@@ -52,6 +52,8 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
     if (oldWidget.skill.id != widget.skill.id) {
       _showMoreExercises = false;
       _showCommonDifficulties = false;
+    } else if (oldWidget.selectedLevel != widget.selectedLevel) {
+      _showMoreExercises = false;
     }
   }
 
@@ -114,6 +116,7 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
     final subjectLabel = widget.skill.subject == SkillSubject.horse
         ? 'Horse'
         : 'Rider';
+    final isTheory = widget.skill.realm == SkillCategory.Other;
     final orderedExercises = _orderedExercises(guide);
     final featuredExercise = orderedExercises.isEmpty
         ? null
@@ -121,6 +124,20 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
     final secondaryExercises = orderedExercises.length > 1
         ? orderedExercises.sublist(1)
         : const <SkillPracticeExercise>[];
+    final moreExercisesTitle = secondaryExercises.length == 1
+        ? (isTheory ? 'Additional exploration' : 'Additional practice')
+        : isTheory
+        ? 'Additional explorations (${secondaryExercises.length})'
+        : 'Additional practice (${secondaryExercises.length})';
+    final firstSecondaryFocus = secondaryExercises.length == 1
+        ? (_focusBadgeText(secondaryExercises.first) ??
+              (isTheory ? 'Optional observation' : 'Optional progression'))
+        : null;
+    final moreExercisesSubtitle = secondaryExercises.length == 1
+        ? '${secondaryExercises.first.title} · $firstSecondaryFocus'
+        : (isTheory
+              ? 'Optional ways to observe and apply'
+              : 'Optional ways to vary and progress');
     final relatedSkills = _resolveRelatedSkills(guide);
     final isNarrow = MediaQuery.sizeOf(context).width < 440;
     final outerPadding = isNarrow ? 12.0 : 18.0;
@@ -152,6 +169,7 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
               entriesOverride: widget.dictionaryEntriesOverride,
               palette: palette,
               isCompact: isNarrow,
+              isTheory: isTheory,
             ),
           ],
           if (secondaryExercises.isNotEmpty) ...[
@@ -159,14 +177,8 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
             _DisclosureCard(
               toggleKey: const Key('developSkillMoreExercisesToggle'),
               icon: Icons.add_circle_outline,
-              title: secondaryExercises.length == 1
-                  ? 'Additional practice'
-                  : 'Additional practice (${secondaryExercises.length})',
-              subtitle: secondaryExercises.length == 1
-                  ? '${secondaryExercises.first.title} · '
-                        '${_focusBadgeText(secondaryExercises.first) ??
-                            'Optional progression'}'
-                  : 'Optional ways to vary and progress',
+              title: moreExercisesTitle,
+              subtitle: moreExercisesSubtitle,
               expanded: _showMoreExercises,
               onToggle: () =>
                   setState(() => _showMoreExercises = !_showMoreExercises),
@@ -182,6 +194,7 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
                       entriesOverride: widget.dictionaryEntriesOverride,
                       palette: palette,
                       isCompact: isNarrow,
+                      isTheory: isTheory,
                     ),
                 ],
               ),
@@ -194,9 +207,14 @@ class _DevelopThisSkillSectionState extends State<DevelopThisSkillSection> {
               icon: Icons.help_outline_rounded,
               title: 'Common difficulties',
               subtitle: guide.commonDifficulties.length == 1
-                  ? '1 typical snag & humane reset'
-                  : '${guide.commonDifficulties.length} typical snags & '
-                        'humane resets',
+                  ? (isTheory
+                        ? '1 common misconception & perspective'
+                        : '1 typical snag & humane reset')
+                  : (isTheory
+                        ? '${guide.commonDifficulties.length} common '
+                              'misconceptions & perspectives'
+                        : '${guide.commonDifficulties.length} typical snags & '
+                              'humane resets'),
               expanded: _showCommonDifficulties,
               onToggle: () => setState(
                 () => _showCommonDifficulties = !_showCommonDifficulties,
@@ -320,18 +338,22 @@ class _ExerciseCard extends StatelessWidget {
     required this.entriesOverride,
     required this.palette,
     this.isCompact = false,
+    this.isTheory = false,
   });
 
   final SkillPracticeExercise exercise;
   final List<DictionaryEntry>? entriesOverride;
   final _DevelopSkillPalette palette;
   final bool isCompact;
+  final bool isTheory;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final badgeLabel = (exercise.badge?.trim().isNotEmpty ?? false)
         ? exercise.badge!.trim().toUpperCase()
+        : isTheory
+        ? 'OBSERVATION & APPLICATION'
         : switch (exercise.focusLevel) {
             DifficultyState.Introductory => 'FOUNDATION EXERCISE',
             DifficultyState.Intermediate => 'PROGRESSION EXERCISE',
@@ -786,10 +808,7 @@ class _FooterRow extends StatelessWidget {
               color: palette.secondaryText,
             ),
           ),
-        _DictionaryFooterLink(
-          entry: dictionaryEntries[i],
-          palette: palette,
-        ),
+        _DictionaryFooterLink(entry: dictionaryEntries[i], palette: palette),
       ],
       for (var i = 0; i < relatedSkills.length; i++) ...[
         if (dictionaryEntries.isNotEmpty || i > 0)
@@ -824,10 +843,7 @@ class _FooterRow extends StatelessWidget {
             spacing: 10,
             children: [
               linksWrap,
-              Align(
-                alignment: Alignment.centerRight,
-                child: educationalBadge,
-              ),
+              Align(alignment: Alignment.centerRight, child: educationalBadge),
             ],
           );
         }
@@ -844,10 +860,7 @@ class _FooterRow extends StatelessWidget {
 }
 
 class _DictionaryFooterLink extends StatelessWidget {
-  const _DictionaryFooterLink({
-    required this.entry,
-    required this.palette,
-  });
+  const _DictionaryFooterLink({required this.entry, required this.palette});
 
   final DictionaryEntry entry;
   final _DevelopSkillPalette palette;
@@ -914,11 +927,7 @@ class _SkillFooterLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.account_tree_outlined,
-                size: 13,
-                color: palette.coral,
-              ),
+              Icon(Icons.account_tree_outlined, size: 13, color: palette.coral),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(

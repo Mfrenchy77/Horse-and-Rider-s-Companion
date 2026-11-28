@@ -117,7 +117,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "intro": "Use training scales as a diagnostic compass across disciplines rather than a rigid checklist—helping you see why tension or crookedness appears and which foundational quality supports the next.",
+      "exercises": [
+        {
+          "title": "Spot the Underlying Layer on Video",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Watch a 60-second clip from any discipline and score mental calm and steady beat before looking at head carriage or speed. Notice whether fixing the base resolves surface tension.",
+          "whatToNotice": "Whether the horse stays relaxed through the jaw and tail when tempo stays consistent."
+        },
+        {
+          "title": "Compare Philosophy Lens Without Bias",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Take one training snag—such as rushing downhill or drifting on a circle—and map it through both the Training Pyramid and simple ground clarity before choosing an adjustment.",
+          "whatToNotice": "Whether multiple humane frameworks point toward slowing down, clarifying cues, and improving balance."
+        },
+        {
+          "title": "Trace Frame Quality Back to Impulsion and Alignment",
+          "badge": "Practical Application",
+          "focusLevel": "advanced",
+          "summary": "During an ordinary ride or ground session, ask for slightly more swing without hurrying tempo, then observe whether soft contact arrives on its own without pulling with the hands.",
+          "whatToNotice": "True uphill ease versus a stiffly held neck that drops back behind the vertical."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Chasing an aesthetic outline before relaxation or rhythm is steady",
+          "guidance": "Step back to quiet walk or free walk on a long rein until breathing softens, then rebuild tempo before asking for any lateral or upward refinement."
+        },
+        {
+          "issue": "Treating the six elements like a one-time ladder",
+          "guidance": "Revisit calmness, alignment, and connection inside every ride as footing, environment, or fatigue shifts."
+        }
+      ],
+      "trainerInsight": "Any useful training framework explains why a horse struggles instead of giving a reason to force an outline.",
+      "welfareNote": "Never sacrifice calm breathing, soft chewing, or willing forward thought just to make a posture look compact.",
+      "relatedDictionaryTerms": [
+        "training-pyramid",
+        "rhythm",
+        "self-carriage"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.how_horses_learn",
+        "rider.theory.balance_weight",
+        "rider.mounted.half_halt"
+      ]
+    }
   },
   {
     "id": "rider.theory.progressive_conditioning",
@@ -210,7 +258,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "intro": "Conditioning builds musculoskeletal resilience as much as stamina, balancing thoughtful workload increases with genuine recovery so horses stay sound and eager over years.",
+      "exercises": [
+        {
+          "title": "Audit Weekly Tissue Recovery Balance",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Write down the last seven days of turnout, flatwork, hills, and rest. Notice whether harder effort days are spaced by gentle movement rather than stacked back to back.",
+          "whatToNotice": "Soft legs, bright attitude at the gate, and eager stepping out during warm-up."
+        },
+        {
+          "title": "Adjust Workload for Heat and Footing",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Evaluate deep sand, slick mud, or high humidity before starting work, and scale duration, speed, and tight turns down to protect tendons, joints, and hydration.",
+          "whatToNotice": "Early heavy breathing, shorter stride length, or stumbling that signals it is time to cool down."
+        },
+        {
+          "title": "Sequence Micro-Intervals With Long Walk Breaks",
+          "badge": "Practical Application",
+          "focusLevel": "advanced",
+          "summary": "Build stamina through brief, quality two- to three-minute bouts interspersed with relaxed free walk rather than continuous circles until the horse tires.",
+          "whatToNotice": "Faster heart-rate and breath recovery alongside cleaner coordination on the final rep than the first."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Increasing jump, slide, or collected work as soon as wind improves",
+          "guidance": "Heart and lungs adapt months sooner than bone, tendon, and ligament density; advance intensity in small steps over weeks rather than days."
+        },
+        {
+          "issue": "Skipping structured warm-up and cool-down on busy days",
+          "guidance": "Preserve ten minutes of loose walk before asking for work and thorough walking afterward until nostrils calm and sweat begins drying."
+        }
+      ],
+      "trainerInsight": "Joints and tendons remember every rep on poor footing even when a fit horse barely breaks a sweat.",
+      "welfareNote": "Match workload to age, conformational limits, weather, and footing—not the calendar before a clinic or show.",
+      "relatedDictionaryTerms": [
+        "impulsion",
+        "engagement",
+        "proprioception"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.session_planning",
+        "rider.theory.pain_discomfort_fatigue",
+        "rider.husbandry.health_monitoring"
+      ]
+    }
   },
   {
     "id": "rider.theory.session_planning",
@@ -299,7 +395,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "intro": "Intentional planning turns vague arena or trail time into purposeful, horse-friendly lessons while leaving room to adapt whenever real-time feedback asks for an easier step.",
+      "exercises": [
+        {
+          "title": "Set One Single Primary Outcome",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Before haltering, choose one simple goal—such as calm halts at the mounting block or straight walk departures—plus two easier fallback exercises if focus dips.",
+          "whatToNotice": "Clearer timing and far less aimless drilling once you know what you came out to teach."
+        },
+        {
+          "title": "Slice a Multi-Step Skill Into First Pieces",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Take a goal like opening a gate or smoother transitions and write the smallest teachable first step you can reward cleanly on day one.",
+          "whatToNotice": "How lowering initial criteria keeps confidence high and prevents frustration on both ends of the lead."
+        },
+        {
+          "title": "Run a Two-Minute Post-Session Debrief",
+          "badge": "Session Reflection",
+          "focusLevel": "advanced",
+          "summary": "After untacking, jot down what clicked easily, where tension spiked, one adjustment to your timing, and the logical starting place next time.",
+          "whatToNotice": "Recurring patterns across weeks rather than reacting emotionally to one tough moment."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Clinging to the original plan when the horse is distracted or sore",
+          "guidance": "Treat the plan as a flexible map: shift to calm basics or a physical check whenever fear, pain, or deep fatigue appears."
+        },
+        {
+          "issue": "Drilling a good movement until quality fades",
+          "guidance": "Stop and reward one or two steps sooner than feels necessary while movement is still buoyant and willing."
+        }
+      ],
+      "trainerInsight": "Decide before you start what a good try looks like today so you recognize it the instant it happens.",
+      "welfareNote": "End physically or mentally demanding tasks before fatigue erodes foot placement, balance, or trust.",
+      "relatedDictionaryTerms": [
+        "transitions",
+        "arousal-threshold",
+        "habituation"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.progressive_conditioning",
+        "rider.theory.timing_reinforcement",
+        "rider.theory.stress_fear_confidence"
+      ]
+    }
   },
   {
     "id": "rider.theory.how_horses_learn",
@@ -396,7 +540,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "intro": "Horses make sense of our training through immediate associations, gradual familiarity, and emotional safety—never through human logic, grudges, or abstract future consequences.",
+      "exercises": [
+        {
+          "title": "Observe Natural Habituation in Daily Care",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Watch how a calm horse reacts to a mildly novel sound or object at a safe distance as curiosity replaces initial alertness without any chasing or restraint.",
+          "whatToNotice": "Deep exhale, blink rate, ear orientation, and soft lowering of the neck once arousal drops."
+        },
+        {
+          "title": "Trace What Actually Got Reinforced",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Recall a moment a horse pulled away, danced at mounting, or pawed at ties, and map the exact stimulus and relief that immediately followed to see why the habit stuck.",
+          "whatToNotice": "Whether accidental pressure release—like stepping back as a horse pulls—rewarded the unwanted choice."
+        },
+        {
+          "title": "Audit Generalization Across Two Environments",
+          "badge": "Practical Application",
+          "focusLevel": "advanced",
+          "summary": "Notice how a familiar cue in the barn aisle needs patient re-clarity beside the driveway or trailhead because horses read surroundings specifically.",
+          "whatToNotice": "Smaller, lower-threshold expectations bringing back relaxed understanding quickly in a new location."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Assuming a horse is stubborn or testing limits in a new setting",
+          "guidance": "Check arousal and clarity first; unfamiliar sights raise adrenaline and shrink a horse’s ability to remember cues learned only at home."
+        },
+        {
+          "issue": "Believing holding a horse next to a scary object teaches bravery",
+          "guidance": "Forced exposure risks flooding and panic; stay just outside the worry zone where curiosity still works."
+        }
+      ],
+      "trainerInsight": "Horses do not separate learning from how they feel while learning; emotion writes the memory.",
+      "welfareNote": "Elevated adrenaline blocks thoughtful problem-solving, so lowering stress is always faster than increasing pressure.",
+      "relatedDictionaryTerms": [
+        "operant-conditioning",
+        "classical-conditioning",
+        "habituation"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.timing_reinforcement",
+        "rider.theory.stress_fear_confidence",
+        "rider.in_hand.obstacles_outings"
+      ]
+    }
   },
   {
     "id": "rider.theory.timing_reinforcement",
@@ -498,7 +690,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "intro": "Timing is the language of horse training: whatever pressure stops or reward arrives in the exact half-second after a behavior shapes what the horse tries more often tomorrow.",
+      "exercises": [
+        {
+          "title": "Rehearse Pressure-and-Release With a Partner",
+          "badge": "Practical Application",
+          "focusLevel": "introductory",
+          "summary": "Hold a lead rope while a friend plays the horse, asking for one step forward with light feel and softening the instant the friend begins shifting weight.",
+          "whatToNotice": "Whether the release is clean and complete on initiation rather than dragging past the goal."
+        },
+        {
+          "title": "Break One Target Behavior Into Five Tiny Slices",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Plan successive approximations for lifting a sticky hoof or loading onto a mat—defining each tiny try worth releasing on before expecting the full result.",
+          "whatToNotice": "Eager participation growing when every small honest effort feels successful."
+        },
+        {
+          "title": "Compare Delayed Correction Against Neutral Reset",
+          "badge": "Session Reflection",
+          "focusLevel": "advanced",
+          "summary": "Review a recent mistake on video or memory and replace late scolding with resetting the setup clearly and marking the very first correct micro-shift.",
+          "whatToNotice": "Calmer facial expression and faster retention when clarity replaces emotional reaction."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Nagging with continuous leg or rein after the horse already answered",
+          "guidance": "Hold pressure steady while waiting, release completely the moment the answer starts, and let your quiet body become the reward."
+        },
+        {
+          "issue": "Raising cue intensity abruptly when a horse seems confused",
+          "guidance": "Pause, ask whether two signals conflicted or criteria jumped too far, and return to an unmistakable easy step."
+        }
+      ],
+      "trainerInsight": "The release does the teaching; pressure only starts the conversation.",
+      "welfareNote": "Separate negative reinforcement (releasing gentle cues at the right response) from punishment, which relies on fear and harms trust.",
+      "relatedDictionaryTerms": [
+        "negative-reinforcement",
+        "positive-reinforcement",
+        "reinforcement"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.how_horses_learn",
+        "rider.theory.understanding_rider_aids",
+        "rider.in_hand.trailer_loading"
+      ]
+    }
   },
   {
     "id": "rider.theory.equine_body_language",
@@ -590,7 +830,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "intro": "Reading the whole horse—ears, eyes, muzzle, breath, posture, and tail together—lets handlers adjust early at subtle whisper signals rather than waiting for loud defensive reactions.",
+      "exercises": [
+        {
+          "title": "Three-Minute Pasture Observation Scan",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Watch herd dynamics silently for three minutes, noting changes in nostril flare, upper eyelid wrinkles, chin tightness, and ear posture as horses approach hay or peers.",
+          "whatToNotice": "Subtle shifts in lip tension and neck height seconds before any step or squeal occurs."
+        },
+        {
+          "title": "Whole-Horse Context Check During Grooming",
+          "badge": "Practical Application",
+          "focusLevel": "intermediate",
+          "summary": "Track breathing rate, weight shifts, tail clamping, and head turning around girth, flank, and poll areas—pausing whenever multiple tight signals cluster together.",
+          "whatToNotice": "The difference between brief curiosity toward a sound and bracing over sensitive tissue."
+        },
+        {
+          "title": "Distinguish Relaxation From Frozen Quietness",
+          "badge": "Scenario Check",
+          "focusLevel": "advanced",
+          "summary": "Compare two still horses: one blinking softly with loose lower lip and resting hip, versus one rigid-necked with fixed stare, high tension, and tucked tail.",
+          "whatToNotice": "Soft blinking, exhaling, and gentle weight shifts signaling real safety rather than quiet freeze."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Judging mood by ear position alone",
+          "guidance": "Ears swivel toward sounds and riders constantly; combine ear angle with eye softness, muzzle shape, breathing depth, and body stiffness."
+        },
+        {
+          "issue": "Dismissing repeated tail swishing or jaw clenching as attitude",
+          "guidance": "Treat clustered tension cues as honest communication about discomfort, confusion, or tight thresholds, and investigate early."
+        }
+      ],
+      "trainerInsight": "Horses warn quietly in eyebrows, nostrils, and breath long before they ever feel forced to kick, bolt, or bite.",
+      "welfareNote": "Respond respectfully to early discomfort signals so your horse never has to shout to stay safe.",
+      "relatedDictionaryTerms": [
+        "arousal-threshold",
+        "equine-pain-ethogram",
+        "blind-spot"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.stress_fear_confidence",
+        "rider.theory.pain_discomfort_fatigue",
+        "rider.husbandry.safe_handling"
+      ]
+    }
   },
   {
     "id": "rider.theory.gaits_footfalls",
@@ -687,7 +975,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "intro": "Knowing each gait’s natural beat and sequence trains your eye and seat to catch subtle irregularity, asymmetry, or discomfort early—whether a horse is three-beat, diagonal, or ambling.",
+      "exercises": [
+        {
+          "title": "Count Footfalls Aloud on Solid Level Ground",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Listen beside a friend leading a horse at walk and gentle trot over hard packed dirt, tapping or counting 1-2-3-4 at walk and 1-2 at trot until sound and stride match.",
+          "whatToNotice": "Clean even spacing between beats without dragging toes or muffled uneven impacts."
+        },
+        {
+          "title": "Identify Canter Leads and Cross-Cantering Safely",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Watch circles in both directions, checking that the inside foreleg reaches farthest forward last in the three-beat stride and spotting when hind legs swap out of sync.",
+          "whatToNotice": "Four-beat flat canter or disjointed hip bounce indicating fatigue, imbalance, or wrong hind synchronization."
+        },
+        {
+          "title": "Map Individual Ambling or Gaited Timing",
+          "badge": "Practical Application",
+          "focusLevel": "advanced",
+          "summary": "Record a slow-motion side clip of a gaited or trotting horse and observe whether footfalls remain four-beat lateral, diagonal, or pace-like as terrain or tension shifts.",
+          "whatToNotice": "Tension turning smooth four-beat flow stiff and pacey when neck rises or hollows."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Guessing diagonal pairs or canter leads by looking straight down from the saddle",
+          "guidance": "Practice hearing and feeling shoulder reach with an instructor from the ground first so looking down does not tip your torso forward."
+        },
+        {
+          "issue": "Normalizing persistent four-beat canter or stumbling",
+          "guidance": "Sudden loss of a clean gait rhythm calls for resting and checking hooves, comfort, and strength rather than asking for more speed."
+        }
+      ],
+      "trainerInsight": "Your ears can often spot a crooked or stiff stride before your eyes notice anything wrong.",
+      "welfareNote": "Sudden cross-cantering, short-striding, or beat loss warrants stopping to evaluate soundness and fatigue.",
+      "relatedDictionaryTerms": [
+        "diagonal-pairs",
+        "ambling-gait",
+        "cross-canter"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.balance_weight",
+        "rider.mounted.walk",
+        "rider.mounted.trot"
+      ]
+    }
   },
   {
     "id": "rider.theory.balance_weight",
@@ -789,7 +1125,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "intro": "Equine biomechanics revolve around shifting load: because horses naturally carry more weight on the front legs, thoughtful alignment and rider poise preserve front-limb longevity and agility.",
+      "exercises": [
+        {
+          "title": "Feel Forehand Drop Versus Upright Neutral on Two Feet",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Notice how walking downhill versus balancing smoothly over your own feet changes effort—then compare that on video of a horse running flat on its shoulders versus carrying evenly.",
+          "whatToNotice": "Quiet uphill base of the neck, bright step under the belly, and calm foot placement without skidding."
+        },
+        {
+          "title": "Test Tiny Seat Shift Effects at Calm Walk",
+          "badge": "Practical Application",
+          "focusLevel": "intermediate",
+          "summary": "In balanced walk, gently slide your chest forward an inch, then back to neutral over your hips, noticing how immediately your horse adjusts stride speed and shoulder load.",
+          "whatToNotice": "Quicker hurried steps when rider leans ahead and steadier, freer shoulder swing when centered."
+        },
+        {
+          "title": "Spot Hollow Tension Masquerading as Frame",
+          "badge": "Scenario Check",
+          "focusLevel": "advanced",
+          "summary": "Examine slow-motion photos showing a lifted high neck with trailing hind legs versus an engaged, supple back where the horse tracks deeply under its center of mass.",
+          "whatToNotice": "Relaxed, swinging back muscles and lowered croup at transitions instead of inverted throatlatch tension."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Holding the reins tighter to keep a heavy horse from rushing",
+          "guidance": "Develop light seat cues and brief half-halt releases alongside gentle strengthening rather than supporting the horse’s weight in your hands."
+        },
+        {
+          "issue": "Pitching behind or ahead of the center on uneven ground",
+          "guidance": "Stay softly stacked over the horse’s balanced motion, keeping lower leg under hip on hills and turns."
+        }
+      ],
+      "trainerInsight": "You cannot pull a horse uphill with the reins; lightness arrives when hind legs carry more cleanly underneath.",
+      "welfareNote": "Crooked saddles or unbalanced riders load front tendons unevenly—prioritize upright poise before speed.",
+      "relatedDictionaryTerms": [
+        "forehand",
+        "hindquarters",
+        "independent-seat"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.training_pyramid",
+        "rider.theory.gaits_footfalls",
+        "rider.mounted.seat_balance"
+      ]
+    }
   },
   {
     "id": "rider.theory.bend_flexion_straightness",
@@ -882,7 +1266,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "intro": "True bend curves smoothly from poll to tail along an arc, whereas straightness aligns the ribcage and hind feet with the track ahead—evening out every horse’s natural asymmetrical side.",
+      "exercises": [
+        {
+          "title": "Spot Natural Sidedness on a Loose Circle",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Compare your horse traveling left and right at calm walk on a long line, noticing whether the ribcage bulges outward one way or drops inward through the shoulder.",
+          "whatToNotice": "Differences in drift, neck curl, and stride swing between the stiffer and hollower direction."
+        },
+        {
+          "title": "Separate Jaw Softness From Ribcage Bend",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Look for over-bent necks where the horse looks inside while its outside shoulder drifts outward—identifying why an outside-rein boundary and inside leg support beat inside pulling.",
+          "whatToNotice": "Poll and eyes remaining level while ribs curve gently around the arc rather than jackknifing at the withers."
+        },
+        {
+          "title": "Track Straightness Down an Arena Quarter-Line",
+          "badge": "Practical Application",
+          "focusLevel": "advanced",
+          "summary": "Leave the security of the wall and travel ten strides down an open line using even legs and light seat alignment, watching for drifting shoulders or trailing hips.",
+          "whatToNotice": "True alignment feeling slightly \"crooked\" at first whenever a handler corrects their own or the horse’s favorite habit."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Pulling the inside rein backward to manufacture bend",
+          "guidance": "Keep the nose gently near center of the chest, offer support from the inside leg at the barrel, and guide shoulder direction with steady outside boundaries."
+        },
+        {
+          "issue": "Treating chronic one-sided stiffness as purely bad habits",
+          "guidance": "Persistent resistance on one direction frequently stems from sharp teeth, crooked saddle flocking, or subtle hock and back soreness."
+        }
+      ],
+      "trainerInsight": "Bend shapes the ribcage like a soft willow branch; pulling the head alone only kinks the base of the neck.",
+      "welfareNote": "Never wrench a horse’s head around sideways; check dental, hoof, and saddle fit early.",
+      "relatedDictionaryTerms": [
+        "bend",
+        "flexion",
+        "straightness"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.balance_weight",
+        "rider.mounted.steering_navigation",
+        "rider.mounted.shoulder_in"
+      ]
+    }
   },
   {
     "id": "rider.theory.stress_fear_confidence",
@@ -980,7 +1412,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "intro": "As prey animals, horses prioritize survival over obedience; building genuine confidence means recognizing stacked triggers and arousal thresholds long before flight, freeze, or panic takes over.",
+      "exercises": [
+        {
+          "title": "Recognize Early Trigger Stacking in Daily Handling",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "List three mild stressors that happened close together—such as wind, separation from herd mates, and clinic noises—and watch how each small stack lowers tolerance for ordinary cues.",
+          "whatToNotice": "Rising head carriage, shorter steps, and jumpy alertness signaling near-threshold capacity."
+        },
+        {
+          "title": "Find the Thinking Distance Edge",
+          "badge": "Practical Application",
+          "focusLevel": "intermediate",
+          "summary": "Approach a mild novelty slowly in-hand and halt the instant ears lock softly without wide-eyed tension, letting the horse look, blink, and step closer when ready.",
+          "whatToNotice": "A calm sniff, lick, or sigh confirming confidence rather than rushing past while startled."
+        },
+        {
+          "title": "Differentiate Calm Confidence From Shutdown Compliance",
+          "badge": "Scenario Check",
+          "focusLevel": "advanced",
+          "summary": "Evaluate a quiet horse in a busy setting by looking for alert curiosity, willing forward step, and gentle expression versus glazed eyes and unresponsive stiffness.",
+          "whatToNotice": "Whether the horse still participates curiously in snacks, stretching, and voluntary movement."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Adding stronger punishment or tighter restraint during a spook",
+          "guidance": "Escalating conflict near fear confirms danger to a prey brain; expand space, breathe softly, and return to familiar grounding cues."
+        },
+        {
+          "issue": "Praising extreme quietness without checking emotional ease",
+          "guidance": "Monitor posture, eyes, and responsiveness so learned helplessness is never mistaken for peaceful training."
+        }
+      ],
+      "trainerInsight": "Confidence is not forcing a horse close to what scares it; it is proving you listen when distance helps it think.",
+      "welfareNote": "Never corner, tie tightly, or punish an overwhelmed horse—restore physical space and emotional safety first.",
+      "relatedDictionaryTerms": [
+        "trigger-stacking",
+        "flooding",
+        "learned-helplessness"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.equine_body_language",
+        "rider.theory.how_horses_learn",
+        "rider.mounted.emergency_control"
+      ]
+    }
   },
   {
     "id": "rider.theory.pain_discomfort_fatigue",
@@ -1078,7 +1558,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "intro": "Horses are masters at hiding mild pain; sudden bracing, saddle-shyness, hollow backs, or refusing transitions are physical messages first—deserving curiosity and qualified veterinary or fit care.",
+      "exercises": [
+        {
+          "title": "Run a Calm Behavioral Baseline Check Before Tacking",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Follow an equine pain ethogram checklist while grooming and girthing: note eye tension, flattened ears, chewing agitation, or shifting away before anything is assumed stubborn.",
+          "whatToNotice": "Whether specific touches or requests trigger repeatable grimace or avoidance patterns."
+        },
+        {
+          "title": "Separate Fatigue Signals From Behavior Snags",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Spot late-session toe dragging, stumbling, cross-cantering, or bracing after hard reps as muscular fatigue rather than disrespect requiring extra drills.",
+          "whatToNotice": "Crisp, relaxed posture before work declining sharply as energy stores empty."
+        },
+        {
+          "title": "Document Observations for Care Specialists",
+          "badge": "Practical Application",
+          "focusLevel": "advanced",
+          "summary": "Record clean straight-line video and recent workload notes to share promptly with your veterinarian, farrier, equine dentist, or qualified saddle fitter.",
+          "whatToNotice": "Clear patterns—like one-sided reluctance or girth sensitivity—speeding diagnosis."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Reaching for stronger bits, spurs, or training gadgets when willingness drops",
+          "guidance": "Pause immediately and rule out dental sharp points, foot soreness, back tenderness, or gastric distress with qualified professionals before re-training."
+        },
+        {
+          "issue": "Waiting until obvious three-legged limping appears",
+          "guidance": "Subtle bilateral soreness shows up in short choppy strides, hollow postures, or mood shifts long before clear single-leg nodding."
+        }
+      ],
+      "trainerInsight": "Assume discomfort before attitude; you will never regret checking soreness early.",
+      "welfareNote": "Stop work promptly on acute lameness or distress and involve a veterinarian, farrier, dentist, or saddle fitter early.",
+      "relatedDictionaryTerms": [
+        "lameness",
+        "equine-pain-ethogram",
+        "asymmetry"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.equine_body_language",
+        "rider.theory.tack_fit_function",
+        "rider.husbandry.health_monitoring"
+      ]
+    }
   },
   {
     "id": "rider.theory.ethical_training",
@@ -1172,7 +1700,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "intro": "Ethical horsemanship treats the whole 24-hour life of the horse—forage, turnout, herd companionship, healthcare, and patient training—as inseparable from every goal under saddle.",
+      "exercises": [
+        {
+          "title": "Audit All Five Welfare Domains Weekly",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Review nutrition, comfortable shelter, freedom to move and socialize, health checks, and positive mental engagement to spot any daily deficit affecting attitude under saddle.",
+          "whatToNotice": "How improved forage access and turnout soften handling tension without adding arena drills."
+        },
+        {
+          "title": "Weigh Short-Cut Devices Against Fair Clarity",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Evaluate any method or gadget by asking whether it works by creating discomfort if the horse raises its head versus helping the horse balance comfortably by choice.",
+          "whatToNotice": "Whether the approach could succeed patiently on a calm, unforced timeline without fatigue or intimidation."
+        },
+        {
+          "title": "Set Clear Pre-Decided Stop Rules",
+          "badge": "Session Reflection",
+          "focusLevel": "advanced",
+          "summary": "Decide before riding which welfare signals—breathing distress, panic, or sudden asymmetry—will pause work regardless of outside pressure.",
+          "whatToNotice": "Deeper long-term partnership when comfort outranks timelines."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Separating arena ethics from stall management and daily needs",
+          "guidance": "A lonely, stall-bound, forage-restricted horse enters every session already stressed; basic lifestyle welfare is the foundation of gentle training."
+        },
+        {
+          "issue": "Letting peer pressure push past a horse’s readiness",
+          "guidance": "Honor your horse’s honest pace; slow humane progress protects soundness and trust far better than hurried show milestones."
+        }
+      ],
+      "trainerInsight": "How a horse lives for the twenty-three hours outside work shapes every answer it gives during the one hour with you.",
+      "welfareNote": "Deprivation, exhaustion, or forced submission never build partnership—forage, movement, and kind timing come first.",
+      "relatedDictionaryTerms": [
+        "five-domains-model",
+        "forage",
+        "learned-helplessness"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.stress_fear_confidence",
+        "rider.theory.pain_discomfort_fatigue",
+        "rider.husbandry.stable_care"
+      ]
+    }
   },
   {
     "id": "rider.theory.understanding_rider_aids",
@@ -1267,7 +1843,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "intro": "Riders communicate through coordinated seat balance, calm legs, soft hands, breath, and voice—achieving effortless responsiveness when each cue asks clearly in order and stops the moment the horse answers.",
+      "exercises": [
+        {
+          "title": "Practice Cue Escalation From Whisper to Clear",
+          "badge": "Practical Application",
+          "focusLevel": "introductory",
+          "summary": "Ask for walk halt by sitting tall and exhaling for two strides first, only closing fingers gently on the reins if the seat request goes unanswered—releasing both immediately at stop.",
+          "whatToNotice": "How quickly horses learn to respond to breath and seat when hands wait politely as backup."
+        },
+        {
+          "title": "Spot Conflicting Go-and-Stop Signals",
+          "badge": "Scenario Check",
+          "focusLevel": "intermediate",
+          "summary": "Check whether gripping knees or tense lower legs stay active while hands ask for calm down-transitions—feeling how clearing the legs lets gentle reins speak quietly.",
+          "whatToNotice": "Tension vanishing from jawline and poll the moment go and slow signals stop competing."
+        },
+        {
+          "title": "Use Artificial Aids Only as Fine Timing Pointers",
+          "badge": "Observation Exercise",
+          "focusLevel": "advanced",
+          "summary": "Note how a light tap of a dressage or long whip on a calm horse simply points to an unhurried hind step rather than driving emotion or anger.",
+          "whatToNotice": "Relaxed response without flinching, tail swishing, or darting forward."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Driving with legs while pulling backward with steady reins",
+          "guidance": "Keep forward and slowing aids distinct in timing—create energy cleanly, then soften legs before offering a brief half-halt."
+        },
+        {
+          "issue": "Using hands as a balance strap when motion increases",
+          "guidance": "Hold mane, a neck strap, or grab strap during tricky moments so the horse’s mouth stays softly protected."
+        }
+      ],
+      "trainerInsight": "Clear aids sound like polite requests in a quiet room, not two people shouting opposite directions at once.",
+      "welfareNote": "Artificial aids (whips, crops, spurs) are delicate timing refinements—never outlets for frustration or heavy punishment.",
+      "relatedDictionaryTerms": [
+        "aids",
+        "half-halt",
+        "rein-contact"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.timing_reinforcement",
+        "rider.mounted.half_halt",
+        "rider.mounted.transitions"
+      ]
+    }
   },
   {
     "id": "rider.theory.tack_fit_function",
@@ -1357,7 +1981,55 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "intro": "Well-fitted tack distributes rider weight evenly over strong muscle while keeping spine, withers, shoulders, breathing, and mouth completely free to move comfortably across changing seasons.",
+      "exercises": [
+        {
+          "title": "Check Static Spine, Wither, and Shoulder Clearance",
+          "badge": "Practical Application",
+          "focusLevel": "introductory",
+          "summary": "Place the saddle bare without pads to inspect panel contact, three-to-four finger spinal channel width, generous wither room, and unobstructed scapula sweep behind the shoulder.",
+          "whatToNotice": "Even contact along back muscles without bridging in the middle or tipping back onto the loins."
+        },
+        {
+          "title": "Check Bridle, Noseband, and Girth Breathability",
+          "badge": "Observation Exercise",
+          "focusLevel": "intermediate",
+          "summary": "Slide flat fingers comfortably beneath noseband, throatlatch, browband, and tightened girth or cinch after walking—verifying normal swallowing, soft chewing, and pinch-free skin.",
+          "whatToNotice": "Dry rub marks, tucked chin avoidance, or tucked elbow posture calling for immediate adjustment."
+        },
+        {
+          "title": "Schedule Fit Checks as Muscle Shifts",
+          "badge": "Scenario Check",
+          "focusLevel": "advanced",
+          "summary": "Track seasonal weight and muscle shifts plus sweat-pattern symmetry, bringing in a qualified saddle fitter, veterinarian, or dentist early.",
+          "whatToNotice": "Dry spots under front points or uneven hair wear warning of pressure peaks."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Piling thick pads under a tight saddle to soften discomfort",
+          "guidance": "Extra padding inside an already narrow tree works like adding thick socks inside tight shoes; check tree width and shape with a qualified fitter."
+        },
+        {
+          "issue": "Cranking nosebands tight to stop mouth opening",
+          "guidance": "Allow two vertical fingers at the nasal bone and investigate dental sharp edges, bit shape, or harsh hand contact."
+        }
+      ],
+      "trainerInsight": "No training aid can teach softness to a horse bracing against pinching panels or a restricted airway.",
+      "welfareNote": "Never ride in a broken tree, zero wither clearance, or tight straps; recheck fit regularly with qualified professionals.",
+      "relatedDictionaryTerms": [
+        "wither-clearance",
+        "girth-cinch",
+        "hackamore-bosal"
+      ],
+      "relatedSkillIds": [
+        "rider.husbandry.tack",
+        "rider.theory.pain_discomfort_fatigue",
+        "rider.theory.training_equipment"
+      ]
+    }
   },
   {
     "id": "rider.theory.training_equipment",
@@ -1456,6 +2128,54 @@
       }
     ],
     "legacyIds": [],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "intro": "Equipment should serve clear communication and equine comfort—not force posture or mask unready basics; knowing each piece’s exact mechanics prevents accidental confusion and restriction.",
+      "exercises": [
+        {
+          "title": "Trace Line of Pull Before Attaching Any Piece",
+          "badge": "Observation Exercise",
+          "focusLevel": "introductory",
+          "summary": "Examine a longe cavesson, surcingle, protective boot, or running martingale by gently holding it in hand to feel exactly where pressure lands and when release actually happens.",
+          "whatToNotice": "Whether the design releases instantly when the horse lowers or softens toward comfort."
+        },
+        {
+          "title": "Match Protective Gear to Actual Work Risks",
+          "badge": "Practical Application",
+          "focusLevel": "intermediate",
+          "summary": "Inspect tendon/splint boots or bell boots for clean fit, proper strap direction, and zero grit inside—using protection where brushing or overreaching risk exists rather than by habit.",
+          "whatToNotice": "Excessive leg heat buildup or stiff fetlock wrap limits after intense summer work."
+        },
+        {
+          "title": "Question Forced Head-Carriage Gadgets",
+          "badge": "Scenario Check",
+          "focusLevel": "advanced",
+          "summary": "Compare calm ground-driving or cavesson work with tight draw reins or side reins, observing how voluntary poise differs from pulled neck bend.",
+          "whatToNotice": "Open throatlatch room and swinging tail versus cramped chin-to-chest tension."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Adding restrictive gadgets when a horse braces or hollows",
+          "guidance": "Remove restrictive straps, verify comfort and balance first, and rebuild clear forward-to-soft transitions calmly in plain basic gear."
+        },
+        {
+          "issue": "Leaving active training gear on while tied or turned out",
+          "guidance": "Always strip martingales, surcingles, boots, and tight rope halters when unsupervised—switching to well-fitted breakaway turnout or stall headgear."
+        }
+      ],
+      "trainerInsight": "Good equipment whispers what your body is already asking clearly; gadgets that clamp posture only silence the warning light.",
+      "welfareNote": "Avoid tie-downs, draw reins, or tight straps to force frame; never tie or turn out in schooling gear.",
+      "relatedDictionaryTerms": [
+        "cavesson",
+        "surcingle",
+        "ground-driving"
+      ],
+      "relatedSkillIds": [
+        "rider.theory.tack_fit_function",
+        "rider.theory.ethical_training",
+        "rider.in_hand.longeing"
+      ]
+    }
   }
 ]
