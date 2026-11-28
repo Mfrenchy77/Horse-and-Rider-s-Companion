@@ -74,7 +74,47 @@
     "legacyIds": [
       "horse.mounted.stand_halt"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Settled Stillness at Block and Mount Landing",
+          "focusLevel": "introductory",
+          "summary": "Standing on flat footing beside the mounting block, allow the horse time to pause quietly as stirrups settle and rider steps aboard, maintaining relaxed stillness for several unhurried breaths afterward before receiving a clear walk cue.",
+          "whatToNotice": "Look for soft blinking, relaxed lips, and level standing across all four hooves rather than leaning anxiously away or stepping off mid-mount."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Composed Pauses Around Group Rides and Venues",
+          "focusLevel": "intermediate",
+          "summary": "Practice calm stationary halts under saddle along trails, gates, or busier arenas while nearby horses trot past or step away, rewarding relaxed stillness without pacing or pawing.",
+          "whatToNotice": "Notice whether muscle bracing through the back settles softly within a couple of breaths as nearby motion continues."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Swinging hindquarters away from the mounting block",
+          "guidance": "Avoidance often stems from saddle or back soreness, heavy landings, or rushed tightening. Verify saddle comfort and gently teach standing politely beside a block with low stress first."
+        },
+        {
+          "issue": "Jigging or walking off right after mounting",
+          "guidance": "Anticipating instant work makes horses rush out under weight. Spend easy rides pausing peacefully after mounting before moving smoothly forward."
+        }
+      ],
+      "trainerInsight": "A horse that waits comfortably at the mounting block carries that same composure into every transition that follows.",
+      "welfareNote": "Rule out pinching saddles, girthy soreness, or rider mounting torque before treating block fidgeting as a behavioral habit.",
+      "relatedDictionaryTerms": [
+        "girth-cinch",
+        "wither-clearance",
+        "equine-pain-ethogram",
+        "habituation"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.mounting",
+        "horse.mounted.walk"
+      ]
+    }
   },
   {
     "id": "horse.mounted.walk",
@@ -151,7 +191,47 @@
     "legacyIds": [
       "horse.mounted.walk_under_saddle"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Willing Four-Beat Walk With Free Head Carriage",
+          "focusLevel": "introductory",
+          "summary": "Invite the horse into a forward, regular four-beat walk on light seat and gentle cues, keeping reins soft enough for natural head and neck oscillation across flat straight tracks and generous corners.",
+          "whatToNotice": "Listen and feel for four distinct, even beats (`1-2-3-4`) with loose swinging back and relaxed tail rather than tight short strides or lateral ambling."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Stretching Into Free Walk and Returning Smoothly",
+          "focusLevel": "intermediate",
+          "summary": "Allow the horse on a soft lengthening rein to stretch forward and downward into an elastic free walk over the topline while keeping steady rhythm, then gather calmly back into active working walk without rushing.",
+          "whatToNotice": "Observe whether the horse steps actively forward toward the lengthening rein—genuine stretch shows swinging hind legs rather than simply dropping the nose."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Walk losing four-beat clarity and turning two-beat or lateral",
+          "guidance": "Tension, restricted neck posture, or rushed rider legs distort walk mechanics. Soften rein contact, pause briefly to breathe, and rebuild a looser four-beat rhythm."
+        },
+        {
+          "issue": "Dragging behind the leg and stalling in corners",
+          "guidance": "Checking saddle fit over shoulders and brightening light cues promptly on response keeps willingness alive without endless nagging."
+        }
+      ],
+      "trainerInsight": "Never underestimate a pure, elastic four-beat walk—it prepares every joint and muscle for higher work.",
+      "welfareNote": "Preserve head and neck freedom; persistent stiffness or lateral pacing in walk can signal back, tooth, or saddle discomfort.",
+      "relatedDictionaryTerms": [
+        "free-walk",
+        "rhythm",
+        "suppleness",
+        "hollowing"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.walk",
+        "horse.mounted.trot"
+      ]
+    }
   },
   {
     "id": "horse.mounted.trot",
@@ -237,7 +317,47 @@
     "legacyIds": [
       "horse.mounted.trot_under_saddle"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Balanced Two-Beat Trot or Jog on Open Lines",
+          "focusLevel": "introductory",
+          "summary": "From a lively balanced walk, allow the horse onto straight lines and large curves in a steady two-beat diagonal trot or relaxed Western jog, keeping tempo comfortable so back muscles stay loose under rider weight.",
+          "whatToNotice": "Feel for even diagonal beats (`1-2, 1-2`) and relaxed neck poise—neither rushing onto the forehand nor hollowing downward away from contact."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Adjustable Stride and Curves Without Loss of Balance",
+          "focusLevel": "intermediate",
+          "summary": "Guide smooth tempo checks and gentle stride lengthenings along straight tracks and balanced turns—and for advanced horses, clear self-carriage across within-gait lengthenings and collectable poise without scurrying.",
+          "whatToNotice": "Check whether lengthening happens through wider ground cover rather than simply faster, frantic choppy legs."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Hurrying fast around turns and dropping the inside shoulder",
+          "guidance": "Rushing curves helps a horse balance sideways momentum via speed. Enlarge turning radius, settle tempo before the corner, and give light outside support."
+        },
+        {
+          "issue": "Uneven choppy strides in one direction only",
+          "guidance": "Asymmetry under saddle often reflects subtle limb soreness or rider crookedness; step down to walk and evaluate soundness and tack."
+        }
+      ],
+      "trainerInsight": "True trot cadence looks smooth and almost slow—when speed rises sharply, balance is slipping forward.",
+      "welfareNote": "Build trot duration thoughtfully for young or returning horses; any persistent head bobbing, unevenness, or tail wringing warrants a soundness and saddle check.",
+      "relatedDictionaryTerms": [
+        "trot",
+        "cadence",
+        "tempo",
+        "lameness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.trot",
+        "horse.mounted.canter"
+      ]
+    }
   },
   {
     "id": "horse.mounted.canter",
@@ -334,7 +454,47 @@
     "legacyIds": [
       "horse.mounted.canter_under_saddle"
     ],
-    "sortOrder": 30
+    "sortOrder": 30,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Settled Depart and Natural Three-Beat Curve",
+          "focusLevel": "introductory",
+          "summary": "From a calm balanced trot or corner on generous arena footing, invite a relaxed three-beat canter or lope without forcing tight speed or head angle, riding easy large curves before returning steadily to trot or walk.",
+          "whatToNotice": "Feel for clear three-beat jump and uphill breathing ease rather than scrambling flat out of running trot."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Reliable Both-Lead Departures and Stride Adjustability",
+          "focusLevel": "intermediate",
+          "summary": "Develop balanced departures on both requested leads, relaxed wide circles, and calm simple lead changes—building toward adaptable within-gait lengthening and shortening for advanced horses without rushing or bracing.",
+          "whatToNotice": "Observe whether left and right leads launch with similar softness and balance rather than hollowing or falling cross-canter behind."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Repeatedly taking one favored lead or cross-cantering",
+          "guidance": "Chronic lead resistance frequently points to hock, stifle, sacroiliac, or saddle discomfort rather than stubbornness—check physical wellness alongside gentle straightness prep."
+        },
+        {
+          "issue": "Breaking stride early through corners",
+          "guidance": "Green horses lose three-beat swing when arcs tighten prematurely. Ride straighter lines and larger curves before deepening corners."
+        }
+      ],
+      "trainerInsight": "Balanced preparation turns canter into an effortless three-beat uphill wave instead of a scrambling departure.",
+      "welfareNote": "Ensure adequate warm-up and supportive footing before cantering, and consult veterinary or saddle professionals if cross-canter or lead avoidance persists.",
+      "relatedDictionaryTerms": [
+        "canter",
+        "canter-lead",
+        "cross-canter",
+        "self-carriage"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.canter",
+        "horse.mounted.counter_canter"
+      ]
+    }
   },
   {
     "id": "horse.mounted.counter_canter",
@@ -556,7 +716,47 @@
       "horse.mounted.downward_transitions_horse",
       "horse.mounted.respond_half_halt"
     ],
-    "sortOrder": 40
+    "sortOrder": 40,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Relaxed Upward and Downward Walk–Trot Flow",
+          "focusLevel": "introductory",
+          "summary": "Encourage the horse to answer light forward and downward requests smoothly between halt, walk, and trot—staying willing and unhurried while keeping jaw and topline loose through every change.",
+          "whatToNotice": "Look for ears attentive and transition steps remaining balanced without bracing the neck up or collapsing abruptly onto the forehand."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Prompt Rebalancing and Elastic Direct Transitions",
+          "focusLevel": "intermediate",
+          "summary": "Practice softening immediately to brief rebalancing checks across three gaits, advancing toward elastic direct transitions (`walk-canter`, `halt-trot`, `canter-halt`) where the hindquarters stay engaged comfortably underneath.",
+          "whatToNotice": "Observe whether downward transitions feel like smooth landing steps rather than sudden jolts through the shoulders."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Tossing the head sharply in downward transitions",
+          "guidance": "Head throwing usually reacts to stiff reins, bit/dental discomfort, or abrupt timing. Allow gentle forward softening on release and check mouth and saddle fit."
+        },
+        {
+          "issue": "Dragging heavy upward steps after sluggish halts",
+          "guidance": "Build lively, attentive walk responses first so upward cues receive bright, calm tries without heavy kicking."
+        }
+      ],
+      "trainerInsight": "Smooth transitions reflect trust: the horse lowers into downward balance knowing the mouth will never be trapped.",
+      "welfareNote": "Persistent bracing, mouth gaping, or abrupt stopping warrants checking rider hand release, teeth, hocks, and saddle fit.",
+      "relatedDictionaryTerms": [
+        "transitions",
+        "half-halt",
+        "engagement",
+        "hollowing"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.transitions",
+        "horse.mounted.rein_back"
+      ]
+    }
   },
   {
     "id": "horse.mounted.steering_navigation",
@@ -644,7 +844,47 @@
       "horse.mounted.circle_balance",
       "horse.mounted.slalom_horse"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Listening Softly Along Open Lines and Generous Arcs",
+          "focusLevel": "introductory",
+          "summary": "Away from the rail at walk, invite the horse to follow light directional guidance evenly down straight tracks and ~20 m curves without pulling outward or leaning onto one shoulder.",
+          "whatToNotice": "Notice whether both ears and ribs stay soft around gentle curves rather than stiffening outward away from subtle steering cues."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Fluid Bend Shifts at Trot and Balanced Canter Lines",
+          "focusLevel": "intermediate",
+          "summary": "Carry smooth bilateral rib bend through trot serpentines and figure changes—extending for advanced horses into agile canter patterns with prompt directional and lead composure.",
+          "whatToNotice": "Check whether transitions from left curve to right curve flow through two relaxed straight strides without losing tempo."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Drifting outward through the outside shoulder on one rein",
+          "guidance": "Natural equine asymmetry makes one direction stiffer. Work gentle counter-flexion or slightly larger arcs calmly rather than hauling the inside head inward."
+        },
+        {
+          "issue": "Speeding up right after straightening out of a turn",
+          "guidance": "Anticipating straightaway freedom unsettles rhythm. Vary paths calmly and add frequent easy downward checks."
+        }
+      ],
+      "trainerInsight": "When a horse understands straightness between gentle inside and outside guidance, complex figures feel effortless.",
+      "welfareNote": "Keep turn sizes appropriate to gait and traction; check dental, neck, or limb asymmetry if one-sided steering stiffness stays locked.",
+      "relatedDictionaryTerms": [
+        "bend",
+        "straightness",
+        "asymmetry",
+        "suppleness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.steering_navigation",
+        "horse.mounted.transitions"
+      ]
+    }
   },
   {
     "id": "horse.mounted.turn_on_forehand",
@@ -715,7 +955,47 @@
     "legacyIds": [
       "horse.mounted.turn_on_forehand"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Calm Hindquarter Crossing Under Saddle",
+          "focusLevel": "introductory",
+          "summary": "From a settled halt or very slow walk, ask gently for one or two relaxed hindquarter steps sideways around relatively steady front legs—rewarding promptly with soft rein freedom and brief stillness.",
+          "whatToNotice": "Watch for smooth inside-hind crossing underneath the barrel and calm ear expression rather than rushing sideways or backing away."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Even Full Turns With Loose Forward Walk Exits",
+          "focusLevel": "intermediate",
+          "summary": "Build complete rhythmic turns on the forehand in both directions on light aids, maintaining relatively steady front feet before stepping calmly straight ahead into a loose working walk.",
+          "whatToNotice": "Check whether both sides cross cleanly without twisting awkwardly on a planted front foot or hollowing the neck."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Stepping backward repeatedly during the turn",
+          "guidance": "Backward steps reflect tight rein restraint or blocked forward confidence. Soften forward feel and reward single quiet hind crossings."
+        },
+        {
+          "issue": "Planting one hind foot stiffly on the weak side",
+          "guidance": "Keep expectations to one or two gentle steps per side and check stifle, hock, or saddle fit if soreness shows."
+        }
+      ],
+      "trainerInsight": "Crossing calmly behind under saddle begins with feeling safe to step sideways without bumping into tight reins.",
+      "welfareNote": "Avoid overly long repetitions on either side and evaluate persistent stiffness for hind-limb, back, or saddle discomfort.",
+      "relatedDictionaryTerms": [
+        "turn-on-the-forehand",
+        "hindquarters",
+        "suppleness",
+        "flexion"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.turn_on_forehand",
+        "horse.mounted.leg_yield"
+      ]
+    }
   },
   {
     "id": "horse.mounted.turn_on_haunches",
@@ -797,7 +1077,47 @@
     "legacyIds": [
       "horse.mounted.turn_on_haunches"
     ],
-    "sortOrder": 20
+    "sortOrder": 20,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Balanced Walk Arc Around Steadier Hindquarters",
+          "focusLevel": "introductory",
+          "summary": "Out of a willing four-beat walk on level ground, invite the horse to bring its shoulders gently across a generous turning arc in both directions while hind feet step rhythmically underneath without stalling or backing.",
+          "whatToNotice": "Feel for even walk footfalls continuing right through the arc—smooth inside-hind stepping supports balanced shoulders."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Compact Walk Turn With Soft Alignment and Straight Exit",
+          "focusLevel": "intermediate",
+          "summary": "Narrow turning radius gradually as strength and understanding grow, maintaining gentle bend suited to build, active hind footfalls, and calm straight walk exits across gates, trails, or arena patterns.",
+          "whatToNotice": "Check whether both front legs cross smoothly rather than twisting rigidly around a stuck hind hoof."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Stopping the hind legs completely mid-turn",
+          "guidance": "A planted, twisting hind leg stresses joints and causes backing. Think of turning out of forward walk steps and widen the arc immediately whenever rhythm slows."
+        },
+        {
+          "issue": "Falling quickly inward through the inside shoulder",
+          "guidance": "Encourage slightly larger walk turns and straight shoulder alignment before narrowing radius."
+        }
+      ],
+      "trainerInsight": "Active, unhurried hind footfalls turn a stiff pivot into graceful, joint-friendly balance.",
+      "welfareNote": "Always use flat, non-slip footing and adjust arc tightness to conformation and conditioning—investigate persistent pivot stiffness for hock or back soreness.",
+      "relatedDictionaryTerms": [
+        "turn-on-the-haunches",
+        "forehand",
+        "engagement",
+        "suppleness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.turn_on_haunches",
+        "horse.mounted.travers"
+      ]
+    }
   },
   {
     "id": "horse.mounted.rein_back",
@@ -1067,7 +1387,47 @@
     "legacyIds": [
       "horse.mounted.leg_yield_horse"
     ],
-    "sortOrder": 10
+    "sortOrder": 10,
+    "learningGuide": {
+      "exercises": [
+        {
+          "badge": "Foundation Exercise",
+          "title": "Stepping Forward and Sideways at Walk",
+          "focusLevel": "intermediate",
+          "summary": "Out of a relaxed straight walk off the rail, invite the horse to step diagonally forward and across on light cues with even crossing of front and hind legs and soft, level jaw carriage.",
+          "whatToNotice": "Observe whether shoulders and hindquarters travel smoothly together in steady walk cadence rather than rushing faster out of tension."
+        },
+        {
+          "badge": "Progression Exercise",
+          "title": "Trot Leg Yield Holding Supple Rhythm",
+          "focusLevel": "intermediate",
+          "summary": "Transition diagonal crossing smoothly into balanced trot along open lines in both directions, maintaining calm steady two-beat tempo and light lateral softness without hollowing.",
+          "whatToNotice": "Check whether crossing steps feel elastic and similar on left and right leads without leaning heavily on one rein."
+        }
+      ],
+      "commonDifficulties": [
+        {
+          "issue": "Speeding up rapidly as soon as leg pressure asks sideways",
+          "guidance": "Running forward escapes unfamiliar lateral coordination. Return to brief relaxed walk yields of just a few steps and release promptly."
+        },
+        {
+          "issue": "Crooked body with hindquarters dragging behind shoulders",
+          "guidance": "Start with shallow diagonal angles so forward freedom stays comfortable before increasing sideways reach."
+        }
+      ],
+      "trainerInsight": "A supple leg yield looks almost effortless—like floating sideways while keeping steady forward flow.",
+      "welfareNote": "Introduce walk crossing before trot, keep bouts brief, and check saddle clearance and stifle/SI comfort if sideways crossing stays stiff.",
+      "relatedDictionaryTerms": [
+        "leg-yield",
+        "lateral-movement",
+        "suppleness",
+        "straightness"
+      ],
+      "relatedSkillIds": [
+        "rider.mounted.leg_yield",
+        "horse.mounted.shoulder_in"
+      ]
+    }
   },
   {
     "id": "horse.mounted.shoulder_in",
