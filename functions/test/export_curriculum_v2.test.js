@@ -10,6 +10,7 @@ const path = require('node:path');
 const {
   DEFAULT_IMPORT_OUT_FILE,
   SKILL_FILE_MAP,
+  cleanSkillForExport,
   buildExportFiles,
   diffExportFiles,
   loadLocalCurriculumV2,
@@ -100,11 +101,20 @@ test('bundleLocalCurriculumForImport builds validated canonical v2 JSON without 
     assert.equal(parsed.schemaVersion, 2);
     assert.equal(parsed.families.length, 33);
     assert.equal(parsed.skills.length, 84);
+    for (const skill of parsed.skills) {
+      assert.ok(skill.learningGuide, `${skill.id} missing learningGuide`);
+      assert.ok(skill.learningGuide.exercises.length >= 1, `${skill.id} missing exercises`);
+    }
     const reinBack = parsed.skills.find((s) => s.id === 'rider.mounted.rein_back');
     assert.ok(reinBack.learningGuide);
-    assert.ok(reinBack.learningGuide.exercises.length >= 1);
-    const unrelated = parsed.skills.find((s) => s.id === 'rider.husbandry.grooming');
-    assert.equal(unrelated.learningGuide, undefined);
+    const grooming = parsed.skills.find((s) => s.id === 'rider.husbandry.grooming');
+    assert.ok(grooming.learningGuide);
+
+    // Optional learningGuide remains backward-compatible when omitted on legacy data.
+    const guideLess = structuredClone(grooming);
+    delete guideLess.learningGuide;
+    const cleaned = cleanSkillForExport(guideLess);
+    assert.equal('learningGuide' in cleaned, false);
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
