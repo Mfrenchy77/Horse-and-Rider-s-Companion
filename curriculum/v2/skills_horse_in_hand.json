@@ -1,5 +1,85 @@
 [
   {
+    "id": "horse.in_hand.catching_turnout",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.leading_manners",
+    "name": "Catching, Haltering & Turnout (Horse)",
+    "aliases": [
+      "Catching and haltering (horse)",
+      "Turnout manners",
+      "Haltering manners",
+      "Gate manners at turnout"
+    ],
+    "summary": "The horse's calm willingness and polite personal-space cooperation during approaching, haltering, gate passage, and turnout release.",
+    "purpose": "Reflects emotional safety around humans, routine predictability, and mutual security at stall doors and turnout gates.",
+    "safety": [
+      "Never mistake tense freeze, shutdown, or learned helplessness (braced muscles, fixed glassy eye, held breath) for genuine relaxed cooperation.",
+      "Notice early signs of worry, discomfort, or avoidance—such as pinned ears, high rigid head, or retreating—and investigate pain, gear pinch, or handling stress rather than cornering or escalating pressure.",
+      "Prioritize calm space and patience near gates and pasture mates so horses neither crowd handlers nor wheel abruptly at release."
+    ],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
+    "levels": {
+      "introductory": {
+        "overview": "Permitting comfortable approach in familiar stalls or paddocks, cooperating calmly with haltering, respecting personal space through gates, and waiting settled facing the handler until unclipped at release.",
+        "components": [
+          {
+            "title": "Genuine comfort vs. shutdown",
+            "description": "Greeting or waiting for approach with soft eye, relaxed breathing, and willing attention rather than braced immobility, defensive ear-pinning, or evading corners."
+          },
+          {
+            "title": "Cooperative haltering and personal space",
+            "description": "Accepting touch on neck and poll, lowering or steadying the head calmly into a properly fitted halter without throwing the head up, nibbling, or barging into the handler."
+          },
+          {
+            "title": "Calm catching and gate-release routine",
+            "description": "Stepping through familiar stall doors or gates without rushing, turning politely toward the handler/gate, and standing calmly until the halter is lowered clear before walking away."
+          }
+        ],
+        "learning": "Accepts familiar catching, haltering, and turnout with mild hesitation, head-raising, crowding through the doorway, or pulling away slightly before the halter is fully released.",
+        "proficient": "Calmly accepts approach and haltering in familiar spaces with genuine relaxed expression, respects personal-space boundaries through doorways and gates, and waits settled until calmly unclipped before turning away.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Maintaining comfortable haltering, polite gate spacing, and emotional steadiness across larger pastures, herd-mate interactions, energetic weather, or unfamiliar venues.",
+        "components": [
+          {
+            "title": "Confidence around herd dynamics and varied routines",
+            "description": "Leaving or rejoining pasture companions safely without pushing into the handler, striking, kicking near gates, or bolting explosively once released."
+          },
+          {
+            "title": "Stress recognition and calm recovery",
+            "description": "Expressing mild curiosity or alertness appropriately while settling calmly back into relaxed attention on light handler cues even when herd members call or run nearby."
+          }
+        ],
+        "learning": "Maintains composure in group pastures or novel settings with occasional restlessness near herd mates, distracted scanning, or hurried steps immediately after gate passage.",
+        "proficient": "Demonstrates consistent confidence and polite personal-space respect during catching, haltering, gate transit, and turnout across larger pastures, herd groups, or energetic days without barging, bolting, or anxious shutdown.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {
+        "skillId": "rider.in_hand.catch_halter_turnout",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "next"
+      }
+    ],
+    "legacyIds": [],
+    "sortOrder": 5
+  },
+  {
     "id": "horse.in_hand.leading",
     "schemaVersion": 2,
     "status": "active",
@@ -70,6 +150,19 @@
       },
       {
         "skillId": "horse.mounted.walk",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.catching_turnout",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.longeing",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.obstacles_outings",
         "relation": "next"
       }
     ],
@@ -400,6 +493,96 @@
     "sortOrder": 30
   },
   {
+    "id": "horse.in_hand.obstacles_outings",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.travel_environments",
+    "name": "In-Hand Obstacles & Outings (Horse)",
+    "aliases": [
+      "In-hand obstacles (horse)",
+      "Hand-walking outings (horse)",
+      "Trail hand-walking (horse)",
+      "Confidence around novel objects"
+    ],
+    "summary": "The horse's calm curiosity, footwork coordination, and emotional recovery when investigating unfamiliar ground features, objects, and outdoor environments in-hand.",
+    "purpose": "Builds resilient confidence and problem-solving trust alongside a handler before encountering new footing, sights, or trails under saddle.",
+    "safety": [
+      "Give the horse clear time to look, sniff, and process unfamiliar surfaces or objects—never flood or drag a worried horse forcefully into panic.",
+      "Check footing traction, sharp hazards, overhead clearance, and surface stability before inviting the horse forward.",
+      "Respect personal space during moments of startle; reward calm curiosity and quiet recovery rather than demanding rushed crossing."
+    ],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
+    "levels": {
+      "introductory": {
+        "overview": "Investigating simple, safe unfamiliar objects or ground features and quiet property paths calmly—stepping through with unhurried footwork and recovering steadily after brief hesitation without needing specific competition props.",
+        "components": [
+          {
+            "title": "Willing investigation without forced exposure",
+            "description": "Lowering the head politely to sniff or inspect harmless unfamiliar objects, ground surface changes, or quiet paths rather than freezing rigidly or spinning away immediately."
+          },
+          {
+            "title": "Thoughtful footwork and coordination",
+            "description": "Stepping over or across simple ground features calmly in balanced walk rhythm without leaping frantically or crowding into the handler's space."
+          },
+          {
+            "title": "Calm recovery from uncertainty",
+            "description": "Accepting reassurance and settling breathing promptly back into relaxed walking after encountering mild surprises."
+          }
+        ],
+        "learning": "Investigates simple objects or quiet property lanes with brief snorting, stopping, hurried exit steps, or mild drifting near the handler.",
+        "proficient": "Investigates simple unfamiliar ground features, everyday novel objects, and quiet paths calmly on a light lead—stepping smoothly in balance without rushing, bolting, or crowding, and settling quickly after minor uncertainty. No specific competition obstacles are required.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Demonstrating adaptable confidence, balanced footing coordination, and reliable composure across varied outdoor trails, uneven ground, unfamiliar venues, or everyday distractions on the ground.",
+        "components": [
+          {
+            "title": "Confidence across unfamiliar environments",
+            "description": "Remaining curious, polite, and attentive to light handler guidance while hand-walking near varied trail surfaces, modest slopes, breezy objects, passing walkers/cyclists, or busy venue outskirts."
+          },
+          {
+            "title": "Balance, coordination, and steady recovery",
+            "description": "Adjusting foot placement deliberately over uneven natural terrain or suitable ground obstacles without panicking, and regaining calm composure rapidly if momentarily startled."
+          }
+        ],
+        "learning": "Handles varied outdoor outings and natural surfaces with occasional watchful tension, surged forward steps past noises, or crowding when passing distractions.",
+        "proficient": "Navigates varied ground environments, natural terrain changes, and unfamiliar outdoor settings calmly in-hand—balancing sure-footedly, honoring personal space, and recovering smoothly from unexpected distractions without forced exposure.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {
+        "skillId": "rider.in_hand.obstacles_outings",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.standing_quietly",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.trailer_loading",
+        "relation": "next"
+      },
+      {
+        "skillId": "horse.mounted.terrain_obstacles",
+        "relation": "next"
+      }
+    ],
+    "legacyIds": [],
+    "sortOrder": 5
+  },
+  {
     "id": "horse.in_hand.trailer_loading",
     "schemaVersion": 2,
     "status": "active",
@@ -460,12 +643,124 @@
         "skillId": "horse.in_hand.standing_quietly",
         "relation": "foundation",
         "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.obstacles_outings",
+        "relation": "foundation",
+        "level": "introductory"
       }
     ],
     "legacyIds": [
       "horse.in_hand.load_trailer"
     ],
     "sortOrder": 10
+  },
+  {
+    "id": "horse.in_hand.longeing",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "horse",
+    "realm": "In_Hand",
+    "familyId": "horse.in_hand.work_on_line",
+    "name": "Longeing (In-Hand)",
+    "aliases": [
+      "Lunging (horse)",
+      "Circle work on a line (horse)",
+      "Longeing manners",
+      "Longing (horse)"
+    ],
+    "summary": "The horse's calm comprehension, balance, responsiveness, and willing participation when guided on a longe line.",
+    "purpose": "Develops attentive voice/body responsiveness, balanced curved movement without a rider's weight, and calm confidence on a light line.",
+    "safety": [
+      "Work on level, non-slip footing with generous joint-protecting circle sizes—especially for young, green, stiff, or large-framed horses.",
+      "Never require faster gaits merely to prove higher proficiency; respect conditioning, soundness, and mental readiness at every level.",
+      "Distinguish relaxed attentiveness from frantic circling, defensive pulling, or anxious shutdown—investigate persistent one-sided reluctance or head tilting for discomfort."
+    ],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
+    "levels": {
+      "introductory": {
+        "overview": "Calmly understanding light ground cues to step out onto a respectful working distance, move settled in both directions at a comfortable pace (such as walk), halt, and step inward politely on invitation—without crowding or fleeing. Faster gaits such as trot or canter are not required.",
+        "components": [
+          {
+            "title": "Understanding light circle and pause cues",
+            "description": "Stepping calmly out onto a line on gentle sending requests, turning cleanly without tangling, and halting settled on the circle or approaching politely when invited in."
+          },
+          {
+            "title": "Maintaining a respectful working distance",
+            "description": "Holding comfortable spacing outward along the arc without drifting onto the handler's toes or lunging tightly outward against the halter/cavesson."
+          },
+          {
+            "title": "Willingness and emotional composure",
+            "description": "Participating with soft jaw, ear awareness, and steady breathing rather than bolting out of worry or shutting down reluctantly."
+          }
+        ],
+        "learning": "Steps onto a circle in familiar enclosed footing while occasionally drifting inward, pulling steadily outward, turning to face abruptly, or hesitating on transitions between left and right directions.",
+        "proficient": "Calmly understands light longeing requests in both directions at a comfortable pace (such as walk), maintains a respectful working distance without leaning or bolting, settles into halt, and yields inward politely on invitation. Faster gaits are not required.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Showing developing coordination, steady rhythm, light non-pulling line communication, and responsive direction or pace transitions suited to horse readiness and footing—without mandating canter.",
+        "components": [
+          {
+            "title": "Transition and direction responsiveness",
+            "description": "Responding smoothly on light posture, line, and voice cues across walk and appropriate pace changes suited to age and fitness (trot where comfortable; canter remaining optional), plus calm reverse transitions without confusion."
+          },
+          {
+            "title": "Developing balance and bilateral symmetry",
+            "description": "Beginning to balance smoothly through the shoulder and ribcage on generous circles in both directions rather than bracing outward or falling heavily inward."
+          },
+          {
+            "title": "Composure and comfort awareness",
+            "description": "Remaining relaxed and attentive around minor ambient distractions while showing honest ease through back and limbs."
+          }
+        ],
+        "learning": "Works smoothly across comfortable circle transitions in one direction while occasionally rushing, losing circle distance around distractions, or leaning slightly inward on the stiffer side.",
+        "proficient": "Responds willingly on a light line in both directions across walk and appropriate pace transitions suited to its fitness (without requiring canter), maintains consistent distance and improving symmetry, and stays relaxed and attentive around routine distractions.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Demonstrating poised balance, subtle cue responsiveness, within-gait adaptability, and willing adjustment across varied circle paths or requests—prioritizing relaxation and sound comfort over speed or specific obstacle props.",
+        "components": [
+          {
+            "title": "Subtle responsiveness and comfortable self-carriage",
+            "description": "Answering quiet voice, breath, and light line cues with relaxed, carrying balance suited to conformation—adjusting stride length, tempo, or posture smoothly without bracing."
+          },
+          {
+            "title": "Adaptability across tracks and requests",
+            "description": "Following varied circle sizes, gentle spirals, or moving ovals/tracks across the arena willingly while staying composed through any optional gymnastic exercises—never requiring faster speed or poles as fixed tests."
+          }
+        ],
+        "learning": "Follows subtle stride or track changes well in familiar spaces while occasionally stiffening briefly during smaller spirals or quicker tempo adjustments.",
+        "proficient": "Responds softly to minimal longeing cues in both directions—adapting stride, balance suited to its build, and varied paths (such as spirals or moving circles) willingly with relaxed composure across diverse requests.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {
+        "skillId": "rider.in_hand.longeing",
+        "relation": "counterpart"
+      },
+      {
+        "skillId": "horse.in_hand.leading",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.yield_hindquarters",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.ground_driving",
+        "relation": "next"
+      }
+    ],
+    "legacyIds": [],
+    "sortOrder": 5
   },
   {
     "id": "horse.in_hand.ground_driving",
@@ -531,6 +826,11 @@
       {
         "skillId": "horse.mounted.steering_navigation",
         "relation": "next"
+      },
+      {
+        "skillId": "horse.in_hand.longeing",
+        "relation": "foundation",
+        "level": "introductory"
       }
     ],
     "legacyIds": [],

@@ -853,11 +853,17 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(
-          find.byKey(Key('skillFamilyHeader_${horseSkill.familyId}')),
+        final horseFamilyHeader = find.byKey(
+          Key('skillFamilyHeader_${horseSkill.familyId}'),
         );
+        await tester.ensureVisible(horseFamilyHeader);
         await tester.pumpAndSettle();
-        await tester.tap(find.byKey(Key('skillCard_${horseSkill.id}')));
+        await tester.tap(horseFamilyHeader);
+        await tester.pumpAndSettle();
+        final horseSkillCard = find.byKey(Key('skillCard_${horseSkill.id}'));
+        await tester.ensureVisible(horseSkillCard);
+        await tester.pumpAndSettle();
+        await tester.tap(horseSkillCard);
         await tester.pumpAndSettle();
         expect(
           find.byKey(Key('skillDetailV2FamilyIcon_${horseSkill.familyId}')),

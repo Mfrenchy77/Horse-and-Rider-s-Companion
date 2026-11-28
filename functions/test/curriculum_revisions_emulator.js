@@ -81,11 +81,11 @@ async function main() {
     chunkByteLimit: 64 * 1024,
   });
 
-  // 1. Save and publish full 33-family / 79-skill baseline as rev_000001.
+  // 1. Save and publish full 33-family / 84-skill baseline as rev_000001.
   await saveDraft({auth: adminAuth, data: {families, skills, note: 'Baseline import'}});
-  const rev1 = await publish({auth: adminAuth, data: {notes: 'Baseline 79-skill publish'}});
+  const rev1 = await publish({auth: adminAuth, data: {notes: 'Baseline 84-skill publish'}});
   assert.equal(rev1.revision.id, 'rev_000001');
-  assert.equal(rev1.revision.skillCount, 79);
+  assert.equal(rev1.revision.skillCount, 84);
   assert.ok(rev1.revision.chunkCount >= 2, 'Expected multi-chunk snapshot');
 
   const chunksSnap = await db
@@ -97,7 +97,7 @@ async function main() {
 
   const activeAfterRev1 = (await db.collection(PUBLIC_COLLECTION).doc(PUBLIC_ACTIVE_DOC_ID).get()).data();
   assert.equal(activeAfterRev1.activeRevisionId, 'rev_000001');
-  assert.equal(activeAfterRev1.skillCount, 79);
+  assert.equal(activeAfterRev1.skillCount, 84);
 
   // 2. Edit a published skill's proficient standard (with standardVersion bump).
   //    First simulate an interruption right before atomic activation and verify

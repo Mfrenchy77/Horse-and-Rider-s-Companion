@@ -56,12 +56,249 @@
       {
         "skillId": "rider.theory.pain_discomfort_fatigue",
         "relation": "theory"
+      },
+      {
+        "skillId": "rider.mounted.seat_balance",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.emergency_control",
+        "relation": "next"
       }
     ],
     "legacyIds": [
       "rider.mounted.mounting"
     ],
     "sortOrder": 10
+  },
+  {
+    "id": "rider.mounted.seat_balance",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.position_balance_safety",
+    "name": "Independent Seat, Position & Balance",
+    "aliases": [
+      "Seat and balance",
+      "Rider position",
+      "Independent seat",
+      "Rider alignment",
+      "Following the horse's motion",
+      "Balanced seat",
+      "Two-point and half-seat"
+    ],
+    "summary": "Maintaining centered rider alignment, shock-absorbing balance, and hand independence while following the horse's motion across disciplines.",
+    "purpose": "Protects the horse's back and mouth while allowing the rider to move harmoniously and adapt safely across varied horses, saddles, and riding contexts.",
+    "safety": [
+      "Keep balance centered over your pelvis, legs, and feet rather than using the reins as a handle or support strap.",
+      "Respect legitimate discipline- and conformation-appropriate postures—adjusting stirrup length, saddle fit, or seat style (full seat, light seat, two-point) for both rider symmetry and equine back comfort.",
+      "Address tension, knee gripping, or persistent rider crookedness early so physical strain does not spill into equine bracing or soreness."
+    ],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
+    "levels": {
+      "introductory": {
+        "overview": "Developing calm baseline alignment, relaxing knee or hip gripping, following quiet walk and early trot/jog motion without relying on the reins for balance, and noticing obvious collapse or tension.",
+        "components": [
+          {
+            "title": "Alignment and relaxed base",
+            "description": "Organizing an upright, stackable posture suited to your tack and discipline (functional ear–shoulder–hip–heel balance without rigid arching or slumped collapse) while allowing ankles, knees, and hips to stay unlocked."
+          },
+          {
+            "title": "Following motion without rein dependence",
+            "description": "Allowing the pelvis to absorb calm walk and introductory trot/jog motion cleanly while resting hands comfortably on light contact, loose rein, or gentle neck/grab-strap support without pulling on the horse's mouth for stability."
+          },
+          {
+            "title": "Common mistakes and horse back comfort",
+            "description": "Common mistakes include tipping ahead on starts, bracing feet forward onto the cantle, locking knees, or holding breath. Notice how heavy bouncing or rigid gripping restricts the horse's back."
+          }
+        ],
+        "learning": "Practices balanced posture at walk and early trot/jog with occasional slumping, knee gripping, tense breathing, or brief reliance on saddle horn, mane, or reins when stride speed changes.",
+        "proficient": "Independently organizes centered, discipline-appropriate alignment at walk and early trot or jog, absorbs movement smoothly without depending on the reins for balance, and notices and corrects obvious posture collapse or tension.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Maintaining independent balance across comfortable gaits, curves, and routine transitions across legitimate riding positions while identifying and self-correcting personal asymmetry.",
+        "components": [
+          {
+            "title": "Independent balance across transitions and positions",
+            "description": "Moving smoothly between relaxed deep seat, working upright posture, and balanced light/two-point positions (as appropriate to saddle and discipline) through walk, trot/jog, canter/lope, turns, and transitions without catching on the reins."
+          },
+          {
+            "title": "Recognizing and addressing personal asymmetry",
+            "description": "Noticing personal habits—such as weighting one seat bone more heavily, collapsing a waist/hip, stiffening one knee, or turning shoulders unequally—and resetting straightness purposefully in both directions."
+          },
+          {
+            "title": "Recovering rhythm without grabbing",
+            "description": "Adjusting calmly if a stirrup slips slightly, footing varies, or a stride lengthens unexpectedly without locking joints or pulling backward."
+          }
+        ],
+        "learning": "Maintains balanced alignment on familiar tracks while occasionally dropping onto one hip in corners, pitching slightly during transitions, or needing reminders to spot side-to-side asymmetry.",
+        "proficient": "Independently sustains non-rein-dependent balance across comfortable gaits, turns, transitions, and legitimate seat positions (such as full or light seat), identifies and self-corrects left/right rider asymmetry, and recovers smoothly from minor balance shifts.",
+        "standardVersion": 1
+      },
+      "advanced": {
+        "overview": "Sustaining an elastic, shock-absorbing, adaptive independent seat across diverse horses, within-gait changes, varied terrain, and demanding movements while keeping hands unaffected and responsive.",
+        "components": [
+          {
+            "title": "Dynamic adaptability across horses and terrain",
+            "description": "Adapting balance, core tone, and shock absorption instantaneously across horses of varied gaits, conformation, ages, or builds—as well as uneven outdoor grades, transitions, and lateral work—across riding disciplines."
+          },
+          {
+            "title": "Quiet hand independence under complex aids",
+            "description": "Applying independent seat, weight, and leg coordination without unintentionally pulling on the reins, leaning out of balance, or stiffening breathing during energetic strides or sudden adjustments."
+          },
+          {
+            "title": "Subtle symmetry and equine welfare awareness",
+            "description": "Detecting minor personal stiffness or saddle imbalance early before it loads one side of the horse's spine unfairly, choosing fair equipment or position adjustments to support relaxed movement."
+          }
+        ],
+        "learning": "Rides diverse tasks with generally sound balance while working to refine subtle asymmetry, elastic timing on large movers, or complete hand quietness during unexpected shifts.",
+        "proficient": "Independently adapts an elastic, well-aligned, shock-absorbing seat across varied horses, gaits, movements, and terrain—maintaining steady hand independence, proactively correcting subtle asymmetry, and supporting equine back comfort across disciplines.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {
+        "skillId": "rider.mounted.mounting",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.mounted.emergency_control",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.walk",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.trot",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.canter",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.balance_weight",
+        "relation": "theory"
+      },
+      {
+        "skillId": "rider.theory.understanding_rider_aids",
+        "relation": "theory"
+      },
+      {
+        "skillId": "rider.theory.pain_discomfort_fatigue",
+        "relation": "theory"
+      }
+    ],
+    "legacyIds": [],
+    "sortOrder": 20
+  },
+  {
+    "id": "rider.mounted.emergency_control",
+    "schemaVersion": 2,
+    "status": "active",
+    "subject": "rider",
+    "realm": "Mounted",
+    "familyId": "rider.mounted.position_balance_safety",
+    "name": "Emergency Situations & Recovery",
+    "aliases": [
+      "Emergency control",
+      "Balance recovery",
+      "Handling spooks",
+      "Situational awareness mounted",
+      "Safety recovery",
+      "De-escalating emergencies"
+    ],
+    "summary": "Using situational awareness, balance recovery, early de-escalation, and sound risk judgment to manage unexpected mounted situations safely.",
+    "purpose": "Helps riders prevent avoidable accidents early and choose calm, context-appropriate safety responses rather than reacting in panic or relying blindly on one risky habit.",
+    "safety": [
+      "Prioritize prevention first through arena/trail awareness, tack checks, sensible footing/spacing choices, and ending or simplifying a task before stress escalates.",
+      "No single emergency technique—including an emergency dismount or a one-rein stop—is appropriate or safe in every situation; consider speed, balance, terrain, obstacles, footing traction, and horse sensitivity before acting.",
+      "Never hesitate to pause, step off safely when halted or safe to do so, or call on an instructor, ground person, or equine professional whenever risk exceeds skill or control."
+    ],
+    "availableLevels": [
+      "introductory",
+      "intermediate"
+    ],
+    "levels": {
+      "introductory": {
+        "overview": "Practicing situational awareness before problems escalate, staying centered during mild unexpected movement, recovering lost reins or stirrups calmly, and knowing when and how to seek assistance.",
+        "components": [
+          {
+            "title": "Situational awareness and early prevention",
+            "description": "Scanning surroundings for footing hazards, close herd/arena traffic, shifting saddles, or early equine tension (braced neck, startled eyes, distracted tail) so you can slow down, widen space, or pause early."
+          },
+          {
+            "title": "Maintaining balance during mild surprises",
+            "description": "Exhaling, softening down into your base without pulling back on the mouth, steadying calmly on mane/saddle/neck if needed during a small spook, trip, or sudden step, and quietly gathering dropped reins or lost stirrups without panicking."
+          },
+          {
+            "title": "Safe pauses, controlled dismounts, and seeking help",
+            "description": "Recognizing when a situation warrants stopping calmly in clear space, waiting for assistance, or completing a controlled, stationary dismount clear of obstacles rather than forcing through rising anxiety."
+          }
+        ],
+        "learning": "Practices noticing triggers and recovering reins or stirrups calmly on quiet horses while occasionally freezing, holding breath, or needing coaching to spot tension early or decide when to ask for help.",
+        "proficient": "Independently maintains practical situational awareness in familiar settings, takes calm preventive steps when tension or hazards appear, keeps centered balance during mild unexpected steps or lost stirrups/reins, and recognizes promptly when to stop, dismount safely, or request assistance.",
+        "standardVersion": 1
+      },
+      "intermediate": {
+        "overview": "Judging dynamic hazards early in varied settings, staying balanced through sudden shies, stumbles, or surges, and selecting safe, circumstance-appropriate responses rather than applying a fixed rule blindly.",
+        "components": [
+          {
+            "title": "Early de-escalation and environmental risk assessment",
+            "description": "Reading rising equine arousal, herd contagion, loose hardware, or slick/steep terrain well ahead of escalation—proactively downgrading pace, turning onto open footing, or stopping a ride safely before control breaks down."
+          },
+          {
+            "title": "Composed balance during unexpected motion",
+            "description": "Following sudden shies, stumbles, buck/hop shifts, or hurried departures with elastic hips and breath rather than curling forward, snatching both reins tight, or losing emotional composure."
+          },
+          {
+            "title": "Selecting context-appropriate safety responses",
+            "description": "Choosing responses matched cleanly to space, footing, horse training, and speed—for instance softening breath and redirecting forward attention on a calm curving path where clear ground allows, using smooth progressive down-transitions, or waiting to dismount only where ground and speed permit (knowing why emergency dismounts or sharp one-rein stops can injure horse or rider on slick turf, narrow trails, or high speed) and calling qualified help when warranted."
+          }
+        ],
+        "learning": "Handles mild unexpected motion in busier or open settings while occasionally pulling reflexively when startled or hesitating over which preventive or recovery choice best fits the terrain and space.",
+        "proficient": "Independently anticipates developing risks early across varied environments, stays centered and calm through unexpected horse movements or minor tack disruptions, chooses safe context-appropriate de-escalation or recovery actions without forcing one universal maneuver, and seeks support wisely whenever conditions demand it.",
+        "standardVersion": 1
+      }
+    },
+    "relatedSkills": [
+      {
+        "skillId": "rider.mounted.seat_balance",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.mounted.mounting",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.mounted.terrain_obstacles",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.equine_body_language",
+        "relation": "theory"
+      },
+      {
+        "skillId": "rider.theory.stress_fear_confidence",
+        "relation": "theory"
+      },
+      {
+        "skillId": "rider.theory.pain_discomfort_fatigue",
+        "relation": "theory"
+      }
+    ],
+    "legacyIds": [],
+    "sortOrder": 30
   },
   {
     "id": "rider.mounted.walk",
@@ -137,6 +374,11 @@
       {
         "skillId": "rider.mounted.trot",
         "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.seat_balance",
+        "relation": "foundation",
+        "level": "introductory"
       }
     ],
     "legacyIds": [
@@ -902,12 +1144,15 @@
     "name": "Turn on the Haunches",
     "aliases": [
       "Turn on the hindquarters",
+      "Turn around the hindquarters",
+      "Shoulder yield around hindquarters",
       "Walk pirouette (early)"
     ],
-    "summary": "Guiding a reasonably prepared horse from walk to step its forehand around an arc while the hindquarters remain relatively anchored.",
-    "purpose": "Develops shoulder control, preparation, and balanced turning around the hindquarters.",
+    "summary": "Guiding a reasonably prepared horse from walk to step its forehand smoothly around steadier hindquarters with clarity, balance, and discipline-neutral coordination.",
+    "purpose": "Builds independent shoulder responsiveness, forward turning balance, and practical precision for gates, trail turns, working horsemanship, and coordinated lateral development.",
     "safety": [
-      "Keep forward walk rhythm into the turn on safe, even footing—never wrench the horse around onto a twisted hock or pull continuously on the inside rein."
+      "Maintain calm forward walk rhythm into every turn on safe, non-slippery footing—never wrench the forehand sideways with the inside rein or twist the horse abruptly onto a stuck hind leg.",
+      "Adjust turning radius to the horse's conditioning, conformation, and ground conditions rather than chasing tight pivots prematurely."
     ],
     "availableLevels": [
       "introductory",
@@ -915,27 +1160,43 @@
     ],
     "levels": {
       "introductory": {
-        "overview": "Guiding a calm, generous walk arc of the shoulders around relatively steady hindquarters in both directions without stalling or backing.",
+        "overview": "Building foundational understanding and calm coordination: inviting the forehand smoothly around steadier hindquarters on a generous walk arc in both directions without hauling the inside rein or pushing backward.",
         "components": [
           {
-            "title": "Outside shoulder guidance and forward intent",
-            "description": "Following the turn gently with your eyes and upper body while using indirect/outside shoulder aids to move the front feet around rather than hauling the nose back toward your knee."
+            "title": "Understanding forward walk flow around the hindquarters",
+            "description": "Looking softly through the intended arc and supporting forward walk rhythm rather than halting dead first or letting steps collapse into backward evasion."
+          },
+          {
+            "title": "Clear shoulder guidance vs. inside-rein pulling",
+            "description": "Using balanced upper-body direction, clear outside-shoulder/neck guidance suited to your bridle/discipline, and calm seat clarity rather than hauling the horse's nose inward toward your knee."
+          },
+          {
+            "title": "Common mistakes and footing awareness",
+            "description": "Notice if the hindquarters swing outward instead of staying relatively centered, or if the horse stalls into backing; reset politely onto a straight walk rather than forcing tighter turns on uneven ground."
           }
         ],
-        "learning": "Guides wide turns around the haunches with occasional pauses, backward creep, or heavy inside rein pulling.",
-        "proficient": "Independently guides calm, rhythmic wide-to-small walk arcs around the hindquarters in both directions without backward pull, spinning, or rushing.",
+        "learning": "Guides generous walk turns around the hindquarters with occasional uneven rhythm, wide drifting, backward steps, or heavy reliance on inside rein pressure.",
+        "proficient": "Independently prepares from calm walk and guides smooth, rhythmic, generous turns of the forehand around steadier hindquarters in both directions using clear, non-pulling shoulder aids without spinning or backing.",
         "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Riding compact, balanced turns around the haunches (e.g., ~1 m pivot zone) with subtle half-halt preparation, clear bend, and straight walk exits.",
+        "overview": "Developing higher precision, balanced preparation, active four-beat rhythm, and adaptability across practical contexts and disciplines (gates, trails, open work, or arena turns).",
         "components": [
           {
-            "title": "Compact rhythm and common mistakes",
-            "description": "Using brief rebalancing prep before asking the shoulders cleanly around, keeping both seat bones grounded and forward walk intention alive—avoiding forcing tighter pivots on sticky ground or stiff horses."
+            "title": "Preparation and coordinated precision",
+            "description": "Using subtle rebalancing (half-halt) and balanced weight over both seat bones before initiating the turn so the horse steps lightly around steadier hindquarters in steady rhythm and exits cleanly onto the chosen line."
+          },
+          {
+            "title": "Discipline-neutral adaptability and footing judgment",
+            "description": "Adapting turning radius, rein feel (elastic two-hand contact or light draped/neck rein), and alignment to suit the horse's conformation, ground traction, and riding context—without mandating fixed degree counts or competition-style collection."
+          },
+          {
+            "title": "Welfare awareness and common errors",
+            "description": "Respecting subtle left/right stiffness and hock comfort; stopping short or widening the arc if stepping loses pure walk rhythm or causes neck brace."
           }
         ],
-        "learning": "Guides compact turns around the haunches with intermittent loss of walk rhythm, over-bent neck, or crooked exits.",
-        "proficient": "Independently prepares and rides smooth, compact turns on the haunches in both directions while keeping rhythmic walk steps, clean non-forced bend, and straight exits.",
+        "learning": "Guides coordinated, smaller-radius turns around the hindquarters with intermittent loss of walk beat, stiff neck alignment, slightly rushed exits, or uneven directional control.",
+        "proficient": "Independently prepares, coordinates, and adapts smooth, accurate turns around steadier hindquarters in both directions across suitable contexts and riding styles—maintaining clear walk rhythm, comfortable alignment, sound footing judgment, and clean straight exits.",
         "standardVersion": 2
       }
     },
@@ -960,6 +1221,11 @@
       {
         "skillId": "rider.theory.bend_flexion_straightness",
         "relation": "theory"
+      },
+      {
+        "skillId": "rider.mounted.seat_balance",
+        "relation": "foundation",
+        "level": "introductory"
       }
     ],
     "legacyIds": [

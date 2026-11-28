@@ -916,6 +916,100 @@ void main() {
       },
     );
 
+    testWidgets(
+      'displays Wave 3 foundational skills cleanly inside target Rider & '
+      'Horse families',
+      (tester) async {
+        final repo = SkillTreeV2Repository(
+          store: InMemorySkillTreeV2Store(
+            families: allFamilies,
+            skills: allSkills,
+          ),
+        );
+        final mockAppCubit = _MockAppCubit();
+        final stateController = StreamController<AppState>.broadcast();
+        addTearDown(stateController.close);
+
+        final riderState = _buildTestAppState();
+        final horseState = _buildTestAppState(
+          isForRider: false,
+          horseProfile: HorseProfile(id: 'horse-comet', name: 'Comet'),
+        );
+        when(() => mockAppCubit.state).thenReturn(riderState);
+        whenListen(
+          mockAppCubit,
+          stateController.stream,
+          initialState: riderState,
+        );
+
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(1200, 900);
+
+        await tester.pumpWidget(
+          _wrapTree(
+            appCubit: mockAppCubit,
+            repo: repo,
+            settings: settings,
+            disableAnimations: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Rider Mounted Position, Balance & Safety shows Seat & Balance
+        //    and Emergency Situations & Recovery.
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_Mounted')));
+        await tester.pumpAndSettle();
+        final posHeader = find.byKey(
+          const Key(
+            'skillFamilyHeader_rider.mounted.position_balance_safety',
+          ),
+        );
+        await tester.ensureVisible(posHeader);
+        await tester.tap(posHeader);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('skillCard_rider.mounted.seat_balance')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('skillCard_rider.mounted.emergency_control')),
+          findsOneWidget,
+        );
+
+        // 2. Horse -> In-Hand displays Catching/Turnout, Obstacles/Outings,
+        //    and Longeing inside their respective target families.
+        when(() => mockAppCubit.state).thenReturn(horseState);
+        stateController.add(horseState);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('skillTreeV2Realm_In_Hand')));
+        await tester.pumpAndSettle();
+
+        for (final entry in const [
+          (
+            'horse.in_hand.leading_manners',
+            'horse.in_hand.catching_turnout',
+          ),
+          (
+            'horse.in_hand.travel_environments',
+            'horse.in_hand.obstacles_outings',
+          ),
+          (
+            'horse.in_hand.work_on_line',
+            'horse.in_hand.longeing',
+          ),
+        ]) {
+          final famHeader = find.byKey(Key('skillFamilyHeader_${entry.$1}'));
+          await tester.ensureVisible(famHeader);
+          await tester.tap(famHeader);
+          await tester.pumpAndSettle();
+          expect(find.byKey(Key('skillCard_${entry.$2}')), findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('captures Skill Tree category screenshots when '
         'CAPTURE_CATEGORY_SCREENSHOTS=1', (tester) async {
       if (Platform.environment['CAPTURE_CATEGORY_SCREENSHOTS'] != '1') return;

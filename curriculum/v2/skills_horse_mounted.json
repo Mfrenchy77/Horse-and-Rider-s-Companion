@@ -726,12 +726,15 @@
     "familyId": "horse.mounted.pivots_body_control",
     "name": "Turn on the Haunches (Under Saddle)",
     "aliases": [
-      "Turn on the hindquarters (under saddle)"
+      "Turn on the hindquarters (under saddle)",
+      "Turn around the hindquarters (under saddle)",
+      "Walk pirouette (early, horse)"
     ],
-    "summary": "The horse's ability to step its forehand smoothly around an arc while the hindquarters remain relatively anchored.",
+    "summary": "The horse's calm comprehension and balanced coordination when stepping its forehand around steadier hindquarters from walk on light requests.",
     "purpose": "Develops shoulder responsiveness, balance, and early collection.",
     "safety": [
-      "Always work on non-slippery footing and keep the horse stepping forward in walk rather than twisting abruptly on anchored hind legs."
+      "Work on safe, non-slip footing and preserve relaxed forward walk stepping rather than twisting abruptly on an anchored hind leg.",
+      "Respect individual conformation and conditioning limits—persistent stiffness may indicate hock, stifle, back, or tack discomfort rather than refusal."
     ],
     "availableLevels": [
       "introductory",
@@ -739,11 +742,15 @@
     ],
     "levels": {
       "introductory": {
-        "overview": "Stepping the shoulders cleanly around a calm, generous arc from walk in both directions while keeping hindquarters softly engaged.",
+        "overview": "Stepping the shoulders cleanly around a calm, generous walk arc in both directions while keeping hindquarters softly engaged without backing or spinning.",
         "components": [
           {
-            "title": "Forward walk arc around haunches",
-            "description": "Keeping regular four-beat walk flow while carrying the forehand sideways around the turn without backing or hollowing."
+            "title": "Calm walk arc around steadier hindquarters",
+            "description": "Keeping regular four-beat walk rhythm while carrying the shoulders smoothly around without bracing the neck, running backward, or rushing."
+          },
+          {
+            "title": "Soft response to light directional cues",
+            "description": "Accepting light shoulder-guiding cues cleanly in both directions without crowding against the rein."
           }
         ],
         "learning": "Brings shoulders around on wider arcs with occasional stalling, backward steps, or rushing.",
@@ -751,11 +758,15 @@
         "standardVersion": 2
       },
       "intermediate": {
-        "overview": "Executing compact, rhythmic turns on the haunches (e.g., ~1 m pivot zone) with soft bend, active inside hind footfalls, and calm exits.",
+        "overview": "Executing accurate, rhythmic turns around steadier hindquarters on light cues across varied contexts with soft alignment suited to build, active inside hind footfalls, and calm straight exits.",
         "components": [
           {
-            "title": "Compact four-beat stepping and straight exit",
-            "description": "Stepping up and down rhythmically with the inside hind leg while front legs cross smoothly, staying relaxed through the topline into straight walk."
+            "title": "Coordinated rhythm and balanced posture",
+            "description": "Stepping cleanly with the inside hind leg near the turn center while front legs cross smoothly, keeping relaxed jaw and back alignment appropriate to discipline and conformation."
+          },
+          {
+            "title": "Adaptability and straight exits",
+            "description": "Adjusting turning radius smoothly to match varied terrain, gates, or riding contexts and stepping calmly straight ahead on light release."
           }
         ],
         "learning": "Performs compact turns with occasional stuck hind pivot, twisted neck, or hurried exit.",
@@ -1212,6 +1223,11 @@
       },
       {
         "skillId": "horse.mounted.transitions",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "horse.in_hand.obstacles_outings",
         "relation": "foundation",
         "level": "introductory"
       }

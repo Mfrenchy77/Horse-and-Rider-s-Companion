@@ -77,6 +77,10 @@
       {
         "skillId": "rider.theory.timing_reinforcement",
         "relation": "theory"
+      },
+      {
+        "skillId": "horse.in_hand.catching_turnout",
+        "relation": "counterpart"
       }
     ],
     "legacyIds": [
@@ -554,6 +558,10 @@
       {
         "skillId": "rider.theory.timing_reinforcement",
         "relation": "theory"
+      },
+      {
+        "skillId": "horse.in_hand.longeing",
+        "relation": "counterpart"
       }
     ],
     "legacyIds": [
@@ -712,6 +720,10 @@
       {
         "skillId": "rider.theory.equine_body_language",
         "relation": "theory"
+      },
+      {
+        "skillId": "horse.in_hand.obstacles_outings",
+        "relation": "counterpart"
       }
     ],
     "legacyIds": [

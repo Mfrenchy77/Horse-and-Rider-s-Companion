@@ -22,14 +22,27 @@
       "Do not mistake stiffly tucked heads, hurried tempo, or learned helplessness/shutdown for true relaxation, energy, or collection.",
       "Reassess comfort, hooves, dental health, tack fit, and emotional load whenever recurring tension disrupts rhythm or willingness."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Understanding how core principles—calm mental state, steady rhythm, relaxation, soft non-restrictive connection, and patient progression—apply practically across any horsemanship tradition (using the Training Pyramid as one accessible guide, never a rigid checklist).",
         "components": [
-          {"title": "One useful map, not the only path", "description": "Explaining the six Training Pyramid concepts (rhythm, suppleness/relaxation, contact/connection, impulsion, straightness, collection) in everyday terms alongside core horse-first priorities—recognizing how they translate equally to loose-rein trail riding, ranch work, driving, gaited horses, positive reinforcement, or arena riding."},
-          {"title": "Relaxation before precision", "description": "Understanding why mental and physical tension block learning and why true connection does not require heavy rein pressure."},
-          {"title": "Common mistakes", "description": "Treating training principles as a rigid one-way ladder, pulling a horse's head into shape without back engagement, or pushing through confusion instead of clarifying."}
+          {
+            "title": "One useful map, not the only path",
+            "description": "Explaining the six Training Pyramid concepts (rhythm, suppleness/relaxation, contact/connection, impulsion, straightness, collection) in everyday terms alongside core horse-first priorities—recognizing how they translate equally to loose-rein trail riding, ranch work, driving, gaited horses, positive reinforcement, or arena riding."
+          },
+          {
+            "title": "Relaxation before precision",
+            "description": "Understanding why mental and physical tension block learning and why true connection does not require heavy rein pressure."
+          },
+          {
+            "title": "Common mistakes",
+            "description": "Treating training principles as a rigid one-way ladder, pulling a horse's head into shape without back engagement, or pushing through confusion instead of clarifying."
+          }
         ],
         "learning": "Recognizes terms like rhythm and relaxation, while sometimes treating training steps as a rigid ladder or associating head carriage with balance.",
         "proficient": "Plainly explains core training priorities and the six Training Pyramid elements as one helpful, non-exclusive framework, describes how mental relaxation and rhythm support any riding or handling tradition, and avoids equating tight headset or speed with healthy training.",
@@ -38,9 +51,18 @@
       "intermediate": {
         "overview": "Observing horses in real situations to recognize which foundational principle needs attention (comfort, emotional composure, rhythm, relaxation, connection, or straightness) and choosing humane, practical next priorities instead of forcing symptoms.",
         "components": [
-          {"title": "Reading movement and tension clusters", "description": "Spotting false framing, rushing passing as impulsion, braced backs or jaws, and crooked drifting on the ground or under saddle."},
-          {"title": "Cycling back and ethical adjustment", "description": "Explaining when to lower intensity, widen curves, clarify cue timing, or investigate physical comfort when higher qualities break down."},
-          {"title": "Method-neutral comparison", "description": "Recognizing how different legitimate horsemanship traditions build rhythm, relaxation, and clear communication without mandating identical tack or posture."}
+          {
+            "title": "Reading movement and tension clusters",
+            "description": "Spotting false framing, rushing passing as impulsion, braced backs or jaws, and crooked drifting on the ground or under saddle."
+          },
+          {
+            "title": "Cycling back and ethical adjustment",
+            "description": "Explaining when to lower intensity, widen curves, clarify cue timing, or investigate physical comfort when higher qualities break down."
+          },
+          {
+            "title": "Method-neutral comparison",
+            "description": "Recognizing how different legitimate horsemanship traditions build rhythm, relaxation, and clear communication without mandating identical tack or posture."
+          }
         ],
         "learning": "Spots imbalances in theory or clear video, while still practicing real-time troubleshooting to trace tension back to timing, comfort, or foundational rhythm.",
         "proficient": "Independently observes horses on the ground or under saddle across contexts, distinguishes calm relaxation and balanced engagement from brace or rushing, and selects sensible, humane next adjustments or comfort checks without escalating force.",
@@ -49,9 +71,18 @@
       "advanced": {
         "overview": "Independently synthesizing movement principles, learning theory, conditioning limits, and equine welfare to guide complex, ambiguous, or varied horses across disciplines without dogma or coaching prerequisites.",
         "components": [
-          {"title": "Adapting to individual horses and traditions", "description": "Prioritizing thoughtfully for young, senior, gaited/ambling, heavy/draft, ranch, positive-reinforcement, driving, or rehabilitating horses without rigid dogma."},
-          {"title": "Root-cause synthesis and welfare judgment", "description": "Weighing subtle interactions among physical discomfort, hoof/tack mechanics, learning history, emotional thresholds, and conditioning timelines."},
-          {"title": "Ethical stewardship", "description": "Choosing long-term soundness and trust over rushed external timelines or mechanical shortcuts—evaluated strictly on personal horsemanship judgment and practical stewardship choices."}
+          {
+            "title": "Adapting to individual horses and traditions",
+            "description": "Prioritizing thoughtfully for young, senior, gaited/ambling, heavy/draft, ranch, positive-reinforcement, driving, or rehabilitating horses without rigid dogma."
+          },
+          {
+            "title": "Root-cause synthesis and welfare judgment",
+            "description": "Weighing subtle interactions among physical discomfort, hoof/tack mechanics, learning history, emotional thresholds, and conditioning timelines."
+          },
+          {
+            "title": "Ethical stewardship",
+            "description": "Choosing long-term soundness and trust over rushed external timelines or mechanical shortcuts—evaluated strictly on personal horsemanship judgment and practical stewardship choices."
+          }
         ],
         "learning": "Applies adaptable, method-neutral principles comfortably to familiar horse types while refining balanced judgment across unfamiliar conformations, disciplines, or subtle multi-factor cases.",
         "proficient": "Independently synthesizes movement frameworks, learning theory, conditioning, and welfare ethics to evaluate complex horsemanship situations and adapt long-term training methods thoughtfully across diverse horses and traditions.",
@@ -59,12 +90,31 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.how_horses_learn", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.balance_weight", "relation": "next"},
-      {"skillId": "rider.theory.progressive_conditioning", "relation": "next"},
-      {"skillId": "rider.theory.session_planning", "relation": "next"},
-      {"skillId": "rider.mounted.half_halt", "relation": "next"},
-      {"skillId": "rider.mounted.transitions", "relation": "next"}
+      {
+        "skillId": "rider.theory.how_horses_learn",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.balance_weight",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.progressive_conditioning",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.session_planning",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.half_halt",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.transitions",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -89,13 +139,23 @@
       "Cardiovascular fitness improves faster than tendon, ligament, and bone strength; never escalate intensity solely because a horse is no longer breathing hard.",
       "Always include adequate warm-up and cool-down, and adjust workloads for heat, humidity, footing, and age."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Understanding warm-up, cool-down, gradual workload increases, and the need for rest days.",
         "components": [
-          {"title": "Warm-up and cool-down", "description": "Explaining why gradual starting and finishing work prepares muscles, joints, and mind."},
-          {"title": "Gradual progression", "description": "Increasing duration, terrain difficulty, or skill complexity in small, sustainable increments."}
+          {
+            "title": "Warm-up and cool-down",
+            "description": "Explaining why gradual starting and finishing work prepares muscles, joints, and mind."
+          },
+          {
+            "title": "Gradual progression",
+            "description": "Increasing duration, terrain difficulty, or skill complexity in small, sustainable increments."
+          }
         ],
         "learning": "Recognizes that horses need warm-up and rest but underestimates how slowly tendons and ligaments adapt.",
         "proficient": "Explains basic warm-up/cool-down routines, why rest days matter, and how to scale workload gradually for a healthy horse.",
@@ -104,8 +164,14 @@
       "intermediate": {
         "overview": "Structuring balanced weekly conditioning using varied terrain, footing, and cross-training.",
         "components": [
-          {"title": "Tissue adaptation rates", "description": "Differentiating cardiovascular, muscular, and tendon/ligament/bone adaptation timelines."},
-          {"title": "Cross-training and variety", "description": "Combining groundwork, arena work, hills, trails, and turnout to build balanced strength and mental freshness."}
+          {
+            "title": "Tissue adaptation rates",
+            "description": "Differentiating cardiovascular, muscular, and tendon/ligament/bone adaptation timelines."
+          },
+          {
+            "title": "Cross-training and variety",
+            "description": "Combining groundwork, arena work, hills, trails, and turnout to build balanced strength and mental freshness."
+          }
         ],
         "learning": "Plans varied weeks but occasionally stacks high-impact sessions too closely or overlooks footing changes.",
         "proficient": "Designs practical multi-week conditioning progressions tailored to a horse's baseline fitness, footing, and goals while monitoring recovery signs.",
@@ -114,8 +180,14 @@
       "advanced": {
         "overview": "Managing long-term conditioning cycles, return-to-work plans, and individualized workload periodization.",
         "components": [
-          {"title": "Return-to-work and senior care", "description": "Collaborating with veterinarians and farriers on post-layup, young-horse, or senior conditioning plans."},
-          {"title": "Early overload detection", "description": "Recognizing subtle heat, filling, stiffness, or behavioral reluctance before injury occurs."}
+          {
+            "title": "Return-to-work and senior care",
+            "description": "Collaborating with veterinarians and farriers on post-layup, young-horse, or senior conditioning plans."
+          },
+          {
+            "title": "Early overload detection",
+            "description": "Recognizing subtle heat, filling, stiffness, or behavioral reluctance before injury occurs."
+          }
         ],
         "learning": "Adjusts plans reactively after soreness appears rather than proactively tapering and monitoring.",
         "proficient": "Constructs and adapts long-term conditioning plans using objective recovery metrics, biomechanics, and veterinary guidance.",
@@ -123,9 +195,19 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.training_pyramid", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.pain_discomfort_fatigue", "relation": "next"},
-      {"skillId": "rider.husbandry.health_monitoring", "relation": "next"}
+      {
+        "skillId": "rider.theory.training_pyramid",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.pain_discomfort_fatigue",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.husbandry.health_monitoring",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 20
@@ -150,13 +232,23 @@
       "Be ready to downgrade or pause a planned exercise if the horse shows fear, pain, fatigue, or unsafe footing.",
       "End demanding work before fatigue degrades coordination or confidence."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Choosing one clear focus per session and knowing when to end on a positive effort.",
         "components": [
-          {"title": "Simple session structure", "description": "Checking in on the horse, warming up, practicing one main focus, and cooling down."},
-          {"title": "Ending on a good try", "description": "Rewarding small improvements instead of repeating an exercise until frustration."}
+          {
+            "title": "Simple session structure",
+            "description": "Checking in on the horse, warming up, practicing one main focus, and cooling down."
+          },
+          {
+            "title": "Ending on a good try",
+            "description": "Rewarding small improvements instead of repeating an exercise until frustration."
+          }
         ],
         "learning": "Starts sessions with vague goals or continues drilling after the horse has already offered a good response.",
         "proficient": "Articulates a clear, realistic goal before a session, keeps repetitions brief, and identifies a sensible stopping point.",
@@ -165,8 +257,14 @@
       "intermediate": {
         "overview": "Splitting complex skills into smaller criteria and adjusting the plan in real time.",
         "components": [
-          {"title": "Task slicing", "description": "Breaking a multi-step maneuver or trail challenge into manageable pieces."},
-          {"title": "Objective review", "description": "Evaluating rider clarity, timing, environment, and horse comfort rather than blaming the horse."}
+          {
+            "title": "Task slicing",
+            "description": "Breaking a multi-step maneuver or trail challenge into manageable pieces."
+          },
+          {
+            "title": "Objective review",
+            "description": "Evaluating rider clarity, timing, environment, and horse comfort rather than blaming the horse."
+          }
         ],
         "learning": "Plans good sessions on paper but struggles to pivot when the horse is distracted, stiff, or confused.",
         "proficient": "Demonstrates flexible session planning, adjusts criteria smoothly when needed, and logs useful observations to guide the next session.",
@@ -175,8 +273,14 @@
       "advanced": {
         "overview": "Designing cohesive multi-week training progressions and conducting structured, reflective session evaluations independently.",
         "components": [
-          {"title": "Hypothesis-driven troubleshooting", "description": "Testing whether a difficulty stems from physical discomfort, environment, unclear cues, or missing prerequisites."},
-          {"title": "Longitudinal tracking", "description": "Using session notes or video review to track subtle changes in symmetry, confidence, and responsiveness."}
+          {
+            "title": "Hypothesis-driven troubleshooting",
+            "description": "Testing whether a difficulty stems from physical discomfort, environment, unclear cues, or missing prerequisites."
+          },
+          {
+            "title": "Longitudinal tracking",
+            "description": "Using session notes or video review to track subtle changes in symmetry, confidence, and responsiveness."
+          }
         ],
         "learning": "Tracks individual workouts steadily while still refining systematic multi-factor troubleshooting across varied horses or unfamiliar plateaus.",
         "proficient": "Creates structured, adaptable training plans over weeks and evaluates sessions systematically across physical, emotional, and communication factors.",
@@ -184,8 +288,15 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.timing_reinforcement", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.progressive_conditioning", "relation": "next"}
+      {
+        "skillId": "rider.theory.timing_reinforcement",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.progressive_conditioning",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 30
@@ -211,14 +322,27 @@
       "Flooding (trapping an overwhelmed horse with a frightening stimulus) risks panic, injury, and learned helplessness; use gradual sub-threshold habituation instead.",
       "High arousal blocks learning; lower stress before asking for new responses."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Recognizing core learning processes: habituation, classical conditioning, operant conditioning, and context generalization.",
         "components": [
-          {"title": "Habituation vs sensitization", "description": "Understanding how horses learn to ignore harmless stimuli (habituation) or react more strongly to repeated overwhelming stimuli (sensitization)."},
-          {"title": "Classical and operant conditioning", "description": "Distinguishing involuntary emotional/cue associations (classical) from behavior shaped by consequences (operant)."},
-          {"title": "Generalization", "description": "Recognizing that a skill learned in one arena or barn often needs patient re-teaching in new locations."}
+          {
+            "title": "Habituation vs sensitization",
+            "description": "Understanding how horses learn to ignore harmless stimuli (habituation) or react more strongly to repeated overwhelming stimuli (sensitization)."
+          },
+          {
+            "title": "Classical and operant conditioning",
+            "description": "Distinguishing involuntary emotional/cue associations (classical) from behavior shaped by consequences (operant)."
+          },
+          {
+            "title": "Generalization",
+            "description": "Recognizing that a skill learned in one arena or barn often needs patient re-teaching in new locations."
+          }
         ],
         "learning": "Uses terms like 'stubborn' or 'testing me' or expects a horse to know a cue everywhere after learning it in one place.",
         "proficient": "Accurately explains habituation, classical conditioning, operant conditioning, and generalization with everyday equine examples, without attributing human spite.",
@@ -227,8 +351,14 @@
       "intermediate": {
         "overview": "Applying learning principles to design calm desensitization and clear cue-transfer plans.",
         "components": [
-          {"title": "Systematic desensitization", "description": "Introducing novel objects, clippers, trailers, or trail obstacles below the horse's fear threshold."},
-          {"title": "Cue transfer (classical to light aid)", "description": "Pairing a light seat, voice, or visual cue just before pressure so the horse responds to the lightest signal."}
+          {
+            "title": "Systematic desensitization",
+            "description": "Introducing novel objects, clippers, trailers, or trail obstacles below the horse's fear threshold."
+          },
+          {
+            "title": "Cue transfer (classical to light aid)",
+            "description": "Pairing a light seat, voice, or visual cue just before pressure so the horse responds to the lightest signal."
+          }
         ],
         "learning": "Understands the concepts but occasionally raises intensity too quickly or forgets to pair light cues before stronger pressure.",
         "proficient": "Demonstrates or explains step-by-step plans for sub-threshold habituation, cue pairing, and generalizing known skills to new environments.",
@@ -237,8 +367,14 @@
       "advanced": {
         "overview": "Troubleshooting complex learning blocks, unwanted conditioned responses, and emotional associations.",
         "components": [
-          {"title": "Counter-conditioning", "description": "Changing a horse's negative emotional expectation around triggers such as needles, mounting blocks, or trailers."},
-          {"title": "Diagnosing conflicting cues", "description": "Identifying accidental overshadowing, poisoned cues, or unintentional reinforcement in everyday handling."}
+          {
+            "title": "Counter-conditioning",
+            "description": "Changing a horse's negative emotional expectation around triggers such as needles, mounting blocks, or trailers."
+          },
+          {
+            "title": "Diagnosing conflicting cues",
+            "description": "Identifying accidental overshadowing, poisoned cues, or unintentional reinforcement in everyday handling."
+          }
         ],
         "learning": "Recognizes conditioned fear or confusion but struggles to design a structured counter-conditioning protocol.",
         "proficient": "Analyzes complex behavioral histories through learning theory, designs ethical counter-conditioning and generalization plans, and explains the science accurately.",
@@ -246,9 +382,18 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.timing_reinforcement", "relation": "next"},
-      {"skillId": "rider.theory.stress_fear_confidence", "relation": "next"},
-      {"skillId": "rider.in_hand.obstacles_outings", "relation": "next"}
+      {
+        "skillId": "rider.theory.timing_reinforcement",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.stress_fear_confidence",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.in_hand.obstacles_outings",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -274,15 +419,31 @@
       "Never confuse negative reinforcement with punishment: negative reinforcement removes pressure to strengthen a desired behavior, whereas punishment applies or removes something to suppress behavior and carries high welfare and fear risks.",
       "Do not escalate pressure abruptly if the horse does not understand; clarify or lower criteria instead."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Accurately defining negative reinforcement, positive reinforcement, punishment, timing, and shaping.",
         "components": [
-          {"title": "Negative reinforcement (pressure & release)", "description": "Explaining that 'negative' means subtracting/removing a motivating pressure at the exact instant of the desired try—not 'bad' or punitive."},
-          {"title": "Positive reinforcement", "description": "Explaining that 'positive' means adding a valued outcome (such as a food treat, scratch, or rest) immediately after a desired behavior."},
-          {"title": "Reinforcement vs punishment", "description": "Clearly distinguishing reinforcement (increasing desired behavior) from punishment (suppressing behavior) and noting why punishment is avoided as a primary teaching tool."},
-          {"title": "Shaping & consistency", "description": "Rewarding small successive approximations and keeping cues consistent."}
+          {
+            "title": "Negative reinforcement (pressure & release)",
+            "description": "Explaining that 'negative' means subtracting/removing a motivating pressure at the exact instant of the desired try—not 'bad' or punitive."
+          },
+          {
+            "title": "Positive reinforcement",
+            "description": "Explaining that 'positive' means adding a valued outcome (such as a food treat, scratch, or rest) immediately after a desired behavior."
+          },
+          {
+            "title": "Reinforcement vs punishment",
+            "description": "Clearly distinguishing reinforcement (increasing desired behavior) from punishment (suppressing behavior) and noting why punishment is avoided as a primary teaching tool."
+          },
+          {
+            "title": "Shaping & consistency",
+            "description": "Rewarding small successive approximations and keeping cues consistent."
+          }
         ],
         "learning": "Confuses negative reinforcement with punishment, or believes the pressure itself—rather than the release—teaches the horse.",
         "proficient": "Clearly distinguishes negative reinforcement, positive reinforcement, and punishment, and explains why immediate release/reward and successive approximations are essential.",
@@ -291,8 +452,14 @@
       "intermediate": {
         "overview": "Demonstrating accurate timing, light-to-clear pressure gradients, and shaping plans.",
         "components": [
-          {"title": "Millisecond timing", "description": "Recognizing or demonstrating timely release/marking within the narrow window where the horse connects cause and effect."},
-          {"title": "Successive approximations", "description": "Designing a 3-to-5 step shaping plan for a practical skill such as trailer loading, standing at a mounting block, or yielding hindquarters."}
+          {
+            "title": "Millisecond timing",
+            "description": "Recognizing or demonstrating timely release/marking within the narrow window where the horse connects cause and effect."
+          },
+          {
+            "title": "Successive approximations",
+            "description": "Designing a 3-to-5 step shaping plan for a practical skill such as trailer loading, standing at a mounting block, or yielding hindquarters."
+          }
         ],
         "learning": "Understands timing in discussion but holds pressure slightly too long in practice or jumps criteria too fast.",
         "proficient": "Consistently identifies or demonstrates prompt release/reward on the first slight try and builds behaviors through calm, logical shaping steps.",
@@ -301,8 +468,14 @@
       "advanced": {
         "overview": "Combining reinforcement strategies thoughtfully, fading prompts, and auditing subtle timing errors.",
         "components": [
-          {"title": "Combined reinforcement", "description": "Ethically integrating pressure-release clarity with positive reinforcement (including marker signals) to build motivation and precision."},
-          {"title": "Timing audit", "description": "Spotting inadvertent reinforcement of unwanted behaviors (such as releasing when a horse pulls away or tosses its head)."}
+          {
+            "title": "Combined reinforcement",
+            "description": "Ethically integrating pressure-release clarity with positive reinforcement (including marker signals) to build motivation and precision."
+          },
+          {
+            "title": "Timing audit",
+            "description": "Spotting inadvertent reinforcement of unwanted behaviors (such as releasing when a horse pulls away or tosses its head)."
+          }
         ],
         "learning": "Applies one reinforcement style well while refining how to audit accidental reinforcement in complex rider-horse interactions.",
         "proficient": "Diagnoses subtle timing errors in live or video scenarios, designs combined-reinforcement shaping plans, and applies accurate learning-theory principles across contexts.",
@@ -310,9 +483,19 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.how_horses_learn", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.understanding_rider_aids", "relation": "next"},
-      {"skillId": "rider.in_hand.trailer_loading", "relation": "next"}
+      {
+        "skillId": "rider.theory.how_horses_learn",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.understanding_rider_aids",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.in_hand.trailer_loading",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 20
@@ -337,13 +520,23 @@
       "Treat pinned ears, tight lips, whites of the eyes, rigid posture, or swishing tail as early warning communications—adjust distance, pressure, or environment before escalation.",
       "Do not rely on a single body part in isolation; always read the whole horse in context."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Recognizing obvious signs of relaxation, alertness, mild tension, and defensive warning.",
         "components": [
-          {"title": "Head and face cues", "description": "Reading ear orientation, eye softness vs tension/sclera, nostril flare, and lip/jaw tightness."},
-          {"title": "Posture and tail", "description": "Distinguishing a resting hip and soft tail from a braced back, high head, or wringing tail."}
+          {
+            "title": "Head and face cues",
+            "description": "Reading ear orientation, eye softness vs tension/sclera, nostril flare, and lip/jaw tightness."
+          },
+          {
+            "title": "Posture and tail",
+            "description": "Distinguishing a resting hip and soft tail from a braced back, high head, or wringing tail."
+          }
         ],
         "learning": "Notices dramatic behaviors like spooking or pinning ears but misses quieter tension in the muzzle, eye, or neck.",
         "proficient": "Identifies clear signs of relaxation, curiosity, mild tension, and defensive warning across real or visual examples without misinterpreting them as 'bad attitude.'",
@@ -352,8 +545,14 @@
       "intermediate": {
         "overview": "Reading subtle, early-stage signals and context-dependent equine communication.",
         "components": [
-          {"title": "Whole-horse context", "description": "Interpreting licking/chewing, yawning, blinking, head lowering, and displacement behaviors accurately within context."},
-          {"title": "Early threshold cues", "description": "Spotting breath-holding, micro-freezes, or muscle bracing before a horse bolts, bucks, or shuts down."}
+          {
+            "title": "Whole-horse context",
+            "description": "Interpreting licking/chewing, yawning, blinking, head lowering, and displacement behaviors accurately within context."
+          },
+          {
+            "title": "Early threshold cues",
+            "description": "Spotting breath-holding, micro-freezes, or muscle bracing before a horse bolts, bucks, or shuts down."
+          }
         ],
         "learning": "Spots subtle signals occasionally or over-interprets single gestures like licking and chewing without checking posture and breathing.",
         "proficient": "Reads multi-signal clusters accurately in real time or video and explains appropriate, calming adjustments to handling or riding.",
@@ -362,8 +561,14 @@
       "advanced": {
         "overview": "Differentiating subtle pain, conflict, confusion, and fear signals during ridden, groundwork, and herd interactions.",
         "components": [
-          {"title": "Conflict vs pain vs confusion", "description": "Recognizing patterns such as teeth grinding, tail clamping, head tossing, or asymmetrical bracing that warrant tack or veterinary checks."},
-          {"title": "Herd and social dynamics", "description": "Understanding affiliative grooming, space negotiation, and resource guarding in group settings."}
+          {
+            "title": "Conflict vs pain vs confusion",
+            "description": "Recognizing patterns such as teeth grinding, tail clamping, head tossing, or asymmetrical bracing that warrant tack or veterinary checks."
+          },
+          {
+            "title": "Herd and social dynamics",
+            "description": "Understanding affiliative grooming, space negotiation, and resource guarding in group settings."
+          }
         ],
         "learning": "Reads individual horses accurately in familiar settings but struggles to separate learned conflict behavior from physical pain.",
         "proficient": "Synthesizes subtle facial, postural, and movement cues across varied contexts to guide safe, welfare-first training and care decisions.",
@@ -371,9 +576,18 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.stress_fear_confidence", "relation": "next"},
-      {"skillId": "rider.theory.pain_discomfort_fatigue", "relation": "next"},
-      {"skillId": "rider.husbandry.safe_handling", "relation": "next"}
+      {
+        "skillId": "rider.theory.stress_fear_confidence",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.pain_discomfort_fatigue",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.husbandry.safe_handling",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 30
@@ -399,13 +613,23 @@
       "Sudden asymmetry, cross-cantering, or loss of a clear beat can indicate fatigue, unbalance, or soundness discomfort—slow down and assess.",
       "Learn footfalls from the ground and in walk/trot before attempting fast gait assessments."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Identifying the beat counts and basic footfall sequences of walk, trot/jog, and canter/lope.",
         "components": [
-          {"title": "Core gait beats", "description": "Explaining the 4-beat walk, 2-beat diagonal trot/jog, and 3-beat asymmetric canter/lope."},
-          {"title": "Leads and diagonals", "description": "Identifying which foreleg leads in canter/lope and what a trot diagonal means."}
+          {
+            "title": "Core gait beats",
+            "description": "Explaining the 4-beat walk, 2-beat diagonal trot/jog, and 3-beat asymmetric canter/lope."
+          },
+          {
+            "title": "Leads and diagonals",
+            "description": "Identifying which foreleg leads in canter/lope and what a trot diagonal means."
+          }
         ],
         "learning": "Knows the names of gaits but mixes up beat counts or struggles to tell left from right canter leads visually.",
         "proficient": "Accurately states beat counts and footfall sequences for walk, trot/jog, and canter/lope, and identifies diagonals and leads by observation.",
@@ -414,8 +638,14 @@
       "intermediate": {
         "overview": "Recognizing gait purity, tempo vs rhythm, rein-back footfalls, and gaited horse variations.",
         "components": [
-          {"title": "Rhythm vs tempo", "description": "Distinguishing evenness/regularity of footfalls (rhythm) from speed of steps (tempo)."},
-          {"title": "Variations and rein-back", "description": "Recognizing the 2-beat diagonal rein-back, 4-beat gallop, and lateral/diagonal 4-beat ambling gaits (e.g., running walk, rack, tölt, paso)."}
+          {
+            "title": "Rhythm vs tempo",
+            "description": "Distinguishing evenness/regularity of footfalls (rhythm) from speed of steps (tempo)."
+          },
+          {
+            "title": "Variations and rein-back",
+            "description": "Recognizing the 2-beat diagonal rein-back, 4-beat gallop, and lateral/diagonal 4-beat ambling gaits (e.g., running walk, rack, tölt, paso)."
+          }
         ],
         "learning": "Recognizes standard three-gait footfalls well but confuses rhythm with tempo or is unfamiliar with gaited footfalls.",
         "proficient": "Evaluates rhythm regularity, distinguishes true 3-beat canter from 4-beat or disunited canter, and explains common ambling gait patterns accurately.",
@@ -424,8 +654,14 @@
       "advanced": {
         "overview": "Connecting footfall timing, suspension, and ground-reaction mechanics to training and soundness.",
         "components": [
-          {"title": "Gait mechanics in transitions", "description": "Explaining how footfall sequence dictates the optimal moment to ask for upward, downward, or lead-change transitions."},
-          {"title": "Spotting subtle gait faults", "description": "Detecting pacing at the walk, forging, disunited canter, or mild asymmetry and linking them to rider, tack, or veterinary factors."}
+          {
+            "title": "Gait mechanics in transitions",
+            "description": "Explaining how footfall sequence dictates the optimal moment to ask for upward, downward, or lead-change transitions."
+          },
+          {
+            "title": "Spotting subtle gait faults",
+            "description": "Detecting pacing at the walk, forging, disunited canter, or mild asymmetry and linking them to rider, tack, or veterinary factors."
+          }
         ],
         "learning": "Identifies footfalls accurately but struggles to time aids to specific phases of the stride.",
         "proficient": "Analyzes stride phases, suspension, and gait purity across breeds and disciplines to guide aid timing and early soundness screening.",
@@ -433,10 +669,22 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.balance_weight", "relation": "next"},
-      {"skillId": "rider.mounted.walk", "relation": "next"},
-      {"skillId": "rider.mounted.trot", "relation": "next"},
-      {"skillId": "rider.mounted.canter", "relation": "next"}
+      {
+        "skillId": "rider.theory.balance_weight",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.walk",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.trot",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.canter",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -461,13 +709,23 @@
       "A rider leaning sharply forward, crooked, or behind the motion makes steep terrain, turns, and transitions harder and less safe for the horse.",
       "Do not force an uphill frame with tight reins; true balance comes from hind-leg engagement and rider alignment."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Understanding natural forehand weight bias and how rider alignment affects the horse.",
         "components": [
-          {"title": "Forehand bias", "description": "Explaining why horses carry more weight in front naturally and why adding a rider increases forehand load."},
-          {"title": "Rider center of gravity", "description": "Recognizing how slouching, tipping forward, or collapsing one hip shifts weight onto the horse."}
+          {
+            "title": "Forehand bias",
+            "description": "Explaining why horses carry more weight in front naturally and why adding a rider increases forehand load."
+          },
+          {
+            "title": "Rider center of gravity",
+            "description": "Recognizing how slouching, tipping forward, or collapsing one hip shifts weight onto the horse."
+          }
         ],
         "learning": "Understands sitting upright is good but cannot explain how rider weight shifts affect the horse's shoulders or hindquarters.",
         "proficient": "Explains natural forehand weight distribution, longitudinal vs lateral balance, and how neutral rider alignment helps the horse stay balanced.",
@@ -476,8 +734,14 @@
       "intermediate": {
         "overview": "Recognizing signs of forehand heaviness vs balanced self-carriage across terrain and arena work.",
         "components": [
-          {"title": "On the forehand vs self-carriage", "description": "Identifying rushing, leaning on the bit, or heavy downhill steps vs light, uphill, balanced steps."},
-          {"title": "Terrain and turn balance", "description": "Explaining how rider position supports the horse on hills, turns, and transitions."}
+          {
+            "title": "On the forehand vs self-carriage",
+            "description": "Identifying rushing, leaning on the bit, or heavy downhill steps vs light, uphill, balanced steps."
+          },
+          {
+            "title": "Terrain and turn balance",
+            "description": "Explaining how rider position supports the horse on hills, turns, and transitions."
+          }
         ],
         "learning": "Spots obvious leaning or rushing but confuses a low head-and-neck stretch with being 'on the forehand.'",
         "proficient": "Distinguishes healthy stretching from forehand heaviness and explains practical ways transitions, hills, and rider balance improve weight distribution.",
@@ -486,8 +750,14 @@
       "advanced": {
         "overview": "Analyzing subtle shifts in weight transfer across lateral work, collection, and varied disciplines.",
         "components": [
-          {"title": "Hindquarter engagement", "description": "Explaining how lowering the croup and flexing hind joints transfers weight back for collection, stops, or agile turns."},
-          {"title": "Asymmetric rider habits", "description": "Diagnosing how subtle rider crookedness or saddle asymmetry alters the horse's diagonal weight bearing."}
+          {
+            "title": "Hindquarter engagement",
+            "description": "Explaining how lowering the croup and flexing hind joints transfers weight back for collection, stops, or agile turns."
+          },
+          {
+            "title": "Asymmetric rider habits",
+            "description": "Diagnosing how subtle rider crookedness or saddle asymmetry alters the horse's diagonal weight bearing."
+          }
         ],
         "learning": "Evaluates longitudinal balance well but misses subtle lateral weight shifts on circles and turns.",
         "proficient": "Assesses longitudinal and lateral weight distribution accurately in live or video scenarios and connects rider biomechanics to equine soundness.",
@@ -495,10 +765,28 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.training_pyramid", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.gaits_footfalls", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.bend_flexion_straightness", "relation": "next"},
-      {"skillId": "rider.mounted.half_halt", "relation": "next"}
+      {
+        "skillId": "rider.theory.training_pyramid",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.gaits_footfalls",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.bend_flexion_straightness",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.half_halt",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.seat_balance",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 20
@@ -523,13 +811,23 @@
       "Never pull the horse's head sharply inward with the inside rein to force a bend; this twists the neck and pushes weight onto the outside shoulder.",
       "Persistent one-sided resistance may reflect dental, saddle, or musculoskeletal pain—check comfort before assuming stiffness."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Defining lateral bend, poll flexion, and straightness on straight lines and curved tracks.",
         "components": [
-          {"title": "Bend vs neck-bending", "description": "Explaining that true bend matches the arc of the circle from poll to tail rather than pulling the nose inward."},
-          {"title": "Natural crookedness", "description": "Recognizing that horses, like humans, have a preferred 'hollow' and 'stiff' side."}
+          {
+            "title": "Bend vs neck-bending",
+            "description": "Explaining that true bend matches the arc of the circle from poll to tail rather than pulling the nose inward."
+          },
+          {
+            "title": "Natural crookedness",
+            "description": "Recognizing that horses, like humans, have a preferred 'hollow' and 'stiff' side."
+          }
         ],
         "learning": "Equates bend with turning the horse's head inward or thinks straightness only applies to straight lines.",
         "proficient": "Clearly distinguishes true longitudinal bend from neck-only bending, defines poll flexion, and explains straightness on both straight and curved lines.",
@@ -538,8 +836,14 @@
       "intermediate": {
         "overview": "Identifying shoulder drift, haunches drift, and balanced bend in live or recorded movement.",
         "components": [
-          {"title": "Tracking alignment", "description": "Spotting when hind feet track inside or outside the front-foot path on lines and circles."},
-          {"title": "Inside-leg-to-outside-rein concept", "description": "Explaining how supporting the ribcage and framing the outside shoulder produces balanced turns across disciplines."}
+          {
+            "title": "Tracking alignment",
+            "description": "Spotting when hind feet track inside or outside the front-foot path on lines and circles."
+          },
+          {
+            "title": "Inside-leg-to-outside-rein concept",
+            "description": "Explaining how supporting the ribcage and framing the outside shoulder produces balanced turns across disciplines."
+          }
         ],
         "learning": "Spots obvious crookedness on straight lines but misses shoulder-falling-out or haunches-swinging-in on circles.",
         "proficient": "Accurately identifies shoulder or haunches drift in observation and explains how balanced aids restore alignment without pulling.",
@@ -548,8 +852,14 @@
       "advanced": {
         "overview": "Evaluating nuanced bend, flexion, and straightening strategies for symmetry and soundness.",
         "components": [
-          {"title": "Lateral work as straightening", "description": "Explaining how shoulder-in, leg yield, and travers address natural asymmetry."},
-          {"title": "Discipline-neutral symmetry", "description": "Applying straightness principles equally to trail obstacles, ranch turns, jumping lines, and dressage."}
+          {
+            "title": "Lateral work as straightening",
+            "description": "Explaining how shoulder-in, leg yield, and travers address natural asymmetry."
+          },
+          {
+            "title": "Discipline-neutral symmetry",
+            "description": "Applying straightness principles equally to trail obstacles, ranch turns, jumping lines, and dressage."
+          }
         ],
         "learning": "Understands lateral exercises individually but struggles to choose which exercise addresses a specific asymmetry.",
         "proficient": "Diagnoses complex asymmetry patterns, selects appropriate straightening strategies, and explains biomechanical trade-offs clearly.",
@@ -557,9 +867,19 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.balance_weight", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.mounted.steering_navigation", "relation": "next"},
-      {"skillId": "rider.mounted.shoulder_in", "relation": "next"}
+      {
+        "skillId": "rider.theory.balance_weight",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.mounted.steering_navigation",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.shoulder_in",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 30
@@ -584,13 +904,23 @@
       "Never trap, corner, or punish a panicked horse; restore space and lower demands until the horse can think again.",
       "Do not mistake a quiet, shut-down horse ('learned helplessness') for a relaxed, confident horse."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Understanding prey-animal survival responses and the difference between calm curiosity and fear.",
         "components": [
-          {"title": "Flight, freeze, fight", "description": "Explaining why horses prioritize escape or freezing when startled, and why 'fight' usually occurs only when escape feels blocked."},
-          {"title": "Threshold basics", "description": "Recognizing that distance, environment, and calm pacing help a horse stay under its panic threshold."}
+          {
+            "title": "Flight, freeze, fight",
+            "description": "Explaining why horses prioritize escape or freezing when startled, and why 'fight' usually occurs only when escape feels blocked."
+          },
+          {
+            "title": "Threshold basics",
+            "description": "Recognizing that distance, environment, and calm pacing help a horse stay under its panic threshold."
+          }
         ],
         "learning": "Labels spookiness as 'bad behavior' or believes a horse must 'face its fear' up close immediately.",
         "proficient": "Explains prey-animal responses accurately and describes safe ways to give a worried horse space and time to investigate calmly.",
@@ -599,8 +929,14 @@
       "intermediate": {
         "overview": "Monitoring arousal levels, avoiding over-facing, and distinguishing relaxation from shutdown.",
         "components": [
-          {"title": "Sub-threshold progression", "description": "Managing distance, duration, and intensity so the horse stays curious and able to process information."},
-          {"title": "Relaxation vs shutdown", "description": "Comparing soft breathing, blinking, and curious movement with dull, frozen, unresponsive coping."}
+          {
+            "title": "Sub-threshold progression",
+            "description": "Managing distance, duration, and intensity so the horse stays curious and able to process information."
+          },
+          {
+            "title": "Relaxation vs shutdown",
+            "description": "Comparing soft breathing, blinking, and curious movement with dull, frozen, unresponsive coping."
+          }
         ],
         "learning": "Adjusts distance when a horse spooks but struggles to recognize quiet freeze or shutdown states.",
         "proficient": "Identifies rising arousal and shutdown cues accurately and outlines practical confidence-building steps using predictability and choice.",
@@ -609,8 +945,14 @@
       "advanced": {
         "overview": "Rehabilitating fearful patterns and designing long-term confidence programs for sensitive or traumatized horses.",
         "components": [
-          {"title": "Trigger stacking", "description": "Recognizing how multiple minor stressors (wind, separation, unfamiliar footing, tight tack) accumulate into an unexpected reaction."},
-          {"title": "Agency and predictability", "description": "Structuring handling and environmental exposure so anxious horses regain predictability and calm self-regulation."}
+          {
+            "title": "Trigger stacking",
+            "description": "Recognizing how multiple minor stressors (wind, separation, unfamiliar footing, tight tack) accumulate into an unexpected reaction."
+          },
+          {
+            "title": "Agency and predictability",
+            "description": "Structuring handling and environmental exposure so anxious horses regain predictability and calm self-regulation."
+          }
         ],
         "learning": "Handles isolated spooky moments well but is surprised by sudden reactions caused by trigger stacking.",
         "proficient": "Evaluates trigger stacking, herd/management stressors, and learning history to build humane, durable confidence plans.",
@@ -618,9 +960,24 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.equine_body_language", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.how_horses_learn", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.ethical_training", "relation": "next"}
+      {
+        "skillId": "rider.theory.equine_body_language",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.how_horses_learn",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.ethical_training",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.emergency_control",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -645,13 +1002,23 @@
       "Stop riding or demanding work if a horse shows sudden lameness, acute distress, severe bracing, or unexplained behavioral change.",
       "Do not mask pain with harsher bits, tie-downs, or stronger spurs; consult a veterinarian, farrier, equine dentist, or qualified saddle fitter."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Recognizing common signs of pain, tack discomfort, and fatigue without blaming the horse.",
         "components": [
-          {"title": "Common discomfort signs", "description": "Identifying girthing sensitivity, pinned ears under saddle, head-bobbing, stumbling, reluctance to go forward, and heavy breathing/sweating."},
-          {"title": "Rule out pain first", "description": "Adopting the habit of checking health, hooves, teeth, and tack before treating resistance as a training issue."}
+          {
+            "title": "Common discomfort signs",
+            "description": "Identifying girthing sensitivity, pinned ears under saddle, head-bobbing, stumbling, reluctance to go forward, and heavy breathing/sweating."
+          },
+          {
+            "title": "Rule out pain first",
+            "description": "Adopting the habit of checking health, hooves, teeth, and tack before treating resistance as a training issue."
+          }
         ],
         "learning": "Treats girthy, grumpy, or reluctant behavior as 'attitude' unless the horse is visibly lame.",
         "proficient": "Lists common physical and behavioral signs of pain and fatigue and explains when to pause work and involve a veterinarian or other qualified professional.",
@@ -660,8 +1027,14 @@
       "intermediate": {
         "overview": "Recognizing subtle ridden and ground pain patterns and differentiating fatigue from lack of training.",
         "components": [
-          {"title": "Subtle pain clusters", "description": "Spotting facial grimace cues, tail swishing, mouth opening, one-sided resistance, or reluctance to pick up a lead or back up."},
-          {"title": "Mental vs physical fatigue", "description": "Recognizing deteriorating coordination, tripping, and mental frustration so sessions end before strain."}
+          {
+            "title": "Subtle pain clusters",
+            "description": "Spotting facial grimace cues, tail swishing, mouth opening, one-sided resistance, or reluctance to pick up a lead or back up."
+          },
+          {
+            "title": "Mental vs physical fatigue",
+            "description": "Recognizing deteriorating coordination, tripping, and mental frustration so sessions end before strain."
+          }
         ],
         "learning": "Notices overt lameness but misses subtle ridden pain markers like tail clamping or persistent crookedness.",
         "proficient": "Identifies subtle pain and fatigue patterns in observation and outlines a structured rule-out checklist with appropriate veterinary, dental, farrier, and saddle-fit referrals.",
@@ -670,8 +1043,14 @@
       "advanced": {
         "overview": "Evaluating chronic or compensatory movement patterns and collaborating effectively with care teams.",
         "components": [
-          {"title": "Compensatory patterns", "description": "Recognizing how hind-end, sacroiliac, gastric, or hoof discomfort can present as behavioral issues or asymmetric training blocks."},
-          {"title": "Documentation for professionals", "description": "Recording clear timelines, video, and context to support accurate veterinary and allied-health diagnosis."}
+          {
+            "title": "Compensatory patterns",
+            "description": "Recognizing how hind-end, sacroiliac, gastric, or hoof discomfort can present as behavioral issues or asymmetric training blocks."
+          },
+          {
+            "title": "Documentation for professionals",
+            "description": "Recording clear timelines, video, and context to support accurate veterinary and allied-health diagnosis."
+          }
         ],
         "learning": "Refers appropriately when problems are obvious but struggles to document subtle longitudinal changes.",
         "proficient": "Critically evaluates complex performance changes, avoids coercive workarounds, and collaborates systematically with veterinary and equine-care specialists.",
@@ -679,10 +1058,24 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.equine_body_language", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.progressive_conditioning", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.husbandry.health_monitoring", "relation": "next"},
-      {"skillId": "rider.theory.tack_fit_function", "relation": "next"}
+      {
+        "skillId": "rider.theory.equine_body_language",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.progressive_conditioning",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.husbandry.health_monitoring",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.theory.tack_fit_function",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 20
@@ -707,13 +1100,23 @@
       "Never use training shortcuts that rely on pain, exhaustion, deprivation, or forced submission.",
       "Ensure daily basic needs—appropriate forage, water, turnout, companionship, hoof care, and veterinary care—are met alongside training."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Understanding basic equine welfare needs and humane handling boundaries.",
         "components": [
-          {"title": "Daily welfare foundations", "description": "Recognizing the importance of forage, water, movement, social contact, and comfortable shelter."},
-          {"title": "Fair training boundaries", "description": "Explaining why training should avoid pain, anger, and unrealistic physical demands."}
+          {
+            "title": "Daily welfare foundations",
+            "description": "Recognizing the importance of forage, water, movement, social contact, and comfortable shelter."
+          },
+          {
+            "title": "Fair training boundaries",
+            "description": "Explaining why training should avoid pain, anger, and unrealistic physical demands."
+          }
         ],
         "learning": "Cares about the horse's well-being but accepts harsh traditions or 'quick fixes' without questioning their welfare impact.",
         "proficient": "Articulates core equine welfare needs and identifies humane vs coercive practices in everyday riding and handling scenarios.",
@@ -722,8 +1125,14 @@
       "intermediate": {
         "overview": "Evaluating training methods, living environments, and equipment using structured welfare principles.",
         "components": [
-          {"title": "Five Domains perspective", "description": "Assessing nutrition, environment, health, behavioral interactions, and overall mental state."},
-          {"title": "Recognizing red flags", "description": "Critiquing over-tightened nosebands, hyperflexion, prolonged isolation, or working horses through pain."}
+          {
+            "title": "Five Domains perspective",
+            "description": "Assessing nutrition, environment, health, behavioral interactions, and overall mental state."
+          },
+          {
+            "title": "Recognizing red flags",
+            "description": "Critiquing over-tightened nosebands, hyperflexion, prolonged isolation, or working horses through pain."
+          }
         ],
         "learning": "Applies welfare principles to own riding but hesitates to evaluate normalized industry practices critically.",
         "proficient": "Evaluates real-world training and management scenarios against welfare frameworks and proposes practical, horse-friendly alternatives.",
@@ -732,8 +1141,14 @@
       "advanced": {
         "overview": "Synthesizing ethical decision-making, end-of-life and retirement stewardship, and welfare accountability across real-world scenarios.",
         "components": [
-          {"title": "Long-term stewardship", "description": "Planning ethically for aging horses, career transitions, injury rehabilitation, and humane end-of-life decisions."},
-          {"title": "Stewarding ethical standards", "description": "Consistently applying calm, evidence-informed, welfare-centered standards in daily care, training, barns, and competitive venues."}
+          {
+            "title": "Long-term stewardship",
+            "description": "Planning ethically for aging horses, career transitions, injury rehabilitation, and humane end-of-life decisions."
+          },
+          {
+            "title": "Stewarding ethical standards",
+            "description": "Consistently applying calm, evidence-informed, welfare-centered standards in daily care, training, barns, and competitive venues."
+          }
         ],
         "learning": "Makes ethical choices in familiar routines while building confidence evaluating complex trade-offs across unfamiliar barn or competition norms.",
         "proficient": "Demonstrates mature, welfare-centered judgment across complex training, management, and stewardship dilemmas while communicating constructively with others.",
@@ -741,9 +1156,20 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.stress_fear_confidence", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.pain_discomfort_fatigue", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.husbandry.stable_care", "relation": "next"}
+      {
+        "skillId": "rider.theory.stress_fear_confidence",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.pain_discomfort_fatigue",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.husbandry.stable_care",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 30
@@ -770,13 +1196,23 @@
       "Never pull backward on the reins while simultaneously kicking or driving the horse forward—conflicting aids cause stress, brace, and dangerous reactions.",
       "Artificial aids (whips, spurs) are gentle, precise refinements, never tools for punishment or anger."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Identifying the natural and artificial aids (or cues) and the principle of asking lightly first with prompt release.",
         "components": [
-          {"title": "Natural aids and cues", "description": "Explaining the distinct roles of seat/weight, legs, hands/reins, and voice/breath across English, Western, and driving terminology."},
-          {"title": "Lightest cue first and common mistakes", "description": "Starting with a subtle seat, breath, or light touch before escalating calmly if needed, and releasing as soon as the horse responds. Common mistake: skipping straight to strong rein or leg pressure when a horse simply hasn't understood the request yet."}
+          {
+            "title": "Natural aids and cues",
+            "description": "Explaining the distinct roles of seat/weight, legs, hands/reins, and voice/breath across English, Western, and driving terminology."
+          },
+          {
+            "title": "Lightest cue first and common mistakes",
+            "description": "Starting with a subtle seat, breath, or light touch before escalating calmly if needed, and releasing as soon as the horse responds. Common mistake: skipping straight to strong rein or leg pressure when a horse simply hasn't understood the request yet."
+          }
         ],
         "learning": "Relies almost entirely on reins for steering and stopping, or uses hands and legs simultaneously without noticing.",
         "proficient": "Names all natural and artificial aids, explains their cooperative roles, and describes how to give a light-to-clear cue followed by immediate release.",
@@ -785,8 +1221,14 @@
       "intermediate": {
         "overview": "Coordinating independent aids and avoiding contradictory or constant background pressure.",
         "components": [
-          {"title": "Aid independence", "description": "Explaining how a rider moves seat, legs, and hands independently without gripping or balancing on the reins."},
-          {"title": "Avoiding nagging and conflicting cues", "description": "Recognizing constant leg squeezing (which habituates/dulls the horse to leg cues), dead-weight hands, or opposing hand-and-leg pressure that creates conflict and welfare stress."}
+          {
+            "title": "Aid independence",
+            "description": "Explaining how a rider moves seat, legs, and hands independently without gripping or balancing on the reins."
+          },
+          {
+            "title": "Avoiding nagging and conflicting cues",
+            "description": "Recognizing constant leg squeezing (which habituates/dulls the horse to leg cues), dead-weight hands, or opposing hand-and-leg pressure that creates conflict and welfare stress."
+          }
         ],
         "learning": "Understands independent aids in theory but struggles to explain how seat, leg, and rein coordinate in transitions or turns.",
         "proficient": "Explains clear aid coordination for transitions, turns, and lateral requests across loose-rein and contact styles, and spots conflicting aids in observation.",
@@ -795,8 +1237,14 @@
       "advanced": {
         "overview": "Refining subtle aid timing, stride-phase coordination, and ethical use of optional refinements.",
         "components": [
-          {"title": "Timing aids to stride", "description": "Matching leg, seat, and half-halt timing to hind-leg swing and stance phases so the horse can answer easily without losing balance."},
-          {"title": "Refinement, fading, and welfare", "description": "Evaluating when an aid is truly helpful vs unnecessary clutter, checking for discomfort before increasing pressure, and progressively fading cues toward lighter, quieter communication."}
+          {
+            "title": "Timing aids to stride",
+            "description": "Matching leg, seat, and half-halt timing to hind-leg swing and stance phases so the horse can answer easily without losing balance."
+          },
+          {
+            "title": "Refinement, fading, and welfare",
+            "description": "Evaluating when an aid is truly helpful vs unnecessary clutter, checking for discomfort before increasing pressure, and progressively fading cues toward lighter, quieter communication."
+          }
         ],
         "learning": "Applies clear aids comfortably in familiar routines while still diagnosing subtle timing clashes under varied conditions.",
         "proficient": "Analyzes complex aid coordination and biomechanics across disciplines, explaining how to refine cues to near-invisible clarity.",
@@ -804,9 +1252,19 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.timing_reinforcement", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.mounted.half_halt", "relation": "next"},
-      {"skillId": "rider.mounted.transitions", "relation": "next"}
+      {
+        "skillId": "rider.theory.timing_reinforcement",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.mounted.half_halt",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.mounted.transitions",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 10
@@ -832,13 +1290,23 @@
       "Never ride in a saddle with a broken tree, zero spinal/wither clearance, or pinching points.",
       "Do not over-tighten nosebands or girths/cinches; allow normal breathing, swallowing, and jaw relaxation."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Performing basic visual and hands-on checks for safe, comfortable saddle and bridle/halter fit.",
         "components": [
-          {"title": "Saddle clearance and balance", "description": "Checking wither and spine clearance, level seat balance, and clear shoulder movement."},
-          {"title": "Headgear and girth comfort", "description": "Checking bit/bitless placement, cheekpiece/noseband breathing room, and smooth girth/cinch placement behind the elbow."}
+          {
+            "title": "Saddle clearance and balance",
+            "description": "Checking wither and spine clearance, level seat balance, and clear shoulder movement."
+          },
+          {
+            "title": "Headgear and girth comfort",
+            "description": "Checking bit/bitless placement, cheekpiece/noseband breathing room, and smooth girth/cinch placement behind the elbow."
+          }
         ],
         "learning": "Tacks up safely but cannot tell whether a saddle is pinching the withers, bridging, or tipping the rider back.",
         "proficient": "Demonstrates or explains essential saddle, pad, girth/cinch, and bridle/halter fit checks and identifies obvious fit hazards.",
@@ -847,8 +1315,14 @@
       "intermediate": {
         "overview": "Understanding bit/bitless mechanics, pad choices, and subtle signs of tack discomfort.",
         "components": [
-          {"title": "Headgear mechanics", "description": "Explaining how snaffles, curb/leverage bits, hackamores, and sidepulls distribute pressure on bars, tongue, poll, and nose."},
-          {"title": "Dynamic fit cues", "description": "Recognizing dry sweat spots, ruffled hair, saddle slip, or girthiness as signs to reassess fit with a professional."}
+          {
+            "title": "Headgear mechanics",
+            "description": "Explaining how snaffles, curb/leverage bits, hackamores, and sidepulls distribute pressure on bars, tongue, poll, and nose."
+          },
+          {
+            "title": "Dynamic fit cues",
+            "description": "Recognizing dry sweat spots, ruffled hair, saddle slip, or girthiness as signs to reassess fit with a professional."
+          }
         ],
         "learning": "Knows basic static fit checks but misunderstands leverage bit mechanics or tries to fix poor saddle fit with thick pads.",
         "proficient": "Explains bit and bitless pressure mechanics accurately, recognizes dynamic fit warning signs, and knows when a professional saddle fitter or equine dentist is needed.",
@@ -857,8 +1331,14 @@
       "advanced": {
         "overview": "Assessing seasonal, fitness, and rider-induced tack-fit changes across disciplines.",
         "components": [
-          {"title": "Conformation and muscle changes", "description": "Monitoring how conditioning, weight shifts, or aging alter saddle tree/flocking/bar requirements."},
-          {"title": "Rider-saddle-horse interaction", "description": "Evaluating how saddle balance and stirrup placement affect both rider posture and equine back symmetry."}
+          {
+            "title": "Conformation and muscle changes",
+            "description": "Monitoring how conditioning, weight shifts, or aging alter saddle tree/flocking/bar requirements."
+          },
+          {
+            "title": "Rider-saddle-horse interaction",
+            "description": "Evaluating how saddle balance and stirrup placement affect both rider posture and equine back symmetry."
+          }
         ],
         "learning": "Checks horse anatomy well but overlooks how rider asymmetry or saddle seat size affects pressure distribution.",
         "proficient": "Evaluates static and dynamic tack-horse-rider interactions thoroughly across Western, English, treeless, or driving setups and guides timely professional adjustments.",
@@ -866,8 +1346,15 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.husbandry.tack", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.pain_discomfort_fatigue", "relation": "next"}
+      {
+        "skillId": "rider.husbandry.tack",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.pain_discomfort_fatigue",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 20
@@ -893,13 +1380,23 @@
       "Never use tie-downs, draw reins, or restrictive gadgets to force head carriage or compensate for missing basics.",
       "Do not turn out or tie a horse in equipment designed only for active handling, such as martingales, side reins, or rope halters without breakaway safety."
     ],
-    "availableLevels": ["introductory", "intermediate", "advanced"],
+    "availableLevels": [
+      "introductory",
+      "intermediate",
+      "advanced"
+    ],
     "levels": {
       "introductory": {
         "overview": "Identifying common groundwork, protective, and riding equipment and their intended safety or communication roles.",
         "components": [
-          {"title": "Everyday tools", "description": "Explaining the purpose of flat vs rope halters, lunge lines, longeing cavessons, breastcollars, and protective boots/wraps."},
-          {"title": "Tools vs training", "description": "Recognizing that equipment cannot replace clear cues, relaxation, or foundational training."}
+          {
+            "title": "Everyday tools",
+            "description": "Explaining the purpose of flat vs rope halters, lunge lines, longeing cavessons, breastcollars, and protective boots/wraps."
+          },
+          {
+            "title": "Tools vs training",
+            "description": "Recognizing that equipment cannot replace clear cues, relaxation, or foundational training."
+          }
         ],
         "learning": "Recognizes common tools by name but cannot explain how they differ mechanically or when they are unnecessary.",
         "proficient": "Accurately explains the intended purpose and basic safety rules for common groundwork, riding, and protective equipment.",
@@ -908,8 +1405,14 @@
       "intermediate": {
         "overview": "Evaluating the mechanics, risks, and appropriate use cases of specialized training equipment.",
         "components": [
-          {"title": "Martingales and auxiliary gear", "description": "Distinguishing running vs standing martingales, breastplates, surcingles, and long lines—including when they help and when they restrict."},
-          {"title": "Risk assessment", "description": "Identifying heat buildup under leg boots, restricted head balance on trails/jumps, and leverage risks."}
+          {
+            "title": "Martingales and auxiliary gear",
+            "description": "Distinguishing running vs standing martingales, breastplates, surcingles, and long lines—including when they help and when they restrict."
+          },
+          {
+            "title": "Risk assessment",
+            "description": "Identifying heat buildup under leg boots, restricted head balance on trails/jumps, and leverage risks."
+          }
         ],
         "learning": "Uses equipment safely when instructed but struggles to evaluate whether a gadget is helping or masking a problem.",
         "proficient": "Explains the mechanical action, proper adjustment, and pros/cons of specialized equipment and chooses minimal, welfare-sound gear for a given task.",
@@ -918,8 +1421,14 @@
       "advanced": {
         "overview": "Critically auditing equipment choices across disciplines and selecting minimal, horse-centered gear responsibly.",
         "components": [
-          {"title": "Welfare and biomechanical critique", "description": "Evaluating coercive vs supportive gear in competitive, ranch, trail, and driving contexts."},
-          {"title": "Transitioning off training aids", "description": "Planning how temporary safety or guidance tools are phased out as balance and understanding develop."}
+          {
+            "title": "Welfare and biomechanical critique",
+            "description": "Evaluating coercive vs supportive gear in competitive, ranch, trail, and driving contexts."
+          },
+          {
+            "title": "Transitioning off training aids",
+            "description": "Planning how temporary safety or guidance tools are phased out as balance and understanding develop."
+          }
         ],
         "learning": "Evaluates familiar gear well while building balanced discernment across specialized equipment used in other disciplines.",
         "proficient": "Provides balanced, biomechanically and ethically grounded equipment evaluations across disciplines and selects safe, minimal gear suited to the individual horse.",
@@ -927,10 +1436,24 @@
       }
     },
     "relatedSkills": [
-      {"skillId": "rider.theory.tack_fit_function", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.theory.ethical_training", "relation": "foundation", "level": "introductory"},
-      {"skillId": "rider.in_hand.longeing", "relation": "next"},
-      {"skillId": "rider.husbandry.leg_wraps", "relation": "next"}
+      {
+        "skillId": "rider.theory.tack_fit_function",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.theory.ethical_training",
+        "relation": "foundation",
+        "level": "introductory"
+      },
+      {
+        "skillId": "rider.in_hand.longeing",
+        "relation": "next"
+      },
+      {
+        "skillId": "rider.husbandry.leg_wraps",
+        "relation": "next"
+      }
     ],
     "legacyIds": [],
     "sortOrder": 30

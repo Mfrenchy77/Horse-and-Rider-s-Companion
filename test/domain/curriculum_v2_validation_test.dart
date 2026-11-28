@@ -66,20 +66,22 @@ void main() {
 
     test('contains expected families, skills, and level standards', () {
       expect(families.length, 33);
-      expect(skills.length, 79);
+      expect(skills.length, 84);
       final totalLevels = skills.fold<int>(
         0,
         (sum, s) => sum + s.availableLevels.length,
       );
-      expect(totalLevels, 175);
+      expect(totalLevels, 187);
 
-      // Wave 1, Wave 2 & Batch 1/2 3-level progression checks
+      // Wave 1, Wave 2, Wave 3 & Batch 1/2 3-level progression checks
       for (final id in [
         'rider.in_hand.longeing',
+        'rider.mounted.seat_balance',
         'rider.mounted.trot',
         'rider.mounted.canter',
         'rider.mounted.transitions',
         'rider.mounted.rein_back',
+        'horse.in_hand.longeing',
         'horse.mounted.trot',
         'horse.mounted.canter',
         'horse.mounted.rein_back',
@@ -442,6 +444,129 @@ void main() {
           .proficient
           .toLowerCase();
       expect(horseForehand.contains('90–180°'), isFalse);
+    });
+
+    test('Wave 3 foundational skills and Turn on the Haunches refinement preserve integrity', () {
+      // 1. Five new foundational skills in expected families & levels.
+      const expectedWave3 = {
+        'rider.mounted.seat_balance': (
+          familyId: 'rider.mounted.position_balance_safety',
+          levels: [
+            DifficultyState.Introductory,
+            DifficultyState.Intermediate,
+            DifficultyState.Advanced,
+          ],
+        ),
+        'rider.mounted.emergency_control': (
+          familyId: 'rider.mounted.position_balance_safety',
+          levels: [
+            DifficultyState.Introductory,
+            DifficultyState.Intermediate,
+          ],
+        ),
+        'horse.in_hand.catching_turnout': (
+          familyId: 'horse.in_hand.leading_manners',
+          levels: [
+            DifficultyState.Introductory,
+            DifficultyState.Intermediate,
+          ],
+        ),
+        'horse.in_hand.longeing': (
+          familyId: 'horse.in_hand.work_on_line',
+          levels: [
+            DifficultyState.Introductory,
+            DifficultyState.Intermediate,
+            DifficultyState.Advanced,
+          ],
+        ),
+        'horse.in_hand.obstacles_outings': (
+          familyId: 'horse.in_hand.travel_environments',
+          levels: [
+            DifficultyState.Introductory,
+            DifficultyState.Intermediate,
+          ],
+        ),
+      };
+      for (final entry in expectedWave3.entries) {
+        final skill = skillById[entry.key]!;
+        expect(skill.familyId, entry.value.familyId);
+        expect(skill.availableLevels, entry.value.levels);
+      }
+
+      // 2. Symmetric counterparts between new Horse In-Hand skills and Rider skills.
+      for (final pair in const [
+        ('horse.in_hand.catching_turnout', 'rider.in_hand.catch_halter_turnout'),
+        ('horse.in_hand.longeing', 'rider.in_hand.longeing'),
+        ('horse.in_hand.obstacles_outings', 'rider.in_hand.obstacles_outings'),
+      ]) {
+        final horseSkill = skillById[pair.$1]!;
+        final riderSkill = skillById[pair.$2]!;
+        expect(
+          horseSkill.relatedSkills.any(
+            (r) =>
+                r.skillId == riderSkill.id &&
+                r.relation == SkillRelationType.counterpart,
+          ),
+          isTrue,
+        );
+        expect(
+          riderSkill.relatedSkills.any(
+            (r) =>
+                r.skillId == horseSkill.id &&
+                r.relation == SkillRelationType.counterpart,
+          ),
+          isTrue,
+        );
+      }
+
+      // 3. Emergency control cautions against one universal maneuver.
+      final emergency = skillById['rider.mounted.emergency_control']!;
+      expect(
+        emergency.safety.join(' ').toLowerCase(),
+        contains('one-rein stop'),
+      );
+      expect(
+        emergency.safety.join(' ').toLowerCase(),
+        contains('emergency dismount'),
+      );
+
+      // 4. Horse Longeing never mandates faster gaits at higher levels.
+      final horseLonge = skillById['horse.in_hand.longeing']!;
+      expect(
+        horseLonge
+            .levelDefinition(DifficultyState.Intermediate)!
+            .proficient
+            .toLowerCase(),
+        contains('without requiring canter'),
+      );
+      expect(
+        horseLonge
+            .levelDefinition(DifficultyState.Introductory)!
+            .proficient
+            .toLowerCase(),
+        contains('faster gaits are not required'),
+      );
+
+      // 5. Horse Catching/Turnout distinguishes calm cooperation from shutdown.
+      final horseCatch = skillById['horse.in_hand.catching_turnout']!;
+      expect(
+        horseCatch.safety.join(' ').toLowerCase(),
+        contains('shutdown'),
+      );
+
+      // 6. Discipline-neutral Turn on the Haunches removes arbitrary ~1 m mandate.
+      final riderHaunches = skillById['rider.mounted.turn_on_haunches']!;
+      final horseHaunches = skillById['horse.mounted.turn_on_haunches']!;
+      for (final lvl in riderHaunches.availableLevels) {
+        final def = riderHaunches.levelDefinition(lvl)!;
+        expect(def.overview.contains('~1 m'), isFalse);
+        expect(def.proficient.contains('~1 m'), isFalse);
+      }
+      for (final lvl in horseHaunches.availableLevels) {
+        final def = horseHaunches.levelDefinition(lvl)!;
+        expect(def.overview.contains('~1 m'), isFalse);
+        expect(def.proficient.contains('~1 m'), isFalse);
+      }
     });
   });
 }

@@ -85,7 +85,7 @@ async function main() {
   const publish = publishCurriculumDraftHandler(db, {publishingEnabled: true, chunkByteLimit: 64 * 1024});
   const rollback = rollbackCurriculumRevisionHandler(db, {publishingEnabled: true, chunkByteLimit: 64 * 1024});
 
-  // Seed production-like baseline: ONLY SkillFamilies (33) and SkillsV2 (79),
+  // Seed production-like baseline: ONLY SkillFamilies (33) and SkillsV2 (84),
   // with NO SkillTreeCurriculumPublic/active and NO SkillTreeCurriculumMeta/current.
   const seedBatch = db.batch();
   for (const f of families) {
@@ -105,7 +105,7 @@ async function main() {
   });
   assert.equal(preExport.source, 'legacy_collections');
   assert.equal(preExport.familyCount, 33);
-  assert.equal(preExport.skillCount, 79);
+  assert.equal(preExport.skillCount, 84);
 
   // Initial revision creation from pre-versioned production baseline:
   // First simulate interruption before activation -> SkillTreeCurriculumPublic/active MUST stay absent!
@@ -126,12 +126,12 @@ async function main() {
       'No partial initial revision may become publicly visible',
   );
 
-  // Resume initial revision -> atomically creates rev_000001 preserving all 33 families, 79 skills, and progress.
+  // Resume initial revision -> atomically creates rev_000001 preserving all 33 families, 84 skills, and progress.
   const rev1 = await publish({auth: adminAuth, data: {resumeFailedPublication: true}});
   assert.equal(rev1.resumed, true);
   assert.equal(rev1.revision.id, 'rev_000001');
   assert.equal(rev1.revision.familyCount, 33);
-  assert.equal(rev1.revision.skillCount, 79);
+  assert.equal(rev1.revision.skillCount, 84);
   assert.equal((await progressRef.get()).data().levels.intermediate.state, 'PROFICIENT');
   assert.equal((await verifRef.get()).data().levels.intermediate.standardVersion, 1);
 
@@ -236,7 +236,7 @@ async function main() {
     assert.equal(exported.source, 'active_revision');
     assert.equal(exported.revisionId, 'rev_000002');
     assert.equal(exported.familyCount, 33);
-    assert.equal(exported.skillCount, 79);
+    assert.equal(exported.skillCount, 84);
     assert.equal(exported.changedCount, 7);
     const exportedMounted = JSON.parse(
         fs.readFileSync(path.join(tmpExportDir, 'skills_rider_mounted.json'), 'utf8'),

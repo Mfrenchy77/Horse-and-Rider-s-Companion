@@ -246,7 +246,7 @@ void main() {
         final families = (await tester.runAsync(skillRepo.fetchFamilies))!;
         final skills = (await tester.runAsync(skillRepo.fetchSkills))!;
         expect(families, hasLength(33));
-        expect(skills, hasLength(79));
+        expect(skills, hasLength(84));
 
         // 2. Record independent Rider progress and instructor verification.
         await skillRepo.setLevelProgress(
@@ -301,7 +301,7 @@ void main() {
         final savedDraft = await draftRepo.saveDraft(
           SkillTreeCurriculumDraft(families: families, skills: skills),
         );
-        expect(savedDraft.skills, hasLength(79));
+        expect(savedDraft.skills, hasLength(84));
         expect((await draftRepo.fetchDraft())?.families, hasLength(33));
 
         final suggestionsStore = InMemorySkillTreeSuggestionsStore();

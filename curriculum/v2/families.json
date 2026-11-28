@@ -85,7 +85,7 @@
     "subject": "rider",
     "realm": "Mounted",
     "name": "Position, Balance & Safety",
-    "description": "Mounting, dismounting, and maintaining a secure, balanced rider position.",
+    "description": "Mounting, dismounting, developing an independent balanced rider seat, and maintaining safety and composure in unexpected situations.",
     "sortOrder": 10,
     "schemaVersion": 2
   },
@@ -193,7 +193,7 @@
     "subject": "horse",
     "realm": "In_Hand",
     "name": "Leading & Ground Manners",
-    "description": "Responding politely to halter requests, leading calmly, and standing quietly on the ground.",
+    "description": "Cooperating calmly during catching, haltering, turnout, leading, and standing quietly on the ground.",
     "sortOrder": 10,
     "schemaVersion": 2
   },
@@ -220,7 +220,7 @@
     "subject": "horse",
     "realm": "In_Hand",
     "name": "Travel & New Environments",
-    "description": "Loading, unloading, and coping calmly with trailers and unfamiliar surroundings.",
+    "description": "Navigating ground obstacles, outings, trailers, and unfamiliar surroundings calmly from the ground.",
     "sortOrder": 30,
     "schemaVersion": 2
   },
@@ -229,7 +229,7 @@
     "subject": "horse",
     "realm": "In_Hand",
     "name": "Work on the Line",
-    "description": "Responding calmly and clearly to long-line requests from the ground.",
+    "description": "Responding calmly and clearly on a longe line or two long lines from the ground.",
     "sortOrder": 40,
     "schemaVersion": 2
   },
